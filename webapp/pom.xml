@@ -66,6 +66,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>life.qbic</groupId>
+                <artifactId>domain</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
                 <groupId>com.vaadin</groupId>
                 <artifactId>vaadin-bom</artifactId>
                 <version>${vaadin.version}</version>
@@ -76,6 +81,11 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>life.qbic</groupId>
+            <artifactId>domain</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->
