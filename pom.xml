@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <modules>
     <module>webapp</module>
     <module>domain</module>
