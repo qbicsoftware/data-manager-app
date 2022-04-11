@@ -1,12 +1,44 @@
 package life.qbic.usermanagement.policies
 
+import spock.lang.Specification
+
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Tests for the {@link EmailFormatPolicy}</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-class EmailFormatPolicySpec extends Speficiation {
+class EmailFormatPolicySpec extends Specification {
+
+    def "An email format that violates the RFC5322 specification shall result in a FAILED policy check"() {
+        when:
+        PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(email as String)
+
+        then:
+        policyCheckReport.status() == PolicyStatus.FAILED
+        policyCheckReport.reason().equalsIgnoreCase("Invalid email address format.")
+
+        where:
+        email << [
+                "my@ohmy",
+                "@test.de",
+                "address.de",
+                "my@address"
+                ]
+    }
+
+    def "An email format that honors the RFC5322 specification shall result in a PASSED policy check"() {
+        when:
+        PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(email as String)
+
+        then:
+        policyCheckReport.status() == PolicyStatus.PASSED
+        policyCheckReport.reason().isBlank()
+
+        where:
+        email << [
+                "valid.address@example.com",
+                "address@subdomain.domain.de"
+        ]
+    }
 
 }

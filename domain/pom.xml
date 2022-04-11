@@ -26,19 +26,21 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <scope>test</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
   <build>
   <plugins>
     <plugin>
       <groupId>org.codehaus.gmavenplus</groupId>
       <artifactId>gmavenplus-plugin</artifactId>
-      <version>1.12.1</version>
+      <version>1.13.1</version>
       <executions>
         <execution>
           <id>default</id>
