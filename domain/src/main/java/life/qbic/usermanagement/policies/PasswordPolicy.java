@@ -22,6 +22,12 @@ public class PasswordPolicy {
     return INSTANCE;
   }
 
+  /**
+   * Validates the password against the current policy.
+   * @param password the password to validate
+   * @return a policy check report
+   * @since 1.0.0
+   */
   public PolicyCheckReport validate(String password) {
     if (password.trim().length() < MIN_LENGTH) {
       return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
