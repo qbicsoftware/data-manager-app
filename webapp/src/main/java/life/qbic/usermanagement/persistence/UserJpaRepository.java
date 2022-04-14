@@ -30,12 +30,12 @@ public class UserJpaRepository implements UserDataStorage {
   }
 
   @Override
-  public void storeUser(User user) {
+  public void save(User user) {
     userRepo.save(user);
   }
 
   @Override
   public Optional<User> findUserById(String id) {
-    return Optional.empty();
+    return Optional.ofNullable(userRepo.findUserById(id));
   }
 }

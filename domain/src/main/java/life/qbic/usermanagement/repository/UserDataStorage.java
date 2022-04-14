@@ -8,7 +8,7 @@ public interface UserDataStorage {
 
   List<User> findUsersByEmail(String email);
 
-  void storeUser(User user);
+  void save(User user);
 
   Optional<User> findUserById(String id);
 }

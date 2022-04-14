@@ -4,9 +4,11 @@ import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 import life.qbic.usermanagement.policies.*;
 
 @Entity
+@Table(name = "users")
 public class User {
 
   @Id
@@ -65,6 +67,15 @@ public class User {
 
   private User(String fullName) {
     this.fullName = fullName;
+  }
+
+  @Override
+  public String toString() {
+    return "User{" +
+        "id='" + id + '\'' +
+        ", fullName='" + fullName + '\'' +
+        ", email='" + email + '\'' +
+        '}';
   }
 
   /**
