@@ -1,6 +1,7 @@
 package life.qbic.usermanagement;
 
 import java.util.UUID;
+import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.usermanagement.policies.*;
 
 public class User {
@@ -111,6 +112,10 @@ public class User {
 
   public String getId() {
     return this.id;
+  }
+
+  public String getEmail() {
+    return this.email;
   }
 
   private void validateEmail(String email) throws UserException {

@@ -3,6 +3,10 @@ package life.qbic.usermanagement.repository;
 import java.util.Optional;
 import life.qbic.usermanagement.User;
 
+/**
+ *
+ * @since 1.0.0
+ */
 public class UserRepository {
 
   private static UserRepository INSTANCE;
@@ -64,16 +68,25 @@ public class UserRepository {
 
   /**
    * Adds a user to the repository.
-   * @param user
-   * @return
-   * @since
+   * @param user the user that shall be added to the repository
+   * @return true, of the user has been added, else will return a false flag. This only happens if
+   * the user with the given id or email address already exists.
+   * @since 1.0.0
    */
   public boolean addUser(User user) {
-    Optional<User> userSearch = findById(user.getId());
-    if (userSearch.isPresent()) {
+    if (doesUserExistWithId(user.getId())
+        || doesUserExistWithEmail(user.getEmail())) {
       return false;
     }
     return dataStorage.storeUser(user);
+  }
+
+  private boolean doesUserExistWithEmail(String email) {
+    return findByEmail(email).isPresent();
+  }
+
+  private boolean doesUserExistWithId(String id) {
+    return findById(id).isPresent();
   }
 
 }
