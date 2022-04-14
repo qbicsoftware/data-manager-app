@@ -29,12 +29,14 @@ class UserRepositorySpec extends Specification {
     def "Given a repository already contains a user, dont add the user twice"() {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
-        storage.findUserById("_") >> [createDummyUser()]
+        storage.findUserById(_ as String) >> Optional.of(createDummyUser())
 
         UserRepository repository = new UserRepository(storage)
 
         when:
-        boolean hasUserBeenAdded = repository.findById("uuid")
+        var result = repository.findById("123")
+        var user = result.get()
+        boolean hasUserBeenAdded = repository.addUser(user)
 
         then:
         !hasUserBeenAdded
