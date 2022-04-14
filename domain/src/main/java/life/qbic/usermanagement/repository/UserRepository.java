@@ -20,11 +20,23 @@ public class UserRepository {
   }
 
   public Optional<User> findByEmail(String email) {
+    var matchingUsers = dataStorage.findUsersByEmail(email);
+    if (matchingUsers.size() > 1) {
+      throw new RuntimeException("More than one user entry with the same email exists!");
+    }
     return Optional.empty();
   }
 
+  public Optional<User> findById(String id) {
+    return dataStorage.findUserById(id);
+  }
+
   public boolean addUser(User user) {
-    return false;
+    Optional<User> userSearch = findById(user.getId());
+    if (userSearch.isPresent()) {
+      return false;
+    }
+    return dataStorage.storeUser(user);
   }
 
 }

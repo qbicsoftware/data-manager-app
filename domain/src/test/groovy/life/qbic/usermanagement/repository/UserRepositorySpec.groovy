@@ -1,0 +1,47 @@
+package life.qbic.usermanagement.repository
+
+import life.qbic.usermanagement.User
+import spock.lang.Specification
+
+/**
+ * <b><class short description - 1 Line!></b>
+ *
+ * <p><More detailed description - When to use, what it solves, etc.></p>
+ *
+ * @since <version tag>
+ */
+class UserRepositorySpec extends Specification {
+
+    def "Given a repository that contains more than one entry with the same email, throw a runtime exception"() {
+        given:
+        UserDataStorage storage = Mock(UserDataStorage.class)
+        storage.findUsersByEmail("_") >> [createDummyUser(), createDummyUser()]
+
+        UserRepository repository = new UserRepository(storage)
+
+        when:
+        repository.findByEmail("my.example@example.com")
+
+        then:
+        thrown(RuntimeException)
+    }
+
+    def "Given a repository already contains a user, dont add the user twice"() {
+        given:
+        UserDataStorage storage = Mock(UserDataStorage.class)
+        storage.findUserById("_") >> [createDummyUser()]
+
+        UserRepository repository = new UserRepository(storage)
+
+        when:
+        boolean hasUserBeenAdded = repository.findById("uuid")
+
+        then:
+        !hasUserBeenAdded
+    }
+
+    static User createDummyUser() {
+        return User.create("test1234", "Sven Svenson", "myexample@example.com")
+    }
+
+}
