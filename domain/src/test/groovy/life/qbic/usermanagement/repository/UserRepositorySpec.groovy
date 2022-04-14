@@ -4,11 +4,9 @@ import life.qbic.usermanagement.User
 import spock.lang.Specification
 
 /**
- * <b><class short description - 1 Line!></b>
+ <b>Tests for the {@link UserRepository}</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class UserRepositorySpec extends Specification {
 
