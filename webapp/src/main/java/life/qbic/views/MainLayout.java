@@ -16,7 +16,7 @@ import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import java.util.Optional;
-import life.qbic.data.entity.User;
+import life.qbic.data.entity.TestUser;
 import life.qbic.security.AuthenticatedUser;
 import life.qbic.views.about.AboutView;
 import life.qbic.views.helloworld.HelloWorldView;
@@ -90,11 +90,11 @@ public class MainLayout extends AppLayout {
         appName.addClassNames("my-0", "me-auto", "text-l");
         layout.add(appName);
 
-        Optional<User> maybeUser = authenticatedUser.get();
+        Optional<TestUser> maybeUser = authenticatedUser.get();
         if (maybeUser.isPresent()) {
-            User user = maybeUser.get();
+            TestUser testUser = maybeUser.get();
 
-            Avatar avatar = new Avatar(user.getName(), user.getProfilePictureUrl());
+            Avatar avatar = new Avatar(testUser.getName(), testUser.getProfilePictureUrl());
             avatar.addClassNames("me-xs");
 
             ContextMenu userMenu = new ContextMenu(avatar);
@@ -103,7 +103,7 @@ public class MainLayout extends AppLayout {
                 authenticatedUser.logout();
             });
 
-            Span name = new Span(user.getName());
+            Span name = new Span(testUser.getName());
             name.addClassNames("font-medium", "text-s", "text-secondary");
 
             layout.add(avatar, name);

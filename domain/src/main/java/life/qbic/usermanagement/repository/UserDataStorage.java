@@ -8,7 +8,7 @@ public interface UserDataStorage {
 
   List<User> findUsersByEmail(String email);
 
-  boolean storeUser(User user);
+  void storeUser(User user);
 
   Optional<User> findUserById(String id);
 }

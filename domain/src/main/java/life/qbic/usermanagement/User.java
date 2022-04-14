@@ -1,10 +1,16 @@
 package life.qbic.usermanagement;
 
 import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import life.qbic.usermanagement.policies.*;
 
+@Entity
 public class User {
 
+  @Id
+  @Column(name = "id")
   private String id;
 
   private String fullName;
@@ -12,6 +18,10 @@ public class User {
   private String email;
 
   private String encryptedPassword;
+
+  protected User() {
+
+  }
 
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within

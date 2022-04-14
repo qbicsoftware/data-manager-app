@@ -36,7 +36,8 @@ public class UserRepository {
     if (userSearch.isPresent()) {
       return false;
     }
-    return dataStorage.storeUser(user);
+    dataStorage.storeUser(user);
+    return true;
   }
 
 }
