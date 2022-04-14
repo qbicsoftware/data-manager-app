@@ -29,7 +29,7 @@ class UserSpec extends Specification {
         run << (1..10_000)
     }
 
-    def "When an invalid email is provided, throw a user exception"() {
+    def "When a weak password is provided, throw a user exception"() {
         when:
         User.create("123", "My Name", "my.name@example.com")
 
@@ -37,7 +37,7 @@ class UserSpec extends Specification {
         thrown(User.UserException)
     }
 
-    def "When a weak password is provided, throw a user exception"() {
+    def "When an invalid email is provided, throw a user exception"() {
         when:
         User.create("test1244", "My Name", "my.name@example")
 
