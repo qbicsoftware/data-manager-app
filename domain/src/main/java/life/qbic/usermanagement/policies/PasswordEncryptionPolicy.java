@@ -17,7 +17,7 @@ public class PasswordEncryptionPolicy {
 
   /**
    * Creates a {@link PasswordEncryptionPolicy} reference. Following the singleton pattern an object
-   * is only instanced once, when this method is called the first time.
+   * is only instanced once this method is called the first time.
    *
    * @return the password encryption policy
    * @since 1.0.0
