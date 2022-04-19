@@ -5,8 +5,11 @@ import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.usermanagement.policies.*;
 
 /**
- * // TODO
- * @since
+ * <b>User class</b>
+ *
+ * User aggregate in the context of user management.
+ *
+ * @since 1.0.0
  */
 public class User {
 
