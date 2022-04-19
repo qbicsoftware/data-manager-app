@@ -8,11 +8,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>User JPA repository</b>
+ * <p>
+ * Implementation fo the {@link UserDataStorage} interface.
+ * <p>
+ * This class serves as an adapter and proxies requests to an JPA implementation to interact with
+ * persistent {@link User} data in the storage layer.
+ * <p>
+ * The actual JPA implementation is done by {@link QbicUserRepo}, which is injected as dependency
+ * upon creation.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class UserJpaRepository implements UserDataStorage {
