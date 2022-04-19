@@ -4,7 +4,7 @@ import java.util.Optional;
 import life.qbic.usermanagement.User;
 
 /**
- * Provides stateless access and storage functionality for {@link User} entities.
+ * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
  *
  * @since 1.0.0
  */
@@ -16,7 +16,7 @@ public class UserRepository {
 
   /**
    * Retrieves a Singleton instance of a user {@link UserRepository}. In case this method is called
-   * the first time, a new instance is created one.
+   * the first time, a new instance is created.
    *
    * @param dataStorage an implementation of {@link UserDataStorage}, handling the low level
    *                    persistence layer access.
@@ -42,7 +42,6 @@ public class UserRepository {
    * suitable as entity identifiers but still need to be unique in the user management context at
    * any given time.
    * <p>
-   * However, an email address of a user is not guaranteed to be persistent over time.
    *
    * @param email the email to find a matching user entry for
    * @return the user object wrapped in an {@link Optional} if found, otherwise returns
