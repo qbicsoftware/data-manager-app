@@ -4,18 +4,19 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
-
-import life.qbic.datamanagement.Example;
+import java.util.Optional;
+import life.qbic.usermanagement.User;
+import life.qbic.usermanagement.persistence.UserJpaRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * The entry point of the Spring Boot application.
- *
- * Use the @PWA annotation make the application installable on phones, tablets
- * and some desktop browsers.
- *
+ * <p>
+ * Use the @PWA annotation make the application installable on phones, tablets and some desktop
+ * browsers.
  */
 @SpringBootApplication
 @Theme(value = "datamanager")
@@ -23,12 +24,20 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
-    public static void main(String[] args) {
-        // Just an example reference to the domain logic
-        var example = Example.create();
-        System.out.println("Random number from the business domain: " + example.spitOutNumber());
-        // Start the application
-        SpringApplication.run(Application.class, args);
-    }
+  public static void main(String[] args) {
+    ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+    var userJpa = context.getBean(UserJpaRepository.class);
 
+    Optional<User> result = userJpa.findUserById("c0b329ca-eaec-4365-9617-80154a23afaf");
+    if (result.isPresent()) {
+      System.out.println("Found user");
+      User user = result.get();
+      user.setEmail("new.address@gmail.com");
+      userJpa.save(user);
+    } else {
+      System.out.println("No user found");
+      User user = User.create("myawesomepassword", "Sven Fillinger", "example@mail.org");
+      userJpa.save(user);
+    }
+  }
 }

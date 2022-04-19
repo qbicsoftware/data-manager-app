@@ -5,7 +5,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- <b>Tests for the {@link User}</b>
+ * <b>Tests for the {@link User}</b>
  *
  * @since 1.0.0
  */
@@ -34,6 +34,7 @@ class UserSpec extends Specification {
         then:
         thrown(User.UserException)
     }
+
 
     def "When an invalid email is provided, throw a user exception"() {
         when:

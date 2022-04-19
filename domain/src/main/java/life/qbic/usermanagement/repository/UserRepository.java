@@ -34,6 +34,7 @@ public class UserRepository {
     this.dataStorage = dataStorage;
   }
 
+
   /**
    * Searches for a user with the provided email address.
    * <p>
@@ -56,8 +57,9 @@ public class UserRepository {
     }
     if (matchingUsers.isEmpty()) {
       return Optional.empty();
+    } else {
+      return Optional.of(matchingUsers.get(0));
     }
-    return Optional.of(matchingUsers.get(0));
   }
 
   /**
@@ -84,7 +86,8 @@ public class UserRepository {
         || doesUserExistWithEmail(user.getEmail())) {
       return false;
     }
-    return dataStorage.storeUser(user);
+    dataStorage.save(user);
+    return true;
   }
 
   private boolean doesUserExistWithEmail(String email) {
@@ -94,5 +97,4 @@ public class UserRepository {
   private boolean doesUserExistWithId(String id) {
     return findById(id).isPresent();
   }
-
 }

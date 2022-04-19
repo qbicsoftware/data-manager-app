@@ -1,7 +1,10 @@
 package life.qbic.usermanagement;
 
 import java.util.UUID;
-import jdk.jshell.spi.ExecutionControl.UserException;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import life.qbic.usermanagement.policies.*;
 
 /**
@@ -11,8 +14,12 @@ import life.qbic.usermanagement.policies.*;
  *
  * @since 1.0.0
  */
+@Entity
+@Table(name = "users")
 public class User {
 
+  @Id
+  @Column(name = "id")
   private String id;
 
   private String fullName;
@@ -20,6 +27,10 @@ public class User {
   private String email;
 
   private String encryptedPassword;
+
+  protected User() {
+
+  }
 
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
@@ -63,6 +74,15 @@ public class User {
 
   private User(String fullName) {
     this.fullName = fullName;
+  }
+
+  @Override
+  public String toString() {
+    return "User{" +
+        "id='" + id + '\'' +
+        ", fullName='" + fullName + '\'' +
+        ", email='" + email + '\'' +
+        '}';
   }
 
   /**

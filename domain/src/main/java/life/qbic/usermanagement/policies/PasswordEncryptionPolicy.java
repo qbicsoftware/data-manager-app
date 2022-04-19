@@ -42,5 +42,4 @@ public class PasswordEncryptionPolicy {
     //Todo implement a sophisticated encryption like AES with a 256-bit key
     return new String(Base64.getEncoder().encode(password.getBytes(StandardCharsets.UTF_8)));
   }
-
 }
