@@ -30,7 +30,7 @@ public class UserJpaRepository implements UserDataStorage {
   }
 
   @Override
-  public void save(User user) {
+  public void storeUser(User user) {
     userRepo.save(user);
   }
 

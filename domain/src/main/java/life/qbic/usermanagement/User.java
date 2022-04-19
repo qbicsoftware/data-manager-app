@@ -7,6 +7,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import life.qbic.usermanagement.policies.*;
 
+/**
+ * <b>User class</b>
+ *
+ * User aggregate in the context of user management.
+ *
+ * @since 1.0.0
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -132,6 +139,10 @@ public class User {
 
   public String getId() {
     return this.id;
+  }
+
+  public String getEmail() {
+    return this.email;
   }
 
   private void validateEmail(String email) throws UserException {
