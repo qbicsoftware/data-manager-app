@@ -4,6 +4,10 @@ import java.util.UUID;
 import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.usermanagement.policies.*;
 
+/**
+ * // TODO
+ * @since
+ */
 public class User {
 
   private String id;
