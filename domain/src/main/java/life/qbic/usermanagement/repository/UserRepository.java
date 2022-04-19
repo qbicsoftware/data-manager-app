@@ -4,7 +4,7 @@ import java.util.Optional;
 import life.qbic.usermanagement.User;
 
 /**
- *
+ * Provides stateless access and storage functionality for {@link User} entities.
  * @since 1.0.0
  */
 public class UserRepository {
@@ -14,10 +14,12 @@ public class UserRepository {
   private final UserDataStorage dataStorage;
 
   /**
-   *
-   * @param dataStorage
-   * @return
-   * @since
+   * Retrieves a Singleton instance of a user {@link UserRepository}. In case
+   * this method is called the first time, a new instance is created one.
+   * @param dataStorage an implementation of {@link UserDataStorage}, handling the low level persistence layer
+   *                    access.
+   * @return a Singleton instance of a user repository.
+   * @since 1.0.0
    */
   public static UserRepository getInstance(UserDataStorage dataStorage) {
     if (INSTANCE == null) {
