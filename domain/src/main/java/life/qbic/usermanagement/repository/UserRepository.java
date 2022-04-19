@@ -82,7 +82,7 @@ public class UserRepository {
         || doesUserExistWithEmail(user.getEmail())) {
       return false;
     }
-    dataStorage.storeUser(user);
+    dataStorage.save(user);
     return true;
   }
 
