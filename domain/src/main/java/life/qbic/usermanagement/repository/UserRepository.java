@@ -55,7 +55,11 @@ public class UserRepository {
     if (matchingUsers.size() > 1) {
       throw new RuntimeException("More than one user entry with the same email exists!");
     }
-    return Optional.empty();
+    if (matchingUsers.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(matchingUsers.get(0));
+    }
   }
 
   /**
@@ -85,8 +89,6 @@ public class UserRepository {
     dataStorage.save(user);
     return true;
   }
-
-
 
   private boolean doesUserExistWithEmail(String email) {
     return findByEmail(email).isPresent();
