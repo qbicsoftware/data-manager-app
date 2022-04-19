@@ -5,6 +5,7 @@ import life.qbic.usermanagement.User;
 
 /**
  * Provides stateless access and storage functionality for {@link User} entities.
+ *
  * @since 1.0.0
  */
 public class UserRepository {
@@ -14,10 +15,11 @@ public class UserRepository {
   private final UserDataStorage dataStorage;
 
   /**
-   * Retrieves a Singleton instance of a user {@link UserRepository}. In case
-   * this method is called the first time, a new instance is created one.
-   * @param dataStorage an implementation of {@link UserDataStorage}, handling the low level persistence layer
-   *                    access.
+   * Retrieves a Singleton instance of a user {@link UserRepository}. In case this method is called
+   * the first time, a new instance is created one.
+   *
+   * @param dataStorage an implementation of {@link UserDataStorage}, handling the low level
+   *                    persistence layer access.
    * @return a Singleton instance of a user repository.
    * @since 1.0.0
    */
@@ -43,7 +45,8 @@ public class UserRepository {
    * However, an email address of a user is not guaranteed to be persistent over time.
    *
    * @param email the email to find a matching user entry for
-   * @return the user object wrapped in an {@link Optional} if found, otherwise returns {@link Optional#empty()}
+   * @return the user object wrapped in an {@link Optional} if found, otherwise returns
+   * {@link Optional#empty()}
    * @throws RuntimeException if there is more than one user matching the email address
    * @since 1.0.0
    */
@@ -59,17 +62,19 @@ public class UserRepository {
   }
 
   /**
+   * Searches for a user matching a provided userId
    *
-   * @param id
-   * @return
-   * @since
+   * @param userId the user's unique id, accessible via {@link User#getId()}
+   * @return the user if present in the repository, else returns an {@link Optional#empty()}.
+   * @since 1.0.0
    */
-  public Optional<User> findById(String id) {
-    return dataStorage.findUserById(id);
+  public Optional<User> findById(String userId) {
+    return dataStorage.findUserById(userId);
   }
 
   /**
    * Adds a user to the repository.
+   *
    * @param user the user that shall be added to the repository
    * @return true, of the user has been added, else will return a false flag. This only happens if
    * the user with the given id or email address already exists.
