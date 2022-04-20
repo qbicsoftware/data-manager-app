@@ -67,7 +67,9 @@ public class LoginView extends VerticalLayout {
                 loginButton, new Span(new Text("Need an account? "),new RouterLink("REGISTER", RegistrationView.class)));
 
         add(contentLayout);
-        setAlignItems(FlexComponent.Alignment.CENTER);
+        setSizeFull();
+        setAlignItems(Alignment.CENTER);
+        setJustifyContentMode(JustifyContentMode.CENTER);
 
     }
 

@@ -59,7 +59,6 @@ public class RegistrationView extends VerticalLayout {
 
         errorMessageField = new Paragraph("Must be at least 8 characters long");
         errorMessageField.addClassName("description-text");
-        errorMessageField.setWidthFull();
 
         registerButton = new Button("Register");
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -68,6 +67,9 @@ public class RegistrationView extends VerticalLayout {
         contentLayout.add(title, email, password, errorMessageField,
                 registerButton, new Span(new Text("Already have an account? "),new RouterLink("LOGIN", LoginView.class)));
         add(contentLayout);
+        setSizeFull();
+        setAlignItems(Alignment.CENTER);
+        setJustifyContentMode(JustifyContentMode.CENTER);
     }
 
     public PasswordField getPasswordField() { return password; }
