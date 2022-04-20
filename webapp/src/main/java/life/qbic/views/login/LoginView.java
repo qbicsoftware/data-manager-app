@@ -1,24 +1,30 @@
 package life.qbic.views.login;
 
 import com.vaadin.flow.component.HasValueAndElement;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.views.MainLayout;
 
 import java.util.stream.Stream;
 
 @PageTitle("Login")
-@Route(value = "login")
+@Route(value = "login", layout = MainLayout.class)
+@AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class LoginView extends Div {
+public class LoginView extends VerticalLayout {
     private H3 title;
 
     private EmailField email;
@@ -27,10 +33,9 @@ public class LoginView extends Div {
 
     private Paragraph errorMessageField;
 
-    private Button submitButton;
+    private Button loginButton;
 
-    private Span linkRegister;
-
+    private VerticalLayout contentLayout;
 
     public LoginView() {
         setId("login-view");
@@ -39,28 +44,38 @@ public class LoginView extends Div {
     }
 
     private void initLayout() {
+        contentLayout = new VerticalLayout();
+
         title = new H3("Login");
         email = new EmailField("Email");
+        email.setWidthFull();
 
         password = new PasswordField("Password");
+        password.setWidthFull();
 
         setRequiredIndicatorVisible(email, password);
 
         errorMessageField = new Paragraph("Must be at least 8 characters long");
         errorMessageField.addClassName("description-text");
+        errorMessageField.setWidthFull();
 
-        submitButton = new Button("Login");
-        submitButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        loginButton = new Button("Login");
+        loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        loginButton.setWidthFull();
 
-        add(title, email, password, errorMessageField,
-                submitButton);
+        contentLayout.add(title, email, password, errorMessageField,
+                loginButton, new Span(new Text("Need an account? "),new RouterLink("REGISTER", RegistrationView.class)));
+
+        add(contentLayout);
+        setAlignItems(FlexComponent.Alignment.CENTER);
+
     }
 
     public PasswordField getPasswordField() { return password; }
 
     public Paragraph getErrorMessageField() { return errorMessageField; }
 
-    public Button getSubmitButton() { return submitButton; }
+    public Button getLoginButton() { return loginButton; }
 
     private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
         Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
