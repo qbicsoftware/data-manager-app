@@ -2,9 +2,14 @@ package life.qbic.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
+import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.charts.model.style.ButtonTheme;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -13,6 +18,10 @@ import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Nav;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import java.util.Optional;
@@ -20,11 +29,67 @@ import life.qbic.data.entity.User;
 import life.qbic.security.AuthenticatedUser;
 import life.qbic.views.about.AboutView;
 import life.qbic.views.helloworld.HelloWorldView;
+import life.qbic.views.login.LoginView;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
+@PageTitle("Data Manager ")
+@Route(value = "data")
 public class MainLayout extends AppLayout {
+
+    protected Button register;
+    protected Button login;
+
+    public MainLayout() {
+        createHeader();
+        createDrawer();
+        addListeners();
+    }
+
+    private void addListeners() {
+        login.addClickListener(event -> {
+            Dialog loginView = new Dialog(new LoginView());
+            loginView.open();
+        });
+    }
+
+    private void createHeader() {
+        H1 logo = new H1("Data Manager");
+        logo.addClassNames("text-l", "m-m");
+
+
+        HorizontalLayout header = new HorizontalLayout(
+                new DrawerToggle(),
+                logo
+        );
+
+        header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+        header.setWidth("100%");
+        header.addClassNames("py-0", "px-m");
+
+        register = new Button("Register");
+        login = new Button("Login");
+        login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        HorizontalLayout buttons = new HorizontalLayout(register,login);
+        buttons.addClassName("button-layout-spacing");
+
+        addToNavbar(header, buttons);
+
+    }
+
+    private void createDrawer() {
+        /*Vaadin example how to add an element to the drawer
+
+        RouterLink listLink = new RouterLink("List", ListView.class);
+        listLink.setHighlightCondition(HighlightConditions.sameLocation());
+
+        addToDrawer(new VerticalLayout(
+                listLink
+        ));
+        */
+    }
 
     /**
      * A simple navigation item component, based on ListItem element.
