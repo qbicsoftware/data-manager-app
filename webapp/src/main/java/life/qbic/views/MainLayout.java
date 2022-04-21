@@ -17,6 +17,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import life.qbic.data.entity.TestUser;
 import life.qbic.security.AuthenticatedUser;
+import life.qbic.usermanagement.User;
 
 import java.util.Optional;
 
@@ -64,9 +65,9 @@ public class MainLayout extends AppLayout {
 
         addToNavbar(header, buttons);
 
-        Optional<TestUser> maybeUser = authenticatedUser.get();
+        Optional<User> maybeUser = authenticatedUser.get();
         if (maybeUser.isPresent()) {
-            TestUser testUser = maybeUser.get();
+            User testUser = maybeUser.get();
 
             Avatar avatar = new Avatar(testUser.getName(), testUser.getProfilePictureUrl());
             avatar.addClassNames("me-xs");

@@ -8,7 +8,6 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -16,7 +15,9 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.data.service.UserService;
 import life.qbic.views.MainLayout;
+import life.qbic.views.register.RegisterView;
 
 import java.util.stream.Stream;
 
@@ -37,8 +38,11 @@ public class LoginView extends VerticalLayout {
 
     private VerticalLayout contentLayout;
 
-    public LoginView() {
+    private final UserService userService;
+
+    public LoginView(UserService userService) {
         setId("login-view");
+        this.userService = userService;
 
         initLayout();
     }
@@ -63,8 +67,12 @@ public class LoginView extends VerticalLayout {
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         loginButton.setWidthFull();
 
+        loginButton.addClickListener(event -> {
+
+        });
+
         contentLayout.add(title, email, password, errorMessageField,
-                loginButton, new Span(new Text("Need an account? "),new RouterLink("REGISTER", RegistrationView.class)));
+                loginButton, new Span(new Text("Need an account? "),new RouterLink("REGISTER", RegisterView.class)));
 
         add(contentLayout);
         setSizeFull();

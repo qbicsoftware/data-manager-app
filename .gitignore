@@ -13,7 +13,7 @@ frontend/generated/
 frontend/index.html
 pnpmfile.js
 vite.generated.ts
-
+webapp/frontend/index.html
 package.json
 tsconfig.json
 types.d.ts

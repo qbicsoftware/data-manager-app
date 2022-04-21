@@ -1,15 +1,12 @@
-package life.qbic.views.login;
+package life.qbic.views.register;
 import com.vaadin.flow.component.HasValueAndElement;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -18,6 +15,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
+import life.qbic.views.login.LoginView;
 
 import java.util.stream.Stream;
 
@@ -25,7 +23,7 @@ import java.util.stream.Stream;
 @Route(value = "register", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class RegistrationView extends VerticalLayout {
+public class RegisterView extends VerticalLayout {
 
     private H3 title;
 
@@ -39,7 +37,7 @@ public class RegistrationView extends VerticalLayout {
 
     private VerticalLayout contentLayout;
 
-    public RegistrationView() {
+    public RegisterView() {
         setId("login-view");
 
         initLayout();
