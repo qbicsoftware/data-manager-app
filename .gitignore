@@ -10,8 +10,15 @@
 # The following files are generated/updated by vaadin-maven-plugin
 node_modules/
 frontend/generated/
+frontend/index.html
 pnpmfile.js
 vite.generated.ts
+
+package.json
+tsconfig.json
+types.d.ts
+webpack.config.js
+webpack.generated.js
 
 # Browser drivers for local integration tests
 drivers/
