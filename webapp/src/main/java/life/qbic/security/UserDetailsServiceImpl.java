@@ -2,7 +2,7 @@ package life.qbic.security;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import life.qbic.data.entity.User;
+import life.qbic.data.entity.TestUser;
 import life.qbic.data.service.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,17 +20,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("No user present with username: " + username);
+        TestUser testUser = userRepository.findByUsername(username);
+        if (testUser == null) {
+            throw new UsernameNotFoundException("No testUser present with username: " + username);
         } else {
-            return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getHashedPassword(),
-                    getAuthorities(user));
+            return new org.springframework.security.core.userdetails.User(testUser.getUsername(), testUser.getHashedPassword(),
+                    getAuthorities(testUser));
         }
     }
 
-    private static List<GrantedAuthority> getAuthorities(User user) {
-        return user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
+    private static List<GrantedAuthority> getAuthorities(TestUser testUser) {
+        return testUser.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
                 .collect(Collectors.toList());
 
     }

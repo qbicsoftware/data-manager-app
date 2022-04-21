@@ -2,7 +2,7 @@ package life.qbic.data.service;
 
 import java.util.Optional;
 import java.util.UUID;
-import life.qbic.data.entity.User;
+import life.qbic.data.entity.TestUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +17,11 @@ public class UserService {
         this.repository = repository;
     }
 
-    public Optional<User> get(UUID id) {
+    public Optional<TestUser> get(UUID id) {
         return repository.findById(id);
     }
 
-    public User update(User entity) {
+    public TestUser update(TestUser entity) {
         return repository.save(entity);
     }
 
@@ -29,7 +29,7 @@ public class UserService {
         repository.deleteById(id);
     }
 
-    public Page<User> list(Pageable pageable) {
+    public Page<TestUser> list(Pageable pageable) {
         return repository.findAll(pageable);
     }
 

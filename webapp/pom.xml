@@ -5,18 +5,17 @@
     <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
     <artifactId>webapp</artifactId>
     <name>Data Manager Webapp</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>17</java.version>
         <vaadin.version>23.0.1</vaadin.version>
     </properties>
 
     <parent>
         <groupId>life.qbic</groupId>
         <artifactId>datamanager</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </parent>
 
     <repositories>
@@ -68,7 +67,7 @@
             <dependency>
                 <groupId>life.qbic</groupId>
                 <artifactId>domain</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>0.1.0</version>
             </dependency>
             <dependency>
                 <groupId>com.vaadin</groupId>
@@ -84,7 +83,6 @@
         <dependency>
             <groupId>life.qbic</groupId>
             <artifactId>domain</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -98,6 +96,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
         <dependency>

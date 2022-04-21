@@ -10,7 +10,7 @@ import life.qbic.data.AbstractEntity;
 import life.qbic.data.Role;
 
 @Entity
-public class User extends AbstractEntity {
+public class TestUser extends AbstractEntity {
 
     private String username;
     private String name;

@@ -2,36 +2,23 @@ package life.qbic.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
-import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.charts.model.style.ButtonTheme;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
-import com.vaadin.flow.component.dependency.NpmPackage;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Nav;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
-import java.util.Optional;
-import life.qbic.data.entity.User;
+import life.qbic.data.entity.TestUser;
 import life.qbic.security.AuthenticatedUser;
-import life.qbic.views.about.AboutView;
-import life.qbic.views.helloworld.HelloWorldView;
-import life.qbic.views.login.LoginView;
-import life.qbic.views.login.RegistrationView;
-import org.apache.juli.logging.Log;
+
+import java.util.Optional;
 
 /**
  * The main view is a top-level placeholder for other views.
@@ -77,27 +64,34 @@ public class MainLayout extends AppLayout {
 
         addToNavbar(header, buttons);
 
-       /* Exemplary User authentication
-
-        Optional<User> maybeUser = authenticatedUser.get();
+        Optional<TestUser> maybeUser = authenticatedUser.get();
         if (maybeUser.isPresent()) {
-            User user = maybeUser.get();
+            TestUser testUser = maybeUser.get();
 
-        Avatar avatar = new Avatar(user.getName(), "images/empty-plant.png");
-        avatar.addClassNames("me-xs");
+            Avatar avatar = new Avatar(testUser.getName(), testUser.getProfilePictureUrl());
+            avatar.addClassNames("me-xs");
 
-        ContextMenu userMenu = new ContextMenu(avatar);
-        userMenu.setOpenOnClick(true);
-        userMenu.addItem("Logout", e -> {
-            authenticatedUser.logout();
-        });
-        Span name = new Span(user.getName());
-        name.addClassNames("font-medium", "text-s", "text-secondary");
+            ContextMenu userMenu = new ContextMenu(avatar);
+            userMenu.setOpenOnClick(true);
+            userMenu.addItem("Logout", e -> {
+                authenticatedUser.logout();
+            });
 
-        header.add(avatar, name);
-        */
+            Span name = new Span(testUser.getName());
+            name.addClassNames("font-medium", "text-s", "text-secondary");
+
+            header.add(avatar, name);
+        } else {
+            Anchor loginLink = new Anchor("login", "Sign in");
+            header.add(loginLink);
+        }
+
+        /* header or navbar
+        Nav nav = new Nav();
+        nav.addClassNames("flex", "gap-s", "overflow-auto", "px-m");
 
         createDrawer();//todo
+        */
 
         return header;
     }
