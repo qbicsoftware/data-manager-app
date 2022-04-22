@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
-import life.qbic.views.login.LoginView;
+import life.qbic.views.login.LoginLayout;
 
 import java.util.stream.Stream;
 
@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 @Route(value = "register", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class RegisterView extends VerticalLayout {
+public class RegisterLayout extends VerticalLayout {
 
     private H3 title;
 
@@ -37,7 +37,7 @@ public class RegisterView extends VerticalLayout {
 
     private VerticalLayout contentLayout;
 
-    public RegisterView() {
+    public RegisterLayout() {
         setId("login-view");
 
         initLayout();
@@ -63,7 +63,7 @@ public class RegisterView extends VerticalLayout {
         registerButton.setWidthFull();
 
         contentLayout.add(title, email, password, errorMessageField,
-                registerButton, new Span(new Text("Already have an account? "),new RouterLink("LOGIN", LoginView.class)));
+                registerButton, new Span(new Text("Already have an account? "),new RouterLink("LOGIN", LoginLayout.class)));
         add(contentLayout);
         setSizeFull();
         setAlignItems(Alignment.CENTER);
