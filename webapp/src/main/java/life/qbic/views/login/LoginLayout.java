@@ -15,10 +15,13 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.Router;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.RegisterLayout;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.util.stream.Stream;
 
@@ -30,7 +33,8 @@ import java.util.stream.Stream;
 @Route(value = "login", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class LoginLayout extends Composite<VerticalLayout> {
+@Component
+public class LoginLayout extends VerticalLayout {
 
     protected EmailField email;
 
@@ -40,7 +44,7 @@ public class LoginLayout extends Composite<VerticalLayout> {
 
     protected Button loginButton;
 
-    protected RouterLink registerLink;
+    protected Span registerSpan;
 
     private final VerticalLayout contentLayout;
 
@@ -56,25 +60,28 @@ public class LoginLayout extends Composite<VerticalLayout> {
 
         styleEmailField();
         styleLoginButton();
-        VerticalLayout passwordLayout = createPasswordLayout();
-        registerLink = new RouterLink("REGISTER", RegisterLayout.class);
+        var passwordLayout = createPasswordLayout();
+        createSpan();
 
         setRequiredIndicatorVisible(email, password);
         styleFormLayout(title, passwordLayout);
 
-
-        VerticalLayout parentLayout = this.getContent();
-        parentLayout.add(contentLayout);
-        parentLayout.setSizeFull();
-        parentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        parentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        add(contentLayout);
+        setSizeFull();
+        setAlignItems(FlexComponent.Alignment.CENTER);
+        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 
     }
 
     private void styleFormLayout(H3 title, VerticalLayout passwordLayout) {
-        contentLayout.addClassNames("bg-base", "border", "border-contrast-10", "box-border", "flex", "flex-col", "w-full");
+        contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
         contentLayout.add(title, email, passwordLayout,
-                loginButton, new Span(new Text("Need an account? "),registerLink));
+                loginButton,registerSpan);
+    }
+
+    private void createSpan(){
+        RouterLink routerLink = new RouterLink("REGISTER", RegisterLayout.class);
+        registerSpan = new Span(new Text("Need an account? "),routerLink);
     }
 
     private void styleLoginButton() {
@@ -111,7 +118,7 @@ public class LoginLayout extends Composite<VerticalLayout> {
 
     public Button getLoginButton() { return loginButton; }
 
-    public RouterLink getRegisterLink() { return registerLink; }
+    public Span getRegisterSpan() { return registerSpan; }
 
     public EmailField getEmail() { return email; }
 

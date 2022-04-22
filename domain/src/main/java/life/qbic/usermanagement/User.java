@@ -1,5 +1,6 @@
 package life.qbic.usermanagement;
 
+import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -143,6 +144,15 @@ public class User {
 
   public String getEmail() {
     return this.email;
+  }
+
+  /**
+   * Checks if a given password is correct for a user
+   * @param password Password that is being validated
+   * @return true, if the given password is correct for the user
+   */
+  public Boolean checkPassword(String password) {
+    return Objects.equals(PasswordEncryptionPolicy.create().encrypt(password), encryptedPassword);
   }
 
   private void validateEmail(String email) throws UserException {

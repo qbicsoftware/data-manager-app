@@ -16,6 +16,7 @@ import com.vaadin.flow.router.Route;
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")
+@org.springframework.stereotype.Component
 public class MainLayout extends AppLayout {
 
     protected Button register;
@@ -37,10 +38,7 @@ public class MainLayout extends AppLayout {
     private HorizontalLayout createHeaderLayout() {
         H1 appName = styleHeaderTitle();
 
-        HorizontalLayout header = new HorizontalLayout(
-                //new DrawerToggle(),
-                appName
-        );
+        HorizontalLayout header = new HorizontalLayout(appName);
 
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.setWidth("100%");
@@ -68,18 +66,6 @@ public class MainLayout extends AppLayout {
 
         login = new Button("Login");
         login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    }
-
-    private void createDrawer() {
-        /*Vaadin example how to add an element to the drawer
-
-        RouterLink listLink = new RouterLink("List", ListView.class);
-        listLink.setHighlightCondition(HighlightConditions.sameLocation());
-
-        addToDrawer(new VerticalLayout(
-                listLink
-        ));
-        */
     }
 
 }

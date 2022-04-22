@@ -12,6 +12,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.Router;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
@@ -25,49 +26,78 @@ import java.util.stream.Stream;
 @CssImport("./styles/views/login/login-view.css")
 public class RegisterLayout extends VerticalLayout {
 
-    private H3 title;
+    protected EmailField email;
 
-    private EmailField email;
+    protected PasswordField password;
 
-    private PasswordField password;
+    protected Paragraph errorMessageField;
 
-    private Paragraph errorMessageField;
+    protected Button registerButton;
 
-    private Button registerButton;
+    protected Span loginSpan;
 
     private VerticalLayout contentLayout;
 
     public RegisterLayout() {
-        setId("login-view");
+        setId("register-view");
+        contentLayout = new VerticalLayout();
 
         initLayout();
     }
 
     private void initLayout() {
-        contentLayout = new VerticalLayout();
+        H3 title = new H3("Register");
 
-        title = new H3("Register");
-        email = new EmailField("Email");
-        email.setWidthFull();
-
-        password = new PasswordField("Password");
-        password.setWidthFull();
+        styleEmailField();
+        styleRegisterButton();
+        stylePasswordField();
+        var passwordLayout = createPasswordLayout();
+        createSpan();
 
         setRequiredIndicatorVisible(email, password);
+        styleFormLayout(title, passwordLayout);
 
-        errorMessageField = new Paragraph("Must be at least 8 characters long");
-        errorMessageField.addClassName("description-text");
-
-        registerButton = new Button("Register");
-        registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        registerButton.setWidthFull();
-
-        contentLayout.add(title, email, password, errorMessageField,
-                registerButton, new Span(new Text("Already have an account? "),new RouterLink("LOGIN", LoginLayout.class)));
         add(contentLayout);
         setSizeFull();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
+    }
+
+    private void styleFormLayout(H3 title, VerticalLayout passwordLayout) {
+        contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
+        contentLayout.add(title, email, passwordLayout,
+                registerButton, loginSpan);
+    }
+
+    private void createSpan(){
+        RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
+        loginSpan = new Span(new Text("Already have an account? "),link);
+    }
+    private void styleRegisterButton() {
+        registerButton = new Button("Register");
+        registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        registerButton.setWidthFull();
+    }
+
+    private VerticalLayout createPasswordLayout(){
+        VerticalLayout compositionLayout = new VerticalLayout(password,errorMessageField);
+        compositionLayout.setSpacing(false);
+        compositionLayout.setPadding(false);
+        compositionLayout.setWidthFull();
+
+        return compositionLayout;
+    }
+
+    private void stylePasswordField() {
+        password = new PasswordField("Password");
+        password.setWidthFull();
+        errorMessageField = new Paragraph("Must be at least 8 characters long");
+        errorMessageField.addClassName("description-text");
+    }
+
+    private void styleEmailField() {
+        email = new EmailField("Email");
+        email.setWidthFull();
     }
 
     public PasswordField getPasswordField() { return password; }

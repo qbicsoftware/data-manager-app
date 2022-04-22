@@ -4,9 +4,6 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
-import java.util.Optional;
-import life.qbic.usermanagement.User;
-import life.qbic.usermanagement.persistence.UserJpaRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -25,8 +22,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
   public static void main(String[] args) {
-    ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
-    var userJpa = context.getBean(UserJpaRepository.class);
+    SpringApplication.run(Application.class, args);
+
+    /*var userJpa = context.getBean(UserJpaRepository.class);
 
     Optional<User> result = userJpa.findUserById("c0b329ca-eaec-4365-9617-80154a23afaf");
     if (result.isPresent()) {
@@ -38,6 +36,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
       System.out.println("No user found");
       User user = User.create("myawesomepassword", "Sven Fillinger", "example@mail.org");
       userJpa.save(user);
-    }
+    }*/
   }
 }
