@@ -3,15 +3,11 @@ package life.qbic.views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/**
- *
- */
-@Component
+
 public class MainController {
 
     private final MainLayout mainLayout;
 
-    @Autowired
     MainController(MainLayout layout){
         this.mainLayout = layout;
 

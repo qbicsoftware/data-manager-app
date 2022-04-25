@@ -7,26 +7,30 @@ import life.qbic.usermanagement.policies.PasswordPolicy;
 import life.qbic.usermanagement.policies.PolicyCheckReport;
 import life.qbic.usermanagement.policies.PolicyStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-/**
- * Handles the {@link LoginLayout} components
- *
- * This class is responsible for enabling buttons or triggering other view relevant changes on the view class components
- */
-@Service
-public class LoginHandler {
+@Component
+public class LoginHandler implements LoginHandlerInterface {
 
     private final UserJpaRepository userRepository;
 
+    private LoginLayout registeredLoginView;
+
     LoginHandler(@Autowired UserJpaRepository repository){
         this.userRepository = repository;
-
-        //addListener();
     }
 
-    public void onClick(){
-        System.out.println("Hello world");
+    @Override
+    public boolean register(LoginLayout loginView) {
+        if (registeredLoginView == null) {
+            this.registeredLoginView = loginView;
+            // orchestrate view
+            this.registeredLoginView.loginButton.addClickListener( e -> System.out.println( "Worked!"));
+            // then return
+            return true;
+        }
+        return false;
     }
 /*
     private void addListener(){

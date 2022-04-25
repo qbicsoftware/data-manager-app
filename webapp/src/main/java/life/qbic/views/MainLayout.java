@@ -16,7 +16,6 @@ import com.vaadin.flow.router.Route;
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")
-@org.springframework.stereotype.Component
 public class MainLayout extends AppLayout {
 
     protected Button register;

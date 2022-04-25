@@ -49,14 +49,19 @@ public class LoginLayout extends VerticalLayout {
 
     private final VerticalLayout contentLayout;
 
-    public final LoginHandler loginHandler;
-
-    public LoginLayout(@Autowired LoginHandler loginHandler) {
+    public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
         setId("login-view");
         contentLayout = new VerticalLayout();
-        this.loginHandler = loginHandler;
-
         initLayout();
+        registerToHandler(loginHandlerInterface);
+    }
+
+    private void registerToHandler(LoginHandlerInterface loginHandler) {
+        if (loginHandler.register(this)) {
+            System.out.println("Nice, that worked");
+        } else {
+            System.out.println("Could not register view :(");
+        }
     }
 
     private void initLayout() {
@@ -93,9 +98,6 @@ public class LoginLayout extends VerticalLayout {
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         //loginButton.setEnabled(false);
         loginButton.setWidthFull();
-        loginButton.addClickListener(event -> {
-            loginHandler.onClick();
-        });
     }
 
     private void styleEmailField(){
