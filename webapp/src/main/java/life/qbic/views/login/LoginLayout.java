@@ -20,9 +20,11 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.RegisterLayout;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.stream.Stream;
 
 /**
@@ -33,7 +35,6 @@ import java.util.stream.Stream;
 @Route(value = "login", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-@Component
 public class LoginLayout extends VerticalLayout {
 
     protected EmailField email;
@@ -48,9 +49,12 @@ public class LoginLayout extends VerticalLayout {
 
     private final VerticalLayout contentLayout;
 
-    public LoginLayout() {
+    public final LoginHandler loginHandler;
+
+    public LoginLayout(@Autowired LoginHandler loginHandler) {
         setId("login-view");
         contentLayout = new VerticalLayout();
+        this.loginHandler = loginHandler;
 
         initLayout();
     }
@@ -87,8 +91,11 @@ public class LoginLayout extends VerticalLayout {
     private void styleLoginButton() {
         loginButton = new Button("Login");
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        loginButton.setEnabled(false);
+        //loginButton.setEnabled(false);
         loginButton.setWidthFull();
+        loginButton.addClickListener(event -> {
+            loginHandler.onClick();
+        });
     }
 
     private void styleEmailField(){
