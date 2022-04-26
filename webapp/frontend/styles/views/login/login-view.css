@@ -2,6 +2,10 @@
     display: grid;
 }
 
+#register-view{
+    display: grid;
+}
+
 .description-text{
     color: #1B2B41B0;
     margin-top: 0.1em;
