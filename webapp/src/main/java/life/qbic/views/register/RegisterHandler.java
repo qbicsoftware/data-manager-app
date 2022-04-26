@@ -1,11 +1,64 @@
 package life.qbic.views.register;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.notification.Notification;
+import life.qbic.usermanagement.User;
+import life.qbic.usermanagement.persistence.UserJpaRepository;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
 /**
  * Handles the {@link RegisterLayout} components
  *
- * This class is responsible for enabling buttons or triggering other view relevant changes on the view class components
+ * <p>This class is responsible for enabling buttons or triggering other view relevant changes on
+ * the view class components
  */
-public class RegisterHandler {
-  //            User user =
-  // User.create(loginLayout.password.getValue(),"fullname?",loginLayout.email.getValue());
+@Component
+public class RegisterHandler implements RegisterHandlerInterface {
+  private static final org.apache.logging.log4j.Logger log =
+      org.apache.logging.log4j.LogManager.getLogger(RegisterHandler.class);
+
+  private final UserJpaRepository userJpaRepository;
+  private RegisterLayout registeredRegisterLayout;
+
+  RegisterHandler(UserJpaRepository userJpaRepository) {
+    this.userJpaRepository = userJpaRepository;
+  }
+
+  @Override
+  public boolean register(RegisterLayout registerLayout) {
+    if (registeredRegisterLayout == null) {
+      this.registeredRegisterLayout = registerLayout;
+      // orchestrate view
+      addListener();
+      // then return
+      return true;
+    }
+    return false;
+  }
+
+  private void addListener() {
+    registeredRegisterLayout.registerButton.addClickListener(
+        event -> {
+          List<User> user =
+              userJpaRepository.findUsersByEmail(registeredRegisterLayout.email.getValue());
+
+          if (user.size() == 0) {
+            Notification.show("Email is already in use!");
+          }
+          try {
+            String password = registeredRegisterLayout.password.getValue();
+            String email = registeredRegisterLayout.email.getValue();
+            String name = registeredRegisterLayout.fullName.getValue();
+
+            User newUser = User.create(password, name, email);
+            userJpaRepository.save(newUser);
+            UI.getCurrent().navigate("login");
+          } catch (Exception e) {
+            log.error(e.getMessage());
+            Notification.show("Could not create user");
+          }
+        });
+  }
 }

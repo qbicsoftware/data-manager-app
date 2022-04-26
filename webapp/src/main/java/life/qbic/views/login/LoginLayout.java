@@ -1,13 +1,11 @@
 package life.qbic.views.login;
 
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValueAndElement;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -15,16 +13,12 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.Router;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.RegisterLayout;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.stream.Stream;
 
 /**
@@ -41,8 +35,6 @@ public class LoginLayout extends VerticalLayout {
 
     protected PasswordField password;
 
-    protected Paragraph errorMessageField;
-
     protected Button loginButton;
 
     protected Span registerSpan;
@@ -52,15 +44,16 @@ public class LoginLayout extends VerticalLayout {
     public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
         setId("login-view");
         contentLayout = new VerticalLayout();
+
         initLayout();
         registerToHandler(loginHandlerInterface);
     }
 
     private void registerToHandler(LoginHandlerInterface loginHandler) {
         if (loginHandler.register(this)) {
-            System.out.println("Nice, that worked");
+            System.out.println("Registered login handler");
         } else {
-            System.out.println("Could not register view :(");
+            System.out.println("Already registered login handler");
         }
     }
 
@@ -68,12 +61,12 @@ public class LoginLayout extends VerticalLayout {
         H3 title = new H3("Login");
 
         styleEmailField();
+        stylePasswordField();
         styleLoginButton();
-        var passwordLayout = createPasswordLayout();
         createSpan();
 
         setRequiredIndicatorVisible(email, password);
-        styleFormLayout(title, passwordLayout);
+        styleFormLayout(title);
 
         add(contentLayout);
         setSizeFull();
@@ -82,9 +75,9 @@ public class LoginLayout extends VerticalLayout {
 
     }
 
-    private void styleFormLayout(H3 title, VerticalLayout passwordLayout) {
+    private void styleFormLayout(H3 title) {
         contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-        contentLayout.add(title, email, passwordLayout,
+        contentLayout.add(title, email, password,
                 loginButton,registerSpan);
     }
 
@@ -96,7 +89,7 @@ public class LoginLayout extends VerticalLayout {
     private void styleLoginButton() {
         loginButton = new Button("Login");
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        //loginButton.setEnabled(false);
+        loginButton.setEnabled(true);
         loginButton.setWidthFull();
     }
 
@@ -105,25 +98,15 @@ public class LoginLayout extends VerticalLayout {
         email.setWidthFull();
     }
 
-    private VerticalLayout createPasswordLayout(){
+    private void stylePasswordField(){
         password = new PasswordField("Password");
+        password.setHelperText("A password must be at least 8 characters");
+        password.setPattern(".{8,}");
+        password.setErrorMessage("Not a valid password");
         password.setWidthFull();
-
-        errorMessageField = new Paragraph("Must be at least 8 characters long");
-        errorMessageField.addClassNames("font-medium", "text-s", "text-secondary");
-        errorMessageField.setWidthFull();
-
-        VerticalLayout compositionLayout = new VerticalLayout(password,errorMessageField);
-        compositionLayout.setSpacing(false);
-        compositionLayout.setPadding(false);
-        compositionLayout.setWidthFull();
-
-        return compositionLayout;
     }
 
     public PasswordField getPasswordField() { return password; }
-
-    public Paragraph getErrorMessageField() { return errorMessageField; }
 
     public Button getLoginButton() { return loginButton; }
 

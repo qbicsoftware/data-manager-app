@@ -7,11 +7,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import javax.annotation.security.PermitAll;
+
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.MainLayout;
 
 @PageTitle("About")
 @Route(value = "about", layout = MainLayout.class)
-@PermitAll
+@AnonymousAllowed //todo change back to allowAll only for testing login
 public class AboutView extends VerticalLayout {
 
     public AboutView() {
