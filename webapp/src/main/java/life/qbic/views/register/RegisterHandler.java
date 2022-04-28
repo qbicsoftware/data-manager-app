@@ -28,7 +28,7 @@ public class RegisterHandler implements RegisterHandlerInterface {
 
   @Override
   public boolean register(RegisterLayout registerLayout) {
-    if (registeredRegisterLayout == null) {
+    if (registeredRegisterLayout != registerLayout) {
       this.registeredRegisterLayout = registerLayout;
       // orchestrate view
       addListener();
@@ -44,7 +44,7 @@ public class RegisterHandler implements RegisterHandlerInterface {
           List<User> user =
               userJpaRepository.findUsersByEmail(registeredRegisterLayout.email.getValue());
 
-          if (user.size() == 0) {
+          if (user.size() > 0) {
             Notification.show("Email is already in use!");
           }
           try {

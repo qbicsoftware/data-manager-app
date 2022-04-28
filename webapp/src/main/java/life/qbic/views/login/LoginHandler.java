@@ -19,13 +19,14 @@ public class LoginHandler implements LoginHandlerInterface {
 
     @Override
     public boolean register(LoginLayout loginView) {
-        if (registeredLoginView == null) {
+        if (registeredLoginView != loginView) {
             this.registeredLoginView = loginView;
             // orchestrate view
             addListener();
             // then return
             return true;
         }
+
         return false;
     }
 
