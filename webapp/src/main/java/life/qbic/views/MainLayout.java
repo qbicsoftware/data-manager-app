@@ -18,8 +18,8 @@ import com.vaadin.flow.router.Route;
 @Route(value = "data")
 public class MainLayout extends AppLayout {
 
-    protected Button register;
-    protected Button login;
+    public Button register;
+    public Button login;
 
     public MainLayout() {
         createHeaderContent();

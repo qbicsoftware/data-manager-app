@@ -29,15 +29,15 @@ import java.util.stream.Stream;
 @CssImport("./styles/views/login/login-view.css")
 public class RegisterLayout extends VerticalLayout {
 
-    protected EmailField email;
+    public EmailField email;
 
-    protected PasswordField password;
+    public PasswordField password;
 
-    protected TextField fullName;
+    public TextField fullName;
 
-    protected Button registerButton;
+    public Button registerButton;
 
-    protected Span loginSpan;
+    public Span loginSpan;
 
     public ErrorMessage alreadyUsedEmailMessage;
     public ErrorMessage passwordTooShortMessage;
@@ -127,11 +127,6 @@ public class RegisterLayout extends VerticalLayout {
         email = new EmailField("Email");
         email.setWidthFull();
     }
-
-    public PasswordField getPasswordField() { return password; }
-
-
-    public Button getRegisterButton() { return registerButton; }
 
     private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
         Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));

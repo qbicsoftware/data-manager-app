@@ -1,6 +1,8 @@
 package life.qbic.views;
 
 
+import com.vaadin.flow.component.UI;
+
 public class MainHandler implements MainHandlerInterface{
 
     private MainLayout registeredMainLayout;
@@ -20,14 +22,12 @@ public class MainHandler implements MainHandlerInterface{
 
     private void addClickListeners() {
         registeredMainLayout.login.addClickListener(event -> {
-            registeredMainLayout.login.getUI().ifPresent(ui ->
-                    ui.navigate("login"));
+            UI.getCurrent().navigate("login");
 
         });
 
         registeredMainLayout.register.addClickListener(event -> {
-            registeredMainLayout.register.getUI().ifPresent(ui ->
-                    ui.navigate("register"));
+            UI.getCurrent().navigate("register");
         });
     }
 

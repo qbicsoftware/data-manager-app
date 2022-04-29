@@ -34,13 +34,13 @@ import java.util.stream.Stream;
 @CssImport("./styles/views/login/login-view.css")
 public class LoginLayout extends VerticalLayout {
 
-    protected EmailField email;
+    public EmailField email;
 
-    protected PasswordField password;
+    public PasswordField password;
 
-    protected Button loginButton;
+    public Button loginButton;
 
-    protected Span registerSpan;
+    public Span registerSpan;
 
     public ErrorMessage errorMessage;
 
@@ -115,14 +115,6 @@ public class LoginLayout extends VerticalLayout {
         password.setErrorMessage("Wrong password");
         password.setWidthFull();
     }
-
-    public PasswordField getPasswordField() { return password; }
-
-    public Button getLoginButton() { return loginButton; }
-
-    public Span getRegisterSpan() { return registerSpan; }
-
-    public EmailField getEmail() { return email; }
 
     private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
         Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
