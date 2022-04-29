@@ -16,6 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.views.ErrorMessage;
 import life.qbic.views.MainLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,10 @@ public class RegisterLayout extends VerticalLayout {
 
     protected Span loginSpan;
 
+    public ErrorMessage alreadyUsedEmailMessage;
+    public ErrorMessage passwordTooShortMessage;
+    public ErrorMessage errorMessage;
+
     private final VerticalLayout contentLayout;
 
     public RegisterLayout(@Autowired RegisterHandlerInterface registerHandler) {
@@ -59,6 +64,7 @@ public class RegisterLayout extends VerticalLayout {
     private void initLayout() {
         H3 title = new H3("Register");
 
+        createErrorMessage();
         styleEmailField();
         styleNameField();
         stylePasswordField();
@@ -74,6 +80,20 @@ public class RegisterLayout extends VerticalLayout {
         setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     }
 
+    private void createErrorMessage(){
+        alreadyUsedEmailMessage = new ErrorMessage("Email already in use",
+                "If you have difficulties with your password you can reset it.");
+        alreadyUsedEmailMessage.setVisible(false);
+
+        passwordTooShortMessage = new ErrorMessage("Password too short",
+                "Your password must be at least 8 characters long.");
+        passwordTooShortMessage.setVisible(false);
+
+        errorMessage = new ErrorMessage("Registration failed",
+                "Please try again.");
+        errorMessage.setVisible(false);
+    }
+
     private void styleNameField() {
         fullName = new TextField("Full Name");
         fullName.setWidthFull();
@@ -81,7 +101,7 @@ public class RegisterLayout extends VerticalLayout {
 
     private void styleFormLayout(H3 title) {
         contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-        contentLayout.add(title, fullName, email, password,
+        contentLayout.add(title, errorMessage, fullName, email, password,
                 registerButton, loginSpan);
     }
 

@@ -45,19 +45,26 @@ public class RegisterHandler implements RegisterHandlerInterface {
               userJpaRepository.findUsersByEmail(registeredRegisterLayout.email.getValue());
 
           if (user.size() > 0) {
-            Notification.show("Email is already in use!");
-          }
-          try {
-            String password = registeredRegisterLayout.password.getValue();
-            String email = registeredRegisterLayout.email.getValue();
-            String name = registeredRegisterLayout.fullName.getValue();
+            registeredRegisterLayout.alreadyUsedEmailMessage.setVisible(true);
+          } else {
+            registeredRegisterLayout.alreadyUsedEmailMessage.setVisible(false);
+            try {
+              String password = registeredRegisterLayout.password.getValue();
+              String email = registeredRegisterLayout.email.getValue();
+              String name = registeredRegisterLayout.fullName.getValue();
 
-            User newUser = User.create(password, name, email);
-            userJpaRepository.save(newUser);
-            UI.getCurrent().navigate("login");
-          } catch (Exception e) {
-            log.error(e.getMessage());
-            Notification.show("Could not create user");
+              User newUser = User.create(password, name, email);
+              // todo validate the password length with the policy (use case)
+              // and then show the error message if too short
+              // registeredRegisterLayout.passwordTooShortMessage.setVisible(true); also hide it
+              // again
+              // also check if email is valid similar the above
+              userJpaRepository.save(newUser);
+              UI.getCurrent().navigate("login");
+            } catch (Exception e) {
+              log.error(e.getMessage());
+              registeredRegisterLayout.errorMessage.setVisible(true);
+            }
           }
         });
   }

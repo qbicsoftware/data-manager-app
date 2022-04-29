@@ -82,7 +82,9 @@ public class LoginLayout extends VerticalLayout {
     }
 
     private void styleErrorDiv(){
-        errorMessage = new ErrorMessage("title","description");
+        errorMessage = new ErrorMessage("Incorrect email or password",
+                "Check that you have used the correct email and password and try again");
+        errorMessage.setVisible(false);
     }
 
     private void styleFormLayout(H3 title) {

@@ -40,7 +40,7 @@ public class LoginHandler implements LoginHandlerInterface {
                 Notification.show("It worked");
             }catch (RuntimeException r){
                 //todo show error in ui
-                Notification.show("Wrong email or password");
+                registeredLoginView.errorMessage.setVisible(true);
             }
         });
     }

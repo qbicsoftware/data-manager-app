@@ -32,7 +32,6 @@ public class ErrorMessage extends Composite<VerticalLayout> {
         this.getContent().add(title,description);
         this.getContent().addClassName("error-10pct");
 
-        this.getContent().setWidthFull();
         this.getContent().getStyle().set("padding", "var(--lumo-space-xs");
     }
 
