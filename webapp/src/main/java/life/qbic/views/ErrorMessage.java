@@ -9,47 +9,63 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 /**
+ * <b> An ErrorMessage component which shows an error message with a title and a detailed
+ * description. </b>
  *
+ * @since 1.0.0
  */
 @CssImport("./styles/views/login/login-view.css")
 public class ErrorMessage extends Composite<VerticalLayout> {
 
-    private Span icon;
-    private Span title;
-    Span titleText;
+  private String descriptionText;
+  private String titleText;
 
-    private Div description;
-    Span descriptionText;
+  private Span icon;
+  private Span titleSpan;
+  public Span titleTextSpan;
 
-    public ErrorMessage(String titleText, String descriptionText){
-        createTitle(titleText);
-        createDescriptionText(descriptionText);
+  private Div descriptionDiv;
+  public Span descriptionTextSpan;
 
-        initLayout();
-    }
+  public ErrorMessage(String titleText, String descriptionText) {
 
-    private void initLayout(){
-        this.getContent().add(title,description);
-        this.getContent().addClassName("error-10pct");
+    this.titleText = titleText;
+    this.descriptionText = descriptionText;
 
-        this.getContent().setWidthFull();
-        this.getContent().getStyle().set("padding", "var(--lumo-space-xs");
-    }
+    initLayout();
+    styleLayout();
+  }
 
-    private void createDescriptionText(String descriptionText) {
-        this.descriptionText = new Span(descriptionText);
+  private void initLayout() {
+    createTitle(titleText);
+    createDescriptionText(descriptionText);
+  }
 
-        description = new Div(this.descriptionText);
-        description.getStyle().set("padding", "var(--lumo-space-m");
-    }
+  private void styleLayout() {
+    styleTitleSpan();
+    styleDescriptionDiv();
 
-    private void createTitle(String titleText){
-        icon = new Span(new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O));
-        icon.getStyle().set("padding", "var(--lumo-space-xs");
+    this.getContent().add(titleSpan, descriptionDiv);
+    this.getContent().addClassName("error-10pct");
+    this.getContent().getStyle().set("padding", "var(--lumo-space-xs");
+  }
 
-        this.titleText = new Span(titleText);
+  private void createDescriptionText(String descriptionText) {
+    this.descriptionTextSpan = new Span(descriptionText);
+    descriptionDiv = new Div(this.descriptionTextSpan);
+  }
 
-        title = new Span(icon, this.titleText);
-    }
+  private void styleDescriptionDiv() {
+    descriptionDiv.getStyle().set("padding", "var(--lumo-space-m");
+  }
 
+  private void createTitle(String titleText) {
+    icon = new Span(new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O));
+    this.titleTextSpan = new Span(titleText);
+    titleSpan = new Span(icon, this.titleTextSpan);
+  }
+
+  private void styleTitleSpan() {
+    icon.getStyle().set("padding", "var(--lumo-space-xs");
+  }
 }

@@ -1,6 +1,8 @@
 package life.qbic.views.register;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import java.util.List;
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.registration.RegisterUserInput;
 import life.qbic.usermanagement.registration.RegisterUserOutput;
@@ -41,7 +43,9 @@ public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOu
   }
 
   private void addListener() {
-    userRegistrationLayout.registerButton.addClickListener( e -> {
+    userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
+
+    userRegistrationLayout.registerButton.addClickListener(event -> {
       var user = User.create(
           userRegistrationLayout.password.getValue(),
           userRegistrationLayout.fullName.getValue(),
@@ -60,5 +64,6 @@ public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOu
     // Display error to the user
     // Stub output:
     System.out.println(reason);
+    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
   }
 }

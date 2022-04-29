@@ -5,10 +5,8 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -25,107 +23,102 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Stream;
 
 /**
- * Describes the layout of the login
+ * <b>Defines the layout and look of the login view. </b>
+ *
+ * @since 1.0.0
  */
-
 @PageTitle("Login")
 @Route(value = "login", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
 public class LoginLayout extends VerticalLayout {
 
-    protected EmailField email;
+  public EmailField email;
 
-    protected PasswordField password;
+  public PasswordField password;
 
-    protected Button loginButton;
+  public Button loginButton;
 
-    protected Span registerSpan;
+  public Span registerSpan;
 
-    public ErrorMessage errorMessage;
+  public ErrorMessage errorMessage;
 
-    private final VerticalLayout contentLayout;
+  private final VerticalLayout contentLayout;
+  private H3 layoutTitle;
 
-    public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
-        setId("login-view");
-        contentLayout = new VerticalLayout();
+  public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
+    setId("login-view");
+    contentLayout = new VerticalLayout();
 
-        initLayout();
-        registerToHandler(loginHandlerInterface);
+    initLayout();
+    styleLayout();
+    registerToHandler(loginHandlerInterface);
+  }
+
+  private void registerToHandler(LoginHandlerInterface loginHandler) {
+    if (loginHandler.register(this)) {
+      System.out.println("Registered login handler");
+    } else {
+      System.out.println("Already registered login handler");
     }
+  }
 
-    private void registerToHandler(LoginHandlerInterface loginHandler) {
-        if (loginHandler.register(this)) {
-            System.out.println("Registered login handler");
-        } else {
-            System.out.println("Already registered login handler");
-        }
-    }
+  private void initLayout() {
+    layoutTitle = new H3("Login");
+    createErrorDiv();
 
-    private void initLayout() {
-        H3 title = new H3("Login");
-        styleErrorDiv();
+    email = new EmailField("Email");
+    loginButton = new Button("Login");
+    createPasswordField();
+    createSpan();
+  }
 
-        styleEmailField();
-        stylePasswordField();
-        styleLoginButton();
-        createSpan();
+  private void styleLayout() {
+    email.setWidthFull();
+    password.setWidthFull();
 
-        setRequiredIndicatorVisible(email, password);
-        styleFormLayout(title);
+    styleLoginButton();
 
-        add(contentLayout);
-        setSizeFull();
-        setAlignItems(FlexComponent.Alignment.CENTER);
-        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    setRequiredIndicatorVisible(email, password);
+    styleFormLayout();
 
-    }
+    add(contentLayout);
+    setSizeFull();
+    setAlignItems(FlexComponent.Alignment.CENTER);
+    setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+  }
 
-    private void styleErrorDiv(){
-        errorMessage = new ErrorMessage("title","description");
-    }
+  private void createErrorDiv() {
+    errorMessage =
+        new ErrorMessage(
+            "Incorrect email or password",
+            "Check that you have used the correct email and password and try again");
+    errorMessage.setVisible(false);
+  }
 
-    private void styleFormLayout(H3 title) {
-        contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-        contentLayout.add(title, errorMessage, email, password,
-                loginButton,registerSpan);
-    }
+  private void styleFormLayout() {
+    contentLayout.addClassNames(
+        "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
+    contentLayout.add(layoutTitle, errorMessage, email, password, loginButton, registerSpan);
+  }
 
-    private void createSpan(){
-        RouterLink routerLink = new RouterLink("REGISTER", RegisterLayout.class);
-        registerSpan = new Span(new Text("Need an account? "),routerLink);
-    }
+  private void createSpan() {
+    RouterLink routerLink = new RouterLink("REGISTER", RegisterLayout.class);
+    registerSpan = new Span(new Text("Need an account? "), routerLink);
+  }
 
-    private void styleLoginButton() {
-        loginButton = new Button("Login");
-        loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        loginButton.setEnabled(true);
-        loginButton.setWidthFull();
-    }
+  private void styleLoginButton() {
+    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loginButton.setEnabled(true);
+    loginButton.setWidthFull();
+  }
 
-    private void styleEmailField(){
-        email = new EmailField("Email");
-        email.setWidthFull();
-    }
+  private void createPasswordField() {
+    password = new PasswordField("Password");
+    password.setErrorMessage("Wrong password");
+  }
 
-    private void stylePasswordField(){
-        password = new PasswordField("Password");
-        password.setHelperText("A password must be at least 8 characters");
-        password.setPattern(".{8,}");
-        password.setErrorMessage("Not a valid password");
-        password.setWidthFull();
-    }
-
-    public PasswordField getPasswordField() { return password; }
-
-    public Button getLoginButton() { return loginButton; }
-
-    public Span getRegisterSpan() { return registerSpan; }
-
-    public EmailField getEmail() { return email; }
-
-    private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
-        Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
-    }
-
+  private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
+    Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
+  }
 }

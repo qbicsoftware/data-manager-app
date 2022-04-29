@@ -10,61 +10,61 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-
 /**
- * The main view is a top-level placeholder for other views.
+ * <b> The main view is a top-level placeholder for other views. </b>
+ *
+ * @since 1.0.0
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")
 public class MainLayout extends AppLayout {
 
-    protected Button register;
-    protected Button login;
+  public Button register;
+  public Button login;
 
-    public MainLayout() {
-        createHeaderContent();
-    }
+  private HorizontalLayout buttonLayout;
+  private HorizontalLayout headerLayout;
 
-    private Component createHeaderContent() {
-        HorizontalLayout header = createHeaderLayout();
-        HorizontalLayout buttons = createHeaderButtonLayout();
+  public MainLayout() {
+    createHeaderContent();
+  }
 
-        addToNavbar(header, buttons);
+  private void createHeaderContent() {
+    createHeaderLayout();
+    createHeaderButtonLayout();
 
-        return header;
-    }
+    addToNavbar(headerLayout, buttonLayout);
+  }
 
-    private HorizontalLayout createHeaderLayout() {
-        H1 appName = styleHeaderTitle();
+  private void createHeaderLayout() {
+    H1 appName = styleHeaderTitle();
+    headerLayout = new HorizontalLayout(appName);
 
-        HorizontalLayout header = new HorizontalLayout(appName);
+    styleHeaderLayout();
+  }
 
-        header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        header.setWidth("100%");
-        header.addClassNames("py-0", "px-m");
+  private void styleHeaderLayout() {
+    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+    headerLayout.setWidth("100%");
+    headerLayout.addClassNames("py-0", "px-m");
+  }
 
-        return header;
-    }
+  private H1 styleHeaderTitle() {
+    H1 appName = new H1("Data Manager");
+    appName.addClassNames("text-l", "m-m");
+    return appName;
+  }
 
-    private H1 styleHeaderTitle() {
-        H1 appName = new H1("Data Manager");
-        appName.addClassNames("text-l", "m-m");
-        return appName;
-    }
+  private void createHeaderButtonLayout() {
+    register = new Button("Register");
+    login = new Button("Login");
 
-    private HorizontalLayout createHeaderButtonLayout() {
-        styleHeaderButtons();
+    buttonLayout = new HorizontalLayout(register, login);
+    styleHeaderButtons();
+  }
 
-        HorizontalLayout buttons = new HorizontalLayout(register,login);
-        buttons.addClassName("button-layout-spacing");
-        return buttons;
-    }
-
-    private void styleHeaderButtons() {
-        register = new Button("Register");
-
-        login = new Button("Login");
-        login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    }
-
+  private void styleHeaderButtons() {
+    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    buttonLayout.addClassName("button-layout-spacing");
+  }
 }
