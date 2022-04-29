@@ -5,8 +5,10 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -15,6 +17,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.views.ErrorMessage;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.RegisterLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +42,8 @@ public class LoginLayout extends VerticalLayout {
 
     protected Span registerSpan;
 
+    public ErrorMessage errorMessage;
+
     private final VerticalLayout contentLayout;
 
     public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
@@ -59,6 +64,7 @@ public class LoginLayout extends VerticalLayout {
 
     private void initLayout() {
         H3 title = new H3("Login");
+        styleErrorDiv();
 
         styleEmailField();
         stylePasswordField();
@@ -75,9 +81,13 @@ public class LoginLayout extends VerticalLayout {
 
     }
 
+    private void styleErrorDiv(){
+        errorMessage = new ErrorMessage("title","description");
+    }
+
     private void styleFormLayout(H3 title) {
         contentLayout.addClassNames("bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-        contentLayout.add(title, email, password,
+        contentLayout.add(title, errorMessage, email, password,
                 loginButton,registerSpan);
     }
 

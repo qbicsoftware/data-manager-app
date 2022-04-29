@@ -12,3 +12,8 @@
     margin-bottom: 1em;
     font-size: 14px;
 }
+
+.error-10pct {
+    background-color: var(--lumo-error-color-10pct);
+    color: var(--lumo-error-text-color);
+}
