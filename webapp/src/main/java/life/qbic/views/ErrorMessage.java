@@ -17,40 +17,55 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 @CssImport("./styles/views/login/login-view.css")
 public class ErrorMessage extends Composite<VerticalLayout> {
 
-  private Span icon;
-  private Span title;
-  public Span titleText;
+  private String descriptionText;
+  private String titleText;
 
-  private Div description;
-  public Span descriptionText;
+  private Span icon;
+  private Span titleSpan;
+  public Span titleTextSpan;
+
+  private Div descriptionDiv;
+  public Span descriptionTextSpan;
 
   public ErrorMessage(String titleText, String descriptionText) {
-    createTitle(titleText);
-    createDescriptionText(descriptionText);
+
+    this.titleText = titleText;
+    this.descriptionText = descriptionText;
 
     initLayout();
+    styleLayout();
   }
 
   private void initLayout() {
-    this.getContent().add(title, description);
-    this.getContent().addClassName("error-10pct");
+    createTitle(titleText);
+    createDescriptionText(descriptionText);
+  }
 
+  private void styleLayout() {
+    styleTitleSpan();
+    styleDescriptionDiv();
+
+    this.getContent().add(titleSpan, descriptionDiv);
+    this.getContent().addClassName("error-10pct");
     this.getContent().getStyle().set("padding", "var(--lumo-space-xs");
   }
 
   private void createDescriptionText(String descriptionText) {
-    this.descriptionText = new Span(descriptionText);
+    this.descriptionTextSpan = new Span(descriptionText);
+    descriptionDiv = new Div(this.descriptionTextSpan);
+  }
 
-    description = new Div(this.descriptionText);
-    description.getStyle().set("padding", "var(--lumo-space-m");
+  private void styleDescriptionDiv() {
+    descriptionDiv.getStyle().set("padding", "var(--lumo-space-m");
   }
 
   private void createTitle(String titleText) {
     icon = new Span(new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O));
+    this.titleTextSpan = new Span(titleText);
+    titleSpan = new Span(icon, this.titleTextSpan);
+  }
+
+  private void styleTitleSpan() {
     icon.getStyle().set("padding", "var(--lumo-space-xs");
-
-    this.titleText = new Span(titleText);
-
-    title = new Span(icon, this.titleText);
   }
 }

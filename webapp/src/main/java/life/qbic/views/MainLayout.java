@@ -22,29 +22,31 @@ public class MainLayout extends AppLayout {
   public Button register;
   public Button login;
 
+  private HorizontalLayout buttonLayout;
+  private HorizontalLayout headerLayout;
+
   public MainLayout() {
     createHeaderContent();
   }
 
-  private Component createHeaderContent() {
-    var header = createHeaderLayout();
-    var buttons = createHeaderButtonLayout();
+  private void createHeaderContent() {
+    createHeaderLayout();
+    createHeaderButtonLayout();
 
-    addToNavbar(header, buttons);
-
-    return header;
+    addToNavbar(headerLayout, buttonLayout);
   }
 
-  private HorizontalLayout createHeaderLayout() {
+  private void createHeaderLayout() {
     H1 appName = styleHeaderTitle();
+    headerLayout = new HorizontalLayout(appName);
 
-    var header = new HorizontalLayout(appName);
+    styleHeaderLayout();
+  }
 
-    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    header.setWidth("100%");
-    header.addClassNames("py-0", "px-m");
-
-    return header;
+  private void styleHeaderLayout() {
+    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+    headerLayout.setWidth("100%");
+    headerLayout.addClassNames("py-0", "px-m");
   }
 
   private H1 styleHeaderTitle() {
@@ -53,18 +55,15 @@ public class MainLayout extends AppLayout {
     return appName;
   }
 
-  private HorizontalLayout createHeaderButtonLayout() {
-    styleHeaderButtons();
+  private void createHeaderButtonLayout() {
+    register = new Button("Register");
+    login = new Button("Login");
 
-    HorizontalLayout buttons = new HorizontalLayout(register, login);
-    buttons.addClassName("button-layout-spacing");
-    return buttons;
+    buttonLayout = new HorizontalLayout(register, login);
   }
 
   private void styleHeaderButtons() {
-    register = new Button("Register");
-
-    login = new Button("Login");
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    buttonLayout.addClassName("button-layout-spacing");
   }
 }

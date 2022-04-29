@@ -49,12 +49,14 @@ public class RegisterLayout extends VerticalLayout {
   public ErrorMessage errorMessage;
 
   private final VerticalLayout contentLayout;
+  private H3 layoutTitle;
 
   public RegisterLayout(@Autowired RegisterHandlerInterface registerHandler) {
     setId("register-view");
     contentLayout = new VerticalLayout();
 
     initLayout();
+    styleLayout();
     registerToHandler(registerHandler);
   }
 
@@ -67,25 +69,34 @@ public class RegisterLayout extends VerticalLayout {
   }
 
   private void initLayout() {
-    H3 title = new H3("Register");
+    layoutTitle = new H3("Register");
 
-    createErrorMessage();
+    createErrorDivs();
     styleEmailField();
     styleNameField();
-    stylePasswordField();
-    styleRegisterButton();
+    createPasswordField();
+    createRegisterButton();
     createSpan();
 
-    setRequiredIndicatorVisible(fullName, email, password);
-    styleFormLayout(title);
-
     add(contentLayout);
+  }
+
+  private void styleLayout() {
+    password.setWidthFull();
+    email.setWidthFull();
+    fullName.setWidthFull();
+
+    styleRegisterButton();
+
+    setRequiredIndicatorVisible(fullName, email, password);
+
+    styleFormLayout();
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void createErrorMessage() {
+  private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
             "Email already in use",
@@ -102,13 +113,12 @@ public class RegisterLayout extends VerticalLayout {
 
   private void styleNameField() {
     fullName = new TextField("Full Name");
-    fullName.setWidthFull();
   }
 
-  private void styleFormLayout(H3 title) {
+  private void styleFormLayout() {
     contentLayout.addClassNames(
         "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-    contentLayout.add(title, errorMessage, fullName, email, password, registerButton, loginSpan);
+    contentLayout.add(layoutTitle, errorMessage, fullName, email, password, registerButton, loginSpan);
   }
 
   private void createSpan() {
@@ -116,23 +126,24 @@ public class RegisterLayout extends VerticalLayout {
     loginSpan = new Span(new Text("Already have an account? "), link);
   }
 
-  private void styleRegisterButton() {
+  private void createRegisterButton() {
     registerButton = new Button("Register");
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    registerButton.setWidthFull();
   }
 
-  private void stylePasswordField() {
+  private void styleRegisterButton() {
+    registerButton.setWidthFull();
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
+
+  private void createPasswordField() {
     password = new PasswordField("Password");
     password.setHelperText("A password must be at least 8 characters");
     password.setPattern(".{8,}");
     password.setErrorMessage("Not a valid password");
-    password.setWidthFull();
   }
 
   private void styleEmailField() {
     email = new EmailField("Email");
-    email.setWidthFull();
   }
 
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {

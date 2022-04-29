@@ -44,12 +44,14 @@ public class LoginLayout extends VerticalLayout {
   public ErrorMessage errorMessage;
 
   private final VerticalLayout contentLayout;
+  private H3 layoutTitle;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     setId("login-view");
     contentLayout = new VerticalLayout();
 
     initLayout();
+    styleLayout();
     registerToHandler(loginHandlerInterface);
   }
 
@@ -62,16 +64,23 @@ public class LoginLayout extends VerticalLayout {
   }
 
   private void initLayout() {
-    H3 title = new H3("Login");
-    styleErrorDiv();
+    layoutTitle = new H3("Login");
+    createErrorDiv();
 
-    styleEmailField();
-    stylePasswordField();
-    styleLoginButton();
+    email = new EmailField("Email");
+    loginButton = new Button("Login");
+    createPasswordField();
     createSpan();
+  }
+
+  private void styleLayout() {
+    email.setWidthFull();
+    password.setWidthFull();
+
+    styleLoginButton();
 
     setRequiredIndicatorVisible(email, password);
-    styleFormLayout(title);
+    styleFormLayout();
 
     add(contentLayout);
     setSizeFull();
@@ -79,7 +88,7 @@ public class LoginLayout extends VerticalLayout {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void styleErrorDiv() {
+  private void createErrorDiv() {
     errorMessage =
         new ErrorMessage(
             "Incorrect email or password",
@@ -87,10 +96,10 @@ public class LoginLayout extends VerticalLayout {
     errorMessage.setVisible(false);
   }
 
-  private void styleFormLayout(H3 title) {
+  private void styleFormLayout() {
     contentLayout.addClassNames(
         "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
-    contentLayout.add(title, errorMessage, email, password, loginButton, registerSpan);
+    contentLayout.add(layoutTitle, errorMessage, email, password, loginButton, registerSpan);
   }
 
   private void createSpan() {
@@ -99,21 +108,14 @@ public class LoginLayout extends VerticalLayout {
   }
 
   private void styleLoginButton() {
-    loginButton = new Button("Login");
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     loginButton.setEnabled(true);
     loginButton.setWidthFull();
   }
 
-  private void styleEmailField() {
-    email = new EmailField("Email");
-    email.setWidthFull();
-  }
-
-  private void stylePasswordField() {
+  private void createPasswordField() {
     password = new PasswordField("Password");
     password.setErrorMessage("Wrong password");
-    password.setWidthFull();
   }
 
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
