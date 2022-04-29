@@ -15,26 +15,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    //@Autowired
-    //private UserRepository userRepository;
+
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //User testUser = userRepository.findByUsername(username);
-        //if (testUser == null) {
-        //    throw new UsernameNotFoundException("No testUser present with username: " + username);
-        //} else {
-            //todo fix me
-            //return new org.springframework.security.core.userdetails.User(testUser.getUsername(), testUser.getHashedPassword(),
-            //        getAuthorities(testUser));
-            return null;
-        //}
+        //todo fix me: find user by username and return user details such as name, passwordhash and authorities
+
+        return null;
     }
 
     private static List<GrantedAuthority> getAuthorities(User testUser) {
-        //todo fix me
-        //return testUser.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
-        //       .collect(Collectors.toList());
+        //todo fix me: implement rolemanagement, parse all roles the user has to understhand which rights the user has
+
         return new ArrayList<>();
     }
 

@@ -21,19 +21,5 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
   public static void main(String[] args) {
     SpringApplication.run(Application.class, args);
-
-    /*var userJpa = context.getBean(UserJpaRepository.class);
-
-    Optional<User> result = userJpa.findUserById("c0b329ca-eaec-4365-9617-80154a23afaf");
-    if (result.isPresent()) {
-      System.out.println("Found user");
-      User user = result.get();
-      user.setEmail("new.address@gmail.com");
-      userJpa.save(user);
-    } else {
-      System.out.println("No user found");
-      User user = User.create("myawesomepassword", "Sven Fillinger", "example@mail.org");
-      userJpa.save(user);
-    }*/
   }
 }
