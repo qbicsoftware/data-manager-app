@@ -3,6 +3,7 @@ package life.qbic.usermanagement.registration
 import life.qbic.usermanagement.User
 import life.qbic.usermanagement.repository.UserDataStorage
 import life.qbic.usermanagement.repository.UserRepository
+import spock.lang.Shared
 import spock.lang.Specification
 
 /**
@@ -12,12 +13,18 @@ import spock.lang.Specification
  */
 class RegistrationSpec extends Specification {
 
+    @Shared
+    public UserRepository userRepository
+
+    def setupSpec() {
+        userRepository = UserRepository.getInstance(new TestStorage())
+    }
+
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
         given: "A repository with one user entry"
         def userDataStorage = new TestStorage()
         def testUser = User.create("12345678", "Mr Somebody", "some@body.com")
-        userDataStorage.save(testUser)
-        def userRepo = UserRepository.getInstance(userDataStorage)
+        userRepository.addUser(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
@@ -26,7 +33,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create("12345678", "Mr Nobody", "some@body.com")
 
         and: "a the use case with output"
-        def registration = new Registration(userRepo)
+        def registration = new Registration(userRepository)
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -41,10 +48,8 @@ class RegistrationSpec extends Specification {
 
     def "When a user is not yet registered with a given email address, register the user"() {
         given: "A repository with one user entry"
-        def userDataStorage = new TestStorage()
         def testUser = User.create("12345678", "Mr Somebody", "some@body.com")
-        userDataStorage.save(testUser)
-        def userRepo = UserRepository.getInstance(userDataStorage)
+        userRepository.addUser(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
@@ -53,7 +58,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create("12345678", "Mr Nobody", "no@body.com")
 
         and: "a the use case with output"
-        def registration = new Registration(userRepo)
+        def registration = new Registration(userRepository)
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -62,7 +67,7 @@ class RegistrationSpec extends Specification {
         then:
         1 * useCaseOutput.onSuccess()
         0 * useCaseOutput.onFailure(_ as String)
-        userDataStorage.findUserById(newUser.getId()).isPresent()
+        userRepository.findById(newUser.getId()).isPresent()
 
     }
 
