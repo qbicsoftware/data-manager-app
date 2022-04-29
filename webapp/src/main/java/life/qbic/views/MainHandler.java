@@ -1,8 +1,12 @@
 package life.qbic.views;
 
-
 import com.vaadin.flow.component.UI;
 
+/**
+ * <b> Handles the view elements of the {@link MainLayout}. </b>
+ *
+ * @since 1.0.0
+ */
 public class MainHandler implements MainHandlerInterface{
 
     private MainLayout registeredMainLayout;

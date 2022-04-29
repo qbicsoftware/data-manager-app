@@ -25,9 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Stream;
 
 /**
- * Describes the layout of the login
+ * <b>Defines the layout and look of the login view. </b>
+ *
+ * @since 1.0.0
  */
-
 @PageTitle("Login")
 @Route(value = "login", layout = MainLayout.class)
 @AnonymousAllowed

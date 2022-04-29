@@ -12,7 +12,9 @@ import com.vaadin.flow.router.Route;
 
 
 /**
- * The main view is a top-level placeholder for other views.
+ * <b> The main view is a top-level placeholder for other views. </b>
+ *
+ * @since 1.0.0
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")

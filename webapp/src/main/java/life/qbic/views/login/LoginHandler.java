@@ -1,11 +1,15 @@
 package life.qbic.views.login;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.Notification;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/**
+ * <b> The LoginHandler handles the view elements of the {@link LoginLayout}. </b>
+ *
+ * @since 1.0.0
+ */
 @Component
 public class LoginHandler implements LoginHandlerInterface {
 

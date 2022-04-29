@@ -8,18 +8,21 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
+
 /**
+ * <b> An ErrorMessage component which shows an error message with a title and a detailed description. </b>
  *
+ * @since 1.0.0
  */
 @CssImport("./styles/views/login/login-view.css")
 public class ErrorMessage extends Composite<VerticalLayout> {
 
     private Span icon;
     private Span title;
-    Span titleText;
+    public Span titleText;
 
     private Div description;
-    Span descriptionText;
+    public Span descriptionText;
 
     public ErrorMessage(String titleText, String descriptionText){
         createTitle(titleText);
