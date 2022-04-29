@@ -5,6 +5,7 @@ import life.qbic.usermanagement.registration.RegisterUserInput;
 import life.qbic.usermanagement.registration.RegisterUserOutput;
 import life.qbic.usermanagement.registration.Registration;
 import life.qbic.usermanagement.repository.UserDataStorage;
+import life.qbic.usermanagement.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,8 +20,12 @@ import org.springframework.context.annotation.Configuration;
 public class AppConfig {
 
   @Bean
-  public RegisterUserInput registerUserInput(UserDataStorage userDataStorage) {
-    return new Registration(userDataStorage);
+  public RegisterUserInput registerUserInput(UserRepository userRepository) {
+    return new Registration(userRepository);
+  }
+  @Bean
+  public UserRepository userRepository(UserDataStorage userDataStorage) {
+    return UserRepository.getInstance(userDataStorage);
   }
 
 }

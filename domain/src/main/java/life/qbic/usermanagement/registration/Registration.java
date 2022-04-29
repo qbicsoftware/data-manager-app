@@ -2,6 +2,7 @@ package life.qbic.usermanagement.registration;
 
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.repository.UserDataStorage;
+import life.qbic.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration use case</b>
@@ -17,9 +18,9 @@ public class Registration implements RegisterUserInput {
 
   private RegisterUserOutput registerUserOutput;
 
-  private final UserDataStorage userRepository;
+  private final UserRepository userRepository;
 
-  public Registration(UserDataStorage userRepository) {
+  public Registration(UserRepository userRepository) {
     this.userRepository = userRepository;
   }
 
@@ -29,15 +30,14 @@ public class Registration implements RegisterUserInput {
 
   @Override
   public void register(User user) {
-    if (userExists(user)) {
-      registerUserOutput.onFailure("User with email address already exists.");
-    } else {
-      // Register the user
-      user.setEmailConfirmed(false);
-      userRepository.save(user);
-      // Then execute success callback
-      registerUserOutput.onSuccess();
-    }
+    userRepository.findByEmail(user.getEmail())
+        .ifPresentOrElse(
+            u -> registerUserOutput.onFailure("User with email address already exists."),
+            () -> {
+              user.setEmailConfirmed(false);
+              userRepository.addUser(user);
+              registerUserOutput.onSuccess();
+            });
   }
 
   @Override
@@ -46,6 +46,6 @@ public class Registration implements RegisterUserInput {
   }
 
   private boolean userExists(User user) {
-    return !userRepository.findUsersByEmail(user.getEmail()).isEmpty();
+    return !userRepository.findByEmail(user.getEmail()).isEmpty();
   }
 }
