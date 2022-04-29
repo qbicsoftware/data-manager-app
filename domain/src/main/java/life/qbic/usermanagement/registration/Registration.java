@@ -46,6 +46,6 @@ public class Registration implements RegisterUserInput {
   }
 
   private boolean userExists(User user) {
-    return !userRepository.findByEmail(user.getEmail()).isEmpty();
+    return userRepository.findByEmail(user.getEmail()).isPresent();
   }
 }
