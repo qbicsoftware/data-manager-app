@@ -10,7 +10,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-
 /**
  * <b> The main view is a top-level placeholder for other views. </b>
  *
@@ -20,53 +19,52 @@ import com.vaadin.flow.router.Route;
 @Route(value = "data")
 public class MainLayout extends AppLayout {
 
-    public Button register;
-    public Button login;
+  public Button register;
+  public Button login;
 
-    public MainLayout() {
-        createHeaderContent();
-    }
+  public MainLayout() {
+    createHeaderContent();
+  }
 
-    private Component createHeaderContent() {
-        var header = createHeaderLayout();
-        var buttons = createHeaderButtonLayout();
+  private Component createHeaderContent() {
+    var header = createHeaderLayout();
+    var buttons = createHeaderButtonLayout();
 
-        addToNavbar(header, buttons);
+    addToNavbar(header, buttons);
 
-        return header;
-    }
+    return header;
+  }
 
-    private HorizontalLayout createHeaderLayout() {
-        H1 appName = styleHeaderTitle();
+  private HorizontalLayout createHeaderLayout() {
+    H1 appName = styleHeaderTitle();
 
-        var header = new HorizontalLayout(appName);
+    var header = new HorizontalLayout(appName);
 
-        header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        header.setWidth("100%");
-        header.addClassNames("py-0", "px-m");
+    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+    header.setWidth("100%");
+    header.addClassNames("py-0", "px-m");
 
-        return header;
-    }
+    return header;
+  }
 
-    private H1 styleHeaderTitle() {
-        H1 appName = new H1("Data Manager");
-        appName.addClassNames("text-l", "m-m");
-        return appName;
-    }
+  private H1 styleHeaderTitle() {
+    H1 appName = new H1("Data Manager");
+    appName.addClassNames("text-l", "m-m");
+    return appName;
+  }
 
-    private HorizontalLayout createHeaderButtonLayout() {
-        styleHeaderButtons();
+  private HorizontalLayout createHeaderButtonLayout() {
+    styleHeaderButtons();
 
-        HorizontalLayout buttons = new HorizontalLayout(register,login);
-        buttons.addClassName("button-layout-spacing");
-        return buttons;
-    }
+    HorizontalLayout buttons = new HorizontalLayout(register, login);
+    buttons.addClassName("button-layout-spacing");
+    return buttons;
+  }
 
-    private void styleHeaderButtons() {
-        register = new Button("Register");
+  private void styleHeaderButtons() {
+    register = new Button("Register");
 
-        login = new Button("Login");
-        login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    }
-
+    login = new Button("Login");
+    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
 }

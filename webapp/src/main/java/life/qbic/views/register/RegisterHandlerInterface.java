@@ -7,10 +7,11 @@ package life.qbic.views.register;
  */
 public interface RegisterHandlerInterface {
 
-    /**
-     * Registers a {@link RegisterLayout} to an implementing class
-     * @param registerLayout The view that is being registerd
-     * @return true, if registration was successful
-     */
-    boolean register(RegisterLayout registerLayout);
+  /**
+   * Registers a {@link RegisterLayout} to an implementing class
+   *
+   * @param registerLayout The view that is being registerd
+   * @return true, if registration was successful
+   */
+  boolean register(RegisterLayout registerLayout);
 }

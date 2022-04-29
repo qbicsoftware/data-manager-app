@@ -1,7 +1,6 @@
 package life.qbic.views.register;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.Notification;
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
 import org.springframework.stereotype.Component;

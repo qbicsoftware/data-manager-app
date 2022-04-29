@@ -7,10 +7,11 @@ package life.qbic.views;
  */
 public interface MainHandlerInterface {
 
-    /**
-     * Registers the {@link MainLayout} to the implementing class
-     * @param layout The view that is being registered
-     * @return true, if registration was successful
-     */
-    boolean register(MainLayout layout);
+  /**
+   * Registers the {@link MainLayout} to the implementing class
+   *
+   * @param layout The view that is being registered
+   * @return true, if registration was successful
+   */
+  boolean register(MainLayout layout);
 }
