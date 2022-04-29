@@ -2,8 +2,8 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
-import java.util.List;
 import life.qbic.usermanagement.User;
+import life.qbic.usermanagement.User.UserException;
 import life.qbic.usermanagement.registration.RegisterUserInput;
 import life.qbic.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +35,7 @@ public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOu
     if (userRegistrationLayout != registerLayout) {
       this.userRegistrationLayout = registerLayout;
       // orchestrate view
+      initFields();
       addListener();
       // then return
       return true;
@@ -42,16 +43,38 @@ public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOu
     return false;
   }
 
+  private void initFields () {
+    userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
+    userRegistrationLayout.password.setPattern(".{8,}");
+    userRegistrationLayout.password.setErrorMessage("Password too short");
+  }
+
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
 
     userRegistrationLayout.registerButton.addClickListener(event -> {
-      var user = User.create(
-          userRegistrationLayout.password.getValue(),
-          userRegistrationLayout.fullName.getValue(),
-          userRegistrationLayout.email.getValue());
-      registerUserInput.register(user);
+      resetErrorMessages();
+      try {
+        var user = User.create(
+            userRegistrationLayout.password.getValue(),
+            userRegistrationLayout.fullName.getValue(),
+            userRegistrationLayout.email.getValue());
+        registerUserInput.register(user);
+      } catch (UserException e) {
+        handleUserException(e.getMessage());
+      }
     });
+  }
+
+  private void handleUserException(String reason) {
+    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
+      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+    }
+  }
+
+  private void resetErrorMessages() {
+    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
+    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
   }
 
   @Override

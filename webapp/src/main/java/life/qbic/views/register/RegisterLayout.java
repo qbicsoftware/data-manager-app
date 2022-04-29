@@ -137,9 +137,6 @@ public class RegisterLayout extends VerticalLayout {
 
   private void createPasswordField() {
     password = new PasswordField("Password");
-    password.setHelperText("A password must be at least 8 characters");
-    password.setPattern(".{8,}");
-    password.setErrorMessage("Not a valid password");
   }
 
   private void styleEmailField() {

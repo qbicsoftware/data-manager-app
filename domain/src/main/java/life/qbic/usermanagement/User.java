@@ -174,7 +174,7 @@ public class User {
     }
   }
 
-  static class UserException extends RuntimeException {
+  public static class UserException extends RuntimeException {
 
     private final String reason;
 
