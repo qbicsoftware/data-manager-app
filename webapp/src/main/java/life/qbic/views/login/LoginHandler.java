@@ -24,7 +24,7 @@ public class LoginHandler implements LoginHandlerInterface {
     @Override
     public boolean register(LoginLayout loginView) {
         if (registeredLoginView != loginView) {
-            this.registeredLoginView = loginView;
+            registeredLoginView = loginView;
             // orchestrate view
             addListener();
             // then return
