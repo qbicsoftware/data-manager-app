@@ -58,9 +58,9 @@ public class MainLayout extends AppLayout {
   private void createHeaderButtonLayout() {
     register = new Button("Register");
     login = new Button("Login");
-    styleHeaderButtons();
 
     buttonLayout = new HorizontalLayout(register, login);
+    styleHeaderButtons();
   }
 
   private void styleHeaderButtons() {
