@@ -11,4 +11,6 @@ public interface RegisterUserInput {
 
   void register(User user);
 
+  void setOutput(RegisterUserOutput output);
+
 }

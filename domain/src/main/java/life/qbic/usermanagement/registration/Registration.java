@@ -15,13 +15,16 @@ import life.qbic.usermanagement.repository.UserDataStorage;
  */
 public class Registration implements RegisterUserInput {
 
-  private final RegisterUserOutput registerUserOutput;
+  private RegisterUserOutput registerUserOutput;
 
   private final UserDataStorage userRepository;
 
-  public Registration(RegisterUserOutput registerUserOutput, UserDataStorage userRepository) {
-    this.registerUserOutput = registerUserOutput;
+  public Registration(UserDataStorage userRepository) {
     this.userRepository = userRepository;
+  }
+
+  public void setRegisterUserOutput(RegisterUserOutput registerUserOutput) {
+    this.registerUserOutput = registerUserOutput;
   }
 
   @Override
@@ -35,6 +38,11 @@ public class Registration implements RegisterUserInput {
       // Then execute success callback
       registerUserOutput.onSuccess();
     }
+  }
+
+  @Override
+  public void setOutput(RegisterUserOutput output) {
+    registerUserOutput = output;
   }
 
   private boolean userExists(User user) {

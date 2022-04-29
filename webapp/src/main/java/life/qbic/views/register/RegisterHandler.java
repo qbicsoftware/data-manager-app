@@ -1,12 +1,11 @@
 package life.qbic.views.register;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.Notification;
 import life.qbic.usermanagement.User;
-import life.qbic.usermanagement.persistence.UserJpaRepository;
+import life.qbic.usermanagement.registration.RegisterUserInput;
+import life.qbic.usermanagement.registration.RegisterUserOutput;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Handles the {@link RegisterLayout} components
@@ -15,21 +14,24 @@ import java.util.List;
  * the view class components
  */
 @Component
-public class RegisterHandler implements RegisterHandlerInterface {
+public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOutput {
+
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(RegisterHandler.class);
+  private RegisterLayout userRegistrationLayout;
 
-  private final UserJpaRepository userJpaRepository;
-  private RegisterLayout registeredRegisterLayout;
+  private final RegisterUserInput registerUserInput;
 
-  RegisterHandler(UserJpaRepository userJpaRepository) {
-    this.userJpaRepository = userJpaRepository;
+  @Autowired
+  RegisterHandler(RegisterUserInput registerUserInput) {
+    this.registerUserInput = registerUserInput;
+    registerUserInput.setOutput(this);
   }
 
   @Override
   public boolean register(RegisterLayout registerLayout) {
-    if (registeredRegisterLayout != registerLayout) {
-      this.registeredRegisterLayout = registerLayout;
+    if (userRegistrationLayout != registerLayout) {
+      this.userRegistrationLayout = registerLayout;
       // orchestrate view
       addListener();
       // then return
@@ -39,26 +41,24 @@ public class RegisterHandler implements RegisterHandlerInterface {
   }
 
   private void addListener() {
-    registeredRegisterLayout.registerButton.addClickListener(
-        event -> {
-          List<User> user =
-              userJpaRepository.findUsersByEmail(registeredRegisterLayout.email.getValue());
+    userRegistrationLayout.registerButton.addClickListener( e -> {
+      var user = User.create(
+          userRegistrationLayout.password.getValue(),
+          userRegistrationLayout.fullName.getValue(),
+          userRegistrationLayout.email.getValue());
+      registerUserInput.register(user);
+    });
+  }
 
-          if (user.size() > 0) {
-            Notification.show("Email is already in use!");
-          }
-          try {
-            String password = registeredRegisterLayout.password.getValue();
-            String email = registeredRegisterLayout.email.getValue();
-            String name = registeredRegisterLayout.fullName.getValue();
+  @Override
+  public void onSuccess() {
+    UI.getCurrent().navigate("/login");
+  }
 
-            User newUser = User.create(password, name, email);
-            userJpaRepository.save(newUser);
-            UI.getCurrent().navigate("login");
-          } catch (Exception e) {
-            log.error(e.getMessage());
-            Notification.show("Could not create user");
-          }
-        });
+  @Override
+  public void onFailure(String reason) {
+    // Display error to the user
+    // Stub output:
+    System.out.println(reason);
   }
 }
