@@ -112,9 +112,7 @@ public class LoginLayout extends VerticalLayout {
 
     private void stylePasswordField(){
         password = new PasswordField("Password");
-        password.setHelperText("A password must be at least 8 characters");
-        password.setPattern(".{8,}");
-        password.setErrorMessage("Not a valid password");
+        password.setErrorMessage("Wrong password");
         password.setWidthFull();
     }
 
