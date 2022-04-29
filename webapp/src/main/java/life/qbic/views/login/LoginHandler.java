@@ -1,5 +1,6 @@
 package life.qbic.views.login;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,8 @@ public class LoginHandler implements LoginHandlerInterface {
   }
 
   private void addListener() {
+    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
+
     registeredLoginView.loginButton.addClickListener(
         event -> {
           try {

@@ -1,5 +1,6 @@
 package life.qbic.views.register;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
@@ -38,6 +39,8 @@ public class RegisterHandler implements RegisterHandlerInterface {
   }
 
   private void addListener() {
+    registeredRegisterLayout.registerButton.addClickShortcut(Key.ENTER);
+
     registeredRegisterLayout.registerButton.addClickListener(
         event -> {
           List<User> user =
