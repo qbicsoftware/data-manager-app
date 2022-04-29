@@ -83,8 +83,7 @@ class RegistrationSpec extends Specification {
 
         @Override
         Optional<User> findUserById(String id) {
-            return users.stream()
-                    .filter((User user) -> { user.getId().equals(id) }).findAny()
+            return users.stream().filter( user -> user.id.equalsIgnoreCase(id)).findAny()
         }
     }
 
