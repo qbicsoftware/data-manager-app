@@ -26,8 +26,8 @@ public class MainLayout extends AppLayout {
     }
 
     private Component createHeaderContent() {
-        HorizontalLayout header = createHeaderLayout();
-        HorizontalLayout buttons = createHeaderButtonLayout();
+        var header = createHeaderLayout();
+        var buttons = createHeaderButtonLayout();
 
         addToNavbar(header, buttons);
 
@@ -37,7 +37,7 @@ public class MainLayout extends AppLayout {
     private HorizontalLayout createHeaderLayout() {
         H1 appName = styleHeaderTitle();
 
-        HorizontalLayout header = new HorizontalLayout(appName);
+        var header = new HorizontalLayout(appName);
 
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.setWidth("100%");
