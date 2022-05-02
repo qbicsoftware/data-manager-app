@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Stream;
 
 /**
- * <b> Defines the look of the handle layout. </b>
+ * <b> Defines the look of the registration layout. </b>
  *
  * @since 1.0.0
  */

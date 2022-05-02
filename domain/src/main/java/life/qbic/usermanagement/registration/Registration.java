@@ -48,7 +48,7 @@ public class Registration implements RegisterUserInput {
   }
 
   /**
-   * Sets an overrides the use case output.
+   * Sets and overrides the use case output.
    *
    * @param registerUserOutput an output interface implementation, so the use case can trigger the
    *                           callback methods after its execution
