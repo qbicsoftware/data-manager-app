@@ -17,7 +17,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.MainLayout;
-import life.qbic.views.register.RegisterLayout;
+import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.stream.Stream;
@@ -103,7 +103,7 @@ public class LoginLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink routerLink = new RouterLink("REGISTER", RegisterLayout.class);
+    RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
     registerSpan = new Span(new Text("Need an account? "), routerLink);
   }
 

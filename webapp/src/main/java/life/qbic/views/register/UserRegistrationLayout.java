@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 @Route(value = "register", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class RegisterLayout extends VerticalLayout {
+public class UserRegistrationLayout extends VerticalLayout {
 
   public EmailField email;
 
@@ -51,7 +51,7 @@ public class RegisterLayout extends VerticalLayout {
   private final VerticalLayout contentLayout;
   private H3 layoutTitle;
 
-  public RegisterLayout(@Autowired RegisterHandlerInterface registerHandler) {
+  public UserRegistrationLayout(@Autowired RegisterHandlerInterface registerHandler) {
     setId("register-view");
     contentLayout = new VerticalLayout();
 
@@ -62,9 +62,9 @@ public class RegisterLayout extends VerticalLayout {
 
   private void registerToHandler(RegisterHandlerInterface registerHandler) {
     if (registerHandler.register(this)) {
-      System.out.println("Registered RegisterHandler");
+      System.out.println("Registered UserRegistrationHandler");
     } else {
-      System.out.println("Already registered RegisterHandler");
+      System.out.println("Already registered UserRegistrationHandler");
     }
   }
 

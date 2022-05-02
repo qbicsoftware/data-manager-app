@@ -10,30 +10,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Handles the {@link RegisterLayout} components
+ * Handles the {@link UserRegistrationLayout} components
  *
  * <p>This class is responsible for enabling buttons or triggering other view relevant changes on
  * the view class components
  */
 @Component
-public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOutput {
+public class UserRegistrationHandler implements RegisterHandlerInterface, RegisterUserOutput {
 
   private static final org.apache.logging.log4j.Logger log =
-      org.apache.logging.log4j.LogManager.getLogger(RegisterHandler.class);
-  private RegisterLayout userRegistrationLayout;
+      org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
+  private UserRegistrationLayout userRegistrationLayout;
 
-  private final RegisterUserInput registerUserInput;
+  private final RegisterUserInput registrationUseCase;
 
   @Autowired
-  RegisterHandler(RegisterUserInput registerUserInput) {
-    this.registerUserInput = registerUserInput;
-    registerUserInput.setOutput(this);
+  UserRegistrationHandler(RegisterUserInput registrationUseCase) {
+    this.registrationUseCase = registrationUseCase;
+    registrationUseCase.setOutput(this);
   }
 
   @Override
-  public boolean register(RegisterLayout registerLayout) {
-    if (userRegistrationLayout != registerLayout) {
-      this.userRegistrationLayout = registerLayout;
+  public boolean register(UserRegistrationLayout registrationLayout) {
+    if (userRegistrationLayout != registrationLayout) {
+      this.userRegistrationLayout = registrationLayout;
       // orchestrate view
       initFields();
       addListener();
@@ -59,7 +59,7 @@ public class RegisterHandler implements RegisterHandlerInterface, RegisterUserOu
             userRegistrationLayout.password.getValue(),
             userRegistrationLayout.fullName.getValue(),
             userRegistrationLayout.email.getValue());
-        registerUserInput.register(user);
+        registrationUseCase.register(user);
       } catch (UserException e) {
         handleUserException(e.getMessage());
       }
