@@ -5,7 +5,7 @@ package life.qbic.views.register;
  *
  * @since 1.0.0
  */
-public interface RegisterHandlerInterface {
+public interface UserRegistrationHandlerInterface {
 
   /**
    * Registers a {@link UserRegistrationLayout} to an implementing class

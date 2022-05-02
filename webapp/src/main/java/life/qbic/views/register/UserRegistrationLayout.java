@@ -51,7 +51,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private final VerticalLayout contentLayout;
   private H3 layoutTitle;
 
-  public UserRegistrationLayout(@Autowired RegisterHandlerInterface registerHandler) {
+  public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
     setId("register-view");
     contentLayout = new VerticalLayout();
 
@@ -60,7 +60,7 @@ public class UserRegistrationLayout extends VerticalLayout {
     registerToHandler(registerHandler);
   }
 
-  private void registerToHandler(RegisterHandlerInterface registerHandler) {
+  private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
     if (registerHandler.register(this)) {
       System.out.println("Registered UserRegistrationHandler");
     } else {

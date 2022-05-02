@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * the view class components
  */
 @Component
-public class UserRegistrationHandler implements RegisterHandlerInterface, RegisterUserOutput {
+public class UserRegistrationHandler implements UserRegistrationHandlerInterface, RegisterUserOutput {
 
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
