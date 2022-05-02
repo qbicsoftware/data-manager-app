@@ -52,7 +52,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private H3 layoutTitle;
 
   public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
-    setId("register-view");
+    this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
     initLayout();
@@ -117,7 +117,7 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void styleFormLayout() {
     contentLayout.addClassNames(
-        "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full", "lumo-font-size-s", "lumo-box-shadow-size-s", "min-width-300", "max-width-15");
+        "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-s", "min-width-300px", "max-width-15vw");
     contentLayout.add(layoutTitle, errorMessage, fullName, email, password, registerButton, loginSpan);
   }
 
