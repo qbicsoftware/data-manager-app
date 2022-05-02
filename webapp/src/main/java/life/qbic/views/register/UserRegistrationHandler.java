@@ -52,23 +52,42 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
 
-    userRegistrationLayout.registerButton.addClickListener(event -> {
-      resetErrorMessages();
-      try {
-        var user = User.create(
-            userRegistrationLayout.password.getValue(),
-            userRegistrationLayout.fullName.getValue(),
-            userRegistrationLayout.email.getValue());
-        registrationUseCase.register(user);
-      } catch (UserException e) {
-        handleUserException(e.getMessage());
-      }
-    });
+    userRegistrationLayout.registerButton.addClickListener(
+        event -> {
+          resetErrorMessages();
+          setEmptyFieldsInvalid();
+          try {
+            var user =
+                User.create(
+                    userRegistrationLayout.password.getValue(),
+                    userRegistrationLayout.fullName.getValue(),
+                    userRegistrationLayout.email.getValue());
+            registrationUseCase.register(user);
+          } catch (UserException e) {
+            System.out.println(e.getMessage());
+            handleUserException(e.getMessage());
+          }
+        });
+  }
+
+  private void setEmptyFieldsInvalid() {
+    if(userRegistrationLayout.password.isEmpty()){
+      userRegistrationLayout.password.setInvalid(true);
+    }
+    if(userRegistrationLayout.fullName.isEmpty()){
+      userRegistrationLayout.fullName.setInvalid(true);
+    }
+    if(userRegistrationLayout.email.isEmpty()){
+      userRegistrationLayout.email.setInvalid(true);
+    }
   }
 
   private void handleUserException(String reason) {
     if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
       userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+    }
+    if (reason.equalsIgnoreCase("User with email address already exists.")) {
+      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
     }
   }
 

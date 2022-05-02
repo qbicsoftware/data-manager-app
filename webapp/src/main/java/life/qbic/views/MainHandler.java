@@ -1,12 +1,14 @@
 package life.qbic.views;
 
 import com.vaadin.flow.component.UI;
+import org.springframework.stereotype.Component;
 
 /**
  * <b> Handles the view elements of the {@link MainLayout}. </b>
  *
  * @since 1.0.0
  */
+@Component
 public class MainHandler implements MainHandlerInterface {
 
   private MainLayout registeredMainLayout;
