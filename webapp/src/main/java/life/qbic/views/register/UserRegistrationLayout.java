@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Stream;
 
 /**
- * <b> Defines the look of the register layout. </b>
+ * <b> Defines the look of the registration layout. </b>
  *
  * @since 1.0.0
  */
@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 @Route(value = "register", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
-public class RegisterLayout extends VerticalLayout {
+public class UserRegistrationLayout extends VerticalLayout {
 
   public EmailField email;
 
@@ -51,7 +51,7 @@ public class RegisterLayout extends VerticalLayout {
   private final VerticalLayout contentLayout;
   private H3 layoutTitle;
 
-  public RegisterLayout(@Autowired RegisterHandlerInterface registerHandler) {
+  public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
     setId("register-view");
     contentLayout = new VerticalLayout();
 
@@ -60,11 +60,11 @@ public class RegisterLayout extends VerticalLayout {
     registerToHandler(registerHandler);
   }
 
-  private void registerToHandler(RegisterHandlerInterface registerHandler) {
-    if (registerHandler.register(this)) {
-      System.out.println("Registered RegisterHandler");
+  private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
+    if (registerHandler.handle(this)) {
+      System.out.println("Registered UserRegistrationHandler");
     } else {
-      System.out.println("Already registered RegisterHandler");
+      System.out.println("Already registered UserRegistrationHandler");
     }
   }
 
@@ -137,9 +137,6 @@ public class RegisterLayout extends VerticalLayout {
 
   private void createPasswordField() {
     password = new PasswordField("Password");
-    password.setHelperText("A password must be at least 8 characters");
-    password.setPattern(".{8,}");
-    password.setErrorMessage("Not a valid password");
   }
 
   private void styleEmailField() {

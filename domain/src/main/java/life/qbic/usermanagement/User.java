@@ -6,11 +6,12 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.usermanagement.policies.*;
 
 /**
  * <b>User class</b>
- *
+ * <p>
  * User aggregate in the context of user management.
  *
  * @since 1.0.0
@@ -28,6 +29,8 @@ public class User {
   private String email;
 
   private String encryptedPassword;
+
+  private boolean emailConfirmed;
 
   protected User() {
 
@@ -146,8 +149,17 @@ public class User {
     return this.email;
   }
 
+  public boolean isEmailConfirmed() {
+    return this.emailConfirmed;
+  }
+
+  public void setEmailConfirmed(boolean emailConfirmed) {
+    this.emailConfirmed = emailConfirmed;
+  }
+
   /**
    * Checks if a given password is correct for a user
+   *
    * @param password Password that is being validated
    * @return true, if the given password is correct for the user
    */
@@ -162,7 +174,7 @@ public class User {
     }
   }
 
-  static class UserException extends RuntimeException {
+  public static class UserException extends RuntimeException {
 
     private final String reason;
 

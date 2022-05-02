@@ -1,7 +1,7 @@
 package life.qbic.views.login;
 
 /**
- * <b> Interface to register the {@link LoginLayout} to the {@link LoginHandler}. </b>
+ * <b> Interface to handle the {@link LoginLayout} to the {@link LoginHandler}. </b>
  *
  * @since 1.0.0
  */
