@@ -14,7 +14,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  *
  * @since 1.0.0
  */
-@CssImport("./styles/views/login/error-message.css")
 public class ErrorMessage extends Composite<VerticalLayout> {
 
   private String descriptionText;
@@ -45,7 +44,7 @@ public class ErrorMessage extends Composite<VerticalLayout> {
     styleDescriptionDiv();
 
     this.getContent().add(titleSpan, descriptionDiv);
-    this.getContent().addClassNames("p-xs", "text-error", "bg-error-10pct");
+    this.getContent().addClassNames("p-xs", "text-error", "bg-error-10");
   }
 
   private void createDescriptionText(String descriptionText) {
