@@ -117,7 +117,7 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void styleFormLayout() {
     contentLayout.addClassNames(
-        "bg-base", "border", "border-contrast-10", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
+        "bg-base", "border", "rounded-m", "border-contrast-10", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
     contentLayout.add(layoutTitle, errorMessage, alreadyUsedEmailMessage, passwordTooShortMessage, fullName, email, password, registerButton, loginSpan);
   }
 

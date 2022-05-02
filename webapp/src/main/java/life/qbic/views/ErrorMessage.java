@@ -44,7 +44,7 @@ public class ErrorMessage extends Composite<VerticalLayout> {
     styleDescriptionDiv();
 
     this.getContent().add(titleSpan, descriptionDiv);
-    this.getContent().addClassNames("p-xs", "text-error", "bg-error-10");
+    this.getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");
   }
 
   private void createDescriptionText(String descriptionText) {
@@ -63,7 +63,7 @@ public class ErrorMessage extends Composite<VerticalLayout> {
     titleSpan = new Span(icon, this.titleTextSpan);
   }
   private void styleTitleSpan() {
-    titleSpan.addClassNames("flex", "items-center", "gap-xs");
+    titleSpan.addClassNames("flex", "items-center", "gap-s");
     titleTextSpan.addClassName("font-bold");
   }
 }
