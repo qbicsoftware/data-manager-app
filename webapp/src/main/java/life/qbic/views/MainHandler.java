@@ -12,7 +12,7 @@ public class MainHandler implements MainHandlerInterface {
   private MainLayout registeredMainLayout;
 
   @Override
-  public boolean register(MainLayout layout) {
+  public boolean handle(MainLayout layout) {
     if (registeredMainLayout != layout) {
       this.registeredMainLayout = layout;
       // orchestrate view

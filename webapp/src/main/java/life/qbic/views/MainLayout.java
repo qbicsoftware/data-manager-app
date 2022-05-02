@@ -1,6 +1,5 @@
 package life.qbic.views;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,6 +8,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b> The main view is a top-level placeholder for other views. </b>
@@ -25,9 +25,20 @@ public class MainLayout extends AppLayout {
   private HorizontalLayout buttonLayout;
   private HorizontalLayout headerLayout;
 
-  public MainLayout() {
+  public MainLayout(@Autowired MainHandlerInterface mainHandlerInterface) {
     createHeaderContent();
+    registerToHandler(mainHandlerInterface);
   }
+
+
+  private void registerToHandler(MainHandlerInterface mainHandler) {
+    if (mainHandler.handle(this)) {
+      System.out.println("Registered main layout handler");
+    } else {
+      System.out.println("Already registered main layout handler");
+    }
+  }
+
 
   private void createHeaderContent() {
     createHeaderLayout();

@@ -23,7 +23,7 @@ public class LoginHandler implements LoginHandlerInterface {
   }
 
   @Override
-  public boolean register(LoginLayout loginView) {
+  public boolean handle(LoginLayout loginView) {
     if (registeredLoginView != loginView) {
       registeredLoginView = loginView;
       // orchestrate view
