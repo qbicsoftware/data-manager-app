@@ -32,7 +32,7 @@ public class MainHandler implements MainHandlerInterface {
 
     registeredMainLayout.register.addClickListener(
         event -> {
-          UI.getCurrent().navigate("handle");
+          UI.getCurrent().navigate("register");
         });
   }
 }

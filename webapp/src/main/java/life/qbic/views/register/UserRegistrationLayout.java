@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * @since 1.0.0
  */
 @PageTitle("Register")
-@Route(value = "handle", layout = MainLayout.class)
+@Route(value = "register", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
 public class UserRegistrationLayout extends VerticalLayout {
@@ -52,7 +52,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private H3 layoutTitle;
 
   public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
-    setId("handle-view");
+    setId("register-view");
     contentLayout = new VerticalLayout();
 
     initLayout();
