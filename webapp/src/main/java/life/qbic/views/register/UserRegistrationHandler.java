@@ -31,7 +31,7 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   }
 
   @Override
-  public boolean register(UserRegistrationLayout registrationLayout) {
+  public boolean handle(UserRegistrationLayout registrationLayout) {
     if (userRegistrationLayout != registrationLayout) {
       this.userRegistrationLayout = registrationLayout;
       // orchestrate view

@@ -24,12 +24,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Stream;
 
 /**
- * <b> Defines the look of the register layout. </b>
+ * <b> Defines the look of the handle layout. </b>
  *
  * @since 1.0.0
  */
 @PageTitle("Register")
-@Route(value = "register", layout = MainLayout.class)
+@Route(value = "handle", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
 public class UserRegistrationLayout extends VerticalLayout {
@@ -52,7 +52,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private H3 layoutTitle;
 
   public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
-    setId("register-view");
+    setId("handle-view");
     contentLayout = new VerticalLayout();
 
     initLayout();
@@ -61,7 +61,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
-    if (registerHandler.register(this)) {
+    if (registerHandler.handle(this)) {
       System.out.println("Registered UserRegistrationHandler");
     } else {
       System.out.println("Already registered UserRegistrationHandler");
