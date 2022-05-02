@@ -98,7 +98,7 @@ public class LoginLayout extends VerticalLayout {
 
   private void styleFormLayout() {
     contentLayout.addClassNames(
-        "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-s", "min-width-300px", "max-width-15vw");
+        "bg-base", "border", "border-contrast-10", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
     contentLayout.add(layoutTitle, errorMessage, email, password, loginButton, registerSpan);
   }
 
