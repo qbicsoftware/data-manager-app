@@ -1,7 +1,7 @@
 package life.qbic.views;
 
 /**
- * <b> Interface to register the {@link MainLayout} to the {@link MainHandler}. </b>
+ * <b> Interface to handle the {@link MainLayout} to the {@link MainHandler}. </b>
  *
  * @since 1.0.0
  */
