@@ -123,6 +123,15 @@ public class User {
   }
 
   /**
+   * Get access to the encrypted password
+   * @return the password
+   * @since 1.0.0
+   */
+  public String getEncryptedPassword() {
+    return this.encryptedPassword;
+  }
+
+  /**
    * Sets the email address for the current user.
    * <p>
    * This method will throw an {@link UserException} if the email address format seems not to be a

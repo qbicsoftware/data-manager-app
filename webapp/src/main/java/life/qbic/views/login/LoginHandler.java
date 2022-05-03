@@ -37,21 +37,11 @@ public class LoginHandler implements LoginHandlerInterface {
 
   private void addListener() {
     registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
+    registeredLoginView.loginButton.getElement().setProperty("action", "login");
 
     registeredLoginView.loginButton.addClickListener(
         event -> {
-          try {
-            var users = userRepository.findUsersByEmail(registeredLoginView.email.getValue());
-            if (users.get(0).checkPassword(registeredLoginView.password.getValue())) {
-              // todo authorization: show the correct route now --> security context
               UI.getCurrent().navigate("about"); // could be dashboard later
-            } else {
-              registeredLoginView.errorMessage.setVisible(true);
-            }
-          } catch (RuntimeException r) {
-            // todo show error in ui
-            registeredLoginView.errorMessage.setVisible(true);
-          }
         });
   }
 }

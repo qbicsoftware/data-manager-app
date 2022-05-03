@@ -13,7 +13,7 @@ import life.qbic.views.MainLayout;
 
 @PageTitle("About")
 @Route(value = "about", layout = MainLayout.class)
-@AnonymousAllowed //todo change back to allowAll only for testing login
+@PermitAll //todo change back to allowAll only for testing login
 public class AboutView extends VerticalLayout {
 
     public AboutView() {

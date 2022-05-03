@@ -16,7 +16,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticatedUser {
 
-    //todo wire userrepo into this class
+    private final UserRepository userRepository;
+
+    public AuthenticatedUser() {
+        this.userRepository = null;
+    }
+
+    @Autowired
+    public AuthenticatedUser(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     private Optional<Authentication> getAuthentication() {
         SecurityContext context = SecurityContextHolder.getContext();
@@ -26,7 +35,8 @@ public class AuthenticatedUser {
 
     public Optional<User> get() {
         //todo return a user from an authenticated context
-        return null;
+        return getAuthentication().flatMap(
+            authentication -> userRepository.findByEmail(authentication.getName()));
     }
 
     public void logout() {

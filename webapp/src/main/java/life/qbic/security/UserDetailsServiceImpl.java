@@ -15,13 +15,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private final UserRepository userRepository;
 
+    UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //todo fix me: find user by username and return user details such as name, passwordhash and authorities
-
-        return null;
+        var user = userRepository.findByEmail(username);
+        return new QbicUserDetails(user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
     }
 
     private static List<GrantedAuthority> getAuthorities(User testUser) {
