@@ -14,16 +14,16 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Component;
 
 @Component
-public class AuthenticatedUser {
+public class SecurityService {
 
     private final UserRepository userRepository;
 
-    public AuthenticatedUser() {
+    public SecurityService() {
         this.userRepository = null;
     }
 
     @Autowired
-    public AuthenticatedUser(UserRepository userRepository) {
+    public SecurityService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 

@@ -158,6 +158,10 @@ public class User {
     return this.email;
   }
 
+  public String getFullName() {
+    return this.fullName;
+  }
+
   public boolean isEmailConfirmed() {
     return this.emailConfirmed;
   }
