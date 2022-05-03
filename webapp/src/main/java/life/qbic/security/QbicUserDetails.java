@@ -1,6 +1,5 @@
 package life.qbic.security;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.usermanagement.User;
@@ -30,7 +29,6 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public String getPassword() {
-    System.out.println("???" + user.getEncryptedPassword());
     return user.getEncryptedPassword();
   }
 

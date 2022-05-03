@@ -24,14 +24,12 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
         return new PasswordEncoder() {
             @Override
             public String encode(CharSequence rawPassword) {
-                System.out.println(rawPassword);
                 return new String(Base64.getEncoder().encode(rawPassword.toString().getBytes()));
             }
 
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                System.out.println("matches?" + rawPassword);
                 return encode(rawPassword).equalsIgnoreCase(encodedPassword);
             }
         };

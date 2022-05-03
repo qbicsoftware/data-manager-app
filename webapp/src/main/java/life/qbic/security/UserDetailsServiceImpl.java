@@ -25,8 +25,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         var user = userRepository.findByEmail(username);
-        System.out.println(username);
-        System.out.println(user.get().getEncryptedPassword());
         return new QbicUserDetails(user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
     }
 
