@@ -18,11 +18,9 @@ import life.qbic.views.register.UserRegistrationLayout;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Defines the layout and look of the login view. </b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @PageTitle("Login")
 @Route(value = "login", layout = MainLayout.class)
