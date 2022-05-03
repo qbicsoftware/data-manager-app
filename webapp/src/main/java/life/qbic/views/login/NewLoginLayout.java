@@ -56,9 +56,9 @@ public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserve
   private void styleLayout() {
     styleFormLayout();
 
-    LoginI18n l = LoginI18n.createDefault();
-    l.getForm().setUsername("Email");
-    loginForm.setI18n(l);
+    LoginI18n i18n = LoginI18n.createDefault();
+    i18n.getForm().setUsername("Email");
+    loginForm.setI18n(i18n);
 
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
