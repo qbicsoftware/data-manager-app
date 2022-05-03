@@ -27,10 +27,10 @@ import java.util.stream.Stream;
  *
  * @since 1.0.0
  */
-@PageTitle("Login")
+//@PageTitle("Login")
 //@Route(value = "login", layout = MainLayout.class)
-@AnonymousAllowed
-@CssImport("./styles/views/login/login-view.css")
+//@AnonymousAllowed
+//@CssImport("./styles/views/login/login-view.css")
 public class LoginLayout extends VerticalLayout {
 
   public EmailField email;

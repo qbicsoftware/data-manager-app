@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Login")
 @Route(value = "login", layout = MainLayout.class)
-@AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
 public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserver {
 

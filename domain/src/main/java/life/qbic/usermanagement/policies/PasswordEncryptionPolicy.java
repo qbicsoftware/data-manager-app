@@ -18,6 +18,12 @@ import javax.crypto.spec.PBEKeySpec;
  */
 public class PasswordEncryptionPolicy {
 
+  private static final int ITERATION_INDEX = 0;
+  private static final int SALT_INDEX = 1;
+  private static final int HASH_INDEX = 2;
+  private static final int ITERATIONS = 65536;
+  private static final int KEY_BYTES = 20;
+  private static final int SALT_BYTES = 20;
   private static PasswordEncryptionPolicy INSTANCE;
 
   /**
@@ -44,14 +50,70 @@ public class PasswordEncryptionPolicy {
    */
   public String encrypt(String password) {
     SecureRandom random = new SecureRandom();
-    byte[] salt = new byte[16];
+    byte[] salt = new byte[SALT_BYTES];
     random.nextBytes(salt);
-    KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
-    SecretKeyFactory factory = tryToGetSecretKeyFactory();
-    return new String(tryToGetSecretKey(factory, spec).getEncoded());
+    byte[] hash = pbkdf2(password.toCharArray(), salt, ITERATIONS);
+    return ITERATIONS + ":" + toHex(salt) + ":" + toHex(hash);
   }
 
-  private SecretKeyFactory tryToGetSecretKeyFactory() {
+  private static byte[] pbkdf2(char[] password, byte[] salt, int iterations) {
+    KeySpec spec = new PBEKeySpec(password, salt, iterations,
+        PasswordEncryptionPolicy.KEY_BYTES * 8);
+    SecretKeyFactory factory = getSecretKeyFactory();
+    return createSecretKey(factory, spec).getEncoded();
+  }
+
+  /**
+   * Compares a provided password with an encrypted hash.
+   *
+   * @param password
+   * @param encryptedHash
+   * @return
+   * @since
+   */
+  public boolean comparePassword(String password, String encryptedHash) {
+    String[] passwordParameters = encryptedHash.split(":");
+    int iterations = Integer.parseInt(passwordParameters[ITERATION_INDEX]);
+    byte[] salt = fromHex(passwordParameters[SALT_INDEX]);
+    byte[] hash = fromHex(passwordParameters[HASH_INDEX]);
+
+    byte[] potentialPassword = pbkdf2(password.toCharArray(), salt, iterations);
+    return validate(potentialPassword, hash);
+  }
+
+  /**
+   * Slow comparison method, making it impossible for timing attacks to reverse-engineer the hash.
+   *
+   * @param a one byte array
+   * @param b another byte array to compare
+   * @return true, if both passwords are equal, else false
+   * @since 1.0.0
+   */
+  private static boolean validate(byte[] a, byte[] b) {
+    int difference = a.length ^ b.length;
+    for (int i = 0; i < a.length && i < b.length; i++) {
+      difference |= a[i] ^ b[i];
+    }
+    return difference == 0;
+  }
+
+  private static String toHex(byte[] bytes) {
+    StringBuilder builder = new StringBuilder();
+    for (byte abyte : bytes) {
+      builder.append(String.format("%02x", abyte));
+    }
+    return builder.toString();
+  }
+
+  private static byte[] fromHex(String hex) {
+    byte[] binary = new byte[hex.length() / 2];
+    for (int i = 0; i < binary.length; i++) {
+      binary[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+    }
+    return binary;
+  }
+
+  private static SecretKeyFactory getSecretKeyFactory() {
     try {
       return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
     } catch (NoSuchAlgorithmException ignored) {
@@ -59,7 +121,7 @@ public class PasswordEncryptionPolicy {
     }
   }
 
-  private SecretKey tryToGetSecretKey(SecretKeyFactory factory, KeySpec keySpec) {
+  private static SecretKey createSecretKey(SecretKeyFactory factory, KeySpec keySpec) {
     try {
       return factory.generateSecret(keySpec);
     } catch (InvalidKeySpecException ignored) {

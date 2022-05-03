@@ -19,6 +19,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.MainLayout;
 import life.qbic.views.login.LoginLayout;
+import life.qbic.views.login.NewLoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.stream.Stream;
@@ -30,8 +31,8 @@ import java.util.stream.Stream;
  */
 @PageTitle("Register")
 @Route(value = "register", layout = MainLayout.class)
-@AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
+@AnonymousAllowed
 public class UserRegistrationLayout extends VerticalLayout {
 
   public EmailField email;
@@ -51,7 +52,9 @@ public class UserRegistrationLayout extends VerticalLayout {
   private final VerticalLayout contentLayout;
   private H3 layoutTitle;
 
-  public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
+  @Autowired
+  public UserRegistrationLayout( UserRegistrationHandlerInterface registerHandler) {
+
     this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
@@ -122,7 +125,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
+    RouterLink link = new RouterLink("LOGIN", NewLoginLayout.class);
     loginSpan = new Span(new Text("Already have an account? "), link);
   }
 

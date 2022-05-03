@@ -24,7 +24,7 @@ class UserSpec extends Specification {
         generatedUserIds.add(user.getId())
 
         where:
-        run << (1..10_000)
+        run << (1..100)
     }
 
     def "When a weak password is provided, throw a user exception"() {
