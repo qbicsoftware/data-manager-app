@@ -1,18 +1,20 @@
 package life.qbic.views;
 
 import com.vaadin.flow.component.UI;
+import org.springframework.stereotype.Component;
 
 /**
  * <b> Handles the view elements of the {@link MainLayout}. </b>
  *
  * @since 1.0.0
  */
+@Component
 public class MainHandler implements MainHandlerInterface {
 
   private MainLayout registeredMainLayout;
 
   @Override
-  public boolean register(MainLayout layout) {
+  public boolean handle(MainLayout layout) {
     if (registeredMainLayout != layout) {
       this.registeredMainLayout = layout;
       // orchestrate view

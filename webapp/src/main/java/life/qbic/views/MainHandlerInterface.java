@@ -13,5 +13,5 @@ public interface MainHandlerInterface {
    * @param layout The view that is being registered
    * @return true, if registration was successful
    */
-  boolean register(MainLayout layout);
+  boolean handle(MainLayout layout);
 }

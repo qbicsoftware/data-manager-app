@@ -1,12 +1,7 @@
-#login-view{
-    display: grid;
+.max-width-15vw{
+    max-width: 15vw;
 }
 
-#register-view{
-    display: grid;
-}
-
-.error-10pct {
-    background-color: var(--lumo-error-color-10pct);
-    color: var(--lumo-error-text-color);
+.min-width-300px {
+    min-width: 300px;
 }

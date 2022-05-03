@@ -14,13 +14,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  *
  * @since 1.0.0
  */
-@CssImport("./styles/views/login/login-view.css")
 public class ErrorMessage extends Composite<VerticalLayout> {
 
   private String descriptionText;
   private String titleText;
 
-  private Span icon;
   private Span titleSpan;
   public Span titleTextSpan;
 
@@ -46,8 +44,7 @@ public class ErrorMessage extends Composite<VerticalLayout> {
     styleDescriptionDiv();
 
     this.getContent().add(titleSpan, descriptionDiv);
-    this.getContent().addClassName("error-10pct");
-    this.getContent().getStyle().set("padding", "var(--lumo-space-xs");
+    this.getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");
   }
 
   private void createDescriptionText(String descriptionText) {
@@ -56,16 +53,17 @@ public class ErrorMessage extends Composite<VerticalLayout> {
   }
 
   private void styleDescriptionDiv() {
-    descriptionDiv.getStyle().set("padding", "var(--lumo-space-m");
+    this.descriptionDiv.addClassNames("text-left", "mx-l");
   }
 
   private void createTitle(String titleText) {
-    icon = new Span(new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O));
+    Icon icon = new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O);
+    icon.addClassName("icon-s");
     this.titleTextSpan = new Span(titleText);
     titleSpan = new Span(icon, this.titleTextSpan);
   }
-
   private void styleTitleSpan() {
-    icon.getStyle().set("padding", "var(--lumo-space-xs");
+    titleSpan.addClassNames("flex", "items-center", "gap-s");
+    titleTextSpan.addClassName("font-bold");
   }
 }

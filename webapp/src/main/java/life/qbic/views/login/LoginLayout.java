@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -48,7 +47,7 @@ public class LoginLayout extends VerticalLayout {
   private H3 layoutTitle;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
-    setId("login-view");
+    this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
     initLayout();
@@ -57,7 +56,7 @@ public class LoginLayout extends VerticalLayout {
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
-    if (loginHandler.register(this)) {
+    if (loginHandler.handle(this)) {
       System.out.println("Registered login handler");
     } else {
       System.out.println("Already registered login handler");
@@ -99,7 +98,7 @@ public class LoginLayout extends VerticalLayout {
 
   private void styleFormLayout() {
     contentLayout.addClassNames(
-        "bg-base", "border", "border-contrast-30", "box-border", "flex", "flex-col", "w-full");
+        "bg-base", "border", "border-contrast-10", "rounded-m", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
     contentLayout.add(layoutTitle, errorMessage, email, password, loginButton, registerSpan);
   }
 
