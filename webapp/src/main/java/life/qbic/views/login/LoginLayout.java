@@ -46,13 +46,13 @@ public class LoginLayout extends VerticalLayout {
   private final VerticalLayout contentLayout;
   private H3 layoutTitle;
 
-  public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
+  public LoginLayout() {
     this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
     initLayout();
     styleLayout();
-    registerToHandler(loginHandlerInterface);
+    //registerToHandler(loginHandlerInterface);
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
