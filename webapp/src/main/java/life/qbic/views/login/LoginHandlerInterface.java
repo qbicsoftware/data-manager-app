@@ -12,6 +12,6 @@ public interface LoginHandlerInterface {
    * @param loginView The view that is being registered
    * @return true, if registration was successful
    */
-  boolean handle(LoginLayout loginView);
+  boolean handle(NewLoginLayout loginView);
 
 }

@@ -16,14 +16,14 @@ public class LoginHandler implements LoginHandlerInterface {
 
   private final UserJpaRepository userRepository;
 
-  private LoginLayout registeredLoginView;
+  private NewLoginLayout registeredLoginView;
 
   LoginHandler(@Autowired UserJpaRepository repository) {
     this.userRepository = repository;
   }
 
   @Override
-  public boolean handle(LoginLayout loginView) {
+  public boolean handle(NewLoginLayout loginView) {
     if (registeredLoginView != loginView) {
       registeredLoginView = loginView;
       // orchestrate view
@@ -36,12 +36,13 @@ public class LoginHandler implements LoginHandlerInterface {
   }
 
   private void addListener() {
-    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
+    registeredLoginView.loginForm.addLoginListener(System.out::println);
+    /*registeredLoginView..addClickShortcut(Key.ENTER);
     registeredLoginView.loginButton.getElement().setProperty("action", "login");
 
     registeredLoginView.loginButton.addClickListener(
         event -> {
               UI.getCurrent().navigate("about"); // could be dashboard later
-        });
+        });*/
   }
 }

@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * @since 1.0.0
  */
 @PageTitle("Login")
-@Route(value = "login", layout = MainLayout.class)
+//@Route(value = "login", layout = MainLayout.class)
 @AnonymousAllowed
 @CssImport("./styles/views/login/login-view.css")
 public class LoginLayout extends VerticalLayout {
@@ -56,11 +56,13 @@ public class LoginLayout extends VerticalLayout {
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
+    /*
     if (loginHandler.handle(this)) {
       System.out.println("Registered login handler");
     } else {
       System.out.println("Already registered login handler");
     }
+    */
   }
 
   private void initLayout() {

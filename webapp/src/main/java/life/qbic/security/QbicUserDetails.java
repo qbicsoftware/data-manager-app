@@ -1,8 +1,11 @@
 package life.qbic.security;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import life.qbic.usermanagement.User;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -22,11 +25,12 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return null;
+    return List.of(new SimpleGrantedAuthority("USER"));
   }
 
   @Override
   public String getPassword() {
+    System.out.println("???" + user.getEncryptedPassword());
     return user.getEncryptedPassword();
   }
 
@@ -52,6 +56,6 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return user.isEmailConfirmed();
+    return true;
   }
 }

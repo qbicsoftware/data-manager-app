@@ -4,6 +4,7 @@ import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.spring.security.VaadinWebSecurityConfigurerAdapter;
 import java.util.Base64;
 import life.qbic.views.login.LoginLayout;
+import life.qbic.views.login.NewLoginLayout;
 import org.apache.catalina.security.SecurityUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,12 +24,14 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
         return new PasswordEncoder() {
             @Override
             public String encode(CharSequence rawPassword) {
+                System.out.println(rawPassword);
                 return new String(Base64.getEncoder().encode(rawPassword.toString().getBytes()));
             }
 
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                System.out.println("matches?" + rawPassword);
                 return encode(rawPassword).equalsIgnoreCase(encodedPassword);
             }
         };
@@ -36,8 +39,8 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-         super.configure(http);
-        setLoginView(http, LoginLayout.class, LOGOUT_URL);
+        super.configure(http);
+        setLoginView(http, NewLoginLayout.class, LOGOUT_URL);
     }
 
     @Override
