@@ -15,6 +15,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.UserRegistrationLayout;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -34,11 +35,12 @@ public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserve
   public LoginForm loginForm;
   public Span registerSpan;
 
-  public NewLoginLayout() {
+  public NewLoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
 
     initLayout();
     styleLayout();
+    registerToHandler(loginHandlerInterface);
   }
 
   private void initLayout() {
@@ -51,6 +53,14 @@ public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserve
     contentLayout.add(loginForm, registerSpan);
 
     add(contentLayout);
+  }
+
+  private void registerToHandler(LoginHandlerInterface loginHandler) {
+    if (loginHandler.handle(this)) {
+      System.out.println("Registered login handler");
+    } else {
+      System.out.println("Already registered login handler");
+    }
   }
 
   private void styleLayout() {
