@@ -6,6 +6,7 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -54,6 +55,10 @@ public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserve
 
   private void styleLayout() {
     styleFormLayout();
+
+    LoginI18n l = LoginI18n.createDefault();
+    l.getForm().setUsername("Email");
+    loginForm.setI18n(l);
 
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
