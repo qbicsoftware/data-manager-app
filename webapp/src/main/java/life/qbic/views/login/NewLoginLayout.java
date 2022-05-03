@@ -1,22 +1,21 @@
 package life.qbic.views.login;
 
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import life.qbic.views.ErrorMessage;
+import java.util.List;
 import life.qbic.views.MainLayout;
 import life.qbic.views.register.UserRegistrationLayout;
-
-import java.util.List;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -84,6 +83,5 @@ public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserve
     if (beforeEnterEvent.getLocation().getQueryParameters().getParameters().containsKey("error")) {
       loginForm.setError(true);
     }
-
   }
 }
