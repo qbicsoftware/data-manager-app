@@ -3,8 +3,8 @@ package life.qbic.security;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
 import java.util.Optional;
-import life.qbic.data.entity.TestUser;
-import life.qbic.data.service.UserRepository;
+import life.qbic.usermanagement.User;
+import life.qbic.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,8 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticatedUser {
 
-    @Autowired
-    private UserRepository userRepository;
+    //todo wire userrepo into this class
 
     private Optional<Authentication> getAuthentication() {
         SecurityContext context = SecurityContextHolder.getContext();
@@ -25,8 +24,9 @@ public class AuthenticatedUser {
                 .filter(authentication -> !(authentication instanceof AnonymousAuthenticationToken));
     }
 
-    public Optional<TestUser> get() {
-        return getAuthentication().map(authentication -> userRepository.findByUsername(authentication.getName()));
+    public Optional<User> get() {
+        //todo return a user from an authenticated context
+        return null;
     }
 
     public void logout() {

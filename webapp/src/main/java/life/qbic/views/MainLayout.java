@@ -1,143 +1,81 @@
 package life.qbic.views;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.contextmenu.ContextMenu;
-import com.vaadin.flow.component.dependency.NpmPackage;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.html.ListItem;
-import com.vaadin.flow.component.html.Nav;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.html.UnorderedList;
-import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.server.auth.AccessAnnotationChecker;
-import java.util.Optional;
-import life.qbic.data.entity.TestUser;
-import life.qbic.security.AuthenticatedUser;
-import life.qbic.views.about.AboutView;
-import life.qbic.views.helloworld.HelloWorldView;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * The main view is a top-level placeholder for other views.
+ * <b> The main view is a top-level placeholder for other views. </b>
+ *
+ * @since 1.0.0
  */
+@PageTitle("Data Manager ")
+@Route(value = "data")
 public class MainLayout extends AppLayout {
 
-    /**
-     * A simple navigation item component, based on ListItem element.
-     */
-    public static class MenuItemInfo extends ListItem {
+  public Button register;
+  public Button login;
 
-        private final Class<? extends Component> view;
+  private HorizontalLayout buttonLayout;
+  private HorizontalLayout headerLayout;
 
-        public MenuItemInfo(String menuTitle, String iconClass, Class<? extends Component> view) {
-            this.view = view;
-            RouterLink link = new RouterLink();
-            // Use Lumo classnames for various styling
-            link.addClassNames("flex", "h-m", "items-center", "px-s", "relative", "text-secondary");
-            link.setRoute(view);
+  public MainLayout(@Autowired MainHandlerInterface mainHandlerInterface) {
+    createHeaderContent();
+    registerToHandler(mainHandlerInterface);
+  }
 
-            Span text = new Span(menuTitle);
-            // Use Lumo classnames for various styling
-            text.addClassNames("font-medium", "text-s", "whitespace-nowrap");
 
-            link.add(new LineAwesomeIcon(iconClass), text);
-            add(link);
-        }
-
-        public Class<?> getView() {
-            return view;
-        }
-
-        /**
-         * Simple wrapper to create icons using LineAwesome iconset. See
-         * https://icons8.com/line-awesome
-         */
-        @NpmPackage(value = "line-awesome", version = "1.3.0")
-        public static class LineAwesomeIcon extends Span {
-            public LineAwesomeIcon(String lineawesomeClassnames) {
-                // Use Lumo classnames for suitable font size and margin
-                addClassNames("me-s", "text-l");
-                if (!lineawesomeClassnames.isEmpty()) {
-                    addClassNames(lineawesomeClassnames);
-                }
-            }
-        }
-
+  private void registerToHandler(MainHandlerInterface mainHandler) {
+    if (mainHandler.handle(this)) {
+      System.out.println("Registered main layout handler");
+    } else {
+      System.out.println("Already registered main layout handler");
     }
+  }
 
-    private AuthenticatedUser authenticatedUser;
-    private AccessAnnotationChecker accessChecker;
 
-    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker) {
-        this.authenticatedUser = authenticatedUser;
-        this.accessChecker = accessChecker;
+  private void createHeaderContent() {
+    createHeaderLayout();
+    createHeaderButtonLayout();
 
-        addToNavbar(createHeaderContent());
-    }
+    addToNavbar(headerLayout, buttonLayout);
+  }
 
-    private Component createHeaderContent() {
-        Header header = new Header();
-        header.addClassNames("bg-base", "border-b", "border-contrast-10", "box-border", "flex", "flex-col", "w-full");
+  private void createHeaderLayout() {
+    H1 appName = styleHeaderTitle();
+    headerLayout = new HorizontalLayout(appName);
 
-        Div layout = new Div();
-        layout.addClassNames("flex", "h-xl", "items-center", "px-l");
+    styleHeaderLayout();
+  }
 
-        H1 appName = new H1("Data Manager");
-        appName.addClassNames("my-0", "me-auto", "text-l");
-        layout.add(appName);
+  private void styleHeaderLayout() {
+    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+    headerLayout.setWidth("100%");
+    headerLayout.addClassNames("py-0", "px-m");
+  }
 
-        Optional<TestUser> maybeUser = authenticatedUser.get();
-        if (maybeUser.isPresent()) {
-            TestUser testUser = maybeUser.get();
+  private H1 styleHeaderTitle() {
+    H1 appName = new H1("Data Manager");
+    appName.addClassNames("text-l", "m-m");
+    return appName;
+  }
 
-            Avatar avatar = new Avatar(testUser.getName(), testUser.getProfilePictureUrl());
-            avatar.addClassNames("me-xs");
+  private void createHeaderButtonLayout() {
+    register = new Button("Register");
+    login = new Button("Login");
 
-            ContextMenu userMenu = new ContextMenu(avatar);
-            userMenu.setOpenOnClick(true);
-            userMenu.addItem("Logout", e -> {
-                authenticatedUser.logout();
-            });
+    buttonLayout = new HorizontalLayout(register, login);
+    styleHeaderButtons();
+  }
 
-            Span name = new Span(testUser.getName());
-            name.addClassNames("font-medium", "text-s", "text-secondary");
-
-            layout.add(avatar, name);
-        } else {
-            Anchor loginLink = new Anchor("login", "Sign in");
-            layout.add(loginLink);
-        }
-
-        Nav nav = new Nav();
-        nav.addClassNames("flex", "gap-s", "overflow-auto", "px-m");
-
-        // Wrap the links in a list; improves accessibility
-        UnorderedList list = new UnorderedList();
-        list.addClassNames("flex", "list-none", "m-0", "p-0");
-        nav.add(list);
-
-        for (MenuItemInfo menuItem : createMenuItems()) {
-            if (accessChecker.hasAccess(menuItem.getView())) {
-                list.add(menuItem);
-            }
-
-        }
-
-        header.add(layout, nav);
-        return header;
-    }
-
-    private MenuItemInfo[] createMenuItems() {
-        return new MenuItemInfo[]{ //
-                new MenuItemInfo("Hello World", "la la-globe", HelloWorldView.class), //
-
-                new MenuItemInfo("About", "la la-file", AboutView.class), //
-
-        };
-    }
-
+  private void styleHeaderButtons() {
+    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    buttonLayout.addClassName("button-layout-spacing");
+  }
 }

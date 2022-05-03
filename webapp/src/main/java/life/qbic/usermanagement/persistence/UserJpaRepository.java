@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * <b>User JPA repository</b>
  * <p>
- * Implementation fo the {@link UserDataStorage} interface.
+ * Implementation for the {@link UserDataStorage} interface.
  * <p>
  * This class serves as an adapter and proxies requests to an JPA implementation to interact with
  * persistent {@link User} data in the storage layer.

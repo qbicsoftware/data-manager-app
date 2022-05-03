@@ -1,7 +1,7 @@
 package life.qbic.security;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurityConfigurerAdapter;
-import life.qbic.views.login.LoginView;
+import life.qbic.views.login.LoginLayout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,7 +25,7 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
 
         super.configure(http);
-        setLoginView(http, LoginView.class, LOGOUT_URL);
+        setLoginView(http, LoginLayout.class, LOGOUT_URL);
     }
 
     @Override
