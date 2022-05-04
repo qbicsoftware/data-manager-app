@@ -14,14 +14,14 @@ public class LoginHandler implements LoginHandlerInterface {
 
   private final UserJpaRepository userRepository;
 
-  private NewLoginLayout registeredLoginView;
+  private LoginLayout registeredLoginView;
 
   LoginHandler(@Autowired UserJpaRepository repository) {
     this.userRepository = repository;
   }
 
   @Override
-  public boolean handle(NewLoginLayout loginView) {
+  public boolean handle(LoginLayout loginView) {
     if (registeredLoginView != loginView) {
       registeredLoginView = loginView;
       // orchestrate view
