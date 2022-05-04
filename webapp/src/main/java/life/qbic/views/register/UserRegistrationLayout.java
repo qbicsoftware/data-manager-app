@@ -5,7 +5,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -18,7 +18,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
-import life.qbic.views.login.NewLoginLayout;
+import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.stream.Stream;
@@ -49,10 +49,9 @@ public class UserRegistrationLayout extends VerticalLayout {
   public ErrorMessage errorMessage;
 
   private final VerticalLayout contentLayout;
-  private H3 layoutTitle;
+  private H2 layoutTitle;
 
-  @Autowired
-  public UserRegistrationLayout( UserRegistrationHandlerInterface registerHandler) {
+  public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
 
     this.addClassName("grid");
     contentLayout = new VerticalLayout();
@@ -71,7 +70,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void initLayout() {
-    layoutTitle = new H3("Register");
+    layoutTitle = new H2("Register");
 
     createErrorDivs();
     styleEmailField();
@@ -124,7 +123,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink link = new RouterLink("LOGIN", NewLoginLayout.class);
+    RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
     loginSpan = new Span(new Text("Already have an account? "), link);
   }
 
