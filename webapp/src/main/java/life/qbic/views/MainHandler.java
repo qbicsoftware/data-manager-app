@@ -1,6 +1,8 @@
 package life.qbic.views;
 
 import com.vaadin.flow.component.UI;
+import life.qbic.security.SecurityService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +14,11 @@ import org.springframework.stereotype.Component;
 public class MainHandler implements MainHandlerInterface {
 
   private MainLayout registeredMainLayout;
+  private final SecurityService securityService;
+
+  public MainHandler(@Autowired SecurityService securityService) {
+    this.securityService = securityService;
+  }
 
   @Override
   public boolean handle(MainLayout layout) {
@@ -27,14 +34,9 @@ public class MainHandler implements MainHandlerInterface {
   }
 
   private void addClickListeners() {
-    registeredMainLayout.login.addClickListener(
+    registeredMainLayout.logout.addClickListener(
         event -> {
-          UI.getCurrent().navigate("login");
-        });
-
-    registeredMainLayout.register.addClickListener(
-        event -> {
-          UI.getCurrent().navigate("register");
+          securityService.logout();
         });
   }
 }

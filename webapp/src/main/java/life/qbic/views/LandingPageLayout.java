@@ -11,26 +11,27 @@ import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b> The main view is a top-level placeholder for other views. </b>
+ * <b> The landing page that allows logging in for the user. </b>
  *
  * @since 1.0.0
  */
-@PageTitle("Data Manager ")
-@Route(value = "data")
-public class MainLayout extends AppLayout {
+@PageTitle("Data Manager")
+@Route(value = "landing")
+public class LandingPageLayout extends AppLayout {
 
-  public Button logout;
+  public Button register;
+  public Button login;
 
-  public HorizontalLayout loggedInButtonLayout;
+  public HorizontalLayout loggedOutButtonLayout;
   private HorizontalLayout headerLayout;
 
-  public MainLayout(@Autowired MainHandlerInterface mainHandlerInterface) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     createHeaderContent();
-    registerToHandler(mainHandlerInterface);
+    registerToHandler(handlerInterface);
   }
 
-  private void registerToHandler(MainHandlerInterface mainHandler) {
-    if (mainHandler.handle(this)) {
+  private void registerToHandler(LandingPageHandlerInterface handler) {
+    if (handler.handle(this)) {
       System.out.println("Registered main layout handler");
     } else {
       System.out.println("Already registered main layout handler");
@@ -41,7 +42,7 @@ public class MainLayout extends AppLayout {
     createHeaderLayout();
     createHeaderButtonLayout();
 
-    addToNavbar(headerLayout, loggedInButtonLayout);
+    addToNavbar(headerLayout, loggedOutButtonLayout);
   }
 
   private void createHeaderLayout() {
@@ -64,14 +65,15 @@ public class MainLayout extends AppLayout {
   }
 
   private void createHeaderButtonLayout() {
-
-    logout = new Button("Log out");
-    loggedInButtonLayout = new HorizontalLayout(logout);
+    register = new Button("Register");
+    login = new Button("Login");
+    loggedOutButtonLayout = new HorizontalLayout(register, login);
 
     styleHeaderButtons();
   }
 
   private void styleHeaderButtons() {
-    loggedInButtonLayout.addClassName("button-layout-spacing");
+    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loggedOutButtonLayout.addClassName("button-layout-spacing");
   }
 }

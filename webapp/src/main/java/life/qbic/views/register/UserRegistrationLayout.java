@@ -17,6 +17,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
+import life.qbic.views.LandingPageLayout;
 import life.qbic.views.MainLayout;
 import life.qbic.views.login.LoginLayout;
 import life.qbic.views.login.NewLoginLayout;
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
  * @since 1.0.0
  */
 @PageTitle("Register")
-@Route(value = "register", layout = MainLayout.class)
+@Route(value = "register", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 public class UserRegistrationLayout extends VerticalLayout {
