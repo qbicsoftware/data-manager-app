@@ -1,5 +1,7 @@
 package life.qbic.usermanagement;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -18,7 +20,10 @@ import life.qbic.usermanagement.policies.*;
  */
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = -8469632941022622595L;
 
   @Id
   @Column(name = "id")

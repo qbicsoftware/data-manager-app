@@ -2,6 +2,9 @@ package life.qbic.security;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Optional;
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.repository.UserRepository;
@@ -14,7 +17,10 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Component;
 
 @Component
-public class SecurityService {
+public class SecurityService implements Serializable{
+
+    @Serial
+    private static final long serialVersionUID = 5199220688136926750L;
 
     private final UserRepository userRepository;
 
