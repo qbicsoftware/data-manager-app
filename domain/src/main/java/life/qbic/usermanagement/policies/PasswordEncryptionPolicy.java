@@ -71,13 +71,13 @@ public class PasswordEncryptionPolicy {
    * @return
    * @since
    */
-  public boolean comparePassword(String password, String encryptedHash) {
+  public boolean comparePassword(char[] rawPassword, String encryptedHash) {
     String[] passwordParameters = encryptedHash.split(":");
     int iterations = Integer.parseInt(passwordParameters[ITERATION_INDEX]);
     byte[] salt = fromHex(passwordParameters[SALT_INDEX]);
     byte[] hash = fromHex(passwordParameters[HASH_INDEX]);
 
-    byte[] potentialPassword = pbkdf2(password.toCharArray(), salt, iterations);
+    byte[] potentialPassword = pbkdf2(rawPassword, salt, iterations);
     return validate(potentialPassword, hash);
   }
 

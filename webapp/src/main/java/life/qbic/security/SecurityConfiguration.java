@@ -20,20 +20,7 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
     public static final String LOGOUT_URL = "/";
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new PasswordEncoder() {
-            @Override
-            public String encode(CharSequence rawPassword) {
-                return new String(Base64.getEncoder().encode(rawPassword.toString().getBytes()));
-            }
-
-
-            @Override
-            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                return encode(rawPassword).equalsIgnoreCase(encodedPassword);
-            }
-        };
-    }
+    public PasswordEncoder passwordEncoder() {return new QBiCPasswordEncoder(); }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
