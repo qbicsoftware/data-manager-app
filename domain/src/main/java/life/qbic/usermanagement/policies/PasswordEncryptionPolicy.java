@@ -21,7 +21,7 @@ public class PasswordEncryptionPolicy {
   private static final int ITERATION_INDEX = 0;
   private static final int SALT_INDEX = 1;
   private static final int HASH_INDEX = 2;
-  private static final int ITERATIONS = 65536;
+  private static final int ITERATIONS = 4242;
   private static final int KEY_BYTES = 20;
   private static final int SALT_BYTES = 20;
   private static PasswordEncryptionPolicy INSTANCE;
