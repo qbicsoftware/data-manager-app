@@ -24,11 +24,7 @@ public class MainLayout extends DataManagerLayout {
   }
 
   private void registerToHandler(MainHandlerInterface startHandler) {
-    if (startHandler.handle(this)) {
-      System.out.println("Registered main layout handler");
-    } else {
-      System.out.println("Already registered main layout handler");
-    }
+    startHandler.handle(this);
   }
 
   private void createNavBarContent() {

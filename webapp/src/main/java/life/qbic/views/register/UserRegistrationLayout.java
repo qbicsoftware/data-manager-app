@@ -62,11 +62,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
-    if (registerHandler.handle(this)) {
-      System.out.println("Registered UserRegistrationHandler");
-    } else {
-      System.out.println("Already registered UserRegistrationHandler");
-    }
+    registerHandler.handle(this);
   }
 
   private void initLayout() {

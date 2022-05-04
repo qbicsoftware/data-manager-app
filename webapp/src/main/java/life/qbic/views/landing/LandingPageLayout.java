@@ -28,11 +28,7 @@ public class LandingPageLayout extends DataManagerLayout {
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
-    if (handler.handle(this)) {
-      System.out.println("Registered main layout handler");
-    } else {
-      System.out.println("Already registered main layout handler");
-    }
+    if (handler.handle(this));
   }
 
   private void createNavBarContent() {

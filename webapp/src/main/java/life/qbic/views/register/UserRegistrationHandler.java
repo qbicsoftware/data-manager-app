@@ -76,7 +76,6 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
                     userRegistrationLayout.email.getValue());
             registrationUseCase.register(user);
           } catch (UserException e) {
-            System.out.println(e.getMessage());
             handleUserException(e.getMessage());
           }
         });

@@ -54,11 +54,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
-    if (loginHandler.handle(this)) {
-      System.out.println("Registered login handler");
-    } else {
-      System.out.println("Already registered login handler");
-    }
+    loginHandler.handle(this);
   }
 
   private void styleLayout() {
