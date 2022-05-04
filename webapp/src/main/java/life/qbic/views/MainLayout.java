@@ -1,10 +1,6 @@
 package life.qbic.views;
 
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -17,20 +13,18 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")
-public class MainLayout extends AppLayout {
+public class MainLayout extends DataManagerLayout {
 
   public Button logout;
+  private HorizontalLayout loggedInButtonLayout;
 
-  public HorizontalLayout loggedInButtonLayout;
-  private HorizontalLayout headerLayout;
-
-  public MainLayout(@Autowired MainHandlerInterface mainHandlerInterface) {
+  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
     createHeaderContent();
-    registerToHandler(mainHandlerInterface);
+    registerToHandler(startHandlerInterface);
   }
 
-  private void registerToHandler(MainHandlerInterface mainHandler) {
-    if (mainHandler.handle(this)) {
+  private void registerToHandler(MainHandlerInterface startHandler) {
+    if (startHandler.handle(this)) {
       System.out.println("Registered main layout handler");
     } else {
       System.out.println("Already registered main layout handler");
@@ -38,33 +32,12 @@ public class MainLayout extends AppLayout {
   }
 
   private void createHeaderContent() {
-    createHeaderLayout();
     createHeaderButtonLayout();
 
-    addToNavbar(headerLayout, loggedInButtonLayout);
-  }
-
-  private void createHeaderLayout() {
-    H1 appName = styleHeaderTitle();
-    headerLayout = new HorizontalLayout(appName);
-
-    styleHeaderLayout();
-  }
-
-  private void styleHeaderLayout() {
-    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    headerLayout.setWidth("100%");
-    headerLayout.addClassNames("py-0", "px-m");
-  }
-
-  private H1 styleHeaderTitle() {
-    H1 appName = new H1("Data Manager");
-    appName.addClassNames("text-l", "m-m");
-    return appName;
+    addToNavbar(loggedInButtonLayout);
   }
 
   private void createHeaderButtonLayout() {
-
     logout = new Button("Log out");
     loggedInButtonLayout = new HorizontalLayout(logout);
 

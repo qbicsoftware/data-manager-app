@@ -1,13 +1,11 @@
-package life.qbic.views;
+package life.qbic.views.landing;
 
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import life.qbic.views.DataManagerLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -17,13 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager")
 @Route(value = "landing")
-public class LandingPageLayout extends AppLayout {
+public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
 
-  public HorizontalLayout loggedOutButtonLayout;
-  private HorizontalLayout headerLayout;
+  private HorizontalLayout loggedOutButtonLayout;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     createHeaderContent();
@@ -39,29 +36,9 @@ public class LandingPageLayout extends AppLayout {
   }
 
   private void createHeaderContent() {
-    createHeaderLayout();
     createHeaderButtonLayout();
 
-    addToNavbar(headerLayout, loggedOutButtonLayout);
-  }
-
-  private void createHeaderLayout() {
-    H1 appName = styleHeaderTitle();
-    headerLayout = new HorizontalLayout(appName);
-
-    styleHeaderLayout();
-  }
-
-  private void styleHeaderLayout() {
-    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    headerLayout.setWidth("100%");
-    headerLayout.addClassNames("py-0", "px-m");
-  }
-
-  private H1 styleHeaderTitle() {
-    H1 appName = new H1("Data Manager");
-    appName.addClassNames("text-l", "m-m");
-    return appName;
+    addToNavbar(loggedOutButtonLayout);
   }
 
   private void createHeaderButtonLayout() {

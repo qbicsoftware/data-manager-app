@@ -1,4 +1,4 @@
-package life.qbic.views;
+package life.qbic.views.landing;
 
 import com.vaadin.flow.component.UI;
 import org.springframework.stereotype.Component;

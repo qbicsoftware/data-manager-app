@@ -4,21 +4,15 @@ import com.vaadin.flow.component.HasValueAndElement;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
-import life.qbic.views.MainLayout;
 import life.qbic.views.register.UserRegistrationLayout;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.stream.Stream;
 

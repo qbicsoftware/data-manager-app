@@ -17,9 +17,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
-import life.qbic.views.LandingPageLayout;
-import life.qbic.views.MainLayout;
-import life.qbic.views.login.LoginLayout;
+import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.NewLoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -1,4 +1,4 @@
-package life.qbic.views;
+package life.qbic.views.landing;
 
 /**
  * <b> Interface to handle the {@link LandingPageLayout} to the {@link LandingPageHandler}. </b>

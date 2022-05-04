@@ -1,6 +1,5 @@
 package life.qbic.views;
 
-import com.vaadin.flow.component.UI;
 import life.qbic.security.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

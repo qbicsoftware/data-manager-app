@@ -12,11 +12,10 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+
 import java.util.List;
 
-import life.qbic.views.LandingPageLayout;
-import life.qbic.views.MainLayout;
+import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "login", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 public class NewLoginLayout extends VerticalLayout implements BeforeEnterObserver {
-
 
   private VerticalLayout contentLayout;
   public LoginForm loginForm;
