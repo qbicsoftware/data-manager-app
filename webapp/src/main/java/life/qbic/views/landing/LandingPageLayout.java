@@ -23,7 +23,7 @@ public class LandingPageLayout extends DataManagerLayout {
   private HorizontalLayout loggedOutButtonLayout;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
-    createHeaderContent();
+    createNavBarContent();
     registerToHandler(handlerInterface);
   }
 
@@ -35,7 +35,7 @@ public class LandingPageLayout extends DataManagerLayout {
     }
   }
 
-  private void createHeaderContent() {
+  private void createNavBarContent() {
     createHeaderButtonLayout();
 
     addToNavbar(loggedOutButtonLayout);

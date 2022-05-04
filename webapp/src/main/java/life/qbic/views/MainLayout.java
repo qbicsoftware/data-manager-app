@@ -19,7 +19,7 @@ public class MainLayout extends DataManagerLayout {
   private HorizontalLayout loggedInButtonLayout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
-    createHeaderContent();
+    createNavBarContent();
     registerToHandler(startHandlerInterface);
   }
 
@@ -31,7 +31,7 @@ public class MainLayout extends DataManagerLayout {
     }
   }
 
-  private void createHeaderContent() {
+  private void createNavBarContent() {
     createHeaderButtonLayout();
 
     addToNavbar(loggedInButtonLayout);
