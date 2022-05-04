@@ -32,9 +32,10 @@ public class QBiCPasswordEncoder implements PasswordEncoder {
   }
 
   /**
-   * @param rawPassword
-   * @param encodedPassword
-   * @return
+   * Matches a given raw password with an encoded password and checks if they are the same
+   * @param rawPassword the raw password to be encoded from the user
+   * @param encodedPassword the encoded password from the database
+   * @return true, if the passwords match
    */
   @Override
   public boolean matches(CharSequence rawPassword, String encodedPassword) {

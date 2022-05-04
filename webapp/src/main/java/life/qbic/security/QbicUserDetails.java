@@ -8,11 +8,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>QBiC User Details</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implements springs {@link UserDetails} class for the QBiC context</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class QbicUserDetails implements UserDetails {
 
