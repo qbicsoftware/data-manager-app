@@ -25,7 +25,6 @@ public class LoginHandler implements LoginHandlerInterface {
     if (registeredLoginView != loginView) {
       registeredLoginView = loginView;
       // orchestrate view
-      addListener();
       // then return
       return true;
     }
@@ -33,14 +32,4 @@ public class LoginHandler implements LoginHandlerInterface {
     return false;
   }
 
-  private void addListener() {
-    registeredLoginView.loginForm.addLoginListener(System.out::println);
-    /*registeredLoginView..addClickShortcut(Key.ENTER);
-    registeredLoginView.loginButton.getElement().setProperty("action", "login");
-
-    registeredLoginView.loginButton.addClickListener(
-        event -> {
-              UI.getCurrent().navigate("about"); // could be dashboard later
-        });*/
-  }
 }

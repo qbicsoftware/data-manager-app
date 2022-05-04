@@ -10,12 +10,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
  *
  * <p>Defines the look of the header and the title</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public abstract class DataManagerLayout extends AppLayout {
     private HorizontalLayout headerLayout;
 
-    public DataManagerLayout() {
+    protected DataManagerLayout() {
         createHeaderContent();
     }
 

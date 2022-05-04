@@ -11,6 +11,7 @@ import com.vaadin.flow.router.RouteAlias;
 import javax.annotation.security.PermitAll;
 import life.qbic.security.SecurityService;
 import life.qbic.views.MainLayout;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Hello World")
 @Route(value = "hello", layout = MainLayout.class)
@@ -18,14 +19,14 @@ import life.qbic.views.MainLayout;
 @PermitAll
 public class HelloWorldView extends VerticalLayout {
 
-    private TextField name;
-    private Button sayHello;
+    private final TextField name;
+    private final Button sayHello;
 
-    private H1 personalWelcomeMessage;
+    private final H1 personalWelcomeMessage;
 
-    private SecurityService securityService;
+    private final SecurityService securityService;
 
-    public HelloWorldView(SecurityService securityService) {
+    public HelloWorldView(@Autowired SecurityService securityService) {
         this.securityService = securityService;
 
 

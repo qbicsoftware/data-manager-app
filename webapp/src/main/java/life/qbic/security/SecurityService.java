@@ -18,10 +18,6 @@ public class SecurityService {
 
     private final UserRepository userRepository;
 
-    public SecurityService() {
-        this.userRepository = null;
-    }
-
     @Autowired
     public SecurityService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -34,7 +30,6 @@ public class SecurityService {
     }
 
     public Optional<User> get() {
-        //todo return a user from an authenticated context
         return getAuthentication().flatMap(
             authentication -> userRepository.findByEmail(authentication.getName()));
     }

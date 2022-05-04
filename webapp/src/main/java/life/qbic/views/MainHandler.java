@@ -34,8 +34,6 @@ public class MainHandler implements MainHandlerInterface {
 
   private void addClickListeners() {
     registeredMainLayout.logout.addClickListener(
-        event -> {
-          securityService.logout();
-        });
+        event -> securityService.logout());
   }
 }

@@ -1,7 +1,6 @@
 package life.qbic.views;
 
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -16,8 +15,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  */
 public class ErrorMessage extends Composite<VerticalLayout> {
 
-  private String descriptionText;
-  private String titleText;
+  private final String descriptionText;
+  private final String titleText;
 
   private Span titleSpan;
   public Span titleTextSpan;
