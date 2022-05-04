@@ -16,7 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class QbicUserDetails implements UserDetails {
 
-  private User user;
+  private final User user;
 
   public QbicUserDetails(User user) {
     this.user = user;
