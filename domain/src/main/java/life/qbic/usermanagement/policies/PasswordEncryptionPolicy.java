@@ -18,12 +18,12 @@ import javax.crypto.spec.PBEKeySpec;
  */
 public class PasswordEncryptionPolicy {
 
-  private static final int ITERATION_INDEX = 0;
-  private static final int SALT_INDEX = 1;
-  private static final int HASH_INDEX = 2;
-  private static final int ITERATIONS = 4242;
-  private static final int KEY_BYTES = 20;
-  private static final int SALT_BYTES = 20;
+  private static final int ITERATION_INDEX = 0; // the index of the iteration count in the encoded password String
+  private static final int SALT_INDEX = 1; // the index of the salt content in the encoded password String
+  private static final int HASH_INDEX = 2; // the index of the hash content in the encoded password String
+  private static final int ITERATIONS = 4242; // the iteration count used for the encryption algorithm
+  private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
+  private static final int SALT_BYTES = 20; // the salt byte value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
 
   /**
@@ -44,7 +44,7 @@ public class PasswordEncryptionPolicy {
    * Encrypts a password using Java's PBKDF2 implementation.
    * <p>
    *
-   * @param password the password to encrypt
+   * @param password the cleartext password to encrypt
    * @return the encrypted password
    * @since 1.0.0
    */
@@ -64,12 +64,12 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Compares a provided password with an encrypted hash.
+   * Compares a provided raw password with an encrypted hash.
    *
-   * @param password
-   * @param encryptedHash
-   * @return
-   * @since
+   * @param rawPassword   the raw password string to match
+   * @param encryptedHash the hash to match against
+   * @return true, if the raw password matches the hash, else false
+   * @since 1.0.0
    */
   public boolean comparePassword(char[] rawPassword, String encryptedHash) {
     String[] passwordParameters = encryptedHash.split(":");
@@ -86,7 +86,7 @@ public class PasswordEncryptionPolicy {
    *
    * @param a one byte array
    * @param b another byte array to compare
-   * @return true, if both passwords are equal, else false
+   * @return true, if both byte arrays contents are equal, else false
    * @since 1.0.0
    */
   private static boolean validate(byte[] a, byte[] b) {
@@ -97,6 +97,13 @@ public class PasswordEncryptionPolicy {
     return difference == 0;
   }
 
+  /**
+   * Converts a byte array into a hexadecimal String representation.
+   *
+   * @param bytes a byte array
+   * @return the hexadecimal String representation
+   * @since 1.0.0
+   */
   private static String toHex(byte[] bytes) {
     StringBuilder builder = new StringBuilder();
     for (byte abyte : bytes) {
@@ -105,6 +112,13 @@ public class PasswordEncryptionPolicy {
     return builder.toString();
   }
 
+  /**
+   * Converts a hexadecimal String representation to a byte array
+   *
+   * @param hex the hexadecimal String
+   * @return the converted byte array
+   * @since 1.0.0
+   */
   private static byte[] fromHex(String hex) {
     byte[] binary = new byte[hex.length() / 2];
     for (int i = 0; i < binary.length; i++) {
