@@ -8,16 +8,24 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Implementation of the UserDetails interface</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * Since we use our own implementation of the user class ({@link User}), we have
+ * to tell Spring how to access certain user information.
  *
- * @since <version tag>
+ * This implementation encapsulate the {@link User} class but integrates it in the security context,
+ * so we can make use of it.
+ * @since 1.0.0
  */
 public class QbicUserDetails implements UserDetails {
 
   private User user;
 
+  /**
+   * Constructor to use and embed a {@link User} entity.
+   * @param user the user to embed
+   * @since 1.0.0
+   */
   public QbicUserDetails(User user) {
     this.user = user;
   }
