@@ -1,27 +1,31 @@
 package life.qbic.usermanagement.policies;
 
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 
 /**
  * <b>Password encryption policy</b>
- * <p>
- * Holds the current business policy for password encryption and provides functionality to execute
- * the policy on clear text passwords.
+ *
+ * <p>Holds the current business policy for password encryption and provides functionality to
+ * execute the policy on clear text passwords.
  *
  * @since 1.0.0
  */
 public class PasswordEncryptionPolicy {
 
-  private static final int ITERATION_INDEX = 0; // the index of the iteration count in the encoded password String
-  private static final int SALT_INDEX = 1; // the index of the salt content in the encoded password String
-  private static final int HASH_INDEX = 2; // the index of the hash content in the encoded password String
-  private static final int ITERATIONS = 4242; // the iteration count used for the encryption algorithm
+  private static final int ITERATION_INDEX =
+      0; // the index of the iteration count in the encoded password String
+  private static final int SALT_INDEX =
+      1; // the index of the salt content in the encoded password String
+  private static final int HASH_INDEX =
+      2; // the index of the hash content in the encoded password String
+  private static final int ITERATIONS =
+      4242; // the iteration count used for the encryption algorithm
   private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
   private static final int SALT_BYTES = 20; // the salt byte value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
@@ -42,6 +46,7 @@ public class PasswordEncryptionPolicy {
 
   /**
    * Encrypts a password using Java's PBKDF2 implementation.
+   *
    * <p>
    *
    * @param password the cleartext password to encrypt
@@ -57,8 +62,8 @@ public class PasswordEncryptionPolicy {
   }
 
   private static byte[] pbkdf2(char[] password, byte[] salt, int iterations) {
-    KeySpec spec = new PBEKeySpec(password, salt, iterations,
-        PasswordEncryptionPolicy.KEY_BYTES * 8);
+    KeySpec spec =
+        new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_BYTES * 8);
     SecretKeyFactory factory = getSecretKeyFactory();
     return createSecretKey(factory, spec).getEncoded();
   }
@@ -66,7 +71,7 @@ public class PasswordEncryptionPolicy {
   /**
    * Compares a provided raw password with an encrypted hash.
    *
-   * @param rawPassword   the raw password string to match
+   * @param rawPassword the raw password string to match
    * @param encryptedHash the hash to match against
    * @return true, if the raw password matches the hash, else false
    * @since 1.0.0
@@ -130,16 +135,24 @@ public class PasswordEncryptionPolicy {
   private static SecretKeyFactory getSecretKeyFactory() {
     try {
       return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-    } catch (NoSuchAlgorithmException ignored) {
-      throw new RuntimeException("Unexpected exception, encryption failed.");
+    } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+      throw new EncryptionException(
+          "Unexpected exception, encryption failed.", noSuchAlgorithmException);
     }
   }
 
   private static SecretKey createSecretKey(SecretKeyFactory factory, KeySpec keySpec) {
     try {
       return factory.generateSecret(keySpec);
-    } catch (InvalidKeySpecException ignored) {
-      throw new RuntimeException("Failed to generate secret key for password hashing.");
+    } catch (InvalidKeySpecException invalidKeySpecException) {
+      throw new EncryptionException(
+          "Failed to generate secret key for password hashing.", invalidKeySpecException);
+    }
+  }
+
+  static class EncryptionException extends RuntimeException {
+    EncryptionException(String reason, Exception cause) {
+      super(reason, cause);
     }
   }
 }
