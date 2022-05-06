@@ -39,7 +39,7 @@ public class QBiCPasswordEncoder implements PasswordEncoder {
    */
   @Override
   public boolean matches(CharSequence rawPassword, String encodedPassword) {
-    return passwordEncryptionPolicy.comparePassword(rawPassword.toString().toCharArray(),
+    return passwordEncryptionPolicy.doPasswordsMatch(rawPassword.toString().toCharArray(),
         encodedPassword);
   }
 }
