@@ -10,6 +10,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import javax.annotation.security.PermitAll;
 import life.qbic.security.SecurityService;
+import life.qbic.usermanagement.User;
 import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,9 +30,9 @@ public class HelloWorldView extends VerticalLayout {
     public HelloWorldView(@Autowired SecurityService securityService) {
         this.securityService = securityService;
 
+        String username = securityService.get().map(User::getFullName).orElse("Your name");
+        name = new TextField(username);
 
-        name = new TextField("Your name");
-        securityService.get().map(User::getFullName).ifPresent(name::setValue);
         sayHello = new Button("Say hello");
         sayHello.addClickListener(e -> {
             Notification.show("Hello " + name.getValue());
@@ -41,7 +42,7 @@ public class HelloWorldView extends VerticalLayout {
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
         this.personalWelcomeMessage = new H1();
-        this.personalWelcomeMessage.getElement().setText("Welcome " + securityService.get().get().getFullName());
+        this.personalWelcomeMessage.getElement().setText("Welcome " + username);
         add(personalWelcomeMessage, name, sayHello);
     }
 
