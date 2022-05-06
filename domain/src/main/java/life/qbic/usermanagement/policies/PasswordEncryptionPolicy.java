@@ -47,7 +47,7 @@ public class PasswordEncryptionPolicy {
   /**
    * Encrypts a password using Java's PBKDF2 implementation.
    *
-   * <p>
+* </br>
    *
    * @param password the cleartext password to encrypt
    * @return the encrypted password
@@ -76,7 +76,7 @@ public class PasswordEncryptionPolicy {
    * @return true, if the raw password matches the hash, else false
    * @since 1.0.0
    */
-  public boolean comparePassword(char[] rawPassword, String encryptedHash) {
+  public boolean doPasswordsMatch(char[] rawPassword, String encryptedHash) {
     String[] passwordParameters = encryptedHash.split(":");
     int iterations = Integer.parseInt(passwordParameters[ITERATION_INDEX]);
     byte[] salt = fromHex(passwordParameters[SALT_INDEX]);

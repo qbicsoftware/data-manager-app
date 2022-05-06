@@ -31,7 +31,7 @@ public class HelloWorldView extends VerticalLayout {
 
 
         name = new TextField("Your name");
-        name.setValue(securityService.get().get().getFullName());
+        securityService.get().map(User::getFullName).ifPresent(name::setValue);
         sayHello = new Button("Say hello");
         sayHello.addClickListener(e -> {
             Notification.show("Hello " + name.getValue());
