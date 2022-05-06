@@ -14,16 +14,11 @@ public class LandingPageHandler implements LandingPageHandlerInterface {
   private LandingPageLayout registeredLandingPage;
 
   @Override
-  public boolean handle(LandingPageLayout layout) {
+  public void handle(LandingPageLayout layout) {
     if (registeredLandingPage != layout) {
       this.registeredLandingPage = layout;
-      // orchestrate view
       addClickListeners();
-      // then return
-      return true;
     }
-
-    return false;
   }
 
   private void addClickListeners() {

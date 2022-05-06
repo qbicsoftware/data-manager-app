@@ -11,7 +11,7 @@ public interface LandingPageHandlerInterface {
    * Registers the {@link LandingPageLayout} to the implementing class
    *
    * @param layout The view that is being registered
-   * @return true, if registration was successful
+   * @since 1.0.0
    */
-  boolean handle(LandingPageLayout layout);
+  void handle(LandingPageLayout layout);
 }

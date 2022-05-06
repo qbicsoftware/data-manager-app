@@ -31,16 +31,12 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   }
 
   @Override
-  public boolean handle(UserRegistrationLayout registrationLayout) {
+  public void handle(UserRegistrationLayout registrationLayout) {
     if (userRegistrationLayout != registrationLayout) {
       this.userRegistrationLayout = registrationLayout;
-      // orchestrate view
       initFields();
       addListener();
-      // then return
-      return true;
     }
-    return false;
   }
 
   private void initFields () {

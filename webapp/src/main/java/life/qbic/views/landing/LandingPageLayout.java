@@ -26,7 +26,7 @@ public class LandingPageLayout extends DataManagerLayout {
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
-    if (handler.handle(this));
+    handler.handle(this);
   }
 
   private void createNavBarContent() {

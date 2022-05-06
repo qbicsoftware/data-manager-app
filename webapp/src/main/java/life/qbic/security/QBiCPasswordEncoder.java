@@ -7,7 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * <b>QBiC's implementation of the PasswordEncoder interface</b>
  * <p>
  * This class shall be used to encode and match passwords in the context of user authentication.
- *
+ * </p>
  * @since 1.0.0
  */
 public class QBiCPasswordEncoder implements PasswordEncoder {

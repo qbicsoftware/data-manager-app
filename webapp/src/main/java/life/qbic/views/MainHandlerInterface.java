@@ -11,7 +11,7 @@ public interface MainHandlerInterface {
    * Registers the {@link MainLayout} to the implementing class
    *
    * @param layout The view that is being registered
-   * @return true, if registration was successful
+   * @since 1.0.0
    */
-  boolean handle(MainLayout layout);
+  void handle(MainLayout layout);
 }

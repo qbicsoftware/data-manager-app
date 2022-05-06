@@ -20,16 +20,13 @@ public class MainHandler implements MainHandlerInterface {
   }
 
   @Override
-  public boolean handle(MainLayout layout) {
+  public void handle(MainLayout layout) {
     if (registeredMainLayout != layout) {
       this.registeredMainLayout = layout;
       // orchestrate view
       addClickListeners();
       // then return
-      return true;
     }
-
-    return false;
   }
 
   private void addClickListeners() {

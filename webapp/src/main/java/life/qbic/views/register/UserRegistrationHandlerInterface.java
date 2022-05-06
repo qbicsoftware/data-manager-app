@@ -11,7 +11,7 @@ public interface UserRegistrationHandlerInterface {
    * Registers a {@link UserRegistrationLayout} to an implementing class
    *
    * @param registerLayout The view that is being handled
-   * @return true, if registration was successful
+   * @since 1.0.0
    */
-  boolean handle(UserRegistrationLayout registerLayout);
+  void handle(UserRegistrationLayout registerLayout);
 }
