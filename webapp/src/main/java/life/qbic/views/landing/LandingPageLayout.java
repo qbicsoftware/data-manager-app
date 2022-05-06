@@ -20,8 +20,6 @@ public class LandingPageLayout extends DataManagerLayout {
   public Button register;
   public Button login;
 
-  private HorizontalLayout loggedOutButtonLayout;
-
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     createNavBarContent();
     registerToHandler(handlerInterface);
@@ -32,21 +30,23 @@ public class LandingPageLayout extends DataManagerLayout {
   }
 
   private void createNavBarContent() {
-    createHeaderButtonLayout();
 
-    addToNavbar(loggedOutButtonLayout);
+    addToNavbar(createHeaderButtonLayout());
   }
 
-  private void createHeaderButtonLayout() {
+  private HorizontalLayout createHeaderButtonLayout() {
     register = new Button("Register");
     login = new Button("Login");
-    loggedOutButtonLayout = new HorizontalLayout(register, login);
+
+    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
+    loggedOutButtonLayout.addClassName("button-layout-spacing");
 
     styleHeaderButtons();
+
+    return loggedOutButtonLayout;
   }
 
   private void styleHeaderButtons() {
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    loggedOutButtonLayout.addClassName("button-layout-spacing");
   }
 }
