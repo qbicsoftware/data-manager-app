@@ -9,7 +9,7 @@ import spock.lang.Specification
  */
 class PasswordEncryptionPolicySpec extends Specification {
 
-    def "A password can be matched with the correct salt and iteration"() {
+    def "The same password can be matched with the correct salt and iteration"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[],encryptedPassword)
@@ -19,6 +19,19 @@ class PasswordEncryptionPolicySpec extends Specification {
 
         where:
         password = "12345678"
+    }
+
+    def "Two different passwords cannot be matched"() {
+        when:
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
+        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[],encryptedPassword)
+
+        then:
+        !result
+
+        where:
+        password = "12345678"
+        anotherPassword = "abcdefghijkl"
     }
 
     def "The encrypted password contains the number of iterations, a salt and the hashed password"() {
@@ -34,4 +47,5 @@ class PasswordEncryptionPolicySpec extends Specification {
         where:
         password = "abcdefghihdeo"
     }
+
 }
