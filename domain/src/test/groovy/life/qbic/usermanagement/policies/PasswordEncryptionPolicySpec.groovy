@@ -14,7 +14,7 @@ class PasswordEncryptionPolicySpec extends Specification {
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
 
         then:
-        encryptedPassword.split(":")[2] != password
+        encryptedPassword != password
 
         where:
         password = "12345678"
