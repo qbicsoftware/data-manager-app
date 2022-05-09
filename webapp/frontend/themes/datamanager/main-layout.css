@@ -51,3 +51,8 @@ header nav a[highlight]::after {
 header nav a[highlight]:not([active])::after {
   opacity: 0;
 }
+
+.button-layout-spacing {
+  margin-right: 1em;
+  margin-left: 1em;
+}

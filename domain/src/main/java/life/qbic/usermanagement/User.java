@@ -1,18 +1,32 @@
 package life.qbic.usermanagement;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Objects;
 import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.usermanagement.policies.*;
 
 /**
  * <b>User class</b>
- *
+ * <p>
  * User aggregate in the context of user management.
  *
  * @since 1.0.0
  */
-public class User {
+@Entity
+@Table(name = "users")
+public class User implements Serializable {
 
+  @Serial
+  private static final long serialVersionUID = -8469632941022622595L;
+
+  @Id
+  @Column(name = "id")
   private String id;
 
   private String fullName;
@@ -20,6 +34,12 @@ public class User {
   private String email;
 
   private String encryptedPassword;
+
+  private boolean emailConfirmed;
+
+  protected User() {
+
+  }
 
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
@@ -65,6 +85,15 @@ public class User {
     this.fullName = fullName;
   }
 
+  @Override
+  public String toString() {
+    return "User{" +
+        "id='" + id + '\'' +
+        ", fullName='" + fullName + '\'' +
+        ", email='" + email + '\'' +
+        '}';
+  }
+
   /**
    * Sets a password for the current user.
    * <p>
@@ -99,6 +128,15 @@ public class User {
   }
 
   /**
+   * Get access to the encrypted password
+   * @return the password
+   * @since 1.0.0
+   */
+  public String getEncryptedPassword() {
+    return this.encryptedPassword;
+  }
+
+  /**
    * Sets the email address for the current user.
    * <p>
    * This method will throw an {@link UserException} if the email address format seems not to be a
@@ -125,6 +163,28 @@ public class User {
     return this.email;
   }
 
+  public String getFullName() {
+    return this.fullName;
+  }
+
+  public boolean isEmailConfirmed() {
+    return this.emailConfirmed;
+  }
+
+  public void setEmailConfirmed(boolean emailConfirmed) {
+    this.emailConfirmed = emailConfirmed;
+  }
+
+  /**
+   * Checks if a given password is correct for a user
+   *
+   * @param password Password that is being validated
+   * @return true, if the given password is correct for the user
+   */
+  public Boolean checkPassword(String password) {
+    return Objects.equals(PasswordEncryptionPolicy.create().encrypt(password), encryptedPassword);
+  }
+
   private void validateEmail(String email) throws UserException {
     PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(email);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
@@ -132,7 +192,7 @@ public class User {
     }
   }
 
-  static class UserException extends RuntimeException {
+  public static class UserException extends RuntimeException {
 
     private final String reason;
 

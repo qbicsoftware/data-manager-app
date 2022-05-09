@@ -1,12 +1,11 @@
 package life.qbic.security;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import life.qbic.data.entity.User;
-import life.qbic.data.service.UserRepository;
+import life.qbic.usermanagement.User;
+import life.qbic.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,24 +14,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("No user present with username: " + username);
-        } else {
-            return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getHashedPassword(),
-                    getAuthorities(user));
-        }
+        var user = userRepository.findByEmail(username);
+        return new QbicUserDetails(user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
     }
 
-    private static List<GrantedAuthority> getAuthorities(User user) {
-        return user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
-                .collect(Collectors.toList());
+    private static List<GrantedAuthority> getAuthorities(User testUser) {
+        //todo fix me: implement rolemanagement, parse all roles the user has to understhand which rights the user has
 
+        return new ArrayList<>();
     }
 
 }

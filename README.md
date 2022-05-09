@@ -23,6 +23,45 @@ ready to be deployed. The file can be found in the `target` folder after the bui
 Once the JAR file is built, you can run it using
 `java -jar target/datamanager-1.0-SNAPSHOT.jar`
 
+
+### Configuration
+
+#### Properties
+
+The default configuration of the app binds to the local port 8080 to the systems localhost:
+
+```
+http://localhost:8080
+```
+
+#### Environment Variables
+The env variables contain information about the salt and the secret. Both of them are used to encrypt and decrypt user information.
+
+| environment variable       | description               |
+|----------------------------|---------------------------|
+| `USER_DB_URL`              | The database host address |
+| `USER_DB_USER_NAME`        | The database user name    |
+| `USER_DB_USER_PW`          | The database password     |
+
+The application properties file could look like the following:
+```properties
+spring.datasource.url=${USER_DB_URL:localhost}
+spring.datasource.username=${USER_DB_USER_NAME:myusername}
+spring.datasource.password=${USER_DB_USER_PW:astrongpassphrase!}
+```
+To change the port or the driver those can be added as environmental variables as well. Both are preset with default values and
+are therefore not mandatory to set
+
+| environment variable | description          |
+|----------------------|----------------------|
+| `PORT`               | The application port |
+| `USER_DB_DRIVER`     | The database driver  |
+
+```properties
+server.port=${PORT:8080}
+spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+```
+
 ## Project structure
 
 - `MainLayout.java` in `src/main/java` contains the navigation setup (i.e., the

@@ -28,14 +28,12 @@ public interface UserDataStorage {
   List<User> findUsersByEmail(String email);
 
   /**
-   * Stores a {@link User} entity permanently.
+   * Saves a {@link User} entity permanently.
    *
    * @param user the user to store
-   * @return true, if the user has been stored. False, if the user has not been stored, because a
-   * user with the given email address or user id already exists.
    * @since 1.0.0
    */
-  boolean storeUser(User user);
+  void save(User user);
 
   /**
    * Find a user entity based on its user id.

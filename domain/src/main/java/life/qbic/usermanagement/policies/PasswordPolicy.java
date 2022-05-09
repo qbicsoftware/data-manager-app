@@ -11,7 +11,7 @@ package life.qbic.usermanagement.policies;
  */
 public class PasswordPolicy {
 
-  private static int MIN_LENGTH = 8;
+  private static final int MIN_LENGTH = 8;
 
   private static PasswordPolicy INSTANCE;
 

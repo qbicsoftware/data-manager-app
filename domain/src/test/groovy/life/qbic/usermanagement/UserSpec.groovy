@@ -5,7 +5,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- <b>Tests for the {@link User}</b>
+ * <b>Tests for the {@link User}</b>
  *
  * @since 1.0.0
  */
@@ -24,7 +24,7 @@ class UserSpec extends Specification {
         generatedUserIds.add(user.getId())
 
         where:
-        run << (1..10_000)
+        run << (1..100)
     }
 
     def "When a weak password is provided, throw a user exception"() {
@@ -34,6 +34,7 @@ class UserSpec extends Specification {
         then:
         thrown(User.UserException)
     }
+
 
     def "When an invalid email is provided, throw a user exception"() {
         when:
