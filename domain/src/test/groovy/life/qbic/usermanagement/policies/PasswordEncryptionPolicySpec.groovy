@@ -9,7 +9,7 @@ import spock.lang.Specification
  */
 class PasswordEncryptionPolicySpec extends Specification {
 
-    def "The same password can be matched with the correct salt and iteration"() {
+    def "The password policy matches same passwords"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[],encryptedPassword)
