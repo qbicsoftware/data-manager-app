@@ -1,5 +1,7 @@
 package life.qbic.usermanagement.repository;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Optional;
 import life.qbic.usermanagement.User;
 
@@ -8,7 +10,10 @@ import life.qbic.usermanagement.User;
  *
  * @since 1.0.0
  */
-public class UserRepository {
+public class UserRepository implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 5576670098610784078L;
 
   private static UserRepository INSTANCE;
 

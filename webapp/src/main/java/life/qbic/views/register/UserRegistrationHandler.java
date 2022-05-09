@@ -31,16 +31,12 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   }
 
   @Override
-  public boolean handle(UserRegistrationLayout registrationLayout) {
+  public void handle(UserRegistrationLayout registrationLayout) {
     if (userRegistrationLayout != registrationLayout) {
       this.userRegistrationLayout = registrationLayout;
-      // orchestrate view
       initFields();
       addListener();
-      // then return
-      return true;
     }
-    return false;
   }
 
   private void initFields () {
@@ -52,6 +48,18 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
 
+    userRegistrationLayout.registerButton.addClickListener(event -> {
+      resetErrorMessages();
+      try {
+        var user = User.create(
+            userRegistrationLayout.password.getValue(),
+            userRegistrationLayout.fullName.getValue(),
+            userRegistrationLayout.email.getValue());
+        registrationUseCase.register(user);
+      } catch (UserException e) {
+        handleUserException(e.getMessage());
+      }
+    });
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
           resetErrorMessages();
@@ -64,7 +72,6 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
                     userRegistrationLayout.email.getValue());
             registrationUseCase.register(user);
           } catch (UserException e) {
-            System.out.println(e.getMessage());
             handleUserException(e.getMessage());
           }
         });

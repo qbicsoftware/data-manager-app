@@ -2,6 +2,9 @@ package life.qbic.security;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Optional;
 import life.qbic.usermanagement.User;
 import life.qbic.usermanagement.repository.UserRepository;
@@ -14,9 +17,17 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Component;
 
 @Component
-public class AuthenticatedUser {
+public class SecurityService implements Serializable{
 
-    //todo wire userrepo into this class
+    @Serial
+    private static final long serialVersionUID = 5199220688136926750L;
+
+    private final UserRepository userRepository;
+
+    @Autowired
+    public SecurityService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     private Optional<Authentication> getAuthentication() {
         SecurityContext context = SecurityContextHolder.getContext();
@@ -25,8 +36,8 @@ public class AuthenticatedUser {
     }
 
     public Optional<User> get() {
-        //todo return a user from an authenticated context
-        return null;
+        return getAuthentication().flatMap(
+            authentication -> userRepository.findByEmail(authentication.getName()));
     }
 
     public void logout() {

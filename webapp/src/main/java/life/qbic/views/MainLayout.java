@@ -1,10 +1,6 @@
 package life.qbic.views;
 
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -17,65 +13,29 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager ")
 @Route(value = "data")
-public class MainLayout extends AppLayout {
+public class MainLayout extends DataManagerLayout {
 
-  public Button register;
-  public Button login;
+  public Button logout;
 
-  private HorizontalLayout buttonLayout;
-  private HorizontalLayout headerLayout;
-
-  public MainLayout(@Autowired MainHandlerInterface mainHandlerInterface) {
-    createHeaderContent();
-    registerToHandler(mainHandlerInterface);
+  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
+    createNavBarContent();
+    registerToHandler(startHandlerInterface);
   }
 
-
-  private void registerToHandler(MainHandlerInterface mainHandler) {
-    if (mainHandler.handle(this)) {
-      System.out.println("Registered main layout handler");
-    } else {
-      System.out.println("Already registered main layout handler");
-    }
+  private void registerToHandler(MainHandlerInterface startHandler) {
+    startHandler.handle(this);
   }
 
-
-  private void createHeaderContent() {
-    createHeaderLayout();
-    createHeaderButtonLayout();
-
-    addToNavbar(headerLayout, buttonLayout);
+  private void createNavBarContent() {
+    addToNavbar(createHeaderButtonLayout());
   }
 
-  private void createHeaderLayout() {
-    H1 appName = styleHeaderTitle();
-    headerLayout = new HorizontalLayout(appName);
+  private HorizontalLayout createHeaderButtonLayout() {
+    logout = new Button("Log out");
+    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(logout);
+    loggedInButtonLayout.addClassName("button-layout-spacing");
 
-    styleHeaderLayout();
+    return loggedInButtonLayout;
   }
 
-  private void styleHeaderLayout() {
-    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    headerLayout.setWidth("100%");
-    headerLayout.addClassNames("py-0", "px-m");
-  }
-
-  private H1 styleHeaderTitle() {
-    H1 appName = new H1("Data Manager");
-    appName.addClassNames("text-l", "m-m");
-    return appName;
-  }
-
-  private void createHeaderButtonLayout() {
-    register = new Button("Register");
-    login = new Button("Login");
-
-    buttonLayout = new HorizontalLayout(register, login);
-    styleHeaderButtons();
-  }
-
-  private void styleHeaderButtons() {
-    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    buttonLayout.addClassName("button-layout-spacing");
-  }
 }

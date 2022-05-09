@@ -10,8 +10,8 @@ public interface LoginHandlerInterface {
   /**
    * Register the {@link LoginLayout} to the implementing class
    * @param loginView The view that is being registered
-   * @return true, if registration was successful
+   * @since 1.0.0
    */
-  boolean handle(LoginLayout loginView);
+  void handle(LoginLayout loginView);
 
 }

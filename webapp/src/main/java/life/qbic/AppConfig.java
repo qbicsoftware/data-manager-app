@@ -1,8 +1,6 @@
 package life.qbic;
 
-import life.qbic.usermanagement.persistence.QbicUserRepo;
 import life.qbic.usermanagement.registration.RegisterUserInput;
-import life.qbic.usermanagement.registration.RegisterUserOutput;
 import life.qbic.usermanagement.registration.Registration;
 import life.qbic.usermanagement.repository.UserDataStorage;
 import life.qbic.usermanagement.repository.UserRepository;

@@ -5,7 +5,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -17,7 +17,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.ErrorMessage;
-import life.qbic.views.MainLayout;
+import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,9 +29,9 @@ import java.util.stream.Stream;
  * @since 1.0.0
  */
 @PageTitle("Register")
-@Route(value = "register", layout = MainLayout.class)
-@AnonymousAllowed
+@Route(value = "register", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
+@AnonymousAllowed
 public class UserRegistrationLayout extends VerticalLayout {
 
   public EmailField email;
@@ -49,9 +49,10 @@ public class UserRegistrationLayout extends VerticalLayout {
   public ErrorMessage errorMessage;
 
   private final VerticalLayout contentLayout;
-  private H3 layoutTitle;
+  private H2 layoutTitle;
 
   public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
+
     this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
@@ -61,15 +62,11 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
-    if (registerHandler.handle(this)) {
-      System.out.println("Registered UserRegistrationHandler");
-    } else {
-      System.out.println("Already registered UserRegistrationHandler");
-    }
+    registerHandler.handle(this);
   }
 
   private void initLayout() {
-    layoutTitle = new H3("Register");
+    layoutTitle = new H2("Register");
 
     createErrorDivs();
     styleEmailField();
