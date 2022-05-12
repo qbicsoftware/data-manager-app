@@ -51,7 +51,7 @@ class PasswordEncryptionPolicySpec extends Specification {
         String[] passwordElements = encryptedPassword.split(":")
 
         then:
-        passwordElements[0].startsWith("4242") // number of iterations
+        passwordElements[0].startsWith("10000") // number of iterations
 
         where:
         password = "abcdefghihdeo"
@@ -75,7 +75,7 @@ class PasswordEncryptionPolicySpec extends Specification {
         String[] passwordElements = encryptedPassword.split(":")
 
         then:
-        passwordElements[2].length() == 40 // contains a hash with length of 20 bytes
+        passwordElements[2] != password // contains a hash with length of 20 bytes
 
         where:
         password = "abcdefghihdeo"
