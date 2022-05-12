@@ -75,7 +75,7 @@ class PasswordEncryptionPolicySpec extends Specification {
         String[] passwordElements = encryptedPassword.split(":")
 
         then:
-        passwordElements[2] != password // contains a hash with length of 20 bytes
+        passwordElements[2] != password // contains a hash that is not the same as the clear text password
 
         where:
         password = "abcdefghihdeo"
