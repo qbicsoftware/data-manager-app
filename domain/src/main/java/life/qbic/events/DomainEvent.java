@@ -15,7 +15,7 @@ public interface DomainEvent {
 
   /**
    * The instant of event creation.
-   * @return the instant the of event creation.
+   * @return the instant the of event.
    */
   Instant occurredOn();
 }
