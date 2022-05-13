@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies;
+package life.qbic.domain.usermanagement.policies;
 
 /**
  * Simple implementation of a policy check report.

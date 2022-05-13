@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies;
+package life.qbic.domain.usermanagement.policies;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -49,15 +49,15 @@ public class PasswordEncryptionPolicy {
    *
    * <p></br>
    *
-   * @param password the cleartext password to encrypt
+   * @param rawPassword the cleartext password to encrypt
    * @return the encrypted password
    * @since 1.0.0
    */
-  public String encrypt(String password) {
+  public String encrypt(char[] rawPassword) {
     SecureRandom random = new SecureRandom();
     byte[] salt = new byte[SALT_BYTES];
     random.nextBytes(salt);
-    byte[] hash = pbe(password.toCharArray(), salt, ITERATIONS);
+    byte[] hash = pbe(rawPassword, salt, ITERATIONS);
     return ITERATIONS + ":" + toHex(salt) + ":" + toHex(hash);
   }
 

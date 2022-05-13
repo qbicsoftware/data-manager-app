@@ -1,7 +1,7 @@
-package life.qbic.usermanagement.registration;
+package life.qbic.domain.usermanagement.registration;
 
 import java.time.Instant;
-import life.qbic.events.DomainEvent;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b>A user registered in the user management context.</b>

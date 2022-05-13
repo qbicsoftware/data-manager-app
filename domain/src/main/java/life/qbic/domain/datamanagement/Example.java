@@ -1,4 +1,4 @@
-package life.qbic.datamanagement;
+package life.qbic.domain.datamanagement;
 
 import java.util.Random;
 

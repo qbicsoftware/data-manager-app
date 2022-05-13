@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies;
+package life.qbic.domain.usermanagement.policies;
 
 import java.util.regex.Pattern;
 

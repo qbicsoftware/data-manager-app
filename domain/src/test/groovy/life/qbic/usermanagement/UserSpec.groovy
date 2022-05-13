@@ -1,11 +1,12 @@
 package life.qbic.usermanagement
 
+import life.qbic.domain.usermanagement.User
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- * <b>Tests for the {@link User}</b>
+ * <b>Tests for the {@link life.qbic.domain.usermanagement.User}</b>
  *
  * @since 1.0.0
  */

@@ -1,4 +1,4 @@
-package life.qbic.events;
+package life.qbic.domain.events;
 
 import java.time.Instant;
 

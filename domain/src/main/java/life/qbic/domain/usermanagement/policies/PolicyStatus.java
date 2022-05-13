@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies;
+package life.qbic.domain.usermanagement.policies;
 
 /**
  * Policy status enums are used in {@link PolicyCheckReport}s, to indicate

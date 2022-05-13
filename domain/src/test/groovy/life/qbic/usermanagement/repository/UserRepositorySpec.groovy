@@ -1,10 +1,12 @@
 package life.qbic.usermanagement.repository
 
-import life.qbic.usermanagement.User
+import life.qbic.domain.usermanagement.User
+import life.qbic.domain.usermanagement.repository.UserDataStorage
+import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link UserRepository}</b>
+ * <b>Tests for the {@link life.qbic.domain.usermanagement.repository.UserRepository}</b>
  *
  * @since 1.0.0
  */

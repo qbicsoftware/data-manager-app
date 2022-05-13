@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.registration;
+package life.qbic.domain.usermanagement.registration;
 
 /**
  * Output interface for the user registration use case

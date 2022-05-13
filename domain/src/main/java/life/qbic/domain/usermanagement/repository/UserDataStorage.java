@@ -1,8 +1,8 @@
-package life.qbic.usermanagement.repository;
+package life.qbic.domain.usermanagement.repository;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.usermanagement.User;
+import life.qbic.domain.usermanagement.User;
 
 /**
  * <b>User Data Storage Interface</b>

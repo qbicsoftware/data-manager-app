@@ -1,9 +1,9 @@
 package life.qbic;
 
-import life.qbic.usermanagement.registration.RegisterUserInput;
-import life.qbic.usermanagement.registration.Registration;
-import life.qbic.usermanagement.repository.UserDataStorage;
-import life.qbic.usermanagement.repository.UserRepository;
+import life.qbic.domain.usermanagement.registration.RegisterUserInput;
+import life.qbic.domain.usermanagement.registration.Registration;
+import life.qbic.domain.usermanagement.repository.UserDataStorage;
+import life.qbic.domain.usermanagement.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

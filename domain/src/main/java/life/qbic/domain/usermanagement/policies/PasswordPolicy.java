@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies;
+package life.qbic.domain.usermanagement.policies;
 
 /**
  * <b>Class PasswordPolicy</b>
@@ -23,13 +23,13 @@ public class PasswordPolicy {
   }
 
   /**
-   * Validates the password against the current policy.
-   * @param password the password to validate
+   * Validates the raw password against the current policy.
+   * @param rawPassword the password to validate
    * @return a policy check report
    * @since 1.0.0
    */
-  public PolicyCheckReport validate(String password) {
-    if (password.trim().length() < MIN_LENGTH) {
+  public PolicyCheckReport validate(char[] rawPassword) {
+    if (rawPassword.length < MIN_LENGTH) {
       return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");

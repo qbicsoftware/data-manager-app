@@ -1,8 +1,10 @@
 package life.qbic.usermanagement.registration
 
-import life.qbic.usermanagement.User
-import life.qbic.usermanagement.repository.UserDataStorage
-import life.qbic.usermanagement.repository.UserRepository
+import life.qbic.domain.usermanagement.User
+import life.qbic.domain.usermanagement.registration.RegisterUserOutput
+import life.qbic.domain.usermanagement.registration.Registration
+import life.qbic.domain.usermanagement.repository.UserDataStorage
+import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Shared
 import spock.lang.Specification
 

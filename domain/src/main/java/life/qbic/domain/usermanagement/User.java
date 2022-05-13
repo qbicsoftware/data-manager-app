@@ -1,4 +1,4 @@
-package life.qbic.usermanagement;
+package life.qbic.domain.usermanagement;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -8,8 +8,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import jdk.jshell.spi.ExecutionControl.UserException;
-import life.qbic.usermanagement.policies.*;
+import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
+import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
+import life.qbic.domain.usermanagement.policies.PasswordPolicy;
+import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
+import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
  * <b>User class</b>
@@ -44,23 +47,23 @@ public class User implements Serializable {
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
    * QBiC's organisation.
+   * <p>
+   * It is the client's responsibility to reset the raw password, after the user has been created.
+   * <p>
+   * The object instance won't hold a reference to the original password char array, after it has
+   * been encrypted.
    *
-   * @param password the desired password for the user
-   * @param fullName the full name of the user
-   * @param email    the email address of the user
+   * @param fullName    the full name of the user
+   * @param email       the email address of the user
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(String password, String fullName, String email) throws UserException {
+  public static User create(String fullName, String email) throws UserException {
     String uuid = String.valueOf(UUID.randomUUID());
     var user = new User(fullName);
-    try {
-      user.setEmail(email);
-      user.setPassword(password);
-      user.setId(uuid);
-    } finally {
-      password = null;
-    }
+    user.setEmail(email);
+    user.setId(uuid);
+
     return user;
   }
 
@@ -102,22 +105,21 @@ public class User implements Serializable {
    * <p>
    * The password is then stored in an encrypted form, controlled by the
    * {@link PasswordEncryptionPolicy}.
+   * <p>
+   * It is the client's responsibility to reset the raw password, after it has been set for the user
+   * and encrypted.
    *
-   * @param password the new user password
+   * @param rawPassword the new user password
    * @throws UserException if the user password is too weak
    * @since 1.0.0
    */
-  public void setPassword(String password) throws UserException {
-    try {
-      validatePassword(password);
-      this.encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password);
-    } finally {
-      password = null; // override the clear text password before GC sets in
-    }
+  public void setPassword(char[] rawPassword) throws UserException {
+    validatePassword(rawPassword);
+    this.encryptedPassword = PasswordEncryptionPolicy.create().encrypt(rawPassword);
   }
 
-  private void validatePassword(String password) {
-    PolicyCheckReport policyCheckReport = PasswordPolicy.create().validate(password);
+  private void validatePassword(char[] rawPassword) {
+    PolicyCheckReport policyCheckReport = PasswordPolicy.create().validate(rawPassword);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
       throw new UserException(policyCheckReport.reason());
     }
@@ -129,6 +131,7 @@ public class User implements Serializable {
 
   /**
    * Get access to the encrypted password
+   *
    * @return the password
    * @since 1.0.0
    */
@@ -178,11 +181,11 @@ public class User implements Serializable {
   /**
    * Checks if a given password is correct for a user
    *
-   * @param password Password that is being validated
+   * @param rawPassword Password that is being validated
    * @return true, if the given password is correct for the user
    */
-  public Boolean checkPassword(String password) {
-    return Objects.equals(PasswordEncryptionPolicy.create().encrypt(password), encryptedPassword);
+  public Boolean checkPassword(char[] rawPassword) {
+    return Objects.equals(PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword);
   }
 
   private void validateEmail(String email) throws UserException {

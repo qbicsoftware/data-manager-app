@@ -1,7 +1,7 @@
-package life.qbic.usermanagement.registration;
+package life.qbic.domain.usermanagement.registration;
 
-import life.qbic.usermanagement.User;
-import life.qbic.usermanagement.repository.UserRepository;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration use case</b>

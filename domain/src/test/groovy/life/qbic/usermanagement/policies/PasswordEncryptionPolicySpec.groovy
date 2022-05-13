@@ -1,9 +1,10 @@
 package life.qbic.usermanagement.policies
 
+import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link PasswordEncryptionPolicy}</b>
+ * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy}</b>
  *
  * @since 1.0.0
  */
