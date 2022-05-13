@@ -1,12 +1,12 @@
 package life.qbic.usermanagement.policies;
 
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 
 /**
  * <b>Password encryption policy</b>
@@ -25,7 +25,7 @@ public class PasswordEncryptionPolicy {
   private static final int HASH_INDEX =
       2; // the index of the hash content in the encoded password String
   private static final int ITERATIONS =
-      4242; // the iteration count used for the encryption algorithm
+      10_000; // the iteration count used for the encryption algorithm
   private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
   private static final int SALT_BYTES = 20; // the salt byte value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
@@ -45,9 +45,9 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Encrypts a password using Java's PBKDF2 implementation.
+   * Encrypts a password using Java's PBE implementation.
    *
-* </br>
+   * <p></br>
    *
    * @param password the cleartext password to encrypt
    * @return the encrypted password
@@ -57,11 +57,11 @@ public class PasswordEncryptionPolicy {
     SecureRandom random = new SecureRandom();
     byte[] salt = new byte[SALT_BYTES];
     random.nextBytes(salt);
-    byte[] hash = pbkdf2(password.toCharArray(), salt, ITERATIONS);
+    byte[] hash = pbe(password.toCharArray(), salt, ITERATIONS);
     return ITERATIONS + ":" + toHex(salt) + ":" + toHex(hash);
   }
 
-  private static byte[] pbkdf2(char[] password, byte[] salt, int iterations) {
+  private static byte[] pbe(char[] password, byte[] salt, int iterations) {
     KeySpec spec =
         new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_BYTES * 8);
     SecretKeyFactory factory = getSecretKeyFactory();
@@ -82,7 +82,7 @@ public class PasswordEncryptionPolicy {
     byte[] salt = fromHex(passwordParameters[SALT_INDEX]);
     byte[] hash = fromHex(passwordParameters[HASH_INDEX]);
 
-    byte[] potentialPassword = pbkdf2(rawPassword, salt, iterations);
+    byte[] potentialPassword = pbe(rawPassword, salt, iterations);
     return validate(potentialPassword, hash);
   }
 
@@ -134,7 +134,7 @@ public class PasswordEncryptionPolicy {
 
   private static SecretKeyFactory getSecretKeyFactory() {
     try {
-      return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+      return SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
     } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
       throw new EncryptionException(
           "Unexpected exception, encryption failed.", noSuchAlgorithmException);
