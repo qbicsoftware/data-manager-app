@@ -1,6 +1,8 @@
 package life.qbic.domain.usermanagement;
 
+import life.qbic.domain.events.DomainEventProducer;
 import life.qbic.domain.usermanagement.User.UserException;
+import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
@@ -28,9 +30,15 @@ public class UserDomainService {
    */
   public void createNewUser(String fullName, String email, char[] rawPassword)
       throws UserException {
+    var domainEventProducer = DomainEventProducer.instance();
+
     var user = User.create(fullName, email);
     user.setPassword(rawPassword);
     userRepository.addUser(user);
+
+    var userCreatedEvent = UserRegistered.createEvent(user.getId(), user.getFullName(),
+        user.getEmail());
+    domainEventProducer.publish(userCreatedEvent);
   }
 
 }

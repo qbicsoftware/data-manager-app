@@ -12,14 +12,24 @@ public class UserRegistered implements DomainEvent {
 
   private final Instant occurredOn;
 
+  private final String fullName;
+
+  private final String email;
+
   private final String userId;
+
+  public static UserRegistered createEvent(final String userId, final String fullName, final String email) {
+    return new UserRegistered(userId, fullName, email);
+  }
 
   /**
    * @param userId the registered user
    * @since 1.0.0
    */
-  public UserRegistered(String userId) {
+  private UserRegistered(final String userId, final String fullName, final String email) {
     this.userId = userId;
+    this.fullName = fullName;
+    this.email = email;
     this.occurredOn = Instant.now();
   }
 
@@ -28,7 +38,15 @@ public class UserRegistered implements DomainEvent {
     return occurredOn;
   }
 
-  public String getUserId() {
+  public String userId() {
     return userId;
+  }
+
+  public String userFullName() {
+    return fullName;
+  }
+
+  public String userEmail() {
+    return email;
   }
 }
