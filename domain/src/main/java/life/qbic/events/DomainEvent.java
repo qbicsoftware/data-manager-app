@@ -8,7 +8,7 @@ import java.time.Instant;
  *   Something happened that domain experts care about.
  * </p>
  * <p>
- * This interface does not provide any information but the instant of event occurrence. All other domain event information must be provided by the implementing classes not dependant of this interface.
+ * This interface provides access to information about the event occurrence timepoint. All other domain event information must be provided by the implementing class. 
  * </p>
  */
 public interface DomainEvent {
