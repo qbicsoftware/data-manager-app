@@ -28,7 +28,7 @@ public class QBiCPasswordEncoder implements PasswordEncoder {
    */
   @Override
   public String encode(CharSequence rawPassword) {
-    return passwordEncryptionPolicy.encrypt(rawPassword.toString());
+    return passwordEncryptionPolicy.encrypt(rawPassword.toString().toCharArray());
   }
 
   /**

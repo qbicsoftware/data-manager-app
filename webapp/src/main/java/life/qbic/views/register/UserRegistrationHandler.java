@@ -51,10 +51,10 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
     userRegistrationLayout.registerButton.addClickListener(event -> {
       resetErrorMessages();
       try {
-        var user = User.create(
-            userRegistrationLayout.password.getValue(),
-            userRegistrationLayout.fullName.getValue(),
-            userRegistrationLayout.email.getValue());
+        var user =
+            User.create(userRegistrationLayout.fullName.getValue(),
+                userRegistrationLayout.email.getValue());
+        user.setPassword(userRegistrationLayout.password.getValue().toCharArray());
         registrationUseCase.register(user);
       } catch (UserException e) {
         handleUserException(e.getMessage());
@@ -66,10 +66,9 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
           setEmptyFieldsInvalid();
           try {
             var user =
-                User.create(
-                    userRegistrationLayout.password.getValue(),
-                    userRegistrationLayout.fullName.getValue(),
+                User.create(userRegistrationLayout.fullName.getValue(),
                     userRegistrationLayout.email.getValue());
+            user.setPassword(userRegistrationLayout.password.getValue().toCharArray());
             registrationUseCase.register(user);
           } catch (UserException e) {
             handleUserException(e.getMessage());

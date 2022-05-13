@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies
+package life.qbic.domain.usermanagement.policies
 
 import life.qbic.domain.usermanagement.policies.PasswordPolicy
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport
@@ -14,7 +14,7 @@ class PasswordPolicySpec extends Specification {
 
     def "Given a password length shorter than 8 characters, the policy check shall fail"() {
         when:
-        PolicyCheckReport report = PasswordPolicy.create().validate(password)
+        PolicyCheckReport report = PasswordPolicy.create().validate(password.toCharArray())
 
         then:
         report.status() == PolicyStatus.FAILED
@@ -34,7 +34,7 @@ class PasswordPolicySpec extends Specification {
 
     def "Given a password length longer or equal to 8 characters, the policy check shall pass"() {
         when:
-        PolicyCheckReport report = PasswordPolicy.create().validate(password)
+        PolicyCheckReport report = PasswordPolicy.create().validate(password.toCharArray())
 
         then:
         report.status() == PolicyStatus.PASSED

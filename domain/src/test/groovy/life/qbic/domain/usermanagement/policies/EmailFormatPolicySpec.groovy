@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.policies
+package life.qbic.domain.usermanagement.policies
 
 import life.qbic.domain.usermanagement.policies.EmailFormatPolicy
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport

@@ -1,4 +1,4 @@
-package life.qbic.usermanagement
+package life.qbic.domain.usermanagement
 
 import life.qbic.domain.usermanagement.User
 import spock.lang.Shared
@@ -18,7 +18,8 @@ class UserSpec extends Specification {
     @Unroll
     def "When a new user is created, a unique identifier is assigned to the user"() {
         when:
-        User user = User.create("test1234", "My Name", "my.name@example.com")
+        User user = User.create("My Name", "my.name@example.com")
+        user.setPassword("test1234".toCharArray())
 
         then:
         !generatedUserIds.contains(user.getId())
@@ -30,7 +31,8 @@ class UserSpec extends Specification {
 
     def "When a weak password is provided, throw a user exception"() {
         when:
-        User.create("123", "My Name", "my.name@example.com")
+        def user = User.create("My Name", "my.name@example.com")
+        user.setPassword(new char[]{"a","b"})
 
         then:
         thrown(User.UserException)
@@ -39,7 +41,7 @@ class UserSpec extends Specification {
 
     def "When an invalid email is provided, throw a user exception"() {
         when:
-        User.create("test1244", "My Name", "my.name@example")
+        User.create("My Name", "my.name@example")
 
         then:
         thrown(User.UserException)

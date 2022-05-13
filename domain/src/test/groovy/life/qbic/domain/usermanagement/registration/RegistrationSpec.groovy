@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.registration
+package life.qbic.domain.usermanagement.registration
 
 import life.qbic.domain.usermanagement.User
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput
@@ -25,14 +25,16 @@ class RegistrationSpec extends Specification {
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
         given: "A repository with one user entry"
         def userDataStorage = new TestStorage()
-        def testUser = User.create("12345678", "Mr Somebody", "some@body.com")
+        def testUser = User.create("Mr Somebody", "some@body.com")
+        testUser.setPassword("12345678".toCharArray())
         userRepository.addUser(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create("12345678", "Mr Nobody", "some@body.com")
+        def newUser = User.create("Mr Nobody", "some@body.com")
+        newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
         def registration = new Registration(userRepository)
@@ -50,14 +52,16 @@ class RegistrationSpec extends Specification {
 
     def "When a user is not yet registered with a given email address, register the user"() {
         given: "A repository with one user entry"
-        def testUser = User.create("12345678", "Mr Somebody", "some@body.com")
+        def testUser = User.create("Mr Somebody", "some@body.com")
+        testUser.setPassword("12345678".toCharArray())
         userRepository.addUser(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create("12345678", "Mr Nobody", "no@body.com")
+        def newUser = User.create("Mr Nobody", "no@body.com")
+        newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
         def registration = new Registration(userRepository)
