@@ -4,7 +4,7 @@ import java.time.Instant;
 import life.qbic.events.DomainEvent;
 
 /**
- * <b>A user registered int the system.</b>
+ * <b>A user registered in the user management context.</b>
  *
  * @since 1.0.0
  */
