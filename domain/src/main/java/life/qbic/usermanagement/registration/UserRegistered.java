@@ -3,14 +3,10 @@ package life.qbic.usermanagement.registration;
 import java.time.Instant;
 import life.qbic.events.DomainEvent;
 
-/**
- * <b>A user registered in the user management context.</b>
- *
- * @since 1.0.0
- */
+
 public class UserRegistered implements DomainEvent {
 
-  private final Instant occurredOn;
+  private Instant occurredOn;
 
   private final String userId;
 
@@ -23,6 +19,10 @@ public class UserRegistered implements DomainEvent {
     this.occurredOn = Instant.now();
   }
 
+  public void setOccurredOn(Instant occurredOn) {
+    this.occurredOn = occurredOn;
+  }
+
   @Override
   public Instant occurredOn() {
     return occurredOn;
@@ -30,5 +30,35 @@ public class UserRegistered implements DomainEvent {
 
   public String getUserId() {
     return userId;
+  }
+
+  @Override
+  public String toString() {
+    return "UserRegistered{" +
+        "occurredOn=" + occurredOn +
+        ", userId='" + userId + '\'' +
+        '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof UserRegistered that)) {
+      return false;
+    }
+
+    if (!occurredOn.equals(that.occurredOn)) {
+      return false;
+    }
+    return userId.equals(that.userId);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = occurredOn.hashCode();
+    result = 31 * result + userId.hashCode();
+    return result;
   }
 }

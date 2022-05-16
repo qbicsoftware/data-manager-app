@@ -1,5 +1,7 @@
 package life.qbic;
 
+import life.qbic.events.EventStore;
+import life.qbic.events.TemporaryEventRepository;
 import life.qbic.usermanagement.registration.RegisterUserInput;
 import life.qbic.usermanagement.registration.Registration;
 import life.qbic.usermanagement.repository.UserDataStorage;
@@ -40,6 +42,15 @@ public class AppConfig {
   @Bean
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
+  }
+
+  /**
+   * Creates the event store instance
+   * @return 1.0.0
+   */
+  @Bean
+  public EventStore eventStore() {
+    return new EventStore(new TemporaryEventRepository());
   }
 
 }
