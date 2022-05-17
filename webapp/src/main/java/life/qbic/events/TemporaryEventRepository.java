@@ -30,6 +30,5 @@ public class TemporaryEventRepository implements EventRepository {
     storedEvent.setEventId(eventId);
     storedEvents.add(storedEvent);
     latestEventId = eventId;
-    System.out.println(this);
   }
 }

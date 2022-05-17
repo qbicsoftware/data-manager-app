@@ -13,17 +13,6 @@ import spock.lang.Specification
 class EventStoreSpec extends Specification {
   UserRegistered userRegisteredEvent = new UserRegistered("my.awesome@user.id")
 
-  def "when a dom"() {
-    given:
-    def eventStore = new EventStore(new TemporaryEventRepository())
-    expect:
-    eventStore.append(new UserRegistered("test"))
-    eventStore.append(new UserRegistered("blabblabb"))
-    def domainEvents = eventStore.findAllByType(UserRegistered.class)
-    println "domainEvents = $domainEvents"
-
-  }
-
   def "when a domain event is appended to the event store, then no exception is thrown"() {
     when: "a domain event is appended to the event store"
     new EventStore(new TemporaryEventRepository()).append(userRegisteredEvent)
