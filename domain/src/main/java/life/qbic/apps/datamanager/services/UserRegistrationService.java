@@ -16,6 +16,7 @@ import life.qbic.domain.usermanagement.registration.UserRegistered;
 public class UserRegistrationService {
 
   public UserRegistrationService() {
+    super();
   }
 
   public void registerNewUser(final String fullName, final String email, final char[] password) throws ServiceException {
