@@ -8,8 +8,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import jdk.jshell.spi.ExecutionControl.UserException;
-import life.qbic.usermanagement.policies.*;
+import life.qbic.usermanagement.policies.EmailFormatPolicy;
+import life.qbic.usermanagement.policies.PasswordEncryptionPolicy;
+import life.qbic.usermanagement.policies.PasswordPolicy;
+import life.qbic.usermanagement.policies.PolicyCheckReport;
+import life.qbic.usermanagement.policies.PolicyStatus;
 
 /**
  * <b>User class</b>

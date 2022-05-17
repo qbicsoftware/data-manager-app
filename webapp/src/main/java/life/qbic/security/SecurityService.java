@@ -2,7 +2,6 @@ package life.qbic.security;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;

@@ -3,7 +3,6 @@ package life.qbic.events;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 import life.qbic.usermanagement.registration.UserRegistered;
 
 public class DomainEventSerializer {
