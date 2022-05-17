@@ -1,6 +1,6 @@
 package life.qbic.events;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * <b>short description</b>
@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public interface EventRepository {
 
-  Set<DomainEvent> findAllByType(Class<DomainEvent> type);
+  List<StoredEvent> findAllByType(Class<DomainEvent> type);
   void save(StoredEvent storedEvent);
 
 }

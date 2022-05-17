@@ -1,6 +1,7 @@
 package life.qbic.events;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain
@@ -28,7 +29,9 @@ public class EventStore {
   }
 
   public Set<DomainEvent> findAllByType(Class<DomainEvent> type) {
-    return eventRepository.findAllByType(type);
+    var storedEvents = eventRepository.findAllByType(type);
+    return storedEvents.stream()
+        .map(it -> EventStore.eventSerializer().deserialize(it.eventBody(), type.getName()))
+        .collect(Collectors.toSet());
   }
-
 }

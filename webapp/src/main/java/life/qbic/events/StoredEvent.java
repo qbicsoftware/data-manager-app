@@ -34,4 +34,14 @@ public class StoredEvent {
   public void setEventId(long eventId) {
     this.eventId = eventId;
   }
+
+  @Override
+  public String toString() {
+    return "StoredEvent{" +
+        "eventBody='" + eventBody + '\'' +
+        ", eventId=" + eventId +
+        ", occurredOn=" + occurredOn +
+        ", typeName='" + typeName + '\'' +
+        '}';
+  }
 }
