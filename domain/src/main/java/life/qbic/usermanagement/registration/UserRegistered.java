@@ -1,26 +1,31 @@
 package life.qbic.usermanagement.registration;
 
+import java.io.Serializable;
 import java.time.Instant;
 import life.qbic.events.DomainEvent;
 
 
-public class UserRegistered implements DomainEvent {
+public class UserRegistered implements DomainEvent, Serializable {
 
-  private Instant occurredOn;
+  private final Instant occurredOn;
 
   private final String userId;
 
   /**
    * @param userId the registered user
+   * @param occurredOn the timestamp of event occurrence
    * @since 1.0.0
    */
-  public UserRegistered(String userId) {
+  private UserRegistered(String userId, Instant occurredOn) {
     this.userId = userId;
-    this.occurredOn = Instant.now();
+    this.occurredOn = occurredOn;
   }
 
-  public void setOccurredOn(Instant occurredOn) {
-    this.occurredOn = occurredOn;
+  public static UserRegistered create(String userId) {
+    return new UserRegistered(userId, Instant.now());
+  }
+  public static UserRegistered create(String userId, Instant occurredOn) {
+    return new UserRegistered(userId, occurredOn);
   }
 
   @Override

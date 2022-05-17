@@ -54,8 +54,7 @@ public class DomainEventSerializer {
       } else if (occurredOn == null) {
         throw new RuntimeException("Cannot deserialize to type " + UserRegistered.class.getName());
       }
-      UserRegistered deserializedEvent = new UserRegistered(userId);
-      deserializedEvent.setOccurredOn(occurredOn);
+      UserRegistered deserializedEvent = UserRegistered.create(userId, occurredOn);
       return deserializedEvent;
     }
   }

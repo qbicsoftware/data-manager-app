@@ -11,7 +11,7 @@ class DomainEventSerializerSpec extends Specification {
     given:
     DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
     def userId = "test"
-    def userRegistered = new UserRegistered(userId)
+    def userRegistered = UserRegistered.create(userId)
     def eventOccurredOn = userRegistered.occurredOn().toString()
 
     expect:
