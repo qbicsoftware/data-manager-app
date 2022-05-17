@@ -8,14 +8,14 @@ import java.time.Instant;
  *   Something happened that domain experts care about.
  * </p>
  * <p>
- * This interface provides access to information about the event occurrence timepoint. All other domain event information must be provided by the implementing class. 
+ * This interface provides access to information about the event occurrence timepoint. All other domain event information must be provided by the implementing classes.
  * </p>
  */
 public interface DomainEvent {
 
   /**
    * The instant of event creation.
-   * @return the instant the of event.
+   * @return the instant the of event creation.
    */
   Instant occurredOn();
 }

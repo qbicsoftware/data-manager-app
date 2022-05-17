@@ -4,7 +4,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import life.qbic.events.DomainEvent;
 
-
+/**
+ * <b>A user registered int the system.</b>
+ *
+ * @since 1.0.0
+ */
 public class UserRegistered implements DomainEvent, Serializable {
 
   private final Instant occurredOn;
