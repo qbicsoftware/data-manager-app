@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.services;
+package life.qbic.apps.datamanager.services;
 
 import java.util.Arrays;
 import life.qbic.domain.events.DomainEventProducer;
@@ -18,7 +18,7 @@ public class UserRegistrationService {
   public UserRegistrationService() {
   }
 
-  public void registerNewUser(final String fullName, final String email, final char[] password) {
+  public void registerNewUser(final String fullName, final String email, final char[] password) throws ServiceException {
     var userDomainService = DomainRegistry.instance().userDomainService();
     DomainEventProducer.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override

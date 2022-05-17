@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
  * the view class components
  */
 @Component
-public class UserRegistrationHandler implements UserRegistrationHandlerInterface, RegisterUserOutput {
+public class UserRegistrationHandler implements UserRegistrationHandlerInterface,
+    RegisterUserOutput {
 
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
@@ -39,7 +40,7 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
     }
   }
 
-  private void initFields () {
+  private void initFields() {
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
@@ -50,40 +51,20 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
 
     userRegistrationLayout.registerButton.addClickListener(event -> {
       resetErrorMessages();
-      try {
-        var user =
-            User.create(userRegistrationLayout.fullName.getValue(),
-                userRegistrationLayout.email.getValue());
-        user.setPassword(userRegistrationLayout.password.getValue().toCharArray());
-        registrationUseCase.register(user);
-      } catch (UserException e) {
-        handleUserException(e.getMessage());
-      }
+      registrationUseCase.register(userRegistrationLayout.fullName.getValue(),
+          userRegistrationLayout.email.getValue(),
+          userRegistrationLayout.password.getValue().toCharArray());
     });
-    userRegistrationLayout.registerButton.addClickListener(
-        event -> {
-          resetErrorMessages();
-          setEmptyFieldsInvalid();
-          try {
-            var user =
-                User.create(userRegistrationLayout.fullName.getValue(),
-                    userRegistrationLayout.email.getValue());
-            user.setPassword(userRegistrationLayout.password.getValue().toCharArray());
-            registrationUseCase.register(user);
-          } catch (UserException e) {
-            handleUserException(e.getMessage());
-          }
-        });
   }
 
   private void setEmptyFieldsInvalid() {
-    if(userRegistrationLayout.password.isEmpty()){
+    if (userRegistrationLayout.password.isEmpty()) {
       userRegistrationLayout.password.setInvalid(true);
     }
-    if(userRegistrationLayout.fullName.isEmpty()){
+    if (userRegistrationLayout.fullName.isEmpty()) {
       userRegistrationLayout.fullName.setInvalid(true);
     }
-    if(userRegistrationLayout.email.isEmpty()){
+    if (userRegistrationLayout.email.isEmpty()) {
       userRegistrationLayout.email.setInvalid(true);
     }
   }

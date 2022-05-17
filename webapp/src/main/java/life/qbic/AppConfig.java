@@ -1,9 +1,14 @@
 package life.qbic;
 
+import life.qbic.apps.datamanager.services.UserRegistrationService;
+import life.qbic.domain.usermanagement.DomainRegistry;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.UserDomainService;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import life.qbic.domain.usermanagement.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,8 +31,8 @@ public class AppConfig {
    * @since 1.0.0
    */
   @Bean
-  public RegisterUserInput registerUserInput(UserRepository userRepository) {
-    return new Registration(userRepository);
+  public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
+    return new Registration(userRegistrationService);
   }
 
   /**
@@ -41,5 +46,11 @@ public class AppConfig {
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
   }
+
+  @Bean
+  public UserRegistrationService userRegistrationService() {
+    return new UserRegistrationService();
+  }
+
 
 }

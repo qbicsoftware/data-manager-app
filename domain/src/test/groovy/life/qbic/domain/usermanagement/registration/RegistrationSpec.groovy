@@ -1,8 +1,9 @@
 package life.qbic.domain.usermanagement.registration
 
+import life.qbic.apps.datamanager.services.UserRegistrationService
+import life.qbic.domain.usermanagement.DomainRegistry
 import life.qbic.domain.usermanagement.User
-import life.qbic.domain.usermanagement.registration.RegisterUserOutput
-import life.qbic.domain.usermanagement.registration.Registration
+import life.qbic.domain.usermanagement.UserDomainService
 import life.qbic.domain.usermanagement.repository.UserDataStorage
 import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Shared
@@ -16,18 +17,22 @@ import spock.lang.Specification
 class RegistrationSpec extends Specification {
 
     @Shared
-    public UserRepository userRepository
+    public UserRegistrationService userRegistrationService
+
+    @Shared
+    public TestStorage testStorage
 
     def setupSpec() {
-        userRepository = UserRepository.getInstance(new TestStorage())
+        testStorage = new TestStorage()
+        DomainRegistry domainRegistry = DomainRegistry.instance()
+        domainRegistry.registerService(new UserDomainService(UserRepository.getInstance(testStorage)))
+        userRegistrationService = new UserRegistrationService()
     }
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
         given: "A repository with one user entry"
-        def userDataStorage = new TestStorage()
         def testUser = User.create("Mr Somebody", "some@body.com")
-        testUser.setPassword("12345678".toCharArray())
-        userRepository.addUser(testUser)
+        testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
@@ -37,43 +42,41 @@ class RegistrationSpec extends Specification {
         newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
-        def registration = new Registration(userRepository)
+        def registration = new Registration(new UserRegistrationService())
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser)
+        registration.register(testUser.fullName, testUser.email, "12345678".toCharArray())
 
         then:
         0 * useCaseOutput.onSuccess()
         1 * useCaseOutput.onFailure(_ as String)
         // the user has not been added to the repository
-        userDataStorage.findUserById(newUser.getId()).isEmpty()
+        testStorage.findUsersByEmail(newUser.email).size() == 1
     }
 
     def "When a user is not yet registered with a given email address, register the user"() {
         given: "A repository with one user entry"
         def testUser = User.create("Mr Somebody", "some@body.com")
-        testUser.setPassword("12345678".toCharArray())
-        userRepository.addUser(testUser)
+        testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
         def newUser = User.create("Mr Nobody", "no@body.com")
-        newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
-        def registration = new Registration(userRepository)
+        def registration = new Registration(new UserRegistrationService())
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser)
+        registration.register(newUser.fullName, newUser.email, "12345678".toCharArray())
 
         then:
         1 * useCaseOutput.onSuccess()
         0 * useCaseOutput.onFailure(_ as String)
-        userRepository.findById(newUser.getId()).isPresent()
+        testStorage.findUsersByEmail(newUser.email).get(0).fullName == newUser.fullName
 
     }
 

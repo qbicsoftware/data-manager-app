@@ -10,12 +10,16 @@ import life.qbic.domain.usermanagement.User;
 public interface RegisterUserInput {
 
   /**
-   * Register a new user.
+   * Registers a new user in the application.
    *
-   * @param user the new user to register
+   * The raw password passed needs to be cleared, after it has been successfully processed.
+   *
+   * @param fullName the full name of the user
+   * @param email the user's email address
+   * @param rawPassword the user selected raw password for authentication
    * @since 1.0.0
    */
-  void register(User user);
+  void register(String fullName, String email, char[] rawPassword);
 
   /**
    * Set the output the use case shall call, when finished.

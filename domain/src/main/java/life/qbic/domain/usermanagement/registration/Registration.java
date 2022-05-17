@@ -1,6 +1,8 @@
 package life.qbic.domain.usermanagement.registration;
 
+import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
@@ -17,7 +19,7 @@ public class Registration implements RegisterUserInput {
 
   private RegisterUserOutput registerUserOutput;
 
-  private final UserRepository userRepository;
+  private final UserRegistrationService userRegistrationService;
 
   /**
    * Creates the registration use case.
@@ -26,13 +28,13 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    * <p>
    * The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been exectuted via {@link Registration#register(User)}.
+   * after the use case has been executed via {@link Registration#register(User)}.
    *
-   * @param userRepository the user repository to save the new user to.
+   * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0
    */
-  public Registration(UserRepository userRepository) {
-    this.userRepository = userRepository;
+  public Registration(UserRegistrationService userRegistrationService) {
+    this.userRegistrationService = userRegistrationService;
     // Init a dummy output, until one is set by the client.
     this.registerUserOutput = new RegisterUserOutput() {
       @Override
@@ -62,15 +64,16 @@ public class Registration implements RegisterUserInput {
    * @inheritDocs
    */
   @Override
-  public void register(User user) {
-    userRepository.findByEmail(user.getEmail())
-        .ifPresentOrElse(
-            u -> registerUserOutput.onFailure("User with email address already exists."),
-            () -> {
-              user.setEmailConfirmed(false);
-              userRepository.addUser(user);
-              registerUserOutput.onSuccess();
-            });
+  public void register(String fullName, String email, char[] rawPassword) {
+    try {
+      userRegistrationService.registerNewUser(fullName, email, rawPassword);
+      registerUserOutput.onSuccess();
+    } catch (UserException e) {
+      e.printStackTrace();
+      registerUserOutput.onFailure("Could not create a new account, please try again.");
+    } catch (Exception e) {
+      registerUserOutput.onFailure("Unexpected error occurred.");
+    }
   }
 
   /**
@@ -79,9 +82,5 @@ public class Registration implements RegisterUserInput {
   @Override
   public void setOutput(RegisterUserOutput output) {
     registerUserOutput = output;
-  }
-
-  private boolean userExists(User user) {
-    return userRepository.findByEmail(user.getEmail()).isPresent();
   }
 }

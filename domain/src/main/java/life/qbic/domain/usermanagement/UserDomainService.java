@@ -30,8 +30,11 @@ public class UserDomainService {
    */
   public void createNewUser(String fullName, String email, char[] rawPassword)
       throws UserException {
+    // First check, if a user with the provided email already exists
+    if (userRepository.findByEmail(email).isPresent()) {
+      throw new UserException("User with email address already exists.");
+    }
     var domainEventProducer = DomainEventProducer.instance();
-
     var user = User.create(fullName, email);
     user.setPassword(rawPassword);
     userRepository.addUser(user);
