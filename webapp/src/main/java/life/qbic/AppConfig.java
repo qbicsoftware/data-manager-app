@@ -50,7 +50,7 @@ public class AppConfig {
    */
   @Bean
   public EventStore eventStore() {
-    return new EventStore(new TemporaryEventRepository());
+    return EventStore.getInstance(new TemporaryEventRepository());
   }
 
 }

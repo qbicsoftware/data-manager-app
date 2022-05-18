@@ -9,10 +9,19 @@ import java.util.stream.Collectors;
  */
 public class EventStore {
 
+  private static EventStore instance;
+
   private final EventRepository eventRepository;
 
   public EventStore(EventRepository eventRepository) {
     this.eventRepository = eventRepository;
+  }
+
+  public static EventStore getInstance(EventRepository eventRepository) {
+    if (instance == null || !instance.eventRepository.equals(eventRepository)) {
+      instance = new EventStore(eventRepository);
+    }
+    return instance;
   }
 
   public void append(DomainEvent event) {

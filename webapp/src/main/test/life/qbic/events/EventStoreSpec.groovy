@@ -15,14 +15,14 @@ class EventStoreSpec extends Specification {
 
   def "when a domain event is appended to the event store, then no exception is thrown"() {
     when: "a domain event is appended to the event store"
-    new EventStore(new TemporaryEventRepository()).append(userRegisteredEvent)
+    EventStore.getInstance(new TemporaryEventRepository()).append(userRegisteredEvent)
     then: "no exception is thrown"
     noExceptionThrown()
   }
 
   def "after a domain event is appended to the event store, it can be retrieved by type "() {
     given:
-    def eventStore = new EventStore(new TemporaryEventRepository())
+    def eventStore = EventStore.getInstance(new TemporaryEventRepository())
 
     when:
     eventStore.append(userRegisteredEvent)
@@ -33,7 +33,7 @@ class EventStoreSpec extends Specification {
 
   def "when the same event is appended multiple times, then it is found only once"() {
     given:
-    EventStore eventStore = new EventStore(new TemporaryEventRepository())
+    EventStore eventStore = EventStore.getInstance(new TemporaryEventRepository())
 
     when: "the same event is appended multiple times"
     eventStore.append(userRegisteredEvent)
