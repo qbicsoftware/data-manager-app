@@ -22,10 +22,10 @@ class DomainEventSerializerSpec extends Specification {
   def "expect serialization of an unknown EventType does not work"() {
     given:
     DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
-    DomainEvent unknownType = new DomainEvent() {
+    DomainEvent unknownType = new SerializableDomainEvent() {
       @Override
       Instant occurredOn() {
-        Instant.now()
+        return Instant.now()
       }
     }
     when:

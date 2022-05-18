@@ -1,5 +1,6 @@
 package life.qbic.events;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,11 @@ public class EventStore {
   }
 
   public void append(DomainEvent event) {
-    String eventSerialization = EventStore.eventSerializer().serialize(event);
+    if (!(event instanceof Serializable)) {
+      throw new RuntimeException(
+          String.format("event of type %s is not serializable.", event.getClass().getName()));
+    }
+    String eventSerialization = EventStore.eventSerializer().serialize((SerializableDomainEvent) event);
     StoredEvent storedEvent = new StoredEvent(
         eventSerialization,
         event.occurredOn(),

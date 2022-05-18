@@ -1,27 +1,43 @@
 package life.qbic.events;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import life.qbic.usermanagement.registration.UserRegistered;
 
 public class DomainEventSerializer {
 
-  public <T extends DomainEvent> String serialize(T event) {
-    if (event instanceof UserRegistered) {
-      return UserRegisteredSerializer.serialize((UserRegistered) event);
+  public <T extends DomainEvent & Serializable> String serialize(T event) {
+    try (
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos)
+    ) {
+      oos.writeObject(event);
+      oos.close();
+      return Base64.getEncoder().encodeToString(baos.toByteArray());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    throw
-        new UnrecognizedEventTypeException(
-        "Cannot serialize events of type " + event.getClass().getName() + ". Unknown event type.");
   }
 
   public DomainEvent deserialize(String serializedEvent, String desiredType) {
-    if (desiredType.equals(UserRegistered.class.getName())) {
-      return UserRegisteredSerializer.deserialize(serializedEvent);
+    try (
+        ByteArrayInputStream bais = new ByteArrayInputStream(
+            serializedEvent.getBytes(StandardCharsets.UTF_8));
+        ObjectInputStream ois = new ObjectInputStream(bais)
+    ) {
+      return (DomainEvent) Class.forName(desiredType).cast(ois.readObject());
+    } catch (IOException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
     }
-    throw new UnrecognizedEventTypeException(
-        "Cannot deserialize events of type " + desiredType + ". Unknown event type.");
   }
 
   private static class UserRegisteredSerializer {
@@ -49,9 +65,11 @@ public class DomainEventSerializer {
         }
       }
       if (userId == null) {
-        throw new RuntimeException("Cannot deserialize to type " + UserRegistered.class.getName());
+        throw new RuntimeException(
+            "Cannot deserialize to type " + UserRegistered.class.getName());
       } else if (occurredOn == null) {
-        throw new RuntimeException("Cannot deserialize to type " + UserRegistered.class.getName());
+        throw new RuntimeException(
+            "Cannot deserialize to type " + UserRegistered.class.getName());
       }
       return UserRegistered.create(userId, occurredOn);
     }
