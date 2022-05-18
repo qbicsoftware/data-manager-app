@@ -13,11 +13,11 @@ public class EventStore {
 
   private final EventRepository eventRepository;
 
-  public EventStore(EventRepository eventRepository) {
+  private EventStore(EventRepository eventRepository) {
     this.eventRepository = eventRepository;
   }
 
-  public static EventStore getInstance(EventRepository eventRepository) {
+  public static EventStore instance(EventRepository eventRepository) {
     if (instance == null || !instance.eventRepository.equals(eventRepository)) {
       instance = new EventStore(eventRepository);
     }
