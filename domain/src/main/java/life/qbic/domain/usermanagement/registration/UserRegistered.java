@@ -1,5 +1,6 @@
 package life.qbic.domain.usermanagement.registration;
 
+import java.io.Serial;
 import java.time.Instant;
 import life.qbic.domain.events.DomainEvent;
 
@@ -8,7 +9,10 @@ import life.qbic.domain.events.DomainEvent;
  *
  * @since 1.0.0
  */
-public class UserRegistered implements DomainEvent {
+public class UserRegistered extends DomainEvent {
+
+  @Serial
+  private static final long serialVersionUID = 2581827831168895067L;
 
   private final Instant occurredOn;
 
@@ -19,6 +23,11 @@ public class UserRegistered implements DomainEvent {
   private final String userId;
 
   public static UserRegistered createEvent(final String userId, final String fullName, final String email) {
+    return new UserRegistered(userId, fullName, email);
+  }
+
+  public static UserRegistered create(final String userId, final String fullName,
+      final String email) {
     return new UserRegistered(userId, fullName, email);
   }
 
@@ -48,5 +57,36 @@ public class UserRegistered implements DomainEvent {
 
   public String userEmail() {
     return email;
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof UserRegistered that)) {
+      return false;
+    }
+
+    if (!occurredOn.equals(that.occurredOn)) {
+      return false;
+    }
+    if (!fullName.equals(that.fullName)) {
+      return false;
+    }
+    if (!email.equals(that.email)) {
+      return false;
+    }
+    return userId.equals(that.userId);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = occurredOn.hashCode();
+    result = 31 * result + fullName.hashCode();
+    result = 31 * result + email.hashCode();
+    result = 31 * result + userId.hashCode();
+    return result;
   }
 }

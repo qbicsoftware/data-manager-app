@@ -1,6 +1,6 @@
 package life.qbic.events
 
-import life.qbic.usermanagement.registration.UserRegistered
+import life.qbic.domain.usermanagement.registration.UserRegistered
 import spock.lang.Specification
 
 /**
@@ -11,7 +11,7 @@ import spock.lang.Specification
  * @since <version tag>
  */
 class EventStoreSpec extends Specification {
-  UserRegistered userRegisteredEvent = UserRegistered.create("my.awesome@user.id")
+  UserRegistered userRegisteredEvent = UserRegistered.create("my.awesome@user.id", "", "")
 
   def "when a domain event is appended to the event store, then no exception is thrown"() {
     when: "a domain event is appended to the event store"
