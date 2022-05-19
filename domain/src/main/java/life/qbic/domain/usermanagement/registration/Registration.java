@@ -3,7 +3,6 @@ package life.qbic.domain.usermanagement.registration;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.User.UserException;
-import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration use case</b>

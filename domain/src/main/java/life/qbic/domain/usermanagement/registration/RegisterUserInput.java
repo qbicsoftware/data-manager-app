@@ -1,7 +1,5 @@
 package life.qbic.domain.usermanagement.registration;
 
-import life.qbic.domain.usermanagement.User;
-
 /**
  * Input interface to register a new user in the application.
  *

@@ -1,8 +1,6 @@
 package life.qbic.domain.usermanagement.policies
 
-import life.qbic.domain.usermanagement.policies.EmailFormatPolicy
-import life.qbic.domain.usermanagement.policies.PolicyCheckReport
-import life.qbic.domain.usermanagement.policies.PolicyStatus
+
 import spock.lang.Specification
 
 /**
