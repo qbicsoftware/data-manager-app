@@ -3,11 +3,9 @@ package life.qbic.domain.events;
 import java.io.Serializable;
 
 /**
- * <b>short description</b>
+ * A domain event that can be serialized.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public abstract class SerializableDomainEvent implements DomainEvent, Serializable {
 
