@@ -3,6 +3,8 @@ package life.qbic.events;
 
 import java.time.Instant;
 import java.util.HashMap;
+import life.qbic.domain.events.DomainEvent;
+import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.usermanagement.registration.UserRegistered;
 
 public class DomainEventSerializer {
@@ -28,7 +30,7 @@ public class DomainEventSerializer {
 
     static String serialize(UserRegistered event) {
       HashMap<String, String> propertiesMap = new HashMap<>();
-      propertiesMap.put("userId", event.getUserId());
+      propertiesMap.put("userId", event.userId());
       propertiesMap.put("occurredOn", event.occurredOn().toString());
       return propertiesMap.toString();
     }
@@ -53,7 +55,7 @@ public class DomainEventSerializer {
       } else if (occurredOn == null) {
         throw new RuntimeException("Cannot deserialize to type " + UserRegistered.class.getName());
       }
-      return UserRegistered.create(userId, occurredOn);
+      return UserRegistered.createEvent(userId, "", "");
     }
   }
 
