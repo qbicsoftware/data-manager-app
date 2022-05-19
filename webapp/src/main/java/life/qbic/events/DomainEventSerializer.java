@@ -50,7 +50,7 @@ public class DomainEventSerializer {
     }
 
     static UserRegistered deserialize(String serializedEvent) {
-      var cleaned = serializedEvent.replaceAll("\\{", "").replaceAll("}", "");
+      var cleaned = serializedEvent.replace("{", "").replace("}", "");
       String[] propertyPairs = cleaned.split(", ");
       String userId = null;
       Instant occurredOn = null;
