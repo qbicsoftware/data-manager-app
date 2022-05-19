@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import life.qbic.domain.events.DomainEvent;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
-import life.qbic.usermanagement.registration.UserRegistered;
 
 public class DomainEventSerializer {
 

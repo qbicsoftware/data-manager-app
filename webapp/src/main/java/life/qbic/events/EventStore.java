@@ -2,6 +2,7 @@ package life.qbic.events;
 
 import java.util.Set;
 import java.util.stream.Collectors;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain

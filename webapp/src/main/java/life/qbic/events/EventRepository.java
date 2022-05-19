@@ -1,6 +1,7 @@
 package life.qbic.events;
 
 import java.util.List;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b>short description</b>

@@ -1,5 +1,7 @@
 package life.qbic.events;
 
+import life.qbic.domain.events.DomainEvent;
+
 /**
  * <b>short description</b>
  *
