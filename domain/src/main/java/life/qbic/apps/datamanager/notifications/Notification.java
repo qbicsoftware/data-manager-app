@@ -1,6 +1,7 @@
 package life.qbic.apps.datamanager.notifications;
 
 import java.time.Instant;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -11,41 +12,26 @@ import java.time.Instant;
  */
 public class Notification {
 
-  private final String serializedMessageBody;
+  final String eventType;
 
-  private final MessageParameters messageParameters;
+  final Instant occuredOn;
 
-  protected Notification(String notification, MessageParameters messageParameters) {
-    super();
-    this.serializedMessageBody = notification;
-    this.messageParameters = messageParameters;
+  final String notificationId;
+
+  final DomainEvent event;
+
+  public static Notification create(String eventType, Instant occuredOn, String notificationId, DomainEvent event) {
+    return new Notification(eventType, occuredOn, notificationId, event);
   }
 
-  public static Notification create(String notification, MessageParameters messageParameters) {
-    return new Notification(notification, messageParameters);
+  protected Notification(String eventType, Instant occuredOn, String notificationId, DomainEvent event) {
+    this.eventType = eventType;
+    this.occuredOn = occuredOn;
+    this.notificationId = notificationId;
+    this.event = event;
   }
 
-  public static class MessageParameters {
-
-    public final String messageType;
-
-    public final String messageId;
-
-    public final String occuredOn;
-
-    protected MessageParameters(String messageType, String messageId, String occuredOn) {
-      super();
-      this.messageId = messageId;
-      this.messageType = messageType;
-      this.occuredOn = occuredOn;
-    }
-
-    public static MessageParameters durableTextParameters(String messageType, String messageId, Instant occuredOn) {
-      String occuredOnString = occuredOn.toString();
-      return new MessageParameters(messageType, messageId, occuredOnString);
-    }
 
 
-  }
 
 }

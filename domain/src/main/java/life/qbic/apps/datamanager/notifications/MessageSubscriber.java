@@ -1,5 +1,7 @@
 package life.qbic.apps.datamanager.notifications;
 
+import life.qbic.apps.datamanager.notifications.Message.MessageParameters;
+
 /**
  * Interface for notification subscribers. This interface needs to be implemented, when a client
  * wants to subscribe to certain event types in the {@link Exchange}.
@@ -9,16 +11,16 @@ package life.qbic.apps.datamanager.notifications;
  *
  * @since 1.0.0
  */
-public interface NotificationSubscriber {
+public interface MessageSubscriber {
 
   /**
    * Receive notifications that are passed from clients such as i.e. an {@link Exchange} to
    * broadcast notifications.
    *
-   * @param notification a notification with encoded information. See {@link Notification} for more
+   * @param message a message with encoded information. See {@link Message} for more
    *                     information.
    * @since 1.0.0
    */
-  void receive(Notification notification);
+  void receive(String message, MessageParameters messageParameters);
 
 }
