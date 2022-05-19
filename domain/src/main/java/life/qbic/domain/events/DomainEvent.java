@@ -1,5 +1,6 @@
 package life.qbic.domain.events;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 /**
@@ -11,11 +12,11 @@ import java.time.Instant;
  * This interface provides access to information about the event occurrence timepoint. All other domain event information must be provided by the implementing classes.
  * </p>
  */
-public interface DomainEvent {
+public abstract class DomainEvent implements Serializable {
 
   /**
    * The instant of event creation.
    * @return the instant the of event creation.
    */
-  Instant occurredOn();
+  public abstract Instant occurredOn();
 }

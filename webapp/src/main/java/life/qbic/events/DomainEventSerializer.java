@@ -6,13 +6,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Base64;
 import life.qbic.domain.events.DomainEvent;
 
 public class DomainEventSerializer {
 
-  public <T extends DomainEvent & Serializable> String serialize(T event) {
+  public <T extends DomainEvent> String serialize(T event) {
     try (
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos)

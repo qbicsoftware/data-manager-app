@@ -2,14 +2,14 @@ package life.qbic.domain.usermanagement.registration;
 
 import java.io.Serial;
 import java.time.Instant;
-import life.qbic.domain.events.SerializableDomainEvent;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b>A user registered in the user management context.</b>
  *
  * @since 1.0.0
  */
-public class UserRegistered extends SerializableDomainEvent {
+public class UserRegistered extends DomainEvent {
 
   @Serial
   private static final long serialVersionUID = 2581827831168895067L;

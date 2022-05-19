@@ -1,10 +1,8 @@
 package life.qbic.events;
 
-import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.domain.events.DomainEvent;
-import life.qbic.domain.events.SerializableDomainEvent;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain
@@ -28,11 +26,7 @@ public class EventStore {
   }
 
   public void append(DomainEvent event) {
-    if (!(event instanceof Serializable)) {
-      throw new RuntimeException(
-          String.format("event of type %s is not serializable.", event.getClass().getName()));
-    }
-    String eventSerialization = EventStore.eventSerializer().serialize((SerializableDomainEvent) event);
+    String eventSerialization = EventStore.eventSerializer().serialize(event);
     StoredEvent storedEvent = new StoredEvent(
         eventSerialization,
         event.occurredOn(),
