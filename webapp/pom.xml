@@ -166,9 +166,15 @@
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
-            <version>5.0.3</version>
+            <version>5.1.1</version>
             <scope>test</scope>
         </dependency>
+      <dependency>
+        <groupId>org.spockframework</groupId>
+        <artifactId>spock-core</artifactId>
+        <version>2.1-groovy-3.0</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
 
     <build>

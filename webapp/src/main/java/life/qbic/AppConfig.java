@@ -1,14 +1,12 @@
 package life.qbic;
 
 import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.User;
-import life.qbic.domain.usermanagement.UserDomainService;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import life.qbic.domain.usermanagement.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import life.qbic.events.EventStore;
+import life.qbic.events.TemporaryEventRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -52,5 +50,9 @@ public class AppConfig {
     return new UserRegistrationService();
   }
 
+  @Bean
+  public EventStore eventStore() {
+    return EventStore.instance(new TemporaryEventRepository());
+  }
 
 }
