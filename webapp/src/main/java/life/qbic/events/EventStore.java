@@ -3,6 +3,8 @@ package life.qbic.events;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
+import life.qbic.domain.events.DomainEvent;
+import life.qbic.domain.events.SerializableDomainEvent;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain

@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
+import life.qbic.domain.events.DomainEvent;
 
 public class DomainEventSerializer {
 
