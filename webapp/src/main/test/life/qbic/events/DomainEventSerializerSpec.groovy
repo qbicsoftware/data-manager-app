@@ -3,35 +3,20 @@ package life.qbic.events
 import life.qbic.usermanagement.registration.UserRegistered
 import spock.lang.Specification
 
-import java.time.Instant
-
 class DomainEventSerializerSpec extends Specification {
+  final DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
+  final def userRegistered = UserRegistered.create("test")
 
-  def "expect the serialized UserRegistered events contain the userId and occurrence time"() {
-    given:
-    DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
-    def userId = "test"
-    def userRegistered = UserRegistered.create(userId)
-    def eventOccurredOn = userRegistered.occurredOn().toString()
-
+  def "expect the serialized UserRegistered events are non empty Strings"() {
     expect:
-    domainEventSerializer.serialize(userRegistered).contains("userId=" + userId)
-    domainEventSerializer.serialize(userRegistered).contains("occurredOn=" + eventOccurredOn)
+    !domainEventSerializer.serialize(userRegistered).isEmpty()
   }
 
-  def "expect serialization of an unknown EventType does not work"() {
-    given:
-    DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
-    DomainEvent unknownType = new SerializableDomainEvent() {
-      @Override
-      Instant occurredOn() {
-        return Instant.now()
-      }
-    }
-    when:
-    domainEventSerializer.serialize(unknownType)
-    then:
-    thrown(UnrecognizedEventTypeException)
+  def "expect the deserialized DomainEvents are the same as before serialization"() {
+    expect:
+    userRegistered == domainEventSerializer.deserialize(domainEventSerializer.serialize(userRegistered))
+
   }
+
 
 }
