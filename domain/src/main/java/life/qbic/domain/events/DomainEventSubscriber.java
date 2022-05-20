@@ -8,7 +8,7 @@ package life.qbic.domain.events;
  *
  * @since 1.0.0
  */
-public interface DomainEventSubscriber<T> {
+public interface DomainEventSubscriber<T extends DomainEvent> {
 
   /**
    * Query the subscribed domain event type.

@@ -45,13 +45,12 @@ public class DomainEventPublisher {
     }
     try {
       publishing.set(Boolean.TRUE);
-      List<DomainEventSubscriber<T>> registeredSubscribers = subscribers.get();
+      List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
       Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
-      for (DomainEventSubscriber<T> subscriber : registeredSubscribers) {
-        if (subscriber.subscribedToEventType() == domainEventType) {
-          subscriber.handleEvent(domainEvent);
-        }
-      }
+      registeredSubscribers.stream()
+          .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
+          .map(it -> (DomainEventSubscriber<T>) it)
+          .forEach(subscriber -> subscriber.handleEvent(domainEvent));
     } finally {
       publishing.set(Boolean.FALSE);
     }
