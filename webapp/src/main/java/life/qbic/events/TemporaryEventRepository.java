@@ -7,11 +7,9 @@ import java.util.stream.Collectors;
 import life.qbic.domain.events.DomainEvent;
 
 /**
- * <b>short description</b>
+ * An in-memory class acting as an event repository.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class TemporaryEventRepository implements EventRepository {
 

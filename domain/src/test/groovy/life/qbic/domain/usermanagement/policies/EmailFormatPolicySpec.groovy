@@ -6,7 +6,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.EmailFormatPolicy}</b>
+ * <b>Tests for the {@link EmailFormatPolicy}</b>
  *
  * @since 1.0.0
  */

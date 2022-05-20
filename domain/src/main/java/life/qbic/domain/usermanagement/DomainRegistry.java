@@ -1,11 +1,13 @@
 package life.qbic.domain.usermanagement;
 
+import java.util.Optional;
+
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Domain Registry</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Provides access to registered domain services.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class DomainRegistry {
 
@@ -20,12 +22,26 @@ public class DomainRegistry {
     return INSTANCE;
   }
 
+  /**
+   * Registers a {@link UserDomainService} in the domain registry.
+   * <p>
+   * Successive calls will overwrite the previous registered service reference.
+   *
+   * @param aUserDomainService a user domain service
+   * @since 1.0.0
+   */
   public void registerService(UserDomainService aUserDomainService) {
     userDomainService = aUserDomainService;
   }
 
-  public UserDomainService userDomainService() {
-    return userDomainService;
+  /**
+   * Queries for a registered {@link UserDomainService}.
+   *
+   * @return a registered service, or {@link Optional#empty()} if none is registered.
+   * @since 1.0.0
+   */
+  public Optional<UserDomainService> userDomainService() {
+    return Optional.ofNullable(userDomainService);
   }
 
 }

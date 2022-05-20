@@ -4,7 +4,7 @@ import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy}</b>
+ * <b>Tests for the {@link PasswordEncryptionPolicy}</b>
  *
  * @since 1.0.0
  */
@@ -12,7 +12,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "The password is not stored in clear text"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
 
         then:
         encryptedPassword != password
@@ -23,7 +23,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "The password policy matches same passwords"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[],encryptedPassword)
 
         then:
@@ -35,7 +35,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "Two different passwords cannot be matched"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[],encryptedPassword)
 
         then:
@@ -48,7 +48,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "The encrypted password starts with the number of iterations"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         String[] passwordElements = encryptedPassword.split(":")
 
         then:
@@ -60,7 +60,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "The encrypted password contains a salt"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         String[] passwordElements = encryptedPassword.split(":")
 
         then:
@@ -72,7 +72,7 @@ class PasswordEncryptionPolicySpec extends Specification {
 
     def "The encrypted password ends with the hashed password"() {
         when:
-        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
+        String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password)
         String[] passwordElements = encryptedPassword.split(":")
 
         then:

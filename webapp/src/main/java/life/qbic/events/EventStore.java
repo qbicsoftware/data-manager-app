@@ -41,7 +41,7 @@ public class EventStore {
   public Set<DomainEvent> findAllByType(Class<DomainEvent> type) {
     var storedEvents = eventRepository.findAllByType(type);
     return storedEvents.stream()
-        .map(it -> EventStore.eventSerializer().deserialize(it.eventBody(), type.getName()))
+        .map(it -> EventStore.eventSerializer().deserialize(it.eventBody()))
         .collect(Collectors.toSet());
   }
 }

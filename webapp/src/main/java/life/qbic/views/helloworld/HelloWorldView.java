@@ -9,8 +9,9 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import javax.annotation.security.PermitAll;
-import life.qbic.security.SecurityService;
 import life.qbic.domain.usermanagement.User;
+import life.qbic.security.SecurityService;
+import life.qbic.usermanagement.User;
 import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 

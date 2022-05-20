@@ -2,6 +2,8 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import life.qbic.domain.usermanagement.registration.RegisterUserInput;
+import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;

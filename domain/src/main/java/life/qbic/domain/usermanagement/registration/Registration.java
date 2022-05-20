@@ -4,6 +4,9 @@ import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.apps.datamanager.services.UserRegistrationService;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.User.UserException;
 
 /**
  * <b>User Registration use case</b>
@@ -66,10 +69,9 @@ public class Registration implements RegisterUserInput {
   @Override
   public void register(String fullName, String email, char[] rawPassword) {
     try {
-      userRegistrationService.registerNewUser(fullName, email, rawPassword);
+      userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
-      e.printStackTrace();
       registerUserOutput.onFailure("Could not create a new account, please try again.");
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");
