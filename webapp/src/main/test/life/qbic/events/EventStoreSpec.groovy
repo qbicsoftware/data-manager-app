@@ -3,13 +3,6 @@ package life.qbic.events
 import life.qbic.domain.usermanagement.registration.UserRegistered
 import spock.lang.Specification
 
-/**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 class EventStoreSpec extends Specification {
   UserRegistered userRegisteredEvent = UserRegistered.create("my.awesome@user.id", "", "")
 
