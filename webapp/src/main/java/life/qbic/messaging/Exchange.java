@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import life.qbic.apps.datamanager.notifications.Message;
-import life.qbic.apps.datamanager.notifications.Message.MessageParameters;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
+import life.qbic.apps.datamanager.notifications.MessageParameters;
 import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 
 /**

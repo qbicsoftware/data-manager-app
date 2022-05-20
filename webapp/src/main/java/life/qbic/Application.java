@@ -4,6 +4,9 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
+import life.qbic.apps.datamanager.notifications.MessageBusInterface;
+import life.qbic.apps.datamanager.notifications.MessageParameters;
+import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserDomainService;
 import life.qbic.domain.usermanagement.repository.UserRepository;
@@ -32,6 +35,13 @@ public class Application extends SpringBootServletInitializer implements AppShel
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
+
+    // Testing: subscribe to user register events in the message bus
+    var messageBus = appContext.getBean(MessageBusInterface.class);
+    messageBus.subscribe((message, messageParameters) -> {
+      System.out.println("Receiving new message:");
+      System.out.println(messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
+    }, "UserRegistered");
 
   }
 }

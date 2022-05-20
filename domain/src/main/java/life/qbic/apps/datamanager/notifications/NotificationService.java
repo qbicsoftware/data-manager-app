@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
-import life.qbic.apps.datamanager.notifications.Message.MessageParameters;
+import life.qbic.apps.datamanager.services.ServiceException;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -22,11 +22,16 @@ public class NotificationService {
     this.messageBus = messageBus;
   }
 
-  public void publish(Notification notification) throws IOException {
+  public void send(Notification notification) throws ServiceException {
     var messageParams =
         MessageParameters.durableTextParameters(notification.eventType, notification.notificationId, notification.occuredOn);
 
-    var message = ObjectSerializer.instance().serialise(notification.event);
+    String message = null;
+    try {
+      message = ObjectSerializer.instance().serialise(notification.event);
+    } catch (IOException e) {
+      throw new ServiceException("Notification was not send", e.getCause());
+    }
 
     messageBus.submit(message, messageParams);
   }

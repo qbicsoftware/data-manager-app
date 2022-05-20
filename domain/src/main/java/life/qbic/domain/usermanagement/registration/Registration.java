@@ -31,7 +31,7 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    * <p>
    * The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been executed via {@link Registration#register(User)}.
+   * after the use case has been executed via {@link Registration#register(String, String, char[])}.
    *
    * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0

@@ -1,6 +1,9 @@
 package life.qbic.apps.datamanager.services;
 
 import java.util.Arrays;
+import life.qbic.apps.datamanager.events.EventStore;
+import life.qbic.apps.datamanager.notifications.Notification;
+import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
@@ -15,8 +18,14 @@ import life.qbic.domain.usermanagement.registration.UserRegistered;
  */
 public final class UserRegistrationService {
 
-  public UserRegistrationService() {
+  private final NotificationService notificationService;
+
+  private final EventStore eventStore;
+
+  public UserRegistrationService(NotificationService notificationService, EventStore eventStore) {
     super();
+    this.notificationService = notificationService;
+    this.eventStore = eventStore;
   }
 
   /**
@@ -46,9 +55,10 @@ public final class UserRegistrationService {
 
       @Override
       public void handleEvent(UserRegistered event) {
-        System.out.println("New user registered event: " + event.occurredOn().toString());
-        System.out.println(event.userId() + ": " + event.userEmail());
-        //TODO implement consequences of event occurence.
+        var notification = Notification.create(UserRegistered.class.getSimpleName(),
+            event.occurredOn(), "123", event);
+        eventStore.append(event);
+        notificationService.send(notification);
       }
     });
     // Trigger the user creation in the domain service
