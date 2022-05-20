@@ -29,7 +29,7 @@ public class DomainEventPublisher {
     if (publishing.get()) {
       return;
     }
-    List<DomainEventSubscriber<T>> registeredSubscribers = subscribers.get();
+    List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
 
     if (registeredSubscribers == null) {
       registeredSubscribers = new ArrayList<>();
