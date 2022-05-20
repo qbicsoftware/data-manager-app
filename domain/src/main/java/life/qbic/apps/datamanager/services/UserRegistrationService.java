@@ -7,20 +7,34 @@ import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>User Registration Service</b>
+ * <p>
+ * Application service that can be used to register users for the user management domain context.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class UserRegistrationService {
+public final class UserRegistrationService {
 
   public UserRegistrationService() {
     super();
   }
 
-  public void registerUser(final String fullName, final String email, final char[] password) {
+  /**
+   * Registers a user in the user management domain.
+   * <p>
+   * Note: the raw password will be overwritten before the method returns. This is only guaranteed
+   * though, when the method returns without any exceptions. In the later case, it is the client's
+   * responsibility to handle the raw password.
+   *
+   * @param fullName    the full name of the user
+   * @param email       the email address of the user
+   * @param rawPassword the raw password provided by the user
+   * @since 1.0.0
+   */
+  public void registerUser(final String fullName, final String email, final char[] rawPassword) {
     var userDomainService = DomainRegistry.instance().userDomainService();
+    // We subscribe to the domain event UserRegistered, in order to forward the event to
+    // the EventStore and to the NotificationService for broadcasting
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override
       public Class<UserRegistered> subscribedToEventType() {
@@ -34,9 +48,10 @@ public class UserRegistrationService {
         //TODO implement consequences of event occurence.
       }
     });
-
-    userDomainService.createUser(fullName, email, password);
-    Arrays.fill(password, '-');
+    // Trigger the user creation in the domain service
+    userDomainService.createUser(fullName, email, rawPassword);
+    // Overwrite the password
+    Arrays.fill(rawPassword, '-');
   }
 
 }
