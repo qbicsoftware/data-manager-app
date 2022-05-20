@@ -33,6 +33,9 @@ public final class UserRegistrationService {
    */
   public void registerUser(final String fullName, final String email, final char[] rawPassword) {
     var userDomainService = DomainRegistry.instance().userDomainService();
+    if (userDomainService.isEmpty()) {
+      throw new RuntimeException("User registration failed.");
+    }
     // We subscribe to the domain event UserRegistered, in order to forward the event to
     // the EventStore and to the NotificationService for broadcasting
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
@@ -49,7 +52,7 @@ public final class UserRegistrationService {
       }
     });
     // Trigger the user creation in the domain service
-    userDomainService.createUser(fullName, email, rawPassword);
+    userDomainService.get().createUser(fullName, email, rawPassword);
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
   }
