@@ -2,8 +2,8 @@ package life.qbic.usermanagement.persistence;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.usermanagement.User;
-import life.qbic.usermanagement.repository.UserDataStorage;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

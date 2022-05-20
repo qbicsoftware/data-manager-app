@@ -16,12 +16,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.util.stream.Stream;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.stream.Stream;
 
 /**
  * <b> Defines the look of the registration layout. </b>
@@ -114,8 +113,10 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void styleFormLayout() {
     contentLayout.addClassNames(
-        "bg-base", "border", "rounded-m", "border-contrast-10", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
-    contentLayout.add(layoutTitle, errorMessage, alreadyUsedEmailMessage, passwordTooShortMessage, fullName, email, password, registerButton, loginSpan);
+        "bg-base", "border", "rounded-m", "border-contrast-10", "box-border", "flex", "flex-col",
+        "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
+    contentLayout.add(layoutTitle, errorMessage, alreadyUsedEmailMessage, passwordTooShortMessage,
+        fullName, email, password, registerButton, loginSpan);
   }
 
   private void createSpan() {

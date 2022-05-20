@@ -12,9 +12,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
-
 import java.util.List;
-
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;

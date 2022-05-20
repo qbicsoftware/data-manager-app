@@ -2,12 +2,11 @@ package life.qbic.security;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.usermanagement.User;
-import life.qbic.usermanagement.repository.UserRepository;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
