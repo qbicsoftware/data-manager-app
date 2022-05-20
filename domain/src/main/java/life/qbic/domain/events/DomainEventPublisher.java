@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class DomainEventPublisher {
 
-  private static final ThreadLocal<List<DomainEventSubscriber<? extends DomainEvent>>> subscribers = new ThreadLocal<>();
+  private static final ThreadLocal<List> subscribers = new ThreadLocal<>();
 
   private static final ThreadLocal<Boolean> publishing = ThreadLocal.withInitial(
       () -> Boolean.FALSE);
