@@ -31,6 +31,7 @@ public class UserRegistrationService {
       public void handleEvent(UserRegistered event) {
         System.out.println("New user registered event: " + event.occurredOn().toString());
         System.out.println(event.userId() + ": " + event.userEmail());
+        //TODO implement consequences of event occurence.
       }
     });
 
