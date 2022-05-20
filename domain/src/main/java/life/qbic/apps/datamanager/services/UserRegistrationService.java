@@ -19,7 +19,7 @@ public class UserRegistrationService {
     super();
   }
 
-  public void registerNewUser(final String fullName, final String email, final char[] password) throws ServiceException {
+  public void registerUser(final String fullName, final String email, final char[] password) {
     var userDomainService = DomainRegistry.instance().userDomainService();
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override

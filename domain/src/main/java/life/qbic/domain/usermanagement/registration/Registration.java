@@ -65,7 +65,7 @@ public class Registration implements RegisterUserInput {
   @Override
   public void register(String fullName, String email, char[] rawPassword) {
     try {
-      userRegistrationService.registerNewUser(fullName, email, rawPassword);
+      userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
       registerUserOutput.onFailure("Could not create a new account, please try again.");
