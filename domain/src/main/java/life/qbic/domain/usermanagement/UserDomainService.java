@@ -39,7 +39,7 @@ public class UserDomainService {
     user.setPassword(rawPassword);
     userRepository.addUser(user);
 
-    var userCreatedEvent = UserRegistered.createEvent(user.getId(), user.getFullName(),
+    var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(),
         user.getEmail());
     domainEventProducer.publish(userCreatedEvent);
   }

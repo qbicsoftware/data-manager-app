@@ -22,10 +22,6 @@ public class UserRegistered extends DomainEvent {
 
   private final String userId;
 
-  public static UserRegistered createEvent(final String userId, final String fullName, final String email) {
-    return new UserRegistered(userId, fullName, email);
-  }
-
   public static UserRegistered create(final String userId, final String fullName,
       final String email) {
     return new UserRegistered(userId, fullName, email);
