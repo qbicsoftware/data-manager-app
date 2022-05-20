@@ -1,6 +1,6 @@
 package life.qbic.domain.usermanagement;
 
-import life.qbic.domain.events.DomainEventProducer;
+import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
@@ -28,13 +28,13 @@ public class UserDomainService {
    * @param rawPassword the raw password desired by the user
    * @since 1.0.0
    */
-  public void createNewUser(String fullName, String email, char[] rawPassword)
+  public void createUser(String fullName, String email, char[] rawPassword)
       throws UserException {
     // First check, if a user with the provided email already exists
     if (userRepository.findByEmail(email).isPresent()) {
       throw new UserException("User with email address already exists.");
     }
-    var domainEventProducer = DomainEventProducer.instance();
+    var domainEventProducer = DomainEventPublisher.instance();
     var user = User.create(fullName, email);
     user.setPassword(rawPassword);
     userRepository.addUser(user);

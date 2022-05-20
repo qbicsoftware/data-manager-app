@@ -10,18 +10,18 @@ import java.util.List;
  *
  * @since <version tag>
  */
-public class DomainEventProducer {
+public class DomainEventPublisher {
 
   private static final ThreadLocal<List> subscribers = new ThreadLocal<>();
 
   private static final ThreadLocal<Boolean> publishing = ThreadLocal.withInitial(
       () -> Boolean.FALSE);
 
-  public static DomainEventProducer instance(){
-    return new DomainEventProducer();
+  public static DomainEventPublisher instance(){
+    return new DomainEventPublisher();
   }
 
-  public DomainEventProducer() {
+  public DomainEventPublisher() {
     super();
   }
 
