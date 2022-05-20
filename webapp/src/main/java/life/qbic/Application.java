@@ -1,14 +1,17 @@
 package life.qbic;
 
+import com.helger.commons.base64.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
-import life.qbic.apps.datamanager.notifications.MessageParameters;
-import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserDomainService;
+import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -41,7 +44,23 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe((message, messageParameters) -> {
       System.out.println("Receiving new message:");
       System.out.println(messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
+      try {
+        UserRegistered event = deserialize(message);
+        System.out.println(event.occurredOn());
+        System.out.println(event.userId());
+        System.out.println(event.userEmail());
+        System.out.println(event.userFullName());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }, "UserRegistered");
 
+  }
+
+  static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
+    byte[] content = Base64.decode(event);
+    ByteArrayInputStream bais = new ByteArrayInputStream(content);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+    return (UserRegistered) ois.readObject();
   }
 }

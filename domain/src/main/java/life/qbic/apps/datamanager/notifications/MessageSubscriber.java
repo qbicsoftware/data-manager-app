@@ -1,5 +1,7 @@
 package life.qbic.apps.datamanager.notifications;
 
+import java.io.IOException;
+
 /**
  * Interface for notification subscribers. This interface needs to be implemented, when a client
  * wants to subscribe to certain event types.
