@@ -4,11 +4,9 @@ import java.util.List;
 import life.qbic.domain.events.DomainEvent;
 
 /**
- * <b>short description</b>
+ * A repository for domain events.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface EventRepository {
 

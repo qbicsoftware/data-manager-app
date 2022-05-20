@@ -32,7 +32,8 @@ class UserSpec extends Specification {
     def "When a weak password is provided, throw a user exception"() {
         when:
         def user = User.create("My Name", "my.name@example.com")
-        user.setPassword(new char[]{"a","b"})
+        def weakPassword = "ab";
+        user.setPassword(weakPassword.toCharArray())
 
         then:
         thrown(User.UserException)
@@ -41,7 +42,7 @@ class UserSpec extends Specification {
 
     def "When an invalid email is provided, throw a user exception"() {
         when:
-        User.create("My Name", "my.name@example")
+        User.create("My Name", "invalid@email")
 
         then:
         thrown(User.UserException)
