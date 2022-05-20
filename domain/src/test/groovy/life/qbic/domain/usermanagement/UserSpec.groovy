@@ -1,6 +1,6 @@
 package life.qbic.domain.usermanagement
 
-import life.qbic.domain.usermanagement.User
+
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -18,7 +18,8 @@ class UserSpec extends Specification {
     @Unroll
     def "When a new user is created, a unique identifier is assigned to the user"() {
         when:
-        User user = User.create("test1234", "My Name", "my.name@example.com")
+        User user = User.create("My Name", "my.name@example.com")
+        user.setPassword("test1234".toCharArray())
 
         then:
         !generatedUserIds.contains(user.getId())

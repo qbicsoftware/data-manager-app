@@ -22,7 +22,7 @@ public class NotificationService {
     this.messageBus = messageBus;
   }
 
-  public void publish(Notification notification) {
+  public void publish(Notification notification) throws IOException {
     var messageParams =
         MessageParameters.durableTextParameters(notification.eventType, notification.notificationId, notification.occuredOn);
 
