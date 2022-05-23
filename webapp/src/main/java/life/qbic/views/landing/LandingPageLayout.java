@@ -42,7 +42,7 @@ public class LandingPageLayout extends DataManagerLayout {
     register = new Button("Register");
     login = new Button("Login");
 
-    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login, new Button("Send email", it -> registrationEmailSender.sendmail("tobias.koch@qbic.uni-tuebingen.de", "Dr. Pepper")));
+    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
     loggedOutButtonLayout.addClassName("button-layout-spacing");
 
     styleHeaderButtons();
