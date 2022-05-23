@@ -2,8 +2,8 @@ package life.qbic.domain.events;
 
 /**
  * <b>Domain Event Subscriber</b>
- * <p>
- * Clients can implement this interface to subscribe to {@link DomainEventPublisher} and get
+ *
+ * <p>Clients can implement this interface to subscribe to {@link DomainEventPublisher} and get
  * informed whenever a {@link DomainEvent} of the specified type <code>T</code> happens.
  *
  * @since 1.0.0
@@ -20,12 +20,11 @@ public interface DomainEventSubscriber<T extends DomainEvent> {
 
   /**
    * Callback that will be executed by the publisher.
-   * <p>
-   * Passes the domain event of the type that was subscribed to.
+   *
+   * <p>Passes the domain event of the type that was subscribed to.
    *
    * @param event the domain event
    * @since 1.0.0
    */
   void handleEvent(T event);
-
 }

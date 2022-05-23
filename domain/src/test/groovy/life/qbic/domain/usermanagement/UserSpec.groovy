@@ -6,7 +6,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.User}</b>
+ * <b>Tests for the {@link User}</b>
  *
  * @since 1.0.0
  */

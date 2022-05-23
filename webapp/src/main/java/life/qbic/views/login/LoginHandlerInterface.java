@@ -9,9 +9,9 @@ public interface LoginHandlerInterface {
 
   /**
    * Register the {@link LoginLayout} to the implementing class
+   *
    * @param loginView The view that is being registered
    * @since 1.0.0
    */
   void handle(LoginLayout loginView);
-
 }

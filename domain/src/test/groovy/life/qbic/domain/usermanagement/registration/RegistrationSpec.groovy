@@ -1,5 +1,8 @@
 package life.qbic.domain.usermanagement.registration
 
+import life.qbic.apps.datamanager.events.EventStore
+import life.qbic.apps.datamanager.notifications.MessageBusInterface
+import life.qbic.apps.datamanager.notifications.NotificationService
 import life.qbic.apps.datamanager.services.UserRegistrationService
 import life.qbic.domain.usermanagement.DomainRegistry
 import life.qbic.domain.usermanagement.User
@@ -26,7 +29,7 @@ class RegistrationSpec extends Specification {
         testStorage = new TestStorage()
         DomainRegistry domainRegistry = DomainRegistry.instance()
         domainRegistry.registerService(new UserDomainService(UserRepository.getInstance(testStorage)))
-        userRegistrationService = new UserRegistrationService()
+        userRegistrationService = new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class))
     }
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
@@ -42,7 +45,7 @@ class RegistrationSpec extends Specification {
         newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService())
+        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class)))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -67,7 +70,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create("Mr Nobody", "no@body.com")
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService())
+        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class)))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -97,7 +100,7 @@ class RegistrationSpec extends Specification {
 
         @Override
         Optional<User> findUserById(String id) {
-            return users.stream().filter( user -> user.id.equalsIgnoreCase(id)).findAny()
+            return users.stream().filter(user -> user.id.equalsIgnoreCase(id)).findAny()
         }
     }
 

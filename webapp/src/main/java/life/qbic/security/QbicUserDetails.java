@@ -1,20 +1,22 @@
 package life.qbic.security;
 
-import java.util.Collection;
-import java.util.List;
 import life.qbic.domain.usermanagement.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * <b>Implementation of the UserDetails interface</b>
  *
- * Since we use our own implementation of the user class ({@link User}), we have
- * to tell Spring how to access certain user information.
+ * <p>Since we use our own implementation of the user class ({@link User}), we have to tell Spring
+ * how to access certain user information.
  *
- * This implementation encapsulate the {@link User} class but integrates it in the security context,
- * so we can make use of it.
+ * <p>This implementation encapsulate the {@link User} class but integrates it in the security
+ * context, so we can make use of it.
+ *
  * @since 1.0.0
  */
 public class QbicUserDetails implements UserDetails {
@@ -23,6 +25,7 @@ public class QbicUserDetails implements UserDetails {
 
   /**
    * Constructor to use and embed a {@link User} entity.
+   *
    * @param user the user to embed
    * @since 1.0.0
    */

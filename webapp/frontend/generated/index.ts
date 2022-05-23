@@ -11,20 +11,20 @@
  ******************************************************************************/
 
 // import Vaadin client-router to handle client-side and server-side navigation
-import { Router } from '@vaadin/router';
+import {Router} from '@vaadin/router';
 
 // import Flow module to enable navigation to Vaadin server-side views
-import { Flow } from '@vaadin/flow-frontend/Flow';
+import {Flow} from '@vaadin/flow-frontend/Flow';
 
-const { serverSideRoutes } = new Flow({
-  imports: () => import('../../target/frontend/generated-flow-imports')
+const {serverSideRoutes} = new Flow({
+    imports: () => import('../../target/frontend/generated-flow-imports')
 });
 
 const routes = [
-  // for client-side, place routes below (more info https://vaadin.com/docs/v15/flow/typescript/creating-routes.html)
+    // for client-side, place routes below (more info https://vaadin.com/docs/v15/flow/typescript/creating-routes.html)
 
-  // for server-side, the next magic line sends all unmatched routes:
-  ...serverSideRoutes // IMPORTANT: this must be the last entry in the array
+    // for server-side, the next magic line sends all unmatched routes:
+    ...serverSideRoutes // IMPORTANT: this must be the last entry in the array
 ];
 
 // Vaadin router needs an outlet in the index.html page to display views

@@ -10,7 +10,7 @@ public interface RegisterUserInput {
   /**
    * Registers a new user in the application.
    *
-   * The raw password passed needs to be cleared, after it has been successfully processed.
+   * <p>The raw password passed needs to be cleared, after it has been successfully processed.
    *
    * @param fullName the full name of the user
    * @param email the user's email address
@@ -21,9 +21,9 @@ public interface RegisterUserInput {
 
   /**
    * Set the output the use case shall call, when finished.
+   *
    * @param output the output to call when the registration has been performed
    * @since 1.0.0
    */
   void setOutput(RegisterUserOutput output);
-
 }

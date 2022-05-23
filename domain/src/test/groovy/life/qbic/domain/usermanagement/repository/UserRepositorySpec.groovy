@@ -68,7 +68,6 @@ class UserRepositorySpec extends Specification {
     }
 
 
-
     static User createDummyUser() {
         def user = User.create("Sven Svenson", "myexample@example.com")
         user.setPassword("test1234".toCharArray())

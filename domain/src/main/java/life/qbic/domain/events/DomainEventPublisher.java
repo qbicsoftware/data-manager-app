@@ -4,20 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Domain Event Publisher</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Thread-local domain event publisher class. Can be used to observe certain domain event types
+ * and publish domain events within the domain.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class DomainEventPublisher {
 
   private static final ThreadLocal<List> subscribers = new ThreadLocal<>();
 
-  private static final ThreadLocal<Boolean> publishing = ThreadLocal.withInitial(
-      () -> Boolean.FALSE);
+  private static final ThreadLocal<Boolean> publishing =
+      ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-  public static DomainEventPublisher instance(){
+  public static DomainEventPublisher instance() {
     return new DomainEventPublisher();
   }
 
@@ -55,5 +56,4 @@ public class DomainEventPublisher {
       publishing.set(Boolean.FALSE);
     }
   }
-
 }

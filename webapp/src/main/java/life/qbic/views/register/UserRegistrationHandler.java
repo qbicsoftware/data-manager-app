@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
  * the view class components
  */
 @Component
-public class UserRegistrationHandler implements UserRegistrationHandlerInterface,
-    RegisterUserOutput {
+public class UserRegistrationHandler
+    implements UserRegistrationHandlerInterface, RegisterUserOutput {
 
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
@@ -47,12 +47,14 @@ public class UserRegistrationHandler implements UserRegistrationHandlerInterface
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
 
-    userRegistrationLayout.registerButton.addClickListener(event -> {
-      resetErrorMessages();
-      registrationUseCase.register(userRegistrationLayout.fullName.getValue(),
-          userRegistrationLayout.email.getValue(),
-          userRegistrationLayout.password.getValue().toCharArray());
-    });
+    userRegistrationLayout.registerButton.addClickListener(
+        event -> {
+          resetErrorMessages();
+          registrationUseCase.register(
+              userRegistrationLayout.fullName.getValue(),
+              userRegistrationLayout.email.getValue(),
+              userRegistrationLayout.password.getValue().toCharArray());
+        });
   }
 
   private void setEmptyFieldsInvalid() {
