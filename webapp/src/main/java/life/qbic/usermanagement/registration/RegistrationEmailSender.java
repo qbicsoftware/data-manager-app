@@ -59,6 +59,7 @@ public class RegistrationEmailSender {
     props.put("mail.smtp.port", smtpPort);
 
     Session session = Session.getInstance(props, new Authenticator() {
+      @Override
       protected PasswordAuthentication getPasswordAuthentication() {
         return new PasswordAuthentication(userName, password);
       }
