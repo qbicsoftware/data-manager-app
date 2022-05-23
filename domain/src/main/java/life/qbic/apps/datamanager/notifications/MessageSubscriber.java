@@ -1,7 +1,5 @@
 package life.qbic.apps.datamanager.notifications;
 
-import java.io.IOException;
-
 /**
  * Interface for notification subscribers. This interface needs to be implemented, when a client
  * wants to subscribe to certain event types.
@@ -13,13 +11,13 @@ import java.io.IOException;
  */
 public interface MessageSubscriber {
 
-  /**
-   * Receive notifications that are passed from clients such as i.e. an exchange to
-   * broadcast notifications.
-   *
-   * @param message a message with encoded information.
-   * @since 1.0.0
-   */
-  void receive(String message, MessageParameters messageParameters);
+    /**
+     * Receive notifications that are passed from clients such as i.e. an exchange to
+     * broadcast notifications.
+     *
+     * @param message a message with encoded information.
+     * @since 1.0.0
+     */
+    void receive(String message, MessageParameters messageParameters);
 
 }

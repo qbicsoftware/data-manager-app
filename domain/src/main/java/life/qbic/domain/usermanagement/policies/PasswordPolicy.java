@@ -7,32 +7,34 @@ package life.qbic.domain.usermanagement.policies;
  * strong passwords.
  * </p>
  * Currently we only enforce the password length to have at least 8 characters or more.
+ *
  * @since 1.0.0
  */
 public class PasswordPolicy {
 
-  private static final int MIN_LENGTH = 8;
+    private static final int MIN_LENGTH = 8;
 
-  private static PasswordPolicy INSTANCE;
+    private static PasswordPolicy INSTANCE;
 
-  public static PasswordPolicy create(){
-    if (INSTANCE == null) {
-      INSTANCE = new PasswordPolicy();
+    public static PasswordPolicy create() {
+        if (INSTANCE == null) {
+            INSTANCE = new PasswordPolicy();
+        }
+        return INSTANCE;
     }
-    return INSTANCE;
-  }
 
-  /**
-   * Validates the raw password against the current policy.
-   * @param rawPassword the password to validate
-   * @return a policy check report
-   * @since 1.0.0
-   */
-  public PolicyCheckReport validate(char[] rawPassword) {
-    if (rawPassword.length < MIN_LENGTH) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
+    /**
+     * Validates the raw password against the current policy.
+     *
+     * @param rawPassword the password to validate
+     * @return a policy check report
+     * @since 1.0.0
+     */
+    public PolicyCheckReport validate(char[] rawPassword) {
+        if (rawPassword.length < MIN_LENGTH) {
+            return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
+        }
+        return new PolicyCheckReport(PolicyStatus.PASSED, "");
     }
-    return new PolicyCheckReport(PolicyStatus.PASSED, "");
-  }
 
 }

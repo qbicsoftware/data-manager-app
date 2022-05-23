@@ -25,50 +25,49 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AppConfig {
 
-  /**
-   * Creates the registration use case.
-   *
-   * @param userRepository the user repository
-   * @return the use case input
-   * @since 1.0.0
-   */
-  @Bean
-  public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
-    return new Registration(userRegistrationService);
-  }
+    /**
+     * Creates the registration use case.
+     *
+     * @param userRepository the user repository
+     * @return the use case input
+     * @since 1.0.0
+     */
+    @Bean
+    public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
+        return new Registration(userRegistrationService);
+    }
 
-  /**
-   * Creates the user repository instance.
-   *
-   * @param userDataStorage an implementation of the {@link UserDataStorage} interface
-   * @return a Singleton of the user repository
-   * @since 1.0.0
-   */
-  @Bean
-  public UserRepository userRepository(UserDataStorage userDataStorage) {
-    return UserRepository.getInstance(userDataStorage);
-  }
+    /**
+     * Creates the user repository instance.
+     *
+     * @param userDataStorage an implementation of the {@link UserDataStorage} interface
+     * @return a Singleton of the user repository
+     * @since 1.0.0
+     */
+    @Bean
+    public UserRepository userRepository(UserDataStorage userDataStorage) {
+        return UserRepository.getInstance(userDataStorage);
+    }
 
-  @Bean
-  public UserRegistrationService userRegistrationService(NotificationService notificationService, EventStore eventStore) {
-    return new UserRegistrationService(notificationService, eventStore);
-  }
+    @Bean
+    public UserRegistrationService userRegistrationService(NotificationService notificationService, EventStore eventStore) {
+        return new UserRegistrationService(notificationService, eventStore);
+    }
 
-  @Bean
-  public SimpleEventStore eventStore() {
-    return SimpleEventStore.instance(new TemporaryEventRepository());
-  }
+    @Bean
+    public SimpleEventStore eventStore() {
+        return SimpleEventStore.instance(new TemporaryEventRepository());
+    }
 
-  @Bean
-  public NotificationService notificationService(MessageBusInterface messageBusInterface) {
-    return new NotificationService(messageBusInterface);
-  }
+    @Bean
+    public NotificationService notificationService(MessageBusInterface messageBusInterface) {
+        return new NotificationService(messageBusInterface);
+    }
 
-  @Bean
-  public MessageBusInterface messageBusInterface() {
-    return Exchange.instance();
-  }
-
+    @Bean
+    public MessageBusInterface messageBusInterface() {
+        return Exchange.instance();
+    }
 
 
 }

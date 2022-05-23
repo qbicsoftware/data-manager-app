@@ -13,48 +13,48 @@ import java.util.List;
  */
 public class DomainEventPublisher {
 
-  private static final ThreadLocal<List> subscribers = new ThreadLocal<>();
+    private static final ThreadLocal<List> subscribers = new ThreadLocal<>();
 
-  private static final ThreadLocal<Boolean> publishing = ThreadLocal.withInitial(
-      () -> Boolean.FALSE);
+    private static final ThreadLocal<Boolean> publishing = ThreadLocal.withInitial(
+            () -> Boolean.FALSE);
 
-  public static DomainEventPublisher instance(){
-    return new DomainEventPublisher();
-  }
-
-  public DomainEventPublisher() {
-    super();
-  }
-
-  public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
-    if (publishing.get()) {
-      return;
-    }
-    List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
-
-    if (registeredSubscribers == null) {
-      registeredSubscribers = new ArrayList<>();
-      subscribers.set(registeredSubscribers);
+    public static DomainEventPublisher instance() {
+        return new DomainEventPublisher();
     }
 
-    registeredSubscribers.add(subscriber);
-  }
+    public DomainEventPublisher() {
+        super();
+    }
 
-  public <T extends DomainEvent> void publish(final T domainEvent) {
-    if (publishing.get()) {
-      return;
+    public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
+        if (publishing.get()) {
+            return;
+        }
+        List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
+
+        if (registeredSubscribers == null) {
+            registeredSubscribers = new ArrayList<>();
+            subscribers.set(registeredSubscribers);
+        }
+
+        registeredSubscribers.add(subscriber);
     }
-    try {
-      publishing.set(Boolean.TRUE);
-      List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
-      Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
-      registeredSubscribers.stream()
-          .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
-          .map(it -> (DomainEventSubscriber<T>) it)
-          .forEach(subscriber -> subscriber.handleEvent(domainEvent));
-    } finally {
-      publishing.set(Boolean.FALSE);
+
+    public <T extends DomainEvent> void publish(final T domainEvent) {
+        if (publishing.get()) {
+            return;
+        }
+        try {
+            publishing.set(Boolean.TRUE);
+            List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
+            Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
+            registeredSubscribers.stream()
+                    .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
+                    .map(it -> (DomainEventSubscriber<T>) it)
+                    .forEach(subscriber -> subscriber.handleEvent(domainEvent));
+        } finally {
+            publishing.set(Boolean.FALSE);
+        }
     }
-  }
 
 }

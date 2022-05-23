@@ -11,5 +11,5 @@ import life.qbic.domain.events.DomainEvent;
  */
 @FunctionalInterface
 public interface DomainEventSubscriber<T extends DomainEvent> {
-  void handle(T event);
+    void handle(T event);
 }

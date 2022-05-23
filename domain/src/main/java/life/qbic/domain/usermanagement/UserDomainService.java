@@ -16,36 +16,36 @@ import life.qbic.domain.usermanagement.repository.UserRepository;
  */
 public class UserDomainService {
 
-  private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-  public UserDomainService(UserRepository userRepository) {
-    this.userRepository = userRepository;
-  }
-
-  /**
-   * Creates a new user in the user management context.
-   *
-   * Note: this will create a new domain event of type {@link UserRegistered}
-   *
-   * @param fullName    the full name of the user
-   * @param email       a valid email address
-   * @param rawPassword the raw password desired by the user
-   * @since 1.0.0
-   */
-  public void createUser(String fullName, String email, char[] rawPassword)
-      throws UserException {
-    // First check, if a user with the provided email already exists
-    if (userRepository.findByEmail(email).isPresent()) {
-      throw new UserException("User with email address already exists.");
+    public UserDomainService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
-    var domainEventPublisher = DomainEventPublisher.instance();
-    var user = User.create(fullName, email);
-    user.setPassword(rawPassword);
-    userRepository.addUser(user);
 
-    var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(),
-        user.getEmail());
-    domainEventPublisher.publish(userCreatedEvent);
-  }
+    /**
+     * Creates a new user in the user management context.
+     * <p>
+     * Note: this will create a new domain event of type {@link UserRegistered}
+     *
+     * @param fullName    the full name of the user
+     * @param email       a valid email address
+     * @param rawPassword the raw password desired by the user
+     * @since 1.0.0
+     */
+    public void createUser(String fullName, String email, char[] rawPassword)
+            throws UserException {
+        // First check, if a user with the provided email already exists
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new UserException("User with email address already exists.");
+        }
+        var domainEventPublisher = DomainEventPublisher.instance();
+        var user = User.create(fullName, email);
+        user.setPassword(rawPassword);
+        userRepository.addUser(user);
+
+        var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(),
+                user.getEmail());
+        domainEventPublisher.publish(userCreatedEvent);
+    }
 
 }

@@ -1,13 +1,13 @@
 package life.qbic.apps.datamanager.notifications;
 
+import life.qbic.apps.datamanager.services.ServiceException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.UUID;
-
-import life.qbic.apps.datamanager.services.ServiceException;
 
 /**
  * <b>Notification Service</b>
@@ -32,6 +32,7 @@ public class NotificationService {
 
     /**
      * Sends the notification out via the {@link MessageBusInterface}.
+     *
      * @param notification the notification of interest to send out
      * @throws ServiceException if the submission to the messaging bus failed.
      */

@@ -17,36 +17,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "landing")
 public class LandingPageLayout extends DataManagerLayout {
 
-  public Button register;
-  public Button login;
+    public Button register;
+    public Button login;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
-    createNavBarContent();
-    registerToHandler(handlerInterface);
-  }
+    public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
+        createNavBarContent();
+        registerToHandler(handlerInterface);
+    }
 
-  private void registerToHandler(LandingPageHandlerInterface handler) {
-    handler.handle(this);
-  }
+    private void registerToHandler(LandingPageHandlerInterface handler) {
+        handler.handle(this);
+    }
 
-  private void createNavBarContent() {
+    private void createNavBarContent() {
 
-    addToNavbar(createHeaderButtonLayout());
-  }
+        addToNavbar(createHeaderButtonLayout());
+    }
 
-  private HorizontalLayout createHeaderButtonLayout() {
-    register = new Button("Register");
-    login = new Button("Login");
+    private HorizontalLayout createHeaderButtonLayout() {
+        register = new Button("Register");
+        login = new Button("Login");
 
-    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
-    loggedOutButtonLayout.addClassName("button-layout-spacing");
+        HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
+        loggedOutButtonLayout.addClassName("button-layout-spacing");
 
-    styleHeaderButtons();
+        styleHeaderButtons();
 
-    return loggedOutButtonLayout;
-  }
+        return loggedOutButtonLayout;
+    }
 
-  private void styleHeaderButtons() {
-    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-  }
+    private void styleHeaderButtons() {
+        login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
 }

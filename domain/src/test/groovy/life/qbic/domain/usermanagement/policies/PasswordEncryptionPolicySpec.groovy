@@ -24,7 +24,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     def "The password policy matches same passwords"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
-        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[],encryptedPassword)
+        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[], encryptedPassword)
 
         then:
         result
@@ -36,7 +36,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     def "Two different passwords cannot be matched"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
-        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[],encryptedPassword)
+        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[], encryptedPassword)
 
         then:
         !result

@@ -1,7 +1,8 @@
 package life.qbic.events;
 
-import java.util.List;
 import life.qbic.domain.events.DomainEvent;
+
+import java.util.List;
 
 /**
  * A repository for domain events.
@@ -10,7 +11,8 @@ import life.qbic.domain.events.DomainEvent;
  */
 public interface EventRepository {
 
-  List<StoredEvent> findAllByType(Class<DomainEvent> type);
-  void save(StoredEvent storedEvent);
+    List<StoredEvent> findAllByType(Class<DomainEvent> type);
+
+    void save(StoredEvent storedEvent);
 
 }

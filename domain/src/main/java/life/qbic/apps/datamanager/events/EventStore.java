@@ -1,12 +1,13 @@
 package life.qbic.apps.datamanager.events;
 
-import java.util.Set;
 import life.qbic.domain.events.DomainEvent;
+
+import java.util.Set;
 
 public interface EventStore {
 
-  void append(DomainEvent event);
+    void append(DomainEvent event);
 
-  public Set<DomainEvent> findAllByType(Class<DomainEvent> type);
+    public Set<DomainEvent> findAllByType(Class<DomainEvent> type);
 
 }

@@ -7,11 +7,11 @@ package life.qbic.views.register;
  */
 public interface UserRegistrationHandlerInterface {
 
-  /**
-   * Registers a {@link UserRegistrationLayout} to an implementing class
-   *
-   * @param registerLayout The view that is being handled
-   * @since 1.0.0
-   */
-  void handle(UserRegistrationLayout registerLayout);
+    /**
+     * Registers a {@link UserRegistrationLayout} to an implementing class
+     *
+     * @param registerLayout The view that is being handled
+     * @since 1.0.0
+     */
+    void handle(UserRegistrationLayout registerLayout);
 }

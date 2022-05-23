@@ -7,11 +7,11 @@ package life.qbic.views.landing;
  */
 public interface LandingPageHandlerInterface {
 
-  /**
-   * Registers the {@link LandingPageLayout} to the implementing class
-   *
-   * @param layout The view that is being registered
-   * @since 1.0.0
-   */
-  void handle(LandingPageLayout layout);
+    /**
+     * Registers the {@link LandingPageLayout} to the implementing class
+     *
+     * @param layout The view that is being registered
+     * @since 1.0.0
+     */
+    void handle(LandingPageLayout layout);
 }

@@ -11,23 +11,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class LandingPageHandler implements LandingPageHandlerInterface {
 
-  private LandingPageLayout registeredLandingPage;
+    private LandingPageLayout registeredLandingPage;
 
-  @Override
-  public void handle(LandingPageLayout layout) {
-    if (registeredLandingPage != layout) {
-      this.registeredLandingPage = layout;
-      addClickListeners();
+    @Override
+    public void handle(LandingPageLayout layout) {
+        if (registeredLandingPage != layout) {
+            this.registeredLandingPage = layout;
+            addClickListeners();
+        }
     }
-  }
 
-  private void addClickListeners() {
+    private void addClickListeners() {
 
-    registeredLandingPage.login.addClickListener(
-        event -> UI.getCurrent().navigate("login"));
+        registeredLandingPage.login.addClickListener(
+                event -> UI.getCurrent().navigate("login"));
 
-    registeredLandingPage.register.addClickListener(
-        event -> UI.getCurrent().navigate("register"));
+        registeredLandingPage.register.addClickListener(
+                event -> UI.getCurrent().navigate("register"));
 
-  }
+    }
 }

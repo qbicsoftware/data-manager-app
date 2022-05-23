@@ -1,8 +1,6 @@
 package life.qbic.domain.usermanagement.repository
 
 import life.qbic.domain.usermanagement.User
-import life.qbic.domain.usermanagement.repository.UserDataStorage
-import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Specification
 
 /**
@@ -68,7 +66,6 @@ class UserRepositorySpec extends Specification {
         then:
         !hasUserBeenAdded
     }
-
 
 
     static User createDummyUser() {

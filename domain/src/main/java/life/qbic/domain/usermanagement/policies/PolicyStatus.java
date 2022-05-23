@@ -8,6 +8,6 @@ package life.qbic.domain.usermanagement.policies;
  */
 public enum PolicyStatus {
 
-  PASSED, FAILED
+    PASSED, FAILED
 
 }

@@ -1,11 +1,12 @@
 package life.qbic.usermanagement.persistence;
 
-import java.util.List;
-import java.util.Optional;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * <b>User JPA repository</b>
@@ -23,25 +24,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserJpaRepository implements UserDataStorage {
 
-  private final QbicUserRepo userRepo;
+    private final QbicUserRepo userRepo;
 
-  @Autowired
-  public UserJpaRepository(QbicUserRepo userRepo) {
-    this.userRepo = userRepo;
-  }
+    @Autowired
+    public UserJpaRepository(QbicUserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
 
-  @Override
-  public List<User> findUsersByEmail(String email) {
-    return userRepo.findUsersByEmail(email);
-  }
+    @Override
+    public List<User> findUsersByEmail(String email) {
+        return userRepo.findUsersByEmail(email);
+    }
 
-  @Override
-  public void save(User user) {
-    userRepo.save(user);
-  }
+    @Override
+    public void save(User user) {
+        userRepo.save(user);
+    }
 
-  @Override
-  public Optional<User> findUserById(String id) {
-    return Optional.ofNullable(userRepo.findUserById(id));
-  }
+    @Override
+    public Optional<User> findUserById(String id) {
+        return Optional.ofNullable(userRepo.findUserById(id));
+    }
 }

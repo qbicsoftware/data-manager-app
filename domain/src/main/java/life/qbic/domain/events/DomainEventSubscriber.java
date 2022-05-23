@@ -10,22 +10,22 @@ package life.qbic.domain.events;
  */
 public interface DomainEventSubscriber<T extends DomainEvent> {
 
-  /**
-   * Query the subscribed domain event type.
-   *
-   * @return the domain event type that is subscribed to
-   * @since 1.0.0
-   */
-  Class<T> subscribedToEventType();
+    /**
+     * Query the subscribed domain event type.
+     *
+     * @return the domain event type that is subscribed to
+     * @since 1.0.0
+     */
+    Class<T> subscribedToEventType();
 
-  /**
-   * Callback that will be executed by the publisher.
-   * <p>
-   * Passes the domain event of the type that was subscribed to.
-   *
-   * @param event the domain event
-   * @since 1.0.0
-   */
-  void handleEvent(T event);
+    /**
+     * Callback that will be executed by the publisher.
+     * <p>
+     * Passes the domain event of the type that was subscribed to.
+     *
+     * @param event the domain event
+     * @since 1.0.0
+     */
+    void handleEvent(T event);
 
 }

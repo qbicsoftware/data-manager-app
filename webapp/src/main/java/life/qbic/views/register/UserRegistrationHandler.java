@@ -4,10 +4,6 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
-import life.qbic.domain.usermanagement.User;
-import life.qbic.domain.usermanagement.User.UserException;
-import life.qbic.domain.usermanagement.registration.RegisterUserInput;
-import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,82 +15,82 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class UserRegistrationHandler implements UserRegistrationHandlerInterface,
-    RegisterUserOutput {
+        RegisterUserOutput {
 
-  private static final org.apache.logging.log4j.Logger log =
-      org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
-  private UserRegistrationLayout userRegistrationLayout;
+    private static final org.apache.logging.log4j.Logger log =
+            org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
+    private UserRegistrationLayout userRegistrationLayout;
 
-  private final RegisterUserInput registrationUseCase;
+    private final RegisterUserInput registrationUseCase;
 
-  @Autowired
-  UserRegistrationHandler(RegisterUserInput registrationUseCase) {
-    this.registrationUseCase = registrationUseCase;
-    registrationUseCase.setOutput(this);
-  }
-
-  @Override
-  public void handle(UserRegistrationLayout registrationLayout) {
-    if (userRegistrationLayout != registrationLayout) {
-      this.userRegistrationLayout = registrationLayout;
-      initFields();
-      addListener();
+    @Autowired
+    UserRegistrationHandler(RegisterUserInput registrationUseCase) {
+        this.registrationUseCase = registrationUseCase;
+        registrationUseCase.setOutput(this);
     }
-  }
 
-  private void initFields() {
-    userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
-    userRegistrationLayout.password.setPattern(".{8,}");
-    userRegistrationLayout.password.setErrorMessage("Password too short");
-  }
-
-  private void addListener() {
-    userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
-
-    userRegistrationLayout.registerButton.addClickListener(event -> {
-      resetErrorMessages();
-      registrationUseCase.register(userRegistrationLayout.fullName.getValue(),
-          userRegistrationLayout.email.getValue(),
-          userRegistrationLayout.password.getValue().toCharArray());
-    });
-  }
-
-  private void setEmptyFieldsInvalid() {
-    if (userRegistrationLayout.password.isEmpty()) {
-      userRegistrationLayout.password.setInvalid(true);
+    @Override
+    public void handle(UserRegistrationLayout registrationLayout) {
+        if (userRegistrationLayout != registrationLayout) {
+            this.userRegistrationLayout = registrationLayout;
+            initFields();
+            addListener();
+        }
     }
-    if (userRegistrationLayout.fullName.isEmpty()) {
-      userRegistrationLayout.fullName.setInvalid(true);
-    }
-    if (userRegistrationLayout.email.isEmpty()) {
-      userRegistrationLayout.email.setInvalid(true);
-    }
-  }
 
-  private void handleUserException(String reason) {
-    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
-      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+    private void initFields() {
+        userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
+        userRegistrationLayout.password.setPattern(".{8,}");
+        userRegistrationLayout.password.setErrorMessage("Password too short");
     }
-    if (reason.equalsIgnoreCase("User with email address already exists.")) {
-      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+
+    private void addListener() {
+        userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
+
+        userRegistrationLayout.registerButton.addClickListener(event -> {
+            resetErrorMessages();
+            registrationUseCase.register(userRegistrationLayout.fullName.getValue(),
+                    userRegistrationLayout.email.getValue(),
+                    userRegistrationLayout.password.getValue().toCharArray());
+        });
     }
-  }
 
-  private void resetErrorMessages() {
-    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
-  }
+    private void setEmptyFieldsInvalid() {
+        if (userRegistrationLayout.password.isEmpty()) {
+            userRegistrationLayout.password.setInvalid(true);
+        }
+        if (userRegistrationLayout.fullName.isEmpty()) {
+            userRegistrationLayout.fullName.setInvalid(true);
+        }
+        if (userRegistrationLayout.email.isEmpty()) {
+            userRegistrationLayout.email.setInvalid(true);
+        }
+    }
 
-  @Override
-  public void onSuccess() {
-    UI.getCurrent().navigate("/login");
-  }
+    private void handleUserException(String reason) {
+        if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
+            userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+        }
+        if (reason.equalsIgnoreCase("User with email address already exists.")) {
+            userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+        }
+    }
 
-  @Override
-  public void onFailure(String reason) {
-    // Display error to the user
-    // Stub output:
-    System.out.println(reason);
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
-  }
+    private void resetErrorMessages() {
+        userRegistrationLayout.passwordTooShortMessage.setVisible(false);
+        userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
+    }
+
+    @Override
+    public void onSuccess() {
+        UI.getCurrent().navigate("/login");
+    }
+
+    @Override
+    public void onFailure(String reason) {
+        // Display error to the user
+        // Stub output:
+        System.out.println(reason);
+        userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+    }
 }
