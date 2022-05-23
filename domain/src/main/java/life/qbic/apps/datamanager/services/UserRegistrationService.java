@@ -55,8 +55,9 @@ public final class UserRegistrationService {
 
       @Override
       public void handleEvent(UserRegistered event) {
+        var notificationId = notificationService.newNotificationId();
         var notification = Notification.create(UserRegistered.class.getSimpleName(),
-            event.occurredOn(), "123", event);
+            event.occurredOn(), notificationId, event);
         eventStore.append(event);
         notificationService.send(notification);
       }
