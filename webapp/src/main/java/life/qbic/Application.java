@@ -51,7 +51,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
         System.out.println(event.userEmail());
         System.out.println(event.userFullName());
       } catch (Exception e) {
-        e.printStackTrace();
+        System.out.println(e.getMessage());
       }
     }, "UserRegistered");
 
