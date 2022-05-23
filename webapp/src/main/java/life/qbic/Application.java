@@ -46,7 +46,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
         (message, messageParameters) -> {
           System.out.println("Receiving new message:");
           System.out.println(
-              messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
+              messageParameters.messageType + " [" + messageParameters.occurredOn + "]");
           try {
             UserRegistered event = deserialize(message);
             System.out.println(event.occurredOn());

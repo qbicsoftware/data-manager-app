@@ -1,13 +1,12 @@
 package life.qbic.apps.datamanager.notifications;
 
-import life.qbic.apps.datamanager.services.ServiceException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.UUID;
+import life.qbic.apps.datamanager.services.ServiceException;
 
 /**
  * <b>Notification Service</b>
@@ -39,9 +38,9 @@ public class NotificationService {
   public void send(Notification notification) throws ServiceException {
     var messageParams =
         MessageParameters.durableTextParameters(
-            notification.eventType, notification.notificationId, notification.occuredOn);
+            notification.eventType, notification.notificationId, notification.occurredOn);
 
-    String message = null;
+    String message;
     try {
       message = ObjectSerializer.instance().serialise(notification.event);
     } catch (IOException e) {

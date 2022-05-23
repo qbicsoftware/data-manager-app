@@ -1,13 +1,12 @@
 package life.qbic.messaging;
 
-import life.qbic.apps.datamanager.notifications.MessageBusInterface;
-import life.qbic.apps.datamanager.notifications.MessageParameters;
-import life.qbic.apps.datamanager.notifications.MessageSubscriber;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import life.qbic.apps.datamanager.notifications.MessageBusInterface;
+import life.qbic.apps.datamanager.notifications.MessageParameters;
+import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 
 /**
  * <b>Exchange (messaging)</b>
@@ -48,7 +47,7 @@ public class Exchange implements MessageBusInterface {
    * MessageParameters#messageType} parameter, and all subscriber to this topic are informed.
    *
    * @param message the message to publish via the exchange instance
-   * @param messageParameters some message parameters, such as the type (aka topic), the occuredOn
+   * @param messageParameters some message parameters, such as the type (aka topic), the occurredOn
    *     timepoint and a unique message identifier.
    */
   @Override
