@@ -1,5 +1,7 @@
 package life.qbic;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.helger.commons.base64.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
@@ -15,10 +17,12 @@ import life.qbic.domain.usermanagement.UserDomainService;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import life.qbic.usermanagement.registration.RegistrationEmailSender;
+import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * The entry point of the Spring Boot application.
@@ -35,6 +39,9 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
+  private static final Logger log = getLogger(Application.class);
+
+
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
 
@@ -43,7 +50,15 @@ public class Application extends SpringBootServletInitializer implements AppShel
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
     // Testing: subscribe to user register events in the message bus
-    MessageSubscriber whenUserRegisteredSendEmail = (message, messageParams) -> {
+
+    var messageBus = appContext.getBean(MessageBusInterface.class);
+    messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
+    messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
+  }
+
+  private static MessageSubscriber whenUserRegisteredSendEmail(
+      ConfigurableApplicationContext appContext) {
+    return (message, messageParams) -> {
       if (!messageParams.messageType.equals("UserRegistered")) {
         return;
       }
@@ -56,9 +71,17 @@ public class Application extends SpringBootServletInitializer implements AppShel
         throw new RuntimeException(e);
       }
     };
+  }
 
-    var messageBus = appContext.getBean(MessageBusInterface.class);
-    messageBus.subscribe(whenUserRegisteredSendEmail, "UserRegistered");
+  private static MessageSubscriber whenUserRegisteredLogUserInfo() {
+    return (message, messageParams) -> {
+      try {
+        UserRegistered userRegistered = deserialize(message);
+        log.info(userRegistered.toString());
+      } catch (IOException | ClassNotFoundException e) {
+        log.error(e.getMessage(), e);
+      }
+    };
   }
 
   static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
