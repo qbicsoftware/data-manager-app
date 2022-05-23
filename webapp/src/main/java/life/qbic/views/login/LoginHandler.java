@@ -12,19 +12,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoginHandler implements LoginHandlerInterface {
 
-    private final UserJpaRepository userRepository;
+  private final UserJpaRepository userRepository;
 
-    private LoginLayout registeredLoginView;
+  private LoginLayout registeredLoginView;
 
-    LoginHandler(@Autowired UserJpaRepository repository) {
-        this.userRepository = repository;
+  LoginHandler(@Autowired UserJpaRepository repository) {
+    this.userRepository = repository;
+  }
+
+  @Override
+  public void handle(LoginLayout loginView) {
+    if (registeredLoginView != loginView) {
+      registeredLoginView = loginView;
     }
-
-    @Override
-    public void handle(LoginLayout loginView) {
-        if (registeredLoginView != loginView) {
-            registeredLoginView = loginView;
-        }
-    }
-
+  }
 }

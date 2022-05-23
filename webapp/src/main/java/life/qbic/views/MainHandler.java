@@ -12,25 +12,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class MainHandler implements MainHandlerInterface {
 
-    private MainLayout registeredMainLayout;
-    private final SecurityService securityService;
+  private MainLayout registeredMainLayout;
+  private final SecurityService securityService;
 
-    public MainHandler(@Autowired SecurityService securityService) {
-        this.securityService = securityService;
-    }
+  public MainHandler(@Autowired SecurityService securityService) {
+    this.securityService = securityService;
+  }
 
-    @Override
-    public void handle(MainLayout layout) {
-        if (registeredMainLayout != layout) {
-            this.registeredMainLayout = layout;
-            // orchestrate view
-            addClickListeners();
-            // then return
-        }
+  @Override
+  public void handle(MainLayout layout) {
+    if (registeredMainLayout != layout) {
+      this.registeredMainLayout = layout;
+      // orchestrate view
+      addClickListeners();
+      // then return
     }
+  }
 
-    private void addClickListeners() {
-        registeredMainLayout.logout.addClickListener(
-                event -> securityService.logout());
-    }
+  private void addClickListeners() {
+    registeredMainLayout.logout.addClickListener(event -> securityService.logout());
+  }
 }

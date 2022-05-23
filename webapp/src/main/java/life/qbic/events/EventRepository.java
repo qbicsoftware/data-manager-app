@@ -11,8 +11,7 @@ import java.util.List;
  */
 public interface EventRepository {
 
-    List<StoredEvent> findAllByType(Class<DomainEvent> type);
+  List<StoredEvent> findAllByType(Class<DomainEvent> type);
 
-    void save(StoredEvent storedEvent);
-
+  void save(StoredEvent storedEvent);
 }

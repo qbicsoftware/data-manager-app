@@ -13,22 +13,22 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
 
-    public static final String LOGOUT_URL = "/";
+  public static final String LOGOUT_URL = "/";
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new QBiCPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new QBiCPasswordEncoder();
+  }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        super.configure(http);
-        setLoginView(http, LoginLayout.class, LOGOUT_URL);
-    }
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    super.configure(http);
+    setLoginView(http, LoginLayout.class, LOGOUT_URL);
+  }
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        super.configure(web);
-        web.ignoring().antMatchers("/images/*.png");
-    }
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    super.configure(web);
+    web.ignoring().antMatchers("/images/*.png");
+  }
 }

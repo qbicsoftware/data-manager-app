@@ -7,11 +7,11 @@ package life.qbic.views;
  */
 public interface MainHandlerInterface {
 
-    /**
-     * Registers the {@link MainLayout} to the implementing class
-     *
-     * @param layout The view that is being registered
-     * @since 1.0.0
-     */
-    void handle(MainLayout layout);
+  /**
+   * Registers the {@link MainLayout} to the implementing class
+   *
+   * @param layout The view that is being registered
+   * @since 1.0.0
+   */
+  void handle(MainLayout layout);
 }

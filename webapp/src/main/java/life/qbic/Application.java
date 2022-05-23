@@ -28,40 +28,42 @@ import java.io.ObjectInputStream;
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
 @Theme(value = "datamanager")
 @PWA(
-        name = "Data Manager",
-        shortName = "Data Manager",
-        offlineResources = {"images/logo.png"})
+    name = "Data Manager",
+    shortName = "Data Manager",
+    offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
-    public static void main(String[] args) {
-        var appContext = SpringApplication.run(Application.class, args);
+  public static void main(String[] args) {
+    var appContext = SpringApplication.run(Application.class, args);
 
-        // We need to set up the domain registry and register important services:
-        var userRepository = appContext.getBean(UserRepository.class);
-        DomainRegistry.instance().registerService(new UserDomainService(userRepository));
+    // We need to set up the domain registry and register important services:
+    var userRepository = appContext.getBean(UserRepository.class);
+    DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
-        // Testing: subscribe to user register events in the message bus
-        var messageBus = appContext.getBean(MessageBusInterface.class);
-        messageBus.subscribe((message, messageParameters) -> {
-            System.out.println("Receiving new message:");
-            System.out.println(messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
-            try {
-                UserRegistered event = deserialize(message);
-                System.out.println(event.occurredOn());
-                System.out.println(event.userId());
-                System.out.println(event.userEmail());
-                System.out.println(event.userFullName());
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }, "UserRegistered");
+    // Testing: subscribe to user register events in the message bus
+    var messageBus = appContext.getBean(MessageBusInterface.class);
+    messageBus.subscribe(
+        (message, messageParameters) -> {
+          System.out.println("Receiving new message:");
+          System.out.println(
+              messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
+          try {
+            UserRegistered event = deserialize(message);
+            System.out.println(event.occurredOn());
+            System.out.println(event.userId());
+            System.out.println(event.userEmail());
+            System.out.println(event.userFullName());
+          } catch (Exception e) {
+            System.out.println(e.getMessage());
+          }
+        },
+        "UserRegistered");
+  }
 
-    }
-
-    static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
-        byte[] content = Base64.decode(event);
-        ByteArrayInputStream bais = new ByteArrayInputStream(content);
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        return (UserRegistered) ois.readObject();
-    }
+  static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
+    byte[] content = Base64.decode(event);
+    ByteArrayInputStream bais = new ByteArrayInputStream(content);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+    return (UserRegistered) ois.readObject();
+  }
 }

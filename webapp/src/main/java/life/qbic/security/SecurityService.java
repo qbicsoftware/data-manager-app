@@ -19,31 +19,29 @@ import java.util.Optional;
 @Component
 public class SecurityService implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 5199220688136926750L;
+  @Serial private static final long serialVersionUID = 5199220688136926750L;
 
-    private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-    @Autowired
-    public SecurityService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+  @Autowired
+  public SecurityService(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
 
-    private Optional<Authentication> getAuthentication() {
-        SecurityContext context = SecurityContextHolder.getContext();
-        return Optional.ofNullable(context.getAuthentication())
-                .filter(authentication -> !(authentication instanceof AnonymousAuthenticationToken));
-    }
+  private Optional<Authentication> getAuthentication() {
+    SecurityContext context = SecurityContextHolder.getContext();
+    return Optional.ofNullable(context.getAuthentication())
+        .filter(authentication -> !(authentication instanceof AnonymousAuthenticationToken));
+  }
 
-    public Optional<User> get() {
-        return getAuthentication().flatMap(
-                authentication -> userRepository.findByEmail(authentication.getName()));
-    }
+  public Optional<User> get() {
+    return getAuthentication()
+        .flatMap(authentication -> userRepository.findByEmail(authentication.getName()));
+  }
 
-    public void logout() {
-        UI.getCurrent().getPage().setLocation(SecurityConfiguration.LOGOUT_URL);
-        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
-        logoutHandler.logout(VaadinServletRequest.getCurrent().getHttpServletRequest(), null, null);
-    }
-
+  public void logout() {
+    UI.getCurrent().getPage().setLocation(SecurityConfiguration.LOGOUT_URL);
+    SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+    logoutHandler.logout(VaadinServletRequest.getCurrent().getHttpServletRequest(), null, null);
+  }
 }

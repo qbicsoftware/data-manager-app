@@ -5,11 +5,11 @@ import life.qbic.domain.events.DomainEvent;
 /**
  * <b>short description</b>
  *
- * <p>detailed description</p>
+ * <p>detailed description
  *
  * @since <version tag>
  */
 @FunctionalInterface
 public interface DomainEventSubscriber<T extends DomainEvent> {
-    void handle(T event);
+  void handle(T event);
 }

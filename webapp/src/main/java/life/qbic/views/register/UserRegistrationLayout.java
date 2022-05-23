@@ -34,115 +34,133 @@ import java.util.stream.Stream;
 @AnonymousAllowed
 public class UserRegistrationLayout extends VerticalLayout {
 
-    public EmailField email;
+  public EmailField email;
 
-    public PasswordField password;
+  public PasswordField password;
 
-    public TextField fullName;
+  public TextField fullName;
 
-    public Button registerButton;
+  public Button registerButton;
 
-    public Span loginSpan;
+  public Span loginSpan;
 
-    public ErrorMessage alreadyUsedEmailMessage;
-    public ErrorMessage passwordTooShortMessage;
-    public ErrorMessage errorMessage;
+  public ErrorMessage alreadyUsedEmailMessage;
+  public ErrorMessage passwordTooShortMessage;
+  public ErrorMessage errorMessage;
 
-    private final VerticalLayout contentLayout;
-    private H2 layoutTitle;
+  private final VerticalLayout contentLayout;
+  private H2 layoutTitle;
 
-    public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
+  public UserRegistrationLayout(@Autowired UserRegistrationHandlerInterface registerHandler) {
 
-        this.addClassName("grid");
-        contentLayout = new VerticalLayout();
+    this.addClassName("grid");
+    contentLayout = new VerticalLayout();
 
-        initLayout();
-        styleLayout();
-        registerToHandler(registerHandler);
-    }
+    initLayout();
+    styleLayout();
+    registerToHandler(registerHandler);
+  }
 
-    private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
-        registerHandler.handle(this);
-    }
+  private void registerToHandler(UserRegistrationHandlerInterface registerHandler) {
+    registerHandler.handle(this);
+  }
 
-    private void initLayout() {
-        layoutTitle = new H2("Register");
+  private void initLayout() {
+    layoutTitle = new H2("Register");
 
-        createErrorDivs();
-        styleEmailField();
-        styleNameField();
-        createPasswordField();
-        createRegisterButton();
-        createSpan();
+    createErrorDivs();
+    styleEmailField();
+    styleNameField();
+    createPasswordField();
+    createRegisterButton();
+    createSpan();
 
-        add(contentLayout);
-    }
+    add(contentLayout);
+  }
 
-    private void styleLayout() {
-        password.setWidthFull();
-        email.setWidthFull();
-        fullName.setWidthFull();
+  private void styleLayout() {
+    password.setWidthFull();
+    email.setWidthFull();
+    fullName.setWidthFull();
 
-        styleRegisterButton();
+    styleRegisterButton();
 
-        setRequiredIndicatorVisible(fullName, email, password);
+    setRequiredIndicatorVisible(fullName, email, password);
 
-        styleFormLayout();
-        setSizeFull();
-        setAlignItems(FlexComponent.Alignment.CENTER);
-        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    }
+    styleFormLayout();
+    setSizeFull();
+    setAlignItems(FlexComponent.Alignment.CENTER);
+    setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+  }
 
-    private void createErrorDivs() {
-        alreadyUsedEmailMessage =
-                new ErrorMessage(
-                        "Email already in use",
-                        "If you have difficulties with your password you can reset it.");
-        alreadyUsedEmailMessage.setVisible(false);
+  private void createErrorDivs() {
+    alreadyUsedEmailMessage =
+        new ErrorMessage(
+            "Email already in use",
+            "If you have difficulties with your password you can reset it.");
+    alreadyUsedEmailMessage.setVisible(false);
 
-        passwordTooShortMessage =
-                new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
-        passwordTooShortMessage.setVisible(false);
+    passwordTooShortMessage =
+        new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
+    passwordTooShortMessage.setVisible(false);
 
-        errorMessage = new ErrorMessage("Registration failed", "Please try again.");
-        errorMessage.setVisible(false);
-    }
+    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
+    errorMessage.setVisible(false);
+  }
 
-    private void styleNameField() {
-        fullName = new TextField("Full Name");
-    }
+  private void styleNameField() {
+    fullName = new TextField("Full Name");
+  }
 
-    private void styleFormLayout() {
-        contentLayout.addClassNames(
-                "bg-base", "border", "rounded-m", "border-contrast-10", "box-border", "flex", "flex-col",
-                "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw");
-        contentLayout.add(layoutTitle, errorMessage, alreadyUsedEmailMessage, passwordTooShortMessage,
-                fullName, email, password, registerButton, loginSpan);
-    }
+  private void styleFormLayout() {
+    contentLayout.addClassNames(
+        "bg-base",
+        "border",
+        "rounded-m",
+        "border-contrast-10",
+        "box-border",
+        "flex",
+        "flex-col",
+        "w-full",
+        "text-s",
+        "shadow-l",
+        "min-width-300px",
+        "max-width-15vw");
+    contentLayout.add(
+        layoutTitle,
+        errorMessage,
+        alreadyUsedEmailMessage,
+        passwordTooShortMessage,
+        fullName,
+        email,
+        password,
+        registerButton,
+        loginSpan);
+  }
 
-    private void createSpan() {
-        RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
-        loginSpan = new Span(new Text("Already have an account? "), link);
-    }
+  private void createSpan() {
+    RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
+    loginSpan = new Span(new Text("Already have an account? "), link);
+  }
 
-    private void createRegisterButton() {
-        registerButton = new Button("Register");
-    }
+  private void createRegisterButton() {
+    registerButton = new Button("Register");
+  }
 
-    private void styleRegisterButton() {
-        registerButton.setWidthFull();
-        registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    }
+  private void styleRegisterButton() {
+    registerButton.setWidthFull();
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
 
-    private void createPasswordField() {
-        password = new PasswordField("Password");
-    }
+  private void createPasswordField() {
+    password = new PasswordField("Password");
+  }
 
-    private void styleEmailField() {
-        email = new EmailField("Email");
-    }
+  private void styleEmailField() {
+    email = new EmailField("Email");
+  }
 
-    private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
-        Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
-    }
+  private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
+    Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
+  }
 }

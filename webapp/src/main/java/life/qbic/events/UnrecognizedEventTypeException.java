@@ -7,7 +7,7 @@ package life.qbic.events;
  */
 public class UnrecognizedEventTypeException extends RuntimeException {
 
-    public UnrecognizedEventTypeException(String message) {
-        super(message);
-    }
+  public UnrecognizedEventTypeException(String message) {
+    super(message);
+  }
 }

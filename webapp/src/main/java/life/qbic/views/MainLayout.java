@@ -15,27 +15,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "data")
 public class MainLayout extends DataManagerLayout {
 
-    public Button logout;
+  public Button logout;
 
-    public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
-        createNavBarContent();
-        registerToHandler(startHandlerInterface);
-    }
+  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
+    createNavBarContent();
+    registerToHandler(startHandlerInterface);
+  }
 
-    private void registerToHandler(MainHandlerInterface startHandler) {
-        startHandler.handle(this);
-    }
+  private void registerToHandler(MainHandlerInterface startHandler) {
+    startHandler.handle(this);
+  }
 
-    private void createNavBarContent() {
-        addToNavbar(createHeaderButtonLayout());
-    }
+  private void createNavBarContent() {
+    addToNavbar(createHeaderButtonLayout());
+  }
 
-    private HorizontalLayout createHeaderButtonLayout() {
-        logout = new Button("Log out");
-        HorizontalLayout loggedInButtonLayout = new HorizontalLayout(logout);
-        loggedInButtonLayout.addClassName("button-layout-spacing");
+  private HorizontalLayout createHeaderButtonLayout() {
+    logout = new Button("Log out");
+    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(logout);
+    loggedInButtonLayout.addClassName("button-layout-spacing");
 
-        return loggedInButtonLayout;
-    }
-
+    return loggedInButtonLayout;
+  }
 }

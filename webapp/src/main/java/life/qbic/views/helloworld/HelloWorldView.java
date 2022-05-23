@@ -21,30 +21,30 @@ import javax.annotation.security.PermitAll;
 @PermitAll
 public class HelloWorldView extends VerticalLayout {
 
-    private final TextField name;
-    private final Button sayHello;
+  private final TextField name;
+  private final Button sayHello;
 
-    private final H1 personalWelcomeMessage;
+  private final H1 personalWelcomeMessage;
 
-    private final SecurityService securityService;
+  private final SecurityService securityService;
 
-    public HelloWorldView(@Autowired SecurityService securityService) {
-        this.securityService = securityService;
+  public HelloWorldView(@Autowired SecurityService securityService) {
+    this.securityService = securityService;
 
-        String username = securityService.get().map(User::getFullName).orElse("Your name");
-        name = new TextField(username);
+    String username = securityService.get().map(User::getFullName).orElse("Your name");
+    name = new TextField(username);
 
-        sayHello = new Button("Say hello");
-        sayHello.addClickListener(e -> {
-            Notification.show("Hello " + name.getValue());
+    sayHello = new Button("Say hello");
+    sayHello.addClickListener(
+        e -> {
+          Notification.show("Hello " + name.getValue());
         });
 
-        setMargin(true);
-        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+    setMargin(true);
+    setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
-        this.personalWelcomeMessage = new H1();
-        this.personalWelcomeMessage.getElement().setText("Welcome " + username);
-        add(personalWelcomeMessage, name, sayHello);
-    }
-
+    this.personalWelcomeMessage = new H1();
+    this.personalWelcomeMessage.getElement().setText("Welcome " + username);
+    add(personalWelcomeMessage, name, sayHello);
+  }
 }
