@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Domain Event Publisher</b>
+ * <p>
+ * Thread-local domain event publisher class. Can be used to observe certain domain event types and publish domain events
+ * within the domain.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class DomainEventPublisher {
 
