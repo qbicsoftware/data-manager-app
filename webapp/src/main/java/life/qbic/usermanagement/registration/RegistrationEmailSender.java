@@ -57,7 +57,6 @@ public class RegistrationEmailSender {
     props.put("mail.smtp.starttls.enable", "true");
     props.put("mail.smtp.host", smtpHost);
     props.put("mail.smtp.port", smtpPort);
-    log.info("smpt host is : " + props.getProperty("mail.smtp.host"));
 
     Session session = Session.getInstance(props, new Authenticator() {
       protected PasswordAuthentication getPasswordAuthentication() {
