@@ -8,7 +8,6 @@ public class StoredEvent {
   private final Instant occurredOn;
   private final String typeName;
 
-
   public StoredEvent(String eventBody, Instant occurredOn, String typeName) {
     this.eventBody = eventBody;
     this.occurredOn = occurredOn;
@@ -37,11 +36,17 @@ public class StoredEvent {
 
   @Override
   public String toString() {
-    return "StoredEvent{" +
-        "eventBody='" + eventBody + '\'' +
-        ", eventId=" + eventId +
-        ", occurredOn=" + occurredOn +
-        ", typeName='" + typeName + '\'' +
-        '}';
+    return "StoredEvent{"
+        + "eventBody='"
+        + eventBody
+        + '\''
+        + ", eventId="
+        + eventId
+        + ", occurredOn="
+        + occurredOn
+        + ", typeName='"
+        + typeName
+        + '\''
+        + '}';
   }
 }

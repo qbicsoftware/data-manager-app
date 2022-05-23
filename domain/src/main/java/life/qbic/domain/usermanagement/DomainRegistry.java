@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * <b>Domain Registry</b>
  *
- * <p>Provides access to registered domain services.</p>
+ * <p>Provides access to registered domain services.
  *
  * @since 1.0.0
  */
@@ -24,8 +24,8 @@ public class DomainRegistry {
 
   /**
    * Registers a {@link UserDomainService} in the domain registry.
-   * <p>
-   * Successive calls will overwrite the previous registered service reference.
+   *
+   * <p>Successive calls will overwrite the previous registered service reference.
    *
    * @param aUserDomainService a user domain service
    * @since 1.0.0
@@ -43,5 +43,4 @@ public class DomainRegistry {
   public Optional<UserDomainService> userDomainService() {
     return Optional.ofNullable(userDomainService);
   }
-
 }

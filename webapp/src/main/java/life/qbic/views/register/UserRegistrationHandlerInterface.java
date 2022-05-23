@@ -1,7 +1,8 @@
 package life.qbic.views.register;
 
 /**
- * <b> Interface to handle the {@link UserRegistrationLayout} to the {@link UserRegistrationHandler}. </b>
+ * <b> Interface to handle the {@link UserRegistrationLayout} to the {@link
+ * UserRegistrationHandler}. </b>
  *
  * @since 1.0.0
  */

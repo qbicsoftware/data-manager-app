@@ -37,5 +37,4 @@ public class MainLayout extends DataManagerLayout {
 
     return loggedInButtonLayout;
   }
-
 }

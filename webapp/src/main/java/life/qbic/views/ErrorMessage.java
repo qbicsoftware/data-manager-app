@@ -61,6 +61,7 @@ public class ErrorMessage extends Composite<VerticalLayout> {
     this.titleTextSpan = new Span(titleText);
     titleSpan = new Span(icon, this.titleTextSpan);
   }
+
   private void styleTitleSpan() {
     titleSpan.addClassNames("flex", "items-center", "gap-s");
     titleTextSpan.addClassName("font-bold");

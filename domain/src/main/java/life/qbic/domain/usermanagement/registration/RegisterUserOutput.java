@@ -21,5 +21,4 @@ public interface RegisterUserOutput {
    * @since 1.0.0
    */
   void onFailure(String reason);
-
 }

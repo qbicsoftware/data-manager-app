@@ -7,15 +7,12 @@ import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
-import java.util.List;
+import com.vaadin.flow.router.*;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -67,13 +64,27 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-
   private void styleFormLayout() {
     registerSpan.addClassName("p-l");
     contentLayout.setWidthFull();
     contentLayout.setPadding(false);
-    contentLayout.getElement().getClassList().addAll(
-            List.of("bg-base", "border", "border-contrast-10", "rounded-m", "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw"));
+    contentLayout
+        .getElement()
+        .getClassList()
+        .addAll(
+            List.of(
+                "bg-base",
+                "border",
+                "border-contrast-10",
+                "rounded-m",
+                "box-border",
+                "flex",
+                "flex-col",
+                "w-full",
+                "text-s",
+                "shadow-l",
+                "min-width-300px",
+                "max-width-15vw"));
   }
 
   private void createSpan() {

@@ -1,23 +1,20 @@
 package life.qbic.domain.usermanagement;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.UUID;
+import life.qbic.domain.usermanagement.policies.*;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
-import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
-import life.qbic.domain.usermanagement.policies.PasswordPolicy;
-import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
-import life.qbic.domain.usermanagement.policies.PolicyStatus;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * <b>User class</b>
- * <p>
- * User aggregate in the context of user management.
+ *
+ * <p>User aggregate in the context of user management.
  *
  * @since 1.0.0
  */
@@ -25,8 +22,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
 @Table(name = "users")
 public class User implements Serializable {
 
-  @Serial
-  private static final long serialVersionUID = -8469632941022622595L;
+  @Serial private static final long serialVersionUID = -8469632941022622595L;
 
   @Id
   @Column(name = "id")
@@ -40,21 +36,20 @@ public class User implements Serializable {
 
   private boolean emailConfirmed;
 
-  protected User() {
-
-  }
+  protected User() {}
 
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
    * QBiC's organisation.
-   * <p>
-   * It is the client's responsibility to reset the raw password, after the user has been created.
-   * <p>
-   * The object instance won't hold a reference to the original password char array, after it has
+   *
+   * <p>It is the client's responsibility to reset the raw password, after the user has been
+   * created.
+   *
+   * <p>The object instance won't hold a reference to the original password char array, after it has
    * been encrypted.
    *
-   * @param fullName    the full name of the user
-   * @param email       the email address of the user
+   * @param fullName the full name of the user
+   * @param email the email address of the user
    * @return the new user
    * @since 1.0.0
    */
@@ -72,8 +67,8 @@ public class User implements Serializable {
    * layer.
    *
    * @param encryptedPassword the encrypted password
-   * @param fullName          the full name
-   * @param email             the email
+   * @param fullName the full name
+   * @param email the email
    * @return an object instance of the user
    * @since 1.0.0
    */
@@ -90,24 +85,30 @@ public class User implements Serializable {
 
   @Override
   public String toString() {
-    return "User{" +
-        "id='" + id + '\'' +
-        ", fullName='" + fullName + '\'' +
-        ", email='" + email + '\'' +
-        '}';
+    return "User{"
+        + "id='"
+        + id
+        + '\''
+        + ", fullName='"
+        + fullName
+        + '\''
+        + ", email='"
+        + email
+        + '\''
+        + '}';
   }
 
   /**
    * Sets a password for the current user.
-   * <p>
-   * Beware that the password gets validated against the current password policy. If the password
+   *
+   * <p>Beware that the password gets validated against the current password policy. If the password
    * violates the policy, an {@link UserException} is thrown.
-   * <p>
-   * The password is then stored in an encrypted form, controlled by the
-   * {@link PasswordEncryptionPolicy}.
-   * <p>
-   * It is the client's responsibility to reset the raw password, after it has been set for the user
-   * and encrypted.
+   *
+   * <p>The password is then stored in an encrypted form, controlled by the {@link
+   * PasswordEncryptionPolicy}.
+   *
+   * <p>It is the client's responsibility to reset the raw password, after it has been set for the
+   * user and encrypted.
    *
    * @param rawPassword the new user password
    * @throws UserException if the user password is too weak
@@ -141,9 +142,9 @@ public class User implements Serializable {
 
   /**
    * Sets the email address for the current user.
-   * <p>
-   * This method will throw an {@link UserException} if the email address format seems not to be a
-   * valid email address. The format policy is specified in {@link EmailFormatPolicy}.
+   *
+   * <p>This method will throw an {@link UserException} if the email address format seems not to be
+   * a valid email address. The format policy is specified in {@link EmailFormatPolicy}.
    *
    * @param email the email address of the user
    * @throws UserException if the email address violates the policy
@@ -185,7 +186,8 @@ public class User implements Serializable {
    * @return true, if the given password is correct for the user
    */
   public Boolean checkPassword(char[] rawPassword) {
-    return Objects.equals(PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword);
+    return Objects.equals(
+        PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword);
   }
 
   private void validateEmail(String email) throws UserException {
@@ -212,7 +214,5 @@ public class User implements Serializable {
     public String getReason() {
       return reason;
     }
-
   }
-
 }

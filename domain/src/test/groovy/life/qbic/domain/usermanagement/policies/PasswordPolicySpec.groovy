@@ -4,7 +4,7 @@ package life.qbic.domain.usermanagement.policies
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.PasswordPolicy}</b>
+ * <b>Tests for the {@link PasswordPolicy}</b>
  *
  * @since 1.0.0
  */

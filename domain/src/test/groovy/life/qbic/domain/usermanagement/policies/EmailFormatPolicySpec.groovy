@@ -4,7 +4,7 @@ package life.qbic.domain.usermanagement.policies
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.EmailFormatPolicy}</b>
+ * <b>Tests for the {@link EmailFormatPolicy}</b>
  *
  * @since 1.0.0
  */
@@ -24,7 +24,7 @@ class EmailFormatPolicySpec extends Specification {
                 "@test.de",
                 "address.de",
                 "my@address"
-                ]
+        ]
     }
 
     def "An email format that honors the RFC5322 specification shall result in a PASSED policy check"() {

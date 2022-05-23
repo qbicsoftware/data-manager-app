@@ -26,5 +26,4 @@ public class LoginHandler implements LoginHandlerInterface {
       registeredLoginView = loginView;
     }
   }
-
 }

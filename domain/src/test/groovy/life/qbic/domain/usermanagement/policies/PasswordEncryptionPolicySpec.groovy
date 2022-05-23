@@ -4,7 +4,7 @@ package life.qbic.domain.usermanagement.policies
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy}</b>
+ * <b>Tests for the {@link PasswordEncryptionPolicy}</b>
  *
  * @since 1.0.0
  */
@@ -24,7 +24,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     def "The password policy matches same passwords"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
-        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[],encryptedPassword)
+        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(password as char[], encryptedPassword)
 
         then:
         result
@@ -36,7 +36,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     def "Two different passwords cannot be matched"() {
         when:
         String encryptedPassword = PasswordEncryptionPolicy.create().encrypt(password.toCharArray())
-        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[],encryptedPassword)
+        boolean result = PasswordEncryptionPolicy.create().doPasswordsMatch(anotherPassword as char[], encryptedPassword)
 
         then:
         !result

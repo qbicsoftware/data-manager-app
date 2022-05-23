@@ -2,11 +2,12 @@ package life.qbic.domain.usermanagement.policies;
 
 /**
  * <b>Class PasswordPolicy</b>
- * <p>Length and complexity are the two properties that have an effect on password strength.
- * We do not enforce complexity explicitly, although we advice to use password managers that generate
- * strong passwords.
- * </p>
- * Currently we only enforce the password length to have at least 8 characters or more.
+ *
+ * <p>Length and complexity are the two properties that have an effect on password strength. We do
+ * not enforce complexity explicitly, although we advice to use password managers that generate
+ * strong passwords. Currently we only enforce the password length to have at least 8 characters or
+ * more.
+ *
  * @since 1.0.0
  */
 public class PasswordPolicy {
@@ -15,7 +16,7 @@ public class PasswordPolicy {
 
   private static PasswordPolicy INSTANCE;
 
-  public static PasswordPolicy create(){
+  public static PasswordPolicy create() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordPolicy();
     }
@@ -24,6 +25,7 @@ public class PasswordPolicy {
 
   /**
    * Validates the raw password against the current policy.
+   *
    * @param rawPassword the password to validate
    * @return a policy check report
    * @since 1.0.0
@@ -34,5 +36,4 @@ public class PasswordPolicy {
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }
-
 }
