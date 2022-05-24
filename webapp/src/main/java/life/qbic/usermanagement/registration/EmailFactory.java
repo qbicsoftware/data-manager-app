@@ -8,6 +8,9 @@ import life.qbic.email.Recipient;
  */
 public class EmailFactory {
 
+  private EmailFactory() {
+  }
+
   private static String formatRegistrationEmailContent(String fullName) {
     return String.format("""
         Dear %s,
