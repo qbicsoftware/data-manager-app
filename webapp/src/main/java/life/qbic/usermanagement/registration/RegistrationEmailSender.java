@@ -1,7 +1,5 @@
 package life.qbic.usermanagement.registration;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 import java.util.Properties;
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -12,19 +10,16 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import org.slf4j.Logger;
+import life.qbic.email.Email;
+import life.qbic.email.EmailService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 /**
  * Sends emails informing a user that she was registered in the system
  *
  * @since 1.0.0
  */
-@Service
-public class RegistrationEmailSender {
-
-  private static final Logger log = getLogger(RegistrationEmailSender.class);
+public class RegistrationEmailSender implements EmailService {
 
   @Value("${spring.mail.password}")
   private String password;
@@ -38,38 +33,36 @@ public class RegistrationEmailSender {
   @Value("${spring.mail.port}")
   private Integer smtpPort;
 
-  public void sendmail(String recipient, String fullName) {
-    String from = "no-reply@qbic.life";
-
-    String subject = "Activate your Data Manager Account";
-    String content = RegistrationMessageFactory.registrationMessage(fullName);
-    try {
-      sendPlainEmail(from, recipient, subject, content);
-    } catch (MessagingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void sendPlainEmail(String from, String to, String subject,
-      String content) throws MessagingException {
+  private void sendPlainEmail(Email email) {
     Properties props = new Properties();
     props.put("mail.smtp.auth", "true");
     props.put("mail.smtp.starttls.enable", "true");
     props.put("mail.smtp.host", smtpHost);
     props.put("mail.smtp.port", smtpPort);
 
-    Session session = Session.getInstance(props, new Authenticator() {
-      @Override
-      protected PasswordAuthentication getPasswordAuthentication() {
-        return new PasswordAuthentication(userName, password);
-      }
-    });
-    Message msg = new MimeMessage(session);
-    msg.setFrom(new InternetAddress(from));
-    msg.setRecipients(RecipientType.TO, InternetAddress.parse(to));
-    msg.setSubject(subject);
-    msg.setText(content);
+    try {
+      Session session = Session.getInstance(props, new Authenticator() {
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+          return new PasswordAuthentication(userName, password);
+        }
+      });
+      Message msg = new MimeMessage(session);
+      msg.setFrom(new InternetAddress(email.from()));
+      msg.setRecipient(RecipientType.TO, new InternetAddress(email.to().address()));
+      msg.setSubject(email.subject());
+      msg.setText(email.content());
 
-    Transport.send(msg);
+      Transport.send(msg);
+    } catch (MessagingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void send(Email email) {
+    if (email.mimeType().equals("text/plain")) {
+      sendPlainEmail(email);
+    }
   }
 }

@@ -8,9 +8,11 @@ import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.email.EmailService;
 import life.qbic.events.SimpleEventStore;
 import life.qbic.events.TemporaryEventRepository;
 import life.qbic.messaging.Exchange;
+import life.qbic.usermanagement.registration.RegistrationEmailSender;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,7 +30,7 @@ public class AppConfig {
   /**
    * Creates the registration use case.
    *
-   * @param userRepository the user repository
+   * @param userRegistrationService the user registration service used by this use case
    * @return the use case input
    * @since 1.0.0
    */
@@ -63,6 +65,11 @@ public class AppConfig {
   @Bean
   public NotificationService notificationService(MessageBusInterface messageBusInterface) {
     return new NotificationService(messageBusInterface);
+  }
+
+  @Bean
+  public EmailService emailService() {
+    return new RegistrationEmailSender();
   }
 
   @Bean

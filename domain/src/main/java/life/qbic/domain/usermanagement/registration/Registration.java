@@ -68,6 +68,7 @@ public class Registration implements RegisterUserInput {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
+
       registerUserOutput.onFailure("Could not create a new account, please try again.");
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");

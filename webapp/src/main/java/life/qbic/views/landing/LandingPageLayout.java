@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import life.qbic.usermanagement.registration.RegistrationEmailSender;
 import life.qbic.views.DataManagerLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -20,9 +19,6 @@ public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
-
-  @Autowired
-  private RegistrationEmailSender registrationEmailSender;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     createNavBarContent();
