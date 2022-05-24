@@ -18,8 +18,8 @@ import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
+import life.qbic.email.Recipient;
 import life.qbic.usermanagement.registration.EmailFactory;
-import life.qbic.usermanagement.registration.Recipient;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -70,7 +70,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
         EmailService registrationEmailSender = appContext.getBean(
             EmailService.class);
         Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
-            Recipient.from(userRegistered.userEmail(), userRegistered.userFullName()));
+            new Recipient(userRegistered.userEmail(), userRegistered.userFullName()));
         registrationEmailSender.send(registrationMail);
       } catch (IOException | ClassNotFoundException e) {
         throw new RuntimeException(e);
