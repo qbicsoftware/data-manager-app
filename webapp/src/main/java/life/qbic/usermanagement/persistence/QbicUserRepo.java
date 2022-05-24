@@ -1,0 +1,38 @@
+package life.qbic.usermanagement.persistence;
+
+import life.qbic.domain.usermanagement.User;
+import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
+
+/**
+ * <b>QBiC user repository interface</b>
+ *
+ * <p>This interface will be automatically detected by Spring on application startup and create an
+ * instance of this class automatically.
+ *
+ * <p>Since it extends the {@link CrudRepository} class from Spring, no need to write queries. The
+ * framework will do that for us.
+ *
+ * @since 1.0.0
+ */
+public interface QbicUserRepo extends CrudRepository<User, String> {
+
+  /**
+   * Find users by email address in the persistent data storage
+   *
+   * @param email the email address to filter users for
+   * @return a list of matching users that have the given email address
+   * @since 1.0.0
+   */
+  List<User> findUsersByEmail(String email);
+
+  /**
+   * Find a user entity by its user id.
+   *
+   * @param id the user id
+   * @return the user matching the id, is <code>null</code> if no matching user was found.
+   * @since 1.0.0
+   */
+  User findUserById(String id);
+}
