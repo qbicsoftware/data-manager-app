@@ -34,6 +34,8 @@ public class Exchange implements MessageBusInterface {
 
   private final ReentrantLock lock;
 
+  private Thread worker;
+
   /**
    * Queries the current instance of the Exchange class.
    *
@@ -58,7 +60,7 @@ public class Exchange implements MessageBusInterface {
   }
 
   private void launchSubmissionTaskWorker() {
-    Thread worker = new SubmissionTaskWorker(submissionTasks, topics, lock);
+    worker = new SubmissionTaskWorker(submissionTasks, topics, lock);
     worker.setName("Message Submission Worker");
     worker.start();
   }
@@ -102,8 +104,12 @@ public class Exchange implements MessageBusInterface {
         throw new RuntimeException("Subscription failed");
       }
     } catch (InterruptedException e) {
-      return; // no need to do anything
+      stop();
     }
+  }
+
+  private void stop() {
+    this.worker.interrupt();
   }
 
   private void tryToSubscribe(MessageSubscriber messageSubscriber, String topic) {
@@ -212,14 +218,14 @@ public class Exchange implements MessageBusInterface {
         if (currentTask != null) {
           try {
             handleSubmission(currentTask);
-          } catch (InterruptedException ignored) {
+          } catch (InterruptedException e) {
             cleanup();
             return;
           }
         }
         try {
           Thread.sleep(100);
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
           // no need to do anything atm, we don't save the state of the working queue.
           // we return if the Thread gets interrupted, which ends the worker
           cleanup();
