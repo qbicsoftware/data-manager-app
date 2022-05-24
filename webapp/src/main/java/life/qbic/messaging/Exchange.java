@@ -101,7 +101,9 @@ public class Exchange implements MessageBusInterface {
       } else {
         throw new RuntimeException("Subscription failed");
       }
-    } catch (InterruptedException ignored) {}
+    } catch (InterruptedException e) {
+      return; // no need to do anything
+    }
   }
 
   private void tryToSubscribe(MessageSubscriber messageSubscriber, String topic) {
@@ -209,11 +211,17 @@ public class Exchange implements MessageBusInterface {
         if (currentTask != null) {
           try {
             handleSubmission(currentTask);
-          } catch (InterruptedException ignored) {}
+          } catch (InterruptedException ignored) {
+            return;
+          }
         }
         try {
           Thread.sleep(100);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+          // no need to do anything atm, we don't save the state of the working queue.
+          // we return if the Thread gets interrupted, which ends the worker
+          return;
+        }
       }
     }
 
