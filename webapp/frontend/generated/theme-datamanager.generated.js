@@ -1,12 +1,4 @@
 import 'construct-style-sheets-polyfill';
-import stylesCss from 'themes/datamanager/styles.css?inline';
-import {
-  badge,
-  color,
-  spacing,
-  typography,
-  utility
-} from '@vaadin/vaadin-lumo-styles';
 
 const createLinkReferences = (css, target) => {
   // Unresolved urls are written as '@import url(text);' to the css

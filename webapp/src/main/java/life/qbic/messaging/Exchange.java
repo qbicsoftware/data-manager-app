@@ -48,6 +48,24 @@ public class Exchange implements MessageBusInterface {
     return instance;
   }
 
+  /**
+   * Queries an instance of the Exchange class. If none exists, one will be created with the
+   * provided capacity for the messages the exchange instance can hold in its queue.
+   * <p>
+   * Note: if the instance already exists prior to this call, then the capacity argument will be
+   * ignored.
+   *
+   * @param capacity the capacity of the queue size
+   * @return an exchange instance
+   * @since 1.0.0
+   */
+  public static Exchange instance(int capacity) {
+    if (instance == null) {
+      instance = new Exchange(capacity);
+    }
+    return instance;
+  }
+
   protected Exchange(int capacity) {
     topics = new ArrayList<>();
     submissionTasks = new ArrayBlockingQueue<>(capacity);
