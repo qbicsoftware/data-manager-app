@@ -219,17 +219,15 @@ public class Exchange implements MessageBusInterface {
           try {
             handleSubmission(currentTask);
           } catch (InterruptedException e) {
-            cleanup();
-            return;
+            Thread.currentThread().interrupt();
           }
         }
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
           // no need to do anything atm, we don't save the state of the working queue.
-          // we return if the Thread gets interrupted, which ends the worker
-          cleanup();
-          return;
+          // we interrupt the current thread and wait for the cleanup
+          Thread.currentThread().interrupt();
         }
       }
     }
