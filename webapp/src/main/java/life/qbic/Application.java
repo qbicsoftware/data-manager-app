@@ -82,7 +82,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     return (message, messageParams) -> {
       try {
         UserRegistered userRegistered = deserialize(message);
-        log.info(userRegistered.toString());
+        log.info(String.valueOf(userRegistered));
       } catch (IOException | ClassNotFoundException e) {
         log.error(e.getMessage(), e);
       }

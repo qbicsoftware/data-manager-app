@@ -10,8 +10,9 @@ type `mvnw` (Windows), or `./mvnw` (Mac & Linux), then open
 http://localhost:8080 in your browser.
 
 You can also import the project to your IDE of choice as you would with any
-Maven project. Read more on [how to import Vaadin projects to different 
-IDEs](https://vaadin.com/docs/latest/flow/guide/step-by-step/importing) (Eclipse, IntelliJ IDEA, NetBeans, and VS Code).
+Maven project. Read more on [how to import Vaadin projects to different
+IDEs](https://vaadin.com/docs/latest/flow/guide/step-by-step/importing) (Eclipse, IntelliJ IDEA,
+NetBeans, and VS Code).
 
 ## Deploying to Production
 
@@ -22,7 +23,6 @@ ready to be deployed. The file can be found in the `target` folder after the bui
 
 Once the JAR file is built, you can run it using
 `java -jar target/datamanager-1.0-SNAPSHOT.jar`
-
 
 ### Configuration
 
@@ -35,7 +35,9 @@ http://localhost:8080
 ```
 
 #### Environment Variables
-The env variables contain information about the salt and the secret. Both of them are used to encrypt and decrypt user information.
+
+The env variables contain information about the salt and the secret. Both of them are used to
+encrypt and decrypt user information.
 
 | environment variable       | description               |
 |----------------------------|---------------------------|
@@ -44,12 +46,15 @@ The env variables contain information about the salt and the secret. Both of the
 | `USER_DB_USER_PW`          | The database password     |
 
 The application properties file could look like the following:
+
 ```properties
 spring.datasource.url=${USER_DB_URL:localhost}
 spring.datasource.username=${USER_DB_USER_NAME:myusername}
 spring.datasource.password=${USER_DB_USER_PW:astrongpassphrase!}
 ```
-To change the port or the driver those can be added as environmental variables as well. Both are preset with default values and
+
+To change the port or the driver those can be added as environmental variables as well. Both are
+preset with default values and
 are therefore not mandatory to set
 
 | environment variable | description          |
@@ -60,6 +65,21 @@ are therefore not mandatory to set
 ```properties
 server.port=${PORT:8080}
 spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+```
+
+As the application needs to send emails, you have to configure an smtp server as well.
+
+| environment variable | description                                          |
+|----------------------|------------------------------------------------------|
+| `MAIL_HOST`          | The smtp server host (e.g. smtp.gmail.com)           |
+| `MAIL_PASSWORD`      | The password to authenticate against the mail server |
+| `Mail_USERNAME`      | The username to authenticate against the mail server |
+
+```properties
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.host=${MAIL_HOST:smtp.gmail.com}
+spring.mail.port=${MAIL_PORT:587}
 ```
 
 ## Project structure
@@ -75,12 +95,18 @@ spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
 
 - Read the documentation at [vaadin.com/docs](https://vaadin.com/docs).
 - Follow the tutorials at [vaadin.com/tutorials](https://vaadin.com/tutorials).
-- Watch training videos and get certified at [vaadin.com/learn/training](https://vaadin.com/learn/training).
+- Watch training videos and get certified
+  at [vaadin.com/learn/training](https://vaadin.com/learn/training).
 - Create new projects at [start.vaadin.com](https://start.vaadin.com/).
-- Search UI components and their usage examples at [vaadin.com/components](https://vaadin.com/components).
-- View use case applications that demonstrate Vaadin capabilities at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
-- Discover Vaadin's set of CSS utility classes that enable building any UI without custom CSS in the [docs](https://vaadin.com/docs/latest/ds/foundation/utility-classes). 
-- Find a collection of solutions to common use cases in [Vaadin Cookbook](https://cookbook.vaadin.com/).
+- Search UI components and their usage examples
+  at [vaadin.com/components](https://vaadin.com/components).
+- View use case applications that demonstrate Vaadin capabilities
+  at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
+- Discover Vaadin's set of CSS utility classes that enable building any UI without custom CSS in
+  the [docs](https://vaadin.com/docs/latest/ds/foundation/utility-classes).
+- Find a collection of solutions to common use cases
+  in [Vaadin Cookbook](https://cookbook.vaadin.com/).
 - Find Add-ons at [vaadin.com/directory](https://vaadin.com/directory).
-- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join our [Discord channel](https://discord.gg/MYFq5RTbBn).
+- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join
+  our [Discord channel](https://discord.gg/MYFq5RTbBn).
 - Report issues, create pull requests in [GitHub](https://github.com/vaadin/platform).
