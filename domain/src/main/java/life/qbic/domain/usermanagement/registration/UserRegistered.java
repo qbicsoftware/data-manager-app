@@ -1,9 +1,8 @@
 package life.qbic.domain.usermanagement.registration;
 
-import life.qbic.domain.events.DomainEvent;
-
 import java.io.Serial;
 import java.time.Instant;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b>A user registered in the user management context.</b>
@@ -85,5 +84,15 @@ public class UserRegistered extends DomainEvent {
         result = 31 * result + email.hashCode();
         result = 31 * result + userId.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "UserRegistered{" +
+            "occurredOn=" + occurredOn +
+            ", fullName='" + fullName + '\'' +
+            ", email='" + email + '\'' +
+            ", userId='" + userId + '\'' +
+            '}';
     }
 }

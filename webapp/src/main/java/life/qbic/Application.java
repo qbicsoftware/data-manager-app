@@ -1,23 +1,31 @@
 package life.qbic;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.helger.commons.base64.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
+import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserDomainService;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.email.Email;
+import life.qbic.email.EmailService;
+import life.qbic.email.Recipient;
+import life.qbic.usermanagement.registration.EmailFactory;
+import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * The entry point of the Spring Boot application.
@@ -33,6 +41,10 @@ import java.io.ObjectInputStream;
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
+
+  private static final Logger log = getLogger(Application.class);
+
+
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
 
@@ -41,23 +53,40 @@ public class Application extends SpringBootServletInitializer implements AppShel
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
     // Testing: subscribe to user register events in the message bus
+
     var messageBus = appContext.getBean(MessageBusInterface.class);
-    messageBus.subscribe(
-        (message, messageParameters) -> {
-          System.out.println("Receiving new message:");
-          System.out.println(
-              messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
-          try {
-            UserRegistered event = deserialize(message);
-            System.out.println(event.occurredOn());
-            System.out.println(event.userId());
-            System.out.println(event.userEmail());
-            System.out.println(event.userFullName());
-          } catch (Exception e) {
-            System.out.println(e.getMessage());
-          }
-        },
-        "UserRegistered");
+    messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
+    messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
+  }
+
+  private static MessageSubscriber whenUserRegisteredSendEmail(
+      ConfigurableApplicationContext appContext) {
+    return (message, messageParams) -> {
+      if (!messageParams.messageType.equals("UserRegistered")) {
+        return;
+      }
+      try {
+        UserRegistered userRegistered = deserialize(message);
+        EmailService registrationEmailSender = appContext.getBean(
+            EmailService.class);
+        Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
+            new Recipient(userRegistered.userEmail(), userRegistered.userFullName()));
+        registrationEmailSender.send(registrationMail);
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    };
+  }
+
+  private static MessageSubscriber whenUserRegisteredLogUserInfo() {
+    return (message, messageParams) -> {
+      try {
+        UserRegistered userRegistered = deserialize(message);
+        log.info(userRegistered.toString());
+      } catch (IOException | ClassNotFoundException e) {
+        log.error(e.getMessage(), e);
+      }
+    };
   }
 
   static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
