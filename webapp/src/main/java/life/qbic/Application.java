@@ -44,6 +44,12 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var messageBus = appContext.getBean(MessageBusInterface.class);
     messageBus.subscribe(
         (message, messageParameters) -> {
+          try {
+            // Simulate long subscription task execution
+            Thread.sleep(5000);
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
           System.out.println("Receiving new message:");
           System.out.println(
               messageParameters.messageType + " [" + messageParameters.occuredOn + "]");
