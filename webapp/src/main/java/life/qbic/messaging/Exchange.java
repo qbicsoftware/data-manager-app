@@ -205,6 +205,7 @@ public class Exchange implements MessageBusInterface {
     public void run() {
       while (true) {
         if (Thread.currentThread().isInterrupted()) {
+          cleanup();
           return;
         }
         SubmissionTask currentTask = tasks.poll();
@@ -212,6 +213,7 @@ public class Exchange implements MessageBusInterface {
           try {
             handleSubmission(currentTask);
           } catch (InterruptedException ignored) {
+            cleanup();
             return;
           }
         }
@@ -220,9 +222,15 @@ public class Exchange implements MessageBusInterface {
         } catch (InterruptedException ignored) {
           // no need to do anything atm, we don't save the state of the working queue.
           // we return if the Thread gets interrupted, which ends the worker
+          cleanup();
           return;
         }
       }
+    }
+
+    private void cleanup() {
+      // do potential cleanup work when the worker receives
+      // an interrupted signal
     }
 
     private void handleSubmission(SubmissionTask currentTask) throws InterruptedException {
