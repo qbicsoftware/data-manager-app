@@ -16,18 +16,18 @@ public final class MessageParameters {
 
   public final String messageId;
 
-  public final String occuredOn;
+  public final String occurredOn;
 
-  private MessageParameters(String messageType, String messageId, String occuredOn) {
+  private MessageParameters(String messageType, String messageId, String occurredOn) {
     super();
     this.messageId = messageId;
     this.messageType = messageType;
-    this.occuredOn = occuredOn;
+    this.occurredOn = occurredOn;
   }
 
   public static MessageParameters durableTextParameters(
-      String messageType, String messageId, Instant occuredOn) {
-    String occuredOnString = occuredOn.toString();
-    return new MessageParameters(messageType, messageId, occuredOnString);
+      String messageType, String messageId, Instant occurredOn) {
+    String occurredOnString = occurredOn.toString();
+    return new MessageParameters(messageType, messageId, occurredOnString);
   }
 }

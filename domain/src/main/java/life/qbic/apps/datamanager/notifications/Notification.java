@@ -1,8 +1,7 @@
 package life.qbic.apps.datamanager.notifications;
 
-import life.qbic.domain.events.DomainEvent;
-
 import java.time.Instant;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * <b>Notification</b>
@@ -16,7 +15,7 @@ public class Notification {
 
   final String eventType;
 
-  final Instant occuredOn;
+  final Instant occurredOn;
 
   final String notificationId;
 
@@ -26,20 +25,20 @@ public class Notification {
    * Creates a new {@link Notification} instance.
    *
    * @param eventType the event type
-   * @param occuredOn the time-point of the event
+   * @param occurredOn the time-point of the event
    * @param notificationId a unique notification id
    * @param event the domain event
-   * @return
+   * @return a notification with the arguments provided
    */
   public static Notification create(
-      String eventType, Instant occuredOn, String notificationId, DomainEvent event) {
-    return new Notification(eventType, occuredOn, notificationId, event);
+      String eventType, Instant occurredOn, String notificationId, DomainEvent event) {
+    return new Notification(eventType, occurredOn, notificationId, event);
   }
 
   protected Notification(
-      String eventType, Instant occuredOn, String notificationId, DomainEvent event) {
+      String eventType, Instant occurredOn, String notificationId, DomainEvent event) {
     this.eventType = eventType;
-    this.occuredOn = occuredOn;
+    this.occurredOn = occurredOn;
     this.notificationId = notificationId;
     this.event = event;
   }
