@@ -91,12 +91,12 @@ public class Exchange implements MessageBusInterface {
    *                          timepoint and a unique message identifier.
    */
   @Override
-  synchronized public void submit(String message, MessageParameters messageParameters) {
+  public synchronized void submit(String message, MessageParameters messageParameters) {
     SubmissionTask newTask = new SubmissionTask(message, messageParameters);
     addSubmissionTask(newTask);
   }
 
-  synchronized protected SubmissionTask getSubmissionTask() {
+  protected synchronized SubmissionTask getSubmissionTask() {
     while (submissionTasks.isEmpty()) {
       try {
         wait();
@@ -109,7 +109,7 @@ public class Exchange implements MessageBusInterface {
     return task;
   }
 
-  synchronized protected void addSubmissionTask(SubmissionTask task) {
+  protected synchronized void addSubmissionTask(SubmissionTask task) {
     while (submissionTasks.size() == maxCapacity) {
       try {
         wait();
