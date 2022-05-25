@@ -1,11 +1,11 @@
 package life.qbic.messaging;
 
-import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
@@ -28,13 +28,11 @@ public class Exchange implements MessageBusInterface {
   private static final int DEFAULT_CAPACITY = 100;
   private final Queue<SubmissionTask> submissionTasks;
 
-  private final List<Topic> topics;
+  private final Deque<Topic> topics;
 
   private static Exchange instance;
 
-  private final ReentrantLock lock;
-
-  private Thread worker;
+  private final int maxCapacity;
 
   /**
    * Queries the current instance of the Exchange class.
@@ -67,9 +65,9 @@ public class Exchange implements MessageBusInterface {
   }
 
   protected Exchange(int capacity) {
-    topics = new ArrayList<>();
+    topics = new ConcurrentLinkedDeque<>();
     submissionTasks = new ArrayBlockingQueue<>(capacity);
-    lock = new ReentrantLock();
+    this.maxCapacity = capacity;
     launchSubmissionTaskWorker();
   }
 
@@ -78,7 +76,7 @@ public class Exchange implements MessageBusInterface {
   }
 
   private void launchSubmissionTaskWorker() {
-    worker = new SubmissionTaskWorker(submissionTasks, topics, lock);
+    Thread worker = new SubmissionTaskWorker(this, topics);
     worker.setName("Message Submission Worker");
     worker.start();
   }
@@ -93,9 +91,34 @@ public class Exchange implements MessageBusInterface {
    *                          timepoint and a unique message identifier.
    */
   @Override
-  public void submit(String message, MessageParameters messageParameters) {
+  synchronized public void submit(String message, MessageParameters messageParameters) {
     SubmissionTask newTask = new SubmissionTask(message, messageParameters);
-    submissionTasks.add(newTask);
+    addSubmissionTask(newTask);
+  }
+
+  synchronized protected SubmissionTask getSubmissionTask() {
+    while (submissionTasks.isEmpty()) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    SubmissionTask task = submissionTasks.remove();
+    notifyAll();
+    return task;
+  }
+
+  synchronized protected void addSubmissionTask(SubmissionTask task) {
+    while (submissionTasks.size() == maxCapacity) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    submissionTasks.add(task);
+    notifyAll();
   }
 
   /**
@@ -108,29 +131,6 @@ public class Exchange implements MessageBusInterface {
    */
   @Override
   public void subscribe(MessageSubscriber subscriber, String topic) {
-    try {
-      // We try to acquire the lock for 1 second. If the lock
-      // cannot be acquired within 1 second, we throw an exception
-      // so the client can try to subscribe again.
-      if (lock.tryLock(1000, TimeUnit.MILLISECONDS)) {
-        try {
-          tryToSubscribe(subscriber, topic);
-        } finally {
-          lock.unlock(); // release the lock afterwards
-        }
-      } else {
-        throw new RuntimeException("Subscription failed");
-      }
-    } catch (InterruptedException e) {
-      stop();
-    }
-  }
-
-  private void stop() {
-    this.worker.interrupt();
-  }
-
-  private void tryToSubscribe(MessageSubscriber messageSubscriber, String topic) {
     Topic matchingTopic = null;
     for (Topic availableTopic : topics) {
       if (availableTopic.matchesTopic(topic)) {
@@ -142,7 +142,7 @@ public class Exchange implements MessageBusInterface {
       matchingTopic = new Topic(topic);
       topics.add(matchingTopic);
     }
-    matchingTopic.addSubscriber(messageSubscriber);
+    matchingTopic.addSubscriber(subscriber);
   }
 
   /**
@@ -170,11 +170,11 @@ public class Exchange implements MessageBusInterface {
       subscribers = new HashSet<>();
     }
 
-    void addSubscriber(MessageSubscriber subscriber) {
+    synchronized void addSubscriber(MessageSubscriber subscriber) {
       subscribers.add(subscriber);
     }
 
-    void removeSubscriber(MessageSubscriber subscriber) {
+    synchronized void removeSubscriber(MessageSubscriber subscriber) {
       subscribers.remove(subscriber);
     }
 
@@ -182,7 +182,7 @@ public class Exchange implements MessageBusInterface {
       return this.topic.equalsIgnoreCase(topic);
     }
 
-    void informAllSubscribers(String message, MessageParameters messageParameters) {
+    synchronized void informAllSubscribers(String message, MessageParameters messageParameters) {
       if (messageParameters.messageType.equalsIgnoreCase(topic)) {
         informSubscribers(message, messageParameters);
       }
@@ -208,16 +208,12 @@ public class Exchange implements MessageBusInterface {
 
   static class SubmissionTaskWorker extends Thread {
 
-    Queue<SubmissionTask> tasks;
+    Exchange exchange;
 
-    List<Topic> topics;
+    Deque<Topic> topics;
 
-    ReentrantLock lock;
-
-    SubmissionTaskWorker(Queue<SubmissionTask> tasks, List<Topic> topics,
-        ReentrantLock lock) {
-      this.tasks = tasks;
-      this.lock = lock;
+    SubmissionTaskWorker(Exchange exchange, Deque<Topic> topics) {
+      this.exchange = exchange;
       this.topics = topics;
     }
 
@@ -232,19 +228,9 @@ public class Exchange implements MessageBusInterface {
           cleanup();
           return;
         }
-        SubmissionTask currentTask = tasks.poll();
-        if (currentTask != null) {
-          try {
-            handleSubmission(currentTask);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-        }
         try {
-          Thread.sleep(100);
+          handleSubmissions();
         } catch (InterruptedException e) {
-          // no need to do anything atm, we don't save the state of the working queue.
-          // we interrupt the current thread and wait for the cleanup
           Thread.currentThread().interrupt();
         }
       }
@@ -255,15 +241,12 @@ public class Exchange implements MessageBusInterface {
       // an interrupted signal
     }
 
-    private void handleSubmission(SubmissionTask currentTask) throws InterruptedException {
-      while (!lock.tryLock()) {
-        Thread.sleep(100);
+    private void handleSubmissions() throws InterruptedException {
+      var task = exchange.getSubmissionTask();
+      if (task == null) {
+        return;
       }
-      try {
-        submit(currentTask.message, currentTask.messageParameters);
-      } finally {
-        lock.unlock();
-      }
+      submit(task.message, task.messageParameters);
     }
 
   }
