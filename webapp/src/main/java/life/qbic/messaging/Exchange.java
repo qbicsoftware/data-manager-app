@@ -101,7 +101,7 @@ public class Exchange implements MessageBusInterface {
       try {
         wait();
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        Thread.currentThread().interrupt();
       }
     }
     SubmissionTask task = submissionTasks.remove();
@@ -114,7 +114,7 @@ public class Exchange implements MessageBusInterface {
       try {
         wait();
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        Thread.currentThread().interrupt();
       }
     }
     submissionTasks.add(task);
