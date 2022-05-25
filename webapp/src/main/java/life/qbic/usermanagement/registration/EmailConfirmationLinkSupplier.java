@@ -1,15 +1,17 @@
 package life.qbic.usermanagement.registration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * Supplies email confirmation routes
  *
  * @since 1.0.0
  */
+@Service
 public class EmailConfirmationLinkSupplier {
 
-  @Value("${server.host}")
+  @Value("${server.address}")
   private String host;
   @Value("${server.port}")
   private String port;
