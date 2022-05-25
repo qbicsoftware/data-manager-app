@@ -50,23 +50,12 @@ public class UserRegistrationHandler
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
           resetErrorMessages();
+          //ToDo Check Input Validity here?
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
               userRegistrationLayout.email.getValue(),
               userRegistrationLayout.password.getValue().toCharArray());
         });
-  }
-
-  private void setEmptyFieldsInvalid() {
-    if (userRegistrationLayout.password.isEmpty()) {
-      userRegistrationLayout.password.setInvalid(true);
-    }
-    if (userRegistrationLayout.fullName.isEmpty()) {
-      userRegistrationLayout.fullName.setInvalid(true);
-    }
-    if (userRegistrationLayout.email.isEmpty()) {
-      userRegistrationLayout.email.setInvalid(true);
-    }
   }
 
   private void handleUserException(String reason) {
@@ -94,5 +83,35 @@ public class UserRegistrationHandler
     // Stub output:
     System.out.println(reason);
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+  }
+
+  private boolean checkFieldValidity() {
+    return isUserNameValid() && isEmailValid() && isPasswordValid();
+  }
+
+  private boolean isUserNameValid() {
+    if (userRegistrationLayout.fullName.isEmpty()) {
+      userRegistrationLayout.fullName.setInvalid(true);
+      return false;
+    }
+    return true;
+  }
+
+  private boolean isEmailValid() {
+    if (userRegistrationLayout.email.isEmpty()) {
+      userRegistrationLayout.email.setInvalid(true);
+      return false;
+    }
+    return true;
+
+  }
+
+  private boolean isPasswordValid() {
+    if (userRegistrationLayout.password.isEmpty()) {
+      userRegistrationLayout.password.setInvalid(true);
+      //ToDo Check Password too short and set error message
+      return false;
+    }
+    return true;
   }
 }
