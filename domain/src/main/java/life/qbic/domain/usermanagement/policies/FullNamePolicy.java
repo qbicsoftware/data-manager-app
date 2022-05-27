@@ -13,7 +13,7 @@ public class FullNamePolicy {
 
   private static FullNamePolicy INSTANCE;
 
-  public String invalidFullNameMessage = "Full Name shorter than 1 character.";
+  private static final String invalidFullNameMessage = "Full Name shorter than 1 character.";
 
   public static FullNamePolicy create() {
     if (INSTANCE == null) {
