@@ -66,7 +66,7 @@ public class UserRegistrationHandler
     userRegistrationLayout.passwordTooShortMessage.setVisible(false);
   }
 
-  private void resetComponentErrors(){
+  private void resetComponentErrors() {
     userRegistrationLayout.fullName.setErrorMessage("A username must be at least 1 character");
     userRegistrationLayout.email.setErrorMessage("Please provide a valid email");
     userRegistrationLayout.password.setErrorMessage("Password too short");
