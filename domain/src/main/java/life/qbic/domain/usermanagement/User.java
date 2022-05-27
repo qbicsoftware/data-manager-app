@@ -103,7 +103,7 @@ public class User implements Serializable {
    * a valid name. The format policy is specified in {@link FullNamePolicy}.
    *
    * @param fullName the full name of the user
-   * @throws UserException if the email address violates the policy
+   * @throws UserException if the full name violates the policy
    * @since 1.0.0
    */
   public void setFullName(String fullName) throws UserException {
