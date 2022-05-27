@@ -26,7 +26,8 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been executed via {@link Registration#register(String, String, char[])}.
+   * after the use case has been executed via
+   * {@link Registration#register(String, String, char[])}.
    *
    * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0
@@ -52,7 +53,7 @@ public class Registration implements RegisterUserInput {
    * Sets and overrides the use case output.
    *
    * @param registerUserOutput an output interface implementation, so the use case can trigger the
-   *     callback methods after its execution
+   *                           callback methods after its execution
    * @since 1.0.0
    */
   public void setRegisterUserOutput(RegisterUserOutput registerUserOutput) {
@@ -68,8 +69,7 @@ public class Registration implements RegisterUserInput {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
-
-      registerUserOutput.onFailure("Could not create a new account, please try again.");
+      registerUserOutput.onFailure(e.getReason());
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");
     }

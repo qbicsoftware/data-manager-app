@@ -47,7 +47,6 @@ public class UserRegistrationLayout extends VerticalLayout {
   public ErrorMessage alreadyUsedEmailMessage;
   public ErrorMessage passwordTooShortMessage;
   public ErrorMessage errorMessage;
-
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
 
@@ -99,13 +98,11 @@ public class UserRegistrationLayout extends VerticalLayout {
             "Email already in use",
             "If you have difficulties with your password you can reset it.");
     alreadyUsedEmailMessage.setVisible(false);
-
+    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
+    errorMessage.setVisible(false);
     passwordTooShortMessage =
         new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
-
-    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
-    errorMessage.setVisible(false);
   }
 
   private void styleNameField() {

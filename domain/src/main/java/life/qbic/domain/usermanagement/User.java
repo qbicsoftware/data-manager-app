@@ -55,7 +55,8 @@ public class User implements Serializable {
    */
   public static User create(String fullName, String email) throws UserException {
     String uuid = String.valueOf(UUID.randomUUID());
-    var user = new User(fullName);
+    var user = new User();
+    user.setFullName(fullName);
     user.setEmail(email);
     user.setId(uuid);
 
@@ -73,14 +74,11 @@ public class User implements Serializable {
    * @since 1.0.0
    */
   protected static User of(String encryptedPassword, String fullName, String email) {
-    var user = new User(fullName);
+    var user = new User();
+    user.setFullName(fullName);
     user.setEmail(email);
     user.setEncryptedPassword(encryptedPassword);
     return user;
-  }
-
-  private User(String fullName) {
-    this.fullName = fullName;
   }
 
   @Override
@@ -96,6 +94,28 @@ public class User implements Serializable {
         + email
         + '\''
         + '}';
+  }
+
+  /**
+   * Sets the full name for the current user.
+   *
+   * <p>This method will throw an {@link UserException} if the full name seems not to be
+   * a valid name. The format policy is specified in {@link FullNamePolicy}.
+   *
+   * @param fullName the full name of the user
+   * @throws UserException if the email address violates the policy
+   * @since 1.0.0
+   */
+  public void setFullName(String fullName) throws UserException {
+    validateFullName(fullName);
+    this.fullName = fullName;
+  }
+
+  private void validateFullName(String fullName) {
+    PolicyCheckReport policyCheckReport = FullNamePolicy.create().validate(fullName);
+    if (policyCheckReport.status() == PolicyStatus.FAILED) {
+      throw new UserException(policyCheckReport.reason());
+    }
   }
 
   /**

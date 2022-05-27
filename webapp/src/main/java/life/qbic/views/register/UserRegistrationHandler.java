@@ -39,6 +39,9 @@ public class UserRegistrationHandler
   }
 
   private void initFields() {
+    userRegistrationLayout.fullName.setPattern(".{1,}");
+    userRegistrationLayout.fullName.setErrorMessage("A username must be at least 1 character");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
@@ -46,11 +49,9 @@ public class UserRegistrationHandler
 
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
-
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
           resetErrorMessages();
-          //ToDo Check Input Validity here?
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
               userRegistrationLayout.email.getValue(),
@@ -58,18 +59,10 @@ public class UserRegistrationHandler
         });
   }
 
-  private void handleUserException(String reason) {
-    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
-      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
-    }
-    if (reason.equalsIgnoreCase("User with email address already exists.")) {
-      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
-    }
-  }
-
   private void resetErrorMessages() {
-    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
+    userRegistrationLayout.errorMessage.setVisible(false);
+    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
   }
 
   @Override
@@ -79,39 +72,26 @@ public class UserRegistrationHandler
 
   @Override
   public void onFailure(String reason) {
-    // Display error to the user
-    // Stub output:
-    System.out.println(reason);
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+    handleRegistrationFailure(reason);
   }
 
-  private boolean checkFieldValidity() {
-    return isUserNameValid() && isEmailValid() && isPasswordValid();
-  }
-
-  private boolean isUserNameValid() {
-    if (userRegistrationLayout.fullName.isEmpty()) {
+  private void handleRegistrationFailure(String reason) {
+    if (reason.equals("Full Name shorter than 1 character.")) {
       userRegistrationLayout.fullName.setInvalid(true);
-      return false;
     }
-    return true;
-  }
-
-  private boolean isEmailValid() {
-    if (userRegistrationLayout.email.isEmpty()) {
+    if (reason.equals("Invalid email address format.")) {
       userRegistrationLayout.email.setInvalid(true);
-      return false;
     }
-    return true;
-
-  }
-
-  private boolean isPasswordValid() {
-    if (userRegistrationLayout.password.isEmpty()) {
+    if (reason.equals("User with email address already exists.")) {
+      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+      userRegistrationLayout.email.setInvalid(true);
+    }
+    if (reason.equals("Unexpected error occurred.")) {
+      userRegistrationLayout.errorMessage.setVisible(true);
+    }
+    if (reason.equals("Password shorter than 8 characters.")) {
+      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
       userRegistrationLayout.password.setInvalid(true);
-      //ToDo Check Password too short and set error message
-      return false;
     }
-    return true;
   }
 }

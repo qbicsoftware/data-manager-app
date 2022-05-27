@@ -20,6 +20,8 @@ public class EmailFormatPolicy {
 
   private static EmailFormatPolicy INSTANCE;
 
+  private static final String InvalidEmailMessage = "Invalid email address format.";
+
   public static EmailFormatPolicy create() {
     if (INSTANCE == null) {
       INSTANCE = new EmailFormatPolicy();
@@ -36,7 +38,7 @@ public class EmailFormatPolicy {
    */
   public PolicyCheckReport validate(String email) {
     if (!honoursRFCSpec(email)) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, "Invalid email address format.");
+      return new PolicyCheckReport(PolicyStatus.FAILED, InvalidEmailMessage);
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }
