@@ -51,6 +51,7 @@ public class UserRegistrationHandler
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
+          resetComponentErrors();
           resetErrorMessages();
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
@@ -63,6 +64,12 @@ public class UserRegistrationHandler
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
     userRegistrationLayout.errorMessage.setVisible(false);
     userRegistrationLayout.passwordTooShortMessage.setVisible(false);
+  }
+
+  private void resetComponentErrors(){
+    userRegistrationLayout.fullName.setErrorMessage("A username must be at least 1 character");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email");
+    userRegistrationLayout.password.setErrorMessage("Password too short");
   }
 
   @Override
@@ -78,13 +85,16 @@ public class UserRegistrationHandler
   private void handleRegistrationFailure(String reason) {
     if (reason.equals("Full Name shorter than 1 character.")) {
       userRegistrationLayout.fullName.setInvalid(true);
+      userRegistrationLayout.fullName.setErrorMessage(reason);
     }
     if (reason.equals("Invalid email address format.")) {
       userRegistrationLayout.email.setInvalid(true);
+      userRegistrationLayout.email.setErrorMessage(reason);
     }
     if (reason.equals("User with email address already exists.")) {
       userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
       userRegistrationLayout.email.setInvalid(true);
+      userRegistrationLayout.email.setErrorMessage(reason);
     }
     if (reason.equals("Unexpected error occurred.")) {
       userRegistrationLayout.errorMessage.setVisible(true);
@@ -92,6 +102,7 @@ public class UserRegistrationHandler
     if (reason.equals("Password shorter than 8 characters.")) {
       userRegistrationLayout.passwordTooShortMessage.setVisible(true);
       userRegistrationLayout.password.setInvalid(true);
+      userRegistrationLayout.password.setErrorMessage(reason);
     }
   }
 }
