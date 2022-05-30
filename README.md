@@ -8,9 +8,9 @@ scientific FAIR-compliant data access.
 [![Build Maven Package](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml)
 [![Run Maven Tests](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml)
 [![CodeQL](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml)
-[![release](https://img.shields.io/github/v/release/qbicsoftware/data-manager-app/include_prereleases)](https://github.com/qbicsoftware/data-manager-app/releases)
+[![release](https://img.shields.io/github/v/release/qbicsoftware/data-manager-app?include_prereleases)](https://github.com/qbicsoftware/data-manager-app/releases)
 
-[![license](https://img.shields.io/github/license/qbicsoftware/data-manager-app/)](https://github.com/qbicsoftware/data-manager-app/blob/main/LICENSE)
+[![license](https://img.shields.io/github/license/qbicsoftware/data-manager-app)](https://github.com/qbicsoftware/data-manager-app/blob/main/LICENSE)
 ![language](https://img.shields.io/badge/language-groovy,%20java-blue.svg)
 
 </div>
