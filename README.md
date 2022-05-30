@@ -82,6 +82,22 @@ spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.port=${MAIL_PORT:587}
 ```
 
+For user email confirmation a specific endpoint is addressed. This endpoint can be configured using
+the following properties:
+
+| environment variable          | description                                          |
+|-------------------------------|------------------------------------------------------|
+| `HOST`                        | The server address                                   |
+| `EMAIL_CONFIRMATION_ENDPOINT` | The endpoint for email confirmation                  |
+
+Generated email confirmation links will look like `127.0.0.1:8080/confirm-email/<token>` with the
+default configuration.
+
+```properties
+server.address=${HOST:127.0.0.1}
+email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:confirm-email}
+```
+
 ## Project structure
 
 - `MainLayout.java` in `src/main/java` contains the navigation setup (i.e., the
