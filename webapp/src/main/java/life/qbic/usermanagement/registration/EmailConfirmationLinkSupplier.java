@@ -30,7 +30,6 @@ public class EmailConfirmationLinkSupplier {
     this.emailConfirmationParameter = emailConfirmationParameter;
   }
 
-// /login?confirmEmail=<user-id>
   public String emailConfirmationUrl(String userId) {
     String hostAddress = String.join(":", host, port);
     String params = String.join("=", emailConfirmationParameter,  userId);
