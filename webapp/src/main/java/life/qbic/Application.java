@@ -75,7 +75,8 @@ public class Application extends SpringBootServletInitializer implements AppShel
             EmailService.class);
 
         Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
-            new Recipient(userRegistered.userEmail(), userRegistered.userFullName()), emailConfirmationUrl);
+            new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
+                , emailConfirmationUrl);
         registrationEmailSender.send(registrationMail);
       } catch (IOException | ClassNotFoundException e) {
         throw new RuntimeException(e);
