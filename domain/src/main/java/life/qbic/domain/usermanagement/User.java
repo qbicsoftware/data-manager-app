@@ -9,7 +9,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import life.qbic.domain.events.DomainEventPublisher;
-import life.qbic.domain.usermanagement.UserActivated.Reason;
 import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordPolicy;
@@ -188,13 +187,14 @@ public class User implements Serializable {
    */
   public void confirmEmail() {
     this.emailConfirmed = true;
-    activate(Reason.EMAIL_CONFIRMED);
+    UserEmailConfirmed event = UserEmailConfirmed.create(id, email);
+    DomainEventPublisher.instance().publish(event);
+    activate();
   }
 
-  private void activate(Reason reason) {
+  private void activate() {
     this.active = true;
-
-    UserActivated event = UserActivated.create(id, reason);
+    UserActivated event = UserActivated.create(id);
     DomainEventPublisher.instance().publish(event);
   }
 

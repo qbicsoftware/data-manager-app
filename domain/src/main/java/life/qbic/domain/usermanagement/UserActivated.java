@@ -9,17 +9,12 @@ import life.qbic.domain.events.DomainEvent;
  */
 public class UserActivated extends DomainEvent {
 
-  public enum Reason {
-    EMAIL_CONFIRMED
+  public static UserActivated create(final String userId) {
+    return new UserActivated(userId);
   }
 
-  public static UserActivated create(final String userId, final Reason reason) {
-    return new UserActivated(userId, reason);
-  }
-
-  private UserActivated(String userId, Reason reason) {
+  private UserActivated(String userId) {
     this.userId = userId;
-    this.reason = reason;
     this.occurredOn = Instant.now();
   }
 
@@ -28,7 +23,6 @@ public class UserActivated extends DomainEvent {
 
   private final Instant occurredOn;
   private final String userId;
-  private final Reason reason;
 
   @Override
   public Instant occurredOn() {
@@ -37,10 +31,6 @@ public class UserActivated extends DomainEvent {
 
   public String userId() {
     return userId;
-  }
-
-  public Reason reason() {
-    return reason;
   }
 
   @Override
@@ -55,17 +45,13 @@ public class UserActivated extends DomainEvent {
     if (!occurredOn.equals(that.occurredOn)) {
       return false;
     }
-    if (!userId.equals(that.userId)) {
-      return false;
-    }
-    return reason == that.reason;
+    return userId.equals(that.userId);
   }
 
   @Override
   public int hashCode() {
     int result = occurredOn.hashCode();
     result = 31 * result + userId.hashCode();
-    result = 31 * result + reason.hashCode();
     return result;
   }
 
@@ -74,7 +60,6 @@ public class UserActivated extends DomainEvent {
     return "UserActivated{" +
         "occurredOn=" + occurredOn +
         ", userId='" + userId + '\'' +
-        ", reason=" + reason +
         '}';
   }
 }

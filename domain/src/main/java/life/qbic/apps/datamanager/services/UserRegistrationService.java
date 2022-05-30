@@ -5,11 +5,13 @@ import java.util.Optional;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
+import life.qbic.domain.events.DomainEvent;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.UserActivated;
+import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 
@@ -55,32 +57,21 @@ public final class UserRegistrationService {
       throw new RuntimeException("User registration failed.");
     }
     // We subscribe to the domain event UserRegistered, in order to forward the event to
-    // the EventStore and to the NotificationService for broadcasting
+    // the EventStore
     DomainEventPublisher.instance()
-        .subscribe(
-            new DomainEventSubscriber<UserRegistered>() {
-              @Override
-              public Class<UserRegistered> subscribedToEventType() {
-                return UserRegistered.class;
-              }
-
-              @Override
-              public void handleEvent(UserRegistered event) {
-                sendNotification(event);
-                eventStore.append(event);
-              }
-
-              private void sendNotification(UserRegistered event) {
-                var notificationId = notificationService.newNotificationId();
-                var notification =
-                    Notification.create(
-                        UserRegistered.class.getSimpleName(),
-                        event.occurredOn(),
-                        notificationId,
-                        event);
-                notificationService.send(notification);
-              }
-            });
+        .subscribe(new StoreEventSubscriber<UserRegistered>() {
+          @Override
+          public Class<UserRegistered> subscribedToEventType() {
+            return UserRegistered.class;
+          }
+        });
+    // We subscribe to the domain event UserRegistered, in order to inform the NotificationService for broadcasting
+    DomainEventPublisher.instance().subscribe(new NotifyAboutEventSubscriber<UserRegistered>() {
+      @Override
+      public Class<UserRegistered> subscribedToEventType() {
+        return UserRegistered.class;
+      }
+    });
     // Trigger the user creation in the domain service
     userDomainService.get().createUser(fullName, email, rawPassword);
     // Overwrite the password
@@ -95,33 +86,28 @@ public final class UserRegistrationService {
    * @since 1.0.0
    */
   public void confirmUserEmail(String userId) {
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
-
+    DomainEventPublisher.instance().subscribe(new NotifyAboutEventSubscriber<UserActivated>() {
       @Override
       public Class<UserActivated> subscribedToEventType() {
         return UserActivated.class;
       }
-
+    });
+    DomainEventPublisher.instance().subscribe(new StoreEventSubscriber<UserActivated>() {
       @Override
-      public void handleEvent(UserActivated event) {
-        storeEvent(event);
-        sendNotification(event);
-        //TODO unsubscribe
+      public Class<UserActivated> subscribedToEventType() {
+        return UserActivated.class;
       }
-
-      private void sendNotification(UserActivated event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                UserActivated.class.getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
+    });
+    DomainEventPublisher.instance().subscribe(new NotifyAboutEventSubscriber<UserEmailConfirmed>() {
+      @Override
+      public Class<UserEmailConfirmed> subscribedToEventType() {
+        return UserEmailConfirmed.class;
       }
-
-      private void storeEvent(UserActivated event) {
-        eventStore.append(event);
+    });
+    DomainEventPublisher.instance().subscribe(new StoreEventSubscriber<UserEmailConfirmed>() {
+      @Override
+      public Class<UserEmailConfirmed> subscribedToEventType() {
+        return UserEmailConfirmed.class;
       }
     });
     Optional<User> optionalUser = userDataStorage.findUserById(userId);
@@ -131,6 +117,40 @@ public final class UserRegistrationService {
     }, () -> {
       throw new RuntimeException("Unknown user. Could not confirm the email address.");
     });
+  }
 
+  /**
+   * A subscriber storing the event to the event store
+   *
+   * @param <T> the event type
+   */
+  private abstract class StoreEventSubscriber<T extends DomainEvent> implements
+      DomainEventSubscriber<T> {
+
+    @Override
+    public void handleEvent(T event) {
+      eventStore.append(event);
+    }
+  }
+
+  /**
+   * A subscriber sending a notification about the event
+   *
+   * @param <T> the event type
+   */
+  private abstract class NotifyAboutEventSubscriber<T extends DomainEvent> implements
+      DomainEventSubscriber<T> {
+
+    @Override
+    public void handleEvent(T event) {
+      var notificationId = notificationService.newNotificationId();
+      var notification =
+          Notification.create(
+              subscribedToEventType().getSimpleName(),
+              event.occurredOn(),
+              notificationId,
+              event);
+      notificationService.send(notification);
+    }
   }
 }
