@@ -12,7 +12,6 @@ import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
-import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration Service</b>
@@ -125,9 +124,11 @@ public final class UserRegistrationService {
         eventStore.append(event);
       }
     });
-    UserRepository userRepository = UserRepository.getInstance(userDataStorage);
-    Optional<User> optionalUser = userRepository.findById(userId);
-    optionalUser.ifPresentOrElse(User::confirmEmail, () -> {
+    Optional<User> optionalUser = userDataStorage.findUserById(userId);
+    optionalUser.ifPresentOrElse(user -> {
+      user.confirmEmail();
+      userDataStorage.save(user);
+    }, () -> {
       throw new RuntimeException("Unknown user. Could not confirm the email address.");
     });
 
