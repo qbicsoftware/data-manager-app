@@ -16,10 +16,10 @@ public class EmailConfirmationLinkSupplier {
   @Value("${server.port}")
   private String port;
   @Value("${email-confirmation-endpoint}")
-  private String emailConfirmationRoute;
+  private String emailConfirmationEndpoint;
 
   public String emailConfirmationUrl(String userId) {
     String hostAddress = String.join(":", host, port);
-    return String.join("/", hostAddress, emailConfirmationRoute, userId);
+    return String.join("/", hostAddress, emailConfirmationEndpoint, userId);
   }
 }
