@@ -19,6 +19,7 @@ import life.qbic.domain.usermanagement.repository.UserRepository;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
+import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.usermanagement.registration.EmailFactory;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -67,6 +68,8 @@ public class Application extends SpringBootServletInitializer implements AppShel
       }
       try {
         UserRegistered userRegistered = deserialize(message);
+        System.out.println(appContext.getBean(EmailConfirmationLinkSupplier.class)
+            .emailConfirmationUrl(userRegistered.userId()));
         EmailService registrationEmailSender = appContext.getBean(
             EmailService.class);
         Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
