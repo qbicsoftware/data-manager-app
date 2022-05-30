@@ -1,5 +1,6 @@
 package life.qbic.apps.datamanager.services;
 
+import java.util.Arrays;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
@@ -7,8 +8,6 @@ import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
-
-import java.util.Arrays;
 
 /**
  * <b>User Registration Service</b>
@@ -73,5 +72,16 @@ public final class UserRegistrationService {
     userDomainService.get().createUser(fullName, email, rawPassword);
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
+  }
+
+  /**
+   * Activates a user with the userId provided. If no user is matched then this method does
+   * nothing.
+   *
+   * @param userId the id of the user to be activated
+   * @since 1.0.0
+   */
+  public void activateUser(String userId) {
+
   }
 }
