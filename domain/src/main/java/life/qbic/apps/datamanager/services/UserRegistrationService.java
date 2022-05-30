@@ -17,7 +17,8 @@ import life.qbic.domain.usermanagement.repository.UserRepository;
 /**
  * <b>User Registration Service</b>
  *
- * <p>Application service that can be used to register users for the user management domain context.
+ * <p>Application service that can be used to register users for the user management domain
+ * context.
  *
  * @since 1.0.0
  */
@@ -44,8 +45,8 @@ public final class UserRegistrationService {
    * guaranteed though, when the method returns without any exceptions. In the later case, it is the
    * client's responsibility to handle the raw password.
    *
-   * @param fullName the full name of the user
-   * @param email the email address of the user
+   * @param fullName    the full name of the user
+   * @param email       the email address of the user
    * @param rawPassword the raw password provided by the user
    * @since 1.0.0
    */
@@ -126,7 +127,9 @@ public final class UserRegistrationService {
     });
     UserRepository userRepository = UserRepository.getInstance(userDataStorage);
     Optional<User> optionalUser = userRepository.findById(userId);
-    optionalUser.ifPresent(User::confirmEmail);
+    optionalUser.ifPresentOrElse(User::confirmEmail, () -> {
+      throw new RuntimeException("Unknown user. Could not confirm the email address.");
+    });
 
   }
 }
