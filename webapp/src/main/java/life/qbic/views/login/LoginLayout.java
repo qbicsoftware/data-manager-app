@@ -8,6 +8,9 @@ import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
+import java.util.Map;
+import life.qbic.views.ConfirmationMessage;
+import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +31,20 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
   public LoginForm loginForm;
   public Span registerSpan;
 
+  private LoginHandlerInterface loginHandlerInterface;
+
+  public ConfirmationMessage confirmationMessage;
+
+  public ErrorMessage errorMessage;
+
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
 
     initLayout();
     styleLayout();
+
+    confirmationMessage = new ConfirmationMessage("", "");
+
     registerToHandler(loginHandlerInterface);
   }
 
@@ -49,6 +61,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
+    this.loginHandlerInterface = loginHandler;
     loginHandler.handle(this);
   }
 
@@ -94,8 +107,6 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    if (beforeEnterEvent.getLocation().getQueryParameters().getParameters().containsKey("error")) {
-      loginForm.setError(true);
-    }
+    loginHandlerInterface.handle(beforeEnterEvent);
   }
 }

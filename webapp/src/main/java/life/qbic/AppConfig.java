@@ -4,6 +4,8 @@ import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
+import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
+import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
@@ -38,6 +40,11 @@ public class AppConfig {
   public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
     return new Registration(userRegistrationService);
   }
+
+  @Bean
+  public ConfirmEmailInput confirmEmailInput(UserRegistrationService userRegistrationService) {
+    return new EmailAddressConfirmation(userRegistrationService);
+  };
 
   /**
    * Creates the user repository instance.
