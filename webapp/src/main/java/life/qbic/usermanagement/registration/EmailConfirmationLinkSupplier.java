@@ -11,12 +11,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailConfirmationLinkSupplier {
 
-  @Value("${server.address}")
-  private String host;
-  @Value("${server.port}")
-  private String port;
-  @Value("${email-confirmation-endpoint}")
-  private String emailConfirmationEndpoint;
+
+  private final String host;
+
+  private final String port;
+
+  private final String emailConfirmationEndpoint;
+
+  public EmailConfirmationLinkSupplier(@Value("${server.address}") String host,
+      @Value("${server.port}") String port,
+      @Value("${email-confirmation-endpoint}") String emailConfirmationEndpoint) {
+    this.host = host;
+    this.port = port;
+    this.emailConfirmationEndpoint = emailConfirmationEndpoint;
+  }
+
 
   public String emailConfirmationUrl(String userId) {
     String hostAddress = String.join(":", host, port);
