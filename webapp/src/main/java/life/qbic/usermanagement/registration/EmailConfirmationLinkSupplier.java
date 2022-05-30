@@ -16,19 +16,25 @@ public class EmailConfirmationLinkSupplier {
 
   private final String port;
 
-  private final String emailConfirmationEndpoint;
+  private final String loginEndpoint;
+
+  private final String emailConfirmationParameter;
 
   public EmailConfirmationLinkSupplier(@Value("${server.address}") String host,
       @Value("${server.port}") String port,
-      @Value("${email-confirmation-endpoint}") String emailConfirmationEndpoint) {
+      @Value("${login-endpoint}") String loginEndpoint,
+      @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
     this.host = host;
     this.port = port;
-    this.emailConfirmationEndpoint = emailConfirmationEndpoint;
+    this.loginEndpoint = loginEndpoint;
+    this.emailConfirmationParameter = emailConfirmationParameter;
   }
 
-
+// /login?confirmEmail=<user-id>
   public String emailConfirmationUrl(String userId) {
     String hostAddress = String.join(":", host, port);
-    return String.join("/", hostAddress, emailConfirmationEndpoint, userId);
+    String params = String.join("=", emailConfirmationParameter,  userId);
+    String endpointWithParams = String.join("?", loginEndpoint, params);
+    return String.join("/", hostAddress, endpointWithParams);
   }
 }
