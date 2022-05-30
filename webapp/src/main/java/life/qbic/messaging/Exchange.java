@@ -96,6 +96,18 @@ public class Exchange implements MessageBusInterface {
     addSubmissionTask(newTask);
   }
 
+  /**
+   * Queries the next available {@link SubmissionTask} from the {@link Exchange}.
+   * <p>
+   * Note: this method is not guaranteed to return promptly.
+   * <p>
+   * This method will return only at once a submission task is available. If no task is available,
+   * the client thread will go into the {@link Object#wait()} state. The exchange will notify all
+   * waiting threads once a new submission task is available.
+   *
+   * @return a submission task
+   * @since 1.0.0
+   */
   protected synchronized SubmissionTask getSubmissionTask() {
     while (submissionTasks.isEmpty()) {
       try {
@@ -109,6 +121,18 @@ public class Exchange implements MessageBusInterface {
     return task;
   }
 
+  /**
+   * Adds a new submission task to the exchange.
+   * <p>
+   * Note: this method is not guaranteed to return immediately. If the exchange has reached its
+   * current maximum capacity, the client thread will be suspended into the {@link Object#wait()}
+   * state.
+   * <p>
+   * Once the exchange has free capacity again, the method will return.
+   *
+   * @param task a new submission task to be added to exchange
+   * @since 1.0.0
+   */
   protected synchronized void addSubmissionTask(SubmissionTask task) {
     while (submissionTasks.size() == maxCapacity) {
       try {
@@ -193,6 +217,12 @@ public class Exchange implements MessageBusInterface {
     }
   }
 
+  /**
+   * A submission task contains the original message and its message parameters
+   * ({@link MessageParameters}).
+   *
+   * @since 1.0.0
+   */
   static class SubmissionTask {
 
     String message;
@@ -206,12 +236,28 @@ public class Exchange implements MessageBusInterface {
 
   }
 
+  /**
+   * Small helper class that can be used to listen to an {@link Exchange} instance and process
+   * incoming new {@link SubmissionTask}s.
+   *
+   * @since 1.0.0
+   */
   static class SubmissionTaskWorker extends Thread {
 
     Exchange exchange;
 
     Deque<Topic> topics;
 
+    /**
+     * This registers an instance of the {@link Exchange} class to a submission worker.
+     *
+     * @param exchange an instance of the {@link} Exchange class, from which submission tasks will
+     *                 be consumed.
+     * @param topics   a linear collection of topics. The worker processes a {@link SubmissionTask}
+     *                 and tries to find the corresponding topic. If a task matches a topic, all
+     *                 subscribers are informed.
+     * @since 1.0.0
+     */
     SubmissionTaskWorker(Exchange exchange, Deque<Topic> topics) {
       this.exchange = exchange;
       this.topics = topics;
@@ -242,6 +288,8 @@ public class Exchange implements MessageBusInterface {
     }
 
     private void handleSubmissions() throws InterruptedException {
+      // Beware that this call is blocking. If no new submission tasks are available,
+      // the worker is going into the Object.wait() state.
       var task = exchange.getSubmissionTask();
       if (task == null) {
         return;
