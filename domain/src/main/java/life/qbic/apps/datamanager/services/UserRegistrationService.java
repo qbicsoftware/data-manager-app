@@ -1,13 +1,18 @@
 package life.qbic.apps.datamanager.services;
 
 import java.util.Arrays;
+import java.util.Optional;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
+import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
+import life.qbic.domain.usermanagement.repository.UserDataStorage;
+import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration Service</b>
@@ -20,11 +25,15 @@ public final class UserRegistrationService {
 
   private final NotificationService notificationService;
 
+  private final UserDataStorage userDataStorage;
+
   private final EventStore eventStore;
 
-  public UserRegistrationService(NotificationService notificationService, EventStore eventStore) {
+  public UserRegistrationService(NotificationService notificationService,
+      UserDataStorage userDataStorage, EventStore eventStore) {
     super();
     this.notificationService = notificationService;
+    this.userDataStorage = userDataStorage;
     this.eventStore = eventStore;
   }
 
@@ -57,6 +66,11 @@ public final class UserRegistrationService {
 
               @Override
               public void handleEvent(UserRegistered event) {
+                sendNotification(event);
+                eventStore.append(event);
+              }
+
+              private void sendNotification(UserRegistered event) {
                 var notificationId = notificationService.newNotificationId();
                 var notification =
                     Notification.create(
@@ -64,7 +78,6 @@ public final class UserRegistrationService {
                         event.occurredOn(),
                         notificationId,
                         event);
-                eventStore.append(event);
                 notificationService.send(notification);
               }
             });
@@ -81,7 +94,39 @@ public final class UserRegistrationService {
    * @param userId the id of the user to be activated
    * @since 1.0.0
    */
-  public void activateUser(String userId) {
+  public void confirmUserEmail(String userId) {
+    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
+
+      @Override
+      public Class<UserActivated> subscribedToEventType() {
+        return UserActivated.class;
+      }
+
+      @Override
+      public void handleEvent(UserActivated event) {
+        storeEvent(event);
+        sendNotification(event);
+        //TODO unsubscribe
+      }
+
+      private void sendNotification(UserActivated event) {
+        var notificationId = notificationService.newNotificationId();
+        var notification =
+            Notification.create(
+                UserActivated.class.getSimpleName(),
+                event.occurredOn(),
+                notificationId,
+                event);
+        notificationService.send(notification);
+      }
+
+      private void storeEvent(UserActivated event) {
+        eventStore.append(event);
+      }
+    });
+    UserRepository userRepository = UserRepository.getInstance(userDataStorage);
+    Optional<User> optionalUser = userRepository.findById(userId);
+    optionalUser.ifPresent(User::confirmEmail);
 
   }
 }
