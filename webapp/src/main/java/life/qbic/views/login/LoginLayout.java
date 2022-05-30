@@ -8,8 +8,7 @@ import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
-import java.util.Map;
-import life.qbic.views.ConfirmationMessage;
+import life.qbic.views.SuccessMessage;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
@@ -33,7 +32,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   private LoginHandlerInterface loginHandlerInterface;
 
-  public ConfirmationMessage confirmationMessage;
+  public SuccessMessage confirmationSuccessMessage;
 
   public ErrorMessage errorMessage;
 
@@ -43,7 +42,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
     initLayout();
     styleLayout();
 
-    confirmationMessage = new ConfirmationMessage("", "");
+    confirmationSuccessMessage = new SuccessMessage("", "");
 
     registerToHandler(loginHandlerInterface);
   }

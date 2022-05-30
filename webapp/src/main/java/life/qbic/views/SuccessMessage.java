@@ -8,13 +8,12 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b> A SuccessMessage component which shows a successful message with a title and a detailed
+ * description. </b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class ConfirmationMessage extends Composite<VerticalLayout>  {
+public class SuccessMessage extends Composite<VerticalLayout> {
 
   private final String descriptionText;
   private final String titleText;
@@ -25,7 +24,7 @@ public class ConfirmationMessage extends Composite<VerticalLayout>  {
   private Div descriptionDiv;
   public Span descriptionTextSpan;
 
-  public ConfirmationMessage(String titleText, String descriptionText) {
+  public SuccessMessage(String titleText, String descriptionText) {
 
     this.titleText = titleText;
     this.descriptionText = descriptionText;
@@ -44,7 +43,8 @@ public class ConfirmationMessage extends Composite<VerticalLayout>  {
     styleDescriptionDiv();
 
     this.getContent().add(titleSpan, descriptionDiv);
-    this.getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");
+    this.getContent()
+        .addClassNames("p-s", "text-secondary", "bg-primary-10", "rounded-l", "gap-y-s");
   }
 
   private void createDescriptionText(String descriptionText) {
@@ -57,7 +57,7 @@ public class ConfirmationMessage extends Composite<VerticalLayout>  {
   }
 
   private void createTitle(String titleText) {
-    Icon icon = new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O);
+    Icon icon = new Icon(VaadinIcon.CHECK_CIRCLE);
     icon.addClassName("icon-s");
     this.titleTextSpan = new Span(titleText);
     titleSpan = new Span(icon, this.titleTextSpan);
