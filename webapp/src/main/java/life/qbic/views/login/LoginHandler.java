@@ -1,12 +1,16 @@
 package life.qbic.views.login;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.RouterLink;
 import java.util.List;
 import java.util.Map;
+import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
 import life.qbic.views.SuccessMessage;
+import life.qbic.views.helloworld.HelloWorldView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -36,10 +40,30 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       registeredLoginView = loginView;
     }
     setupView();
+    initFields();
+    addListener();
   }
 
   private void setupView() {
     registeredLoginView.confirmationSuccessMessage.setVisible(false);
+  }
+
+  private void initFields() {
+    registeredLoginView.password.setHelperText("A password must be at least 8 characters");
+    registeredLoginView.password.setPattern(".{8,}");
+    registeredLoginView.password.setErrorMessage("Invalid Password");
+    registeredLoginView.email.setErrorMessage("Invalid Email");
+  }
+
+  private void addListener() {
+    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
+    registeredLoginView.loginButton.addClickListener(
+        event -> {
+          resetMessages();
+          resetComponentErrors();
+          checkUserEmail(registeredLoginView.email.getValue());
+        });
+    //ToDo Add forgot password Logic
   }
 
   @Override
@@ -47,7 +71,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     Map<String, List<String>> queryParams = beforeEnterEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
-      registeredLoginView.loginForm.setError(true);
+      //Todo Replace this with a distinct error message in the loginView
+      onFailure("The provided information was invalid");
     }
     if (queryParams.containsKey("confirmEmail")) {
       String userId = queryParams.get("confirmEmail").iterator().next();
@@ -55,13 +80,51 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     }
   }
 
+  //ToDo this should be moved into a LoginUser Use Case
+  private void checkUserEmail(String email) {
+    //ToDo Check If fields are filled before parsing database
+    List<User> foundUsers = userRepository.findUsersByEmail(email);
+    if (!foundUsers.isEmpty()) {
+      checkUserPassword(foundUsers.get(0));
+    } else {
+      onFailure("Invalid Credentials");
+      registeredLoginView.email.setInvalid(true);
+      registeredLoginView.password.setInvalid(true);
+    }
+  }
+
+  //ToDo This should be moved into a LoginUser Use Case
+  private void checkUserPassword(User user) {
+    if (user.checkPassword(registeredLoginView.password.getValue().toCharArray())) {
+      RouterLink routerLink = new RouterLink("HelloWorld", HelloWorldView.class);
+      //ToDo Move User to HelloWorldView after login
+    } else {
+      onFailure("Invalid Credentials");
+      registeredLoginView.email.setInvalid(true);
+      registeredLoginView.password.setInvalid(true);
+    }
+  }
+
+  private void resetMessages() {
+    registeredLoginView.errorMessage.setVisible(false);
+    registeredLoginView.confirmationSuccessMessage.setVisible(false);
+  }
+
+  private void resetComponentErrors() {
+    registeredLoginView.email.setInvalid(false);
+    registeredLoginView.password.setInvalid(false);
+  }
+
   @Override
   public void onSuccess() {
-    registeredLoginView.confirmationSuccessMessage = new SuccessMessage("Email address confirmed", "You can now login with your credentials.");
+    registeredLoginView.confirmationSuccessMessage = new SuccessMessage("Email address confirmed",
+        "You can now login with your credentials.");
   }
 
   @Override
   public void onFailure(String reason) {
-    // Todo Display error message
+    //Todo Set individual error messages dependent on origin:
+    registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
+    registeredLoginView.errorMessage.setVisible(true);
   }
 }
