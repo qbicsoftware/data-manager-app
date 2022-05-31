@@ -1,14 +1,18 @@
 package life.qbic.domain.usermanagement.registration;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Confirm Email use case input</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface ConfirmEmailInput {
 
+  /**
+   * Confirms the user's email address
+   *
+   * @param userID the user whose email address is to be confirmed
+   * @since 1.0.0
+   */
   void confirmEmailAddress(String userID);
 
 }
