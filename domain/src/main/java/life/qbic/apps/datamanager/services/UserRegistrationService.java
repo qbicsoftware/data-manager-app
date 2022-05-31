@@ -11,6 +11,7 @@ import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
+import life.qbic.domain.usermanagement.registration.UserNotFoundException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 
@@ -91,7 +92,7 @@ public final class UserRegistrationService {
    * @param userId the id of the user to be activated
    * @since 1.0.0
    */
-  public void confirmUserEmail(String userId) {
+  public void confirmUserEmail(String userId) throws UserNotFoundException {
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
       @Override
       public Class<UserActivated> subscribedToEventType() {
@@ -143,7 +144,7 @@ public final class UserRegistrationService {
       user.confirmEmail();
       userDataStorage.save(user);
     }, () -> {
-      throw new RuntimeException("Unknown user. Could not confirm the email address.");
+      throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
     });
   }
 }

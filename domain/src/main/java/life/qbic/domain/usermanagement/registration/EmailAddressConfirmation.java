@@ -29,10 +29,10 @@ public class EmailAddressConfirmation implements ConfirmEmailInput {
   public void confirmEmailAddress(String userID) {
     Objects.requireNonNull(confirmEmailOutput, "No use case output was set yet");
     try  {
-      userRegistrationService.activateUser(userID);
+      userRegistrationService.confirmUserEmail(userID);
       confirmEmailOutput.onSuccess();
-    } catch (Exception ignored) {
-      confirmEmailOutput.onFailure("Email address could not be confirmed");
+    } catch (UserNotFoundException e) {
+      confirmEmailOutput.onFailure("Unknown user");
     }
   }
 }

@@ -67,7 +67,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void handle(BeforeEvent beforeEnterEvent) {
-    System.out.println("Before Enter event happened");
     Map<String, List<String>> queryParams = beforeEnterEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
@@ -127,7 +126,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   @Override
   public void onFailure(String reason) {
     resetMessages();
-    //Todo Set individual error messages dependent on origin:
+    registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
     registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
     registeredLoginView.errorMessage.setVisible(true);
   }
