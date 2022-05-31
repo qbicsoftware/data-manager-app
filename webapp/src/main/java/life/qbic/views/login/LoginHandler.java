@@ -38,12 +38,12 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     if (registeredLoginView != loginView) {
       registeredLoginView = loginView;
     }
-    setupView();
     initFields();
+    setupVisibility();
     addListener();
   }
 
-  private void setupView() {
+  private void setupVisibility() {
     registeredLoginView.confirmationSuccessMessage.setVisible(false);
   }
 
@@ -71,7 +71,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
         .getParameters();
     if (queryParams.containsKey("error")) {
       //Todo Replace this with a distinct error message in the loginView
-      onFailure("The provided information was invalid");
+      onEmailConfirmationFailure("The provided information was invalid");
     }
     if (queryParams.containsKey("confirmEmail")) {
       String userId = queryParams.get("confirmEmail").iterator().next();
@@ -86,7 +86,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     if (!foundUsers.isEmpty()) {
       checkUserPassword(foundUsers.get(0));
     } else {
-      onFailure("Invalid Credentials");
+      onEmailConfirmationFailure("Invalid Credentials");
       registeredLoginView.email.setInvalid(true);
       registeredLoginView.password.setInvalid(true);
     }
@@ -98,7 +98,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       RouterLink routerLink = new RouterLink("HelloWorld", HelloWorldView.class);
       //ToDo Move User to HelloWorldView after login
     } else {
-      onFailure("Invalid Credentials");
+      onEmailConfirmationFailure("Invalid Credentials");
       registeredLoginView.email.setInvalid(true);
       registeredLoginView.password.setInvalid(true);
     }
@@ -115,7 +115,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   @Override
-  public void onSuccess() {
+  public void onEmailConfirmationSuccess() {
     resetMessages();
     registeredLoginView.confirmationSuccessMessage.titleTextSpan.setText("Email address confirmed");
     registeredLoginView.confirmationSuccessMessage.descriptionTextSpan.setText("You can now login with your credentials.");
@@ -123,7 +123,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   @Override
-  public void onFailure(String reason) {
+  public void onEmailConfirmationFailure(String reason) {
     resetMessages();
     registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
     registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);

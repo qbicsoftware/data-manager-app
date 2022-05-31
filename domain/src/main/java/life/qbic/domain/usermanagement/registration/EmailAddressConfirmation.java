@@ -2,7 +2,6 @@ package life.qbic.domain.usermanagement.registration;
 
 import java.util.Objects;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>Email Address Confirmation use case</b>
@@ -30,9 +29,9 @@ public class EmailAddressConfirmation implements ConfirmEmailInput {
     Objects.requireNonNull(confirmEmailOutput, "No use case output was set yet");
     try {
       userRegistrationService.confirmUserEmail(userID);
-      confirmEmailOutput.onSuccess();
+      confirmEmailOutput.onEmailConfirmationSuccess();
     } catch (UserNotFoundException e) {
-      confirmEmailOutput.onFailure("Unknown user");
+      confirmEmailOutput.onEmailConfirmationFailure("Unknown user");
     }
   }
 }

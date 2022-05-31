@@ -7,8 +7,8 @@ package life.qbic.domain.usermanagement.registration;
  */
 public interface ConfirmEmailOutput {
 
-  void onSuccess();
+  void onEmailConfirmationSuccess();
 
-  void onFailure(String reason);
+  void onEmailConfirmationFailure(String reason);
 
 }
