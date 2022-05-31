@@ -20,7 +20,7 @@ public class EmailConfirmationLinkSupplier {
 
   private final String emailConfirmationParameter;
 
-  public EmailConfirmationLinkSupplier(@Value("${server.address}") String host,
+  public EmailConfirmationLinkSupplier(@Value("${host.name}") String host,
       @Value("${server.port}") String port,
       @Value("${login-endpoint}") String loginEndpoint,
       @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
