@@ -68,12 +68,13 @@ public class Application extends SpringBootServletInitializer implements AppShel
       }
       try {
         UserRegistered userRegistered = deserialize(message);
-        System.out.println(appContext.getBean(EmailConfirmationLinkSupplier.class)
-            .emailConfirmationUrl(userRegistered.userId()));
+        String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
+            .emailConfirmationUrl(userRegistered.userId());
         EmailService registrationEmailSender = appContext.getBean(
             EmailService.class);
         Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
-            new Recipient(userRegistered.userEmail(), userRegistered.userFullName()));
+            new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
+            , emailConfirmationUrl);
         registrationEmailSender.send(registrationMail);
       } catch (IOException | ClassNotFoundException e) {
         throw new RuntimeException(e);

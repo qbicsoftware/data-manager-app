@@ -85,17 +85,20 @@ spring.mail.port=${MAIL_PORT:587}
 For user email confirmation a specific endpoint is addressed. This endpoint can be configured using
 the following properties:
 
-| environment variable          | description                                          |
-|-------------------------------|------------------------------------------------------|
-| `HOST`                        | The server address                                   |
-| `EMAIL_CONFIRMATION_ENDPOINT` | The endpoint for email confirmation                  |
+| environment variable           | description                                                       |
+|--------------------------------|-------------------------------------------------------------------|
+| `HOST`                         | The server address                                                |
+| `EMAIL_CONFIRMATION_PARAMETER` | The name of the parameter to which to pass the confirmation token |
+| `LOGIN_ENDPOINT`               | The endpoint for the login                                        |
 
-Generated email confirmation links will look like `127.0.0.1:8080/confirm-email/<token>` with the
+Generated email confirmation links will look like `localhost:8080/login?confirm-email=<token>` with
+the
 default configuration.
 
 ```properties
-server.address=${HOST:127.0.0.1}
-email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:confirm-email}
+host.name=${HOST:localhost}
+login-endpoint=${LOGIN_ENDPOINT:login}
+email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
 ```
 
 ## Project structure
