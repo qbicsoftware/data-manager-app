@@ -36,7 +36,7 @@ public class EmailFormatPolicy {
    */
   public PolicyCheckReport validate(String email) {
     if (!honoursRFCSpec(email)) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, "Invalid email address format");
+      return new PolicyCheckReport(PolicyStatus.FAILED, "Invalid email address format.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }
