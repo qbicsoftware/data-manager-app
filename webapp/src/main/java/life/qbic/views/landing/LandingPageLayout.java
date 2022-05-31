@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager")
 @Route(value = "landing")
-public class LandingPageLayout extends DataManagerLayout implements HasUrlParameter<String> {
+public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
@@ -50,10 +50,5 @@ public class LandingPageLayout extends DataManagerLayout implements HasUrlParame
 
   private void styleHeaderButtons() {
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-  }
-
-  @Override
-  public void setParameter(BeforeEvent beforeEvent, String s) {
-    System.out.println(beforeEvent.getLocation());
   }
 }
