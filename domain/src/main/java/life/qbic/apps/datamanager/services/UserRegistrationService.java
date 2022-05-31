@@ -91,6 +91,8 @@ public final class UserRegistrationService {
    *
    * @param userId the id of the user to be activated
    * @since 1.0.0
+   *
+   * @throws UserNotFoundException when no user with the provided user id can be found.
    */
   public void confirmUserEmail(String userId) throws UserNotFoundException {
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
