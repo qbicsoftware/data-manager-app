@@ -38,8 +38,6 @@ public class User implements Serializable {
 
   private String encryptedPassword;
 
-  private boolean emailConfirmed = false;
-
   private boolean active = false;
 
   protected User() {
@@ -66,7 +64,6 @@ public class User implements Serializable {
     user.setEmail(email);
     user.setId(uuid);
     user.active = false;
-    user.emailConfirmed = false;
 
     return user;
   }
@@ -186,7 +183,6 @@ public class User implements Serializable {
    * Confirms the email address.
    */
   public void confirmEmail() {
-    this.emailConfirmed = true;
     UserEmailConfirmed event = UserEmailConfirmed.create(id, email);
     DomainEventPublisher.instance().publish(event);
     activate();
