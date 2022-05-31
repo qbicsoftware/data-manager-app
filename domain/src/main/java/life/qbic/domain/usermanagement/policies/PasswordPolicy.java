@@ -16,8 +16,6 @@ public class PasswordPolicy {
 
   private static PasswordPolicy INSTANCE;
 
-  private static final String invalidPasswordMessage = "Password shorter than 8 characters.";
-
   public static PasswordPolicy create() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordPolicy();
@@ -34,7 +32,7 @@ public class PasswordPolicy {
    */
   public PolicyCheckReport validate(char[] rawPassword) {
     if (rawPassword.length < MIN_LENGTH) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, invalidPasswordMessage);
+      return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }

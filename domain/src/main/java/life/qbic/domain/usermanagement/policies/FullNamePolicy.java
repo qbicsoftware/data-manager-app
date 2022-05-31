@@ -13,8 +13,6 @@ public class FullNamePolicy {
 
   private static FullNamePolicy INSTANCE;
 
-  private static final String invalidFullNameMessage = "Full Name shorter than 1 character.";
-
   public static FullNamePolicy create() {
     if (INSTANCE == null) {
       INSTANCE = new FullNamePolicy();
@@ -31,7 +29,7 @@ public class FullNamePolicy {
    */
   public PolicyCheckReport validate(String fullName) {
     if (fullName.length() < MIN_LENGTH) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, invalidFullNameMessage);
+      return new PolicyCheckReport(PolicyStatus.FAILED, "Full Name shorter than 1 character.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }
