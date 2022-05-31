@@ -6,8 +6,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.MessageParameters;
 import life.qbic.apps.datamanager.notifications.MessageSubscriber;

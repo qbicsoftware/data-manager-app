@@ -4,8 +4,6 @@ import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
-import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
@@ -16,8 +14,6 @@ import life.qbic.events.SimpleEventStore;
 import life.qbic.events.TemporaryEventRepository;
 import life.qbic.messaging.Exchange;
 import life.qbic.usermanagement.registration.RegistrationEmailSender;
-import life.qbic.views.login.LoginHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
