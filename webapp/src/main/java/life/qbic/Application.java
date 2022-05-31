@@ -14,6 +14,8 @@ import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserDomainService;
+import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
+import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import life.qbic.email.Email;
@@ -21,6 +23,7 @@ import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.usermanagement.registration.EmailFactory;
+import life.qbic.views.login.LoginHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -58,6 +61,14 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var messageBus = appContext.getBean(MessageBusInterface.class);
     messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
+
+    setupUseCases(appContext);
+  }
+
+  private static void setupUseCases(ConfigurableApplicationContext context) {
+    var emailAddressConfirmation = context.getBean(EmailAddressConfirmation.class);
+    var loginHandler = (ConfirmEmailOutput) context.getBean(LoginHandler.class);
+    emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(

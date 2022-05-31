@@ -1,7 +1,7 @@
 package life.qbic.views.login;
 
 import com.vaadin.flow.component.Key;
-import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.RouterLink;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +9,6 @@ import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
-import life.qbic.views.SuccessMessage;
 import life.qbic.views.helloworld.HelloWorldView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -67,7 +66,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   @Override
-  public void handle(BeforeEnterEvent beforeEnterEvent) {
+  public void handle(BeforeEvent beforeEnterEvent) {
+    System.out.println("Before Enter event happened");
     Map<String, List<String>> queryParams = beforeEnterEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
@@ -75,6 +75,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       onFailure("The provided information was invalid");
     }
     if (queryParams.containsKey("confirmEmail")) {
+      System.out.println(queryParams.get("confirmEmail").iterator().next());
       String userId = queryParams.get("confirmEmail").iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
     }
@@ -117,12 +118,15 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void onSuccess() {
-    registeredLoginView.confirmationSuccessMessage = new SuccessMessage("Email address confirmed",
-        "You can now login with your credentials.");
+    resetMessages();
+    registeredLoginView.confirmationSuccessMessage.titleTextSpan.setText("Email address confirmed");
+    registeredLoginView.confirmationSuccessMessage.descriptionTextSpan.setText("You can now login with your credentials.");
+    registeredLoginView.confirmationSuccessMessage.setVisible(true);
   }
 
   @Override
   public void onFailure(String reason) {
+    resetMessages();
     //Todo Set individual error messages dependent on origin:
     registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
     registeredLoginView.errorMessage.setVisible(true);

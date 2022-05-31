@@ -3,6 +3,8 @@ package life.qbic.views.landing;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.views.DataManagerLayout;
@@ -15,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager")
 @Route(value = "landing")
-public class LandingPageLayout extends DataManagerLayout {
+public class LandingPageLayout extends DataManagerLayout implements HasUrlParameter<String> {
 
   public Button register;
   public Button login;
@@ -48,5 +50,10 @@ public class LandingPageLayout extends DataManagerLayout {
 
   private void styleHeaderButtons() {
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
+
+  @Override
+  public void setParameter(BeforeEvent beforeEvent, String s) {
+    System.out.println(beforeEvent.getLocation());
   }
 }

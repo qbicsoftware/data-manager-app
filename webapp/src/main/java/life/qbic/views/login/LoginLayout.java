@@ -12,6 +12,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import life.qbic.views.SuccessMessage;
 import life.qbic.views.ErrorMessage;
@@ -27,7 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Login")
 @Route(value = "login", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
-public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
+@AnonymousAllowed
+public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
 
@@ -50,7 +54,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   public ErrorMessage passwordTooShortMessage;
 
-  public ErrorMessage unConfirmedEmailMessage;
+  public ErrorMessage emailConfirmationFailedMessage;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
@@ -110,9 +114,9 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
     passwordTooShortMessage = new ErrorMessage("Password too short",
         "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
-    unConfirmedEmailMessage = new ErrorMessage("Unconfirmed email address",
+    emailConfirmationFailedMessage = new ErrorMessage("Unconfirmed email address",
         "Please confirm your email address before logging in");
-    unConfirmedEmailMessage.setVisible(false);
+    emailConfirmationFailedMessage.setVisible(false);
   }
 
   private void createSuccessDivs() {
@@ -177,13 +181,11 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
     registerSpan = new Span(new Text("Need an account? "), routerLink);
   }
 
-  @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    loginHandlerInterface.handle(beforeEnterEvent);
-  }
-
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
     Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
   }
-
+  @Override
+  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String s) {
+    loginHandlerInterface.handle(beforeEvent);
+  }
 }

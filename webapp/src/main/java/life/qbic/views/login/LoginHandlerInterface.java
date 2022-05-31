@@ -1,6 +1,6 @@
 package life.qbic.views.login;
 
-import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEvent;
 
 /**
  * <b> Interface to handle the {@link LoginLayout} to the {@link LoginHandler}. </b>
@@ -17,5 +17,5 @@ public interface LoginHandlerInterface {
    */
   void handle(LoginLayout loginView);
 
-  void handle(BeforeEnterEvent beforeEnterEvent);
+  void handle(BeforeEvent beforeEnterEvent);
 }
