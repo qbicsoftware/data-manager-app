@@ -1,11 +1,9 @@
 package life.qbic.domain.usermanagement.registration;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Confirm Email use case output</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface ConfirmEmailOutput {
 

@@ -66,8 +66,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   @Override
-  public void handle(BeforeEvent beforeEnterEvent) {
-    Map<String, List<String>> queryParams = beforeEnterEvent.getLocation().getQueryParameters()
+  public void handle(BeforeEvent beforeEvent) {
+    Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
       //Todo Replace this with a distinct error message in the loginView

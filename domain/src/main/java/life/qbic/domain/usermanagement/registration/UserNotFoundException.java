@@ -1,11 +1,12 @@
 package life.qbic.domain.usermanagement.registration;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>User Not Found exception</b>
+ * <p>
+ * Throw this exception, if you want to indicate to the client that a user could not been found in
+ * the system.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UserNotFoundException extends RuntimeException {
 

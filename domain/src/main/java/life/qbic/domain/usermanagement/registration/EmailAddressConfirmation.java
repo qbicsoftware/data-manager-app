@@ -5,11 +5,11 @@ import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Email Address Confirmation use case</b>
+ * <p>
+ * Activates a user with a given user id.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailAddressConfirmation implements ConfirmEmailInput {
 
@@ -21,14 +21,14 @@ public class EmailAddressConfirmation implements ConfirmEmailInput {
     this.userRegistrationService = Objects.requireNonNull(userRegistrationService);
   }
 
-  public void setConfirmEmailOutput(ConfirmEmailOutput confirmEmailOutput){
+  public void setConfirmEmailOutput(ConfirmEmailOutput confirmEmailOutput) {
     this.confirmEmailOutput = confirmEmailOutput;
   }
 
   @Override
   public void confirmEmailAddress(String userID) {
     Objects.requireNonNull(confirmEmailOutput, "No use case output was set yet");
-    try  {
+    try {
       userRegistrationService.confirmUserEmail(userID);
       confirmEmailOutput.onSuccess();
     } catch (UserNotFoundException e) {
