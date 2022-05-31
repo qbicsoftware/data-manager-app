@@ -70,7 +70,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
         UserRegistered userRegistered = deserialize(message);
         String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
                 .emailConfirmationUrl(userRegistered.userId());
-        System.out.println(emailConfirmationUrl);
+        log.info("confirmation url: "+emailConfirmationUrl);
         EmailService registrationEmailSender = appContext.getBean(
             EmailService.class);
 
