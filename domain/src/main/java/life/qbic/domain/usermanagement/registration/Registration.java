@@ -1,5 +1,8 @@
 package life.qbic.domain.usermanagement.registration;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User.UserException;
 
@@ -69,10 +72,25 @@ public class Registration implements RegisterUserInput {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
-      registerUserOutput.onFailure(e.getReason());
+      if (containsSuppressedUserExceptions(e)) {
+        listUserExceptionReasons(e).forEach(reason -> registerUserOutput.onFailure(reason));
+      } else {
+        registerUserOutput.onFailure(e.getReason());
+      }
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");
     }
+  }
+
+  private boolean containsSuppressedUserExceptions(UserException e) {
+    return e.getSuppressed().length > 0;
+  }
+
+  private List<String> listUserExceptionReasons(UserException e) {
+    List<String> userExceptionReasons = new ArrayList<>();
+    Arrays.stream(e.getSuppressed()).toList()
+        .forEach(userException -> userExceptionReasons.add(userException.getMessage()));
+    return userExceptionReasons;
   }
 
   /**

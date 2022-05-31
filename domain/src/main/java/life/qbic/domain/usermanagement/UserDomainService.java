@@ -1,5 +1,7 @@
 package life.qbic.domain.usermanagement;
 
+import java.util.ArrayList;
+import java.util.List;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
@@ -34,15 +36,51 @@ public class UserDomainService {
    */
   public void createUser(String fullName, String email, char[] rawPassword) throws UserException {
     // First check, if a user with the provided email already exists
-    if (userRepository.findByEmail(email).isPresent()) {
-      throw new UserException("User with email address already exists.");
-    }
+    validateUserCredentials(fullName, email, rawPassword);
     var domainEventPublisher = DomainEventPublisher.instance();
     var user = User.create(fullName, email);
     user.setPassword(rawPassword);
     userRepository.addUser(user);
-
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(), user.getEmail());
     domainEventPublisher.publish(userCreatedEvent);
+  }
+
+  private boolean isEmailInDatabase(String email) {
+    return userRepository.findByEmail(email).isPresent();
+  }
+
+  private void validateUserCredentials(String fullName, String email, char[] rawPassword) {
+    List<UserException> userExceptions = new ArrayList<>();
+    var user = new User();
+    if (isEmailInDatabase(email)) {
+      userExceptions.add(new UserException("User with email address already exists."));
+    }
+    try {
+      user.setFullName(fullName);
+    } catch (UserException e) {
+      userExceptions.add(e);
+    }
+    try {
+      user.setEmail(email);
+    } catch (UserException e) {
+      userExceptions.add(e);
+    }
+    try {
+      user.setPassword(rawPassword);
+    } catch (UserException e) {
+      userExceptions.add(e);
+    }
+    throwCorrectUserException(userExceptions);
+  }
+
+  private void throwCorrectUserException(List<UserException> userExceptions) {
+    if (userExceptions.size() == 1) {
+      throw userExceptions.get(0);
+    }
+    if (userExceptions.size() > 1) {
+      UserException groupedUserException = new UserException("Multiple Invalid Credentials");
+      userExceptions.forEach(groupedUserException::addSuppressed);
+      throw groupedUserException;
+    }
   }
 }
