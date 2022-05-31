@@ -29,7 +29,7 @@ class RegistrationSpec extends Specification {
         testStorage = new TestStorage()
         DomainRegistry domainRegistry = DomainRegistry.instance()
         domainRegistry.registerService(new UserDomainService(UserRepository.getInstance(testStorage)))
-        userRegistrationService = new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class))
+        userRegistrationService = new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(UserDataStorage), Mock(EventStore.class))
     }
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
@@ -45,7 +45,7 @@ class RegistrationSpec extends Specification {
         newUser.setPassword("12345678".toCharArray())
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class)))
+        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), testStorage, Mock(EventStore.class)))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -70,7 +70,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create("Mr Nobody", "no@body.com")
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(EventStore.class)))
+        def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), Mock(UserDataStorage), Mock(EventStore.class)))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"

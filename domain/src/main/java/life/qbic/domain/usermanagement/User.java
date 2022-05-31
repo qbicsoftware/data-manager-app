@@ -1,15 +1,19 @@
 package life.qbic.domain.usermanagement;
 
-import life.qbic.domain.usermanagement.policies.*;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import life.qbic.domain.events.DomainEventPublisher;
+import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
+import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
+import life.qbic.domain.usermanagement.policies.PasswordPolicy;
+import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
+import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
  * <b>User class</b>
@@ -34,9 +38,10 @@ public class User implements Serializable {
 
   private String encryptedPassword;
 
-  private boolean emailConfirmed;
+  private boolean active = false;
 
-  protected User() {}
+  protected User() {
+  }
 
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
@@ -58,6 +63,7 @@ public class User implements Serializable {
     var user = new User(fullName);
     user.setEmail(email);
     user.setId(uuid);
+    user.active = false;
 
     return user;
   }
@@ -95,6 +101,8 @@ public class User implements Serializable {
         + ", email='"
         + email
         + '\''
+        + active
+        + '\''
         + '}';
   }
 
@@ -126,7 +134,7 @@ public class User implements Serializable {
     }
   }
 
-  protected void setEncryptedPassword(String encryptedPassword) {
+  private void setEncryptedPassword(String encryptedPassword) {
     this.encryptedPassword = encryptedPassword;
   }
 
@@ -150,12 +158,12 @@ public class User implements Serializable {
    * @throws UserException if the email address violates the policy
    * @since 1.0.0
    */
-  public void setEmail(String email) throws UserException {
+  private void setEmail(String email) throws UserException {
     validateEmail(email);
     this.email = email;
   }
 
-  public void setId(String id) {
+  private void setId(String id) {
     this.id = id;
   }
 
@@ -171,13 +179,21 @@ public class User implements Serializable {
     return this.fullName;
   }
 
-  public boolean isEmailConfirmed() {
-    return this.emailConfirmed;
+  /**
+   * Confirms the email address.
+   */
+  public void confirmEmail() {
+    UserEmailConfirmed event = UserEmailConfirmed.create(id, email);
+    DomainEventPublisher.instance().publish(event);
+    activate();
   }
 
-  public void setEmailConfirmed(boolean emailConfirmed) {
-    this.emailConfirmed = emailConfirmed;
+  private void activate() {
+    this.active = true;
+    UserActivated event = UserActivated.create(id);
+    DomainEventPublisher.instance().publish(event);
   }
+
 
   /**
    * Checks if a given password is correct for a user
