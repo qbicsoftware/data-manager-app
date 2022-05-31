@@ -74,7 +74,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       onFailure("The provided information was invalid");
     }
     if (queryParams.containsKey("confirmEmail")) {
-      System.out.println(queryParams.get("confirmEmail").iterator().next());
       String userId = queryParams.get("confirmEmail").iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
     }
