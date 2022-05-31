@@ -77,7 +77,7 @@ public class Exchange implements MessageBusInterface {
 
   private void launchSubmissionTaskWorker() {
     Thread worker = new SubmissionTaskWorker(this, topics);
-    worker.setName("Message Submission Worker");
+    worker.setName("DisplayMessage Submission Worker");
     worker.start();
   }
 
