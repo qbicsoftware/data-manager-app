@@ -84,11 +84,11 @@ public class UserRegistrationHandler
         userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
         userRegistrationLayout.email.setInvalid(true);
       }
-      case "Unexpected error occurred." -> userRegistrationLayout.errorMessage.setVisible(true);
       case "Password shorter than 8 characters." -> {
         userRegistrationLayout.passwordTooShortMessage.setVisible(true);
         userRegistrationLayout.password.setInvalid(true);
       }
+      default -> userRegistrationLayout.errorMessage.setVisible(true);
     }
   }
 }
