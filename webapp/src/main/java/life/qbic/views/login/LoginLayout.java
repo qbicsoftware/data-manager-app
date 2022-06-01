@@ -20,7 +20,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.stream.Stream;
 import life.qbic.views.components.ErrorMessage;
-import life.qbic.views.components.SuccessMessage;
+import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private H2 layoutTitle;
  private transient LoginHandlerInterface loginHandlerInterface;
 
-  public SuccessMessage confirmationSuccessMessage;
+  public InformationMessage confirmationInformationMessage;
+
   public ErrorMessage errorMessage;
 
   public ErrorMessage invalidEmailMessage;
@@ -105,7 +106,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private void createDivs() {
     createErrorDivs();
-    createSuccessDivs();
+    createInformationDivs();
   }
 
   private void createErrorDivs() {
@@ -122,10 +123,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     emailConfirmationFailedMessage.setVisible(false);
   }
 
-  private void createSuccessDivs() {
-    confirmationSuccessMessage = new SuccessMessage("What a success!",
-        "I don't know what you want to show here");
-    confirmationSuccessMessage.setVisible(false);
+  private void createInformationDivs() {
+    confirmationInformationMessage = new InformationMessage("What an information!",
+        "so much information");
+    confirmationInformationMessage.setVisible(false);
   }
 
   private void styleFormLayout() {
@@ -145,7 +146,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     contentLayout.add(
         layoutTitle,
         errorMessage,
-        confirmationSuccessMessage,
+        confirmationInformationMessage,
         email,
         password,
         loginButton,
