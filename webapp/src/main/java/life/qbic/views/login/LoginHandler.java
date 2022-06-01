@@ -2,14 +2,12 @@ package life.qbic.views.login;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEvent;
-import com.vaadin.flow.router.RouterLink;
 import java.util.List;
 import java.util.Map;
 import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
-import life.qbic.views.helloworld.HelloWorldView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -39,14 +37,9 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       registeredLoginView = loginView;
     }
     initFields();
-    setupVisibility();
+    resetMessages();
     addListener();
   }
-
-  private void setupVisibility() {
-    registeredLoginView.confirmationSuccessMessage.setVisible(false);
-  }
-
   private void initFields() {
     registeredLoginView.password.setHelperText("A password must be at least 8 characters");
     registeredLoginView.password.setPattern(".{8,}");
@@ -105,7 +98,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void resetMessages() {
     registeredLoginView.errorMessage.setVisible(false);
-    registeredLoginView.confirmationSuccessMessage.setVisible(false);
+    registeredLoginView.confirmationInformationMessage.setVisible(false);
   }
 
   private void resetComponentErrors() {
@@ -116,9 +109,9 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   @Override
   public void onEmailConfirmationSuccess() {
     resetMessages();
-    registeredLoginView.confirmationSuccessMessage.titleTextSpan.setText("Email address confirmed");
-    registeredLoginView.confirmationSuccessMessage.descriptionTextSpan.setText("You can now login with your credentials.");
-    registeredLoginView.confirmationSuccessMessage.setVisible(true);
+    registeredLoginView.confirmationInformationMessage.titleTextSpan.setText("Email address confirmed");
+    registeredLoginView.confirmationInformationMessage.descriptionTextSpan.setText("You can now login with your credentials.");
+    registeredLoginView.confirmationInformationMessage.setVisible(true);
   }
 
   @Override

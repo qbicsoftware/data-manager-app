@@ -4,7 +4,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * <b> A SuccessMessage component which shows a successful message with a title and a detailed
+ * <b> A SuccessMessage component which shows a success message with a title and a detailed
  * description. </b>
  *
  * @since 1.0.0
@@ -17,13 +17,11 @@ public class SuccessMessage extends DisplayMessage {
 
   @Override
   protected void configureIcon() {
-    messageIcon = new Icon(VaadinIcon.CHECK_CIRCLE);
+    messageIcon = new Icon(VaadinIcon.CHECK_CIRCLE_O);
     messageIcon.addClassName("icon-s");
   }
-
   @Override
   protected void styleSpecificLayout() {
-    getContent()
-        .addClassNames("p-s", "text-secondary", "bg-primary-10", "rounded-l", "gap-y-s");
+    super.getContent().addClassNames("p-s", "text-success", "bg-success-10", "rounded-l", "gap-y-s");
   }
 }
