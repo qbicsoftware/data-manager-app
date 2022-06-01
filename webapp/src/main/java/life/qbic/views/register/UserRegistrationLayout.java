@@ -16,12 +16,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import life.qbic.views.ErrorMessage;
+import java.util.stream.Stream;
+import life.qbic.views.components.ErrorMessage;
+import life.qbic.views.components.SuccessMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.stream.Stream;
 
 /**
  * <b> Defines the look of the registration layout. </b>
@@ -48,6 +48,8 @@ public class UserRegistrationLayout extends VerticalLayout {
   public ErrorMessage passwordTooShortMessage;
   public ErrorMessage errorMessage;
 
+  public SuccessMessage confirmationSuccessMessage;
+
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
 
@@ -68,7 +70,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void initLayout() {
     layoutTitle = new H2("Register");
 
-    createErrorDivs();
+    createDivs();
     styleEmailField();
     styleNameField();
     createPasswordField();
@@ -93,6 +95,11 @@ public class UserRegistrationLayout extends VerticalLayout {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
+  private void createDivs() {
+    createErrorDivs();
+    createSuccessDivs();
+  }
+
   private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
@@ -106,6 +113,12 @@ public class UserRegistrationLayout extends VerticalLayout {
 
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
     errorMessage.setVisible(false);
+  }
+
+  private void createSuccessDivs() {
+    confirmationSuccessMessage = new SuccessMessage("Confirmation successful",
+        "You can now login with your credentials");
+    confirmationSuccessMessage.setVisible(false);
   }
 
   private void styleNameField() {
@@ -131,6 +144,7 @@ public class UserRegistrationLayout extends VerticalLayout {
         errorMessage,
         alreadyUsedEmailMessage,
         passwordTooShortMessage,
+        confirmationSuccessMessage,
         fullName,
         email,
         password,

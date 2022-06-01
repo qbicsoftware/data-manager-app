@@ -1,4 +1,12 @@
 import 'construct-style-sheets-polyfill';
+import stylesCss from 'themes/datamanager/styles.css?inline';
+import {
+  badge,
+  color,
+  spacing,
+  typography,
+  utility
+} from '@vaadin/vaadin-lumo-styles';
 
 const createLinkReferences = (css, target) => {
   // Unresolved urls are written as '@import url(text);' to the css
@@ -46,12 +54,6 @@ export const injectGlobalCss = (css, target, first) => {
     target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
   }
 };
-import stylesCss from 'themes/datamanager/styles.css?inline';
-import { typography } from '@vaadin/vaadin-lumo-styles';
-import { color } from '@vaadin/vaadin-lumo-styles';
-import { spacing } from '@vaadin/vaadin-lumo-styles';
-import { badge } from '@vaadin/vaadin-lumo-styles';
-import { utility } from '@vaadin/vaadin-lumo-styles';
 
 window.Vaadin = window.Vaadin || {};
 window.Vaadin.theme = window.Vaadin.theme || {};

@@ -1,12 +1,11 @@
 package life.qbic.security;
 
+import java.util.Collection;
+import java.util.List;
 import life.qbic.domain.usermanagement.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  * <b>Implementation of the UserDetails interface</b>

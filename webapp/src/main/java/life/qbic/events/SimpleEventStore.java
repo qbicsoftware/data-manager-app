@@ -1,10 +1,9 @@
 package life.qbic.events;
 
-import life.qbic.apps.datamanager.events.EventStore;
-import life.qbic.domain.events.DomainEvent;
-
 import java.util.Set;
 import java.util.stream.Collectors;
+import life.qbic.apps.datamanager.events.EventStore;
+import life.qbic.domain.events.DomainEvent;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain

@@ -4,6 +4,7 @@ import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
+import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.Registration;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
@@ -37,6 +38,12 @@ public class AppConfig {
   @Bean
   public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
     return new Registration(userRegistrationService);
+  }
+
+  @Bean
+  public EmailAddressConfirmation confirmEmailInput(UserRegistrationService userRegistrationService) {
+    var emailAddressConfirmation = new EmailAddressConfirmation(userRegistrationService);
+    return emailAddressConfirmation;
   }
 
   /**
