@@ -38,8 +38,7 @@ public class UserDomainService {
     // First check, if a user with the provided email already exists
     validateUserCredentials(fullName, email, rawPassword);
     var domainEventPublisher = DomainEventPublisher.instance();
-    var user = User.create(fullName, email);
-    user.setPassword(rawPassword);
+    var user = User.create(fullName, email, rawPassword);
     userRepository.addUser(user);
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(), user.getEmail());
     domainEventPublisher.publish(userCreatedEvent);

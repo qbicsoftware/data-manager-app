@@ -52,17 +52,40 @@ public class UserRegistrationHandler
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
           resetErrorMessages();
-          registrationUseCase.register(
-              userRegistrationLayout.fullName.getValue(),
-              userRegistrationLayout.email.getValue(),
-              userRegistrationLayout.password.getValue().toCharArray());
+          setEmptyInputInvalid();
+          if (isUserInputValid()) {
+            registrationUseCase.register(
+                userRegistrationLayout.fullName.getValue(),
+                userRegistrationLayout.email.getValue(),
+                userRegistrationLayout.password.getValue().toCharArray());
+          } else {
+            userRegistrationLayout.invalidCredentialsMessage.setVisible(true);
+          }
         });
+  }
+
+  private boolean isUserInputValid() {
+    return !(userRegistrationLayout.fullName.isInvalid() || userRegistrationLayout.email.isInvalid()
+        || userRegistrationLayout.password.isInvalid());
+  }
+
+  private void setEmptyInputInvalid() {
+    if (userRegistrationLayout.fullName.isEmpty()) {
+      userRegistrationLayout.fullName.setInvalid(true);
+    }
+    if (userRegistrationLayout.email.isEmpty()) {
+      userRegistrationLayout.email.setInvalid(true);
+    }
+    if (userRegistrationLayout.password.isEmpty()) {
+      userRegistrationLayout.password.setInvalid(true);
+    }
   }
 
   private void resetErrorMessages() {
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
     userRegistrationLayout.errorMessage.setVisible(false);
     userRegistrationLayout.passwordTooShortMessage.setVisible(false);
+    userRegistrationLayout.invalidCredentialsMessage.setVisible(false);
   }
 
   @Override

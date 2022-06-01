@@ -27,7 +27,6 @@ public class User implements Serializable {
   @Id
   @Column(name = "id")
   private String id;
-
   private String fullName;
 
   private String email;
@@ -53,13 +52,25 @@ public class User implements Serializable {
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(String fullName, String email) throws UserException {
-    String uuid = String.valueOf(UUID.randomUUID());
+  public static User create(String fullName, String email, char[] rawPassword) throws UserException {
     var user = new User();
-    user.setFullName(fullName);
+    try {
+      user.setFullName(fullName);
+    }
+    catch (UserException fullNameException){
+      //ToDo Add reason to Multiple Parameter Exception
+    }
+    try {
     user.setEmail(email);
-    user.setId(uuid);
-
+    }
+    catch (UserException emailException){
+      //ToDo Add reason to Multiple Parameter Exception
+    }
+    try {
+      user.setPassword(rawPassword);
+    } catch(UserException passwordException) {
+      //ToDo Add reason to Multiple Parameter Exception
+    }
     return user;
   }
 
@@ -74,11 +85,17 @@ public class User implements Serializable {
    * @since 1.0.0
    */
   protected static User of(String encryptedPassword, String fullName, String email) {
-    var user = new User();
-    user.setFullName(fullName);
+    var user = new User(fullName);
     user.setEmail(email);
     user.setEncryptedPassword(encryptedPassword);
     return user;
+  }
+
+  private User(String fullName) {
+    if(fullName.isEmpty()) {
+      throw new UserException("Full name can't be empty");
+    }
+    this.fullName = fullName;
   }
 
   @Override
@@ -100,22 +117,17 @@ public class User implements Serializable {
    * Sets the full name for the current user.
    *
    * <p>This method will throw an {@link UserException} if the full name seems not to be
-   * a valid name. The format policy is specified in {@link FullNamePolicy}.
+   * a valid name.
    *
    * @param fullName the full name of the user
-   * @throws UserException if the full name violates the policy
+   * @throws UserException if the full name is empty
    * @since 1.0.0
    */
   public void setFullName(String fullName) throws UserException {
-    validateFullName(fullName);
-    this.fullName = fullName;
-  }
-
-  private void validateFullName(String fullName) {
-    PolicyCheckReport policyCheckReport = FullNamePolicy.create().validate(fullName);
-    if (policyCheckReport.status() == PolicyStatus.FAILED) {
-      throw new UserException(policyCheckReport.reason());
+    if(fullName.isEmpty()) {
+      throw new UserException("Full name can't be empty");
     }
+    this.fullName = fullName;
   }
 
   /**
