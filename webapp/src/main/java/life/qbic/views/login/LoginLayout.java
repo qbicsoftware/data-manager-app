@@ -124,8 +124,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void createInformationDivs() {
-    confirmationInformationMessage = new InformationMessage("What an information!",
-        "so much information");
+    confirmationInformationMessage = new InformationMessage("Email address confirmed",
+        "You can now login with your credentials.");
     confirmationInformationMessage.setVisible(false);
   }
 

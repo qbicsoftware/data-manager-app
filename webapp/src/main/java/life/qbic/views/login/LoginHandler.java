@@ -109,8 +109,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   @Override
   public void onEmailConfirmationSuccess() {
     resetMessages();
-    registeredLoginView.confirmationInformationMessage.titleTextSpan.setText("Email address confirmed");
-    registeredLoginView.confirmationInformationMessage.descriptionTextSpan.setText("You can now login with your credentials.");
     registeredLoginView.confirmationInformationMessage.setVisible(true);
   }
 
