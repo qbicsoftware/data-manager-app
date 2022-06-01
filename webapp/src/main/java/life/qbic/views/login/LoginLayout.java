@@ -48,7 +48,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   public Span registerSpan;
 
   private H2 layoutTitle;
-  transient private LoginHandlerInterface loginHandlerInterface;
+ private transient LoginHandlerInterface loginHandlerInterface;
 
   public SuccessMessage confirmationSuccessMessage;
   public ErrorMessage errorMessage;

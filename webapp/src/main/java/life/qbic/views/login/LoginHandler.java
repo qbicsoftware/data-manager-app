@@ -95,7 +95,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   //ToDo This should be moved into a LoginUser Use Case
   private void checkUserPassword(User user) {
     if (user.checkPassword(registeredLoginView.password.getValue().toCharArray())) {
-      RouterLink routerLink = new RouterLink("HelloWorld", HelloWorldView.class);
       //ToDo Move User to HelloWorldView after login
     } else {
       onEmailConfirmationFailure("Invalid Credentials");
