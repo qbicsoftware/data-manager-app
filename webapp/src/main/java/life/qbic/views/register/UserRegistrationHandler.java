@@ -40,7 +40,7 @@ public class UserRegistrationHandler
 
   private void initFields() {
     userRegistrationLayout.fullName.setPattern(".{1,}");
-    userRegistrationLayout.fullName.setErrorMessage("A username must be at least 1 character");
+    userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
     userRegistrationLayout.email.setErrorMessage("Please provide a valid email");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
