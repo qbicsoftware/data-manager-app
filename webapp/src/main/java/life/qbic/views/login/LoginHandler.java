@@ -38,14 +38,9 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
       registeredLoginView = loginView;
     }
     initFields();
-    setupVisibility();
+    resetMessages();
     addListener();
   }
-
-  private void setupVisibility() {
-    registeredLoginView.confirmationSuccessMessage.setVisible(false);
-  }
-
   private void initFields() {
     registeredLoginView.password.setHelperText("A password must be at least 8 characters");
     registeredLoginView.password.setPattern(".{8,}");
@@ -80,7 +75,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
 
   private void resetMessages() {
     registeredLoginView.errorMessage.setVisible(false);
-    registeredLoginView.confirmationSuccessMessage.setVisible(false);
+    registeredLoginView.informationMessage.setVisible(false);
   }
 
   private void resetComponentErrors() {
@@ -90,14 +85,14 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
 
   @Override
   public void onEmailConfirmationSuccess() {
-    displaySuccess("Email address confirmed", "You can now login with your credentials.");
+    displayInformation("Email address confirmed", "You can now login with your credentials.");
   }
 
-  private void displaySuccess(String title, String description) {
+  private void displayInformation(String title, String description) {
     resetMessages();
-    registeredLoginView.confirmationSuccessMessage.titleTextSpan.setText(title);
-    registeredLoginView.confirmationSuccessMessage.descriptionTextSpan.setText(description);
-    registeredLoginView.confirmationSuccessMessage.setVisible(true);
+    registeredLoginView.informationMessage.titleTextSpan.setText(title);
+    registeredLoginView.informationMessage.descriptionTextSpan.setText(description);
+    registeredLoginView.informationMessage.setVisible(true);
   }
 
   @Override
@@ -118,7 +113,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
 
   @Override
   public void onLoginSucceeded() {
-    displaySuccess("Login successful", "You are now logged in.");
+    displayInformation("Login successful", "You are now logged in.");
     resetComponentErrors();
     UI.getCurrent().navigate("/register");
   }
