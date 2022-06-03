@@ -27,7 +27,7 @@ public final class UserLoginService {
       return false;
     }
     Optional<User> user = userRepository.findByEmail(email);
-    return user
+    return user.filter(User::isActive)
         .map(it -> it.checkPassword(password.toCharArray()))
         .orElse(false);
   }

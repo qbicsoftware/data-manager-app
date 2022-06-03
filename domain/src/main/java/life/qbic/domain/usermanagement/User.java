@@ -171,6 +171,10 @@ public class User implements Serializable {
     return this.id;
   }
 
+  public boolean isActive() {
+    return active;
+  }
+
   public String getEmail() {
     return this.email;
   }
