@@ -9,7 +9,6 @@ import javax.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * <b>User class</b>
