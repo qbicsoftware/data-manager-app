@@ -1,5 +1,7 @@
 package life.qbic.domain.usermanagement.registration;
 
+import life.qbic.apps.datamanager.services.UserRegistrationException;
+
 /**
  * Output interface for the user registration use case
  *
@@ -20,5 +22,7 @@ public interface RegisterUserOutput {
    * @param reason the reason for the user registration failure
    * @since 1.0.0
    */
+  void onFailure(UserRegistrationException exception);
+
   void onFailure(String reason);
 }

@@ -2,6 +2,7 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +87,11 @@ public class UserRegistrationHandler
   @Override
   public void onSuccess() {
     UI.getCurrent().navigate("/login");
+  }
+
+  @Override
+  public void onFailure(UserRegistrationException exception) {
+
   }
 
   @Override

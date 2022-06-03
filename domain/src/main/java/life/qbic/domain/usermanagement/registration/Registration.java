@@ -1,5 +1,6 @@
 package life.qbic.domain.usermanagement.registration;
 
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User.UserException;
 
@@ -42,8 +43,13 @@ public class Registration implements RegisterUserInput {
           }
 
           @Override
-          public void onFailure(String reason) {
+          public void onFailure(UserRegistrationException e) {
             System.err.println("Called dummy register failure output.");
+          }
+
+          @Override
+          public void onFailure(String reason) {
+
           }
         };
   }
@@ -67,9 +73,8 @@ public class Registration implements RegisterUserInput {
     try {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
-    } catch (UserException e) {
-
-      registerUserOutput.onFailure("Could not create a new account, please try again.");
+    } catch (UserRegistrationException e) {
+      registerUserOutput.onFailure(e);
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");
     }
