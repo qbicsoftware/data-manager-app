@@ -20,6 +20,12 @@ public final class UserLoginService {
   }
 
   public boolean login(String email, String password) {
+    if (email == null || email.isBlank()) {
+      return false;
+    }
+    if (password == null || password.isBlank()) {
+      return false;
+    }
     Optional<User> user = userRepository.findByEmail(email);
     return user
         .map(it -> it.checkPassword(password.toCharArray()))
