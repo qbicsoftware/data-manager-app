@@ -1,6 +1,6 @@
 package life.qbic.domain.usermanagement.repository
 
-import life.qbic.domain.usermanagement.User
+import life.qbic.domain.user.User
 import spock.lang.Specification
 
 /**

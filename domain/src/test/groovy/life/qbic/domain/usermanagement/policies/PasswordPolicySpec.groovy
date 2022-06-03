@@ -16,7 +16,7 @@ class PasswordPolicySpec extends Specification {
 
         then:
         report.status() == PolicyStatus.FAILED
-        report.reason().equalsIgnoreCase("Password shorter than 8 characters.")
+        report.reason().equalsIgnoreCase("EncryptedPassword shorter than 8 characters.")
 
         where:
         password << [

@@ -1,9 +1,8 @@
 package life.qbic.usermanagement.persistence;
 
-import life.qbic.domain.usermanagement.User;
-import org.springframework.data.repository.CrudRepository;
-
 import java.util.List;
+import life.qbic.domain.user.User;
+import org.springframework.data.repository.CrudRepository;
 
 /**
  * <b>QBiC user repository interface</b>

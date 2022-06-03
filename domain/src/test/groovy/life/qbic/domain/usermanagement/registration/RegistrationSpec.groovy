@@ -5,8 +5,8 @@ import life.qbic.apps.datamanager.notifications.MessageBusInterface
 import life.qbic.apps.datamanager.notifications.NotificationService
 import life.qbic.apps.datamanager.services.UserRegistrationService
 import life.qbic.domain.usermanagement.DomainRegistry
-import life.qbic.domain.usermanagement.User
-import life.qbic.domain.usermanagement.UserDomainService
+import life.qbic.domain.user.User
+import life.qbic.domain.user.UserDomainService
 import life.qbic.domain.usermanagement.repository.UserDataStorage
 import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Shared
