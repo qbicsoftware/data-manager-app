@@ -15,6 +15,8 @@ import life.qbic.domain.usermanagement.User.UserException;
  */
 public class Registration implements RegisterUserInput {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Registration.class);
+
   private RegisterUserOutput registerUserOutput;
 
   private final UserRegistrationService userRegistrationService;
@@ -68,14 +70,10 @@ public class Registration implements RegisterUserInput {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
     } catch (UserException e) {
-      // do not swallow the stack trace
-      //todo log
-      e.printStackTrace();
+      log.error(e.getMessage(), e);
       registerUserOutput.onFailure("Could not create a new account, please try again.");
     } catch (Exception e) {
-      // do not swallow the stack trace
-      //todo log
-      e.printStackTrace();
+      log.error(e.getMessage(), e);
       registerUserOutput.onFailure("Unexpected error occurred.");
     }
   }
