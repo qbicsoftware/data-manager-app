@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.apps.datamanager.ConcreteEception;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
@@ -86,6 +87,7 @@ public final class UserRegistrationService {
     userDomainService.get().createUser(fullName, email, rawPassword);
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
+    return new RegistrationResponse();
   }
 
   /**
