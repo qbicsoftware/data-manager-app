@@ -51,9 +51,10 @@ public final class UserRegistrationService {
    * @param fullName    the full name of the user
    * @param email       the email address of the user
    * @param rawPassword the raw password provided by the user
+   * @return a registration response with information about if the registration was successful or not.
    * @since 1.0.0
    */
-  public void registerUser(final String fullName, final String email, final char[] rawPassword) {
+  public RegistrationResponse registerUser(final String fullName, final String email, final char[] rawPassword) {
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
       throw new RuntimeException("User registration failed.");
