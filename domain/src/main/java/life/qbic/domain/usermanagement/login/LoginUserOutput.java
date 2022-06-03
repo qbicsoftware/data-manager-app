@@ -1,16 +1,25 @@
 package life.qbic.domain.usermanagement.login;
 
+
 /**
- * <b>short description</b>
+ * Output interface for the user login use case
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface LoginUserOutput {
 
+  /**
+   * Actions performed when the user login succeeded.
+   *
+   * @since 1.0.0
+   */
   void onLoginSucceeded();
 
+  /**
+   * Actions performed when the user login failed.
+   *
+   * @since 1.0.0
+   */
   void onLoginFailed();
 
 

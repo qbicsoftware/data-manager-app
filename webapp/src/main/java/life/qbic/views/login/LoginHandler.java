@@ -115,7 +115,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
   public void onLoginSucceeded() {
     displayInformation("Login successful", "You are now logged in.");
     resetComponentErrors();
-    UI.getCurrent().navigate("/register");
+    UI.getCurrent().navigate("/register");     //TODO change to welcome page
   }
 
   @Override

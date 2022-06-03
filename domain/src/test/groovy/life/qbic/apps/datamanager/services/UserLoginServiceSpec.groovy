@@ -1,15 +1,12 @@
 package life.qbic.apps.datamanager.services
 
 
-import life.qbic.apps.datamanager.notifications.MessageBusInterface
-import life.qbic.apps.datamanager.notifications.NotificationService
 import life.qbic.domain.usermanagement.User
 import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Specification
 
 class UserLoginServiceSpec extends Specification {
 
-  NotificationService notificationService = new NotificationService(Mock(MessageBusInterface))
   UserLoginService service = new UserLoginService(new ActiveUserRepositoryMock())
 
   def "login with wrong credentials does not work"() {
