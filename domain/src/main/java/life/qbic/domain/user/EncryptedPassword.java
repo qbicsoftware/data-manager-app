@@ -1,6 +1,5 @@
 package life.qbic.domain.user;
 
-import life.qbic.domain.user.User.UserException;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordPolicy;
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
