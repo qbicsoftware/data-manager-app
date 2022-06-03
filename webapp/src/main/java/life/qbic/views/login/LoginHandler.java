@@ -104,10 +104,10 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
     displayError("Login failed", "");
   }
 
-  private void displayError(String Login_failed, String text) {
+  private void displayError(String title, String description) {
     resetMessages();
-    registeredLoginView.errorMessage.titleTextSpan.setText(Login_failed);
-    registeredLoginView.errorMessage.descriptionTextSpan.setText(text);
+    registeredLoginView.errorMessage.titleTextSpan.setText(title);
+    registeredLoginView.errorMessage.descriptionTextSpan.setText(description);
     registeredLoginView.errorMessage.setVisible(true);
   }
 
