@@ -42,7 +42,7 @@ public class UserRegistrationHandler
   private void initFields() {
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
-    userRegistrationLayout.password.setErrorMessage("Password too short");
+    userRegistrationLayout.password.setErrorMessage("EncryptedPassword too short");
   }
 
   private void addListener() {
@@ -71,7 +71,7 @@ public class UserRegistrationHandler
   }
 
   private void handleUserException(String reason) {
-    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
+    if (reason.equalsIgnoreCase("EncryptedPassword shorter than 8 characters.")) {
       userRegistrationLayout.passwordTooShortMessage.setVisible(true);
     }
     if (reason.equalsIgnoreCase("User with email address already exists.")) {

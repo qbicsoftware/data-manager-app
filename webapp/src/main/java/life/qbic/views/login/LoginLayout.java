@@ -115,7 +115,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     invalidEmailMessage = new ErrorMessage("Invalid credentials",
         "The provided email or password is invalid");
     invalidEmailMessage.setVisible(false);
-    passwordTooShortMessage = new ErrorMessage("Password too short",
+    passwordTooShortMessage = new ErrorMessage("EncryptedPassword too short",
         "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
     emailConfirmationFailedMessage = new ErrorMessage("Unconfirmed email address",
@@ -159,7 +159,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void createPasswordField() {
-    password = new PasswordField("Password");
+    password = new PasswordField("EncryptedPassword");
   }
 
   private void createLoginButton() {
@@ -172,7 +172,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void createForgotPasswordButton() {
-    forgotPasswordButton = new Button("Forgot Password");
+    forgotPasswordButton = new Button("Forgot EncryptedPassword");
   }
 
   private void styleForgotPasswordButton() {

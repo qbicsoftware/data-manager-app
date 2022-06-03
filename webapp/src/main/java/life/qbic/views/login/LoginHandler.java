@@ -4,7 +4,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
-import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
@@ -43,7 +43,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void initFields() {
     registeredLoginView.password.setHelperText("A password must be at least 8 characters");
     registeredLoginView.password.setPattern(".{8,}");
-    registeredLoginView.password.setErrorMessage("Invalid Password");
+    registeredLoginView.password.setErrorMessage("Invalid EncryptedPassword");
     registeredLoginView.email.setErrorMessage("Invalid Email");
   }
 

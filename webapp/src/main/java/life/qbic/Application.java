@@ -13,7 +13,7 @@ import java.io.ObjectInputStream;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.UserDomainService;
+import life.qbic.domain.user.UserDomainService;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
 import life.qbic.domain.usermanagement.registration.UserRegistered;

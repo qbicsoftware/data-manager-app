@@ -9,7 +9,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /**
- * <b>Password encryption policy</b>
+ * <b>EncryptedPassword encryption policy</b>
  *
  * <p>Holds the current business policy for password encryption and provides functionality to
  * execute the policy on clear text passwords.

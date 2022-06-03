@@ -1,17 +1,21 @@
 package life.qbic.apps.datamanager.services;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.apps.datamanager.ConcreteEception;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
+import life.qbic.domain.user.Email;
+import life.qbic.domain.user.Email.EmailValidationException;
+import life.qbic.domain.user.EncryptedPassword;
+import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
+import life.qbic.domain.user.FullName;
 import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserNotFoundException;
@@ -52,10 +56,18 @@ public final class UserRegistrationService {
    * @param fullName    the full name of the user
    * @param email       the email address of the user
    * @param rawPassword the raw password provided by the user
-   * @return a registration response with information about if the registration was successful or not.
+   * @return a registration response with information about if the registration was successful or
+   * not.
    * @since 1.0.0
    */
-  public RegistrationResponse registerUser(final String fullName, final String email, final char[] rawPassword) {
+  public RegistrationResponse registerUser(final String fullName, final String email,
+      final char[] rawPassword) {
+
+    var registrationResponse = validateInput(fullName, email, rawPassword);
+    if (registrationResponse.hasFailures()) {
+      return registrationResponse;
+    }
+
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
       throw new RuntimeException("User registration failed.");
@@ -83,11 +95,45 @@ public final class UserRegistrationService {
         notificationService.send(notification);
       }
     });
+
     // Trigger the user creation in the domain service
-    userDomainService.get().createUser(fullName, email, rawPassword);
+    userDomainService.get().createUser(FullName.from(fullName), Email.from(email),
+        EncryptedPassword.from(rawPassword));
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
-    return new RegistrationResponse();
+    return RegistrationResponse.successResponse();
+  }
+
+  private RegistrationResponse validateInput(String fullName, String email, char[] rawPassword) {
+    List<Exception> failures = new ArrayList<>();
+
+    try {
+      Email.from(email);
+    } catch (EmailValidationException e) {
+      failures.add(e);
+    }
+    try {
+      FullName.from(fullName);
+    } catch (Exception e) {
+      failures.add(e);
+    }
+    try {
+      EncryptedPassword.from(rawPassword);
+    } catch (PasswordValidationException e) {
+      failures.add(e);
+    }
+
+    if (failures.isEmpty()) {
+      return RegistrationResponse.successResponse();
+    }
+
+    if (failures.size() > 1) {
+      return RegistrationResponse.failureResponse(failures.get(0),
+          failures.subList(1, failures.size())
+              .toArray(failures.toArray(new Exception[failures.size() - 1])));
+    } else {
+      return RegistrationResponse.failureResponse(failures.get(0));
+    }
   }
 
   /**

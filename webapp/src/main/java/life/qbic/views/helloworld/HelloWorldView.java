@@ -8,7 +8,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import javax.annotation.security.PermitAll;
-import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.user.User;
 import life.qbic.security.SecurityService;
 import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;

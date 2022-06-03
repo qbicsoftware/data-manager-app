@@ -3,7 +3,7 @@ package life.qbic.domain.usermanagement.repository;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.user.User;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
