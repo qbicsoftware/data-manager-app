@@ -1,8 +1,6 @@
 package life.qbic.domain.usermanagement.registration;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.domain.usermanagement.User.UserException;
 
@@ -29,8 +27,7 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been executed via
-   * {@link Registration#register(String, String, char[])}.
+   * after the use case has been executed via {@link Registration#register(String, String, char[])}.
    *
    * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0
@@ -46,8 +43,13 @@ public class Registration implements RegisterUserInput {
           }
 
           @Override
-          public void onFailure(String reason) {
+          public void onFailure(UserRegistrationException e) {
             System.err.println("Called dummy register failure output.");
+          }
+
+          @Override
+          public void onFailure(String reason) {
+
           }
         };
   }
@@ -56,7 +58,7 @@ public class Registration implements RegisterUserInput {
    * Sets and overrides the use case output.
    *
    * @param registerUserOutput an output interface implementation, so the use case can trigger the
-   *                           callback methods after its execution
+   *     callback methods after its execution
    * @since 1.0.0
    */
   public void setRegisterUserOutput(RegisterUserOutput registerUserOutput) {
@@ -71,26 +73,11 @@ public class Registration implements RegisterUserInput {
     try {
       userRegistrationService.registerUser(fullName, email, rawPassword);
       registerUserOutput.onSuccess();
-    } catch (UserException e) {
-      if (containsSuppressedUserExceptions(e)) {
-        listUserExceptionReasons(e).forEach(reason -> registerUserOutput.onFailure(reason));
-      } else {
-        registerUserOutput.onFailure(e.getReason());
-      }
+    } catch (UserRegistrationException e) {
+      registerUserOutput.onFailure(e);
     } catch (Exception e) {
       registerUserOutput.onFailure("Unexpected error occurred.");
     }
-  }
-
-  private boolean containsSuppressedUserExceptions(UserException e) {
-    return e.getSuppressed().length > 0;
-  }
-
-  private List<String> listUserExceptionReasons(UserException e) {
-    List<String> userExceptionReasons = new ArrayList<>();
-    Arrays.stream(e.getSuppressed()).toList()
-        .forEach(userException -> userExceptionReasons.add(userException.getMessage()));
-    return userExceptionReasons;
   }
 
   /**
