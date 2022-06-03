@@ -1,6 +1,8 @@
 package life.qbic.apps.datamanager.services;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
@@ -90,9 +92,8 @@ public final class UserRegistrationService {
    * nothing.
    *
    * @param userId the id of the user to be activated
-   * @since 1.0.0
-   *
    * @throws UserNotFoundException when no user with the provided user id can be found.
+   * @since 1.0.0
    */
   public void confirmUserEmail(String userId) throws UserNotFoundException {
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
@@ -148,5 +149,55 @@ public final class UserRegistrationService {
     }, () -> {
       throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
     });
+  }
+
+  public static class RegistrationResponse {
+
+    private enum Type {SUCCESSFUL, FAILED}
+
+    public Type type;
+
+    public List<Exception> exceptions;
+
+    public static RegistrationResponse successResponse() {
+      var successResponse = new RegistrationResponse();
+      successResponse.setType(Type.SUCCESSFUL);
+      return successResponse;
+    }
+
+    public static RegistrationResponse failureResponse(Exception e1, Exception... exceptions) {
+      if (e1 == null || exceptions == null) {
+        throw new IllegalArgumentException("Null references are not allowed.");
+      }
+      var failureResponse = new RegistrationResponse();
+      failureResponse.setType(Type.FAILED);
+      failureResponse.setExceptions(e1, exceptions);
+      return failureResponse;
+    }
+
+    private RegistrationResponse() {
+      super();
+    }
+
+    private void setType(Type type) {
+      this.type = type;
+    }
+
+    private void setExceptions(Exception e1, Exception... exceptions) {
+      var allExceptions = new Exception[exceptions.length + 1];
+      allExceptions[0] = e1;
+      for (int i = 0; i <= exceptions.length; i++) {
+        allExceptions[i + 1] = exceptions[i];
+      }
+      this.exceptions = Arrays.stream(allExceptions).toList();
+    }
+
+    public boolean hasFailures() {
+      return type == Type.FAILED;
+    }
+
+    public List<Exception> failures() {
+      return exceptions;
+    }
   }
 }
