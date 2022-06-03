@@ -86,7 +86,7 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public boolean addUser(User user) {
-    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail())) {
+    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail().address())) {
       return false;
     }
     dataStorage.save(user);
