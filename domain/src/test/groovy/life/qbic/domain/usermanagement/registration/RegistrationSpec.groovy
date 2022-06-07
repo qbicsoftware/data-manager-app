@@ -3,6 +3,7 @@ package life.qbic.domain.usermanagement.registration
 import life.qbic.apps.datamanager.events.EventStore
 import life.qbic.apps.datamanager.notifications.MessageBusInterface
 import life.qbic.apps.datamanager.notifications.NotificationService
+import life.qbic.apps.datamanager.services.UserRegistrationException
 import life.qbic.apps.datamanager.services.UserRegistrationService
 import life.qbic.domain.user.Email
 import life.qbic.domain.user.EncryptedPassword
@@ -51,11 +52,11 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(testUser.fullName.name(), testUser.email.address(), "12345678".toCharArray())
+        registration.register(newUser.fullName.name(), newUser.email.address(), "12345678".toCharArray())
 
         then:
         0 * useCaseOutput.onSuccess()
-        1 * useCaseOutput.onFailure(_ as String)
+        1 * useCaseOutput.onFailure(_ as UserRegistrationException)
         // the user has not been added to the repository
         testStorage.findUsersByEmail(newUser.email).size() == 1
     }
@@ -81,6 +82,7 @@ class RegistrationSpec extends Specification {
         then:
         1 * useCaseOutput.onSuccess()
         0 * useCaseOutput.onFailure(_ as String)
+        0 * useCaseOutput.onFailure(_ as UserRegistrationException)
         def storedUser = testStorage.findUsersByEmail(newUser.getEmail()).get(0)
         storedUser.getFullName() == newUser.getFullName()
         !storedUser.getId().isBlank()
