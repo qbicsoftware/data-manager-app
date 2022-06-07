@@ -14,6 +14,9 @@ public class FullName {
   private String fullName;
 
   public static FullName from(String s) {
+    if (s.isBlank()) {
+      throw new InvalidFullNameException("Name must not be empty or blank.");
+    }
     var fullName = new FullName();
     fullName.setFullName(s);
     return fullName;
@@ -46,5 +49,15 @@ public class FullName {
   @Override
   public int hashCode() {
     return Objects.hash(fullName);
+  }
+
+  static class InvalidFullNameException extends RuntimeException {
+    InvalidFullNameException() {
+      super();
+    }
+
+    InvalidFullNameException(String message) {
+      super(message);
+    }
   }
 }

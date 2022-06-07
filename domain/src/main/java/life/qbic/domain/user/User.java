@@ -96,19 +96,13 @@ public class User implements Serializable {
 
   @Override
   public String toString() {
-    return "User{"
-        + "id='"
-        + id
-        + '\''
-        + ", fullName='"
-        + fullName
-        + '\''
-        + ", email='"
-        + email
-        + '\''
-        + active
-        + '\''
-        + '}';
+    return "User{" +
+        "id='" + id + '\'' +
+        ", fullName=" + fullName +
+        ", email=" + email +
+        ", encryptedPassword=" + encryptedPassword +
+        ", active=" + active +
+        '}';
   }
 
   private void setEncryptedPassword(EncryptedPassword encryptedPassword) {
@@ -175,6 +169,6 @@ public class User implements Serializable {
    */
   public Boolean checkPassword(char[] rawPassword) {
     return Objects.equals(
-        PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword);
+        PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword.hash());
   }
 }
