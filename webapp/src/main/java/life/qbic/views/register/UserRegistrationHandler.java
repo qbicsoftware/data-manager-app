@@ -40,6 +40,9 @@ public class UserRegistrationHandler
   }
 
   private void initFields() {
+    userRegistrationLayout.fullName.setPattern("\\S.*");
+    userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email address");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("EncryptedPassword too short");
@@ -80,8 +83,10 @@ public class UserRegistrationHandler
   }
 
   private void resetErrorMessages() {
-    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
+    userRegistrationLayout.errorMessage.setVisible(false);
+    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
+    userRegistrationLayout.invalidCredentialsMessage.setVisible(false);
   }
 
   @Override
@@ -96,9 +101,23 @@ public class UserRegistrationHandler
 
   @Override
   public void onFailure(String reason) {
-    // Display error to the user
-    // Stub output:
-    System.out.println(reason);
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+    handleRegistrationFailure(reason);
+  }
+
+  private void handleRegistrationFailure(String reason) {
+    switch (reason) {
+      case "Full Name shorter than 1 character." ->
+          userRegistrationLayout.fullName.setInvalid(true);
+      case "Invalid email address format." -> userRegistrationLayout.email.setInvalid(true);
+      case "User with email address already exists." -> {
+        userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+        userRegistrationLayout.email.setInvalid(true);
+      }
+      case "Password shorter than 8 characters." -> {
+        userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+        userRegistrationLayout.password.setInvalid(true);
+      }
+      default -> userRegistrationLayout.errorMessage.setVisible(true);
+    }
   }
 }
