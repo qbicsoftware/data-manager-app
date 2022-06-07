@@ -6,16 +6,29 @@ import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
 import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Email class</b>
+ * <p>
+ * Represents a valid email address, specified by RFC5322.
+ * <p>
+ * For mor details please check {@link EmailFormatPolicy}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class Email {
 
   private String address;
 
+  /**
+   * Creates an email object instance from a String representation of an email address.
+   * <p>
+   * This method performs a format validation.
+   *
+   * @param s the email address String
+   * @return an email
+   * @throws EmailValidationException if the email format is not a valid email format specified by
+   *                                  RFC5322
+   * @since 1.0.0
+   */
   public static Email from(String s) throws EmailValidationException {
     PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(s);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
@@ -34,6 +47,12 @@ public class Email {
     address = s;
   }
 
+  /**
+   * Queries the email address as String representation.
+   *
+   * @return email address as String
+   * @since 1.0.0
+   */
   public String address() {
     return this.address;
   }
