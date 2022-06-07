@@ -3,16 +3,25 @@ package life.qbic.domain.user;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Full name class</b>
+ * <p>
+ * Represents a full name of a user.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class FullName {
 
   private String fullName;
 
+  /**
+   * Creates a full name object instance from a String representation.
+   * <p>
+   * Performs some basic input validation, for example the input String must not be empty or blank.
+   *
+   * @param s the full name String representation
+   * @return the full name
+   * @since 1.0.0
+   */
   public static FullName from(String s) {
     if (s.isBlank()) {
       throw new InvalidFullNameException("Name must not be empty or blank.");
@@ -30,6 +39,12 @@ public class FullName {
     this.fullName = s;
   }
 
+  /**
+   * Queries the full name String representation.
+   *
+   * @return the full name as String
+   * @since 1.0.0
+   */
   public String name() {
     return fullName;
   }
@@ -52,6 +67,7 @@ public class FullName {
   }
 
   public static class InvalidFullNameException extends RuntimeException {
+
     InvalidFullNameException() {
       super();
     }
