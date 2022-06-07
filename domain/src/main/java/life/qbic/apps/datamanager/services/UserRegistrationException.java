@@ -1,5 +1,6 @@
 package life.qbic.apps.datamanager.services;
 
+import java.io.Serial;
 import java.util.Optional;
 import life.qbic.apps.datamanager.ApplicationException;
 
@@ -11,42 +12,48 @@ import life.qbic.apps.datamanager.ApplicationException;
  * @since <version tag>
  */
 public class UserRegistrationException extends ApplicationException {
-  private final Optional<Exception> emailFormatException;
-  private final Optional<Exception> invalidPasswordException;
-  private final Optional<Exception> fullNameException;
-  private final Optional<Exception> unexpectedException;
+
+  @Serial
+  private static final long serialVersionUID = 1026978635211901782L;
+  private final transient ApplicationException emailFormatException;
+  private final transient ApplicationException invalidPasswordException;
+  private final transient ApplicationException fullNameException;
+  private final transient RuntimeException unexpectedException;
 
   public static Builder builder() {
     return new Builder();
   }
+
   public static class Builder {
-    private Exception emailFormatException;
 
-    private Exception invalidPasswordException;
+    private ApplicationException emailFormatException;
 
-    private Exception fullNameException;
+    private ApplicationException invalidPasswordException;
 
-    private Exception unexpectedException;
+    private ApplicationException fullNameException;
+
+    private RuntimeException unexpectedException;
+
     protected Builder() {
 
     }
 
-    public Builder withEmailFormatException(Exception e) {
+    public Builder withEmailFormatException(ApplicationException e) {
       emailFormatException = e;
       return this;
     }
 
-    public Builder withFullNameException(Exception e) {
+    public Builder withFullNameException(ApplicationException e) {
       fullNameException = e;
       return this;
     }
 
-    public Builder withInvalidPasswordException(Exception e) {
+    public Builder withInvalidPasswordException(ApplicationException e) {
       invalidPasswordException = e;
       return this;
     }
 
-    public Builder withUnexpectedException(Exception e) {
+    public Builder withUnexpectedException(RuntimeException e) {
       unexpectedException = e;
       return this;
     }
@@ -57,24 +64,26 @@ public class UserRegistrationException extends ApplicationException {
   }
 
   private UserRegistrationException(Builder builder) {
-    emailFormatException = Optional.ofNullable(builder.emailFormatException);
-    fullNameException = Optional.ofNullable(builder.fullNameException);
-    invalidPasswordException = Optional.ofNullable(builder.invalidPasswordException);
-    unexpectedException = Optional.ofNullable(builder.unexpectedException);
+    emailFormatException = builder.emailFormatException;
+    fullNameException = builder.fullNameException;
+    invalidPasswordException = builder.invalidPasswordException;
+    unexpectedException = builder.unexpectedException;
   }
 
-  public Optional<Exception> emailFormatException(){
-   return Optional.empty();
+  public Optional<ApplicationException> emailFormatException() {
+    return Optional.ofNullable(emailFormatException);
   }
 
-  public Optional<Exception> fullNameException(){
-    return Optional.empty();
+  public Optional<ApplicationException> fullNameException() {
+    return Optional.ofNullable(fullNameException);
   }
 
-  public Optional<Exception> passwordException(){
-    return Optional.empty();
+  public Optional<ApplicationException> passwordException() {
+    return Optional.ofNullable(invalidPasswordException);
   }
 
-  public Optional<Exception> unexpectedException() {return Optional.empty();}
+  public Optional<RuntimeException> unexpectedException() {
+    return Optional.ofNullable(unexpectedException);
+  }
 
 }

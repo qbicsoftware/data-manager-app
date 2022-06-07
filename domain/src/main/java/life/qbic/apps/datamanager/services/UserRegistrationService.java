@@ -15,6 +15,7 @@ import life.qbic.domain.user.Email.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
+import life.qbic.domain.user.FullName.InvalidFullNameException;
 import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserActivated;
@@ -114,7 +115,7 @@ public final class UserRegistrationService {
   }
 
   private RegistrationResponse validateInput(String fullName, String email, char[] rawPassword) {
-    List<Exception> failures = new ArrayList<>();
+    List<RuntimeException> failures = new ArrayList<>();
 
     try {
       Email.from(email);
@@ -123,7 +124,7 @@ public final class UserRegistrationService {
     }
     try {
       FullName.from(fullName);
-    } catch (Exception e) {
+    } catch (InvalidFullNameException e) {
       failures.add(e);
     }
     try {
@@ -139,7 +140,7 @@ public final class UserRegistrationService {
     if (failures.size() > 1) {
       return RegistrationResponse.failureResponse(failures.get(0),
           failures.subList(1, failures.size())
-              .toArray(failures.toArray(new Exception[failures.size() - 1])));
+              .toArray(failures.toArray(new RuntimeException[failures.size() - 1])));
     } else {
       return RegistrationResponse.failureResponse(failures.get(0));
     }
@@ -215,7 +216,7 @@ public final class UserRegistrationService {
 
     public Type type;
 
-    private List<Exception> exceptions;
+    private List<RuntimeException> exceptions;
 
     public static RegistrationResponse successResponse() {
       var successResponse = new RegistrationResponse();
@@ -223,7 +224,7 @@ public final class UserRegistrationService {
       return successResponse;
     }
 
-    public static RegistrationResponse failureResponse(Exception e1, Exception... exceptions) {
+    public static RegistrationResponse failureResponse(RuntimeException e1, RuntimeException... exceptions) {
       if (e1 == null || exceptions == null) {
         throw new IllegalArgumentException("Null references are not allowed.");
       }
@@ -241,10 +242,10 @@ public final class UserRegistrationService {
       this.type = type;
     }
 
-    private void setExceptions(Exception e1, Exception... exceptions) {
-      Exception[] allExceptions;
+    private void setExceptions(RuntimeException e1, RuntimeException... exceptions) {
+      RuntimeException[] allExceptions;
       allExceptions =
-          exceptions.length > 0 ? new Exception[exceptions.length + 1] : new Exception[1];
+          exceptions.length > 0 ? new RuntimeException[exceptions.length + 1] : new RuntimeException[1];
       allExceptions[0] = e1;
       for (int i = 0; i < exceptions.length; i++) {
         allExceptions[i + 1] = exceptions[i];
@@ -256,7 +257,7 @@ public final class UserRegistrationService {
       return type == Type.FAILED;
     }
 
-    public List<Exception> failures() {
+    public List<RuntimeException> failures() {
       return exceptions;
     }
   }
