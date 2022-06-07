@@ -91,12 +91,14 @@ public class Registration implements RegisterUserInput {
     var builder = UserRegistrationException.builder();
 
     for (Exception e : registrationResponse.failures()) {
-      switch (e) {
-        case Exception exc && exc.getClass().isInstance(EmailValidationException.class) -> builder.withEmailFormatException(e);
-        case Exception exc && exc.getClass().isInstance(PasswordValidationException.class) -> builder.withInvalidPasswordException(e);
-        case Exception exc && exc.getClass().isInstance(InvalidFullNameException.class) -> builder.withFullNameException(e);
-        default -> builder.withUnexpectedException(e);
-      }
+      if (e.getClass().isInstance(EmailValidationException.class))
+        builder.withEmailFormatException(e);
+      if (e.getClass().isInstance(PasswordValidationException.class))
+        builder.withInvalidPasswordException(e);
+      if (e.getClass().isInstance(InvalidFullNameException.class))
+        builder.withFullNameException(e);
+      else
+        builder.withUnexpectedException(e);
     }
     return builder.build();
   }

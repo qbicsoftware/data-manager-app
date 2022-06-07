@@ -13,7 +13,7 @@ public class PasswordConverter implements AttributeConverter<EncryptedPassword, 
 
   @Override
   public String convertToDatabaseColumn(EncryptedPassword email) {
-    return email.toString();
+    return email.hash();
   }
 
   @Override
