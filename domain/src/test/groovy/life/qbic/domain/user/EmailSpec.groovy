@@ -18,4 +18,13 @@ class EmailSpec extends Specification {
         then:
         thrown(Email.EmailValidationException)
     }
+
+    def "When a valid email address is provided, create an instance of the object"() {
+        when:
+        Email email = Email.from("valid@email.com")
+
+        then:
+        noExceptionThrown()
+        email.address().equals("valid@email.com")
+    }
 }
