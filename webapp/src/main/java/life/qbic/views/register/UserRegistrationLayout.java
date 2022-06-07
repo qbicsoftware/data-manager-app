@@ -23,6 +23,8 @@ import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.stream.Stream;
+
 /**
  * <b> Defines the look of the registration layout. </b>
  *
@@ -50,6 +52,7 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   public InformationMessage confirmationInformationMessage;
 
+  public ErrorMessage invalidCredentialsMessage;
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
 
@@ -106,13 +109,13 @@ public class UserRegistrationLayout extends VerticalLayout {
             "Email already in use",
             "If you have difficulties with your password you can reset it.");
     alreadyUsedEmailMessage.setVisible(false);
-
+    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
+    errorMessage.setVisible(false);
     passwordTooShortMessage =
         new ErrorMessage("EncryptedPassword too short", "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
-
-    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
-    errorMessage.setVisible(false);
+    invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided user credentials");
+    invalidCredentialsMessage.setVisible(false);
   }
 
   private void createInformationDivs() {
@@ -145,6 +148,7 @@ public class UserRegistrationLayout extends VerticalLayout {
         alreadyUsedEmailMessage,
         passwordTooShortMessage,
         confirmationInformationMessage,
+        invalidCredentialsMessage,
         fullName,
         email,
         password,
