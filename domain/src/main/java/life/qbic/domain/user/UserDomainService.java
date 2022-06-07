@@ -39,7 +39,7 @@ public class UserDomainService {
       throw UserExistsException.create();
     }
     var domainEventPublisher = DomainEventPublisher.instance();
-    var user = User.of(password, fullName, email);
+    var user = User.create(fullName, email, password);
     userRepository.addUser(user);
 
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().name(),
