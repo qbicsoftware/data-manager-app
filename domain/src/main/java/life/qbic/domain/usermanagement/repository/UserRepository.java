@@ -101,4 +101,8 @@ public class UserRepository implements Serializable {
   private boolean doesUserExistWithId(String id) {
     return findById(id).isPresent();
   }
+
+  public void updateUser(User user) {
+    dataStorage.save(user);
+  }
 }

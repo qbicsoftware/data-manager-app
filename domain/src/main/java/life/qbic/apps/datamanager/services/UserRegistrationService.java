@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
@@ -21,6 +22,7 @@ import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserNotFoundException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
+import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
  * <b>User Registration Service</b>
@@ -34,15 +36,15 @@ public final class UserRegistrationService {
 
   private final NotificationService notificationService;
 
-  private final UserDataStorage userDataStorage;
+  private final UserRepository userRepository;
 
   private final EventStore eventStore;
 
   public UserRegistrationService(NotificationService notificationService,
-      UserDataStorage userDataStorage, EventStore eventStore) {
+      UserRepository userRepository, EventStore eventStore) {
     super();
     this.notificationService = notificationService;
-    this.userDataStorage = userDataStorage;
+    this.userRepository = userRepository;
     this.eventStore = eventStore;
   }
 
@@ -96,11 +98,17 @@ public final class UserRegistrationService {
       }
     });
 
-    // Trigger the user creation in the domain service
-    try {
-      userDataStorage.findUsersByEmail(createUser(FullName.from(fullName), Email.from(email),
-          EncryptedPassword.from(rawPassword));
+    var userEmail = Email.from(email);
+    var userFullName = FullName.from(fullName);
+    var userPassword = EncryptedPassword.from(rawPassword);
+
+    if (userRepository.findByEmail(userEmail).isPresent()) {
+      return RegistrationResponse.failureResponse(new UserExistsException());
     }
+
+    // Trigger the user creation in the domain service
+    userDomainService.get().createUser(userFullName, userEmail, userPassword);
+
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
     return RegistrationResponse.successResponse();
@@ -193,10 +201,10 @@ public final class UserRegistrationService {
         notificationService.send(notification);
       }
     });
-    Optional<User> optionalUser = userDataStorage.findUserById(userId);
-    optionalUser.ifPresentOrElse(user -> {
+    Optional<User> userToActivate = userRepository.findById(userId);
+    userToActivate.ifPresentOrElse(user -> {
       user.confirmEmail();
-      userDataStorage.save(user);
+      userRepository.updateUser(user);
     }, () -> {
       throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
     });
@@ -235,7 +243,9 @@ public final class UserRegistrationService {
     }
 
     private void setExceptions(Exception e1, Exception... exceptions) {
-      var allExceptions = new Exception[exceptions.length + 1];
+      Exception[] allExceptions;
+      allExceptions =
+          exceptions.length > 0 ? new Exception[exceptions.length + 1] : new Exception[1];
       allExceptions[0] = e1;
       for (int i = 0; i <= exceptions.length; i++) {
         allExceptions[i + 1] = exceptions[i];
@@ -249,6 +259,13 @@ public final class UserRegistrationService {
 
     public List<Exception> failures() {
       return exceptions;
+    }
+  }
+
+  public static class UserExistsException extends ApplicationException {
+
+    public UserExistsException() {
+      super();
     }
   }
 }

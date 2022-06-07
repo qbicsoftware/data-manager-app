@@ -2,6 +2,7 @@ package life.qbic.views.login;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import life.qbic.domain.user.User;
@@ -75,7 +76,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   //ToDo this should be moved into a LoginUser Use Case
   private void checkUserEmail(String email) {
     //ToDo Check If fields are filled before parsing database
-    List<User> foundUsers = userRepository.findUsersByEmail(email);
+    List<User> foundUsers = new ArrayList<>();
     if (!foundUsers.isEmpty()) {
       checkUserPassword(foundUsers.get(0));
     } else {

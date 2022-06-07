@@ -44,7 +44,7 @@ public class EncryptedPassword {
   }
 
   protected static EncryptedPassword fromEncrypted(String encryptedPassword) {
-    return EncryptedPassword.fromEncrypted(encryptedPassword);
+    return new EncryptedPassword(encryptedPassword);
   }
 
   protected EncryptedPassword(String encryptedPassword) {
