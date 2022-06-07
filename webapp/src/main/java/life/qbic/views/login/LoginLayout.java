@@ -31,12 +31,15 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
   public LoginForm loginForm;
   public Span registerSpan;
 
+  private final LoginHandlerInterface viewHandler;
+
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
 
     initLayout();
     styleLayout();
-    registerToHandler(loginHandlerInterface);
+    viewHandler = loginHandlerInterface;
+    registerToHandler(viewHandler);
   }
 
   private void initLayout() {
@@ -97,8 +100,6 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    if (beforeEnterEvent.getLocation().getQueryParameters().getParameters().containsKey("error")) {
-      loginForm.setError(true);
-    }
+    viewHandler.handle(beforeEnterEvent);
   }
 }
