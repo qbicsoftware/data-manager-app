@@ -21,7 +21,6 @@ import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserNotFoundException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
-import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
 /**
