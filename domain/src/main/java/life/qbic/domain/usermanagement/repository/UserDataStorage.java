@@ -2,6 +2,7 @@ package life.qbic.domain.usermanagement.repository;
 
 import java.util.List;
 import java.util.Optional;
+import life.qbic.domain.user.Email;
 import life.qbic.domain.user.User;
 
 /**
@@ -25,7 +26,7 @@ public interface UserDataStorage {
    *     the provided email address
    * @since 1.0.0
    */
-  List<User> findUsersByEmail(String email);
+  List<User> findUsersByEmail(Email email);
 
   /**
    * Saves a {@link User} entity permanently.

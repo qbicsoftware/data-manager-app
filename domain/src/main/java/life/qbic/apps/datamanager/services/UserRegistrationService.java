@@ -14,8 +14,8 @@ import life.qbic.domain.user.Email.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
-import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.user.User;
+import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserNotFoundException;
@@ -97,8 +97,10 @@ public final class UserRegistrationService {
     });
 
     // Trigger the user creation in the domain service
-    userDomainService.get().createUser(FullName.from(fullName), Email.from(email),
-        EncryptedPassword.from(rawPassword));
+    try {
+      userDataStorage.findUsersByEmail(createUser(FullName.from(fullName), Email.from(email),
+          EncryptedPassword.from(rawPassword));
+    }
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
     return RegistrationResponse.successResponse();
@@ -206,7 +208,7 @@ public final class UserRegistrationService {
 
     public Type type;
 
-    public List<Exception> exceptions;
+    private List<Exception> exceptions;
 
     public static RegistrationResponse successResponse() {
       var successResponse = new RegistrationResponse();

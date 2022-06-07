@@ -1,6 +1,7 @@
 package life.qbic.usermanagement.persistence;
 
 import java.util.List;
+import life.qbic.domain.user.Email;
 import life.qbic.domain.user.User;
 import org.springframework.data.repository.CrudRepository;
 
@@ -24,7 +25,7 @@ public interface QbicUserRepo extends CrudRepository<User, String> {
    * @return a list of matching users that have the given email address
    * @since 1.0.0
    */
-  List<User> findUsersByEmail(String email);
+  List<User> findUsersByEmail(Email email);
 
   /**
    * Find a user entity by its user id.

@@ -26,17 +26,19 @@ public class UserDomainService {
   /**
    * Creates a new user in the user management context.
    *
-   * <p>Note: this will create a new domain event of type {@link UserRegistered}
+   * <p>Note: this will create a new domain event of type {@link UserRegistered}.
+   * This method is idempotent, if a user already exists with the given email, no new user
+   * will be created.
    *
    * @param fullName    the full name of the user
    * @param email       a valid email address
    * @param password the raw password desired by the user
    * @since 1.0.0
    */
-  public void createUser(FullName fullName, Email email, EncryptedPassword password) throws UserExistsException {
-    // First check, if a user with the provided email already exists
-    if (userRepository.findByEmail(email.address()).isPresent()) {
-      throw UserExistsException.create();
+  public void createUser(FullName fullName, Email email, EncryptedPassword password) {
+    // Ensure idempotent behaviour of the service
+    if (userRepository.findByEmail(email).isPresent()) {
+      return;
     }
     var domainEventPublisher = DomainEventPublisher.instance();
     var user = User.create(fullName, email, password);
@@ -45,16 +47,5 @@ public class UserDomainService {
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().name(),
         user.getEmail().address());
     domainEventPublisher.publish(userCreatedEvent);
-  }
-
-  public static class UserExistsException extends ApplicationException {
-
-    private static UserExistsException create() {
-      return new UserExistsException();
-    }
-
-    private UserExistsException() {
-      super();
-    }
   }
 }
