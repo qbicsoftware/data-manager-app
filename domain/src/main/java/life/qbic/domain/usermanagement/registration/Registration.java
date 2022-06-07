@@ -78,6 +78,7 @@ public class Registration implements RegisterUserInput {
           email, rawPassword);
       if (registrationResponse.hasFailures()) {
         registerUserOutput.onFailure(build(registrationResponse));
+        return;
       }
       registerUserOutput.onSuccess();
     } catch (Exception e) {
