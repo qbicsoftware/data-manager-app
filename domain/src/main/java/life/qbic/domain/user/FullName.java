@@ -3,7 +3,7 @@ package life.qbic.domain.user;
 import java.util.Objects;
 
 /**
- * <b>Full name class</b>
+ * <b>Full name</b>
  * <p>
  * Represents a full name of a user.
  *
