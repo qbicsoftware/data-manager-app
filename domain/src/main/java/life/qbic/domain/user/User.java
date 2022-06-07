@@ -9,15 +9,10 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import jdk.jshell.spi.ExecutionControl.UserException;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
-import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
-import life.qbic.domain.usermanagement.policies.PasswordPolicy;
-import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
-import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
  * <b>User class</b>
@@ -67,8 +62,7 @@ public class User implements Serializable {
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(FullName fullName, Email email, EncryptedPassword encryptedPassword)
-      throws UserException {
+  public static User create(FullName fullName, Email email, EncryptedPassword encryptedPassword) {
     String uuid = String.valueOf(UUID.randomUUID());
     var user = new User(fullName);
     user.setEmail(email);

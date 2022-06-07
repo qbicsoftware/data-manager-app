@@ -81,7 +81,9 @@ class RegistrationSpec extends Specification {
         then:
         1 * useCaseOutput.onSuccess()
         0 * useCaseOutput.onFailure(_ as String)
-        testStorage.findUsersByEmail(newUser.email.address()).get(0).fullName == newUser.fullName
+        def storedUser = testStorage.findUsersByEmail(newUser.email.address()).get(0)
+        storedUser.getFullName() == newUser.getFullName()
+        !storedUser.getId().isBlank()
 
     }
 
@@ -92,7 +94,7 @@ class RegistrationSpec extends Specification {
         @Override
         List<User> findUsersByEmail(String email) {
             return users.stream()
-                    .filter((User user) -> { user.getEmail().address().equals(email) }).collect()
+                    .filter((User user) -> { user.getEmail().address() == email }).collect()
         }
 
         @Override

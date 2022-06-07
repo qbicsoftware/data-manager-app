@@ -1,5 +1,7 @@
 package life.qbic.domain.user;
 
+import java.util.Objects;
+
 /**
  * <b><class short description - 1 Line!></b>
  *
@@ -29,4 +31,20 @@ public class FullName {
     return fullName;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    FullName fullName1 = (FullName) o;
+    return Objects.equals(fullName, fullName1.fullName);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fullName);
+  }
 }
