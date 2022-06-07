@@ -1,6 +1,8 @@
 package life.qbic.domain.user;
 
+import java.io.Serial;
 import java.util.Objects;
+import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordPolicy;
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
@@ -90,7 +92,10 @@ public class EncryptedPassword {
     return Objects.hash(encryptedPassword);
   }
 
-  public static class PasswordValidationException extends RuntimeException {
+  public static class PasswordValidationException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = -3732749830794920567L;
 
     PasswordValidationException() {
       super();

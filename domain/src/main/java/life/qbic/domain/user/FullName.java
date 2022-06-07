@@ -1,6 +1,8 @@
 package life.qbic.domain.user;
 
+import java.io.Serial;
 import java.util.Objects;
+import life.qbic.apps.datamanager.ApplicationException;
 
 /**
  * <b>Full name</b>
@@ -66,7 +68,10 @@ public class FullName {
     return Objects.hash(name);
   }
 
-  public static class InvalidFullNameException extends RuntimeException {
+  public static class InvalidFullNameException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = -7328021953844399851L;
 
     InvalidFullNameException() {
       super();
