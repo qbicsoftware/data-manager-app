@@ -213,6 +213,10 @@ public class User implements Serializable {
     }
   }
 
+  public boolean isActive() {
+    return active;
+  }
+
   public static class UserException extends RuntimeException {
 
     private final String reason;

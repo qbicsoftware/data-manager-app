@@ -1,6 +1,5 @@
 package life.qbic.views.login;
 
-import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
@@ -41,20 +40,20 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     addListener();
   }
   private void initFields() {
-    registeredLoginView.password.setHelperText("A password must be at least 8 characters");
-    registeredLoginView.password.setPattern(".{8,}");
-    registeredLoginView.password.setErrorMessage("Invalid Password");
-    registeredLoginView.email.setErrorMessage("Invalid Email");
+//    registeredLoginView.setPasswordHelperText("A password must be at least 8 characters");
+//    registeredLoginView.password.setPattern(".{8,}");
+//    registeredLoginView.password.setErrorMessage("Invalid Password");
+//    registeredLoginView.email.setErrorMessage("Invalid Email");
   }
 
   private void addListener() {
-    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
-    registeredLoginView.loginButton.addClickListener(
-        event -> {
-          resetMessages();
-          resetComponentErrors();
-          checkUserEmail(registeredLoginView.email.getValue());
-        });
+//    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
+//    registeredLoginView.loginButton.addClickListener(
+//        event -> {
+//          resetMessages();
+//          resetComponentErrors();
+//          checkUserEmail(registeredLoginView.email.getValue());
+//        });
     //ToDo Add forgot password Logic
   }
 
@@ -80,43 +79,43 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       checkUserPassword(foundUsers.get(0));
     } else {
       onEmailConfirmationFailure("Invalid Credentials");
-      registeredLoginView.email.setInvalid(true);
-      registeredLoginView.password.setInvalid(true);
+//      registeredLoginView.email.setInvalid(true);
+//      registeredLoginView.password.setInvalid(true);
     }
   }
 
   //ToDo This should be moved into a LoginUser Use Case
   private void checkUserPassword(User user) {
-    if (user.checkPassword(registeredLoginView.password.getValue().toCharArray())) {
-      //ToDo Move User to HelloWorldView after login
-    } else {
-      onEmailConfirmationFailure("Invalid Credentials");
-      registeredLoginView.email.setInvalid(true);
-      registeredLoginView.password.setInvalid(true);
-    }
+//    if (user.checkPassword(registeredLoginView.password.getValue().toCharArray())) {
+//      //ToDo Move User to HelloWorldView after login
+//    } else {
+//      onEmailConfirmationFailure("Invalid Credentials");
+//      registeredLoginView.email.setInvalid(true);
+//      registeredLoginView.password.setInvalid(true);
+//    }
   }
 
   private void resetMessages() {
-    registeredLoginView.errorMessage.setVisible(false);
-    registeredLoginView.confirmationInformationMessage.setVisible(false);
+//    registeredLoginView.errorMessage.setVisible(false);
+//    registeredLoginView.confirmationInformationMessage.setVisible(false);
   }
 
   private void resetComponentErrors() {
-    registeredLoginView.email.setInvalid(false);
-    registeredLoginView.password.setInvalid(false);
+//    registeredLoginView.email.setInvalid(false);
+//    registeredLoginView.password.setInvalid(false);
   }
 
   @Override
   public void onEmailConfirmationSuccess() {
     resetMessages();
-    registeredLoginView.confirmationInformationMessage.setVisible(true);
+//    registeredLoginView.confirmationInformationMessage.setVisible(true);
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
     resetMessages();
-    registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
-    registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
-    registeredLoginView.errorMessage.setVisible(true);
+//    registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
+//    registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
+//    registeredLoginView.errorMessage.setVisible(true);
   }
 }
