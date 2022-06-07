@@ -59,19 +59,21 @@ public class User implements Serializable {
    * created.
    *
    * <p>The object instance won't hold a reference to the original password char array, after it
-   * has
-   * been encrypted.
+   * has been encrypted.
    *
-   * @param fullName the full name of the user
-   * @param email    the email address of the user
+   * @param fullName          the full name of the user
+   * @param email             the email address of the user
+   * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(FullName fullName, Email email) throws UserException {
+  public static User create(FullName fullName, Email email, EncryptedPassword encryptedPassword)
+      throws UserException {
     String uuid = String.valueOf(UUID.randomUUID());
     var user = new User(fullName);
     user.setEmail(email);
     user.setId(uuid);
+    user.setEncryptedPassword(encryptedPassword);
     user.active = false;
 
     return user;
