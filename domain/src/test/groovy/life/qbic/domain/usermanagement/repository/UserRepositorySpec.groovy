@@ -1,5 +1,8 @@
 package life.qbic.domain.usermanagement.repository
 
+import life.qbic.domain.user.Email
+import life.qbic.domain.user.EncryptedPassword
+import life.qbic.domain.user.FullName
 import life.qbic.domain.user.User
 import spock.lang.Specification
 
@@ -69,9 +72,7 @@ class UserRepositorySpec extends Specification {
 
 
     static User createDummyUser() {
-        def user = User.create("Sven Svenson", "myexample@example.com")
-        user.setPassword("test1234".toCharArray())
-        user.setId(new Random().nextInt().toString())
+        def user = User.create(FullName.from("Test User"), Email.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
         return user
     }
 
