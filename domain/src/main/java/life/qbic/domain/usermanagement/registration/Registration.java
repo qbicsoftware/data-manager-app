@@ -30,7 +30,8 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been executed via {@link Registration#register(String, String, char[])}.
+   * after the use case has been executed via
+   * {@link Registration#register(String, String, char[])}.
    *
    * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0
@@ -89,15 +90,18 @@ public class Registration implements RegisterUserInput {
   private UserRegistrationException build(RegistrationResponse registrationResponse) {
     var builder = UserRegistrationException.builder();
 
-    for (Exception e : registrationResponse.failures()) {
-      if (e.getClass().isInstance(EmailValidationException.class))
-        builder.withEmailFormatException(e);
-      if (e.getClass().isInstance(PasswordValidationException.class))
-        builder.withInvalidPasswordException(e);
-      if (e.getClass().isInstance(InvalidFullNameException.class))
-        builder.withFullNameException(e);
-      else
+    for (RuntimeException e : registrationResponse.failures()) {
+      if (e instanceof EmailValidationException) {
+        builder.withEmailFormatException((EmailValidationException) e);
+      }
+      if (e instanceof PasswordValidationException) {
+        builder.withInvalidPasswordException((PasswordValidationException) e);
+      }
+      if (e instanceof InvalidFullNameException) {
+        builder.withFullNameException((InvalidFullNameException) e);
+      } else {
         builder.withUnexpectedException(e);
+      }
     }
     return builder.build();
   }
