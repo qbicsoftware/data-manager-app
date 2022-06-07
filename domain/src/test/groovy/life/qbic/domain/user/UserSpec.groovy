@@ -18,7 +18,7 @@ class UserSpec extends Specification {
     @Unroll
     def "When a new user is created, a unique identifier is assigned to the user"() {
         when:
-        User user = User.create(FullName.from("Test User"), Email.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
+        User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         then:
         !generatedUserIds.contains(user.getId())

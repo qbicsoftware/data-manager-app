@@ -10,8 +10,8 @@ import life.qbic.apps.datamanager.notifications.Notification;
 import life.qbic.apps.datamanager.notifications.NotificationService;
 import life.qbic.domain.events.DomainEventPublisher;
 import life.qbic.domain.events.DomainEventSubscriber;
-import life.qbic.domain.user.Email;
-import life.qbic.domain.user.Email.EmailValidationException;
+import life.qbic.domain.user.EmailAddress;
+import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
@@ -98,7 +98,7 @@ public final class UserRegistrationService {
       }
     });
 
-    var userEmail = Email.from(email);
+    var userEmail = EmailAddress.from(email);
     var userFullName = FullName.from(fullName);
     var userPassword = EncryptedPassword.from(rawPassword);
 
@@ -118,7 +118,7 @@ public final class UserRegistrationService {
     List<RuntimeException> failures = new ArrayList<>();
 
     try {
-      Email.from(email);
+      EmailAddress.from(email);
     } catch (EmailValidationException e) {
       failures.add(e);
     }

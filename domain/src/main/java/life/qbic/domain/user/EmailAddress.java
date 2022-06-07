@@ -8,7 +8,7 @@ import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
 import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
- * <b>Email</b>
+ * <b>EmailAddress</b>
  * <p>
  * Represents a valid email address, specified by RFC5322.
  * <p>
@@ -16,7 +16,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  *
  * @since 1.0.0
  */
-public class Email {
+public class EmailAddress {
 
   private String address;
 
@@ -31,17 +31,17 @@ public class Email {
    *                                  RFC5322
    * @since 1.0.0
    */
-  public static Email from(String s) throws EmailValidationException {
+  public static EmailAddress from(String s) throws EmailValidationException {
     PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(s);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
       throw new EmailValidationException(policyCheckReport.reason());
     }
-    var email = new Email();
+    var email = new EmailAddress();
     email.set(s);
     return email;
   }
 
-  private Email() {
+  private EmailAddress() {
     super();
   }
 
@@ -67,8 +67,8 @@ public class Email {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Email email = (Email) o;
-    return address.equals(email.address());
+    EmailAddress emailAddress = (EmailAddress) o;
+    return address.equals(emailAddress.address());
   }
 
   @Override

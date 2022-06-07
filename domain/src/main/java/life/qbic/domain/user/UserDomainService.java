@@ -26,21 +26,21 @@ public class UserDomainService {
    * Creates a new user in the user management context.
    *
    * <p>Note: this will create a new domain event of type {@link UserRegistered}.
-   * This method is idempotent, if a user already exists with the given email, no new user
+   * This method is idempotent, if a user already exists with the given emailAddress, no new user
    * will be created.
    *
    * @param fullName    the full name of the user
-   * @param email       a valid email address
+   * @param emailAddress       a valid emailAddress address
    * @param password the raw password desired by the user
    * @since 1.0.0
    */
-  public void createUser(FullName fullName, Email email, EncryptedPassword password) {
+  public void createUser(FullName fullName, EmailAddress emailAddress, EncryptedPassword password) {
     // Ensure idempotent behaviour of the service
-    if (userRepository.findByEmail(email).isPresent()) {
+    if (userRepository.findByEmail(emailAddress).isPresent()) {
       return;
     }
     var domainEventPublisher = DomainEventPublisher.instance();
-    var user = User.create(fullName, email, password);
+    var user = User.create(fullName, emailAddress, password);
     userRepository.addUser(user);
 
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().name(),

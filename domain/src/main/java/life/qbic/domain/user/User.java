@@ -36,7 +36,7 @@ public class User implements Serializable {
   private FullName fullName;
 
   @Convert(converter = EmailConverter.class)
-  private Email email;
+  private EmailAddress emailAddress;
 
   @Convert(converter = PasswordConverter.class)
   private EncryptedPassword encryptedPassword;
@@ -57,15 +57,15 @@ public class User implements Serializable {
    * has been encrypted.
    *
    * @param fullName          the full name of the user
-   * @param email             the email address of the user
+   * @param emailAddress             the emailAddress address of the user
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(FullName fullName, Email email, EncryptedPassword encryptedPassword) {
+  public static User create(FullName fullName, EmailAddress emailAddress, EncryptedPassword encryptedPassword) {
     String uuid = String.valueOf(UUID.randomUUID());
     var user = new User(fullName);
-    user.setEmail(email);
+    user.setEmail(emailAddress);
     user.setId(uuid);
     user.setEncryptedPassword(encryptedPassword);
     user.active = false;
@@ -79,13 +79,13 @@ public class User implements Serializable {
    *
    * @param encryptedPassword the encrypted password
    * @param fullName          the full name
-   * @param email             the email
+   * @param emailAddress             the emailAddress
    * @return an object instance of the user
    * @since 1.0.0
    */
-  protected static User of(EncryptedPassword encryptedPassword, FullName fullName, Email email) {
+  protected static User of(EncryptedPassword encryptedPassword, FullName fullName, EmailAddress emailAddress) {
     var user = new User(fullName);
-    user.setEmail(email);
+    user.setEmail(emailAddress);
     user.setEncryptedPassword(encryptedPassword);
     return user;
   }
@@ -99,7 +99,7 @@ public class User implements Serializable {
     return "User{" +
         "id='" + id + '\'' +
         ", fullName=" + fullName +
-        ", email=" + email +
+        ", emailAddress=" + emailAddress +
         ", encryptedPassword=" + encryptedPassword +
         ", active=" + active +
         '}';
@@ -120,13 +120,13 @@ public class User implements Serializable {
   }
 
   /**
-   * Sets the email address for the current user.
+   * Sets the emailAddress address for the current user.
    *
-   * @param email the email address of the user
+   * @param emailAddress the emailAddress address of the user
    * @since 1.0.0
    */
-  private void setEmail(Email email) {
-    this.email = email;
+  private void setEmail(EmailAddress emailAddress) {
+    this.emailAddress = emailAddress;
   }
 
   private void setId(String id) {
@@ -137,8 +137,8 @@ public class User implements Serializable {
     return this.id;
   }
 
-  public Email getEmail() {
-    return this.email;
+  public EmailAddress getEmail() {
+    return this.emailAddress;
   }
 
   public FullName getFullName() {
@@ -146,10 +146,10 @@ public class User implements Serializable {
   }
 
   /**
-   * Confirms the email address.
+   * Confirms the emailAddress address.
    */
   public void confirmEmail() {
-    UserEmailConfirmed event = UserEmailConfirmed.create(id, email.address());
+    UserEmailConfirmed event = UserEmailConfirmed.create(id, emailAddress.address());
     DomainEventPublisher.instance().publish(event);
     activate();
   }

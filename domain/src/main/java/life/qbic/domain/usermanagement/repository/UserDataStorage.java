@@ -2,7 +2,7 @@ package life.qbic.domain.usermanagement.repository;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.domain.user.Email;
+import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
 
 /**
@@ -15,18 +15,18 @@ import life.qbic.domain.user.User;
 public interface UserDataStorage {
 
   /**
-   * Searches for any available user entities with the provided email address.
+   * Searches for any available user entities with the provided emailAddress address.
    *
    * <p>Note, that the implementation must not make any assumptions by number of occurrences, even
-   * for the email address. The implementation shall return any user entry with the provided email
+   * for the emailAddress address. The implementation shall return any user entry with the provided emailAddress
    * address and leave the logic to the application layer.
    *
-   * @param email the email address to use as search filter
+   * @param emailAddress the emailAddress address to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
-   *     the provided email address
+   *     the provided emailAddress address
    * @since 1.0.0
    */
-  List<User> findUsersByEmail(Email email);
+  List<User> findUsersByEmail(EmailAddress emailAddress);
 
   /**
    * Saves a {@link User} entity permanently.

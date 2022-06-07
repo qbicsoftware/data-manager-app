@@ -34,14 +34,14 @@ class RegistrationSpec extends Specification {
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
         given: "A repository with one user entry"
-        def testUser = User.create(FullName.from("Mr Somebody"), Email.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
+        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
         testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create(FullName.from("Mr Somebody"), Email.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
+        def newUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         and: "a the use case with output"
         def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), UserRepository.getInstance(Mock(UserDataStorage)), Mock(EventStore.class)))
@@ -59,14 +59,14 @@ class RegistrationSpec extends Specification {
 
     def "When a user is not yet registered with a given email address, register the user"() {
         given: "A repository with one user entry"
-        def testUser = User.create(FullName.from("Mr Somebody"), Email.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
+        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
         testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create(FullName.from("Mr Nobody"), Email.from("no@body.com"), EncryptedPassword.from("test1234".toCharArray()))
+        def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         and: "a the use case with output"
         def registration = new Registration(new UserRegistrationService(new NotificationService(Mock(MessageBusInterface)), UserRepository.getInstance(Mock(UserDataStorage)), Mock(EventStore.class)))
@@ -90,7 +90,7 @@ class RegistrationSpec extends Specification {
         private List<User> users = []
 
         @Override
-        List<User> findUsersByEmail(Email email) {
+        List<User> findUsersByEmail(EmailAddress email) {
             return users.stream()
                     .filter((User user) -> { user.getEmail().equals( email) }).collect()
         }

@@ -1,6 +1,7 @@
 package life.qbic.domain.usermanagement.repository
 
-import life.qbic.domain.user.Email
+
+import life.qbic.domain.user.EmailAddress
 import life.qbic.domain.user.EncryptedPassword
 import life.qbic.domain.user.FullName
 import life.qbic.domain.user.User
@@ -16,12 +17,12 @@ class UserRepositorySpec extends Specification {
     def "Given a repository that contains more than one entry with the same email, throw a runtime exception"() {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
-        storage.findUsersByEmail(_ as Email) >> [createDummyUser(), createDummyUser()]
+        storage.findUsersByEmail(_ as EmailAddress) >> [createDummyUser(), createDummyUser()]
 
         UserRepository repository = new UserRepository(storage)
 
         when:
-        repository.findByEmail(Email.from("my.example@example.com"))
+        repository.findByEmail(EmailAddress.from("my.example@example.com"))
 
         then:
         thrown(RuntimeException)
@@ -31,11 +32,11 @@ class UserRepositorySpec extends Specification {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
-        storage.findUsersByEmail(_ as Email) >> [user]
+        storage.findUsersByEmail(_ as EmailAddress) >> [user]
         UserRepository repository = new UserRepository(storage)
 
         when:
-        def matchingUser = repository.findByEmail(Email.from("my.example@example.com"))
+        def matchingUser = repository.findByEmail(EmailAddress.from("my.example@example.com"))
 
         then:
         matchingUser.get().getId().equalsIgnoreCase(user.getId())
@@ -45,11 +46,11 @@ class UserRepositorySpec extends Specification {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
-        storage.findUsersByEmail(_ as Email) >> []
+        storage.findUsersByEmail(_ as EmailAddress) >> []
         UserRepository repository = new UserRepository(storage)
 
         when:
-        def matchingUser = repository.findByEmail(Email.from("not.existing@example.com"))
+        def matchingUser = repository.findByEmail(EmailAddress.from("not.existing@example.com"))
 
         then:
         matchingUser.isEmpty()
@@ -72,7 +73,7 @@ class UserRepositorySpec extends Specification {
 
 
     static User createDummyUser() {
-        def user = User.create(FullName.from("Test User"), Email.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
+        def user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
         return user
     }
 

@@ -5,7 +5,7 @@ import com.vaadin.flow.server.VaadinServletRequest;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.domain.user.Email;
+import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +36,7 @@ public class SecurityService implements Serializable {
 
   public Optional<User> get() {
     return getAuthentication()
-        .flatMap(authentication -> userRepository.findByEmail(Email.from(authentication.getName())));
+        .flatMap(authentication -> userRepository.findByEmail(EmailAddress.from(authentication.getName())));
   }
 
   public void logout() {
