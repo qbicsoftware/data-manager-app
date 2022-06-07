@@ -1,5 +1,6 @@
 package life.qbic.domain.usermanagement.registration;
 
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
 import life.qbic.domain.user.Email.EmailValidationException;

@@ -1,8 +1,6 @@
 package life.qbic.domain.user;
 
-import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.events.DomainEventPublisher;
-import life.qbic.domain.usermanagement.User.UserException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
