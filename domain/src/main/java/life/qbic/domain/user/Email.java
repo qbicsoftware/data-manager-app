@@ -1,6 +1,8 @@
 package life.qbic.domain.user;
 
+import java.io.Serial;
 import java.util.Objects;
+import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
 import life.qbic.domain.usermanagement.policies.PolicyStatus;
@@ -74,7 +76,10 @@ public class Email {
     return Objects.hash(address);
   }
 
-  public static class EmailValidationException extends RuntimeException {
+  public static class EmailValidationException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = -4253849498611530692L;
 
     EmailValidationException() {
       super();
