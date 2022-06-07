@@ -1,5 +1,6 @@
 package life.qbic.domain.user;
 
+import java.util.Objects;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 import life.qbic.domain.usermanagement.policies.PasswordPolicy;
 import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
@@ -62,8 +63,30 @@ public class EncryptedPassword {
     return PasswordEncryptionPolicy.create().encrypt(rawPassword);
   }
 
+  /**
+   * Returns the passwords encrypted hash value
+   * @return
+   * @since 1.0.0
+   */
   public String hash() {
     return this.encryptedPassword;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    EncryptedPassword that = (EncryptedPassword) o;
+    return Objects.equals(encryptedPassword, that.encryptedPassword);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(encryptedPassword);
   }
 
   public static class PasswordValidationException extends RuntimeException {
