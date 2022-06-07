@@ -247,7 +247,7 @@ public final class UserRegistrationService {
       allExceptions =
           exceptions.length > 0 ? new Exception[exceptions.length + 1] : new Exception[1];
       allExceptions[0] = e1;
-      for (int i = 0; i <= exceptions.length; i++) {
+      for (int i = 0; i < exceptions.length; i++) {
         allExceptions[i + 1] = exceptions[i];
       }
       this.exceptions = Arrays.stream(allExceptions).toList();
