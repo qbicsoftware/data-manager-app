@@ -6,7 +6,7 @@ import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
 import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
- * <b>Email class</b>
+ * <b>Email</b>
  * <p>
  * Represents a valid email address, specified by RFC5322.
  * <p>
