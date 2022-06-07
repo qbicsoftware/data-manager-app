@@ -11,9 +11,17 @@ import spock.lang.Specification
  */
 class FullNameSpec extends Specification {
 
-    def "Given an empty or blank name, throw an IllegalArgumentException"() {
+    def "Given an blank name, throw an IllegalArgumentException"() {
         when:
         FullName.from("  ")
+
+        then:
+        thrown(FullName.InvalidFullNameException)
+    }
+
+    def "Given an empty name, throw an IllegalArgumentException"() {
+        when:
+        FullName.from("")
 
         then:
         thrown(FullName.InvalidFullNameException)
