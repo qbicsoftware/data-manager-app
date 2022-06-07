@@ -75,6 +75,7 @@ public class Registration implements RegisterUserInput {
     } catch (UserRegistrationException e) {
       registerUserOutput.onFailure(e);
     } catch (Exception e) {
+      e.printStackTrace();
       registerUserOutput.onFailure("Unexpected error occurred.");
     }
   }
