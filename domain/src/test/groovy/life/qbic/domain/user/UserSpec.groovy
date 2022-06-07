@@ -1,6 +1,6 @@
 package life.qbic.domain.user
 
-import life.qbic.domain.user.User
+
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll

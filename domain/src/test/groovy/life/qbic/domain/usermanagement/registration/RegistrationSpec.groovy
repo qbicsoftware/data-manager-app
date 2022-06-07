@@ -5,12 +5,8 @@ import life.qbic.apps.datamanager.notifications.MessageBusInterface
 import life.qbic.apps.datamanager.notifications.NotificationService
 import life.qbic.apps.datamanager.services.UserRegistrationException
 import life.qbic.apps.datamanager.services.UserRegistrationService
-import life.qbic.domain.user.Email
-import life.qbic.domain.user.EncryptedPassword
-import life.qbic.domain.user.FullName
+import life.qbic.domain.user.*
 import life.qbic.domain.usermanagement.DomainRegistry
-import life.qbic.domain.user.User
-import life.qbic.domain.user.UserDomainService
 import life.qbic.domain.usermanagement.repository.UserDataStorage
 import life.qbic.domain.usermanagement.repository.UserRepository
 import spock.lang.Shared

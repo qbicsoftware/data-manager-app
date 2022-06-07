@@ -1,7 +1,5 @@
 package life.qbic.apps.datamanager;
 
-import java.util.List;
-
 /**
  * <b><class short description - 1 Line!></b>
  *
