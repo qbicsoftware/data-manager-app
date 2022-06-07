@@ -7,11 +7,11 @@ import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
 import life.qbic.domain.usermanagement.policies.PolicyStatus;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Encrypted Password</b>
+ * <p>
+ * Represents an encrypted user password.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EncryptedPassword {
 
@@ -65,6 +65,7 @@ public class EncryptedPassword {
 
   /**
    * Returns the passwords encrypted hash value
+   *
    * @return
    * @since 1.0.0
    */
