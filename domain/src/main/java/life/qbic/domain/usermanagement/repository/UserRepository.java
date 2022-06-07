@@ -3,6 +3,7 @@ package life.qbic.domain.usermanagement.repository;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
+import life.qbic.domain.user.Email;
 import life.qbic.domain.user.User;
 
 /**
@@ -54,7 +55,7 @@ public class UserRepository implements Serializable {
    * @throws RuntimeException if there is more than one user matching the email address
    * @since 1.0.0
    */
-  public Optional<User> findByEmail(String email) throws RuntimeException {
+  public Optional<User> findByEmail(Email email) throws RuntimeException {
     var matchingUsers = dataStorage.findUsersByEmail(email);
     if (matchingUsers.size() > 1) {
       throw new RuntimeException("More than one user entry with the same email exists!");
@@ -86,14 +87,14 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public boolean addUser(User user) {
-    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail().address())) {
+    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail())) {
       return false;
     }
     dataStorage.save(user);
     return true;
   }
 
-  private boolean doesUserExistWithEmail(String email) {
+  private boolean doesUserExistWithEmail(Email email) {
     return findByEmail(email).isPresent();
   }
 

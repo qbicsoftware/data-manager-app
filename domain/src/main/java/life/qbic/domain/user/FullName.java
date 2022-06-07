@@ -51,7 +51,7 @@ public class FullName {
     return Objects.hash(fullName);
   }
 
-  static class InvalidFullNameException extends RuntimeException {
+  public static class InvalidFullNameException extends RuntimeException {
     InvalidFullNameException() {
       super();
     }
