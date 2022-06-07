@@ -9,15 +9,15 @@ import javax.persistence.AttributeConverter;
  *
  * @since <version tag>
  */
-public class EmailConverter implements AttributeConverter<Email, String> {
+public class EmailConverter implements AttributeConverter<EmailAddress, String> {
 
   @Override
-  public String convertToDatabaseColumn(Email email) {
-    return email.address();
+  public String convertToDatabaseColumn(EmailAddress emailAddress) {
+    return emailAddress.address();
   }
 
   @Override
-  public Email convertToEntityAttribute(String s) {
-    return Email.from(s);
+  public EmailAddress convertToEntityAttribute(String s) {
+    return EmailAddress.from(s);
   }
 }

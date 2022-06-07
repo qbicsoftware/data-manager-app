@@ -124,7 +124,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void createInformationDivs() {
-    confirmationInformationMessage = new InformationMessage("Email address confirmed",
+    confirmationInformationMessage = new InformationMessage("EmailAddress address confirmed",
         "You can now login with your credentials.");
     confirmationInformationMessage.setVisible(false);
   }
@@ -155,7 +155,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void createEmailField() {
-    email = new EmailField("Email");
+    email = new EmailField("EmailAddress");
   }
 
   private void createPasswordField() {

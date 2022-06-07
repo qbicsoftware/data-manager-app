@@ -1,7 +1,7 @@
 package life.qbic.domain.usermanagement.registration;
 
 /**
- * <b>Confirm Email use case output</b>
+ * <b>Confirm EmailAddress use case output</b>
  *
  * @since 1.0.0
  */

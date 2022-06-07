@@ -4,7 +4,7 @@ import java.util.Objects;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 
 /**
- * <b>Email Address Confirmation use case</b>
+ * <b>EmailAddress Address Confirmation use case</b>
  * <p>
  * Activates a user with a given user id.
  *

@@ -45,7 +45,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     registeredLoginView.password.setHelperText("A password must be at least 8 characters");
     registeredLoginView.password.setPattern(".{8,}");
     registeredLoginView.password.setErrorMessage("Invalid EncryptedPassword");
-    registeredLoginView.email.setErrorMessage("Invalid Email");
+    registeredLoginView.email.setErrorMessage("Invalid EmailAddress");
   }
 
   private void addListener() {
@@ -116,7 +116,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   @Override
   public void onEmailConfirmationFailure(String reason) {
     resetMessages();
-    registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
+    registeredLoginView.errorMessage.titleTextSpan.setText("EmailAddress confirmation failed");
     registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
     registeredLoginView.errorMessage.setVisible(true);
   }
