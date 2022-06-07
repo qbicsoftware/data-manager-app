@@ -11,7 +11,7 @@ import java.util.Objects;
  */
 public class FullName {
 
-  private String fullName;
+  private String name;
 
   /**
    * Creates a full name object instance from a String representation.
@@ -27,7 +27,7 @@ public class FullName {
       throw new InvalidFullNameException("Name must not be empty or blank.");
     }
     var fullName = new FullName();
-    fullName.setFullName(s);
+    fullName.setName(s);
     return fullName;
   }
 
@@ -35,8 +35,8 @@ public class FullName {
     super();
   }
 
-  private void setFullName(String s) {
-    this.fullName = s;
+  private void setName(String s) {
+    this.name = s;
   }
 
   /**
@@ -46,7 +46,7 @@ public class FullName {
    * @since 1.0.0
    */
   public String name() {
-    return fullName;
+    return name;
   }
 
   @Override
@@ -58,12 +58,12 @@ public class FullName {
       return false;
     }
     FullName fullName1 = (FullName) o;
-    return Objects.equals(fullName, fullName1.fullName);
+    return Objects.equals(name, fullName1.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(fullName);
+    return Objects.hash(name);
   }
 
   public static class InvalidFullNameException extends RuntimeException {
