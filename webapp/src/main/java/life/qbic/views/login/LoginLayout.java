@@ -1,19 +1,19 @@
 package life.qbic.views.login;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.login.LoginForm;
-import com.vaadin.flow.component.login.LoginI18n;
+import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
-import java.util.List;
 import life.qbic.views.landing.LandingPageLayout;
+import life.qbic.views.login.ConfigurableLoginForm.ErrorMessage;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,10 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Login")
 @Route(value = "login", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
-public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
+public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
-  public LoginForm loginForm;
+  public ConfigurableLoginForm loginForm;
+
   public Span registerSpan;
 
   private final LoginHandlerInterface viewHandler;
@@ -44,7 +45,7 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   private void initLayout() {
     contentLayout = new VerticalLayout();
-    this.loginForm = new LoginForm();
+    this.loginForm = new ConfigurableLoginForm();
     loginForm.setAction("login");
 
     createSpan();
@@ -60,37 +61,29 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   private void styleLayout() {
     styleFormLayout();
-
-    LoginI18n i18n = LoginI18n.createDefault();
-    i18n.getForm().setUsername("Email");
-    loginForm.setI18n(i18n);
-
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    loginForm.setUsernameText("Email");
   }
 
   private void styleFormLayout() {
     registerSpan.addClassName("p-l");
     contentLayout.setWidthFull();
     contentLayout.setPadding(false);
-    contentLayout
-        .getElement()
-        .getClassList()
-        .addAll(
-            List.of(
-                "bg-base",
-                "border",
-                "border-contrast-10",
-                "rounded-m",
-                "box-border",
-                "flex",
-                "flex-col",
-                "w-full",
-                "text-s",
-                "shadow-l",
-                "min-width-300px",
-                "max-width-15vw"));
+    contentLayout.addClassNames(
+        "bg-base",
+        "border",
+        "border-contrast-10",
+        "rounded-m",
+        "box-border",
+        "flex",
+        "flex-col",
+        "w-full",
+        "text-s",
+        "shadow-l",
+        "min-width-300px",
+        "max-width-15vw");
   }
 
   private void createSpan() {
@@ -98,8 +91,22 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
     registerSpan = new Span(new Text("Need an account? "), routerLink);
   }
 
+  public void hideError() {
+    loginForm.hideError();
+  }
+
+  public void showError(ErrorMessage errorMessage) {
+    loginForm.setError(errorMessage);
+    loginForm.showError();
+  }
+
+  public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
+    loginForm.getAction();
+    loginForm.addLoginListener(loginListener);
+  }
+
   @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    viewHandler.handle(beforeEnterEvent);
+  public void setParameter(BeforeEvent event, String parameter) {
+    viewHandler.handle(event);
   }
 }

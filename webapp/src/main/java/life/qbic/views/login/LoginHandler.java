@@ -3,10 +3,10 @@ package life.qbic.views.login;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
-import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.usermanagement.persistence.UserJpaRepository;
+import life.qbic.views.login.ConfigurableLoginForm.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -36,25 +36,36 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       registeredLoginView = loginView;
     }
     initFields();
-    resetMessages();
     addListener();
   }
+
   private void initFields() {
-//    registeredLoginView.setPasswordHelperText("A password must be at least 8 characters");
-//    registeredLoginView.password.setPattern(".{8,}");
-//    registeredLoginView.password.setErrorMessage("Invalid Password");
-//    registeredLoginView.email.setErrorMessage("Invalid Email");
+    resetErrorMessages();
+  }
+
+  private void resetErrorMessages() {
+    setDefaultError();
+    hideError();
+  }
+
+  private void hideError() {
+    registeredLoginView.hideError();
+  }
+
+  private void setDefaultError() {
+    registeredLoginView.showError(new ErrorMessage(
+        "Incorrect username or password",
+        "Check that you have entered the correct username and password and try again."
+    ));
   }
 
   private void addListener() {
-//    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
-//    registeredLoginView.loginButton.addClickListener(
-//        event -> {
-//          resetMessages();
-//          resetComponentErrors();
-//          checkUserEmail(registeredLoginView.email.getValue());
-//        });
+    registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     //ToDo Add forgot password Logic
+  }
+
+  private void onLoginSucceeded() {
+    resetErrorMessages();
   }
 
   @Override
@@ -71,51 +82,13 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     }
   }
 
-  //ToDo this should be moved into a LoginUser Use Case
-  private void checkUserEmail(String email) {
-    //ToDo Check If fields are filled before parsing database
-    List<User> foundUsers = userRepository.findUsersByEmail(email);
-    if (!foundUsers.isEmpty()) {
-      checkUserPassword(foundUsers.get(0));
-    } else {
-      onEmailConfirmationFailure("Invalid Credentials");
-//      registeredLoginView.email.setInvalid(true);
-//      registeredLoginView.password.setInvalid(true);
-    }
-  }
-
-  //ToDo This should be moved into a LoginUser Use Case
-  private void checkUserPassword(User user) {
-//    if (user.checkPassword(registeredLoginView.password.getValue().toCharArray())) {
-//      //ToDo Move User to HelloWorldView after login
-//    } else {
-//      onEmailConfirmationFailure("Invalid Credentials");
-//      registeredLoginView.email.setInvalid(true);
-//      registeredLoginView.password.setInvalid(true);
-//    }
-  }
-
-  private void resetMessages() {
-//    registeredLoginView.errorMessage.setVisible(false);
-//    registeredLoginView.confirmationInformationMessage.setVisible(false);
-  }
-
-  private void resetComponentErrors() {
-//    registeredLoginView.email.setInvalid(false);
-//    registeredLoginView.password.setInvalid(false);
-  }
-
   @Override
   public void onEmailConfirmationSuccess() {
-    resetMessages();
-//    registeredLoginView.confirmationInformationMessage.setVisible(true);
+    resetErrorMessages();
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    resetMessages();
-//    registeredLoginView.errorMessage.titleTextSpan.setText("Email confirmation failed");
-//    registeredLoginView.errorMessage.descriptionTextSpan.setText(reason);
-//    registeredLoginView.errorMessage.setVisible(true);
+    registeredLoginView.showError(new ErrorMessage("Email confirmation failed", reason));
   }
 }
