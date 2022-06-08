@@ -24,10 +24,10 @@ class ConfigurableLoginForm extends LoginForm {
     LoginI18n loginI18n = LoginI18n.createDefault();
     if (errorTitle != null && !errorTitle.isBlank()
         || errorMessage != null && !errorMessage.isBlank()) {
-      LoginI18n.ErrorMessage errorMessage = new LoginI18n.ErrorMessage();
-      errorMessage.setMessage(this.errorMessage);
-      errorMessage.setTitle(this.errorTitle);
-      loginI18n.setErrorMessage(errorMessage);
+      LoginI18n.ErrorMessage error = new LoginI18n.ErrorMessage();
+      error.setMessage(this.errorMessage);
+      error.setTitle(this.errorTitle);
+      loginI18n.setErrorMessage(error);
     }
     Form form = loginI18n.getForm();
     if (usernameText != null && !usernameText.isBlank()) {
