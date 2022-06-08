@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
@@ -106,7 +107,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   @Override
-  public void setParameter(BeforeEvent event, String parameter) {
+  public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
     viewHandler.handle(event);
   }
 }
