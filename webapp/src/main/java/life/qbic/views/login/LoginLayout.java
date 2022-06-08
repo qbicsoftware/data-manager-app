@@ -30,9 +30,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
-  public ConfigurableLoginForm loginForm;
 
-  public Span registerSpan;
+  private ConfigurableLoginForm loginForm;
+
+  private Span registerSpan;
 
   private final LoginHandlerInterface viewHandler;
 

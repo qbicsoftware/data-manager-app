@@ -1,5 +1,6 @@
 package life.qbic.views.login;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void onLoginSucceeded() {
     resetErrorMessages();
+    UI.getCurrent().navigate("/hello");
   }
 
   @Override
