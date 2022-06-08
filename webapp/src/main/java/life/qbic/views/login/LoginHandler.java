@@ -23,6 +23,10 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private LoginLayout registeredLoginView;
 
   private final ConfirmEmailInput confirmEmailInput;
+  private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
+      "Incorrect username or password",
+      "Check that you have entered the correct username and password and try again."
+  );
 
   LoginHandler(@Autowired UserJpaRepository repository,
       @Autowired ConfirmEmailInput confirmEmailInput) {
@@ -44,7 +48,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void resetErrorMessages() {
-    setDefaultError();
+    showDefaultError();
     hideError();
   }
 
@@ -52,16 +56,13 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     registeredLoginView.hideError();
   }
 
-  private void setDefaultError() {
-    registeredLoginView.showError(new ErrorMessage(
-        "Incorrect username or password",
-        "Check that you have entered the correct username and password and try again."
-    ));
+  private void showDefaultError() {
+    registeredLoginView.showError(INCORRECT_USERNAME_OR_PASSWORD);
   }
 
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
-    //ToDo Add forgot password Logic
+    registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
   }
 
   private void onLoginSucceeded() {
@@ -74,7 +75,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
         .getParameters();
     if (queryParams.containsKey("error")) {
       //Todo Replace this with a distinct error message in the loginView
-      onEmailConfirmationFailure("The provided information was invalid");
+      showDefaultError();
     }
     if (queryParams.containsKey("confirmEmail")) {
       String userId = queryParams.get("confirmEmail").iterator().next();

@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -102,8 +103,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
-    loginForm.getAction();
     loginForm.addLoginListener(loginListener);
+  }
+
+  public void addForgotPasswordListener(ComponentEventListener<ForgotPasswordEvent> listener) {
+    loginForm.addForgotPasswordListener(listener);
   }
 
   @Override
