@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.Map;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
-import life.qbic.usermanagement.persistence.UserJpaRepository;
-import life.qbic.views.login.ConfigurableLoginForm.ErrorMessage;
+import life.qbic.views.login.ConfigurableLoginForm.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,19 +18,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
-  private final UserJpaRepository userRepository;
-
   private LoginLayout registeredLoginView;
 
   private final ConfirmEmailInput confirmEmailInput;
-  private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
+  private static final Message INCORRECT_USERNAME_OR_PASSWORD = new Message(
       "Incorrect username or password",
       "Check that you have entered the correct username and password and try again."
   );
 
-  LoginHandler(@Autowired UserJpaRepository repository,
-      @Autowired ConfirmEmailInput confirmEmailInput) {
-    this.userRepository = repository;
+  private static final Message EMAIL_CONFIRMATION_SUCCESS = new Message(
+      "Email address confirmed",
+      "You can now login with your credentials."
+  );
+
+  LoginHandler(@Autowired ConfirmEmailInput confirmEmailInput) {
     this.confirmEmailInput = confirmEmailInput;
   }
 
@@ -46,11 +46,16 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void initFields() {
     resetErrorMessages();
+    resetInformationMessages();
   }
 
   private void resetErrorMessages() {
     showDefaultError();
     hideError();
+  }
+
+  private void resetInformationMessages() {
+    registeredLoginView.resetInformation();
   }
 
   private void hideError() {
@@ -61,6 +66,10 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     registeredLoginView.showError(INCORRECT_USERNAME_OR_PASSWORD);
   }
 
+  private void showEmailConfirmationInformation() {
+    registeredLoginView.showInformation(EMAIL_CONFIRMATION_SUCCESS);
+  }
+
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
@@ -68,6 +77,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void onLoginSucceeded() {
     resetErrorMessages();
+    resetInformationMessages();
     UI.getCurrent().navigate("/hello");
   }
 
@@ -88,10 +98,12 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   @Override
   public void onEmailConfirmationSuccess() {
     resetErrorMessages();
+    showEmailConfirmationInformation();
+
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    registeredLoginView.showError(new ErrorMessage("Email confirmation failed", reason));
+    registeredLoginView.showError(new Message("Email confirmation failed", reason));
   }
 }

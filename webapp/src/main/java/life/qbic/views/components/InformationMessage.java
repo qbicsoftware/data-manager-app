@@ -1,14 +1,18 @@
 package life.qbic.views.components;
 
+import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
+
 /**
- * <b> A InformationMessage component which shows a primarily styled information message with a title and a detailed
- * description. </b>
+ * <b> A InformationMessage component which shows a primarily styled information message with a
+ * title and a detailed description. </b>
  *
  * @since 1.0.0
  */
+
+@Tag("information-message")
 public class InformationMessage extends DisplayMessage {
 
   public InformationMessage(String titleText, String descriptionText) {

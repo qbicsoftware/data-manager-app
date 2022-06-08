@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.landing.LandingPageLayout;
-import life.qbic.views.login.ConfigurableLoginForm.ErrorMessage;
+import life.qbic.views.login.ConfigurableLoginForm.Message;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -53,7 +53,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     this.loginForm = new ConfigurableLoginForm();
     loginForm.setAction("login");
 
-    createSpan();
+    Span registerSpan = initRegisterSpan();
+    this.registerSpan = registerSpan;
 
     contentLayout.add(loginForm, registerSpan);
 
@@ -74,8 +75,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private void styleFormLayout() {
     registerSpan.addClassName("p-l");
-    contentLayout.setWidthFull();
     contentLayout.setPadding(false);
+    contentLayout.setSpacing(false);
     contentLayout.addClassNames(
         "bg-base",
         "border",
@@ -91,16 +92,16 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "max-width-15vw");
   }
 
-  private void createSpan() {
+  private Span initRegisterSpan() {
     RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), routerLink);
+    return new Span(new Text("Need an account? "), routerLink);
   }
 
   public void hideError() {
     loginForm.hideError();
   }
 
-  public void showError(ErrorMessage errorMessage) {
+  public void showError(Message errorMessage) {
     loginForm.setError(errorMessage);
     loginForm.showError();
   }
@@ -116,5 +117,13 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   @Override
   public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
     viewHandler.handle(event);
+  }
+
+  public void showInformation(Message message) {
+    loginForm.showInformation(message);
+  }
+
+  public void resetInformation() {
+    loginForm.resetInformation();
   }
 }
