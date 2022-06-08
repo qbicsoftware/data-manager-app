@@ -32,6 +32,7 @@ public class User implements Serializable {
   @Convert(converter = FullNameConverter.class)
   private FullName fullName;
 
+  @Column(name = "email")
   @Convert(converter = EmailConverter.class)
   private EmailAddress emailAddress;
 

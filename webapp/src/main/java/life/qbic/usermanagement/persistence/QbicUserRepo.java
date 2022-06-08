@@ -25,7 +25,7 @@ public interface QbicUserRepo extends CrudRepository<User, String> {
    * @return a list of matching users that have the given emailAddress address
    * @since 1.0.0
    */
-  List<User> findUsersByEmail(EmailAddress emailAddress);
+  List<User> findUsersByEmailAddress(EmailAddress emailAddress);
 
   /**
    * Find a user entity by its user id.
