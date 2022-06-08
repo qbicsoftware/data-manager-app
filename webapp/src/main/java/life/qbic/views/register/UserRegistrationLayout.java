@@ -17,13 +17,12 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.stream.Stream;
-import life.qbic.views.components.ErrorMessage;
-import life.qbic.views.components.InformationMessage;
+import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.stream.Stream;
+
 
 /**
  * <b> Defines the look of the registration layout. </b>
@@ -50,8 +49,6 @@ public class UserRegistrationLayout extends VerticalLayout {
   public ErrorMessage passwordTooShortMessage;
   public ErrorMessage errorMessage;
 
-  public InformationMessage confirmationInformationMessage;
-
   public ErrorMessage invalidCredentialsMessage;
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
@@ -73,7 +70,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void initLayout() {
     layoutTitle = new H2("Register");
 
-    createDivs();
+    createErrorDivs();
     styleEmailField();
     styleNameField();
     createPasswordField();
@@ -98,11 +95,6 @@ public class UserRegistrationLayout extends VerticalLayout {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void createDivs() {
-    createErrorDivs();
-    createInformationDivs();
-  }
-
   private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
@@ -116,12 +108,6 @@ public class UserRegistrationLayout extends VerticalLayout {
     passwordTooShortMessage.setVisible(false);
     invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided user credentials");
     invalidCredentialsMessage.setVisible(false);
-  }
-
-  private void createInformationDivs() {
-    confirmationInformationMessage = new InformationMessage("Confirmation successful",
-        "You can now login with your credentials");
-    confirmationInformationMessage.setVisible(false);
   }
 
   private void styleNameField() {
@@ -147,7 +133,6 @@ public class UserRegistrationLayout extends VerticalLayout {
         errorMessage,
         alreadyUsedEmailMessage,
         passwordTooShortMessage,
-        confirmationInformationMessage,
         invalidCredentialsMessage,
         fullName,
         email,

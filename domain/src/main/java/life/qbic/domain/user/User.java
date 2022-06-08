@@ -9,9 +9,6 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import life.qbic.domain.events.DomainEventPublisher;
-import life.qbic.domain.usermanagement.UserActivated;
-import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 
 /**
@@ -144,22 +141,6 @@ public class User implements Serializable {
   public FullName getFullName() {
     return this.fullName;
   }
-
-  /**
-   * Confirms the emailAddress address.
-   */
-  public void confirmEmail() {
-    UserEmailConfirmed event = UserEmailConfirmed.create(id, emailAddress.address());
-    DomainEventPublisher.instance().publish(event);
-    activate();
-  }
-
-  private void activate() {
-    this.active = true;
-    UserActivated event = UserActivated.create(id);
-    DomainEventPublisher.instance().publish(event);
-  }
-
 
   /**
    * Checks if a given password is correct for a user

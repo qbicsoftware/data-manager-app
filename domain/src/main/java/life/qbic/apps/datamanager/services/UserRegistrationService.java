@@ -3,7 +3,6 @@ package life.qbic.apps.datamanager.services;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
@@ -16,11 +15,7 @@ import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
 import life.qbic.domain.user.FullName.InvalidFullNameException;
-import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.UserActivated;
-import life.qbic.domain.usermanagement.UserEmailConfirmed;
-import life.qbic.domain.usermanagement.registration.UserNotFoundException;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 
@@ -144,70 +139,6 @@ public final class UserRegistrationService {
     } else {
       return RegistrationResponse.failureResponse(failures.get(0));
     }
-  }
-
-  /**
-   * Activates a user with the userId provided. If no user is matched then this method does
-   * nothing.
-   *
-   * @param userId the id of the user to be activated
-   * @throws UserNotFoundException when no user with the provided user id can be found.
-   * @since 1.0.0
-   */
-  public void confirmUserEmail(String userId) throws UserNotFoundException {
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
-      @Override
-      public Class<UserActivated> subscribedToEventType() {
-        return UserActivated.class;
-      }
-
-      @Override
-      public void handleEvent(UserActivated event) {
-        eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserActivated event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
-      }
-    });
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserEmailConfirmed>() {
-      @Override
-      public Class<UserEmailConfirmed> subscribedToEventType() {
-        return UserEmailConfirmed.class;
-      }
-
-      @Override
-      public void handleEvent(UserEmailConfirmed event) {
-        eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserEmailConfirmed event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
-      }
-    });
-    Optional<User> userToActivate = userRepository.findById(userId);
-    userToActivate.ifPresentOrElse(user -> {
-      user.confirmEmail();
-      userRepository.updateUser(user);
-    }, () -> {
-      throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
-    });
   }
 
   public static class RegistrationResponse {
