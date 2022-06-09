@@ -6,7 +6,7 @@
     min-width: 300px;
 }
 
-.form-title {
+.title {
     margin: 0;
     margin-top: var(--lumo-font-size-xxs);
     padding: 0;

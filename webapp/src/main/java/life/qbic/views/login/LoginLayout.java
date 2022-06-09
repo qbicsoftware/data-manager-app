@@ -3,6 +3,7 @@ package life.qbic.views.login;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
@@ -15,8 +16,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.views.components.ErrorMessage;
+import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
-import life.qbic.views.login.ConfigurableLoginForm.Message;
+import life.qbic.views.login.ConfigurableLoginForm.ErrorListener;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,6 +35,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
+
+  private VerticalLayout informationContainer;
+
+  private VerticalLayout errorContainer;
+  private H2 title;
 
   private ConfigurableLoginForm loginForm;
 
@@ -56,7 +64,12 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     Span registerSpan = initRegisterSpan();
     this.registerSpan = registerSpan;
 
-    contentLayout.add(loginForm, registerSpan);
+    informationContainer = new VerticalLayout();
+    errorContainer = new VerticalLayout();
+
+    title = new H2("Log in");
+
+    contentLayout.add(title, informationContainer, errorContainer, loginForm, registerSpan);
 
     add(contentLayout);
   }
@@ -70,6 +83,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    title.setClassName("title");
     loginForm.setUsernameText("Email");
   }
 
@@ -97,13 +111,24 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     return new Span(new Text("Need an account? "), routerLink);
   }
 
-  public void hideError() {
-    loginForm.hideError();
+  public void clearErrors() {
+    errorContainer.setVisible(false);
+    errorContainer.removeAll();
   }
 
-  public void showError(Message errorMessage) {
-    loginForm.setError(errorMessage);
-    loginForm.showError();
+  public void showError(ErrorMessage errorMessage) {
+    errorContainer.add(new ErrorMessage(errorMessage.title(), errorMessage.message()));
+    errorContainer.setVisible(true);
+  }
+
+  public void showInformation(InformationMessage message) {
+    informationContainer.add(new InformationMessage(message.title(), message.message()));
+    informationContainer.setVisible(true);
+  }
+
+  public void clearInformation() {
+    informationContainer.setVisible(false);
+    informationContainer.removeAll();
   }
 
   public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
@@ -114,16 +139,12 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     loginForm.addForgotPasswordListener(listener);
   }
 
+  public void addErrorListener(ErrorListener listener) {
+    loginForm.addErrorListener(listener);
+  }
+
   @Override
   public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
     viewHandler.handle(event);
-  }
-
-  public void showInformation(Message message) {
-    loginForm.showInformation(message);
-  }
-
-  public void resetInformation() {
-    loginForm.resetInformation();
   }
 }

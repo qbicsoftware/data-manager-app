@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
-import life.qbic.views.login.ConfigurableLoginForm.Message;
+import life.qbic.views.components.ErrorMessage;
+import life.qbic.views.components.InformationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,12 +22,12 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private LoginLayout registeredLoginView;
 
   private final ConfirmEmailInput confirmEmailInput;
-  private static final Message INCORRECT_USERNAME_OR_PASSWORD = new Message(
+  private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
       "Incorrect username or password",
       "Check that you have entered the correct username and password and try again."
   );
 
-  private static final Message EMAIL_CONFIRMATION_SUCCESS = new Message(
+  private static final InformationMessage EMAIL_CONFIRMATION_SUCCESS = new InformationMessage(
       "Email address confirmed",
       "You can now login with your credentials."
   );
@@ -45,24 +46,15 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void initFields() {
-    resetErrorMessages();
-    resetInformationMessages();
+    clearMessages();
   }
 
-  private void resetErrorMessages() {
-    showDefaultError();
-    hideError();
+  private void clearMessages() {
+    registeredLoginView.clearErrors();
+    registeredLoginView.clearInformation();
   }
 
-  private void resetInformationMessages() {
-    registeredLoginView.resetInformation();
-  }
-
-  private void hideError() {
-    registeredLoginView.hideError();
-  }
-
-  private void showDefaultError() {
+  private void showInvalidCredentialsError() {
     registeredLoginView.showError(INCORRECT_USERNAME_OR_PASSWORD);
   }
 
@@ -73,11 +65,11 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
+    registeredLoginView.addErrorListener(() -> System.out.println("error occurred"));
   }
 
   private void onLoginSucceeded() {
-    resetErrorMessages();
-    resetInformationMessages();
+    clearMessages();
     UI.getCurrent().navigate("/hello");
   }
 
@@ -87,7 +79,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
         .getParameters();
     if (queryParams.containsKey("error")) {
       //Todo Replace this with a distinct error message in the loginView
-      showDefaultError();
+      showInvalidCredentialsError();
     }
     if (queryParams.containsKey("confirmEmail")) {
       String userId = queryParams.get("confirmEmail").iterator().next();
@@ -97,13 +89,13 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void onEmailConfirmationSuccess() {
-    resetErrorMessages();
+    clearMessages();
     showEmailConfirmationInformation();
 
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    registeredLoginView.showError(new Message("Email confirmation failed", reason));
+    registeredLoginView.showError(new ErrorMessage("Email confirmation failed", reason));
   }
 }
