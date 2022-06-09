@@ -2,8 +2,7 @@ package life.qbic.views.login;
 
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
-import java.util.ArrayList;
-import java.util.List;
+import com.vaadin.flow.component.login.LoginI18n.ErrorMessage;
 
 /**
  * <b>A login form that remembers the text it displays.</b>
@@ -13,14 +12,6 @@ import java.util.List;
  */
 class ConfigurableLoginForm extends LoginForm {
 
-  @FunctionalInterface
-  public interface ErrorListener {
-
-    void onError();
-  }
-
-  private final List<ErrorListener> errorListeners;
-
   private final LoginI18n loginI18n;
 
 
@@ -28,8 +19,13 @@ class ConfigurableLoginForm extends LoginForm {
     super();
     this.loginI18n = LoginI18n.createDefault();
     removeTitle();
+    removeErrorMessage();
     this.setI18n(loginI18n);
-    errorListeners = new ArrayList<>();
+  }
+
+  private void removeErrorMessage() {
+    loginI18n.setErrorMessage(new ErrorMessage());
+    updateText();
   }
 
   private void removeTitle() {
@@ -45,24 +41,8 @@ class ConfigurableLoginForm extends LoginForm {
     updateText();
   }
 
-  private void fireErrorEvent() {
-    errorListeners.forEach(ErrorListener::onError);
-  }
-
-  @Override
-  public void setError(boolean error) {
-    super.setError(error);
-    if (error) {
-      fireErrorEvent();
-    }
-  }
-
   @Override
   public boolean isError() {
     return super.isError();
-  }
-
-  public void addErrorListener(ErrorListener listener) {
-    errorListeners.add(listener);
   }
 }

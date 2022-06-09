@@ -19,7 +19,6 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.components.ErrorMessage;
 import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
-import life.qbic.views.login.ConfigurableLoginForm.ErrorListener;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -137,10 +136,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   public void addForgotPasswordListener(ComponentEventListener<ForgotPasswordEvent> listener) {
     loginForm.addForgotPasswordListener(listener);
-  }
-
-  public void addErrorListener(ErrorListener listener) {
-    loginForm.addErrorListener(listener);
   }
 
   @Override

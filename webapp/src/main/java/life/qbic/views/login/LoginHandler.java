@@ -65,7 +65,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
-    registeredLoginView.addErrorListener(() -> System.out.println("error occurred"));
   }
 
   private void onLoginSucceeded() {
