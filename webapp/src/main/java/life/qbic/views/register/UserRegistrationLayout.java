@@ -104,7 +104,7 @@ public class UserRegistrationLayout extends VerticalLayout {
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
     errorMessage.setVisible(false);
     passwordTooShortMessage =
-        new ErrorMessage("EncryptedPassword too short", "Your password must be at least 8 characters long.");
+        new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
     invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided user credentials");
     invalidCredentialsMessage.setVisible(false);
@@ -156,7 +156,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void createPasswordField() {
-    password = new PasswordField("EncryptedPassword");
+    password = new PasswordField("Password");
   }
 
   private void styleEmailField() {
