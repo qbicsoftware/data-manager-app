@@ -95,12 +95,12 @@ public class UserRegistrationHandler
   }
 
   @Override
-  public void onFailure(UserRegistrationException exception) {
+  public void onUserRegistrationFailed(UserRegistrationException exception) {
 
   }
 
   @Override
-  public void onFailure(String reason) {
+  public void onUserRegistrationFailed(String reason) {
     handleRegistrationFailure(reason);
   }
 

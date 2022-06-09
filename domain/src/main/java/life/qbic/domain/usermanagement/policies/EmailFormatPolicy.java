@@ -20,7 +20,7 @@ public class EmailFormatPolicy {
 
   private static EmailFormatPolicy INSTANCE;
 
-  public static EmailFormatPolicy create() {
+  public static EmailFormatPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new EmailFormatPolicy();
     }

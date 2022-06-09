@@ -39,23 +39,22 @@ public class Registration implements RegisterUserInput {
   public Registration(UserRegistrationService userRegistrationService) {
     this.userRegistrationService = userRegistrationService;
     // Init a dummy output, until one is set by the client.
-    this.registerUserOutput =
-        new RegisterUserOutput() {
-          @Override
-          public void onSuccess() {
-            System.out.println("Called dummy register success output.");
-          }
+    this.registerUserOutput = new RegisterUserOutput() {
+      @Override
+      public void onSuccess() {
+        System.out.println("Called dummy register success output.");
+      }
 
-          @Override
-          public void onUserRegistrationFailed(UserRegistrationException e) {
-            System.err.println("Called dummy register failure output.");
-          }
+      @Override
+      public void onUserRegistrationFailed(UserRegistrationException e) {
+        System.err.println("Called dummy register failure output.");
+      }
 
-          @Override
-          public void onUserRegistrationFailed(String reason) {
+      @Override
+      public void onUserRegistrationFailed(String reason) {
 
-          }
-        };
+      }
+    };
   }
 
   /**
@@ -83,7 +82,7 @@ public class Registration implements RegisterUserInput {
       }
       registerUserOutput.onSuccess();
     } catch (Exception e) {
-      registerUserOutput.onFailure("Unexpected error occurred.");
+      registerUserOutput.onUserRegistrationFailed("Unexpected error occurred.");
     }
   }
 

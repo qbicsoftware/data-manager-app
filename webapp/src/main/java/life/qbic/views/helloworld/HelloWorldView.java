@@ -8,7 +8,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import javax.annotation.security.PermitAll;
-import life.qbic.domain.user.User;
 import life.qbic.security.SecurityService;
 import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +27,12 @@ public class HelloWorldView extends VerticalLayout {
   public HelloWorldView(@Autowired SecurityService securityService) {
     this.securityService = securityService;
 
-    String username = securityService.get().map( user -> user.getFullName().name()).orElse("Your name");
+    String username = securityService.get().map( u -> u.getFullName().get()).orElse("Your name");
     name = new TextField(username);
 
     sayHello = new Button("Say hello");
     sayHello.addClickListener(
-        e -> {
-          Notification.show("Hello " + name.getValue());
-        });
+        e -> Notification.show("Hello " + name.getValue()));
 
     setMargin(true);
     setDefaultHorizontalComponentAlignment(Alignment.CENTER);

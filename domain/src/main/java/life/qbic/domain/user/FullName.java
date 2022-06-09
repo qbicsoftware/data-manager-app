@@ -26,7 +26,7 @@ public class FullName {
    */
   public static FullName from(String s) {
     if (s.isBlank()) {
-      throw new InvalidFullNameException("Name must not be empty or blank.");
+      throw new InvalidFullNameException("Name must not be empty or blank.", s);
     }
     var fullName = new FullName();
     fullName.setName(s);
@@ -47,7 +47,7 @@ public class FullName {
    * @return the full name as String
    * @since 1.0.0
    */
-  public String name() {
+  public String get() {
     return name;
   }
 
@@ -68,17 +68,34 @@ public class FullName {
     return Objects.hash(name);
   }
 
+  /**
+   * <h1>Exception that indicates violations during the full name validation process/h1>
+   *
+   * <p>This exception is supposed to be thrown, if the provided full name for an user consists of
+   * only whitespace or is Empty.
+   * Its intention is to contain the invalid full name</p>
+   *
+   * @since 1.0.0
+   */
+
   public static class InvalidFullNameException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -7328021953844399851L;
 
+    private String invalidFullName;
+
     InvalidFullNameException() {
       super();
     }
 
-    InvalidFullNameException(String message) {
+    InvalidFullNameException(String message, String invalidFullName) {
       super(message);
+      this.invalidFullName = invalidFullName;
+    }
+
+    public String getInvalidFullName() {
+      return invalidFullName;
     }
   }
 }

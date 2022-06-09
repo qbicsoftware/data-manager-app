@@ -3,17 +3,20 @@ package life.qbic.domain.user;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Converts {@link life.qbic.domain.user.FullName} into a String and vice versa></b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Converts the String value stored in the database to an
+ * {@link life.qbic.domain.user.FullName}. Additionally converts the
+ * {@link life.qbic.domain.user.FullName} to a string value to be stored in the database.
+ * </p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class FullNameConverter implements AttributeConverter<FullName, String> {
 
   @Override
   public String convertToDatabaseColumn(FullName fullName) {
-    return fullName.name();
+    return fullName.get();
   }
 
   @Override

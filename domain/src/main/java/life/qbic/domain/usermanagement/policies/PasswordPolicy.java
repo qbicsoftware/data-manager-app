@@ -16,7 +16,7 @@ public class PasswordPolicy {
 
   private static PasswordPolicy INSTANCE;
 
-  public static PasswordPolicy create() {
+  public static PasswordPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordPolicy();
     }
@@ -32,7 +32,7 @@ public class PasswordPolicy {
    */
   public PolicyCheckReport validate(char[] rawPassword) {
     if (rawPassword.length < MIN_LENGTH) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, "EncryptedPassword shorter than 8 characters.");
+      return new PolicyCheckReport(PolicyStatus.FAILED, "Password shorter than 8 characters.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }

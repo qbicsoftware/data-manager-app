@@ -3,11 +3,9 @@ package life.qbic.domain.user
 import spock.lang.Specification
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Tests for the {@link life.qbic.domain.user.FullName}</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class FullNameSpec extends Specification {
 
@@ -32,6 +30,6 @@ class FullNameSpec extends Specification {
         FullName name = FullName.from("Test Tester")
 
         then:
-        name.name().equals("Test Tester")
+        name.get().equals("Test Tester")
     }
 }

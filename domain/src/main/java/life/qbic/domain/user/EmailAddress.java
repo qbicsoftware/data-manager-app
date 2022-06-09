@@ -32,9 +32,9 @@ public class EmailAddress {
    * @since 1.0.0
    */
   public static EmailAddress from(String s) throws EmailValidationException {
-    PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(s);
+    PolicyCheckReport policyCheckReport = EmailFormatPolicy.instance().validate(s);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
-      throw new EmailValidationException(policyCheckReport.reason());
+      throw new EmailValidationException(policyCheckReport, s);
     }
     var email = new EmailAddress();
     email.set(s);
@@ -55,7 +55,7 @@ public class EmailAddress {
    * @return email address as String
    * @since 1.0.0
    */
-  public String address() {
+  public String get() {
     return this.address;
   }
 
@@ -68,7 +68,7 @@ public class EmailAddress {
       return false;
     }
     EmailAddress emailAddress = (EmailAddress) o;
-    return address.equals(emailAddress.address());
+    return address.equals(emailAddress.get());
   }
 
   @Override
@@ -76,18 +76,42 @@ public class EmailAddress {
     return Objects.hash(address);
   }
 
+
+  /**
+   * <h1>Exception that indicates violations during the email address validation process/h1>
+   *
+   * <p>This exception is supposed to be thrown, if the provided email address for an user violates
+   * the format specified by
+   * RFC5322 It's intention is to contain the invalid email address and the PolicyCheckReport for
+   * the violated policy</p>
+   *
+   * @since 1.0.0
+   */
   public static class EmailValidationException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
 
+    private String invalidEmailAddress;
+
+    private PolicyCheckReport emailPolicyCheckReport;
+
     EmailValidationException() {
       super();
     }
 
-    EmailValidationException(String message) {
-      super(message);
+    EmailValidationException(PolicyCheckReport emailAddressCheckReport,
+        String invalidEmailAddress) {
+      this.emailPolicyCheckReport = emailAddressCheckReport;
+      this.invalidEmailAddress = invalidEmailAddress;
     }
 
+    public String getInvalidEmailAddress() {
+      return invalidEmailAddress;
+    }
+
+    public PolicyCheckReport getEmailPolicyCheckReport() {
+      return emailPolicyCheckReport;
+    }
   }
 }

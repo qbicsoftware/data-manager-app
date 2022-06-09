@@ -55,12 +55,13 @@ public class User implements Serializable {
    * has been encrypted.
    *
    * @param fullName          the full name of the user
-   * @param emailAddress             the emailAddress address of the user
+   * @param emailAddress      the emailAddress address of the user
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
    */
-  public static User create(FullName fullName, EmailAddress emailAddress, EncryptedPassword encryptedPassword) {
+  public static User create(FullName fullName, EmailAddress emailAddress,
+      EncryptedPassword encryptedPassword) {
     String uuid = String.valueOf(UUID.randomUUID());
     var user = new User(fullName);
     user.setEmail(emailAddress);
@@ -77,11 +78,12 @@ public class User implements Serializable {
    *
    * @param encryptedPassword the encrypted password
    * @param fullName          the full name
-   * @param emailAddress             the emailAddress
+   * @param emailAddress      the emailAddress
    * @return an object instance of the user
    * @since 1.0.0
    */
-  protected static User of(EncryptedPassword encryptedPassword, FullName fullName, EmailAddress emailAddress) {
+  protected static User of(EncryptedPassword encryptedPassword, FullName fullName,
+      EmailAddress emailAddress) {
     var user = new User(fullName);
     user.setEmail(emailAddress);
     user.setEncryptedPassword(encryptedPassword);
@@ -143,14 +145,4 @@ public class User implements Serializable {
     return this.fullName;
   }
 
-  /**
-   * Checks if a given password is correct for a user
-   *
-   * @param rawPassword EncryptedPassword that is being validated
-   * @return true, if the given password is correct for the user
-   */
-  public Boolean checkPassword(char[] rawPassword) {
-    return Objects.equals(
-        PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword.hash());
-  }
 }

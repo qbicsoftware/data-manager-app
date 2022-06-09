@@ -19,10 +19,10 @@ public interface RegisterUserOutput {
   /**
    * Callback is executed, when the user registration failed.
    *
-   * @param reason the reason for the user registration failure
+   * @param userRegistrationException the Exception containing the reasons for the user registration failure
    * @since 1.0.0
    */
-  void onUserRegistrationFailed(UserRegistrationException exception);
+  void onUserRegistrationFailed(UserRegistrationException userRegistrationException);
 
   void onUserRegistrationFailed(String reason);
 }

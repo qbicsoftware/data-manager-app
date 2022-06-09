@@ -44,7 +44,7 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public String getUsername() {
-    return user.getEmail().address();
+    return user.getEmail().get();
   }
 
   @Override

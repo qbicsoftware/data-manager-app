@@ -3,17 +3,20 @@ package life.qbic.domain.user;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Converts {@link life.qbic.domain.user.EmailAddress} into a String and vice versa></b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Converts the String value stored in the database to an
+ * {@link life.qbic.domain.user.EmailAddress}. Additionally converts the
+ * {@link life.qbic.domain.user.EmailAddress} to a string value to be stored in the database.
+ * </p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailConverter implements AttributeConverter<EmailAddress, String> {
 
   @Override
   public String convertToDatabaseColumn(EmailAddress emailAddress) {
-    return emailAddress.address();
+    return emailAddress.get();
   }
 
   @Override

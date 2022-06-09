@@ -36,9 +36,9 @@ public class EncryptedPassword {
    * @since 1.0.0
    */
   public static EncryptedPassword from(char[] rawPassword) throws PasswordValidationException {
-    PolicyCheckReport policyCheckReport = PasswordPolicy.create().validate(rawPassword);
+    PolicyCheckReport policyCheckReport = PasswordPolicy.instance().validate(rawPassword);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
-      throw new PasswordValidationException(policyCheckReport.reason());
+      throw new PasswordValidationException(policyCheckReport);
     }
     var password = new EncryptedPassword();
     password.setEncryptedPassword(encryptPassword(rawPassword));
@@ -62,13 +62,12 @@ public class EncryptedPassword {
   }
 
   private static String encryptPassword(char[] rawPassword) {
-    return PasswordEncryptionPolicy.create().encrypt(rawPassword);
+    return PasswordEncryptionPolicy.instance().encrypt(rawPassword);
   }
 
   /**
    * Returns the passwords encrypted hash value
    *
-   * @return
    * @since 1.0.0
    */
   public String hash() {
@@ -92,17 +91,32 @@ public class EncryptedPassword {
     return Objects.hash(encryptedPassword);
   }
 
+  /**
+   * <h1>Exception that indicates violations during the password validation process/h1>
+   *
+   * <p>This exception is supposed to be thrown, if the provided password for an user violates
+   * the specifications set by the PasswordPolicy. It's intention is to contain the
+   * PolicyCheckReport for the violated policy</p>
+   *
+   * @since 1.0.0
+   */
   public static class PasswordValidationException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -3732749830794920567L;
 
+    private PolicyCheckReport passwordPolicyCheckReport;
+
     PasswordValidationException() {
       super();
     }
 
-    PasswordValidationException(String message) {
-      super(message);
+    PasswordValidationException(PolicyCheckReport policyCheckReport) {
+      this.passwordPolicyCheckReport = policyCheckReport;
+    }
+
+    public PolicyCheckReport getPasswordPolicyCheckReport() {
+      return passwordPolicyCheckReport;
     }
 
   }
