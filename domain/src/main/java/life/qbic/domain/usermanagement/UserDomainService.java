@@ -8,9 +8,9 @@ import life.qbic.domain.usermanagement.repository.UserRepository;
 /**
  * <b>User Domain Service</b>
  *
- * <p>Domain service within the usermanagement context. Takes over the user creation and publishes a
- * {@link life.qbic.domain.events.DomainEvent} of type {@link UserRegistered} once the user has been
- * successfully registered in the domain.
+ * <p>Domain service within the usermanagement context. Takes over the user creation and publishes
+ * a {@link life.qbic.domain.events.DomainEvent} of type {@link UserRegistered} once the user has
+ * been successfully registered in the domain.
  *
  * @since 1.0.0
  */
@@ -27,8 +27,8 @@ public class UserDomainService {
    *
    * <p>Note: this will create a new domain event of type {@link UserRegistered}
    *
-   * @param fullName the full name of the user
-   * @param email a valid email address
+   * @param fullName    the full name of the user
+   * @param email       a valid email address
    * @param rawPassword the raw password desired by the user
    * @since 1.0.0
    */
@@ -37,12 +37,10 @@ public class UserDomainService {
     if (userRepository.findByEmail(email).isPresent()) {
       throw new UserException("User with email address already exists.");
     }
-    var domainEventPublisher = DomainEventPublisher.instance();
     var user = User.create(fullName, email);
     user.setPassword(rawPassword);
     userRepository.addUser(user);
-
     var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName(), user.getEmail());
-    domainEventPublisher.publish(userCreatedEvent);
+    DomainEventPublisher.instance().publish(userCreatedEvent);
   }
 }
