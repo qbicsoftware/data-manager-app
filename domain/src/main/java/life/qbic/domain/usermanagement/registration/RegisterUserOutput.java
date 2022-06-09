@@ -24,5 +24,5 @@ public interface RegisterUserOutput {
    */
   void onUserRegistrationFailed(UserRegistrationException exception);
 
-  void onFailure(String reason);
+  void onUserRegistrationFailed(String reason);
 }
