@@ -1,7 +1,7 @@
 package life.qbic.email;
 
 /**
- * A simple representation of an EmailAddress
+ * A simple representation of an Email
  *
  * @since <version tag>
  */
