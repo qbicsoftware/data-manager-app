@@ -1,14 +1,13 @@
 package life.qbic.views.login;
 
-import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
-import life.qbic.domain.usermanagement.login.LoginUserInput;
-import life.qbic.domain.usermanagement.login.LoginUserOutput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
+import life.qbic.views.components.ErrorMessage;
+import life.qbic.views.components.InformationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,18 +17,23 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, LoginUserOutput {
+public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private LoginLayout registeredLoginView;
 
   private final ConfirmEmailInput confirmEmailInput;
+  private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
+      "Incorrect username or password",
+      "Check that you have entered the correct username and password and try again."
+  );
 
-  private final LoginUserInput loginUserInput;
+  private static final InformationMessage EMAIL_CONFIRMATION_SUCCESS = new InformationMessage(
+      "Email address confirmed",
+      "You can now login with your credentials."
+  );
 
-  LoginHandler(@Autowired ConfirmEmailInput confirmEmailInput, LoginUserInput loginUserInput) {
+  LoginHandler(@Autowired ConfirmEmailInput confirmEmailInput) {
     this.confirmEmailInput = confirmEmailInput;
-    this.loginUserInput = loginUserInput;
-    loginUserInput.setOutput(this);
   }
 
   @Override
@@ -38,26 +42,34 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
       registeredLoginView = loginView;
     }
     initFields();
-    resetMessages();
     addListener();
   }
+
   private void initFields() {
-    registeredLoginView.password.setHelperText("A password must be at least 8 characters");
-    registeredLoginView.password.setPattern(".{8,}");
-    registeredLoginView.password.setErrorMessage("Invalid Password");
-    registeredLoginView.email.setErrorMessage("Invalid Email");
+    clearMessages();
+  }
+
+  private void clearMessages() {
+    registeredLoginView.clearErrors();
+    registeredLoginView.clearInformation();
+  }
+
+  private void showInvalidCredentialsError() {
+    registeredLoginView.showError(INCORRECT_USERNAME_OR_PASSWORD);
+  }
+
+  private void showEmailConfirmationInformation() {
+    registeredLoginView.showInformation(EMAIL_CONFIRMATION_SUCCESS);
   }
 
   private void addListener() {
-    registeredLoginView.loginButton.addClickShortcut(Key.ENTER);
-    registeredLoginView.loginButton.addClickListener(
-        event -> {
-          resetMessages();
-          resetComponentErrors();
-          loginUserInput.login(registeredLoginView.email.getValue(),
-              registeredLoginView.password.getValue());
-        });
-    //ToDo Add forgot password Logic
+    registeredLoginView.addLoginListener(it -> onLoginSucceeded());
+    registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
+  }
+
+  private void onLoginSucceeded() {
+    clearMessages();
+    UI.getCurrent().navigate("/hello");
   }
 
   @Override
@@ -65,7 +77,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
-      displayUnspecificError();
+      //Todo Replace this with a distinct error message in the loginView
+      showInvalidCredentialsError();
     }
     if (queryParams.containsKey("confirmEmail")) {
       String userId = queryParams.get("confirmEmail").iterator().next();
@@ -73,55 +86,15 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput, 
     }
   }
 
-  private void resetMessages() {
-    registeredLoginView.errorMessage.setVisible(false);
-    registeredLoginView.informationMessage.setVisible(false);
-  }
-
-  private void resetComponentErrors() {
-    registeredLoginView.email.setInvalid(false);
-    registeredLoginView.password.setInvalid(false);
-  }
-
   @Override
   public void onEmailConfirmationSuccess() {
-    displayInformation("Email address confirmed", "You can now login with your credentials.");
-  }
+    clearMessages();
+    showEmailConfirmationInformation();
 
-  private void displayInformation(String title, String description) {
-    resetMessages();
-    registeredLoginView.informationMessage.titleTextSpan.setText(title);
-    registeredLoginView.informationMessage.descriptionTextSpan.setText(description);
-    registeredLoginView.informationMessage.setVisible(true);
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    displayError("Email confirmation failed", reason);
-  }
-
-  private void displayUnspecificError() {
-    displayError("Login failed", "");
-  }
-
-  private void displayError(String title, String description) {
-    resetMessages();
-    registeredLoginView.errorMessage.titleTextSpan.setText(title);
-    registeredLoginView.errorMessage.descriptionTextSpan.setText(description);
-    registeredLoginView.errorMessage.setVisible(true);
-  }
-
-  @Override
-  public void onLoginSucceeded() {
-    displayInformation("Login successful", "You are now logged in.");
-    resetComponentErrors();
-    UI.getCurrent().navigate("/register");     //TODO change to welcome page
-  }
-
-  @Override
-  public void onLoginFailed() {
-    registeredLoginView.email.setInvalid(true);
-    registeredLoginView.password.setInvalid(true);
-    displayError("Login failed", "Invalid password or email address provided.");
+    registeredLoginView.showError(new ErrorMessage("Email confirmation failed", reason));
   }
 }
