@@ -40,9 +40,4 @@ class ConfigurableLoginForm extends LoginForm {
     loginI18n.getForm().setUsername(usernameText);
     updateText();
   }
-
-  @Override
-  public boolean isError() {
-    return super.isError();
-  }
 }
