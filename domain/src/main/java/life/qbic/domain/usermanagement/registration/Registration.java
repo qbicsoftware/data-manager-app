@@ -47,7 +47,7 @@ public class Registration implements RegisterUserInput {
           }
 
           @Override
-          public void onFailure(UserRegistrationException e) {
+          public void onUserRegistrationFailed(UserRegistrationException e) {
             System.err.println("Called dummy register failure output.");
           }
 
