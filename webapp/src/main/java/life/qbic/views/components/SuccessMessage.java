@@ -1,5 +1,6 @@
 package life.qbic.views.components;
 
+import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
@@ -9,6 +10,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  *
  * @since 1.0.0
  */
+@Tag("success-message")
 public class SuccessMessage extends DisplayMessage {
 
   public SuccessMessage(String titleText, String descriptionText) {

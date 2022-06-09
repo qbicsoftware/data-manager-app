@@ -1,16 +1,14 @@
 package life.qbic.views.login;
 
-import com.vaadin.flow.component.HasValueAndElement;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
+import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -18,7 +16,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import java.util.stream.Stream;
 import life.qbic.views.components.ErrorMessage;
 import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
@@ -38,44 +35,44 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private VerticalLayout contentLayout;
 
-  public PasswordField password;
+  private VerticalLayout informationContainer;
 
-  public EmailField email;
+  private VerticalLayout errorContainer;
+  private H2 title;
 
-  public Button loginButton;
+  private ConfigurableLoginForm loginForm;
 
-  public Button forgotPasswordButton;
-  public Span registerSpan;
+  private Div registrationSection;
 
-  private H2 layoutTitle;
- private transient LoginHandlerInterface loginHandlerInterface;
-
-  public InformationMessage confirmationInformationMessage;
-
-  public ErrorMessage errorMessage;
-
-  public ErrorMessage invalidEmailMessage;
-
-  public ErrorMessage passwordTooShortMessage;
-
-  public ErrorMessage emailConfirmationFailedMessage;
+  private final transient LoginHandlerInterface viewHandler;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
+
     initLayout();
     styleLayout();
-    registerToHandler(loginHandlerInterface);
+    viewHandler = loginHandlerInterface;
+    registerToHandler(viewHandler);
   }
 
   private void initLayout() {
     contentLayout = new VerticalLayout();
-    createComponents();
-    styleComponents();
+    this.loginForm = new ConfigurableLoginForm();
+    loginForm.setAction("login");
+
+    this.registrationSection = initRegistrationSection();
+
+    informationContainer = new VerticalLayout();
+    errorContainer = new VerticalLayout();
+
+    title = new H2("Log in");
+
+    contentLayout.add(title, informationContainer, errorContainer, loginForm, registrationSection);
+
     add(contentLayout);
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
-    this.loginHandlerInterface = loginHandler;
     loginHandler.handle(this);
   }
 
@@ -84,52 +81,14 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-  }
-
-  private void createComponents() {
-    layoutTitle = new H2("Log In");
-    createEmailField();
-    createPasswordField();
-    createLoginButton();
-    createRegisterSpan();
-    createForgotPasswordButton();
-    createDivs();
-  }
-
-  private void styleComponents() {
-    password.setWidthFull();
-    email.setWidthFull();
-    styleLoginButton();
-    setRequiredIndicatorVisible(email, password);
-    styleForgotPasswordButton();
-  }
-
-  private void createDivs() {
-    createErrorDivs();
-    createInformationDivs();
-  }
-
-  private void createErrorDivs() {
-    errorMessage = new ErrorMessage("Log In failed", "Please try again.");
-    errorMessage.setVisible(false);
-    invalidEmailMessage = new ErrorMessage("Invalid credentials",
-        "The provided email or password is invalid");
-    invalidEmailMessage.setVisible(false);
-    passwordTooShortMessage = new ErrorMessage("Password too short",
-        "Your password must be at least 8 characters long.");
-    passwordTooShortMessage.setVisible(false);
-    emailConfirmationFailedMessage = new ErrorMessage("Unconfirmed email address",
-        "Please confirm your email address before logging in");
-    emailConfirmationFailedMessage.setVisible(false);
-  }
-
-  private void createInformationDivs() {
-    confirmationInformationMessage = new InformationMessage("Email address confirmed",
-        "You can now login with your credentials.");
-    confirmationInformationMessage.setVisible(false);
+    title.setClassName("title");
+    loginForm.setUsernameText("Email");
+    registrationSection.addClassName("registration");
   }
 
   private void styleFormLayout() {
+    contentLayout.setPadding(false);
+    contentLayout.setSpacing(false);
     contentLayout.addClassNames(
         "bg-base",
         "border",
@@ -143,53 +102,43 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "shadow-l",
         "min-width-300px",
         "max-width-15vw");
-    contentLayout.add(
-        layoutTitle,
-        errorMessage,
-        confirmationInformationMessage,
-        email,
-        password,
-        loginButton,
-        forgotPasswordButton,
-        registerSpan);
   }
 
-  private void createEmailField() {
-    email = new EmailField("Email");
-  }
-
-  private void createPasswordField() {
-    password = new PasswordField("Password");
-  }
-
-  private void createLoginButton() {
-    loginButton = new Button("Log In");
-  }
-
-  private void styleLoginButton() {
-    loginButton.setWidthFull();
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-  }
-
-  private void createForgotPasswordButton() {
-    forgotPasswordButton = new Button("Forgot Password");
-  }
-
-  private void styleForgotPasswordButton() {
-    forgotPasswordButton.setWidthFull();
-    forgotPasswordButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-  }
-
-  private void createRegisterSpan() {
+  private Div initRegistrationSection() {
     RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), routerLink);
+    return new Div(new Text("Need an account? "), routerLink);
   }
 
-  private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
-    Stream.of(components).forEach(comp -> comp.setRequiredIndicatorVisible(true));
+  public void clearErrors() {
+    errorContainer.setVisible(false);
+    errorContainer.removeAll();
   }
+
+  public void showError(ErrorMessage errorMessage) {
+    errorContainer.add(new ErrorMessage(errorMessage.title(), errorMessage.message()));
+    errorContainer.setVisible(true);
+  }
+
+  public void showInformation(InformationMessage message) {
+    informationContainer.add(new InformationMessage(message.title(), message.message()));
+    informationContainer.setVisible(true);
+  }
+
+  public void clearInformation() {
+    informationContainer.setVisible(false);
+    informationContainer.removeAll();
+  }
+
+  public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
+    loginForm.addLoginListener(loginListener);
+  }
+
+  public void addForgotPasswordListener(ComponentEventListener<ForgotPasswordEvent> listener) {
+    loginForm.addForgotPasswordListener(listener);
+  }
+
   @Override
-  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String s) {
-    loginHandlerInterface.handle(beforeEvent);
+  public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+    viewHandler.handle(event);
   }
 }

@@ -53,4 +53,12 @@ public class DisplayMessage extends Composite<VerticalLayout> {
   protected void styleSpecificLayout() {
     getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");
   }
+
+  public String title() {
+    return titleTextSpan.getText();
+  }
+
+  public String message() {
+    return descriptionTextSpan.getText();
+  }
 }
