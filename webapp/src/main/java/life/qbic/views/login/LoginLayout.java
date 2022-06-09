@@ -60,15 +60,14 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     this.loginForm = new ConfigurableLoginForm();
     loginForm.setAction("login");
 
-    Span registerSpan = initRegisterSpan();
-    this.registerSpan = registerSpan;
+    this.registerSpan = initRegisterSpan();
 
     informationContainer = new VerticalLayout();
     errorContainer = new VerticalLayout();
 
     title = new H2("Log in");
 
-    contentLayout.add(title, informationContainer, errorContainer, loginForm, registerSpan);
+    contentLayout.add(title, informationContainer, errorContainer, loginForm, initRegisterSpan());
 
     add(contentLayout);
   }
