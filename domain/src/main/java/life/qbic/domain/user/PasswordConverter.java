@@ -12,8 +12,8 @@ import javax.persistence.AttributeConverter;
 public class PasswordConverter implements AttributeConverter<EncryptedPassword, String> {
 
   @Override
-  public String convertToDatabaseColumn(EncryptedPassword email) {
-    return email.hash();
+  public String convertToDatabaseColumn(EncryptedPassword password) {
+    return password.hash();
   }
 
   @Override
