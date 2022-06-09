@@ -28,7 +28,7 @@ public class HelloWorldView extends VerticalLayout {
   public HelloWorldView(@Autowired SecurityService securityService) {
     this.securityService = securityService;
 
-    String username = securityService.get().map( u -> u.getFullName().name()).orElse("Your name");
+    String username = securityService.get().map( user -> user.getFullName().name()).orElse("Your name");
     name = new TextField(username);
 
     sayHello = new Button("Say hello");
