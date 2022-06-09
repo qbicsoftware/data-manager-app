@@ -22,7 +22,7 @@ public interface RegisterUserOutput {
    * @param reason the reason for the user registration failure
    * @since 1.0.0
    */
-  void onFailure(UserRegistrationException exception);
+  void onUserRegistrationFailed(UserRegistrationException exception);
 
   void onFailure(String reason);
 }
