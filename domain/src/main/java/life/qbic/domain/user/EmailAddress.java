@@ -1,6 +1,7 @@
 package life.qbic.domain.user;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
@@ -16,7 +17,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  *
  * @since 1.0.0
  */
-public class EmailAddress {
+public class EmailAddress implements Serializable {
 
   private String address;
 
@@ -92,16 +93,13 @@ public class EmailAddress {
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
 
-    private String invalidEmailAddress;
+    private final String invalidEmailAddress;
 
-    private PolicyCheckReport emailPolicyCheckReport;
-
-    EmailValidationException() {
-      super();
-    }
+    private final transient PolicyCheckReport emailPolicyCheckReport;
 
     EmailValidationException(PolicyCheckReport emailAddressCheckReport,
         String invalidEmailAddress) {
+      super();
       this.emailPolicyCheckReport = emailAddressCheckReport;
       this.invalidEmailAddress = invalidEmailAddress;
     }

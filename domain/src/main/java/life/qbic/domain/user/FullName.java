@@ -1,6 +1,7 @@
 package life.qbic.domain.user;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.apps.datamanager.ApplicationException;
 
@@ -11,7 +12,7 @@ import life.qbic.apps.datamanager.ApplicationException;
  *
  * @since 1.0.0
  */
-public class FullName {
+public class FullName implements Serializable {
 
   private String name;
 
@@ -83,11 +84,7 @@ public class FullName {
     @Serial
     private static final long serialVersionUID = -7328021953844399851L;
 
-    private String invalidFullName;
-
-    InvalidFullNameException() {
-      super();
-    }
+    private final String invalidFullName;
 
     InvalidFullNameException(String message, String invalidFullName) {
       super(message);

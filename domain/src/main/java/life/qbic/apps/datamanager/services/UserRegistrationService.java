@@ -144,8 +144,7 @@ public final class UserRegistrationService {
   public static class RegistrationResponse {
 
     private enum Type {SUCCESSFUL, FAILED}
-
-    public Type type;
+    private Type type;
 
     private List<RuntimeException> exceptions;
 
@@ -173,14 +172,17 @@ public final class UserRegistrationService {
       this.type = type;
     }
 
+    public Type getType() {
+      return type;
+    }
+
+
     private void setExceptions(RuntimeException e1, RuntimeException... exceptions) {
       RuntimeException[] allExceptions;
       allExceptions =
           exceptions.length > 0 ? new RuntimeException[exceptions.length + 1] : new RuntimeException[1];
       allExceptions[0] = e1;
-      for (int i = 0; i < exceptions.length; i++) {
-        allExceptions[i + 1] = exceptions[i];
-      }
+      System.arraycopy(exceptions, 0, allExceptions, 1, exceptions.length);
       this.exceptions = Arrays.stream(allExceptions).toList();
     }
 

@@ -2,14 +2,12 @@ package life.qbic.domain.user;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
 
 /**
  * <b>User class</b>

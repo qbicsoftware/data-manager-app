@@ -1,6 +1,7 @@
 package life.qbic.domain.user;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
@@ -15,7 +16,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  *
  * @since 1.0.0
  */
-public class EncryptedPassword {
+public class EncryptedPassword implements Serializable {
 
   private String encryptedPassword;
 
@@ -105,13 +106,10 @@ public class EncryptedPassword {
     @Serial
     private static final long serialVersionUID = -3732749830794920567L;
 
-    private PolicyCheckReport passwordPolicyCheckReport;
-
-    PasswordValidationException() {
-      super();
-    }
+    private final transient PolicyCheckReport passwordPolicyCheckReport;
 
     PasswordValidationException(PolicyCheckReport policyCheckReport) {
+      super();
       this.passwordPolicyCheckReport = policyCheckReport;
     }
 
