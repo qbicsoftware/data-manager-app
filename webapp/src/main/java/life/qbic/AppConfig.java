@@ -41,9 +41,9 @@ public class AppConfig {
   }
 
   @Bean
-  public EmailAddressConfirmation confirmEmailInput(UserRegistrationService userRegistrationService) {
-    var emailAddressConfirmation = new EmailAddressConfirmation(userRegistrationService);
-    return emailAddressConfirmation;
+  public EmailAddressConfirmation confirmEmailInput(
+      UserRegistrationService userRegistrationService) {
+    return new EmailAddressConfirmation(userRegistrationService);
   }
 
   /**
@@ -64,6 +64,7 @@ public class AppConfig {
       EventStore eventStore) {
     return new UserRegistrationService(notificationService, userDataStorage, eventStore);
   }
+
 
   @Bean
   public SimpleEventStore eventStore() {

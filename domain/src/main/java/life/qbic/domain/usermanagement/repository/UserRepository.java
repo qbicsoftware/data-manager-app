@@ -12,7 +12,8 @@ import life.qbic.domain.usermanagement.User;
  */
 public class UserRepository implements Serializable {
 
-  @Serial private static final long serialVersionUID = 5576670098610784078L;
+  @Serial
+  private static final long serialVersionUID = 5576670098610784078L;
 
   private static UserRepository INSTANCE;
 
@@ -23,7 +24,7 @@ public class UserRepository implements Serializable {
    * the first time, a new instance is created.
    *
    * @param dataStorage an implementation of {@link UserDataStorage}, handling the low level
-   *     persistence layer access.
+   *                    persistence layer access.
    * @return a Singleton instance of a user repository.
    * @since 1.0.0
    */
@@ -49,8 +50,8 @@ public class UserRepository implements Serializable {
    * <p>
    *
    * @param email the email to find a matching user entry for
-   * @return the user object wrapped in an {@link Optional} if found, otherwise returns {@link
-   *     Optional#empty()}
+   * @return the user object wrapped in an {@link Optional} if found, otherwise returns
+   * {@link Optional#empty()}
    * @throws RuntimeException if there is more than one user matching the email address
    * @since 1.0.0
    */
@@ -78,19 +79,41 @@ public class UserRepository implements Serializable {
   }
 
   /**
-   * Adds a user to the repository.
+   * Adds a user to the repository. Publishes all domain events of the user if successful. If
+   * unsuccessful, throws a {@link UserStorageException} Exception.
    *
    * @param user the user that shall be added to the repository
-   * @return true, of the user has been added, else will return a false flag. This only happens if
-   *     the user with the given id or email address already exists.
+   * @throws UserStorageException if the user could not be added to the repository
    * @since 1.0.0
    */
-  public boolean addUser(User user) {
+  public void addUser(User user) throws UserStorageException {
     if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail())) {
-      return false;
+      throw new UserStorageException();
     }
-    dataStorage.save(user);
-    return true;
+    saveUser(user);
+  }
+
+  /**
+   * Updates a user in the repository. Publishes all domain events of the user if successful. If
+   * unsuccessful, throws a {@link UserStorageException}
+   *
+   * @param user the updated user state to write to the repository
+   * @throws UserStorageException if the user could not be updated in the repository
+   * @since 1.0.0
+   */
+  public void updateUser(User user) throws UserStorageException {
+    if (!doesUserExistWithId(user.getId())) {
+      throw new UserStorageException();
+    }
+    saveUser(user);
+  }
+
+  private void saveUser(User user) {
+    try {
+      dataStorage.save(user);
+    } catch (Exception e) {
+      throw new UserStorageException(e);
+    }
   }
 
   private boolean doesUserExistWithEmail(String email) {
@@ -99,5 +122,16 @@ public class UserRepository implements Serializable {
 
   private boolean doesUserExistWithId(String id) {
     return findById(id).isPresent();
+  }
+
+  public static class UserStorageException extends RuntimeException {
+
+
+    public UserStorageException() {
+    }
+
+    public UserStorageException(Throwable cause) {
+      super(cause);
+    }
   }
 }

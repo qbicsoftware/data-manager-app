@@ -41,7 +41,6 @@ class UserRepositorySpec extends Specification {
     def "Given a repository that contains no user with a given email, return an empty result"() {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
-        def user = createDummyUser()
         storage.findUsersByEmail(_ as String) >> []
         UserRepository repository = new UserRepository(storage)
 
@@ -61,10 +60,10 @@ class UserRepositorySpec extends Specification {
         when:
         var result = repository.findById("123")
         var user = result.get()
-        boolean hasUserBeenAdded = repository.addUser(user)
+        repository.addUser(user)
 
         then:
-        !hasUserBeenAdded
+        thrown(UserRepository.UserStorageException)
     }
 
 

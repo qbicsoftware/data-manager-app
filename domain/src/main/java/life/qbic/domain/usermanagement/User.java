@@ -2,7 +2,6 @@ package life.qbic.domain.usermanagement;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,7 +25,8 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
 @Table(name = "users")
 public class User implements Serializable {
 
-  @Serial private static final long serialVersionUID = -8469632941022622595L;
+  @Serial
+  private static final long serialVersionUID = -8469632941022622595L;
 
   @Id
   @Column(name = "id")
@@ -50,11 +50,11 @@ public class User implements Serializable {
    * <p>It is the client's responsibility to reset the raw password, after the user has been
    * created.
    *
-   * <p>The object instance won't hold a reference to the original password char array, after it has
-   * been encrypted.
+   * <p>The object instance won't hold a reference to the original password char array, after it
+   * has been encrypted.
    *
    * @param fullName the full name of the user
-   * @param email the email address of the user
+   * @param email    the email address of the user
    * @return the new user
    * @since 1.0.0
    */
@@ -73,8 +73,8 @@ public class User implements Serializable {
    * layer.
    *
    * @param encryptedPassword the encrypted password
-   * @param fullName the full name
-   * @param email the email
+   * @param fullName          the full name
+   * @param email             the email
    * @return an object instance of the user
    * @since 1.0.0
    */
@@ -109,8 +109,8 @@ public class User implements Serializable {
   /**
    * Sets a password for the current user.
    *
-   * <p>Beware that the password gets validated against the current password policy. If the password
-   * violates the policy, an {@link UserException} is thrown.
+   * <p>Beware that the password gets validated against the current password policy. If the
+   * password violates the policy, an {@link UserException} is thrown.
    *
    * <p>The password is then stored in an encrypted form, controlled by the {@link
    * PasswordEncryptionPolicy}.
@@ -171,6 +171,10 @@ public class User implements Serializable {
     return this.id;
   }
 
+  public boolean isActive() {
+    return active;
+  }
+
   public String getEmail() {
     return this.email;
   }
@@ -201,9 +205,8 @@ public class User implements Serializable {
    * @param rawPassword Password that is being validated
    * @return true, if the given password is correct for the user
    */
-  public Boolean checkPassword(char[] rawPassword) {
-    return Objects.equals(
-        PasswordEncryptionPolicy.create().encrypt(rawPassword), encryptedPassword);
+  public boolean checkPassword(char[] rawPassword) {
+    return PasswordEncryptionPolicy.create().doPasswordsMatch(rawPassword, encryptedPassword);
   }
 
   private void validateEmail(String email) throws UserException {
