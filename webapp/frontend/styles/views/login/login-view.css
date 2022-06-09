@@ -13,3 +13,7 @@
     padding-top: var(--lumo-space-l);
     padding-left: var(--lumo-space-l);
 }
+
+.registration {
+    padding: var(--lumo-space-l);
+}

@@ -3,8 +3,8 @@ package life.qbic.views.login;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -42,7 +42,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private ConfigurableLoginForm loginForm;
 
-  private Span registerSpan;
+  private Div registrationSection;
 
   private final transient LoginHandlerInterface viewHandler;
 
@@ -60,14 +60,14 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     this.loginForm = new ConfigurableLoginForm();
     loginForm.setAction("login");
 
-    this.registerSpan = initRegisterSpan();
+    this.registrationSection = initRegistrationSection();
 
     informationContainer = new VerticalLayout();
     errorContainer = new VerticalLayout();
 
     title = new H2("Log in");
 
-    contentLayout.add(title, informationContainer, errorContainer, loginForm, initRegisterSpan());
+    contentLayout.add(title, informationContainer, errorContainer, loginForm, registrationSection);
 
     add(contentLayout);
   }
@@ -83,10 +83,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     title.setClassName("title");
     loginForm.setUsernameText("Email");
+    registrationSection.addClassName("registration");
   }
 
   private void styleFormLayout() {
-    registerSpan.addClassName("p-l");
     contentLayout.setPadding(false);
     contentLayout.setSpacing(false);
     contentLayout.addClassNames(
@@ -104,9 +104,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "max-width-15vw");
   }
 
-  private Span initRegisterSpan() {
+  private Div initRegistrationSection() {
     RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    return new Span(new Text("Need an account? "), routerLink);
+    return new Div(new Text("Need an account? "), routerLink);
   }
 
   public void clearErrors() {
