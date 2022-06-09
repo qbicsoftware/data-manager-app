@@ -52,7 +52,7 @@ public class Registration implements RegisterUserInput {
           }
 
           @Override
-          public void onFailure(String reason) {
+          public void onUserRegistrationFailed(String reason) {
 
           }
         };
