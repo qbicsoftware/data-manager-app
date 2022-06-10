@@ -128,7 +128,7 @@ credentials.
 ![add](docs/readme/LoginScreen.png)
 
 Additionally, in this screen the user can request a password reset for his account if necessary. \
-The user will then be contacted via the provided emailAddress address with the steps necessary to perform a
+The user will then be contacted via the provided email address with the steps necessary to perform a
 password reset.\
 Finally, the user is able to switch to the [registration screen](#user-registration) by clicking on
 the register button or the registration link
