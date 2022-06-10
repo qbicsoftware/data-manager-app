@@ -48,7 +48,7 @@ public class FullName implements Serializable {
    * @return the full name as String
    * @since 1.0.0
    */
-  public String value() {
+  public String get() {
     return value;
   }
 
