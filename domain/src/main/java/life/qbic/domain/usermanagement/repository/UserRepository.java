@@ -40,7 +40,7 @@ public class UserRepository implements Serializable {
   }
 
   /**
-   * Searches for a user with the provided emailAddress value.
+   * Searches for a user with the provided email address
    *
    * <p>Note: A runtime exception is thrown, when there is more than one user found. We want the
    * emailAddress addresses to be unique in the user context, but they might change over time. So emails
