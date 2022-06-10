@@ -21,7 +21,7 @@ public interface UserDataStorage {
    * for the email address. The implementation shall return any user entry with the provided email address
    * and leave the logic to the application layer.
    *
-   * @param emailAddress the emailAddress value to use as search filter
+   * @param emailAddress the email address to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
    *     the provided emailAddress value
    * @since 1.0.0
