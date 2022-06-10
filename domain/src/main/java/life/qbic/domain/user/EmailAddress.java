@@ -72,7 +72,7 @@ public class EmailAddress implements Serializable {
       return false;
     }
     EmailAddress emailAddress = (EmailAddress) o;
-    return value.equals(emailAddress.value());
+    return value.equals(emailAddress.get());
   }
 
   @Override

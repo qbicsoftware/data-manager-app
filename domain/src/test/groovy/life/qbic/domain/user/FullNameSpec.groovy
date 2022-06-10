@@ -30,6 +30,6 @@ class FullNameSpec extends Specification {
         FullName name = FullName.from("Test Tester")
 
         then:
-        name.value().equals("Test Tester")
+        name.get().equals("Test Tester")
     }
 }

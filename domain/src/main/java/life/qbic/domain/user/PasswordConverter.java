@@ -16,7 +16,7 @@ public class PasswordConverter implements AttributeConverter<EncryptedPassword, 
 
   @Override
   public String convertToDatabaseColumn(EncryptedPassword password) {
-    return password.value();
+    return password.get();
   }
 
   @Override
