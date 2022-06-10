@@ -59,7 +59,7 @@ public class EmailAddress implements Serializable {
    * @return email value as String
    * @since 1.0.0
    */
-  public String value() {
+  public String get() {
     return this.value;
   }
 
