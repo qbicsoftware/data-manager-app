@@ -53,7 +53,7 @@ public class User implements Serializable {
    * has been encrypted.
    *
    * @param fullName          the full name of the user
-   * @param emailAddress      the emailAddress value of the user
+   * @param emailAddress      the email address value of the user
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
