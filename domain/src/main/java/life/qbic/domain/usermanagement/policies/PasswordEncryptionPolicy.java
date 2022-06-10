@@ -23,7 +23,7 @@ public class PasswordEncryptionPolicy {
   private static final int SALT_INDEX =
       1; // the index of the salt content in the encoded password String
   private static final int HASH_INDEX =
-      2; // the index of the value content in the encoded password String
+      2; // the index of the hash content in the encoded password String
   private static final int ITERATIONS =
       10_000; // the iteration count used for the encryption algorithm
   private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
