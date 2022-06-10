@@ -108,7 +108,7 @@ public class UserRegistrationHandler
     switch (reason) {
       case "Full Name shorter than 1 character." ->
           userRegistrationLayout.fullName.setInvalid(true);
-      case "Invalid email value format." -> userRegistrationLayout.email.setInvalid(true);
+      case "Invalid email address format." -> userRegistrationLayout.email.setInvalid(true);
       case "User with email value already exists." -> {
         userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
         userRegistrationLayout.email.setInvalid(true);
