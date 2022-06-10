@@ -67,7 +67,7 @@ public class EncryptedPassword implements Serializable {
   }
 
   /**
-   * Returns the passwords encrypted value value
+   * Returns the passwords encrypted value
    *
    * @since 1.0.0
    */
