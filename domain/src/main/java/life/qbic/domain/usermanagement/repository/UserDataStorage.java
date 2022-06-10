@@ -23,7 +23,7 @@ public interface UserDataStorage {
    *
    * @param emailAddress the email address to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
-   *     the provided emailAddress value
+   *     the provided email address
    * @since 1.0.0
    */
   List<User> findUsersByEmailAddress(EmailAddress emailAddress);
