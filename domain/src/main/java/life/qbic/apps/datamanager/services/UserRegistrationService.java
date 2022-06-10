@@ -154,13 +154,13 @@ public final class UserRegistrationService {
       return successResponse;
     }
 
-    public static RegistrationResponse failureResponse(RuntimeException e1, RuntimeException... exceptions) {
-      if (e1 == null || exceptions == null) {
+    public static RegistrationResponse failureResponse(RuntimeException... exceptions) {
+      if (exceptions == null) {
         throw new IllegalArgumentException("Null references are not allowed.");
       }
       var failureResponse = new RegistrationResponse();
       failureResponse.setType(Type.FAILED);
-      failureResponse.setExceptions(e1, exceptions);
+      failureResponse.setExceptions(exceptions);
       return failureResponse;
     }
 
