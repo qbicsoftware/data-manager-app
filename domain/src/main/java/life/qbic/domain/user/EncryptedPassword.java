@@ -18,7 +18,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  */
 public class EncryptedPassword implements Serializable {
 
-  private String encryptedPassword;
+  private String value;
 
   /**
    * Sets a password for the current user.

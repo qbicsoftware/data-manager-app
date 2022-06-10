@@ -41,7 +41,7 @@ public class Registration implements RegisterUserInput {
     // Init a dummy output, until one is set by the client.
     this.registerUserOutput = new RegisterUserOutput() {
       @Override
-      public void onSuccess() {
+      public void onUserRegistrationSucceeded() {
         System.out.println("Called dummy register success output.");
       }
 

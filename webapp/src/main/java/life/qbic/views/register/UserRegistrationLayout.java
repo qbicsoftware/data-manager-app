@@ -98,7 +98,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
-            "EmailAddress already in use",
+            "Email address already in use",
             "If you have difficulties with your password you can reset it.");
     alreadyUsedEmailMessage.setVisible(false);
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
@@ -160,7 +160,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void styleEmailField() {
-    email = new EmailField("EmailAddress");
+    email = new EmailField("Email Address");
   }
 
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
