@@ -37,7 +37,7 @@ public class UserRegistrationException extends ApplicationException {
 
     private PasswordValidationException invalidPasswordException;
 
-    private InvalidFullNameException fullNameException;
+    private FullNameValidationException fullNameException;
 
     private RuntimeException unexpectedException;
 
