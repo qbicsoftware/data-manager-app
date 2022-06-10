@@ -15,7 +15,7 @@ import life.qbic.domain.user.User;
 public interface UserDataStorage {
 
   /**
-   * Searches for any available user entities with the provided emailAddress value.
+   * Searches for any available user entities with the provided email address.
    *
    * <p>Note, that the implementation must not make any assumptions by number of occurrences, even
    * for the emailAddress value. The implementation shall return any user entry with the provided emailAddress
