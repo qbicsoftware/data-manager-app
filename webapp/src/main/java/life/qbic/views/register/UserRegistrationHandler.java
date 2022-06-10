@@ -2,6 +2,7 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,35 +50,35 @@ public class UserRegistrationHandler
 
   private void addListener() {
     userRegistrationLayout.registerButton.addClickShortcut(Key.ENTER);
+
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
           resetErrorMessages();
-          setEmptyInputInvalid();
-          if (isUserInputValid()) {
-            registrationUseCase.register(
-                userRegistrationLayout.fullName.getValue(),
-                userRegistrationLayout.email.getValue(),
-                userRegistrationLayout.password.getValue().toCharArray());
-          } else {
-            userRegistrationLayout.invalidCredentialsMessage.setVisible(true);
-          }
+          registrationUseCase.register(
+              userRegistrationLayout.fullName.getValue(),
+              userRegistrationLayout.email.getValue(),
+              userRegistrationLayout.password.getValue().toCharArray());
         });
   }
 
-  private boolean isUserInputValid() {
-    return !(userRegistrationLayout.fullName.isInvalid() || userRegistrationLayout.email.isInvalid()
-        || userRegistrationLayout.password.isInvalid());
-  }
-
-  private void setEmptyInputInvalid() {
+  private void setEmptyFieldsInvalid() {
+    if (userRegistrationLayout.password.isEmpty()) {
+      userRegistrationLayout.password.setInvalid(true);
+    }
     if (userRegistrationLayout.fullName.isEmpty()) {
       userRegistrationLayout.fullName.setInvalid(true);
     }
     if (userRegistrationLayout.email.isEmpty()) {
       userRegistrationLayout.email.setInvalid(true);
     }
-    if (userRegistrationLayout.password.isEmpty()) {
-      userRegistrationLayout.password.setInvalid(true);
+  }
+
+  private void handleUserException(String reason) {
+    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
+      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+    }
+    if (reason.equalsIgnoreCase("User with email value already exists.")) {
+      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
     }
   }
 
@@ -89,12 +90,17 @@ public class UserRegistrationHandler
   }
 
   @Override
-  public void onSuccess() {
+  public void onUserRegistrationSucceeded() {
     UI.getCurrent().navigate("/login");
   }
 
   @Override
-  public void onFailure(String reason) {
+  public void onUnexpectedFailure(UserRegistrationException exception) {
+
+  }
+
+  @Override
+  public void onUnexpectedFailure(String reason) {
     handleRegistrationFailure(reason);
   }
 

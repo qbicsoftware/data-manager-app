@@ -1,12 +1,12 @@
 package life.qbic.usermanagement.persistence;
 
-import life.qbic.domain.usermanagement.User;
+import java.util.List;
+import java.util.Optional;
+import life.qbic.domain.user.EmailAddress;
+import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * <b>User JPA repository</b>
@@ -32,8 +32,8 @@ public class UserJpaRepository implements UserDataStorage {
   }
 
   @Override
-  public List<User> findUsersByEmail(String email) {
-    return userRepo.findUsersByEmail(email);
+  public List<User> findUsersByEmailAddress(EmailAddress emailAddress) {
+    return userRepo.findUsersByEmailAddress(emailAddress);
   }
 
   @Override

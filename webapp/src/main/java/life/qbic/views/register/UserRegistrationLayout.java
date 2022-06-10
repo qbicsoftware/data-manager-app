@@ -16,12 +16,13 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.util.stream.Stream;
 import life.qbic.views.ErrorMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.stream.Stream;
+
 
 /**
  * <b> Defines the look of the registration layout. </b>
@@ -97,7 +98,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
-            "Email already in use",
+            "Email address already in use",
             "If you have difficulties with your password you can reset it.");
     alreadyUsedEmailMessage.setVisible(false);
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
@@ -159,7 +160,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void styleEmailField() {
-    email = new EmailField("Email");
+    email = new EmailField("Email Address");
   }
 
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {

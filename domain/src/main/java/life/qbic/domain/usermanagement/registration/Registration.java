@@ -1,10 +1,11 @@
 package life.qbic.domain.usermanagement.registration;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.User.UserException;
+import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
+import life.qbic.domain.user.EmailAddress.EmailValidationException;
+import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
+import life.qbic.domain.user.FullName.FullNameValidationException;
 
 /**
  * <b>User Registration use case</b>
@@ -38,18 +39,22 @@ public class Registration implements RegisterUserInput {
   public Registration(UserRegistrationService userRegistrationService) {
     this.userRegistrationService = userRegistrationService;
     // Init a dummy output, until one is set by the client.
-    this.registerUserOutput =
-        new RegisterUserOutput() {
-          @Override
-          public void onSuccess() {
-            System.out.println("Called dummy register success output.");
-          }
+    this.registerUserOutput = new RegisterUserOutput() {
+      @Override
+      public void onUserRegistrationSucceeded() {
+        System.out.println("Called dummy register success output.");
+      }
 
-          @Override
-          public void onFailure(String reason) {
-            System.err.println("Called dummy register failure output.");
-          }
-        };
+      @Override
+      public void onUnexpectedFailure(UserRegistrationException e) {
+        System.err.println("Called dummy register failure output.");
+      }
+
+      @Override
+      public void onUnexpectedFailure(String reason) {
+
+      }
+    };
   }
 
   /**
@@ -69,28 +74,35 @@ public class Registration implements RegisterUserInput {
   @Override
   public void register(String fullName, String email, char[] rawPassword) {
     try {
-      userRegistrationService.registerUser(fullName, email, rawPassword);
-      registerUserOutput.onSuccess();
-    } catch (UserException e) {
-      if (containsSuppressedUserExceptions(e)) {
-        listUserExceptionReasons(e).forEach(reason -> registerUserOutput.onFailure(reason));
-      } else {
-        registerUserOutput.onFailure(e.getReason());
+      RegistrationResponse registrationResponse = userRegistrationService.registerUser(fullName,
+          email, rawPassword);
+      if (registrationResponse.hasFailures()) {
+        registerUserOutput.onUnexpectedFailure(build(registrationResponse));
+        return;
       }
+      registerUserOutput.onUserRegistrationSucceeded();
     } catch (Exception e) {
-      registerUserOutput.onFailure("Unexpected error occurred.");
+      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
     }
   }
 
-  private boolean containsSuppressedUserExceptions(UserException e) {
-    return e.getSuppressed().length > 0;
-  }
+  private UserRegistrationException build(RegistrationResponse registrationResponse) {
+    var builder = UserRegistrationException.builder();
 
-  private List<String> listUserExceptionReasons(UserException e) {
-    List<String> userExceptionReasons = new ArrayList<>();
-    Arrays.stream(e.getSuppressed()).toList()
-        .forEach(userException -> userExceptionReasons.add(userException.getMessage()));
-    return userExceptionReasons;
+    for (RuntimeException e : registrationResponse.failures()) {
+      if (e instanceof EmailValidationException) {
+        builder.withEmailFormatException((EmailValidationException) e);
+      }
+      if (e instanceof PasswordValidationException) {
+        builder.withInvalidPasswordException((PasswordValidationException) e);
+      }
+      if (e instanceof FullNameValidationException) {
+        builder.withFullNameException((FullNameValidationException) e);
+      } else {
+        builder.withUnexpectedException(e);
+      }
+    }
+    return builder.build();
   }
 
   /**

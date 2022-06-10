@@ -1,6 +1,7 @@
 package life.qbic.domain.usermanagement;
 
 import java.util.Optional;
+import life.qbic.domain.user.UserDomainService;
 
 /**
  * <b>Domain Registry</b>
