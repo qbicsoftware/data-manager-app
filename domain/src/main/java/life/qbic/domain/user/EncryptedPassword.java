@@ -71,7 +71,7 @@ public class EncryptedPassword implements Serializable {
    *
    * @since 1.0.0
    */
-  public String value() {
+  public String get() {
     return this.value;
   }
 
