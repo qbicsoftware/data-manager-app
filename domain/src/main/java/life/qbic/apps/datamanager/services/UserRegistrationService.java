@@ -133,11 +133,7 @@ public final class UserRegistrationService {
       return RegistrationResponse.successResponse();
     }
 
-    if (failures.size() > 1) {
-      return RegistrationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
-    } else {
-      return RegistrationResponse.failureResponse(failures.get(0));
-    }
+    return RegistrationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
   }
 
   public static class RegistrationResponse {
