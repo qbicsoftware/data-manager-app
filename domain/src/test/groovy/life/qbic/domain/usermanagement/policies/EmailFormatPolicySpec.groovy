@@ -16,7 +16,7 @@ class EmailFormatPolicySpec extends Specification {
 
         then:
         policyCheckReport.status() == PolicyStatus.FAILED
-        policyCheckReport.reason().equalsIgnoreCase("Invalid email value format.")
+        policyCheckReport.reason().equalsIgnoreCase("Invalid email address format.")
 
         where:
         email << [
