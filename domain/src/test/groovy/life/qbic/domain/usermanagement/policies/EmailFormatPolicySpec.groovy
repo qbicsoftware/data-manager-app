@@ -37,8 +37,8 @@ class EmailFormatPolicySpec extends Specification {
 
         where:
         email << [
-                "valid.value@example.com",
-                "value@subdomain.domain.de"
+                "valid.address@example.com",
+                "address@subdomain.domain.de"
         ]
     }
 
