@@ -18,8 +18,8 @@ public interface UserDataStorage {
    * Searches for any available user entities with the provided email address.
    *
    * <p>Note, that the implementation must not make any assumptions by number of occurrences, even
-   * for the emailAddress value. The implementation shall return any user entry with the provided emailAddress
-   * value and leave the logic to the application layer.
+   * for the email address. The implementation shall return any user entry with the provided email address
+   * and leave the logic to the application layer.
    *
    * @param emailAddress the emailAddress value to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
