@@ -21,8 +21,8 @@ public interface QbicUserRepo extends CrudRepository<User, String> {
   /**
    * Find users by email address in the persistent data storage
    *
-   * @param emailAddress the emailAddress value to filter users for
-   * @return a list of matching users that have the given emailAddress value
+   * @param emailAddress the email address to filter users for
+   * @return a list of matching users that have the given email address
    * @since 1.0.0
    */
   List<User> findUsersByEmailAddress(EmailAddress emailAddress);
