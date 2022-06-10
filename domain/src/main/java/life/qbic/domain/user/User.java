@@ -120,7 +120,7 @@ public class User implements Serializable {
   /**
    * Sets the emailAddress value for the current user.
    *
-   * @param emailAddress the emailAddress value of the user
+   * @param emailAddress the email address of the user
    * @since 1.0.0
    */
   private void setEmail(EmailAddress emailAddress) {
