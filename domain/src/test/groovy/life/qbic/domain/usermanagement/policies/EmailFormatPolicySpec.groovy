@@ -22,8 +22,8 @@ class EmailFormatPolicySpec extends Specification {
         email << [
                 "my@ohmy",
                 "@test.de",
-                "value.de",
-                "my@value"
+                "address.de",
+                "my@address"
         ]
     }
 
