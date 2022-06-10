@@ -42,7 +42,7 @@ public class UserRegistrationHandler
   private void initFields() {
     userRegistrationLayout.fullName.setPattern("\\S.*");
     userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
-    userRegistrationLayout.email.setErrorMessage("Please provide a valid email value");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email address");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
