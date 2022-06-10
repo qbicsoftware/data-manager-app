@@ -147,7 +147,7 @@ This view enables the user to register a new account by providing the required c
 
 ![add](docs/readme/RegistrationScreen.png)
 
-After successful registration the user will be contacted via the provided emailAddress address with the
+After successful registration the user will be contacted via the provided email address with the
 steps necessary to authenticate the generated account.
 
 ## Application overview
