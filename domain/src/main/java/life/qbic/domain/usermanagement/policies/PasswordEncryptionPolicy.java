@@ -23,7 +23,7 @@ public class PasswordEncryptionPolicy {
   private static final int SALT_INDEX =
       1; // the index of the salt content in the encoded password String
   private static final int HASH_INDEX =
-      2; // the index of the hash content in the encoded password String
+      2; // the index of the value content in the encoded password String
   private static final int ITERATIONS =
       10_000; // the iteration count used for the encryption algorithm
   private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
@@ -69,11 +69,11 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Compares a provided raw password with an encrypted hash.
+   * Compares a provided raw password with an encrypted value.
    *
    * @param rawPassword the raw password string to match
-   * @param encryptedHash the hash to match against
-   * @return true, if the raw password matches the hash, else false
+   * @param encryptedHash the value to match against
+   * @return true, if the raw password matches the value, else false
    * @since 1.0.0
    */
   public boolean doPasswordsMatch(char[] rawPassword, String encryptedHash) {
@@ -87,7 +87,7 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Slow comparison method, making it impossible for timing attacks to reverse-engineer the hash.
+   * Slow comparison method, making it impossible for timing attacks to reverse-engineer the value.
    *
    * @param a one byte array
    * @param b another byte array to compare

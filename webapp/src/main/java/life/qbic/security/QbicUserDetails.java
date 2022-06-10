@@ -39,12 +39,12 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public String getPassword() {
-    return user.getEncryptedPassword().hash();
+    return user.getEncryptedPassword().value();
   }
 
   @Override
   public String getUsername() {
-    return user.getEmail().get();
+    return user.getEmail().value();
   }
 
   @Override

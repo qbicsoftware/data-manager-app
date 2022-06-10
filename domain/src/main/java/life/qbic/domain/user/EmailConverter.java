@@ -16,7 +16,7 @@ public class EmailConverter implements AttributeConverter<EmailAddress, String> 
 
   @Override
   public String convertToDatabaseColumn(EmailAddress emailAddress) {
-    return emailAddress.get();
+    return emailAddress.value();
   }
 
   @Override

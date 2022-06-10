@@ -42,7 +42,7 @@ public class UserRegistrationHandler
   private void initFields() {
     userRegistrationLayout.fullName.setPattern("\\S.*");
     userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
-    userRegistrationLayout.email.setErrorMessage("Please provide a valid email address");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email value");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
@@ -77,7 +77,7 @@ public class UserRegistrationHandler
     if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
       userRegistrationLayout.passwordTooShortMessage.setVisible(true);
     }
-    if (reason.equalsIgnoreCase("User with email address already exists.")) {
+    if (reason.equalsIgnoreCase("User with email value already exists.")) {
       userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
     }
   }
@@ -90,17 +90,17 @@ public class UserRegistrationHandler
   }
 
   @Override
-  public void onSuccess() {
+  public void onUserRegistrationSucceeded() {
     UI.getCurrent().navigate("/login");
   }
 
   @Override
-  public void onUserRegistrationFailed(UserRegistrationException exception) {
+  public void onUnexpectedFailure(UserRegistrationException exception) {
 
   }
 
   @Override
-  public void onUserRegistrationFailed(String reason) {
+  public void onUnexpectedFailure(String reason) {
     handleRegistrationFailure(reason);
   }
 
@@ -108,8 +108,8 @@ public class UserRegistrationHandler
     switch (reason) {
       case "Full Name shorter than 1 character." ->
           userRegistrationLayout.fullName.setInvalid(true);
-      case "Invalid email address format." -> userRegistrationLayout.email.setInvalid(true);
-      case "User with email address already exists." -> {
+      case "Invalid email value format." -> userRegistrationLayout.email.setInvalid(true);
+      case "User with email value already exists." -> {
         userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
         userRegistrationLayout.email.setInvalid(true);
       }

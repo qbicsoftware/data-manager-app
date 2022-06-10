@@ -2,6 +2,7 @@ package life.qbic.apps.datamanager.services;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
@@ -51,7 +52,7 @@ public final class UserRegistrationService {
    * client's responsibility to handle the raw password.
    *
    * @param fullName    the full name of the user
-   * @param email       the email address of the user
+   * @param email       the email value of the user
    * @param rawPassword the raw password provided by the user
    * @return a registration response with information about if the registration was successful or
    * not.
@@ -133,9 +134,7 @@ public final class UserRegistrationService {
     }
 
     if (failures.size() > 1) {
-      return RegistrationResponse.failureResponse(failures.get(0),
-          failures.subList(1, failures.size())
-              .toArray(failures.toArray(new RuntimeException[failures.size() - 1])));
+      return RegistrationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
     } else {
       return RegistrationResponse.failureResponse(failures.get(0));
     }
@@ -176,14 +175,12 @@ public final class UserRegistrationService {
       return type;
     }
 
+    private void setException(RuntimeException e) {
+      this.exceptions = Collections.singletonList(e);
+    }
 
-    private void setExceptions(RuntimeException e1, RuntimeException... exceptions) {
-      RuntimeException[] allExceptions;
-      allExceptions =
-          exceptions.length > 0 ? new RuntimeException[exceptions.length + 1] : new RuntimeException[1];
-      allExceptions[0] = e1;
-      System.arraycopy(exceptions, 0, allExceptions, 1, exceptions.length);
-      this.exceptions = Arrays.stream(allExceptions).toList();
+    private void setExceptions(RuntimeException... exceptions) {
+      this.exceptions = Arrays.stream(exceptions).toList();
     }
 
     public boolean hasFailures() {

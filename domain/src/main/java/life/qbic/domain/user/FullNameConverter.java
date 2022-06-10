@@ -16,7 +16,7 @@ public class FullNameConverter implements AttributeConverter<FullName, String> {
 
   @Override
   public String convertToDatabaseColumn(FullName fullName) {
-    return fullName.get();
+    return fullName.value();
   }
 
   @Override

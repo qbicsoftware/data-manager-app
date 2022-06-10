@@ -23,6 +23,6 @@ class EmailAddressSpec extends Specification {
 
         then:
         noExceptionThrown()
-        emailAddress.get().equals("valid@emailAddress.com")
+        emailAddress.value().equals("valid@emailAddress.com")
     }
 }

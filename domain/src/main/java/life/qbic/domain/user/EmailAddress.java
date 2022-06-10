@@ -11,7 +11,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
 /**
  * <b>EmailAddress</b>
  * <p>
- * Represents a valid email address, specified by RFC5322.
+ * Represents a valid email value, specified by RFC5322.
  * <p>
  * For mor details please check {@link EmailFormatPolicy}.
  *
@@ -19,14 +19,17 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  */
 public class EmailAddress implements Serializable {
 
-  private String address;
+  @Serial
+  private static final long serialVersionUID = -2988567868530531076L;
+
+  private String value;
 
   /**
-   * Creates an email object instance from a String representation of an email address.
+   * Creates an email object instance from a String representation of an email value.
    * <p>
    * This method performs a format validation.
    *
-   * @param s the email address String
+   * @param s the email value String
    * @return an email
    * @throws EmailValidationException if the email format is not a valid email format specified by
    *                                  RFC5322
@@ -47,17 +50,17 @@ public class EmailAddress implements Serializable {
   }
 
   private void set(String s) {
-    address = s;
+    value = s;
   }
 
   /**
-   * Queries the email address as String representation.
+   * Queries the email value as String representation.
    *
-   * @return email address as String
+   * @return email value as String
    * @since 1.0.0
    */
-  public String get() {
-    return this.address;
+  public String value() {
+    return this.value;
   }
 
   @Override
@@ -69,22 +72,21 @@ public class EmailAddress implements Serializable {
       return false;
     }
     EmailAddress emailAddress = (EmailAddress) o;
-    return address.equals(emailAddress.get());
+    return value.equals(emailAddress.value());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(address);
+    return Objects.hash(value);
   }
 
 
   /**
-   * <h1>Exception that indicates violations during the email address validation process/h1>
+   * <h1>Exception that indicates violations during the email value validation process</h1>
    *
-   * <p>This exception is supposed to be thrown, if the provided email address for an user violates
-   * the format specified by
-   * RFC5322 It's intention is to contain the invalid email address and the PolicyCheckReport for
-   * the violated policy</p>
+   * <p>This exception is supposed to be thrown, if the provided email value for an user violates
+   * the format specified by RFC5322 It's intention is to contain the invalid email value and the
+   * PolicyCheckReport for the violated policy</p>
    *
    * @since 1.0.0
    */

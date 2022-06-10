@@ -46,12 +46,12 @@ public class Registration implements RegisterUserInput {
       }
 
       @Override
-      public void onUserRegistrationFailed(UserRegistrationException e) {
+      public void onUnexpectedFailure(UserRegistrationException e) {
         System.err.println("Called dummy register failure output.");
       }
 
       @Override
-      public void onUserRegistrationFailed(String reason) {
+      public void onUnexpectedFailure(String reason) {
 
       }
     };
@@ -77,12 +77,12 @@ public class Registration implements RegisterUserInput {
       RegistrationResponse registrationResponse = userRegistrationService.registerUser(fullName,
           email, rawPassword);
       if (registrationResponse.hasFailures()) {
-        registerUserOutput.onUserRegistrationFailed(build(registrationResponse));
+        registerUserOutput.onUnexpectedFailure(build(registrationResponse));
         return;
       }
-      registerUserOutput.onSuccess();
+      registerUserOutput.onUserRegistrationSucceeded();
     } catch (Exception e) {
-      registerUserOutput.onUserRegistrationFailed("Unexpected error occurred.");
+      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
     }
   }
 

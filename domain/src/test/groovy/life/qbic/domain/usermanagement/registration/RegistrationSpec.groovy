@@ -48,11 +48,11 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser.fullName.get(), newUser.email.get(), "12345678".toCharArray())
+        registration.register(newUser.fullName.value(), newUser.email.value(), "12345678".toCharArray())
 
         then:
-        0 * useCaseOutput.onSuccess()
-        1 * useCaseOutput.onUserRegistrationFailed(_ as UserRegistrationException)
+        0 * useCaseOutput.onUserRegistrationSucceeded()
+        1 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         // the user has not been added to the repository
         testStorage.findUsersByEmail(newUser.email).size() == 1
     }
@@ -73,12 +73,12 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser.fullName.get(), newUser.email.get(), "12345678".toCharArray())
+        registration.register(newUser.fullName.value(), newUser.email.value(), "12345678".toCharArray())
 
         then:
-        1 * useCaseOutput.onSuccess()
-        0 * useCaseOutput.onUserRegistrationFailed(_ as String)
-        0 * useCaseOutput.onUserRegistrationFailed(_ as UserRegistrationException)
+        1 * useCaseOutput.onUserRegistrationSucceeded()
+        0 * useCaseOutput.onUnexpectedFailure(_ as String)
+        0 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         def storedUser = testStorage.findUsersByEmail(newUser.getEmail()).get(0)
         storedUser.getFullName() == newUser.getFullName()
         !storedUser.getId().isBlank()

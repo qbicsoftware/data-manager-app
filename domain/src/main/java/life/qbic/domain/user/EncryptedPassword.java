@@ -51,7 +51,7 @@ public class EncryptedPassword implements Serializable {
   }
 
   protected EncryptedPassword(String encryptedPassword) {
-    this.encryptedPassword = encryptedPassword;
+    this.value = encryptedPassword;
   }
 
   private EncryptedPassword() {
@@ -59,7 +59,7 @@ public class EncryptedPassword implements Serializable {
   }
 
   private void setEncryptedPassword(String encryptedPassword) {
-    this.encryptedPassword = encryptedPassword;
+    this.value = encryptedPassword;
   }
 
   private static String encryptPassword(char[] rawPassword) {
@@ -67,12 +67,12 @@ public class EncryptedPassword implements Serializable {
   }
 
   /**
-   * Returns the passwords encrypted hash value
+   * Returns the passwords encrypted value value
    *
    * @since 1.0.0
    */
-  public String hash() {
-    return this.encryptedPassword;
+  public String value() {
+    return this.value;
   }
 
   @Override
@@ -84,12 +84,12 @@ public class EncryptedPassword implements Serializable {
       return false;
     }
     EncryptedPassword that = (EncryptedPassword) o;
-    return Objects.equals(encryptedPassword, that.encryptedPassword);
+    return Objects.equals(value, that.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(encryptedPassword);
+    return Objects.hash(value);
   }
 
   /**

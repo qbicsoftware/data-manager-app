@@ -14,7 +14,7 @@ import life.qbic.apps.datamanager.ApplicationException;
  */
 public class FullName implements Serializable {
 
-  private String name;
+  private String value;
 
   /**
    * Creates a full name object instance from a String representation.
@@ -39,7 +39,7 @@ public class FullName implements Serializable {
   }
 
   private void setName(String s) {
-    this.name = s;
+    this.value = s;
   }
 
   /**
@@ -48,8 +48,8 @@ public class FullName implements Serializable {
    * @return the full name as String
    * @since 1.0.0
    */
-  public String get() {
-    return name;
+  public String value() {
+    return value;
   }
 
   @Override
@@ -61,12 +61,12 @@ public class FullName implements Serializable {
       return false;
     }
     FullName fullName1 = (FullName) o;
-    return Objects.equals(name, fullName1.name);
+    return Objects.equals(value, fullName1.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name);
+    return Objects.hash(value);
   }
 
   /**

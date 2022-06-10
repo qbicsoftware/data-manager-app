@@ -14,7 +14,7 @@ public interface RegisterUserOutput {
    *
    * @since 1.0.0
    */
-  void onSuccess();
+  void onUserRegistrationSucceeded();
 
   /**
    * Callback is executed, when the user registration failed.
@@ -22,7 +22,7 @@ public interface RegisterUserOutput {
    * @param userRegistrationException the Exception containing the reasons for the user registration failure
    * @since 1.0.0
    */
-  void onUserRegistrationFailed(UserRegistrationException userRegistrationException);
+  void onUnexpectedFailure(UserRegistrationException userRegistrationException);
 
-  void onUserRegistrationFailed(String reason);
+  void onUnexpectedFailure(String reason);
 }

@@ -16,14 +16,14 @@ class EmailFormatPolicySpec extends Specification {
 
         then:
         policyCheckReport.status() == PolicyStatus.FAILED
-        policyCheckReport.reason().equalsIgnoreCase("Invalid email address format.")
+        policyCheckReport.reason().equalsIgnoreCase("Invalid email value format.")
 
         where:
         email << [
                 "my@ohmy",
                 "@test.de",
-                "address.de",
-                "my@address"
+                "value.de",
+                "my@value"
         ]
     }
 
@@ -37,8 +37,8 @@ class EmailFormatPolicySpec extends Specification {
 
         where:
         email << [
-                "valid.address@example.com",
-                "address@subdomain.domain.de"
+                "valid.value@example.com",
+                "value@subdomain.domain.de"
         ]
     }
 

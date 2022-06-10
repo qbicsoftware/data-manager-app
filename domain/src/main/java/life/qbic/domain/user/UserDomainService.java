@@ -30,7 +30,7 @@ public class UserDomainService {
    * will be created.
    *
    * @param fullName    the full name of the user
-   * @param emailAddress       a valid emailAddress address
+   * @param emailAddress       a valid emailAddress value
    * @param password the raw password desired by the user
    * @since 1.0.0
    */
@@ -43,8 +43,8 @@ public class UserDomainService {
     var user = User.create(fullName, emailAddress, password);
     userRepository.addUser(user);
 
-    var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().get(),
-        user.getEmail().get());
+    var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().value(),
+        user.getEmail().value());
     domainEventPublisher.publish(userCreatedEvent);
   }
 }

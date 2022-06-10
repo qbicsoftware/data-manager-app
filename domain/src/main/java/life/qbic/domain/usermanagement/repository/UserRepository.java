@@ -40,7 +40,7 @@ public class UserRepository implements Serializable {
   }
 
   /**
-   * Searches for a user with the provided emailAddress address.
+   * Searches for a user with the provided emailAddress value.
    *
    * <p>Note: A runtime exception is thrown, when there is more than one user found. We want the
    * emailAddress addresses to be unique in the user context, but they might change over time. So emails
@@ -52,13 +52,13 @@ public class UserRepository implements Serializable {
    * @param emailAddress the emailAddress to find a matching user entry for
    * @return the user object wrapped in an {@link Optional} if found, otherwise returns {@link
    *     Optional#empty()}
-   * @throws RuntimeException if there is more than one user matching the emailAddress address
+   * @throws RuntimeException if there is more than one user matching the emailAddress value
    * @since 1.0.0
    */
   public Optional<User> findByEmail(EmailAddress emailAddress) throws RuntimeException {
     var matchingUsers = dataStorage.findUsersByEmail(emailAddress);
     if (matchingUsers.size() > 1) {
-      throw new RuntimeException("More than one user entry with the same email address exists!");
+      throw new RuntimeException("More than one user entry with the same email value exists!");
     }
     if (matchingUsers.isEmpty()) {
       return Optional.empty();
@@ -83,7 +83,7 @@ public class UserRepository implements Serializable {
    *
    * @param user the user that shall be added to the repository
    * @return true, of the user has been added, else will return a false flag. This only happens if
-   *     the user with the given id or email address already exists.
+   *     the user with the given id or email value already exists.
    * @since 1.0.0
    */
   public boolean addUser(User user) {
