@@ -19,7 +19,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface QbicUserRepo extends CrudRepository<User, String> {
 
   /**
-   * Find users by emailAddress value in the persistent data storage
+   * Find users by email address in the persistent data storage
    *
    * @param emailAddress the emailAddress value to filter users for
    * @return a list of matching users that have the given emailAddress value
