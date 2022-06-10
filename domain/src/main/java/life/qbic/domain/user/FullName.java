@@ -14,7 +14,7 @@ import life.qbic.apps.datamanager.ApplicationException;
  */
 public class FullName implements Serializable {
 
-  private String value;
+  private final String value;
 
   /**
    * Creates a full name object instance from a String representation.
@@ -29,17 +29,12 @@ public class FullName implements Serializable {
     if (s.isBlank()) {
       throw new FullNameValidationException("Name must not be empty or blank.", s);
     }
-    var fullName = new FullName();
-    fullName.setName(s);
-    return fullName;
+    return new FullName(s);
   }
 
-  private FullName() {
+  private FullName(String fullName) {
     super();
-  }
-
-  private void setName(String s) {
-    this.value = s;
+    this.value = fullName;
   }
 
   /**

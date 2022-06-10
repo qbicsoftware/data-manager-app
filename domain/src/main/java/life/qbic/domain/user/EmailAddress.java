@@ -22,7 +22,7 @@ public class EmailAddress implements Serializable {
   @Serial
   private static final long serialVersionUID = -2988567868530531076L;
 
-  private String value;
+  private final String value;
 
   /**
    * Creates an email object instance from a String representation of an email value.
@@ -40,17 +40,12 @@ public class EmailAddress implements Serializable {
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
       throw new EmailValidationException(policyCheckReport, s);
     }
-    var email = new EmailAddress();
-    email.set(s);
-    return email;
+    return new EmailAddress(s);
   }
 
-  private EmailAddress() {
+  private EmailAddress(String emailAddress) {
     super();
-  }
-
-  private void set(String s) {
-    value = s;
+    this.value = emailAddress;
   }
 
   /**

@@ -18,7 +18,7 @@ import life.qbic.domain.usermanagement.policies.PolicyStatus;
  */
 public class EncryptedPassword implements Serializable {
 
-  private String value;
+  private final String value;
 
   /**
    * Sets a password for the current user.
@@ -41,26 +41,18 @@ public class EncryptedPassword implements Serializable {
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
       throw new PasswordValidationException(policyCheckReport);
     }
-    var password = new EncryptedPassword();
-    password.setEncryptedPassword(encryptPassword(rawPassword));
-    return password;
+    return new EncryptedPassword(encryptPassword(rawPassword));
   }
 
   protected static EncryptedPassword fromEncrypted(String encryptedPassword) {
     return new EncryptedPassword(encryptedPassword);
   }
 
-  protected EncryptedPassword(String encryptedPassword) {
-    this.value = encryptedPassword;
-  }
-
-  private EncryptedPassword() {
+  private EncryptedPassword(String encryptedPassword) {
     super();
-  }
-
-  private void setEncryptedPassword(String encryptedPassword) {
     this.value = encryptedPassword;
   }
+
 
   private static String encryptPassword(char[] rawPassword) {
     return PasswordEncryptionPolicy.instance().encrypt(rawPassword);
