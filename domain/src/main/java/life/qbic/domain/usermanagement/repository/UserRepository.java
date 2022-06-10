@@ -52,7 +52,7 @@ public class UserRepository implements Serializable {
    * @param emailAddress the email address to find a matching user entry for
    * @return the user object wrapped in an {@link Optional} if found, otherwise returns {@link
    *     Optional#empty()}
-   * @throws RuntimeException if there is more than one user matching the emailAddress value
+   * @throws RuntimeException if there is more than one user matching the email address
    * @since 1.0.0
    */
   public Optional<User> findByEmail(EmailAddress emailAddress) throws RuntimeException {
