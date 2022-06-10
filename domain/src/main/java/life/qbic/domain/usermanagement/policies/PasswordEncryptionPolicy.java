@@ -87,7 +87,7 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Slow comparison method, making it impossible for timing attacks to reverse-engineer the value.
+   * Slow comparison method, making it impossible for timing attacks to reverse-engineer the hash.
    *
    * @param a one byte array
    * @param b another byte array to compare
