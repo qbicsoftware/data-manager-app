@@ -83,7 +83,7 @@ public class UserRepository implements Serializable {
    *
    * @param user the user that shall be added to the repository
    * @return true, of the user has been added, else will return a false flag. This only happens if
-   *     the user with the given id or email value already exists.
+   *     the user with the given id or email address already exists.
    * @since 1.0.0
    */
   public boolean addUser(User user) {
