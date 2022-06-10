@@ -118,7 +118,7 @@ public class User implements Serializable {
   }
 
   /**
-   * Sets the emailAddress value for the current user.
+   * Sets the email address for the current user.
    *
    * @param emailAddress the email address of the user
    * @since 1.0.0
