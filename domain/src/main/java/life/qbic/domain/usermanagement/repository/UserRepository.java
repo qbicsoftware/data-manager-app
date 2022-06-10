@@ -58,7 +58,7 @@ public class UserRepository implements Serializable {
   public Optional<User> findByEmail(EmailAddress emailAddress) throws RuntimeException {
     var matchingUsers = dataStorage.findUsersByEmailAddress(emailAddress);
     if (matchingUsers.size() > 1) {
-      throw new RuntimeException("More than one user entry with the same email value exists!");
+      throw new RuntimeException("More than one user entry with the same email address exists!");
     }
     if (matchingUsers.isEmpty()) {
       return Optional.empty();
