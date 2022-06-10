@@ -69,7 +69,7 @@ public class PasswordEncryptionPolicy {
   }
 
   /**
-   * Compares a provided raw password with an encrypted value.
+   * Compares a provided raw password with an encrypted hash.
    *
    * @param rawPassword the raw password string to match
    * @param encryptedHash the value to match against
