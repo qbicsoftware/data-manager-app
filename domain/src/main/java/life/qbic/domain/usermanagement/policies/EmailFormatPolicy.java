@@ -28,7 +28,7 @@ public class EmailFormatPolicy {
   }
 
   /**
-   * Validates a given putative email value against the RFC5322 value-spec.
+   * Validates a given putative email address against the RFC5322 address-spec.
    *
    * @param email the email to validate
    * @return a check report with the validation information
