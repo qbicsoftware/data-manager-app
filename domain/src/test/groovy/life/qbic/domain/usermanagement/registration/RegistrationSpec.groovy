@@ -54,7 +54,7 @@ class RegistrationSpec extends Specification {
         0 * useCaseOutput.onUserRegistrationSucceeded()
         1 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         // the user has not been added to the repository
-        testStorage.findUsersByEmail(newUser.email).size() == 1
+        testStorage.findUsersByEmailAddress(newUser.email).size() == 1
     }
 
     def "When a user is not yet registered with a given email address, register the user"() {
@@ -79,7 +79,7 @@ class RegistrationSpec extends Specification {
         1 * useCaseOutput.onUserRegistrationSucceeded()
         0 * useCaseOutput.onUnexpectedFailure(_ as String)
         0 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
-        def storedUser = testStorage.findUsersByEmail(newUser.getEmail()).get(0)
+        def storedUser = testStorage.findUsersByEmailAddress(newUser.getEmail()).get(0)
         storedUser.getFullName() == newUser.getFullName()
         !storedUser.getId().isBlank()
 
@@ -90,7 +90,7 @@ class RegistrationSpec extends Specification {
         private List<User> users = []
 
         @Override
-        List<User> findUsersByEmail(EmailAddress email) {
+        List<User> findUsersByEmailAddress(EmailAddress email) {
             return users.stream()
                     .filter((User user) -> { user.getEmail().equals( email) }).collect()
         }

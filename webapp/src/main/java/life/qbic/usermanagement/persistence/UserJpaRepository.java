@@ -32,7 +32,7 @@ public class UserJpaRepository implements UserDataStorage {
   }
 
   @Override
-  public List<User> findUsersByEmail(EmailAddress emailAddress) {
+  public List<User> findUsersByEmailAddress(EmailAddress emailAddress) {
     return userRepo.findUsersByEmailAddress(emailAddress);
   }
 

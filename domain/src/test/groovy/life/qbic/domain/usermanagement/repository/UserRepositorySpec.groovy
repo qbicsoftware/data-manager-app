@@ -17,7 +17,7 @@ class UserRepositorySpec extends Specification {
     def "Given a repository that contains more than one entry with the same email, throw a runtime exception"() {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
-        storage.findUsersByEmail(_ as EmailAddress) >> [createDummyUser(), createDummyUser()]
+        storage.findUsersByEmailAddress(_ as EmailAddress) >> [createDummyUser(), createDummyUser()]
 
         UserRepository repository = new UserRepository(storage)
 
@@ -32,7 +32,7 @@ class UserRepositorySpec extends Specification {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
-        storage.findUsersByEmail(_ as EmailAddress) >> [user]
+        storage.findUsersByEmailAddress(_ as EmailAddress) >> [user]
         UserRepository repository = new UserRepository(storage)
 
         when:
@@ -46,7 +46,7 @@ class UserRepositorySpec extends Specification {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
-        storage.findUsersByEmail(_ as EmailAddress) >> []
+        storage.findUsersByEmailAddress(_ as EmailAddress) >> []
         UserRepository repository = new UserRepository(storage)
 
         when:

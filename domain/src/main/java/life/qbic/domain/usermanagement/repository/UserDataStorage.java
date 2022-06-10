@@ -26,7 +26,7 @@ public interface UserDataStorage {
    *     the provided emailAddress value
    * @since 1.0.0
    */
-  List<User> findUsersByEmail(EmailAddress emailAddress);
+  List<User> findUsersByEmailAddress(EmailAddress emailAddress);
 
   /**
    * Saves a {@link User} entity permanently.
