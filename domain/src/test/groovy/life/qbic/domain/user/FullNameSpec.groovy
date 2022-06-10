@@ -14,7 +14,7 @@ class FullNameSpec extends Specification {
         FullName.from("  ")
 
         then:
-        thrown(FullName.InvalidFullNameException)
+        thrown(FullName.FullNameValidationException)
     }
 
     def "Given an empty name, throw an IllegalArgumentException"() {
@@ -22,7 +22,7 @@ class FullNameSpec extends Specification {
         FullName.from("")
 
         then:
-        thrown(FullName.InvalidFullNameException)
+        thrown(FullName.FullNameValidationException)
     }
 
     def "Given a valid name, create an instance of a full name object"() {

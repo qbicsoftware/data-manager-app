@@ -15,7 +15,7 @@ import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
-import life.qbic.domain.user.FullName.InvalidFullNameException;
+import life.qbic.domain.user.FullName.FullNameValidationException;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
@@ -120,7 +120,7 @@ public final class UserRegistrationService {
     }
     try {
       FullName.from(fullName);
-    } catch (InvalidFullNameException e) {
+    } catch (FullNameValidationException e) {
       failures.add(e);
     }
     try {

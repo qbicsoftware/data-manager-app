@@ -5,7 +5,7 @@ import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
 import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
-import life.qbic.domain.user.FullName.InvalidFullNameException;
+import life.qbic.domain.user.FullName.FullNameValidationException;
 
 /**
  * <b>User Registration use case</b>
@@ -96,8 +96,8 @@ public class Registration implements RegisterUserInput {
       if (e instanceof PasswordValidationException) {
         builder.withInvalidPasswordException((PasswordValidationException) e);
       }
-      if (e instanceof InvalidFullNameException) {
-        builder.withFullNameException((InvalidFullNameException) e);
+      if (e instanceof FullNameValidationException) {
+        builder.withFullNameException((FullNameValidationException) e);
       } else {
         builder.withUnexpectedException(e);
       }

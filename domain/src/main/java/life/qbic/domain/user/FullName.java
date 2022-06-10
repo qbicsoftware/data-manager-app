@@ -27,7 +27,7 @@ public class FullName implements Serializable {
    */
   public static FullName from(String s) {
     if (s.isBlank()) {
-      throw new InvalidFullNameException("Name must not be empty or blank.", s);
+      throw new FullNameValidationException("Name must not be empty or blank.", s);
     }
     var fullName = new FullName();
     fullName.setName(s);
@@ -79,14 +79,14 @@ public class FullName implements Serializable {
    * @since 1.0.0
    */
 
-  public static class InvalidFullNameException extends ApplicationException {
+  public static class FullNameValidationException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -7328021953844399851L;
 
     private final String invalidFullName;
 
-    InvalidFullNameException(String message, String invalidFullName) {
+    FullNameValidationException(String message, String invalidFullName) {
       super(message);
       this.invalidFullName = invalidFullName;
     }

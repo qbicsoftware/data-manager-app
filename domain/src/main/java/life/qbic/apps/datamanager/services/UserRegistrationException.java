@@ -5,7 +5,7 @@ import java.util.Optional;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
-import life.qbic.domain.user.FullName.InvalidFullNameException;
+import life.qbic.domain.user.FullName.FullNameValidationException;
 
 /**
  * <h1>Exception that indicates violations during the user registration process</h1>
@@ -24,7 +24,7 @@ public class UserRegistrationException extends ApplicationException {
   private static final long serialVersionUID = 1026978635211901782L;
   private final transient EmailValidationException emailFormatException;
   private final transient PasswordValidationException invalidPasswordException;
-  private final transient InvalidFullNameException fullNameException;
+  private final transient FullNameValidationException fullNameException;
   private final transient RuntimeException unexpectedException;
 
   public static Builder builder() {
@@ -50,7 +50,7 @@ public class UserRegistrationException extends ApplicationException {
       return this;
     }
 
-    public Builder withFullNameException(InvalidFullNameException e) {
+    public Builder withFullNameException(FullNameValidationException e) {
       fullNameException = e;
       return this;
     }
@@ -81,7 +81,7 @@ public class UserRegistrationException extends ApplicationException {
     return Optional.ofNullable(emailFormatException);
   }
 
-  public Optional<InvalidFullNameException> fullNameException() {
+  public Optional<FullNameValidationException> fullNameException() {
     return Optional.ofNullable(fullNameException);
   }
 
