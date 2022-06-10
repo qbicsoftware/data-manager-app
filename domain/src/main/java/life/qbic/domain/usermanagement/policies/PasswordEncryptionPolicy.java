@@ -72,8 +72,8 @@ public class PasswordEncryptionPolicy {
    * Compares a provided raw password with an encrypted hash.
    *
    * @param rawPassword the raw password string to match
-   * @param encryptedHash the value to match against
-   * @return true, if the raw password matches the value, else false
+   * @param encryptedHash the hash to match against
+   * @return true, if the raw password matches the hash, else false
    * @since 1.0.0
    */
   public boolean doPasswordsMatch(char[] rawPassword, String encryptedHash) {
