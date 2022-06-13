@@ -48,13 +48,13 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(User.fullName.get(), User.emailAddress.get(), "12345678".toCharArray())
+        registration.register(newUser.fullName().get(), newUser.emailAddress().get(), "12345678".toCharArray())
 
         then:
         0 * useCaseOutput.onUserRegistrationSucceeded()
         1 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         // the user has not been added to the repository
-        testStorage.findUsersByEmailAddress(User.emailAddress).size() == 1
+        testStorage.findUsersByEmailAddress(testUser.emailAddress()).size() == 1
     }
 
     def "When a user is not yet registered with a given email address, register the user"() {
@@ -73,7 +73,7 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(User.fullName.get(), User.emailAddress.get(), "12345678".toCharArray())
+        registration.register(newUser.fullName().get(), newUser.emailAddress().get(), "12345678".toCharArray())
 
         then:
         1 * useCaseOutput.onUserRegistrationSucceeded()
