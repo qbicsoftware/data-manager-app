@@ -3,7 +3,8 @@ package life.qbic.domain.usermanagement.repository;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.domain.usermanagement.User;
+import life.qbic.domain.user.EmailAddress;
+import life.qbic.domain.user.User;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
@@ -12,8 +13,7 @@ import life.qbic.domain.usermanagement.User;
  */
 public class UserRepository implements Serializable {
 
-  @Serial
-  private static final long serialVersionUID = 5576670098610784078L;
+  @Serial private static final long serialVersionUID = 5576670098610784078L;
 
   private static UserRepository INSTANCE;
 
@@ -40,7 +40,7 @@ public class UserRepository implements Serializable {
   }
 
   /**
-   * Searches for a user with the provided email address.
+   * Searches for a user with the provided email address
    *
    * <p>Note: A runtime exception is thrown, when there is more than one user found. We want the
    * email addresses to be unique in the user context, but they might change over time. So emails
@@ -55,10 +55,10 @@ public class UserRepository implements Serializable {
    * @throws RuntimeException if there is more than one user matching the email address
    * @since 1.0.0
    */
-  public Optional<User> findByEmail(String email) throws RuntimeException {
-    var matchingUsers = dataStorage.findUsersByEmail(email);
+  public Optional<User> findByEmail(EmailAddress emailAddress) throws RuntimeException {
+    var matchingUsers = dataStorage.findUsersByEmailAddress(emailAddress);
     if (matchingUsers.size() > 1) {
-      throw new RuntimeException("More than one user entry with the same email exists!");
+      throw new RuntimeException("More than one user entry with the same email address exists!");
     }
     if (matchingUsers.isEmpty()) {
       return Optional.empty();
@@ -87,7 +87,7 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public void addUser(User user) throws UserStorageException {
-    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail())) {
+    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.emailAddress())) {
       throw new UserStorageException();
     }
     saveUser(user);
@@ -116,8 +116,8 @@ public class UserRepository implements Serializable {
     }
   }
 
-  private boolean doesUserExistWithEmail(String email) {
-    return findByEmail(email).isPresent();
+  private boolean doesUserExistWithEmail(EmailAddress emailAddress) {
+    return findByEmail(emailAddress).isPresent();
   }
 
   private boolean doesUserExistWithId(String id) {

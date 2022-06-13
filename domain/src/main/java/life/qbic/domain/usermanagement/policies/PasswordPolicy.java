@@ -16,7 +16,7 @@ public class PasswordPolicy {
 
   private static PasswordPolicy INSTANCE;
 
-  public static PasswordPolicy create() {
+  public static PasswordPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordPolicy();
     }

@@ -60,9 +60,9 @@ public class AppConfig {
 
   @Bean
   public UserRegistrationService userRegistrationService(
-      NotificationService notificationService, UserDataStorage userDataStorage,
+      NotificationService notificationService, UserRepository userRepository,
       EventStore eventStore) {
-    return new UserRegistrationService(notificationService, userDataStorage, eventStore);
+    return new UserRegistrationService(notificationService, userRepository, eventStore);
   }
 
 

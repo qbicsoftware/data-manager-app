@@ -1,7 +1,12 @@
 package life.qbic.domain.usermanagement.registration;
 
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.User.UserException;
+import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
+import life.qbic.apps.datamanager.services.UserRegistrationService.UserExistsException;
+import life.qbic.domain.user.EmailAddress.EmailValidationException;
+import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
+import life.qbic.domain.user.FullName.FullNameValidationException;
 
 /**
  * <b>User Registration use case</b>
@@ -28,33 +33,21 @@ public class Registration implements RegisterUserInput {
    * explicitly setting it via {@link Registration#setRegisterUserOutput(RegisterUserOutput)}.
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
-   * after the use case has been executed via {@link Registration#register(String, String, char[])}.
+   * after the use case has been executed via
+   * {@link Registration#register(String, String, char[])}.
    *
    * @param userRegistrationService the user registration service to save the new user to.
    * @since 1.0.0
    */
   public Registration(UserRegistrationService userRegistrationService) {
     this.userRegistrationService = userRegistrationService;
-    // Init a dummy output, until one is set by the client.
-    this.registerUserOutput =
-        new RegisterUserOutput() {
-          @Override
-          public void onSuccess() {
-            System.out.println("Called dummy register success output.");
-          }
-
-          @Override
-          public void onFailure(String reason) {
-            System.err.println("Called dummy register failure output.");
-          }
-        };
   }
 
   /**
    * Sets and overrides the use case output.
    *
    * @param registerUserOutput an output interface implementation, so the use case can trigger the
-   *     callback methods after its execution
+   *                           callback methods after its execution
    * @since 1.0.0
    */
   public void setRegisterUserOutput(RegisterUserOutput registerUserOutput) {
@@ -66,16 +59,41 @@ public class Registration implements RegisterUserInput {
    */
   @Override
   public void register(String fullName, String email, char[] rawPassword) {
-    try {
-      userRegistrationService.registerUser(fullName, email, rawPassword);
-      registerUserOutput.onSuccess();
-    } catch (UserException e) {
-      log.error(e.getMessage(), e);
-      registerUserOutput.onFailure("Could not create a new account, please try again.");
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      registerUserOutput.onFailure("Unexpected error occurred.");
+    if (registerUserOutput == null) {
+      log.error("No use case output set.");
+      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
+      return;
     }
+    try {
+      userRegistrationService.registerUser(fullName, email, rawPassword)
+          .ifSuccessOrElse(this::reportSuccess,
+              response -> registerUserOutput.onUnexpectedFailure(build(response)));
+    } catch (Exception e) {
+      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
+    }
+  }
+
+  private void reportSuccess(RegistrationResponse registrationResponse) {
+    registerUserOutput.onUserRegistrationSucceeded();
+  }
+
+  private UserRegistrationException build(RegistrationResponse registrationResponse) {
+    var builder = UserRegistrationException.builder();
+
+    for (RuntimeException e : registrationResponse.failures()) {
+      if (e instanceof EmailValidationException) {
+        builder.withEmailFormatException((EmailValidationException) e);
+      } else if (e instanceof PasswordValidationException) {
+        builder.withInvalidPasswordException((PasswordValidationException) e);
+      } else if (e instanceof FullNameValidationException) {
+        builder.withFullNameException((FullNameValidationException) e);
+      } else if (e instanceof UserExistsException) {
+        builder.withUserExistsException((UserExistsException) e);
+      } else {
+        builder.withUnexpectedException(e);
+      }
+    }
+    return builder.build();
   }
 
   /**

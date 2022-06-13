@@ -144,7 +144,7 @@ public class Exchange implements MessageBusInterface {
   }
 
   /**
-   * Subscribe to a topic in order to get informed, whenever a message with this topic is published
+   * Subscribe to a topic in order to be informed, whenever a message with this topic is published
    * over this Exchange instance.
    *
    * @param subscriber the subscriber callback reference. A subscriber can only subscribe once to a

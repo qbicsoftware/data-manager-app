@@ -15,7 +15,7 @@ public class QBiCPasswordEncoder implements PasswordEncoder {
   private final PasswordEncryptionPolicy passwordEncryptionPolicy;
 
   public QBiCPasswordEncoder() {
-    passwordEncryptionPolicy = PasswordEncryptionPolicy.create();
+    passwordEncryptionPolicy = PasswordEncryptionPolicy.instance();
   }
 
   /**

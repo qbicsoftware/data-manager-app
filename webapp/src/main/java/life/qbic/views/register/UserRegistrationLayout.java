@@ -43,9 +43,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   public Button registerButton;
 
   public Span loginSpan;
-
   public ErrorMessage alreadyUsedEmailMessage;
-  public ErrorMessage passwordTooShortMessage;
   public ErrorMessage errorMessage;
 
   public InformationMessage confirmationInformationMessage;
@@ -103,14 +101,9 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void createErrorDivs() {
     alreadyUsedEmailMessage =
         new ErrorMessage(
-            "Email already in use",
+            "Email address already in use",
             "If you have difficulties with your password you can reset it.");
     alreadyUsedEmailMessage.setVisible(false);
-
-    passwordTooShortMessage =
-        new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
-    passwordTooShortMessage.setVisible(false);
-
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
     errorMessage.setVisible(false);
   }
@@ -126,6 +119,8 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void styleFormLayout() {
+    contentLayout.setPadding(false);
+    contentLayout.setMargin(false);
     contentLayout.addClassNames(
         "bg-base",
         "border",
@@ -138,12 +133,14 @@ public class UserRegistrationLayout extends VerticalLayout {
         "text-s",
         "shadow-l",
         "min-width-300px",
-        "max-width-15vw");
+        "max-width-15vw",
+        "pb-l",
+        "pr-l",
+        "pl-l");
     contentLayout.add(
         layoutTitle,
         errorMessage,
         alreadyUsedEmailMessage,
-        passwordTooShortMessage,
         confirmationInformationMessage,
         fullName,
         email,

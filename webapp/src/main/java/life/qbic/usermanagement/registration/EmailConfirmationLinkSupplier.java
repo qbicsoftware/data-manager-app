@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailConfirmationLinkSupplier {
 
-
   private final String host;
 
   private final String port;

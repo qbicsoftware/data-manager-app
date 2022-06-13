@@ -37,7 +37,7 @@ public class PasswordEncryptionPolicy {
    * @return the password encryption policy
    * @since 1.0.0
    */
-  public static PasswordEncryptionPolicy create() {
+  public static PasswordEncryptionPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordEncryptionPolicy();
     }
