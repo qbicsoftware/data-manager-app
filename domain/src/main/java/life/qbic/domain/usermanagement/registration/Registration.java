@@ -3,6 +3,7 @@ package life.qbic.domain.usermanagement.registration;
 import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.apps.datamanager.services.UserRegistrationService;
 import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
+import life.qbic.apps.datamanager.services.UserRegistrationService.UserExistsException;
 import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName.FullNameValidationException;
@@ -95,12 +96,16 @@ public class Registration implements RegisterUserInput {
       if (e instanceof EmailValidationException) {
         builder.withEmailFormatException((EmailValidationException) e);
       }
-      if (e instanceof PasswordValidationException) {
+      else if (e instanceof PasswordValidationException) {
         builder.withInvalidPasswordException((PasswordValidationException) e);
       }
-      if (e instanceof FullNameValidationException) {
+      else if (e instanceof FullNameValidationException) {
         builder.withFullNameException((FullNameValidationException) e);
-      } else {
+      }
+      else if (e instanceof UserExistsException) {
+        builder.withUserExistsException((UserExistsException) e);
+      }
+      else {
         builder.withUnexpectedException(e);
       }
     }
