@@ -2,13 +2,14 @@ package life.qbic.domain.user;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import life.qbic.domain.events.DomainEventPublisher;
+import life.qbic.domain.user.jpa.EmailConverter;
+import life.qbic.domain.user.jpa.FullNameConverter;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
 
@@ -26,9 +27,9 @@ public class User implements Serializable {
   @Serial
   private static final long serialVersionUID = -8469632941022622595L;
 
-  @Id
+  @EmbeddedId
   @Column(name = "id")
-  private String id;
+  private UserId id;
 
   @Convert(converter = FullNameConverter.class)
   private FullName fullName;
@@ -63,36 +64,19 @@ public class User implements Serializable {
    */
   public static User create(FullName fullName, EmailAddress emailAddress,
       EncryptedPassword encryptedPassword) {
-    String uuid = String.valueOf(UUID.randomUUID());
-    var user = new User(fullName);
-    user.setEmail(emailAddress);
-    user.setId(uuid);
-    user.setEncryptedPassword(encryptedPassword);
+    UserId id = UserId.create();
+    var user = new User(id, fullName, emailAddress, encryptedPassword);
     user.active = false;
 
     return user;
   }
 
-  /**
-   * Recreates an instance of a user object, for example when loading user data from the persistence
-   * layer.
-   *
-   * @param encryptedPassword the encrypted password
-   * @param fullName          the full name
-   * @param emailAddress      the emailAddress
-   * @return an object instance of the user
-   * @since 1.0.0
-   */
-  protected static User of(EncryptedPassword encryptedPassword, FullName fullName,
-      EmailAddress emailAddress) {
-    var user = new User(fullName);
-    user.setEmail(emailAddress);
-    user.setEncryptedPassword(encryptedPassword);
-    return user;
-  }
-
-  private User(FullName fullName) {
+  private User(UserId id, FullName fullName, EmailAddress emailAddress,
+      EncryptedPassword encryptedPassword) {
+    this.id = id;
     this.fullName = fullName;
+    this.emailAddress = emailAddress;
+    this.encryptedPassword = encryptedPassword;
   }
 
   @Override
@@ -130,11 +114,7 @@ public class User implements Serializable {
     this.emailAddress = emailAddress;
   }
 
-  private void setId(String id) {
-    this.id = id;
-  }
-
-  public String getId() {
+  public UserId id() {
     return this.id;
   }
 
@@ -154,14 +134,14 @@ public class User implements Serializable {
    * Confirms the email address.
    */
   public void confirmEmail() {
-    UserEmailConfirmed event = UserEmailConfirmed.create(id, emailAddress.get());
+    UserEmailConfirmed event = UserEmailConfirmed.create(id.get(), emailAddress.get());
     DomainEventPublisher.instance().publish(event);
     activate();
   }
 
   private void activate() {
     this.active = true;
-    UserActivated event = UserActivated.create(id);
+    UserActivated event = UserActivated.create(id.get());
     DomainEventPublisher.instance().publish(event);
   }
 }

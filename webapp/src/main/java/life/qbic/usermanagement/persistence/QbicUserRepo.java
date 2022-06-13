@@ -3,6 +3,7 @@ package life.qbic.usermanagement.persistence;
 import java.util.List;
 import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
+import life.qbic.domain.user.UserId;
 import org.springframework.data.repository.CrudRepository;
 
 
@@ -17,7 +18,7 @@ import org.springframework.data.repository.CrudRepository;
  *
  * @since 1.0.0
  */
-public interface QbicUserRepo extends CrudRepository<User, String> {
+public interface QbicUserRepo extends CrudRepository<User, UserId> {
 
   /**
    * Find users by email address in the persistent data storage
@@ -35,5 +36,5 @@ public interface QbicUserRepo extends CrudRepository<User, String> {
    * @return the user matching the id, is <code>null</code> if no matching user was found.
    * @since 1.0.0
    */
-  User findUserById(String id);
+  User findUserById(UserId id);
 }

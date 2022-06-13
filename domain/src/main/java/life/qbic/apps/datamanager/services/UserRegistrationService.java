@@ -19,6 +19,7 @@ import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
 import life.qbic.domain.user.FullName.FullNameValidationException;
 import life.qbic.domain.user.User;
+import life.qbic.domain.user.UserId;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
@@ -278,7 +279,8 @@ public final class UserRegistrationService {
         notificationService.send(notification);
       }
     });
-    Optional<User> optionalUser = userRepository.findById(userId);
+
+    Optional<User> optionalUser = userRepository.findById(UserId.from(userId));
     optionalUser.ifPresentOrElse(user -> {
       user.confirmEmail();
       userRepository.updateUser(user);

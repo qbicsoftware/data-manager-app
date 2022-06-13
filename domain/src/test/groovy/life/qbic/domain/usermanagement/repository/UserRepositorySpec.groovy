@@ -5,6 +5,7 @@ import life.qbic.domain.user.EmailAddress
 import life.qbic.domain.user.EncryptedPassword
 import life.qbic.domain.user.FullName
 import life.qbic.domain.user.User
+import life.qbic.domain.user.UserId
 import spock.lang.Specification
 
 /**
@@ -39,7 +40,7 @@ class UserRepositorySpec extends Specification {
         def matchingUser = repository.findByEmail(EmailAddress.from("my.example@example.com"))
 
         then:
-        matchingUser.get().getId().equalsIgnoreCase(user.getId())
+        matchingUser.get().id() == user.id()
     }
 
     def "Given a repository that contains no user with a given email, return an empty result"() {
@@ -59,11 +60,11 @@ class UserRepositorySpec extends Specification {
     def "Given a repository already contains a user, dont add the user twice"() {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
-        storage.findUserById(_ as String) >> Optional.of(createDummyUser())
+        storage.findUserById(_ as UserId) >> Optional.of(createDummyUser())
         UserRepository repository = new UserRepository(storage)
 
         when:
-        var result = repository.findById("123")
+        var result = repository.findById(UserId.create())
         var user = result.get()
         repository.addUser(user)
 

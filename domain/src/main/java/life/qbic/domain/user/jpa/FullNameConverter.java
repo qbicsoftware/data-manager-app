@@ -1,6 +1,7 @@
-package life.qbic.domain.user;
+package life.qbic.domain.user.jpa;
 
 import javax.persistence.AttributeConverter;
+import life.qbic.domain.user.FullName;
 
 /**
  * <b>Converts {@link life.qbic.domain.user.FullName} into a String and vice versa></b>
