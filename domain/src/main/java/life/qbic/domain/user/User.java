@@ -138,11 +138,11 @@ public class User implements Serializable {
     return this.id;
   }
 
-  public EmailAddress getEmail() {
+  public EmailAddress emailAddress() {
     return this.emailAddress;
   }
 
-  public FullName getFullName() {
+  public FullName fullName() {
     return this.fullName;
   }
 

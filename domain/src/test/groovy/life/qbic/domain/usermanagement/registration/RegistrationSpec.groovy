@@ -48,13 +48,13 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser.fullName.get(), newUser.email.get(), "12345678".toCharArray())
+        registration.register(User.fullName.get(), User.emailAddress.get(), "12345678".toCharArray())
 
         then:
         0 * useCaseOutput.onUserRegistrationSucceeded()
         1 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         // the user has not been added to the repository
-        testStorage.findUsersByEmailAddress(newUser.email).size() == 1
+        testStorage.findUsersByEmailAddress(User.emailAddress).size() == 1
     }
 
     def "When a user is not yet registered with a given email address, register the user"() {
@@ -73,14 +73,14 @@ class RegistrationSpec extends Specification {
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser.fullName.get(), newUser.email.get(), "12345678".toCharArray())
+        registration.register(User.fullName.get(), User.emailAddress.get(), "12345678".toCharArray())
 
         then:
         1 * useCaseOutput.onUserRegistrationSucceeded()
         0 * useCaseOutput.onUnexpectedFailure(_ as String)
         0 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
-        def storedUser = testStorage.findUsersByEmailAddress(newUser.getEmail()).get(0)
-        storedUser.getFullName() == newUser.getFullName()
+        def storedUser = testStorage.findUsersByEmailAddress(newUser.emailAddress()).get(0)
+        storedUser.fullName() == newUser.fullName()
         !storedUser.getId().isBlank()
 
     }
@@ -92,7 +92,7 @@ class RegistrationSpec extends Specification {
         @Override
         List<User> findUsersByEmailAddress(EmailAddress email) {
             return users.stream()
-                    .filter((User user) -> { user.getEmail().equals( email) }).collect()
+                    .filter((User user) -> { user.emailAddress().equals( email) }).collect()
         }
 
         @Override

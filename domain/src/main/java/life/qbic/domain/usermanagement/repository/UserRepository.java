@@ -87,7 +87,7 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public void addUser(User user) throws UserStorageException {
-    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.getEmail())) {
+    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.emailAddress())) {
       throw new UserStorageException();
     }
     saveUser(user);

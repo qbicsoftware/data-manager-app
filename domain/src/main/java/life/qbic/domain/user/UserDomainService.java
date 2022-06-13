@@ -44,8 +44,8 @@ public class UserDomainService {
     }
     var user = User.create(fullName, emailAddress, password);
     userRepository.addUser(user);
-    var userCreatedEvent = UserRegistered.create(user.getId(), user.getFullName().get(),
-        user.getEmail().get());
+    var userCreatedEvent = UserRegistered.create(user.getId(), user.fullName().get(),
+        user.emailAddress().get());
     DomainEventPublisher.instance().publish(userCreatedEvent);
   }
 }

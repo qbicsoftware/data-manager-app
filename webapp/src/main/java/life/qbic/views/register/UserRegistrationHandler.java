@@ -6,6 +6,7 @@ import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,6 +29,7 @@ public class UserRegistrationHandler
   UserRegistrationHandler(RegisterUserInput registrationUseCase) {
     this.registrationUseCase = registrationUseCase;
     registrationUseCase.setOutput(this);
+
   }
 
   @Override
