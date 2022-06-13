@@ -55,7 +55,7 @@ public class Registration implements RegisterUserInput {
 
       @Override
       public void onUnexpectedFailure(String reason) {
-
+        System.err.println("Called dummy register unexpected failure output.");
       }
     };
   }

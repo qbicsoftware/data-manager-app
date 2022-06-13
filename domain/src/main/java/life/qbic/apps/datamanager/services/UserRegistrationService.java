@@ -176,10 +176,6 @@ public final class UserRegistrationService {
       return type;
     }
 
-    private void setException(RuntimeException e) {
-      this.exceptions = Collections.singletonList(e);
-    }
-
     private void setExceptions(RuntimeException... exceptions) {
       this.exceptions = Arrays.stream(exceptions).toList();
     }
