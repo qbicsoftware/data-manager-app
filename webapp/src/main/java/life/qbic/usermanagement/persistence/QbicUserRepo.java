@@ -1,6 +1,7 @@
 package life.qbic.usermanagement.persistence;
 
 import java.util.List;
+import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
 import org.springframework.data.repository.CrudRepository;
 

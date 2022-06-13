@@ -8,8 +8,6 @@ import life.qbic.domain.usermanagement.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
 
 /**
  * <b>User JPA repository</b>

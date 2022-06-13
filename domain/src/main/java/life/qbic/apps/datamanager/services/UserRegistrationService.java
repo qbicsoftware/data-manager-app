@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
@@ -16,8 +17,8 @@ import life.qbic.domain.user.EncryptedPassword;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName;
 import life.qbic.domain.user.FullName.FullNameValidationException;
+import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.User;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.domain.usermanagement.registration.UserNotFoundException;
@@ -255,10 +256,10 @@ public final class UserRegistrationService {
         notificationService.send(notification);
       }
     });
-    Optional<User> optionalUser = userDataStorage.findUserById(userId);
+    Optional<User> optionalUser = userRepository.findById(userId);
     optionalUser.ifPresentOrElse(user -> {
       user.confirmEmail();
-      userDataStorage.save(user);
+      userRepository.updateUser(user);
     }, () -> {
       throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
     });

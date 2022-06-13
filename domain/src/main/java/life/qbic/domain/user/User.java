@@ -8,6 +8,9 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import life.qbic.domain.events.DomainEventPublisher;
+import life.qbic.domain.usermanagement.UserActivated;
+import life.qbic.domain.usermanagement.UserEmailConfirmed;
 
 /**
  * <b>User class</b>
@@ -143,4 +146,22 @@ public class User implements Serializable {
     return this.fullName;
   }
 
+  public boolean isActive() {
+    return this.active;
+  }
+
+  /**
+   * Confirms the email address.
+   */
+  public void confirmEmail() {
+    UserEmailConfirmed event = UserEmailConfirmed.create(id, emailAddress.get());
+    DomainEventPublisher.instance().publish(event);
+    activate();
+  }
+
+  private void activate() {
+    this.active = true;
+    UserActivated event = UserActivated.create(id);
+    DomainEventPublisher.instance().publish(event);
+  }
 }
