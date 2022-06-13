@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
+import life.qbic.domain.usermanagement.User;
 
 /**
  * <b>User Data Storage Interface</b>

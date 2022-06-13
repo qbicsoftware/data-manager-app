@@ -39,12 +39,12 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public String getPassword() {
-    return user.getEncryptedPassword().get();
+    return user.getEncryptedPassword();
   }
 
   @Override
   public String getUsername() {
-    return user.getEmail().get();
+    return user.getEmail();
   }
 
   @Override
@@ -64,6 +64,6 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return user.isActive();
   }
 }

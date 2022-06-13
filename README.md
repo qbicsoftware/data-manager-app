@@ -45,6 +45,16 @@ Maven project. Read more on [how to import Vaadin projects to different
 IDEs](https://vaadin.com/docs/latest/flow/guide/step-by-step/importing) (Eclipse, IntelliJ IDEA,
 NetBeans, and VS Code).
 
+## Deploying to Production
+
+To create a production build, call `mvnw clean package -Pproduction` (Windows),
+or `./mvnw clean package -Pproduction` (Mac & Linux).
+This will build a JAR file with all the dependencies and front-end resources,
+ready to be deployed. The file can be found in the `target` folder after the build completes.
+
+Once the JAR file is built, you can run it using
+`java -jar target/datamanager-1.0-SNAPSHOT.jar`
+
 ### Configuration
 
 #### Java Version
@@ -53,19 +63,70 @@ This application requires [Java 17](https://openjdk.java.net/projects/jdk/17/) t
 
 #### Environment Variables
 
-The environment variables specify the information for the connection to the mail server and user
-database, both of which are necessary for this application to run.
+The env variables contain information about the salt and the secret. Both of them are used to
+encrypt and decrypt user information.
 
-| Environment Variable | Description               | Default Value                           |                
-|----------------------|---------------------------|-----------------------------------------|
-| `USER_DB_URL`        | The database host address | driver:database://123.4.56.789:8080     |
-| `USER_DB_USER_NAME`  | The database user name    | myusername                              |
-| `USER_DB_USER_PW`    | The database password     | astrongpassphrase                       |
-| `PORT`               | The application port      | 8080                                    |
-| `USER_DB_DRIVER`     | The database driver       | com.mysql.cj.jdbc.Driver                |
-| `MAIL_HOST`          | The smtp server host      | smtp.gmail.com                          |
-| `MAIL_PASSWORD`      | The password to authenticate against the mail server | astrongemailpassphrase                  |
-| `Mail_USERNAME`      | The username to authenticate against the mail server | myemailusername                         |
+| environment variable       | description               |
+|----------------------------|---------------------------|
+| `USER_DB_URL`              | The database host address |
+| `USER_DB_USER_NAME`        | The database user name    |
+| `USER_DB_USER_PW`          | The database password     |
+
+The application properties file could look like the following:
+
+```properties
+spring.datasource.url=${USER_DB_URL:localhost}
+spring.datasource.username=${USER_DB_USER_NAME:myusername}
+spring.datasource.password=${USER_DB_USER_PW:astrongpassphrase!}
+```
+
+To change the port or the driver those can be added as environmental variables as well. Both are
+preset with default values and
+are therefore not mandatory to set
+
+| environment variable | description          |
+|----------------------|----------------------|
+| `PORT`               | The application port |
+| `USER_DB_DRIVER`     | The database driver  |
+
+```properties
+server.port=${PORT:8080}
+spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+```
+
+As the application needs to send emails, you have to configure an smtp server as well.
+
+| environment variable | description                                          |
+|----------------------|------------------------------------------------------|
+| `MAIL_HOST`          | The smtp server host (e.g. smtp.gmail.com)           |
+| `MAIL_PASSWORD`      | The password to authenticate against the mail server |
+| `Mail_USERNAME`      | The username to authenticate against the mail server |
+
+```properties
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.host=${MAIL_HOST:smtp.gmail.com}
+spring.mail.port=${MAIL_PORT:587}
+```
+
+For user email confirmation a specific endpoint is addressed. This endpoint can be configured using
+the following properties:
+
+| environment variable           | description                                                       |
+|--------------------------------|-------------------------------------------------------------------|
+| `HOST`                         | The server address                                                |
+| `EMAIL_CONFIRMATION_PARAMETER` | The name of the parameter to which to pass the confirmation token |
+| `LOGIN_ENDPOINT`               | The endpoint for the login                                        |
+
+Generated email confirmation links will look like `localhost:8080/login?confirm-email=<token>` with
+the
+default configuration.
+
+```properties
+host.name=${HOST:localhost}
+login-endpoint=${LOGIN_ENDPOINT:login}
+email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
+```
 
 #### Properties
 
@@ -82,6 +143,9 @@ spring.mail.username=${MAIL_USERNAME}
 spring.mail.password=${MAIL_PASSWORD}
 spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.port=${MAIL_PORT:587}
+host.name=${HOST:localhost}
+login-endpoint=${LOGIN_ENDPOINT:login}
+email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
 ```
 
 ### Local testing

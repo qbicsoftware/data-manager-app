@@ -19,6 +19,8 @@ import life.qbic.domain.user.FullName.FullNameValidationException;
  */
 public class Registration implements RegisterUserInput {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Registration.class);
+
   private RegisterUserOutput registerUserOutput;
 
   private final UserRegistrationService userRegistrationService;

@@ -1,18 +1,26 @@
 package life.qbic.views.login;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.login.LoginForm;
-import com.vaadin.flow.component.login.LoginI18n;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
+import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.views.components.ErrorMessage;
+import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -22,28 +30,44 @@ import java.util.List;
 @PageTitle("Login")
 @Route(value = "login", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
-public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
+@AnonymousAllowed
+public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
-  public LoginForm loginForm;
-  public Span registerSpan;
+
+  private VerticalLayout informationContainer;
+
+  private VerticalLayout errorContainer;
+  private H2 title;
+
+  private ConfigurableLoginForm loginForm;
+
+  private Div registrationSection;
+
+  private final transient LoginHandlerInterface viewHandler;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
 
     initLayout();
     styleLayout();
-    registerToHandler(loginHandlerInterface);
+    viewHandler = loginHandlerInterface;
+    registerToHandler(viewHandler);
   }
 
   private void initLayout() {
     contentLayout = new VerticalLayout();
-    this.loginForm = new LoginForm();
+    this.loginForm = new ConfigurableLoginForm();
     loginForm.setAction("login");
 
-    createSpan();
+    this.registrationSection = initRegistrationSection();
 
-    contentLayout.add(loginForm, registerSpan);
+    informationContainer = new VerticalLayout();
+    errorContainer = new VerticalLayout();
+
+    title = new H2("Log in");
+
+    contentLayout.add(title, informationContainer, errorContainer, loginForm, registrationSection);
 
     add(contentLayout);
   }
@@ -54,48 +78,67 @@ public class LoginLayout extends VerticalLayout implements BeforeEnterObserver {
 
   private void styleLayout() {
     styleFormLayout();
-
-    LoginI18n i18n = LoginI18n.createDefault();
-    i18n.getForm().setUsername("Email");
-    loginForm.setI18n(i18n);
-
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    title.setClassName("title");
+    loginForm.setUsernameText("Email");
+    registrationSection.addClassName("registration");
   }
 
   private void styleFormLayout() {
-    registerSpan.addClassName("p-l");
-    contentLayout.setWidthFull();
     contentLayout.setPadding(false);
-    contentLayout
-        .getElement()
-        .getClassList()
-        .addAll(
-            List.of(
-                "bg-base",
-                "border",
-                "border-contrast-10",
-                "rounded-m",
-                "box-border",
-                "flex",
-                "flex-col",
-                "w-full",
-                "text-s",
-                "shadow-l",
-                "min-width-300px",
-                "max-width-15vw"));
+    contentLayout.setSpacing(false);
+    contentLayout.addClassNames(
+        "bg-base",
+        "border",
+        "border-contrast-10",
+        "rounded-m",
+        "box-border",
+        "flex",
+        "flex-col",
+        "w-full",
+        "text-s",
+        "shadow-l",
+        "min-width-300px",
+        "max-width-15vw");
   }
 
-  private void createSpan() {
+  private Div initRegistrationSection() {
     RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), routerLink);
+    return new Div(new Text("Need an account? "), routerLink);
+  }
+
+  public void clearErrors() {
+    errorContainer.setVisible(false);
+    errorContainer.removeAll();
+  }
+
+  public void showError(ErrorMessage errorMessage) {
+    errorContainer.add(new ErrorMessage(errorMessage.title(), errorMessage.message()));
+    errorContainer.setVisible(true);
+  }
+
+  public void showInformation(InformationMessage message) {
+    informationContainer.add(new InformationMessage(message.title(), message.message()));
+    informationContainer.setVisible(true);
+  }
+
+  public void clearInformation() {
+    informationContainer.setVisible(false);
+    informationContainer.removeAll();
+  }
+
+  public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
+    loginForm.addLoginListener(loginListener);
+  }
+
+  public void addForgotPasswordListener(ComponentEventListener<ForgotPasswordEvent> listener) {
+    loginForm.addForgotPasswordListener(listener);
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    if (beforeEnterEvent.getLocation().getQueryParameters().getParameters().containsKey("error")) {
-      loginForm.setError(true);
-    }
+  public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+    viewHandler.handle(event);
   }
 }

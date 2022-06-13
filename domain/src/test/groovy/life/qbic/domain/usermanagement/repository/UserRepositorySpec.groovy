@@ -65,10 +65,10 @@ class UserRepositorySpec extends Specification {
         when:
         var result = repository.findById("123")
         var user = result.get()
-        boolean hasUserBeenAdded = repository.addUser(user)
+        repository.addUser(user)
 
         then:
-        !hasUserBeenAdded
+        thrown(UserRepository.UserStorageException)
     }
 
 
