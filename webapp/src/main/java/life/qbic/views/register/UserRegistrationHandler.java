@@ -86,7 +86,6 @@ public class UserRegistrationHandler
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
     userRegistrationLayout.errorMessage.setVisible(false);
     userRegistrationLayout.passwordTooShortMessage.setVisible(false);
-    userRegistrationLayout.invalidCredentialsMessage.setVisible(false);
   }
 
   @Override

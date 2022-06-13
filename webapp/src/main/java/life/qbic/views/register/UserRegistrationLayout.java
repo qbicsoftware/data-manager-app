@@ -23,8 +23,6 @@ import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
-
 /**
  * <b> Defines the look of the registration layout. </b>
  *
@@ -113,8 +111,6 @@ public class UserRegistrationLayout extends VerticalLayout {
     passwordTooShortMessage =
         new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
     passwordTooShortMessage.setVisible(false);
-    invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided user credentials");
-    invalidCredentialsMessage.setVisible(false);
   }
 
   private void createInformationDivs() {
@@ -140,7 +136,8 @@ public class UserRegistrationLayout extends VerticalLayout {
         "text-s",
         "shadow-l",
         "min-width-300px",
-        "max-width-15vw");
+        "max-width-15vw",
+        "p-l");
     contentLayout.add(
         layoutTitle,
         errorMessage,
