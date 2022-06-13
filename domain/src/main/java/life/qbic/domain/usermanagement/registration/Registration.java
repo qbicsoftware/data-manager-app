@@ -41,23 +41,6 @@ public class Registration implements RegisterUserInput {
    */
   public Registration(UserRegistrationService userRegistrationService) {
     this.userRegistrationService = userRegistrationService;
-    // Init a dummy output, until one is set by the client.
-    this.registerUserOutput = new RegisterUserOutput() {
-      @Override
-      public void onUserRegistrationSucceeded() {
-        System.out.println("Called dummy register success output.");
-      }
-
-      @Override
-      public void onUnexpectedFailure(UserRegistrationException e) {
-        System.err.println("Called dummy register failure output.");
-      }
-
-      @Override
-      public void onUnexpectedFailure(String reason) {
-        System.err.println("Called dummy register unexpected failure output.");
-      }
-    };
   }
 
   /**
@@ -76,17 +59,22 @@ public class Registration implements RegisterUserInput {
    */
   @Override
   public void register(String fullName, String email, char[] rawPassword) {
+    if (registerUserOutput == null) {
+      log.error("No use case output set.");
+      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
+      return;
+    }
     try {
-      RegistrationResponse registrationResponse = userRegistrationService.registerUser(fullName,
-          email, rawPassword);
-      if (registrationResponse.hasFailures()) {
-        registerUserOutput.onUnexpectedFailure(build(registrationResponse));
-        return;
-      }
-      registerUserOutput.onUserRegistrationSucceeded();
+      userRegistrationService.registerUser(fullName, email, rawPassword)
+          .ifSuccessOrElse(this::reportSuccess,
+              response -> registerUserOutput.onUnexpectedFailure(build(response)));
     } catch (Exception e) {
       registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
     }
+  }
+
+  private void reportSuccess(RegistrationResponse registrationResponse) {
+    registerUserOutput.onUserRegistrationSucceeded();
   }
 
   private UserRegistrationException build(RegistrationResponse registrationResponse) {
@@ -95,17 +83,13 @@ public class Registration implements RegisterUserInput {
     for (RuntimeException e : registrationResponse.failures()) {
       if (e instanceof EmailValidationException) {
         builder.withEmailFormatException((EmailValidationException) e);
-      }
-      else if (e instanceof PasswordValidationException) {
+      } else if (e instanceof PasswordValidationException) {
         builder.withInvalidPasswordException((PasswordValidationException) e);
-      }
-      else if (e instanceof FullNameValidationException) {
+      } else if (e instanceof FullNameValidationException) {
         builder.withFullNameException((FullNameValidationException) e);
-      }
-      else if (e instanceof UserExistsException) {
+      } else if (e instanceof UserExistsException) {
         builder.withUserExistsException((UserExistsException) e);
-      }
-      else {
+      } else {
         builder.withUnexpectedException(e);
       }
     }

@@ -1,10 +1,11 @@
 package life.qbic.apps.datamanager.services;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import life.qbic.apps.datamanager.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
 import life.qbic.apps.datamanager.notifications.Notification;
@@ -144,6 +145,7 @@ public final class UserRegistrationService {
   public static class RegistrationResponse {
 
     private enum Type {SUCCESSFUL, FAILED}
+
     private Type type;
 
     private List<RuntimeException> exceptions;
@@ -187,9 +189,34 @@ public final class UserRegistrationService {
     public List<RuntimeException> failures() {
       return exceptions;
     }
+
+    /**
+     * Depending on the response, two type of downstream actions can be passed to the
+     * {@link RegistrationResponse}.
+     * <p>
+     * If the instance contains failures, the downstream failure {@link Consumer} action will be
+     * triggered and a reference to itself passed as argument. Otherwise, the downstream failure
+     * consumer is called.
+     *
+     * @param downstreamSuccess consumer for success responses
+     * @param downstreamFailure consumer for failure responses
+     * @since 1.0.0
+     */
+    public void ifSuccessOrElse(Consumer<RegistrationResponse> downstreamSuccess,
+        Consumer<RegistrationResponse> downstreamFailure) {
+      if (hasFailures()) {
+        downstreamFailure.accept(this);
+      } else {
+        downstreamSuccess.accept(this);
+      }
+    }
+
   }
 
   public static class UserExistsException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = 3147229431249844901L;
 
     public UserExistsException() {
       super();
@@ -201,9 +228,8 @@ public final class UserRegistrationService {
    * nothing.
    *
    * @param userId the id of the user to be activated
-   * @since 1.0.0
-   *
    * @throws UserNotFoundException when no user with the provided user id can be found.
+   * @since 1.0.0
    */
   public void confirmUserEmail(String userId) throws UserNotFoundException {
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
