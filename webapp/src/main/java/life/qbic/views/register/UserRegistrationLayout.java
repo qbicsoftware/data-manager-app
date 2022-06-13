@@ -124,6 +124,8 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void styleFormLayout() {
+    contentLayout.setPadding(false);
+    contentLayout.setMargin(false);
     contentLayout.addClassNames(
         "bg-base",
         "border",
@@ -137,7 +139,9 @@ public class UserRegistrationLayout extends VerticalLayout {
         "shadow-l",
         "min-width-300px",
         "max-width-15vw",
-        "p-l");
+        "pb-l",
+        "pr-l",
+        "pl-l");
     contentLayout.add(
         layoutTitle,
         errorMessage,
