@@ -2,6 +2,7 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import life.qbic.apps.datamanager.services.UserRegistrationException;
 import life.qbic.domain.usermanagement.registration.RegisterUserInput;
 import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ public class UserRegistrationHandler
   UserRegistrationHandler(RegisterUserInput registrationUseCase) {
     this.registrationUseCase = registrationUseCase;
     registrationUseCase.setOutput(this);
+
   }
 
   @Override
@@ -39,6 +41,9 @@ public class UserRegistrationHandler
   }
 
   private void initFields() {
+    userRegistrationLayout.fullName.setPattern("\\S.*");
+    userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid email address");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
@@ -57,42 +62,41 @@ public class UserRegistrationHandler
         });
   }
 
-  private void setEmptyFieldsInvalid() {
-    if (userRegistrationLayout.password.isEmpty()) {
-      userRegistrationLayout.password.setInvalid(true);
-    }
-    if (userRegistrationLayout.fullName.isEmpty()) {
-      userRegistrationLayout.fullName.setInvalid(true);
-    }
-    if (userRegistrationLayout.email.isEmpty()) {
-      userRegistrationLayout.email.setInvalid(true);
-    }
-  }
-
-  private void handleUserException(String reason) {
-    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
-      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
-    }
-    if (reason.equalsIgnoreCase("User with email address already exists.")) {
-      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
-    }
-  }
-
   private void resetErrorMessages() {
-    userRegistrationLayout.passwordTooShortMessage.setVisible(false);
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
+    userRegistrationLayout.errorMessage.setVisible(false);
   }
 
   @Override
-  public void onSuccess() {
+  public void onUserRegistrationSucceeded() {
     UI.getCurrent().navigate("/login");
   }
 
   @Override
-  public void onFailure(String reason) {
-    // Display error to the user
-    // Stub output:
-    System.out.println(reason);
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+  public void onUnexpectedFailure(UserRegistrationException userRegistrationException) {
+    handleRegistrationFailure(userRegistrationException);
+  }
+
+  @Override
+  public void onUnexpectedFailure(String reason) {
+    userRegistrationLayout.errorMessage.setVisible(true);
+  }
+
+  private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
+    if (userRegistrationException.fullNameException().isPresent()) {
+      userRegistrationLayout.fullName.setInvalid(true);
+    }
+    if (userRegistrationException.passwordException().isPresent()) {
+      userRegistrationLayout.password.setInvalid(true);
+    }
+    if (userRegistrationException.emailFormatException().isPresent()) {
+      userRegistrationLayout.email.setInvalid(true);
+    }
+    if (userRegistrationException.userExistsException().isPresent()) {
+      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+    }
+    if (userRegistrationException.unexpectedException().isPresent()) {
+      userRegistrationLayout.errorMessage.setVisible(true);
+    }
   }
 }

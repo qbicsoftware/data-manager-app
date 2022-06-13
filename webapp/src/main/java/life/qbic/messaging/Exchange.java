@@ -1,13 +1,11 @@
 package life.qbic.messaging;
 
-import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import life.qbic.apps.datamanager.notifications.MessageBusInterface;
 import life.qbic.apps.datamanager.notifications.MessageParameters;
 import life.qbic.apps.datamanager.notifications.MessageSubscriber;
@@ -28,13 +26,11 @@ public class Exchange implements MessageBusInterface {
   private static final int DEFAULT_CAPACITY = 100;
   private final Queue<SubmissionTask> submissionTasks;
 
-  private final List<Topic> topics;
+  private final Deque<Topic> topics;
 
   private static Exchange instance;
 
-  private final ReentrantLock lock;
-
-  private Thread worker;
+  private final int maxCapacity;
 
   /**
    * Queries the current instance of the Exchange class.
@@ -67,9 +63,9 @@ public class Exchange implements MessageBusInterface {
   }
 
   protected Exchange(int capacity) {
-    topics = new ArrayList<>();
+    topics = new ConcurrentLinkedDeque<>();
     submissionTasks = new ArrayBlockingQueue<>(capacity);
-    lock = new ReentrantLock();
+    this.maxCapacity = capacity;
     launchSubmissionTaskWorker();
   }
 
@@ -78,8 +74,8 @@ public class Exchange implements MessageBusInterface {
   }
 
   private void launchSubmissionTaskWorker() {
-    worker = new SubmissionTaskWorker(submissionTasks, topics, lock);
-    worker.setName("Message Submission Worker");
+    Thread worker = new SubmissionTaskWorker(this, topics);
+    worker.setName("DisplayMessage Submission Worker");
     worker.start();
   }
 
@@ -93,13 +89,62 @@ public class Exchange implements MessageBusInterface {
    *                          timepoint and a unique message identifier.
    */
   @Override
-  public void submit(String message, MessageParameters messageParameters) {
+  public synchronized void submit(String message, MessageParameters messageParameters) {
     SubmissionTask newTask = new SubmissionTask(message, messageParameters);
-    submissionTasks.add(newTask);
+    addSubmissionTask(newTask);
   }
 
   /**
-   * Subscribe to a topic in order to get informed, whenever a message with this topic is published
+   * Queries the next available {@link SubmissionTask} from the {@link Exchange}.
+   * <p>
+   * Note: this method is not guaranteed to return promptly.
+   * <p>
+   * This method will return only at once a submission task is available. If no task is available,
+   * the client thread will go into the {@link Object#wait()} state. The exchange will notify all
+   * waiting threads once a new submission task is available.
+   *
+   * @return a submission task
+   * @since 1.0.0
+   */
+  protected synchronized SubmissionTask getSubmissionTask() {
+    while (submissionTasks.isEmpty()) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    SubmissionTask task = submissionTasks.remove();
+    notifyAll();
+    return task;
+  }
+
+  /**
+   * Adds a new submission task to the exchange.
+   * <p>
+   * Note: this method is not guaranteed to return immediately. If the exchange has reached its
+   * current maximum capacity, the client thread will be suspended into the {@link Object#wait()}
+   * state.
+   * <p>
+   * Once the exchange has free capacity again, the method will return.
+   *
+   * @param task a new submission task to be added to exchange
+   * @since 1.0.0
+   */
+  protected synchronized void addSubmissionTask(SubmissionTask task) {
+    while (submissionTasks.size() == maxCapacity) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    submissionTasks.add(task);
+    notifyAll();
+  }
+
+  /**
+   * Subscribe to a topic in order to be informed, whenever a message with this topic is published
    * over this Exchange instance.
    *
    * @param subscriber the subscriber callback reference. A subscriber can only subscribe once to a
@@ -108,29 +153,6 @@ public class Exchange implements MessageBusInterface {
    */
   @Override
   public void subscribe(MessageSubscriber subscriber, String topic) {
-    try {
-      // We try to acquire the lock for 1 second. If the lock
-      // cannot be acquired within 1 second, we throw an exception
-      // so the client can try to subscribe again.
-      if (lock.tryLock(1000, TimeUnit.MILLISECONDS)) {
-        try {
-          tryToSubscribe(subscriber, topic);
-        } finally {
-          lock.unlock(); // release the lock afterwards
-        }
-      } else {
-        throw new RuntimeException("Subscription failed");
-      }
-    } catch (InterruptedException e) {
-      stop();
-    }
-  }
-
-  private void stop() {
-    this.worker.interrupt();
-  }
-
-  private void tryToSubscribe(MessageSubscriber messageSubscriber, String topic) {
     Topic matchingTopic = null;
     for (Topic availableTopic : topics) {
       if (availableTopic.matchesTopic(topic)) {
@@ -142,7 +164,7 @@ public class Exchange implements MessageBusInterface {
       matchingTopic = new Topic(topic);
       topics.add(matchingTopic);
     }
-    matchingTopic.addSubscriber(messageSubscriber);
+    matchingTopic.addSubscriber(subscriber);
   }
 
   /**
@@ -170,11 +192,11 @@ public class Exchange implements MessageBusInterface {
       subscribers = new HashSet<>();
     }
 
-    void addSubscriber(MessageSubscriber subscriber) {
+    synchronized void addSubscriber(MessageSubscriber subscriber) {
       subscribers.add(subscriber);
     }
 
-    void removeSubscriber(MessageSubscriber subscriber) {
+    synchronized void removeSubscriber(MessageSubscriber subscriber) {
       subscribers.remove(subscriber);
     }
 
@@ -182,7 +204,7 @@ public class Exchange implements MessageBusInterface {
       return this.topic.equalsIgnoreCase(topic);
     }
 
-    void informAllSubscribers(String message, MessageParameters messageParameters) {
+    synchronized void informAllSubscribers(String message, MessageParameters messageParameters) {
       if (messageParameters.messageType.equalsIgnoreCase(topic)) {
         informSubscribers(message, messageParameters);
       }
@@ -193,6 +215,12 @@ public class Exchange implements MessageBusInterface {
     }
   }
 
+  /**
+   * A submission task contains the original message and its message parameters
+   * ({@link MessageParameters}).
+   *
+   * @since 1.0.0
+   */
   static class SubmissionTask {
 
     String message;
@@ -206,18 +234,30 @@ public class Exchange implements MessageBusInterface {
 
   }
 
+  /**
+   * Small helper class that can be used to listen to an {@link Exchange} instance and process
+   * incoming new {@link SubmissionTask}s.
+   *
+   * @since 1.0.0
+   */
   static class SubmissionTaskWorker extends Thread {
 
-    Queue<SubmissionTask> tasks;
+    Exchange exchange;
 
-    List<Topic> topics;
+    Deque<Topic> topics;
 
-    ReentrantLock lock;
-
-    SubmissionTaskWorker(Queue<SubmissionTask> tasks, List<Topic> topics,
-        ReentrantLock lock) {
-      this.tasks = tasks;
-      this.lock = lock;
+    /**
+     * This registers an instance of the {@link Exchange} class to a submission worker.
+     *
+     * @param exchange an instance of the {@link} Exchange class, from which submission tasks will
+     *                 be consumed.
+     * @param topics   a linear collection of topics. The worker processes a {@link SubmissionTask}
+     *                 and tries to find the corresponding topic. If a task matches a topic, all
+     *                 subscribers are informed.
+     * @since 1.0.0
+     */
+    SubmissionTaskWorker(Exchange exchange, Deque<Topic> topics) {
+      this.exchange = exchange;
       this.topics = topics;
     }
 
@@ -232,19 +272,9 @@ public class Exchange implements MessageBusInterface {
           cleanup();
           return;
         }
-        SubmissionTask currentTask = tasks.poll();
-        if (currentTask != null) {
-          try {
-            handleSubmission(currentTask);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-        }
         try {
-          Thread.sleep(100);
+          handleSubmissions();
         } catch (InterruptedException e) {
-          // no need to do anything atm, we don't save the state of the working queue.
-          // we interrupt the current thread and wait for the cleanup
           Thread.currentThread().interrupt();
         }
       }
@@ -255,15 +285,14 @@ public class Exchange implements MessageBusInterface {
       // an interrupted signal
     }
 
-    private void handleSubmission(SubmissionTask currentTask) throws InterruptedException {
-      while (!lock.tryLock()) {
-        Thread.sleep(100);
+    private void handleSubmissions() throws InterruptedException {
+      // Beware that this call is blocking. If no new submission tasks are available,
+      // the worker is going into the Object.wait() state.
+      var task = exchange.getSubmissionTask();
+      if (task == null) {
+        return;
       }
-      try {
-        submit(currentTask.message, currentTask.messageParameters);
-      } finally {
-        lock.unlock();
-      }
+      submit(task.message, task.messageParameters);
     }
 
   }

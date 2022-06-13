@@ -3,7 +3,7 @@ package life.qbic.domain.usermanagement.policies;
 import java.util.regex.Pattern;
 
 /**
- * <b>Email Format Policy</b>
+ * <b>EmailAddress Format Policy</b>
  *
  * <p>Validates a String against the RFC5322 email format specification (<a
  * href="https://www.rfc-editor.org/rfc/rfc5322">https://www.rfc-editor.org/rfc/rfc5322</a>).
@@ -20,7 +20,7 @@ public class EmailFormatPolicy {
 
   private static EmailFormatPolicy INSTANCE;
 
-  public static EmailFormatPolicy create() {
+  public static EmailFormatPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new EmailFormatPolicy();
     }

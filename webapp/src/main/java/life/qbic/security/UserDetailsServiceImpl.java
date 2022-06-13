@@ -1,6 +1,9 @@
 package life.qbic.security;
 
-import life.qbic.domain.usermanagement.User;
+import java.util.ArrayList;
+import java.util.List;
+import life.qbic.domain.user.EmailAddress;
+import life.qbic.domain.user.User;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -8,9 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -24,7 +24,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    var user = userRepository.findByEmail(username);
+    var user = userRepository.findByEmail(EmailAddress.from(username));
     return new QbicUserDetails(
         user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
   }

@@ -12,7 +12,7 @@ class EmailFormatPolicySpec extends Specification {
 
     def "An email format that violates the RFC5322 specification shall result in a FAILED policy check"() {
         when:
-        PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(email as String)
+        PolicyCheckReport policyCheckReport = EmailFormatPolicy.instance().validate(email as String)
 
         then:
         policyCheckReport.status() == PolicyStatus.FAILED
@@ -29,7 +29,7 @@ class EmailFormatPolicySpec extends Specification {
 
     def "An email format that honors the RFC5322 specification shall result in a PASSED policy check"() {
         when:
-        PolicyCheckReport policyCheckReport = EmailFormatPolicy.create().validate(email as String)
+        PolicyCheckReport policyCheckReport = EmailFormatPolicy.instance().validate(email as String)
 
         then:
         policyCheckReport.status() == PolicyStatus.PASSED

@@ -1,12 +1,12 @@
 package life.qbic.domain.usermanagement.policies;
 
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 /**
  * <b>Password encryption policy</b>
@@ -37,7 +37,7 @@ public class PasswordEncryptionPolicy {
    * @return the password encryption policy
    * @since 1.0.0
    */
-  public static PasswordEncryptionPolicy create() {
+  public static PasswordEncryptionPolicy instance() {
     if (INSTANCE == null) {
       INSTANCE = new PasswordEncryptionPolicy();
     }

@@ -12,7 +12,7 @@ class PasswordPolicySpec extends Specification {
 
     def "Given a password length shorter than 8 characters, the policy check shall fail"() {
         when:
-        PolicyCheckReport report = PasswordPolicy.create().validate(password.toCharArray())
+        PolicyCheckReport report = PasswordPolicy.instance().validate(password.toCharArray())
 
         then:
         report.status() == PolicyStatus.FAILED
@@ -32,7 +32,7 @@ class PasswordPolicySpec extends Specification {
 
     def "Given a password length longer or equal to 8 characters, the policy check shall pass"() {
         when:
-        PolicyCheckReport report = PasswordPolicy.create().validate(password.toCharArray())
+        PolicyCheckReport report = PasswordPolicy.instance().validate(password.toCharArray())
 
         then:
         report.status() == PolicyStatus.PASSED
