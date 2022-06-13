@@ -27,7 +27,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private final String emailConfirmationParameter;
   private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
       "Incorrect username or password",
-      "Check that you have entered the correct username and password and try again."
+      "Please try again."
   );
 
   private static final InformationMessage EMAIL_CONFIRMATION_SUCCESS = new InformationMessage(

@@ -43,8 +43,6 @@ public class UserRegistrationLayout extends VerticalLayout {
   public Button registerButton;
 
   public Span loginSpan;
-
-  public ErrorMessage invalidCredentialsMessage;
   public ErrorMessage alreadyUsedEmailMessage;
   public ErrorMessage errorMessage;
 
@@ -108,8 +106,6 @@ public class UserRegistrationLayout extends VerticalLayout {
     alreadyUsedEmailMessage.setVisible(false);
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
     errorMessage.setVisible(false);
-    invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided credentials and try again");
-    invalidCredentialsMessage.setVisible(false);
   }
 
   private void createInformationDivs() {
@@ -146,7 +142,6 @@ public class UserRegistrationLayout extends VerticalLayout {
         errorMessage,
         alreadyUsedEmailMessage,
         confirmationInformationMessage,
-        invalidCredentialsMessage,
         fullName,
         email,
         password,

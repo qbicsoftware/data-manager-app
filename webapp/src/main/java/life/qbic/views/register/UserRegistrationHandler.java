@@ -65,7 +65,6 @@ public class UserRegistrationHandler
   private void resetErrorMessages() {
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
     userRegistrationLayout.errorMessage.setVisible(false);
-    userRegistrationLayout.invalidCredentialsMessage.setVisible(false);
   }
 
   @Override
@@ -86,15 +85,12 @@ public class UserRegistrationHandler
   private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
     if (userRegistrationException.fullNameException().isPresent()) {
       userRegistrationLayout.fullName.setInvalid(true);
-      userRegistrationLayout.invalidCredentialsMessage.setVisible(true);
     }
     if (userRegistrationException.passwordException().isPresent()) {
       userRegistrationLayout.password.setInvalid(true);
-      userRegistrationLayout.invalidCredentialsMessage.setVisible(true);
     }
     if (userRegistrationException.emailFormatException().isPresent()) {
       userRegistrationLayout.email.setInvalid(true);
-      userRegistrationLayout.invalidCredentialsMessage.setVisible(true);
     }
     if (userRegistrationException.userExistsException().isPresent()) {
       userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
