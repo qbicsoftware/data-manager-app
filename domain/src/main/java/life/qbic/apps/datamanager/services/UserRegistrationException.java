@@ -3,6 +3,7 @@ package life.qbic.apps.datamanager.services;
 import java.io.Serial;
 import java.util.Optional;
 import life.qbic.apps.datamanager.ApplicationException;
+import life.qbic.apps.datamanager.services.UserRegistrationService.UserExistsException;
 import life.qbic.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.domain.user.FullName.FullNameValidationException;
@@ -25,6 +26,8 @@ public class UserRegistrationException extends ApplicationException {
   private final transient EmailValidationException emailFormatException;
   private final transient PasswordValidationException invalidPasswordException;
   private final transient FullNameValidationException fullNameException;
+
+  private final transient UserExistsException userExistsException;
   private final transient RuntimeException unexpectedException;
 
   public static Builder builder() {
@@ -39,6 +42,7 @@ public class UserRegistrationException extends ApplicationException {
 
     private FullNameValidationException fullNameException;
 
+    private UserExistsException userExistsException;
     private RuntimeException unexpectedException;
 
     protected Builder() {
@@ -60,6 +64,11 @@ public class UserRegistrationException extends ApplicationException {
       return this;
     }
 
+    public Builder withUserExistsException(UserExistsException e) {
+      userExistsException = e;
+      return this;
+    }
+
     public Builder withUnexpectedException(RuntimeException e) {
       unexpectedException = e;
       return this;
@@ -74,6 +83,7 @@ public class UserRegistrationException extends ApplicationException {
     emailFormatException = builder.emailFormatException;
     fullNameException = builder.fullNameException;
     invalidPasswordException = builder.invalidPasswordException;
+    userExistsException = builder.userExistsException;
     unexpectedException = builder.unexpectedException;
   }
 
@@ -87,6 +97,10 @@ public class UserRegistrationException extends ApplicationException {
 
   public Optional<PasswordValidationException> passwordException() {
     return Optional.ofNullable(invalidPasswordException);
+  }
+
+  public Optional<UserExistsException> userExistsException() {
+    return Optional.ofNullable(userExistsException);
   }
 
   public Optional<RuntimeException> unexpectedException() {

@@ -61,27 +61,6 @@ public class UserRegistrationHandler
         });
   }
 
-  private void setEmptyFieldsInvalid() {
-    if (userRegistrationLayout.password.isEmpty()) {
-      userRegistrationLayout.password.setInvalid(true);
-    }
-    if (userRegistrationLayout.fullName.isEmpty()) {
-      userRegistrationLayout.fullName.setInvalid(true);
-    }
-    if (userRegistrationLayout.email.isEmpty()) {
-      userRegistrationLayout.email.setInvalid(true);
-    }
-  }
-
-  private void handleUserException(String reason) {
-    if (reason.equalsIgnoreCase("Password shorter than 8 characters.")) {
-      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
-    }
-    if (reason.equalsIgnoreCase("User with email value already exists.")) {
-      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
-    }
-  }
-
   private void resetErrorMessages() {
     userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
     userRegistrationLayout.errorMessage.setVisible(false);
@@ -94,29 +73,31 @@ public class UserRegistrationHandler
   }
 
   @Override
-  public void onUnexpectedFailure(UserRegistrationException exception) {
-
+  public void onUnexpectedFailure(UserRegistrationException userRegistrationException) {
+    handleRegistrationFailure(userRegistrationException);
   }
 
   @Override
   public void onUnexpectedFailure(String reason) {
-    handleRegistrationFailure(reason);
+    userRegistrationLayout.errorMessage.setVisible(true);
   }
 
-  private void handleRegistrationFailure(String reason) {
-    switch (reason) {
-      case "Full Name shorter than 1 character." ->
-          userRegistrationLayout.fullName.setInvalid(true);
-      case "Invalid email address format." -> userRegistrationLayout.email.setInvalid(true);
-      case "User with email address already exists." -> {
-        userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
-        userRegistrationLayout.email.setInvalid(true);
-      }
-      case "Password shorter than 8 characters." -> {
-        userRegistrationLayout.passwordTooShortMessage.setVisible(true);
-        userRegistrationLayout.password.setInvalid(true);
-      }
-      default -> userRegistrationLayout.errorMessage.setVisible(true);
+  private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
+    if (userRegistrationException.fullNameException().isPresent()) {
+      userRegistrationLayout.fullName.setInvalid(true);
+    }
+    if (userRegistrationException.passwordException().isPresent()) {
+      userRegistrationLayout.password.setInvalid(true);
+      userRegistrationLayout.passwordTooShortMessage.setVisible(true);
+    }
+    if (userRegistrationException.emailFormatException().isPresent()) {
+      userRegistrationLayout.email.setInvalid(true);
+    }
+    if (userRegistrationException.userExistsException().isPresent()) {
+      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+    }
+    if (userRegistrationException.unexpectedException().isPresent()) {
+      userRegistrationLayout.errorMessage.setVisible(true);
     }
   }
 }
