@@ -9,6 +9,7 @@ import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.views.components.ErrorMessage;
 import life.qbic.views.components.InformationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,6 +23,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private LoginLayout registeredLoginView;
 
   private final ConfirmEmailInput confirmEmailInput;
+
+  private final String emailConfirmationParameter;
   private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
       "Incorrect username or password",
       "Check that you have entered the correct username and password and try again."
@@ -32,8 +35,11 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       "You can now login with your credentials."
   );
 
-  LoginHandler(@Autowired ConfirmEmailInput confirmEmailInput) {
+  @Autowired
+  LoginHandler(ConfirmEmailInput confirmEmailInput,
+      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
     this.confirmEmailInput = confirmEmailInput;
+    this.emailConfirmationParameter = emailConfirmationParameter;
   }
 
   @Override
@@ -80,8 +86,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       //Todo Replace this with a distinct error message in the loginView
       showInvalidCredentialsError();
     }
-    if (queryParams.containsKey("confirmEmail")) {
-      String userId = queryParams.get("confirmEmail").iterator().next();
+    if (queryParams.containsKey(emailConfirmationParameter)) {
+      String userId = queryParams.get(emailConfirmationParameter).iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
     }
   }
