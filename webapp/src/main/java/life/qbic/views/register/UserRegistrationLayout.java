@@ -44,8 +44,8 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   public Span loginSpan;
 
+  public ErrorMessage invalidCredentialsMessage;
   public ErrorMessage alreadyUsedEmailMessage;
-  public ErrorMessage passwordTooShortMessage;
   public ErrorMessage errorMessage;
 
   public InformationMessage confirmationInformationMessage;
@@ -108,9 +108,8 @@ public class UserRegistrationLayout extends VerticalLayout {
     alreadyUsedEmailMessage.setVisible(false);
     errorMessage = new ErrorMessage("Registration failed", "Please try again.");
     errorMessage.setVisible(false);
-    passwordTooShortMessage =
-        new ErrorMessage("Password too short", "Your password must be at least 8 characters long.");
-    passwordTooShortMessage.setVisible(false);
+    invalidCredentialsMessage = new ErrorMessage("Invalid Credentials", "Please check the provided credentials and try again");
+    invalidCredentialsMessage.setVisible(false);
   }
 
   private void createInformationDivs() {
@@ -146,8 +145,8 @@ public class UserRegistrationLayout extends VerticalLayout {
         layoutTitle,
         errorMessage,
         alreadyUsedEmailMessage,
-        passwordTooShortMessage,
         confirmationInformationMessage,
+        invalidCredentialsMessage,
         fullName,
         email,
         password,
