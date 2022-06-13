@@ -34,7 +34,7 @@ public class UserDomainService {
    *
    * @param fullName    the full name of the user
    * @param emailAddress       a valid email address
-   * @param password the encrypted password desired by the user
+   * @param password the password desired by the user
    * @since 1.0.0
    */
   public void createUser(FullName fullName, EmailAddress emailAddress, EncryptedPassword password) {
