@@ -81,9 +81,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    title.setClassName("title");
+    informationContainer.setPadding(false);
+    errorContainer.setPadding(false);
     loginForm.setUsernameText("Email");
-    registrationSection.addClassName("registration");
   }
 
   private void styleFormLayout() {
@@ -101,7 +101,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "text-s",
         "shadow-l",
         "min-width-300px",
-        "max-width-15vw");
+        "max-width-15vw",
+        "pb-l",
+        "pr-l",
+        "pl-l");
   }
 
   private Div initRegistrationSection() {
