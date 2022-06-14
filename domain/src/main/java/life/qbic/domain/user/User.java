@@ -28,7 +28,6 @@ public class User implements Serializable {
   private static final long serialVersionUID = -8469632941022622595L;
 
   @EmbeddedId
-  @Column(name = "id")
   private UserId id;
 
   @Convert(converter = FullNameConverter.class)
