@@ -81,7 +81,7 @@ class RegistrationSpec extends Specification {
         0 * useCaseOutput.onUnexpectedFailure(_ as UserRegistrationException)
         def storedUser = testStorage.findUsersByEmailAddress(newUser.emailAddress()).get(0)
         storedUser.fullName() == newUser.fullName()
-        !storedUser.getId().isBlank()
+        !storedUser.id().get().isBlank()
 
     }
 
@@ -101,8 +101,8 @@ class RegistrationSpec extends Specification {
         }
 
         @Override
-        Optional<User> findUserById(String id) {
-            return users.stream().filter(user -> user.id.equalsIgnoreCase(id)).findAny()
+        Optional<User> findUserById(UserId id) {
+            return users.stream().filter(user -> user.id() == id).findAny()
         }
     }
 

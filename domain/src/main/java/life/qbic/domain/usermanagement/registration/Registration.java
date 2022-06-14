@@ -69,6 +69,7 @@ public class Registration implements RegisterUserInput {
           .ifSuccessOrElse(this::reportSuccess,
               response -> registerUserOutput.onUnexpectedFailure(build(response)));
     } catch (Exception e) {
+      log.error("User registration failed", e.getCause());
       registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
     }
   }

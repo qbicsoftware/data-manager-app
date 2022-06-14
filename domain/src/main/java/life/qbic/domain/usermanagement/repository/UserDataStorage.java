@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
+import life.qbic.domain.user.UserId;
 
 /**
  * <b>User Data Storage Interface</b>
@@ -44,5 +45,5 @@ public interface UserDataStorage {
    *     found.
    * @since 1.0.0
    */
-  Optional<User> findUserById(String id);
+  Optional<User> findUserById(UserId id);
 }

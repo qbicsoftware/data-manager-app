@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Optional;
 import life.qbic.domain.user.EmailAddress;
 import life.qbic.domain.user.User;
+import life.qbic.domain.user.UserId;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
@@ -70,11 +71,11 @@ public class UserRepository implements Serializable {
   /**
    * Searches for a user matching a provided userId
    *
-   * @param userId the user's unique id, accessible via {@link User#getId()}
+   * @param userId the user's unique id, accessible via {@link User#id()}
    * @return the user if present in the repository, else returns an {@link Optional#empty()}.
    * @since 1.0.0
    */
-  public Optional<User> findById(String userId) {
+  public Optional<User> findById(UserId userId) {
     return dataStorage.findUserById(userId);
   }
 
@@ -87,7 +88,7 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public void addUser(User user) throws UserStorageException {
-    if (doesUserExistWithId(user.getId()) || doesUserExistWithEmail(user.emailAddress())) {
+    if (doesUserExistWithId(user.id()) || doesUserExistWithEmail(user.emailAddress())) {
       throw new UserStorageException();
     }
     saveUser(user);
@@ -102,7 +103,7 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public void updateUser(User user) throws UserStorageException {
-    if (!doesUserExistWithId(user.getId())) {
+    if (!doesUserExistWithId(user.id())) {
       throw new UserStorageException();
     }
     saveUser(user);
@@ -120,7 +121,7 @@ public class UserRepository implements Serializable {
     return findByEmail(emailAddress).isPresent();
   }
 
-  private boolean doesUserExistWithId(String id) {
+  private boolean doesUserExistWithId(UserId id) {
     return findById(id).isPresent();
   }
 

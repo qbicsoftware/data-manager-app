@@ -21,8 +21,8 @@ class UserSpec extends Specification {
         User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         then:
-        !generatedUserIds.contains(user.getId())
-        generatedUserIds.add(user.getId())
+        !generatedUserIds.contains(user.id())
+        generatedUserIds.add(user.id())
 
         where:
         run << (1..100)
