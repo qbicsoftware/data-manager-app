@@ -20,7 +20,7 @@ public class DisplayMessage extends Composite<VerticalLayout> {
 
   protected Div descriptionDiv;
   public Span descriptionTextSpan;
-
+  public Span iconSpan;
   protected Icon messageIcon;
 
   public DisplayMessage(String titleText, String descriptionText) {
@@ -28,8 +28,8 @@ public class DisplayMessage extends Composite<VerticalLayout> {
     descriptionTextSpan = new Span(descriptionText);
 
     configureIcon();
-
-    titleSpan = new Span(messageIcon, this.titleTextSpan);
+    iconSpan = new Span(messageIcon);
+    titleSpan = new Span(iconSpan, this.titleTextSpan);
     descriptionDiv = new Div(this.descriptionTextSpan);
     getContent().add(titleSpan, descriptionDiv);
 
@@ -45,7 +45,7 @@ public class DisplayMessage extends Composite<VerticalLayout> {
   }
 
   private void styleCommonLayout() {
-    titleSpan.addClassNames("flex", "items-center", "gap-s");
+    titleSpan.addClassNames("flex", "items-top", "gap-s");
     titleTextSpan.addClassName("font-bold");
     this.descriptionDiv.addClassNames("text-left", "mx-l");
   }
