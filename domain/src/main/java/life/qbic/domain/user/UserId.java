@@ -37,6 +37,15 @@ public class UserId implements Serializable {
     return new UserId(UUID.randomUUID());
   }
 
+  /**
+   * Creates a user id from a String based representation.
+   * <p>
+   * Throws an {@link IllegalArgumentException} if the input is not a valid user id.
+   *
+   * @param s a user id String
+   * @return an instance of a new user id object
+   * @since 1.0.0
+   */
   public static UserId from(String s) {
     try {
       return new UserId(UUID.fromString(s));
