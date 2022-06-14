@@ -23,7 +23,7 @@ public class UserId implements Serializable {
   @Column(name = "id")
   private String value;
 
-  private UserId() {
+  protected UserId() {
     super();
   }
 
