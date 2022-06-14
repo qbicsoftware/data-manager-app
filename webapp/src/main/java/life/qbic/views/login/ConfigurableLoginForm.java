@@ -21,6 +21,7 @@ class ConfigurableLoginForm extends LoginForm {
     removeTitle();
     removeErrorMessage();
     this.setI18n(loginI18n);
+    this.setId("login-form");
   }
 
   private void removeErrorMessage() {
