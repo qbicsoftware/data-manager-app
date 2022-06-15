@@ -15,7 +15,7 @@ import life.qbic.apps.datamanager.notifications.MessageSubscriber;
 import life.qbic.domain.usermanagement.DomainRegistry;
 import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
 import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
-import life.qbic.domain.user.UserDomainService;
+import life.qbic.identityaccess.domain.user.UserDomainService;
 import life.qbic.domain.usermanagement.registration.UserRegistered;
 import life.qbic.domain.usermanagement.repository.UserRepository;
 import life.qbic.email.Email;
