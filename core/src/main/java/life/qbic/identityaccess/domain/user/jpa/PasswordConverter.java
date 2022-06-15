@@ -1,6 +1,7 @@
-package life.qbic.identityaccess.domain.user;
+package life.qbic.identityaccess.domain.user.jpa;
 
 import javax.persistence.AttributeConverter;
+import life.qbic.identityaccess.domain.user.EncryptedPassword;
 
 /**
  * <b>Converts {@link EncryptedPassword} into a String and vice versa></b>

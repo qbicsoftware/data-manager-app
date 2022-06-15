@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.policies;
+package life.qbic.identityaccess.domain;
 
 import java.io.Serializable;
 

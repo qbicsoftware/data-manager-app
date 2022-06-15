@@ -4,10 +4,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.apps.datamanager.ApplicationException;
-import life.qbic.domain.usermanagement.policies.PasswordEncryptionPolicy;
-import life.qbic.domain.usermanagement.policies.PasswordPolicy;
-import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
-import life.qbic.domain.usermanagement.policies.PolicyStatus;
+import life.qbic.identityaccess.domain.PolicyCheckReport;
+import life.qbic.identityaccess.domain.PolicyStatus;
+import life.qbic.identityaccess.domain.user.policy.PasswordEncryptionPolicy;
+import life.qbic.identityaccess.domain.user.policy.PasswordPolicy;
 
 /**
  * <b>Encrypted Password</b>
@@ -44,7 +44,7 @@ public class EncryptedPassword implements Serializable {
     return new EncryptedPassword(encryptPassword(rawPassword));
   }
 
-  protected static EncryptedPassword fromEncrypted(String encryptedPassword) {
+  public static EncryptedPassword fromEncrypted(String encryptedPassword) {
     return new EncryptedPassword(encryptedPassword);
   }
 

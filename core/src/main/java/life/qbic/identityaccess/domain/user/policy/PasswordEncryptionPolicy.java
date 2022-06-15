@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.policies;
+package life.qbic.identityaccess.domain.user.policy;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

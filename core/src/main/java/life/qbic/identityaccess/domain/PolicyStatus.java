@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.policies;
+package life.qbic.identityaccess.domain;
 
 /**
  * Policy status enums are used in {@link PolicyCheckReport}s, to indicate whether a policy check

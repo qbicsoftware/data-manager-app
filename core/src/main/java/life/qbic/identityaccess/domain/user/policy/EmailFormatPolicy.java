@@ -1,6 +1,8 @@
-package life.qbic.domain.usermanagement.policies;
+package life.qbic.identityaccess.domain.user.policy;
 
 import java.util.regex.Pattern;
+import life.qbic.identityaccess.domain.PolicyCheckReport;
+import life.qbic.identityaccess.domain.PolicyStatus;
 
 /**
  * <b>EmailAddress Format Policy</b>

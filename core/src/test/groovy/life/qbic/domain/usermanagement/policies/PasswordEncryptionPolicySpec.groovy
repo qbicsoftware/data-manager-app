@@ -1,6 +1,6 @@
 package life.qbic.domain.usermanagement.policies
 
-
+import life.qbic.identityaccess.domain.user.policy.PasswordEncryptionPolicy
 import spock.lang.Specification
 
 /**

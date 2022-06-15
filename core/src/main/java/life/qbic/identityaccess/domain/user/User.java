@@ -12,6 +12,7 @@ import life.qbic.identityaccess.domain.user.jpa.EmailConverter;
 import life.qbic.identityaccess.domain.user.jpa.FullNameConverter;
 import life.qbic.domain.usermanagement.UserActivated;
 import life.qbic.domain.usermanagement.UserEmailConfirmed;
+import life.qbic.identityaccess.domain.user.jpa.PasswordConverter;
 
 /**
  * <b>User class</b>

@@ -1,4 +1,7 @@
-package life.qbic.domain.usermanagement.policies;
+package life.qbic.identityaccess.domain.user.policy;
+
+import life.qbic.identityaccess.domain.PolicyCheckReport;
+import life.qbic.identityaccess.domain.PolicyStatus;
 
 /**
  * <b>Class PasswordPolicy</b>

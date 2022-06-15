@@ -4,9 +4,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.apps.datamanager.ApplicationException;
-import life.qbic.domain.usermanagement.policies.EmailFormatPolicy;
-import life.qbic.domain.usermanagement.policies.PolicyCheckReport;
-import life.qbic.domain.usermanagement.policies.PolicyStatus;
+import life.qbic.identityaccess.domain.PolicyCheckReport;
+import life.qbic.identityaccess.domain.PolicyStatus;
+import life.qbic.identityaccess.domain.user.policy.EmailFormatPolicy;
 
 /**
  * <b>EmailAddress</b>

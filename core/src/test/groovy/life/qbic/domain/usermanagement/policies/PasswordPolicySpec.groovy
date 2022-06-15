@@ -1,6 +1,8 @@
 package life.qbic.domain.usermanagement.policies
 
-
+import life.qbic.identityaccess.domain.PolicyCheckReport
+import life.qbic.identityaccess.domain.PolicyStatus
+import life.qbic.identityaccess.domain.user.policy.PasswordPolicy
 import spock.lang.Specification
 
 /**
