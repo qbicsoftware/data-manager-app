@@ -1,4 +1,4 @@
-package life.qbic.identityaccess.domain.events;
+package life.qbic.shared.domain.events;
 
 import java.util.ArrayList;
 import java.util.List;

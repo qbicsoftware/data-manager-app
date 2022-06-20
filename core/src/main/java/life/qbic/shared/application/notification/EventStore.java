@@ -1,7 +1,7 @@
-package life.qbic.identityaccess.application.notification;
+package life.qbic.shared.application.notification;
 
 import java.util.Set;
-import life.qbic.identityaccess.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEvent;
 
 public interface EventStore {
 

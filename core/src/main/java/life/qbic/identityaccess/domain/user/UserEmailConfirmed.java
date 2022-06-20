@@ -2,7 +2,7 @@ package life.qbic.identityaccess.domain.user;
 
 import java.io.Serial;
 import java.time.Instant;
-import life.qbic.identityaccess.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEvent;
 
 /**
  * <b>A user email was confirmed</b>

@@ -1,4 +1,4 @@
-package life.qbic.identityaccess.application.notification;
+package life.qbic.shared.application.notification;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

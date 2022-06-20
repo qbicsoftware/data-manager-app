@@ -1,7 +1,7 @@
 package life.qbic.events;
 
 import java.util.List;
-import life.qbic.identityaccess.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEvent;
 
 /**
  * A repository for domain events.

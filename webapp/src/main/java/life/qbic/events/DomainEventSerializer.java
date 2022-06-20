@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Base64;
-import life.qbic.identityaccess.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEvent;
 
 public class DomainEventSerializer {
 

@@ -1,11 +1,11 @@
 package life.qbic;
 
-import life.qbic.identityaccess.application.notification.EventStore;
+import life.qbic.shared.application.notification.EventStore;
 import life.qbic.email.EmailService;
 import life.qbic.events.SimpleEventStore;
 import life.qbic.events.TemporaryEventRepository;
-import life.qbic.identityaccess.application.notification.MessageBusInterface;
-import life.qbic.identityaccess.application.notification.NotificationService;
+import life.qbic.shared.application.notification.MessageBusInterface;
+import life.qbic.shared.application.notification.NotificationService;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.application.user.RegisterUserInput;
 import life.qbic.identityaccess.application.user.Registration;

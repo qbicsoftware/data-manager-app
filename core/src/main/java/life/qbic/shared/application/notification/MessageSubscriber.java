@@ -1,4 +1,4 @@
-package life.qbic.identityaccess.application.notification;
+package life.qbic.shared.application.notification;
 
 /**
  * Interface for notification subscribers. This interface needs to be implemented, when a client
