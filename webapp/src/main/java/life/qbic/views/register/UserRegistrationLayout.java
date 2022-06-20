@@ -48,6 +48,7 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   public InformationMessage confirmationInformationMessage;
 
+  private VerticalLayout fieldLayout;
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
 
@@ -68,9 +69,10 @@ public class UserRegistrationLayout extends VerticalLayout {
   private void initLayout() {
     layoutTitle = new H2("Register");
 
+    fieldLayout = new VerticalLayout();
     createDivs();
-    styleEmailField();
-    styleNameField();
+    createEmailField();
+    createNameField();
     createPasswordField();
     createRegisterButton();
     createSpan();
@@ -79,14 +81,9 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void styleLayout() {
-    password.setWidthFull();
-    email.setWidthFull();
-    fullName.setWidthFull();
 
+    styleFieldLayout();
     styleRegisterButton();
-
-    setRequiredIndicatorVisible(fullName, email, password);
-
     styleFormLayout();
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
@@ -114,8 +111,25 @@ public class UserRegistrationLayout extends VerticalLayout {
     confirmationInformationMessage.setVisible(false);
   }
 
-  private void styleNameField() {
+  private void createSpan() {
+    RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
+    loginSpan = new Span(new Text("Already have an account? "), link);
+  }
+
+  private void createRegisterButton() {
+    registerButton = new Button("Register");
+  }
+
+  private void createNameField() {
     fullName = new TextField("Full Name");
+  }
+
+  private void createEmailField() {
+    email = new EmailField("Email");
+  }
+
+  private void createPasswordField() {
+    password = new PasswordField("Password");
   }
 
   private void styleFormLayout() {
@@ -142,33 +156,25 @@ public class UserRegistrationLayout extends VerticalLayout {
         errorMessage,
         alreadyUsedEmailMessage,
         confirmationInformationMessage,
-        fullName,
-        email,
-        password,
+        fieldLayout,
         registerButton,
         loginSpan);
   }
 
-  private void createSpan() {
-    RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
-    loginSpan = new Span(new Text("Already have an account? "), link);
-  }
-
-  private void createRegisterButton() {
-    registerButton = new Button("Register");
+  private void styleFieldLayout() {
+    fieldLayout.add(fullName, email, password);
+    password.setWidthFull();
+    email.setWidthFull();
+    fullName.setWidthFull();
+    setRequiredIndicatorVisible(fullName, email, password);
+    fieldLayout.setSpacing(false);
+    fieldLayout.setMargin(false);
+    fieldLayout.setPadding(false);
   }
 
   private void styleRegisterButton() {
     registerButton.setWidthFull();
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-  }
-
-  private void createPasswordField() {
-    password = new PasswordField("Password");
-  }
-
-  private void styleEmailField() {
-    email = new EmailField("Email");
   }
 
   private void setRequiredIndicatorVisible(HasValueAndElement<?, ?>... components) {
