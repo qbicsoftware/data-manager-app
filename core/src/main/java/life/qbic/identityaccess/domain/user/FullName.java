@@ -3,7 +3,7 @@ package life.qbic.identityaccess.domain.user;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.apps.datamanager.ApplicationException;
+import life.qbic.identityaccess.application.ApplicationException;
 
 /**
  * <b>Full name</b>

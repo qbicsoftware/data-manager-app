@@ -1,7 +1,7 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.application.user;
 
 import java.util.Objects;
-import life.qbic.apps.datamanager.services.UserRegistrationService;
+import life.qbic.identityaccess.domain.user.UserNotFoundException;
 
 /**
  * <b>Email Address Confirmation use case</b>

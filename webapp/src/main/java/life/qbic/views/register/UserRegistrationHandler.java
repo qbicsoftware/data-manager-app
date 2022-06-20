@@ -2,9 +2,9 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
-import life.qbic.apps.datamanager.services.UserRegistrationException;
-import life.qbic.domain.usermanagement.registration.RegisterUserInput;
-import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
+import life.qbic.identityaccess.application.user.RegisterUserInput;
+import life.qbic.identityaccess.application.user.RegisterUserOutput;
+import life.qbic.identityaccess.application.user.UserRegistrationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
-package life.qbic.domain.usermanagement;
+package life.qbic.identityaccess.domain.user;
 
 import java.io.Serial;
 import java.time.Instant;
-import life.qbic.domain.events.DomainEvent;
+import life.qbic.identityaccess.domain.events.DomainEvent;
 
 /**
  * <b>A user was activated.</b>

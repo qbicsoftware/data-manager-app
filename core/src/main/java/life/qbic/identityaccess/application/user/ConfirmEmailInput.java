@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.application.user;
 
 /**
  * <b>Confirm Email use case input</b>

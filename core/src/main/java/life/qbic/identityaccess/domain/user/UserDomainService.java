@@ -1,18 +1,17 @@
 package life.qbic.identityaccess.domain.user;
 
-import life.qbic.domain.events.DomainEventPublisher;
-import life.qbic.domain.usermanagement.registration.UserRegistered;
-import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.identityaccess.domain.events.DomainEventPublisher;
+import life.qbic.identityaccess.domain.events.DomainEvent;
 
 /**
  * <b>User Domain Service</b>
  *
  * <p>Domain service within the usermanagement context. Takes over the user creation and publishes
  * a
- * {@link life.qbic.domain.events.DomainEvent} of type {@link UserRegistered} once the user has been
+ * {@link DomainEvent} of type {@link UserRegistered} once the user has been
  * successfully registered in the domain.
  * <p>Domain service within the usermanagement context. Takes over the user creation and publishes
- * a {@link life.qbic.domain.events.DomainEvent} of type {@link UserRegistered} once the user has
+ * a {@link DomainEvent} of type {@link UserRegistered} once the user has
  * been successfully registered in the domain.
  *
  * @since 1.0.0

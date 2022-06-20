@@ -1,6 +1,6 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.application.user;
 
-import life.qbic.apps.datamanager.services.UserRegistrationException;
+import life.qbic.identityaccess.application.user.UserRegistrationException;
 
 /**
  * Output interface for the user registration use case

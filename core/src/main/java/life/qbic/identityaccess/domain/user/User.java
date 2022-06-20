@@ -7,11 +7,9 @@ import javax.persistence.Convert;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import life.qbic.domain.events.DomainEventPublisher;
+import life.qbic.identityaccess.domain.events.DomainEventPublisher;
 import life.qbic.identityaccess.domain.user.jpa.EmailConverter;
 import life.qbic.identityaccess.domain.user.jpa.FullNameConverter;
-import life.qbic.domain.usermanagement.UserActivated;
-import life.qbic.domain.usermanagement.UserEmailConfirmed;
 import life.qbic.identityaccess.domain.user.jpa.PasswordConverter;
 
 /**

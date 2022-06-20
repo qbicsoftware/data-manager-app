@@ -1,9 +1,7 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.application.user;
 
-import life.qbic.apps.datamanager.services.UserRegistrationException;
-import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.apps.datamanager.services.UserRegistrationService.RegistrationResponse;
-import life.qbic.apps.datamanager.services.UserRegistrationService.UserExistsException;
+import life.qbic.identityaccess.application.user.UserRegistrationService.RegistrationResponse;
+import life.qbic.identityaccess.application.user.UserRegistrationService.UserExistsException;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;

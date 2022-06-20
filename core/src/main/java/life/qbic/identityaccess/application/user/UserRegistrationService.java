@@ -1,4 +1,4 @@
-package life.qbic.apps.datamanager.services;
+package life.qbic.identityaccess.application.user;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -6,12 +6,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import life.qbic.apps.datamanager.ApplicationException;
+import life.qbic.identityaccess.application.ApplicationException;
 import life.qbic.apps.datamanager.events.EventStore;
-import life.qbic.apps.datamanager.notifications.Notification;
-import life.qbic.apps.datamanager.notifications.NotificationService;
-import life.qbic.domain.events.DomainEventPublisher;
-import life.qbic.domain.events.DomainEventSubscriber;
+import life.qbic.identityaccess.application.notifications.Notification;
+import life.qbic.identityaccess.application.notifications.NotificationService;
+import life.qbic.identityaccess.domain.events.DomainEventPublisher;
+import life.qbic.identityaccess.domain.events.DomainEventSubscriber;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.EncryptedPassword;
@@ -20,12 +20,12 @@ import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;
 import life.qbic.identityaccess.domain.user.User;
 import life.qbic.identityaccess.domain.user.UserId;
-import life.qbic.domain.usermanagement.DomainRegistry;
-import life.qbic.domain.usermanagement.UserActivated;
-import life.qbic.domain.usermanagement.UserEmailConfirmed;
-import life.qbic.domain.usermanagement.registration.UserNotFoundException;
-import life.qbic.domain.usermanagement.registration.UserRegistered;
-import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.identityaccess.domain.events.DomainRegistry;
+import life.qbic.identityaccess.domain.user.UserActivated;
+import life.qbic.identityaccess.domain.user.UserEmailConfirmed;
+import life.qbic.identityaccess.domain.user.UserNotFoundException;
+import life.qbic.identityaccess.domain.user.UserRegistered;
+import life.qbic.identityaccess.domain.user.UserRepository;
 
 /**
  * <b>User Registration Service</b>

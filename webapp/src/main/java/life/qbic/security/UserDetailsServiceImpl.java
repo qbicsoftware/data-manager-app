@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.User;
-import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.identityaccess.domain.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

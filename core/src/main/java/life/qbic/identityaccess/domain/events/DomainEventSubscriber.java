@@ -1,4 +1,4 @@
-package life.qbic.domain.events;
+package life.qbic.identityaccess.domain.events;
 
 /**
  * <b>Domain Event Subscriber</b>

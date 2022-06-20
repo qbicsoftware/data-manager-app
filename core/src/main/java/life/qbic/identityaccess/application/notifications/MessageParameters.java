@@ -1,4 +1,4 @@
-package life.qbic.apps.datamanager.notifications;
+package life.qbic.identityaccess.application.notifications;
 
 import java.time.Instant;
 

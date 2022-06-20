@@ -1,4 +1,4 @@
-package life.qbic.apps.datamanager.notifications;
+package life.qbic.identityaccess.application.notifications;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.UUID;
-import life.qbic.apps.datamanager.services.ServiceException;
+import life.qbic.identityaccess.application.ServiceException;
 
 /**
  * <b>Notification Service</b>

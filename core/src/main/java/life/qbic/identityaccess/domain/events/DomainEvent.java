@@ -1,4 +1,4 @@
-package life.qbic.domain.events;
+package life.qbic.identityaccess.domain.events;
 
 import java.io.Serializable;
 import java.time.Instant;

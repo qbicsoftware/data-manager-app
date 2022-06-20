@@ -1,11 +1,8 @@
-package life.qbic.domain.usermanagement.repository;
+package life.qbic.identityaccess.domain.user;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.identityaccess.domain.user.EmailAddress;
-import life.qbic.identityaccess.domain.user.User;
-import life.qbic.identityaccess.domain.user.UserId;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>

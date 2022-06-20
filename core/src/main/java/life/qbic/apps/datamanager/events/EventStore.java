@@ -1,7 +1,7 @@
 package life.qbic.apps.datamanager.events;
 
 import java.util.Set;
-import life.qbic.domain.events.DomainEvent;
+import life.qbic.identityaccess.domain.events.DomainEvent;
 
 public interface EventStore {
 

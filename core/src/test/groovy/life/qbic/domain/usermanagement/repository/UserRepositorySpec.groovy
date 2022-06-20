@@ -5,11 +5,13 @@ import life.qbic.identityaccess.domain.user.EmailAddress
 import life.qbic.identityaccess.domain.user.EncryptedPassword
 import life.qbic.identityaccess.domain.user.FullName
 import life.qbic.identityaccess.domain.user.User
+import life.qbic.identityaccess.domain.user.UserDataStorage
 import life.qbic.identityaccess.domain.user.UserId
+import life.qbic.identityaccess.domain.user.UserRepository
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link life.qbic.domain.usermanagement.repository.UserRepository}</b>
+ * <b>Tests for the {@link life.qbic.identityaccess.domain.user.UserRepository}</b>
  *
  * @since 1.0.0
  */

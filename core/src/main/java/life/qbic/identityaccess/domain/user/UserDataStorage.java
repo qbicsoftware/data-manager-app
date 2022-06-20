@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.repository;
+package life.qbic.identityaccess.domain.user;
 
 import java.util.List;
 import java.util.Optional;

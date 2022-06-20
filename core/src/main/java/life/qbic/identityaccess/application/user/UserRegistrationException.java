@@ -1,9 +1,9 @@
-package life.qbic.apps.datamanager.services;
+package life.qbic.identityaccess.application.user;
 
 import java.io.Serial;
 import java.util.Optional;
-import life.qbic.apps.datamanager.ApplicationException;
-import life.qbic.apps.datamanager.services.UserRegistrationService.UserExistsException;
+import life.qbic.identityaccess.application.ApplicationException;
+import life.qbic.identityaccess.application.user.UserRegistrationService.UserExistsException;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;

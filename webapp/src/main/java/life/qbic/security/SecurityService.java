@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.Optional;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.User;
-import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.identityaccess.domain.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;

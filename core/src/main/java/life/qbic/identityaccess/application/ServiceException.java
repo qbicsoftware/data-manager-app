@@ -1,4 +1,4 @@
-package life.qbic.apps.datamanager.services;
+package life.qbic.identityaccess.application;
 
 /**
  * <b><class short description - 1 Line!></b>

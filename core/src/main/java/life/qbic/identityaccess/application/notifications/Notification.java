@@ -1,7 +1,7 @@
-package life.qbic.apps.datamanager.notifications;
+package life.qbic.identityaccess.application.notifications;
 
 import java.time.Instant;
-import life.qbic.domain.events.DomainEvent;
+import life.qbic.identityaccess.domain.events.DomainEvent;
 
 /**
  * <b>Notification</b>

@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.application.user;
 
 /**
  * Input interface to register a new user in the application.

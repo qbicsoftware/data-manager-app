@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement;
+package life.qbic.identityaccess.domain.events;
 
 import java.util.Optional;
 import life.qbic.identityaccess.domain.user.UserDomainService;

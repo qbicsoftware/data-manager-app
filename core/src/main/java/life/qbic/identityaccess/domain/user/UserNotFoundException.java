@@ -1,4 +1,4 @@
-package life.qbic.domain.usermanagement.registration;
+package life.qbic.identityaccess.domain.user;
 
 /**
  * <b>User Not Found exception</b>
