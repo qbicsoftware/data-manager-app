@@ -36,7 +36,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   );
 
   private static final InformationMessage EMAIL_CONFIRMATION_REMINDER = new InformationMessage(
-      "Registration Email sent",
+      "Registration email sent",
       "Please check your email inbox to confirm your registration"
   );
 
