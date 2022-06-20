@@ -8,11 +8,10 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b> A DisplayMessage component which shows an unspecific styled information message with a
+ * title and a detailed description. </b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class DisplayMessage extends Composite<VerticalLayout> {
   protected Span titleSpan;
@@ -20,7 +19,7 @@ public class DisplayMessage extends Composite<VerticalLayout> {
 
   protected Div descriptionDiv;
   public Span descriptionTextSpan;
-
+  public Span iconSpan;
   protected Icon messageIcon;
 
   public DisplayMessage(String titleText, String descriptionText) {
@@ -28,8 +27,8 @@ public class DisplayMessage extends Composite<VerticalLayout> {
     descriptionTextSpan = new Span(descriptionText);
 
     configureIcon();
-
-    titleSpan = new Span(messageIcon, this.titleTextSpan);
+    iconSpan = new Span(messageIcon);
+    titleSpan = new Span(iconSpan, this.titleTextSpan);
     descriptionDiv = new Div(this.descriptionTextSpan);
     getContent().add(titleSpan, descriptionDiv);
 
@@ -45,13 +44,13 @@ public class DisplayMessage extends Composite<VerticalLayout> {
   }
 
   private void styleCommonLayout() {
-    titleSpan.addClassNames("flex", "items-center", "gap-s");
+    titleSpan.addClassNames("flex", "items-top", "gap-s");
     titleTextSpan.addClassName("font-bold");
     this.descriptionDiv.addClassNames("text-left", "mx-l");
   }
 
   protected void styleSpecificLayout() {
-    getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");
+    getContent().addClassNames("p-s", "bg-contrast-5", "rounded-l", "gap-y-s");
   }
 
   public String title() {
