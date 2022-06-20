@@ -2,9 +2,6 @@ package life.qbic.identityaccess.domain.user;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.identityaccess.domain.user.EmailAddress;
-import life.qbic.identityaccess.domain.user.User;
-import life.qbic.identityaccess.domain.user.UserId;
 
 /**
  * <b>User Data Storage Interface</b>

@@ -1,7 +1,7 @@
 package life.qbic.identityaccess.domain.user;
 
-import life.qbic.shared.domain.events.DomainEventPublisher;
 import life.qbic.shared.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEventPublisher;
 
 /**
  * <b>User Domain Service</b>

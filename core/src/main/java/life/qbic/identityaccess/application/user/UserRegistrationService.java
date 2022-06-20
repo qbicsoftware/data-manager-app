@@ -7,11 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import life.qbic.identityaccess.application.ApplicationException;
-import life.qbic.shared.application.notification.EventStore;
-import life.qbic.shared.application.notification.Notification;
-import life.qbic.shared.application.notification.NotificationService;
-import life.qbic.shared.domain.events.DomainEventPublisher;
-import life.qbic.shared.domain.events.DomainEventSubscriber;
+import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.EncryptedPassword;
@@ -19,13 +15,17 @@ import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidation
 import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;
 import life.qbic.identityaccess.domain.user.User;
-import life.qbic.identityaccess.domain.user.UserId;
-import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.UserActivated;
 import life.qbic.identityaccess.domain.user.UserEmailConfirmed;
+import life.qbic.identityaccess.domain.user.UserId;
 import life.qbic.identityaccess.domain.user.UserNotFoundException;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
+import life.qbic.shared.application.notification.EventStore;
+import life.qbic.shared.application.notification.Notification;
+import life.qbic.shared.application.notification.NotificationService;
+import life.qbic.shared.domain.events.DomainEventPublisher;
+import life.qbic.shared.domain.events.DomainEventSubscriber;
 
 /**
  * <b>User Registration Service</b>

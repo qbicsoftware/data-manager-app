@@ -1,7 +1,5 @@
 package life.qbic.identityaccess.application.user;
 
-import life.qbic.identityaccess.application.user.UserRegistrationException;
-
 /**
  * Output interface for the user registration use case
  *
