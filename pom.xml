@@ -10,7 +10,7 @@
   <version>0.2.0</version>
   <modules>
     <module>webapp</module>
-    <module>domain</module>
+    <module>core</module>
   </modules>
   <packaging>pom</packaging>
 
