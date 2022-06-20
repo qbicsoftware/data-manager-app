@@ -5,6 +5,8 @@ import com.vaadin.flow.component.UI;
 import life.qbic.identityaccess.application.user.RegisterUserInput;
 import life.qbic.identityaccess.application.user.RegisterUserOutput;
 import life.qbic.identityaccess.application.user.UserRegistrationException;
+import com.vaadin.flow.router.QueryParameters;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +23,6 @@ public class UserRegistrationHandler
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
   private UserRegistrationLayout userRegistrationLayout;
-
   private final RegisterUserInput registrationUseCase;
 
   @Autowired
@@ -69,7 +70,8 @@ public class UserRegistrationHandler
 
   @Override
   public void onUserRegistrationSucceeded() {
-    UI.getCurrent().navigate("/login");
+    QueryParameters registrationParams = QueryParameters.simple(Map.of("userRegistered", "true"));
+    UI.getCurrent().navigate("/login", registrationParams);
   }
 
   @Override
