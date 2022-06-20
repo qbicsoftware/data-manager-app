@@ -1,8 +1,8 @@
 package life.qbic.domain.usermanagement.registration
 
-import life.qbic.apps.datamanager.events.EventStore
-import life.qbic.identityaccess.application.notifications.MessageBusInterface
-import life.qbic.identityaccess.application.notifications.NotificationService
+import life.qbic.identityaccess.application.notification.EventStore
+import life.qbic.identityaccess.application.notification.MessageBusInterface
+import life.qbic.identityaccess.application.notification.NotificationService
 import life.qbic.identityaccess.application.user.UserRegistrationException
 import life.qbic.identityaccess.application.user.UserRegistrationService
 import life.qbic.identityaccess.domain.events.DomainRegistry

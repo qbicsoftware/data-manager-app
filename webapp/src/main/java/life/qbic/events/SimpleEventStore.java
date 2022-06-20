@@ -2,7 +2,7 @@ package life.qbic.events;
 
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.apps.datamanager.events.EventStore;
+import life.qbic.identityaccess.application.notification.EventStore;
 import life.qbic.identityaccess.domain.events.DomainEvent;
 
 /**

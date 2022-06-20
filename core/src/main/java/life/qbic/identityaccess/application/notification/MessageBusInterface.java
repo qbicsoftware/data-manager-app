@@ -1,4 +1,4 @@
-package life.qbic.identityaccess.application.notifications;
+package life.qbic.identityaccess.application.notification;
 
 public interface MessageBusInterface {
 
