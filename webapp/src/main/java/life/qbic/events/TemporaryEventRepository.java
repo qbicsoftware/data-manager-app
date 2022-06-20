@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.domain.events.DomainEvent;
+import life.qbic.shared.domain.events.DomainEvent;
 
 /**
  * An in-memory class acting as an event repository.

@@ -67,7 +67,7 @@
         <dependencies>
             <dependency>
                 <groupId>life.qbic</groupId>
-                <artifactId>domain</artifactId>
+                <artifactId>core</artifactId>
                 <version>0.2.0</version>
             </dependency>
             <dependency>
@@ -83,7 +83,7 @@
     <dependencies>
         <dependency>
             <groupId>life.qbic</groupId>
-            <artifactId>domain</artifactId>
+            <artifactId>core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>

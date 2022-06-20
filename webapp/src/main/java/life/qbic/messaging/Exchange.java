@@ -6,9 +6,9 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import life.qbic.apps.datamanager.notifications.MessageBusInterface;
-import life.qbic.apps.datamanager.notifications.MessageParameters;
-import life.qbic.apps.datamanager.notifications.MessageSubscriber;
+import life.qbic.shared.application.notification.MessageBusInterface;
+import life.qbic.shared.application.notification.MessageParameters;
+import life.qbic.shared.application.notification.MessageSubscriber;
 
 /**
  * <b>Exchange (messaging)</b>
