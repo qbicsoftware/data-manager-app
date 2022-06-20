@@ -18,7 +18,7 @@ public class EmailFormatPolicy {
   Many thanks to https://www.javatpoint.com/java-email-validation
    */
   private static final String FULL_ADDRESS_SPEC =
-      "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*+@(?:[a-zA-Z0-9-]{2,30}+\\.)*+[a-zA-Z]{2,6}$";
+      "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*+@(?:[a-zA-Z0-9-]+\\.)+?[a-zA-Z]{2,6}$";
 
   private static EmailFormatPolicy INSTANCE;
 
