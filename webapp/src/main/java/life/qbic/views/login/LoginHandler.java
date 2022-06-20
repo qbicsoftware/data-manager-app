@@ -92,14 +92,13 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
-      //Todo Replace this with a distinct error message in the loginView
       showInvalidCredentialsError();
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
       String userId = queryParams.get(emailConfirmationParameter).iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
     }
-    if (queryParams.containsKey("successfulRegistration")){
+    if (queryParams.containsKey("userRegistered")){
      showEmailConfirmationReminder();
     }
   }
