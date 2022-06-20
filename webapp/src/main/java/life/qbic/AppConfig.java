@@ -1,17 +1,17 @@
 package life.qbic;
 
-import life.qbic.apps.datamanager.events.EventStore;
-import life.qbic.apps.datamanager.notifications.MessageBusInterface;
-import life.qbic.apps.datamanager.notifications.NotificationService;
-import life.qbic.apps.datamanager.services.UserRegistrationService;
-import life.qbic.domain.usermanagement.registration.EmailAddressConfirmation;
-import life.qbic.domain.usermanagement.registration.RegisterUserInput;
-import life.qbic.domain.usermanagement.registration.Registration;
-import life.qbic.domain.usermanagement.repository.UserDataStorage;
-import life.qbic.domain.usermanagement.repository.UserRepository;
+import life.qbic.shared.application.notification.EventStore;
 import life.qbic.email.EmailService;
 import life.qbic.events.SimpleEventStore;
 import life.qbic.events.TemporaryEventRepository;
+import life.qbic.shared.application.notification.MessageBusInterface;
+import life.qbic.shared.application.notification.NotificationService;
+import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
+import life.qbic.identityaccess.application.user.RegisterUserInput;
+import life.qbic.identityaccess.application.user.Registration;
+import life.qbic.identityaccess.application.user.UserRegistrationService;
+import life.qbic.identityaccess.domain.user.UserDataStorage;
+import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.messaging.Exchange;
 import life.qbic.usermanagement.registration.RegistrationEmailSender;
 import org.springframework.context.annotation.Bean;

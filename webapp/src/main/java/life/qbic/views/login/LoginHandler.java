@@ -4,8 +4,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
-import life.qbic.domain.usermanagement.registration.ConfirmEmailInput;
-import life.qbic.domain.usermanagement.registration.ConfirmEmailOutput;
+import life.qbic.identityaccess.application.user.ConfirmEmailInput;
+import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.views.components.ErrorMessage;
 import life.qbic.views.components.InformationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,11 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private static final InformationMessage EMAIL_CONFIRMATION_SUCCESS = new InformationMessage(
       "Email address confirmed",
       "You can now login with your credentials."
+  );
+
+  private static final InformationMessage EMAIL_CONFIRMATION_REMINDER = new InformationMessage(
+      "Registration email sent",
+      "Please check your email inbox to confirm your registration"
   );
 
   @Autowired
@@ -68,6 +73,10 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     registeredLoginView.showInformation(EMAIL_CONFIRMATION_SUCCESS);
   }
 
+  private void showEmailConfirmationReminder() {
+    registeredLoginView.showInformation(EMAIL_CONFIRMATION_REMINDER);
+  }
+
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(it -> {/*TODO*/});
@@ -83,12 +92,14 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {
-      //Todo Replace this with a distinct error message in the loginView
       showInvalidCredentialsError();
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
       String userId = queryParams.get(emailConfirmationParameter).iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
+    }
+    if (queryParams.containsKey("userRegistered")){
+     showEmailConfirmationReminder();
     }
   }
 
