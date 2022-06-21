@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import life.qbic.identityaccess.application.ApplicationException;
+import life.qbic.identityaccess.application.ApplicationResponse;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
@@ -65,7 +65,7 @@ public final class UserRegistrationService {
    * not.
    * @since 1.0.0
    */
-  public RegistrationResponse registerUser(final String fullName, final String email,
+  public ApplicationResponse registerUser(final String fullName, final String email,
       final char[] rawPassword) {
 
     var registrationResponse = validateInput(fullName, email, rawPassword);
@@ -106,7 +106,7 @@ public final class UserRegistrationService {
     var userPassword = EncryptedPassword.from(rawPassword);
 
     if (userRepository.findByEmail(userEmail).isPresent()) {
-      return RegistrationResponse.failureResponse(new UserExistsException());
+      return ApplicationResponse.failureResponse(new UserExistsException());
     }
 
     // Trigger the user creation in the domain service
@@ -114,10 +114,10 @@ public final class UserRegistrationService {
 
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
-    return RegistrationResponse.successResponse();
+    return ApplicationResponse.successResponse();
   }
 
-  private RegistrationResponse validateInput(String fullName, String email, char[] rawPassword) {
+  private ApplicationResponse validateInput(String fullName, String email, char[] rawPassword) {
     List<RuntimeException> failures = new ArrayList<>();
 
     try {
@@ -137,81 +137,10 @@ public final class UserRegistrationService {
     }
 
     if (failures.isEmpty()) {
-      return RegistrationResponse.successResponse();
+      return ApplicationResponse.successResponse();
     }
 
-    return RegistrationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
-  }
-
-  public static class RegistrationResponse {
-
-    private enum Type {SUCCESSFUL, FAILED}
-
-    private Type type;
-
-    private List<RuntimeException> exceptions;
-
-    public static RegistrationResponse successResponse() {
-      var successResponse = new RegistrationResponse();
-      successResponse.setType(Type.SUCCESSFUL);
-      return successResponse;
-    }
-
-    public static RegistrationResponse failureResponse(RuntimeException... exceptions) {
-      if (exceptions == null) {
-        throw new IllegalArgumentException("Null references are not allowed.");
-      }
-      var failureResponse = new RegistrationResponse();
-      failureResponse.setType(Type.FAILED);
-      failureResponse.setExceptions(exceptions);
-      return failureResponse;
-    }
-
-    private RegistrationResponse() {
-      super();
-    }
-
-    private void setType(Type type) {
-      this.type = type;
-    }
-
-    public Type getType() {
-      return type;
-    }
-
-    private void setExceptions(RuntimeException... exceptions) {
-      this.exceptions = Arrays.stream(exceptions).toList();
-    }
-
-    public boolean hasFailures() {
-      return type == Type.FAILED;
-    }
-
-    public List<RuntimeException> failures() {
-      return exceptions;
-    }
-
-    /**
-     * Depending on the response, two type of downstream actions can be passed to the
-     * {@link RegistrationResponse}.
-     * <p>
-     * If the instance contains failures, the downstream failure {@link Consumer} action will be
-     * triggered and a reference to itself passed as argument. Otherwise, the downstream failure
-     * consumer is called.
-     *
-     * @param downstreamSuccess consumer for success responses
-     * @param downstreamFailure consumer for failure responses
-     * @since 1.0.0
-     */
-    public void ifSuccessOrElse(Consumer<RegistrationResponse> downstreamSuccess,
-        Consumer<RegistrationResponse> downstreamFailure) {
-      if (hasFailures()) {
-        downstreamFailure.accept(this);
-      } else {
-        downstreamSuccess.accept(this);
-      }
-    }
-
+    return ApplicationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
   }
 
   public static class UserExistsException extends ApplicationException {

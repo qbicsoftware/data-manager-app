@@ -1,6 +1,6 @@
 package life.qbic.identityaccess.application.user;
 
-import life.qbic.identityaccess.application.user.UserRegistrationService.RegistrationResponse;
+import life.qbic.identityaccess.application.ApplicationResponse;
 import life.qbic.identityaccess.application.user.UserRegistrationService.UserExistsException;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidationException;
@@ -72,14 +72,14 @@ public class Registration implements RegisterUserInput {
     }
   }
 
-  private void reportSuccess(RegistrationResponse registrationResponse) {
+  private void reportSuccess(ApplicationResponse applicationResponse) {
     registerUserOutput.onUserRegistrationSucceeded();
   }
 
-  private UserRegistrationException build(RegistrationResponse registrationResponse) {
+  private UserRegistrationException build(ApplicationResponse applicationResponse) {
     var builder = UserRegistrationException.builder();
 
-    for (RuntimeException e : registrationResponse.failures()) {
+    for (RuntimeException e : applicationResponse.failures()) {
       if (e instanceof EmailValidationException) {
         builder.withEmailFormatException((EmailValidationException) e);
       } else if (e instanceof PasswordValidationException) {
