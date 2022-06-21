@@ -1,5 +1,6 @@
 package life.qbic.identityaccess.domain.user;
 
+import java.io.Serial;
 import java.time.Instant;
 import life.qbic.shared.domain.events.DomainEvent;
 
@@ -11,6 +12,9 @@ import life.qbic.shared.domain.events.DomainEvent;
  * @since 1.0.0
  */
 public class PasswordReset extends DomainEvent {
+
+  @Serial
+  private static final long serialVersionUID = 7086981262356789842L;
 
   private final UserId userId;
 
