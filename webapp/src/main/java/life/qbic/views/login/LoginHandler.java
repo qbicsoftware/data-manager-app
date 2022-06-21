@@ -57,24 +57,36 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void initFields() {
-    clearMessages();
-  }
-
-  private void clearMessages() {
-    registeredLoginView.clearErrors();
-    registeredLoginView.clearInformation();
+    clearNotifications();
   }
 
   private void showInvalidCredentialsError() {
-    registeredLoginView.showError(INCORRECT_USERNAME_OR_PASSWORD);
+    showError(INCORRECT_USERNAME_OR_PASSWORD);
   }
 
   private void showEmailConfirmationInformation() {
-    registeredLoginView.showInformation(EMAIL_CONFIRMATION_SUCCESS);
+    showInformation(EMAIL_CONFIRMATION_SUCCESS);
   }
 
   private void showEmailConfirmationReminder() {
-    registeredLoginView.showInformation(EMAIL_CONFIRMATION_REMINDER);
+    showInformation(EMAIL_CONFIRMATION_REMINDER);
+  }
+
+  public void clearNotifications() {
+    registeredLoginView.notificationLayout.setVisible(false);
+    registeredLoginView.notificationLayout.removeAll();
+  }
+
+  public void showError(ErrorMessage errorMessage) {
+    registeredLoginView.notificationLayout.add(
+        new ErrorMessage(errorMessage.title(), errorMessage.message()));
+    registeredLoginView.notificationLayout.setVisible(true);
+  }
+
+  public void showInformation(InformationMessage message) {
+    registeredLoginView.notificationLayout.add(
+        new InformationMessage(message.title(), message.message()));
+    registeredLoginView.notificationLayout.setVisible(true);
   }
 
   private void addListener() {
@@ -83,7 +95,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void onLoginSucceeded() {
-    clearMessages();
+    clearNotifications();
     UI.getCurrent().navigate("/hello");
   }
 
@@ -98,20 +110,19 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
       String userId = queryParams.get(emailConfirmationParameter).iterator().next();
       confirmEmailInput.confirmEmailAddress(userId);
     }
-    if (queryParams.containsKey("userRegistered")){
-     showEmailConfirmationReminder();
+    if (queryParams.containsKey("userRegistered")) {
+      showEmailConfirmationReminder();
     }
   }
 
   @Override
   public void onEmailConfirmationSuccess() {
-    clearMessages();
+    clearNotifications();
     showEmailConfirmationInformation();
-
   }
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    registeredLoginView.showError(new ErrorMessage("Email confirmation failed", reason));
+    showError(new ErrorMessage("Email confirmation failed", reason));
   }
 }
