@@ -3,11 +3,11 @@ package life.qbic.usermanagement.passwordreset;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Password Reset Link Supplier</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Creates a actionable URL that represents a password reset entry point</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 class PasswordResetLinkSupplier {
 
