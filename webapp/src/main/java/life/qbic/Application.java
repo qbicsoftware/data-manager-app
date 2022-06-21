@@ -10,19 +10,20 @@ import com.vaadin.flow.theme.Theme;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
-import life.qbic.shared.application.notification.MessageBusInterface;
-import life.qbic.shared.application.notification.MessageSubscriber;
 import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.UserDomainService;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
+import life.qbic.shared.application.notification.MessageBusInterface;
+import life.qbic.shared.application.notification.MessageSubscriber;
+import life.qbic.usermanagement.EmailFactory;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
-import life.qbic.usermanagement.registration.EmailFactory;
 import life.qbic.views.login.LoginHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -48,6 +49,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   private static final Logger log = getLogger(Application.class);
 
+  @Serial
+  private static final long serialVersionUID = -8182104817961102407L;
+
 
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
@@ -56,11 +60,10 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
-    // Testing: subscribe to user register events in the message bus
-
     var messageBus = appContext.getBean(MessageBusInterface.class);
     messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
+    messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), "PasswordReset");
 
     setupUseCases(appContext);
   }
@@ -71,25 +74,39 @@ public class Application extends SpringBootServletInitializer implements AppShel
     emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
   }
 
+  private static void sendEmail(ConfigurableApplicationContext appContext, String message) {
+    try {
+      UserRegistered userRegistered = deserialize(message);
+      String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
+          .emailConfirmationUrl(userRegistered.userId());
+      EmailService registrationEmailSender = appContext.getBean(
+          EmailService.class);
+      Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
+          new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
+          , emailConfirmationUrl);
+      registrationEmailSender.send(registrationMail);
+    } catch (IOException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private static MessageSubscriber whenUserRegisteredSendEmail(
       ConfigurableApplicationContext appContext) {
     return (message, messageParams) -> {
       if (!messageParams.messageType.equals("UserRegistered")) {
         return;
       }
-      try {
-        UserRegistered userRegistered = deserialize(message);
-        String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
-            .emailConfirmationUrl(userRegistered.userId());
-        EmailService registrationEmailSender = appContext.getBean(
-            EmailService.class);
-        Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
-            new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
-            , emailConfirmationUrl);
-        registrationEmailSender.send(registrationMail);
-      } catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
+      sendEmail(appContext, message);
+    };
+  }
+
+  private static MessageSubscriber whenPasswordResetRequestSendEmail(
+      ConfigurableApplicationContext appContext) {
+    return (message, messageParams) -> {
+      if (!messageParams.messageType.equals("PasswordReset")) {
+        return;
       }
+      sendEmail(appContext, message);
     };
   }
 

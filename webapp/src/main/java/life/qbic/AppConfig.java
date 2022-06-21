@@ -13,7 +13,7 @@ import life.qbic.identityaccess.application.user.UserRegistrationService;
 import life.qbic.identityaccess.domain.user.UserDataStorage;
 import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.messaging.Exchange;
-import life.qbic.usermanagement.registration.RegistrationEmailSender;
+import life.qbic.usermanagement.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -78,7 +78,7 @@ public class AppConfig {
 
   @Bean
   public EmailService emailService() {
-    return new RegistrationEmailSender();
+    return new EmailSubmissionService();
   }
 
   @Bean

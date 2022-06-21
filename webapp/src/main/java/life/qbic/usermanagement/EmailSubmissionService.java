@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.registration;
+package life.qbic.usermanagement;
 
 import java.util.Properties;
 import javax.mail.Authenticator;
@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * @since 1.0.0
  */
-public class RegistrationEmailSender implements EmailService {
+public class EmailSubmissionService implements EmailService {
 
   @Value("${spring.mail.password}")
   private String password;

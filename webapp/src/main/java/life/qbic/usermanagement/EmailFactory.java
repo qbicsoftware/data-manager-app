@@ -1,4 +1,4 @@
-package life.qbic.usermanagement.registration;
+package life.qbic.usermanagement;
 
 import life.qbic.email.Email;
 import life.qbic.email.Recipient;
@@ -46,8 +46,15 @@ public class EmailFactory {
 
   public static Email registrationEmail(String from, Recipient to, String confirmationLink) {
     String content = formatRegistrationEmailContent(to.fullName(), confirmationLink);
-    String subject = "Activate your Data Manager Account";
+    String subject = "Activate your Data Manager account";
     String mimeType = "text/plain";
+    return new Email(content, subject, from, to, mimeType);
+  }
+
+  public static Email passwordResetEmail(String from, Recipient to, String passwordResetLink) {
+    var content = formatPasswordResetEmailContent(to.fullName(), passwordResetLink);
+    var subject = "Reset your Data Manager account password";
+    var mimeType = "text/plain";
     return new Email(content, subject, from, to, mimeType);
   }
 
