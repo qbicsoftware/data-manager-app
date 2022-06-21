@@ -45,7 +45,7 @@ public class PasswordReset extends DomainEvent {
   }
 
   /**
-   * Queries the user id of the user for whom the password needs to be reset
+   * Returns the user id of the user for whom the password needs to be reset
    *
    * @return the affected user's id
    * @since 1.0.0
