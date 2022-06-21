@@ -53,17 +53,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private void initLayout() {
     contentLayout = new VerticalLayout();
-    this.loginForm = new ConfigurableLoginForm();
-    loginForm.setAction("login");
-
-    notificationLayout = new VerticalLayout();
-
+    createNotificationLayout();
+    createLoginForm();
     this.registrationSection = initRegistrationSection();
-
     title = new H2("Log in");
-
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
-
     add(contentLayout);
   }
 
@@ -72,12 +66,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void styleLayout() {
+    styleNotificationLayout();
     styleFormLayout();
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    notificationLayout.setPadding(false);
-    loginForm.setUsernameText("Email");
   }
 
   private void styleFormLayout() {
@@ -101,9 +94,23 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "pl-l");
   }
 
+  private void createNotificationLayout() {
+    notificationLayout = new VerticalLayout();
+  }
+
+  private void createLoginForm() {
+    this.loginForm = new ConfigurableLoginForm();
+    loginForm.setAction("login");
+    loginForm.setUsernameText("Email");
+  }
+
   private Div initRegistrationSection() {
     RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
     return new Div(new Text("Need an account? "), routerLink);
+  }
+
+  private void styleNotificationLayout() {
+    notificationLayout.setPadding(false);
   }
 
   public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
