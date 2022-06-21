@@ -20,6 +20,10 @@ public class PasswordReset extends DomainEvent {
 
   private final Instant occurredOn;
 
+  private final FullName fullName;
+
+  private final EmailAddress emailAddress;
+
   /**
    * Creates a new {@link PasswordReset} domain event.
    * <p>
@@ -29,14 +33,16 @@ public class PasswordReset extends DomainEvent {
    * @return a new instance of a password reset domain event
    * @since 1.0.0
    */
-  public static PasswordReset create(UserId userId) {
-    return new PasswordReset(userId, Instant.now());
+  public static PasswordReset create(UserId userId, FullName name, EmailAddress emailAddress) {
+    return new PasswordReset(userId, Instant.now(), name, emailAddress);
   }
 
-  private PasswordReset(UserId userId, Instant occurredOn) {
+  private PasswordReset(UserId userId, Instant occurredOn, FullName name, EmailAddress emailAddress) {
     super();
     this.userId = userId;
     this.occurredOn = occurredOn;
+    this.fullName = name;
+    this.emailAddress = emailAddress;
   }
 
   @Override
