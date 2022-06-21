@@ -52,7 +52,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
-
+  private static final String qbicNoReply = "no-reply@qbic.life";
 
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
@@ -109,7 +109,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
             .emailConfirmationUrl(passwordResetRequest.userId().get());
         var registrationEmailSender = appContext.getBean(
             EmailService.class);
-        var passwordResetEmail = EmailFactory.registrationEmail("no-reply@qbic.life",
+        var passwordResetEmail = EmailFactory.registrationEmail(qbicNoReply,
             new Recipient(passwordResetRequest.userEmailAddress().get(),
                 passwordResetRequest.userFullName().get())
             , passwordResetLink);
