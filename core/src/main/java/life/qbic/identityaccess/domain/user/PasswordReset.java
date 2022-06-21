@@ -37,7 +37,8 @@ public class PasswordReset extends DomainEvent {
     return new PasswordReset(userId, Instant.now(), name, emailAddress);
   }
 
-  private PasswordReset(UserId userId, Instant occurredOn, FullName name, EmailAddress emailAddress) {
+  private PasswordReset(UserId userId, Instant occurredOn, FullName name,
+      EmailAddress emailAddress) {
     super();
     this.userId = userId;
     this.occurredOn = occurredOn;
@@ -58,5 +59,25 @@ public class PasswordReset extends DomainEvent {
    */
   public UserId userId() {
     return userId;
+  }
+
+  /**
+   * Returns the user's registered email address
+   *
+   * @return the user's email address
+   * @since 1.0.0
+   */
+  public EmailAddress emailAddress() {
+    return emailAddress;
+  }
+
+  /**
+   * Returns the full name of the user for whom the password reset was requested
+   *
+   * @return the name of the user
+   * @since 1.0.0
+   */
+  public FullName fullName() {
+    return this.fullName;
   }
 }
