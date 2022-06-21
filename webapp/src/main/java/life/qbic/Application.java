@@ -17,6 +17,7 @@ import life.qbic.email.Recipient;
 import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.domain.DomainRegistry;
+import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.UserDomainService;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
@@ -74,29 +75,25 @@ public class Application extends SpringBootServletInitializer implements AppShel
     emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
   }
 
-  private static void sendEmail(ConfigurableApplicationContext appContext, String message) {
-    try {
-      UserRegistered userRegistered = deserialize(message);
-      String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
-          .emailConfirmationUrl(userRegistered.userId());
-      EmailService registrationEmailSender = appContext.getBean(
-          EmailService.class);
-      Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
-          new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
-          , emailConfirmationUrl);
-      registrationEmailSender.send(registrationMail);
-    } catch (IOException | ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   private static MessageSubscriber whenUserRegisteredSendEmail(
       ConfigurableApplicationContext appContext) {
     return (message, messageParams) -> {
       if (!messageParams.messageType.equals("UserRegistered")) {
         return;
       }
-      sendEmail(appContext, message);
+      try {
+        UserRegistered userRegistered = deserializeUserRegistered(message);
+        String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
+            .emailConfirmationUrl(userRegistered.userId());
+        EmailService registrationEmailSender = appContext.getBean(
+            EmailService.class);
+        Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
+            new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
+            , emailConfirmationUrl);
+        registrationEmailSender.send(registrationMail);
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
     };
   }
 
@@ -106,14 +103,27 @@ public class Application extends SpringBootServletInitializer implements AppShel
       if (!messageParams.messageType.equals("PasswordReset")) {
         return;
       }
-      sendEmail(appContext, message);
+      try {
+        var passwordResetRequest = deserializePasswordReset(message);
+        var passwordResetLink = appContext.getBean(EmailConfirmationLinkSupplier.class)
+            .emailConfirmationUrl(passwordResetRequest.userId().get());
+        var registrationEmailSender = appContext.getBean(
+            EmailService.class);
+        var passwordResetEmail = EmailFactory.registrationEmail("no-reply@qbic.life",
+            new Recipient(passwordResetRequest.userEmailAddress().get(),
+                passwordResetRequest.userFullName().get())
+            , passwordResetLink);
+        registrationEmailSender.send(passwordResetEmail);
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
     };
   }
 
   private static MessageSubscriber whenUserRegisteredLogUserInfo() {
     return (message, messageParams) -> {
       try {
-        UserRegistered userRegistered = deserialize(message);
+        UserRegistered userRegistered = deserializeUserRegistered(message);
         log.info(String.valueOf(userRegistered));
       } catch (IOException | ClassNotFoundException e) {
         log.error(e.getMessage(), e);
@@ -121,10 +131,19 @@ public class Application extends SpringBootServletInitializer implements AppShel
     };
   }
 
-  static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
+  static UserRegistered deserializeUserRegistered(String event)
+      throws IOException, ClassNotFoundException {
     byte[] content = Base64.decode(event);
     ByteArrayInputStream bais = new ByteArrayInputStream(content);
     ObjectInputStream ois = new ObjectInputStream(bais);
     return (UserRegistered) ois.readObject();
+  }
+
+  static PasswordReset deserializePasswordReset(String event)
+      throws IOException, ClassNotFoundException {
+    byte[] content = Base64.decode(event);
+    ByteArrayInputStream bais = new ByteArrayInputStream(content);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+    return (PasswordReset) ois.readObject();
   }
 }

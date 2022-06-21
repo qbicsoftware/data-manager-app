@@ -67,7 +67,7 @@ public class PasswordReset extends DomainEvent {
    * @return the user's email address
    * @since 1.0.0
    */
-  public EmailAddress emailAddress() {
+  public EmailAddress userEmailAddress() {
     return emailAddress;
   }
 
@@ -77,7 +77,7 @@ public class PasswordReset extends DomainEvent {
    * @return the name of the user
    * @since 1.0.0
    */
-  public FullName fullName() {
+  public FullName userFullName() {
     return this.fullName;
   }
 }
