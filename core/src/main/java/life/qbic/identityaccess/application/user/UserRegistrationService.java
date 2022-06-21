@@ -145,6 +145,13 @@ public final class UserRegistrationService {
     return ApplicationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
   }
 
+  /**
+   * Requests a password reset for a user.
+   *
+   * @param userId the user id of the user for whom the password reset shall be issued
+   * @return application response with success or failure information
+   * @since 1.0.0
+   */
   public ApplicationResponse requestPasswordReset(String userId) {
     UserId id;
     try {
