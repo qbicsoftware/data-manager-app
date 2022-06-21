@@ -14,6 +14,7 @@ import life.qbic.identityaccess.domain.user.EncryptedPassword;
 import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;
+import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.User;
 import life.qbic.identityaccess.domain.user.UserActivated;
 import life.qbic.identityaccess.domain.user.UserEmailConfirmed;
@@ -24,6 +25,7 @@ import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.shared.application.notification.EventStore;
 import life.qbic.shared.application.notification.Notification;
 import life.qbic.shared.application.notification.NotificationService;
+import life.qbic.shared.domain.events.DomainEvent;
 import life.qbic.shared.domain.events.DomainEventPublisher;
 import life.qbic.shared.domain.events.DomainEventSubscriber;
 
@@ -79,7 +81,7 @@ public final class UserRegistrationService {
     }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override
-      public Class<UserRegistered> subscribedToEventType() {
+      public Class<? extends DomainEvent> subscribedToEventType() {
         return UserRegistered.class;
       }
 
@@ -143,6 +145,49 @@ public final class UserRegistrationService {
     return ApplicationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
   }
 
+  public ApplicationResponse requestPasswordReset(String userId) {
+    UserId id;
+    try {
+      id = UserId.from(userId);
+    } catch (IllegalArgumentException e) {
+      return ApplicationResponse.failureResponse(e);
+    }
+    // fetch user
+    var optionalUser = userRepository.findById(id);
+    if (optionalUser.isEmpty()) {
+      return ApplicationResponse.failureResponse(new UserNotFoundException());
+    }
+
+    // trigger password reset
+    var user = optionalUser.get();
+    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<PasswordReset>() {
+      @Override
+      public Class<? extends DomainEvent> subscribedToEventType() {
+        return PasswordReset.class;
+      }
+
+      @Override
+      public void handleEvent(PasswordReset event) {
+        eventStore.append(event);
+        sendNotification(event, notificationService);
+      }
+    });
+
+    user.resetPassword();
+    return ApplicationResponse.successResponse();
+  }
+
+  private static void sendNotification(DomainEvent event, NotificationService notificationService) {
+    var notificationId = notificationService.newNotificationId();
+    var notification =
+        Notification.create(
+            event.getClass().getSimpleName(),
+            event.occurredOn(),
+            notificationId,
+            event);
+    notificationService.send(notification);
+  }
+
   public static class UserExistsException extends ApplicationException {
 
     @Serial
@@ -171,18 +216,7 @@ public final class UserRegistrationService {
       @Override
       public void handleEvent(UserActivated event) {
         eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserActivated event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
+        sendNotification(event, notificationService);
       }
     });
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserEmailConfirmed>() {
