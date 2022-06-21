@@ -1,9 +1,8 @@
-package life.qbic.identityaccess.application;
+package life.qbic.shared.application;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import life.qbic.identityaccess.application.user.UserRegistrationService;
 
 /**
  * <b>Application Response</b>

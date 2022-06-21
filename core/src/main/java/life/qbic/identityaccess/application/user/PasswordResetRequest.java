@@ -1,7 +1,7 @@
 package life.qbic.identityaccess.application.user;
 
 import java.util.Objects;
-import life.qbic.identityaccess.application.ApplicationResponse;
+import life.qbic.shared.application.ApplicationResponse;
 
 /**
  * <b>Password Reset Use Case</b>

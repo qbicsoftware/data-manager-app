@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.identityaccess.application.ApplicationException;
-import life.qbic.identityaccess.application.ApplicationResponse;
+import life.qbic.shared.application.ApplicationResponse;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
