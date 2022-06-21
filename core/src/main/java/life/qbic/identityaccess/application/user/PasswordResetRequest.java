@@ -24,7 +24,6 @@ class PasswordResetRequest implements PasswordResetInput {
   @Override
   public void resetPassword(String userId) {
     Objects.requireNonNull(output, "No use case output was set");
-    // Todo trigger password reset
     ApplicationResponse response = registrationService.requestPasswordReset(userId);
     response.ifSuccessOrElse(success -> output.onPasswordResetSucceeded(),
         failure -> output.onPasswordResetFailed());
