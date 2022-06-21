@@ -63,25 +63,34 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void initLayout() {
     layoutTitle = new H2("Register");
-    notificationLayout = new VerticalLayout();
-    fieldLayout = new VerticalLayout();
-    createEmailField();
-    createNameField();
-    createPasswordField();
+    createNotificationLayout();
+    createFieldLayout();
     createRegisterButton();
     createSpan();
-
     add(contentLayout);
+    contentLayout.add(layoutTitle, notificationLayout, fieldLayout, registerButton, loginSpan);
   }
 
   private void styleLayout() {
-
     styleFieldLayout();
+    styleNotificationLayout();
     styleRegisterButton();
     styleFormLayout();
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+  }
+
+  private void createNotificationLayout() {
+    notificationLayout = new VerticalLayout();
+  }
+
+  private void createFieldLayout() {
+    fieldLayout = new VerticalLayout();
+    createEmailField();
+    createNameField();
+    createPasswordField();
+    fieldLayout.add(fullName, email, password);
   }
 
   private void createSpan() {
@@ -105,17 +114,19 @@ public class UserRegistrationLayout extends VerticalLayout {
     password = new PasswordField("Password");
   }
 
+  private void styleNotificationLayout() {
+    notificationLayout.setPadding(false);
+  }
+
   private void styleFormLayout() {
     contentLayout.setPadding(false);
     contentLayout.setMargin(false);
     contentLayout.addClassNames("bg-base", "border", "rounded-m", "border-contrast-10",
         "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px",
         "max-width-15vw", "pb-l", "pr-l", "pl-l");
-    contentLayout.add(layoutTitle, notificationLayout, fieldLayout, registerButton, loginSpan);
   }
 
   private void styleFieldLayout() {
-    fieldLayout.add(fullName, email, password);
     password.setWidthFull();
     email.setWidthFull();
     fullName.setWidthFull();
