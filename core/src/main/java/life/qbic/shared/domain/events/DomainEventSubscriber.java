@@ -16,7 +16,7 @@ public interface DomainEventSubscriber<T extends DomainEvent> {
    * @return the domain event type that is subscribed to
    * @since 1.0.0
    */
-  Class<T> subscribedToEventType();
+  Class<? extends DomainEvent> subscribedToEventType();
 
   /**
    * Callback that will be executed by the publisher.

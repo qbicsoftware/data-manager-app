@@ -10,19 +10,21 @@ import com.vaadin.flow.theme.Theme;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
-import life.qbic.shared.application.notification.MessageBusInterface;
-import life.qbic.shared.application.notification.MessageSubscriber;
 import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.domain.DomainRegistry;
+import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.UserDomainService;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
+import life.qbic.shared.application.notification.MessageBusInterface;
+import life.qbic.shared.application.notification.MessageSubscriber;
+import life.qbic.usermanagement.EmailFactory;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
-import life.qbic.usermanagement.registration.EmailFactory;
 import life.qbic.views.login.LoginHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -48,6 +50,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   private static final Logger log = getLogger(Application.class);
 
+  @Serial
+  private static final long serialVersionUID = -8182104817961102407L;
+  private static final String qbicNoReply = "no-reply@qbic.life";
 
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
@@ -56,11 +61,10 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
-    // Testing: subscribe to user register events in the message bus
-
     var messageBus = appContext.getBean(MessageBusInterface.class);
     messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
+    messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), "PasswordReset");
 
     setupUseCases(appContext);
   }
@@ -78,7 +82,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
         return;
       }
       try {
-        UserRegistered userRegistered = deserialize(message);
+        UserRegistered userRegistered = deserializeUserRegistered(message);
         String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
             .emailConfirmationUrl(userRegistered.userId());
         EmailService registrationEmailSender = appContext.getBean(
@@ -93,10 +97,33 @@ public class Application extends SpringBootServletInitializer implements AppShel
     };
   }
 
+  private static MessageSubscriber whenPasswordResetRequestSendEmail(
+      ConfigurableApplicationContext appContext) {
+    return (message, messageParams) -> {
+      if (!messageParams.messageType.equals("PasswordReset")) {
+        return;
+      }
+      try {
+        var passwordResetRequest = deserializePasswordReset(message);
+        var passwordResetLink = appContext.getBean(EmailConfirmationLinkSupplier.class)
+            .emailConfirmationUrl(passwordResetRequest.userId().get());
+        var registrationEmailSender = appContext.getBean(
+            EmailService.class);
+        var passwordResetEmail = EmailFactory.registrationEmail(qbicNoReply,
+            new Recipient(passwordResetRequest.userEmailAddress().get(),
+                passwordResetRequest.userFullName().get())
+            , passwordResetLink);
+        registrationEmailSender.send(passwordResetEmail);
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    };
+  }
+
   private static MessageSubscriber whenUserRegisteredLogUserInfo() {
     return (message, messageParams) -> {
       try {
-        UserRegistered userRegistered = deserialize(message);
+        UserRegistered userRegistered = deserializeUserRegistered(message);
         log.info(String.valueOf(userRegistered));
       } catch (IOException | ClassNotFoundException e) {
         log.error(e.getMessage(), e);
@@ -104,10 +131,19 @@ public class Application extends SpringBootServletInitializer implements AppShel
     };
   }
 
-  static UserRegistered deserialize(String event) throws IOException, ClassNotFoundException {
+  static UserRegistered deserializeUserRegistered(String event)
+      throws IOException, ClassNotFoundException {
     byte[] content = Base64.decode(event);
     ByteArrayInputStream bais = new ByteArrayInputStream(content);
     ObjectInputStream ois = new ObjectInputStream(bais);
     return (UserRegistered) ois.readObject();
+  }
+
+  static PasswordReset deserializePasswordReset(String event)
+      throws IOException, ClassNotFoundException {
+    byte[] content = Base64.decode(event);
+    ByteArrayInputStream bais = new ByteArrayInputStream(content);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+    return (PasswordReset) ois.readObject();
   }
 }

@@ -145,7 +145,7 @@ public class User implements Serializable {
    * @since 1.0.0
    */
   public void resetPassword() {
-    PasswordReset event = PasswordReset.create(id);
+    PasswordReset event = PasswordReset.create(id, fullName, emailAddress);
     DomainEventPublisher.instance().publish(event);
   }
 
