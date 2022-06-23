@@ -118,7 +118,7 @@ public class BoxForm extends VerticalLayout {
     descriptionText.setVisible(visible);
   }
 
-  public void addLinkSpanContent(Span span){
-    linkSpan = span;
+  public void addLinkSpanContent(Component... components){
+    linkSpan.add(components);
   }
 }
