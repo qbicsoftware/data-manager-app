@@ -22,9 +22,9 @@ class PasswordResetRequest implements PasswordResetInput {
   }
 
   @Override
-  public void resetPassword(String userId) {
+  public void resetPassword(String emailAddress) {
     Objects.requireNonNull(output, "No use case output was set");
-    ApplicationResponse response = registrationService.requestPasswordReset(userId);
+    ApplicationResponse response = registrationService.requestPasswordReset(emailAddress);
     response.ifSuccessOrElse(success -> output.onPasswordResetSucceeded(),
         failure -> output.onPasswordResetFailed());
   }

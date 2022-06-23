@@ -148,19 +148,19 @@ public final class UserRegistrationService {
   /**
    * Requests a password reset for a user.
    *
-   * @param userId the user id of the user for whom the password reset shall be issued
+   * @param userEmailAddress the user's email address for whom the password reset shall be issued
    * @return application response with success or failure information
    * @since 1.0.0
    */
-  public ApplicationResponse requestPasswordReset(String userId) {
-    UserId id;
+  public ApplicationResponse requestPasswordReset(String userEmailAddress) {
+    EmailAddress emailAddress;
     try {
-      id = UserId.from(userId);
-    } catch (IllegalArgumentException e) {
+      emailAddress = EmailAddress.from(userEmailAddress);
+    } catch (EmailValidationException e) {
       return ApplicationResponse.failureResponse(e);
     }
     // fetch user
-    var optionalUser = userRepository.findById(id);
+    var optionalUser = userRepository.findByEmail(emailAddress);
     if (optionalUser.isEmpty()) {
       return ApplicationResponse.failureResponse(new UserNotFoundException());
     }
