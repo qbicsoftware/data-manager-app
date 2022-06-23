@@ -19,6 +19,9 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface{
         if (registeredPasswordResetLayout != layout) {
             this.registeredPasswordResetLayout = layout;
             //addClickListeners();
+            registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent -> {
+                registeredPasswordResetLayout.getUI().ifPresent(ui -> ui.navigate("account-recovery/sent"));
+            });
         }
     }
 }
