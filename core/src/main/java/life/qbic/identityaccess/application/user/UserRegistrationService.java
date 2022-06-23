@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.identityaccess.application.ApplicationException;
-import life.qbic.shared.application.ApplicationResponse;
+import life.qbic.identityaccess.application.ServiceException;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
@@ -22,6 +22,7 @@ import life.qbic.identityaccess.domain.user.UserId;
 import life.qbic.identityaccess.domain.user.UserNotFoundException;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
+import life.qbic.shared.application.ApplicationResponse;
 import life.qbic.shared.application.notification.EventStore;
 import life.qbic.shared.application.notification.Notification;
 import life.qbic.shared.application.notification.NotificationService;
@@ -193,6 +194,42 @@ public final class UserRegistrationService {
             notificationId,
             event);
     notificationService.send(notification);
+  }
+
+  /**
+   * Sets a new password for a given user.
+   * <p>
+   * Success or failures of the request need to be evaluated by the client via the
+   * {@link ApplicationResponse}.
+   *
+   * @param userId         the user's id for whom the new password shall be set
+   * @param newRawPassword the user's request new password
+   * @return an application response. In the case of a password validation failure, the
+   * {@link ApplicationResponse#failures()} will contain an exception with type
+   * {@link PasswordValidationException}.
+   * @since
+   */
+  public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
+    UserId id = UserId.from(userId);
+    EncryptedPassword encryptedPassword;
+    try {
+      encryptedPassword = EncryptedPassword.from(newRawPassword);
+    } catch (PasswordValidationException e) {
+      return ApplicationResponse.failureResponse(e);
+    }
+
+    var optionalUser = userRepository.findById(id);
+
+    if (optionalUser.isEmpty()) {
+      return ApplicationResponse.failureResponse(new ServiceException("Unknown user id"));
+    }
+
+    optionalUser.ifPresent(user -> {
+      user.setNewPassword(encryptedPassword);
+      userRepository.updateUser(user);
+    });
+
+    return ApplicationResponse.successResponse();
   }
 
   public static class UserExistsException extends ApplicationException {
