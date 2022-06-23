@@ -24,7 +24,7 @@ import life.qbic.views.landing.LandingPageLayout;
 public class LinkSendLayout extends VerticalLayout {
 
   public Button loginButton;
-  private Text spanText;
+  private Span resendSpan;
   public Button resendButton;
 
   public LinkSendLayout() {
@@ -41,13 +41,18 @@ public class LinkSendLayout extends VerticalLayout {
     loginButton = new Button("Login");
     boxForm.addButtons(loginButton);
 
-    spanText = new Text("Didn't receive the link? ");
-    resendButton = new Button("Resend");
-    boxForm.addLinkSpanContent(spanText, resendButton);
+    createSpan();
+    boxForm.addLinkSpanContent(resendSpan);
 
     styleButtons();
 
     add(boxForm);
+  }
+
+  private void createSpan() {
+    Text spanText = new Text("Didn't receive the link? ");
+    resendButton = new Button("Resend");
+    resendSpan = new Span(spanText,resendButton);
   }
 
   private void styleButtons(){

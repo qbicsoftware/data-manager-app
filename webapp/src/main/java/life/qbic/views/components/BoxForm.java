@@ -44,7 +44,6 @@ public class BoxForm extends VerticalLayout {
 
     fieldLayout = new VerticalLayout();
     buttonLayout = new VerticalLayout();
-    buttonLayout.setWidthFull();
 
     linkSpan = new Span();
     add(contentLayout);
@@ -53,6 +52,7 @@ public class BoxForm extends VerticalLayout {
   private void styleLayout() {
     styleFieldLayout();
     styleFormLayout();
+    styleButtonLayout();
     styleDescriptionText();
 
     setSizeFull();
@@ -88,6 +88,12 @@ public class BoxForm extends VerticalLayout {
     fieldLayout.setPadding(false);
   }
 
+  private void styleButtonLayout(){
+    buttonLayout.setSpacing(false);
+    buttonLayout.setMargin(false);
+    buttonLayout.setPadding(false);
+  }
+
   private void styleDescriptionText(){
     textLayout.addClassName("text-contrast-70");
   }
@@ -96,7 +102,7 @@ public class BoxForm extends VerticalLayout {
     layoutTitle.setText(text);
   }
 
-  public void addFields(TextField... fields) {
+  public void addFields(Component... fields) {
     fieldLayout.add(fields);
   }
 
@@ -112,7 +118,7 @@ public class BoxForm extends VerticalLayout {
     descriptionText.setVisible(visible);
   }
 
-  public void addLinkSpanContent(Component... components){
-    linkSpan.add(components);
+  public void addLinkSpanContent(Span span){
+    linkSpan = span;
   }
 }
