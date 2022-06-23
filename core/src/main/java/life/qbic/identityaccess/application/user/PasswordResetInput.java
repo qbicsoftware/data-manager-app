@@ -12,9 +12,9 @@ public interface PasswordResetInput {
   /**
    * Requests a password reset for a user identified by the user id.
    *
-   * @param userId the user's id
+   * @param emailAddress the user's id
    * @since 1.0.0
    */
-  void resetPassword(String userId);
+  void resetPassword(String emailAddress);
 
 }
