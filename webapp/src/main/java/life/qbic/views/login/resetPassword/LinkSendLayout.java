@@ -11,6 +11,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.components.BoxForm;
 import life.qbic.views.landing.LandingPageLayout;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b> Defines the look of the password reset layout. </b>
@@ -27,9 +28,14 @@ public class LinkSendLayout extends VerticalLayout {
   private Span resendSpan;
   public Button resendButton;
 
-  public LinkSendLayout() {
+  public LinkSendLayout(@Autowired LinkSendHandlerInterface linkSendHandlerInterface) {
 
     initLayout();
+    registerLayout(linkSendHandlerInterface);
+  }
+
+  private void registerLayout(LinkSendHandlerInterface linkSendHandlerInterface) {
+    linkSendHandlerInterface.handle(this);
   }
 
   private void initLayout(){
