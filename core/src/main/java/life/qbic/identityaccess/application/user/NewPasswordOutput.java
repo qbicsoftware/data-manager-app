@@ -12,7 +12,7 @@ public interface NewPasswordOutput {
    *
    * @since 1.0.0
    */
-  void onSuccessFullNewPassword();
+  void onSuccessfullNewPassword();
 
   /**
    * Called, when the password did not meet the requirements

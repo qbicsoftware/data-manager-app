@@ -207,7 +207,7 @@ public final class UserRegistrationService {
    * @return an application response. In the case of a password validation failure, the
    * {@link ApplicationResponse#failures()} will contain an exception with type
    * {@link PasswordValidationException}.
-   * @since
+   * @since 1.0.0
    */
   public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
     UserId id = UserId.from(userId);
