@@ -19,7 +19,7 @@ class PasswordResetLinkSupplier {
 
   private final String resetEndpoint;
 
-  private final String emailConfirmationParameter;
+  private final String passwordResetParameter;
 
   public PasswordResetLinkSupplier(
       @Value("${service.host.protocol}") String protocol,
