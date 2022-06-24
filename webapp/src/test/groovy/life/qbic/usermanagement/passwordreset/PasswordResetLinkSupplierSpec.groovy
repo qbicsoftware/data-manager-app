@@ -16,7 +16,7 @@ class PasswordResetLinkSupplierSpec extends Specification {
         given:
         def linkSupplier = new PasswordResetLinkSupplier("https", "hostname", 8080, "endpoint", "confirmation-parameter")
         expect:
-        linkSupplier.passwordResetUrl("some-user").startsWith("https://hostname:8080/endpoint?confirmation-parameter=")
+        linkSupplier.passwordResetUrl("some-user") == "https://hostname:8080/endpoint?confirmation-parameter=some-user"
     }
 
 }

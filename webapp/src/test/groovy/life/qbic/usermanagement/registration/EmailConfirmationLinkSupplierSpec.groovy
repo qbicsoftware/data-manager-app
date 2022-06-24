@@ -9,7 +9,7 @@ class EmailConfirmationLinkSupplierSpec extends Specification {
     given:
     def linkSupplier = new EmailConfirmationLinkSupplier("https", "hostname", 8080, "endpoint", "confirmation-parameter")
     expect:
-    linkSupplier.emailConfirmationUrl("some-user").startsWith("https://hostname:8080/endpoint?confirmation-parameter=")
+    linkSupplier.emailConfirmationUrl("some-user") == "https://hostname:8080/endpoint?confirmation-parameter=some-user"
   }
 
 }
