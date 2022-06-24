@@ -14,10 +14,10 @@ public class LinkSentLayout extends BoxLayout {
   public Button loginButton;
 
   public LinkSentLayout() {
-    initLayout();
+    fillLayoutComponents();
   }
 
-  private void initLayout(){
+  private void fillLayoutComponents(){
     setTitleText("Email has been sent!");
     setDescriptionText("Please check your inbox and click the received link to reset your password");
 
