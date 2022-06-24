@@ -1,5 +1,7 @@
 package life.qbic;
 
+import life.qbic.identityaccess.application.user.PasswordResetInput;
+import life.qbic.identityaccess.application.user.PasswordResetRequest;
 import life.qbic.shared.application.notification.EventStore;
 import life.qbic.email.EmailService;
 import life.qbic.events.SimpleEventStore;
@@ -84,5 +86,10 @@ public class AppConfig {
   @Bean
   public MessageBusInterface messageBusInterface() {
     return Exchange.instance();
+  }
+
+  @Bean
+  public PasswordResetInput passwordResetInput(UserRegistrationService userRegistrationService) {
+    return new PasswordResetRequest(userRegistrationService);
   }
 }
