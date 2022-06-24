@@ -165,12 +165,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <version>2.1-groovy-3.0</version>
-        <scope>test</scope>
-      </dependency>
+        <dependency>
+            <groupId>org.spockframework</groupId>
+            <artifactId>spock-core</artifactId>
+            <scope>test</scope>
+        </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-mail</artifactId>
@@ -207,51 +206,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.gmavenplus</groupId>
-                <artifactId>gmavenplus-plugin</artifactId>
-                <version>1.13.1</version>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <goals>
-                            <goal>addSources</goal>
-                            <goal>addTestSources</goal>
-                            <goal>generateStubs</goal>
-                            <goal>compile</goal>
-                            <goal>generateTestStubs</goal>
-                            <goal>compileTests</goal>
-                            <goal>removeStubs</goal>
-                            <goal>removeTestStubs</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>site</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>generateStubs</goal>
-                            <goal>generateTestStubs</goal>
-                            <goal>groovydoc</goal>
-                            <goal>groovydocTests</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <groovyDocOutputDirectory>${project.build.directory}/site/gapidocs
-                    </groovyDocOutputDirectory>
-                    <testGroovyDocOutputDirectory>${project.build.directory}/site/testgapidocs
-                    </testGroovyDocOutputDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <includes>
-                        <include>**/*Spec</include>
-                    </includes>
-                </configuration>
             </plugin>
         </plugins>
     </build>
