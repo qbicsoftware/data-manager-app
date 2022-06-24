@@ -1,4 +1,4 @@
-package life.qbic.views.login.resetPassword;
+package life.qbic.views.login.passwordreset;
 
 /**
  * <b>Handles the {@link ResetPasswordLayout} components</b>

@@ -1,4 +1,4 @@
-package life.qbic.views.login.resetPassword;
+package life.qbic.views.login.passwordreset;
 
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetOutput;

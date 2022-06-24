@@ -1,4 +1,4 @@
-package life.qbic.views.login.resetPassword;
+package life.qbic.views.login.passwordreset;
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;

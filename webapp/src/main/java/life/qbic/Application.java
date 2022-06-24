@@ -29,7 +29,7 @@ import life.qbic.usermanagement.EmailFactory;
 import life.qbic.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.views.login.LoginHandler;
-import life.qbic.views.login.resetPassword.PasswordResetHandler;
+import life.qbic.views.login.passwordreset.PasswordResetHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
