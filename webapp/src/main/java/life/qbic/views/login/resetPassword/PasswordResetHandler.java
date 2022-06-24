@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PasswordResetHandler implements PasswordResetHandlerInterface, PasswordResetOutput {
 
-    private EnterEmailLayout registeredPasswordResetLayout;
+    private ResetPasswordLayout registeredPasswordResetLayout;
     private final PasswordResetInput passwordReset;
 
     @Autowired
@@ -25,26 +25,25 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     }
 
     @Override
-    public void handle(EnterEmailLayout layout) {
+    public void handle(ResetPasswordLayout layout) {
         if (registeredPasswordResetLayout != layout) {
             this.registeredPasswordResetLayout = layout;
             //addClickListeners();
             registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent -> {
                 passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue());
-                registeredPasswordResetLayout.getUI().ifPresent(ui -> ui.navigate("account-recovery/sent"));
             });
         }
     }
 
     @Override
     public void onPasswordResetSucceeded() {
-        //todo
-        throw new NotImplementedException();
+        registeredPasswordResetLayout.linkSent.setVisible(true);
+        registeredPasswordResetLayout.enterEmailLayout.setVisible(false);
     }
 
     @Override
     public void onPasswordResetFailed() {
         //todo
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
     }
 }

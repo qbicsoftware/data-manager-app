@@ -17,5 +17,5 @@ public interface PasswordResetHandlerInterface {
      * @param registerLayout The view that is being handled
      * @since 1.0.0
      */
-    void handle(EnterEmailLayout registerLayout);
+    void handle(ResetPasswordLayout registerLayout);
 }

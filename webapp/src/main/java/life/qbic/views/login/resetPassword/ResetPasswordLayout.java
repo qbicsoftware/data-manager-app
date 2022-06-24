@@ -23,11 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@PageTitle("Account Recovery")
-@Route(value = "account-recovery", layout = LandingPageLayout.class)
+@PageTitle("Reset Password")
+@Route(value = "reset-password", layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
-public class EnterEmailLayout extends VerticalLayout{
+public class ResetPasswordLayout extends VerticalLayout{
 
   public EmailField email;
 
@@ -35,7 +35,10 @@ public class EnterEmailLayout extends VerticalLayout{
 
   public Span loginSpan;
 
-  public EnterEmailLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
+  public BoxLayout enterEmailLayout;
+  public BoxLayout linkSent;
+
+  public ResetPasswordLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
 
     initLayout();
     styleLayout();
@@ -47,21 +50,24 @@ public class EnterEmailLayout extends VerticalLayout{
   }
 
   private void initLayout() {
-    BoxLayout boxLayout = new BoxLayout();
+    linkSent = new LinkSentLayout();
+    linkSent.setVisible(false);
 
-    boxLayout.setTitleText("Reset Password");
-    boxLayout.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password");
+    enterEmailLayout = new BoxLayout();
+
+    enterEmailLayout.setTitleText("Reset Password");
+    enterEmailLayout.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password");
 
     email = new EmailField("Email");
-    boxLayout.addFields(email);
+    enterEmailLayout.addFields(email);
 
     createSendButton();
-    boxLayout.addButtons(sendButton);
+    enterEmailLayout.addButtons(sendButton);
 
     createSpan();
-    boxLayout.addLinkSpanContent(loginSpan);
+    enterEmailLayout.addLinkSpanContent(loginSpan);
 
-    add(boxLayout);
+    add(enterEmailLayout,linkSent);
   }
 
   private void styleLayout() {
