@@ -36,7 +36,7 @@ public class ResetPasswordLayout extends VerticalLayout{
   public Span loginSpan;
 
   public BoxLayout enterEmailLayout;
-  public BoxLayout linkSent;
+  public LinkSentLayout linkSent;
 
   public ResetPasswordLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
 
