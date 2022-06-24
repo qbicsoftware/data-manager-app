@@ -8,7 +8,6 @@ import life.qbic.identityaccess.application.user.UserRegistrationException;
 import com.vaadin.flow.router.QueryParameters;
 import java.util.Map;
 import life.qbic.views.components.ErrorMessage;
-import life.qbic.views.components.InformationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -74,14 +73,11 @@ public class UserRegistrationHandler
   }
 
   private void clearNotifications() {
-    userRegistrationLayout.notificationLayout.setVisible(false);
     userRegistrationLayout.notificationLayout.removeAll();
   }
 
   private void showError(ErrorMessage errorMessage) {
-    userRegistrationLayout.notificationLayout.add(
-        new ErrorMessage(errorMessage.title(), errorMessage.message()));
-    userRegistrationLayout.notificationLayout.setVisible(true);
+    userRegistrationLayout.notificationLayout.add(errorMessage);
   }
 
   @Override

@@ -73,18 +73,15 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   public void clearNotifications() {
-    registeredLoginView.notificationLayout.setVisible(false);
     registeredLoginView.notificationLayout.removeAll();
   }
 
   public void showError(ErrorMessage errorMessage) {
     registeredLoginView.notificationLayout.add(errorMessage);
-    registeredLoginView.notificationLayout.setVisible(true);
   }
 
   public void showInformation(InformationMessage message) {
     registeredLoginView.notificationLayout.add(message);
-    registeredLoginView.notificationLayout.setVisible(true);
   }
 
   private void addListener() {
