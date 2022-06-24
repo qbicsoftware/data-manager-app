@@ -7,16 +7,16 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 
 /**
- * <b>short description</b>
+ * <b>Box Layout</b>
  *
- * <p>detailed description
+ * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons and a span to add links.
+ * Furthermore, the description text can be toggled visible or invisible
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class BoxForm extends VerticalLayout {
+public class BoxLayout extends VerticalLayout {
 
   private H2 layoutTitle;
   private Text descriptionText;
@@ -27,7 +27,7 @@ public class BoxForm extends VerticalLayout {
 
   private final VerticalLayout contentLayout;
 
-  public BoxForm() {
+  public BoxLayout() {
     this.addClassName("grid");
     contentLayout = new VerticalLayout();
 
@@ -98,26 +98,50 @@ public class BoxForm extends VerticalLayout {
     textLayout.addClassName("text-contrast-70");
   }
 
+  /**
+   * Sets the title text
+   * @param text The text for the title
+   */
   public void setTitleText(String text) {
     layoutTitle.setText(text);
   }
 
+  /**
+   * Adds the field components to the field layout
+   * @param fields The fields could be TextFields, EmailFields, PasswordFields
+   */
   public void addFields(Component... fields) {
     fieldLayout.add(fields);
   }
 
+  /**
+   * Adds buttons to the button layout
+   * @param buttons The buttons that need to be part of the layout
+   */
   public void addButtons(Button... buttons) {
     buttonLayout.add(buttons);
   }
 
+  /**
+   * Sets the description text
+   * @param text The text that allows to enter a description of the process
+   */
   public void setDescriptionText(String text){
     descriptionText.setText(text);
   }
 
+  /**
+   * Toggles the description text visible or invisible
+   * @param visible The visibility status of the text
+   */
   public void setDescriptionTextVisible(boolean visible){
     descriptionText.setVisible(visible);
   }
 
+  /**
+   * Span that will hold content like small texts and links that should be not so present as a button
+   * @param components Components like Text, RouterLink, or Tertiary Buttons
+   */
   public void addLinkSpanContent(Component... components){
     linkSpan.add(components);
   }

@@ -6,8 +6,8 @@ package life.qbic.views.login.resetPassword;
  * <p>detailed description</p>
  *
  * @since <version tag>
- */
+ *///todo
 public interface LinkSendHandlerInterface {
-
+    //todo
     void handle(LinkSendLayout layout);
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  * <p>detailed description</p>
  *
  * @since <version tag>
- */
+ */ //todo
 @Component
 public class PasswordResetHandler implements PasswordResetHandlerInterface, PasswordResetOutput {
 
@@ -38,11 +38,13 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
 
     @Override
     public void onPasswordResetSucceeded() {
+        //todo
         throw new NotImplementedException();
     }
 
     @Override
     public void onPasswordResetFailed() {
+        //todo
         throw new NotImplementedException();
     }
 }

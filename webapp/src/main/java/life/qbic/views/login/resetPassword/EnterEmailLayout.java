@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -13,7 +12,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import life.qbic.views.components.BoxForm;
+import life.qbic.views.components.BoxLayout;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,21 +47,21 @@ public class EnterEmailLayout extends VerticalLayout{
   }
 
   private void initLayout() {
-    BoxForm boxForm = new BoxForm();
+    BoxLayout boxLayout = new BoxLayout();
 
-    boxForm.setTitleText("Reset Password");
-    boxForm.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password");
+    boxLayout.setTitleText("Reset Password");
+    boxLayout.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password");
 
     email = new EmailField("Email");
-    boxForm.addFields(email);
+    boxLayout.addFields(email);
 
     createSendButton();
-    boxForm.addButtons(sendButton);
+    boxLayout.addButtons(sendButton);
 
     createSpan();
-    boxForm.addLinkSpanContent(loginSpan);
+    boxLayout.addLinkSpanContent(loginSpan);
 
-    add(boxForm);
+    add(boxLayout);
   }
 
   private void styleLayout() {

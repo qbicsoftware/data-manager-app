@@ -1,6 +1,5 @@
 package life.qbic.views.login.resetPassword;
 
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -9,7 +8,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import life.qbic.views.components.BoxForm;
+import life.qbic.views.components.BoxLayout;
 import life.qbic.views.landing.LandingPageLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -39,17 +38,17 @@ public class LinkSendLayout extends VerticalLayout {
   }
 
   private void initLayout(){
-    BoxForm boxForm = new BoxForm();
+    BoxLayout boxLayout = new BoxLayout();
 
-    boxForm.setTitleText("Email has been sent!");
-    boxForm.setDescriptionText("Please check your inbox and click the received link to reset your password");
+    boxLayout.setTitleText("Email has been sent!");
+    boxLayout.setDescriptionText("Please check your inbox and click the received link to reset your password");
 
     loginButton = new Button("Login");
-    boxForm.addButtons(loginButton);
+    boxLayout.addButtons(loginButton);
 
     styleButtons();
 
-    add(boxForm);
+    add(boxLayout);
   }
 
   private void styleButtons(){
