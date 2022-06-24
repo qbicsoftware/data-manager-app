@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * @since 1.0.0
  */
-class PasswordResetLinkSupplier {
+public class PasswordResetLinkSupplier {
 
   private final String protocol;
 
