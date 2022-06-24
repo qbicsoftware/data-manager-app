@@ -30,16 +30,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ResetPasswordLayout extends VerticalLayout{
 
   public EmailField email;
-
   public Button sendButton;
-
   public Span loginSpan;
-
   public BoxLayout enterEmailLayout;
   public LinkSentLayout linkSent;
 
   public ResetPasswordLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
-
     initLayout();
     styleLayout();
     registerToHandler(passwordResetHandler);

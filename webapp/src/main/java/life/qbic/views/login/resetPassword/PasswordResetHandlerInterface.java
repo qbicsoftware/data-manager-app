@@ -1,18 +1,17 @@
 package life.qbic.views.login.resetPassword;
 
-import life.qbic.views.register.UserRegistrationLayout;
-
 /**
- * <b>short description</b>
+ * <b>Handles the {@link ResetPasswordLayout} components</b>
  *
- * <p>detailed description</p>
+ * <p>This class is responsible for enabling buttons or triggering other view relevant changes on
+ * the view class components
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface PasswordResetHandlerInterface {
 
     /**
-     * Registers a {@link UserRegistrationLayout} to an implementing class
+     * Registers a {@link ResetPasswordLayout} to an implementing class
      *
      * @param registerLayout The view that is being handled
      * @since 1.0.0

@@ -7,12 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>short description</b>
+ * <b>Handles the password reset</b>
  *
- * <p>detailed description</p>
+ * <p>When a password reset is triggered the handler starts the use case. On success the view is toggled
+ * and the user can login again. On failure the user sees an error notification</p>
  *
- * @since <version tag>
- */ //todo
+ * @since 1.0.0
+ */
 @Component
 public class PasswordResetHandler implements PasswordResetHandlerInterface, PasswordResetOutput {
 
@@ -28,13 +29,16 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     public void handle(ResetPasswordLayout layout) {
         if (registeredPasswordResetLayout != layout) {
             this.registeredPasswordResetLayout = layout;
-            //addClickListeners();
-            registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent -> {
-                passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue());
-            });
-            registeredPasswordResetLayout.linkSent.loginButton.addClickListener(buttonClickEvent ->
-                    registeredPasswordResetLayout.linkSent.getUI().ifPresent(ui -> ui.navigate("login")));
+            addClickListeners();
         }
+    }
+
+    private void addClickListeners() {
+        registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
+            passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue()));
+
+        registeredPasswordResetLayout.linkSent.loginButton.addClickListener(buttonClickEvent ->
+                registeredPasswordResetLayout.linkSent.getUI().ifPresent(ui -> ui.navigate("login")));
     }
 
     @Override
@@ -46,6 +50,6 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     @Override
     public void onPasswordResetFailed() {
         //todo
-        //throw new NotImplementedException();
+        throw new NotImplementedException();
     }
 }
