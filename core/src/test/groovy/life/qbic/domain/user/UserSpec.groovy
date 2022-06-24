@@ -1,10 +1,6 @@
 package life.qbic.domain.user
 
-import life.qbic.identityaccess.domain.user.EmailAddress
-import life.qbic.identityaccess.domain.user.EncryptedPassword
-import life.qbic.identityaccess.domain.user.FullName
-import life.qbic.identityaccess.domain.user.PasswordReset
-import life.qbic.identityaccess.domain.user.User
+import life.qbic.identityaccess.domain.user.*
 import life.qbic.shared.domain.events.DomainEventPublisher
 import life.qbic.shared.domain.events.DomainEventSubscriber
 import spock.lang.Shared
