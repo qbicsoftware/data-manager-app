@@ -26,16 +26,16 @@ class PasswordResetLinkSupplier {
       @Value("${service.host.name}") String host,
       @Value("${server.port}") String port,
       @Value("${password-reset-endpoint}") String resetEndpoint,
-      @Value("${email-password-reset-parameter}") String emailConfirmationParameter) {
+      @Value("${email-password-reset-parameter}") String passwordResetParameter) {
     this.protocol = protocol;
     this.host = host;
     this.port = port;
     this.resetEndpoint = resetEndpoint;
-    this.emailConfirmationParameter = emailConfirmationParameter;
+    this.passwordResetParameter = passwordResetParameter;
   }
 
   public String passwordResetUrl(String userId) {
     return String.format("%s://%s:%s/%s?%s=%s", protocol, host, port, resetEndpoint,
-        emailConfirmationParameter, userId);
+        passwordResetParameter, userId);
   }
 }
