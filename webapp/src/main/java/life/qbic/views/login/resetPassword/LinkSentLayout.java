@@ -2,12 +2,7 @@ package life.qbic.views.login.resetPassword;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.views.components.BoxLayout;
-import life.qbic.views.landing.LandingPageLayout;
 
 /**
  * <b> Defines the look of the password reset layout. </b>
