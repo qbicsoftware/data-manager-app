@@ -68,20 +68,19 @@ public class UserRegistrationHandler
     userRegistrationLayout.notificationLayout.removeAll();
   }
 
-  private void showError(ErrorMessage errorMessage) {
+  private void showError(String title, String description) {
     clearNotifications();
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
     userRegistrationLayout.notificationLayout.add(errorMessage);
   }
 
   private void showAlreadyUsedEmailError() {
-    showError(new ErrorMessage(
-        "Email address already in use",
-        "If you have difficulties with your password you can reset it."));
+    showError("Email address already in use",
+        "If you have difficulties with your password you can reset it.");
   }
 
   private void showUnexpectedError() {
-    showError(new ErrorMessage("Registration failed",
-        "Please try again."));
+    showError("Registration failed", "Please try again.");
   }
 
   @Override

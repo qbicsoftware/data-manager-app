@@ -47,31 +47,32 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void showInvalidCredentialsError() {
-    showError(new ErrorMessage("Incorrect username or password", "Please try again."));
+    showError("Incorrect username or password", "Please try again.");
   }
 
   private void showEmailConfirmationInformation() {
-    showInformation(new InformationMessage("Email address confirmed",
-        "You can now login with your credentials."));
+    showInformation("Email address confirmed", "You can now login with your credentials.");
   }
 
   private void showEmailConfirmationReminder() {
-    showInformation(new InformationMessage("Registration email sent",
-        "Please check your email inbox to confirm your registration"));
+    showInformation("Registration email sent",
+        "Please check your email inbox to confirm your registration");
   }
 
   public void clearNotifications() {
     registeredLoginView.notificationLayout.removeAll();
   }
 
-  public void showError(ErrorMessage errorMessage) {
+  public void showError(String title, String description) {
     clearNotifications();
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
     registeredLoginView.notificationLayout.add(errorMessage);
   }
 
-  public void showInformation(InformationMessage message) {
+  public void showInformation(String title, String description) {
     clearNotifications();
-    registeredLoginView.notificationLayout.add(message);
+    InformationMessage informationMessage = new InformationMessage(title, description);
+    registeredLoginView.notificationLayout.add(informationMessage);
   }
 
   private void addListener() {
@@ -107,6 +108,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void onEmailConfirmationFailure(String reason) {
-    showError(new ErrorMessage("Email confirmation failed", reason));
+    showError("Email confirmation failed", reason);
   }
 }
