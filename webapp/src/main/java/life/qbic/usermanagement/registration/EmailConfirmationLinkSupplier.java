@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailConfirmationLinkSupplier {
 
+  private final String protocol;
+
   private final String host;
 
   private final String port;
@@ -19,10 +21,13 @@ public class EmailConfirmationLinkSupplier {
 
   private final String emailConfirmationParameter;
 
-  public EmailConfirmationLinkSupplier(@Value("${host.name}") String host,
+  public EmailConfirmationLinkSupplier(
+      @Value("${service.host.protocol}") String protocol,
+      @Value("${service.host.name}") String host,
       @Value("${server.port}") String port,
-      @Value("${login-endpoint}") String loginEndpoint,
+      @Value("${email-confirmation-endpoint}") String loginEndpoint,
       @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
+    this.protocol = protocol;
     this.host = host;
     this.port = port;
     this.loginEndpoint = loginEndpoint;
@@ -30,9 +35,7 @@ public class EmailConfirmationLinkSupplier {
   }
 
   public String emailConfirmationUrl(String userId) {
-    String hostAddress = String.join(":", host, port);
-    String params = String.join("=", emailConfirmationParameter,  userId);
-    String endpointWithParams = String.join("?", loginEndpoint, params);
-    return String.join("/", hostAddress, endpointWithParams);
+    return String.format("%s://%s:%s/%s?%s=%s", protocol, host, port, loginEndpoint,
+        emailConfirmationParameter, userId);
   }
 }
