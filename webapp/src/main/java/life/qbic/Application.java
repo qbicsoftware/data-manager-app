@@ -26,6 +26,7 @@ import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.shared.application.notification.MessageBusInterface;
 import life.qbic.shared.application.notification.MessageSubscriber;
 import life.qbic.usermanagement.EmailFactory;
+import life.qbic.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.views.login.LoginHandler;
 import life.qbic.views.login.resetPassword.PasswordResetHandler;
@@ -112,8 +113,8 @@ public class Application extends SpringBootServletInitializer implements AppShel
       }
       try {
         var passwordResetRequest = deserializePasswordReset(message);
-        var passwordResetLink = appContext.getBean(EmailConfirmationLinkSupplier.class)
-            .emailConfirmationUrl(passwordResetRequest.userId().get());
+        var passwordResetLink = appContext.getBean(PasswordResetLinkSupplier.class)
+            .passwordResetUrl(passwordResetRequest.userId().get());
         var registrationEmailSender = appContext.getBean(
             EmailService.class);
         var passwordResetEmail = EmailFactory.registrationEmail(qbicNoReply,

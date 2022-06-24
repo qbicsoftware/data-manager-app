@@ -14,7 +14,7 @@ public class PasswordResetRequest implements PasswordResetInput {
 
   private PasswordResetOutput output;
 
-  private UserRegistrationService registrationService;
+  private final UserRegistrationService registrationService;
 
   public PasswordResetRequest(UserRegistrationService registrationService) {
     super();

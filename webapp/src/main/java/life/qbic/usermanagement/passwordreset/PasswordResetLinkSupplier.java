@@ -1,6 +1,7 @@
 package life.qbic.usermanagement.passwordreset;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Password Reset Link Supplier</b>
@@ -9,7 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * @since 1.0.0
  */
-class PasswordResetLinkSupplier {
+@Service
+public class PasswordResetLinkSupplier {
 
   private final String host;
 
