@@ -1,4 +1,4 @@
-package groovy.life.qbic.events
+package life.qbic.events
 
 import life.qbic.events.SimpleEventStore
 import life.qbic.events.TemporaryEventRepository

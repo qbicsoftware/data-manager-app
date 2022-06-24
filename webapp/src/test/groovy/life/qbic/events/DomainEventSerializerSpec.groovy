@@ -1,4 +1,4 @@
-package groovy.life.qbic.events
+package life.qbic.events
 
 import life.qbic.events.DomainEventSerializer
 import life.qbic.identityaccess.domain.user.UserRegistered
