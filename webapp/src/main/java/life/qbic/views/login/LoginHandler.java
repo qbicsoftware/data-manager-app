@@ -25,20 +25,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private final ConfirmEmailInput confirmEmailInput;
 
   private final String emailConfirmationParameter;
-  private static final ErrorMessage INCORRECT_USERNAME_OR_PASSWORD = new ErrorMessage(
-      "Incorrect username or password",
-      "Please try again."
-  );
-
-  private static final InformationMessage EMAIL_CONFIRMATION_SUCCESS = new InformationMessage(
-      "Email address confirmed",
-      "You can now login with your credentials."
-  );
-
-  private static final InformationMessage EMAIL_CONFIRMATION_REMINDER = new InformationMessage(
-      "Registration email sent",
-      "Please check your email inbox to confirm your registration"
-  );
 
   @Autowired
   LoginHandler(ConfirmEmailInput confirmEmailInput,
@@ -61,15 +47,17 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void showInvalidCredentialsError() {
-    showError(INCORRECT_USERNAME_OR_PASSWORD);
+    showError(new ErrorMessage("Incorrect username or password", "Please try again."));
   }
 
   private void showEmailConfirmationInformation() {
-    showInformation(EMAIL_CONFIRMATION_SUCCESS);
+    showInformation(new InformationMessage("Email address confirmed",
+        "You can now login with your credentials."));
   }
 
   private void showEmailConfirmationReminder() {
-    showInformation(EMAIL_CONFIRMATION_REMINDER);
+    showInformation(new InformationMessage("Registration email sent",
+        "Please check your email inbox to confirm your registration"));
   }
 
   public void clearNotifications() {
@@ -77,10 +65,12 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   public void showError(ErrorMessage errorMessage) {
+    clearNotifications();
     registeredLoginView.notificationLayout.add(errorMessage);
   }
 
   public void showInformation(InformationMessage message) {
+    clearNotifications();
     registeredLoginView.notificationLayout.add(message);
   }
 
@@ -112,7 +102,6 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void onEmailConfirmationSuccess() {
-    clearNotifications();
     showEmailConfirmationInformation();
   }
 

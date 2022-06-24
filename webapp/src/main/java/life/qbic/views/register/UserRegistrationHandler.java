@@ -26,14 +26,6 @@ public class UserRegistrationHandler
   private UserRegistrationLayout userRegistrationLayout;
   private final RegisterUserInput registrationUseCase;
 
-  private static final ErrorMessage alreadyUsedEmailMessage =
-      new ErrorMessage(
-          "Email address already in use",
-          "If you have difficulties with your password you can reset it.");
-
-  private static final ErrorMessage errorMessage = new ErrorMessage("Registration failed",
-      "Please try again.");
-
   @Autowired
   UserRegistrationHandler(RegisterUserInput registrationUseCase) {
     this.registrationUseCase = registrationUseCase;
@@ -77,7 +69,19 @@ public class UserRegistrationHandler
   }
 
   private void showError(ErrorMessage errorMessage) {
+    clearNotifications();
     userRegistrationLayout.notificationLayout.add(errorMessage);
+  }
+
+  private void showAlreadyUsedEmailError() {
+    showError(new ErrorMessage(
+        "Email address already in use",
+        "If you have difficulties with your password you can reset it."));
+  }
+
+  private void showUnexpectedError() {
+    showError(new ErrorMessage("Registration failed",
+        "Please try again."));
   }
 
   @Override
@@ -93,7 +97,7 @@ public class UserRegistrationHandler
 
   @Override
   public void onUnexpectedFailure(String reason) {
-    showError(errorMessage);
+    showUnexpectedError();
   }
 
   private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
@@ -107,10 +111,10 @@ public class UserRegistrationHandler
       userRegistrationLayout.email.setInvalid(true);
     }
     if (userRegistrationException.userExistsException().isPresent()) {
-      showError(alreadyUsedEmailMessage);
+      showAlreadyUsedEmailError();
     }
     if (userRegistrationException.unexpectedException().isPresent()) {
-      showError(errorMessage);
+      showUnexpectedError();
     }
   }
 }
