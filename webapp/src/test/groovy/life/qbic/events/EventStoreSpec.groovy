@@ -1,7 +1,6 @@
 package life.qbic.events
 
-import life.qbic.events.SimpleEventStore
-import life.qbic.events.TemporaryEventRepository
+
 import life.qbic.identityaccess.domain.user.UserRegistered
 import spock.lang.Specification
 

@@ -1,6 +1,6 @@
 package life.qbic.events
 
-import life.qbic.events.DomainEventSerializer
+
 import life.qbic.identityaccess.domain.user.UserRegistered
 import spock.lang.Specification
 

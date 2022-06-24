@@ -1,6 +1,6 @@
 package life.qbic.usermanagement.registration
 
-import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier
+
 import spock.lang.Specification
 
 class EmailConfirmationLinkSupplierSpec extends Specification {
