@@ -1,5 +1,7 @@
 package life.qbic.usermanagement.passwordreset;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -15,7 +17,7 @@ class PasswordResetLinkSupplier {
 
   private final String host;
 
-  private final String port;
+  private int port;
 
   private final String resetEndpoint;
 
@@ -24,7 +26,7 @@ class PasswordResetLinkSupplier {
   public PasswordResetLinkSupplier(
       @Value("${service.host.protocol}") String protocol,
       @Value("${service.host.name}") String host,
-      @Value("${server.port}") String port,
+      @Value("${server.port}") int port,
       @Value("${password-reset-endpoint}") String resetEndpoint,
       @Value("${email-password-reset-parameter}") String passwordResetParameter) {
     this.protocol = protocol;
@@ -34,8 +36,9 @@ class PasswordResetLinkSupplier {
     this.passwordResetParameter = passwordResetParameter;
   }
 
-  public String passwordResetUrl(String userId) {
-    return String.format("%s://%s:%s/%s?%s=%s", protocol, host, port, resetEndpoint,
-        passwordResetParameter, userId);
+  public String passwordResetUrl(String userId) throws MalformedURLException {
+    String pathWithQuery = "/" + resetEndpoint + "?" + passwordResetParameter + "=" + userId;
+
+    return new URL(protocol, host, port, pathWithQuery).toExternalForm();
   }
 }
