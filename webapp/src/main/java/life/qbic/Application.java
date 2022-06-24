@@ -117,7 +117,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
             .passwordResetUrl(passwordResetRequest.userId().get());
         var registrationEmailSender = appContext.getBean(
             EmailService.class);
-        var passwordResetEmail = EmailFactory.registrationEmail(qbicNoReply,
+        var passwordResetEmail = EmailFactory.passwordResetEmail(qbicNoReply,
             new Recipient(passwordResetRequest.userEmailAddress().get(),
                 passwordResetRequest.userFullName().get())
             , passwordResetLink);
