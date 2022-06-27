@@ -40,11 +40,11 @@ public class NewPassword implements NewPasswordInput {
         },
         it -> it.failures().stream().filter(e -> e instanceof PasswordValidationException).findAny()
             .ifPresentOrElse(ignored -> {
-                  log.error("Could not set new password for user: " + userId);
+                  log.error(String.format("Could not set new password for user: %s", userId));
                   useCaseOutput.onPasswordValidationFailure();
                 },
                 () -> {
-                  log.error("Unexpected failure on password reset for user: " + userId);
+                  log.error(String.format("Unexpected failure on password reset for user: %s", userId));
                   useCaseOutput.onUnexpectedFailure();
                 }));
 
