@@ -166,8 +166,13 @@ public final class UserRegistrationService {
       return ApplicationResponse.failureResponse(new UserNotFoundException());
     }
 
-    // trigger password reset
+    // get user
     var user = optionalUser.get();
+
+    // We only allow password reset for users with confirmed email address
+    if (!user.isActive()) {
+      return ApplicationResponse.failureResponse(new ServiceException("User not active"));
+    }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<PasswordReset>() {
       @Override
       public Class<? extends DomainEvent> subscribedToEventType() {
