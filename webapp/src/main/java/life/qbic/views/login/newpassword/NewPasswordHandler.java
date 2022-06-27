@@ -1,0 +1,91 @@
+package life.qbic.views.login.newpassword;
+
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.router.BeforeEvent;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import life.qbic.identityaccess.application.user.NewPasswordInput;
+import life.qbic.identityaccess.application.user.NewPasswordOutput;
+import org.apache.commons.lang3.NotImplementedException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+/**
+ * <b>Handles the password reset</b>
+ *
+ * <p>When a password reset is triggered the handler starts the use case. On success the view is
+ * toggled and the user can login again. On failure the user sees an error notification</p>
+ *
+ * @since 1.0.0
+ */
+@Component
+public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPasswordOutput {
+
+  private String currentUserId;
+
+  private NewPasswordLayout registeredPasswordResetLayout;
+  private final NewPasswordInput passwordReset;
+
+  private final String passwordResetQueryParameter;
+
+  @Autowired
+  NewPasswordHandler(NewPasswordInput newPasswordUseCase,
+      @Value("${password-reset-parameter}") String newPasswordParam) {
+    this.passwordReset = newPasswordUseCase;
+    this.currentUserId = "";
+    this.passwordResetQueryParameter = newPasswordParam;
+  }
+
+  @Override
+  public void handle(NewPasswordLayout layout) {
+    if (registeredPasswordResetLayout != layout) {
+      this.registeredPasswordResetLayout = layout;
+      addClickListeners();
+    }
+  }
+
+  @Override
+  public void handle(BeforeEvent beforeEvent) {
+    Map<String, List<String>> params = beforeEvent.getLocation().getQueryParameters()
+        .getParameters();
+   var resetParam = params.keySet().stream()
+        .filter(entry -> Objects.equals(
+            entry, passwordResetQueryParameter)).findAny();
+   if (resetParam.isPresent()) {
+     currentUserId = params.get(passwordResetQueryParameter).get(0);
+   } else {
+     // unknown query
+     // TODO show error
+     throw new NotImplementedException();
+   }
+  }
+
+  private void addClickListeners() {
+    registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
+        passwordReset.setNewUserPassword(currentUserId,
+            registeredPasswordResetLayout.newPassword.getValue().toCharArray()));
+    registeredPasswordResetLayout.sendButton.addClickShortcut(Key.ENTER);
+
+    registeredPasswordResetLayout.newPasswordSetLayout.loginButton.addClickListener(
+        buttonClickEvent ->
+            registeredPasswordResetLayout.newPasswordSetLayout.getUI()
+                .ifPresent(ui -> ui.navigate("login")));
+  }
+
+  @Override
+  public void onSuccessfullNewPassword() {
+
+  }
+
+  @Override
+  public void onPasswordValidationFailure() {
+
+  }
+
+  @Override
+  public void onUnexpectedFailure() {
+
+  }
+}
