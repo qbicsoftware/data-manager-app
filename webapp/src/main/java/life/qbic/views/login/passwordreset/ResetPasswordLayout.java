@@ -54,8 +54,8 @@ public class ResetPasswordLayout extends VerticalLayout{
   private void initEnterEmailLayout() {
     enterEmailLayout = new BoxLayout();
 
-    enterEmailLayout.setTitleText("Reset Password");
-    enterEmailLayout.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password");
+    enterEmailLayout.setTitleText("Reset password");
+    enterEmailLayout.setDescriptionText("Enter the email address associated with your account and we'll send you a link to reset your password:");
 
     email = new EmailField("Email");
     enterEmailLayout.addFields(email);

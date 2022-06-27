@@ -19,7 +19,7 @@ public class LinkSentLayout extends BoxLayout {
 
   private void fillLayoutComponents(){
     setTitleText("Email has been sent!");
-    setDescriptionText("Please check your inbox and follow the instructions to reset your password");
+    setDescriptionText("Please check your inbox and follow the instructions to reset your password.");
 
     loginButton = new Button("Login");
     addButtons(loginButton);
