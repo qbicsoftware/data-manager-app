@@ -3,7 +3,7 @@ package life.qbic.views.login.passwordreset;
 import com.vaadin.flow.component.Key;
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetOutput;
-import org.apache.commons.lang3.NotImplementedException;
+import life.qbic.views.components.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +42,19 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
         registeredPasswordResetLayout.linkSentLayout.loginButton.addClickListener(buttonClickEvent ->
                 registeredPasswordResetLayout.linkSentLayout.getUI().ifPresent(ui -> ui.navigate("login")));
     }
+    public void clearNotifications() {
+        registeredPasswordResetLayout.enterEmailLayout.removeNotifications();
+    }
+
+    public void showError(String title, String description) {
+        clearNotifications();
+        ErrorMessage errorMessage = new ErrorMessage(title, description);
+        registeredPasswordResetLayout.enterEmailLayout.setNotification(errorMessage);
+    }
+
+    private void showPasswordResetFailedError() {
+        showError("The Password Reset has failed", "Please try again.");
+    }
 
     @Override
     public void onPasswordResetSucceeded() {
@@ -51,7 +64,6 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
 
     @Override
     public void onPasswordResetFailed() {
-        //todo
-        throw new NotImplementedException();
+        showPasswordResetFailedError();
     }
 }
