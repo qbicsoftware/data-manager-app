@@ -1,9 +1,7 @@
 package life.qbic.views.login.newpassword;
 
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.BeforeEvent;
@@ -11,12 +9,10 @@ import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
 import life.qbic.views.components.BoxLayout;
 import life.qbic.views.landing.LandingPageLayout;
-import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
