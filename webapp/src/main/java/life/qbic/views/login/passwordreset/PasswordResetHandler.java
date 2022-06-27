@@ -35,8 +35,10 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     }
 
     private void addClickListeners() {
-        registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
-            passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue()));
+        registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent -> {
+            clearNotifications();
+            passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue());
+            });
         registeredPasswordResetLayout.sendButton.addClickShortcut(Key.ENTER);
 
         registeredPasswordResetLayout.linkSentLayout.loginButton.addClickListener(buttonClickEvent ->
