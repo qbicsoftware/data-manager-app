@@ -8,6 +8,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
@@ -51,7 +52,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
   }
 
   private void initLayout() {
-    initLinkSentLayout();
+    initPasswordSetLayout();
 
     initEnterEmailLayout();
 
@@ -74,7 +75,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
     provideNewPasswordLayout.addLinkSpanContent(registerSpan);
   }
 
-  private void initLinkSentLayout() {
+  private void initPasswordSetLayout() {
     newPasswordSetLayout = new NewPasswordSetLayout();
     newPasswordSetLayout.setVisible(false);
   }
@@ -107,7 +108,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
   }
 
   @Override
-  public void setParameter(BeforeEvent beforeEvent, String s) {
+  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String parameter) {
     handlerInterface.handle(beforeEvent);
   }
 }

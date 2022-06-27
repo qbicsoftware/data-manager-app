@@ -18,8 +18,8 @@ public class NewPasswordSetLayout extends BoxLayout {
   }
 
   private void fillLayoutComponents(){
-    setTitleText("Email has been sent!");
-    setDescriptionText("Please check your inbox and follow the instructions to reset your password.");
+    setTitleText("New password saved!");
+    setDescriptionText("You can now log in with your new password.");
 
     loginButton = new Button("Login");
     addButtons(loginButton);

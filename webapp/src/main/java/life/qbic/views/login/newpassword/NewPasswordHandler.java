@@ -25,7 +25,7 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
 
   private String currentUserId;
 
-  private NewPasswordLayout registeredPasswordResetLayout;
+  private NewPasswordLayout newPasswordLayout;
   private final NewPasswordInput passwordReset;
 
   private final String passwordResetQueryParameter;
@@ -40,8 +40,8 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
 
   @Override
   public void handle(NewPasswordLayout layout) {
-    if (registeredPasswordResetLayout != layout) {
-      this.registeredPasswordResetLayout = layout;
+    if (newPasswordLayout != layout) {
+      this.newPasswordLayout = layout;
       addClickListeners();
     }
   }
@@ -63,20 +63,21 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
   }
 
   private void addClickListeners() {
-    registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
+    newPasswordLayout.sendButton.addClickListener(buttonClickEvent ->
         passwordReset.setNewUserPassword(currentUserId,
-            registeredPasswordResetLayout.newPassword.getValue().toCharArray()));
-    registeredPasswordResetLayout.sendButton.addClickShortcut(Key.ENTER);
+            newPasswordLayout.newPassword.getValue().toCharArray()));
+    newPasswordLayout.sendButton.addClickShortcut(Key.ENTER);
 
-    registeredPasswordResetLayout.newPasswordSetLayout.loginButton.addClickListener(
+    newPasswordLayout.newPasswordSetLayout.loginButton.addClickListener(
         buttonClickEvent ->
-            registeredPasswordResetLayout.newPasswordSetLayout.getUI()
+            newPasswordLayout.newPasswordSetLayout.getUI()
                 .ifPresent(ui -> ui.navigate("login")));
   }
 
   @Override
-  public void onSuccessfullNewPassword() {
-
+  public void onSuccessfulNewPassword() {
+    newPasswordLayout.provideNewPasswordLayout.setVisible(false);
+    newPasswordLayout.newPasswordSetLayout.setVisible(true);
   }
 
   @Override
