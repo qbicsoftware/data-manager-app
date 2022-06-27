@@ -1,5 +1,6 @@
 package life.qbic.views.login.passwordreset;
 
+import com.vaadin.flow.component.Key;
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetOutput;
 import org.apache.commons.lang3.NotImplementedException;
@@ -36,6 +37,7 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     private void addClickListeners() {
         registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
             passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue()));
+        registeredPasswordResetLayout.sendButton.addClickShortcut(Key.ENTER);
 
         registeredPasswordResetLayout.linkSentLayout.loginButton.addClickListener(buttonClickEvent ->
                 registeredPasswordResetLayout.linkSentLayout.getUI().ifPresent(ui -> ui.navigate("login")));
