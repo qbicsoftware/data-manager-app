@@ -35,7 +35,7 @@ public class NewPassword implements NewPasswordInput {
     ApplicationResponse response = userRegistrationService.newUserPassword(userId, newRawPassword);
 
     response.ifSuccessOrElse(ignored -> {
-          log.info("Successful password reset for user " + userId);
+          log.info(String.format("Successful password reset for user %s", userId));
           useCaseOutput.onSuccessfulNewPassword();
         },
         it -> it.failures().stream().filter(e -> e instanceof PasswordValidationException).findAny()
