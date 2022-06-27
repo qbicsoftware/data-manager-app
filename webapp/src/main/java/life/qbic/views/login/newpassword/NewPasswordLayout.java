@@ -38,7 +38,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
   private BoxLayout provideNewPasswordLayout;
   private NewPasswordSetLayout newPasswordSetLayout;
 
-  private NewPasswordHandlerInterface handlerInterface;
+  private transient NewPasswordHandlerInterface handlerInterface;
 
   public NewPasswordLayout(@Autowired NewPasswordHandlerInterface passwordResetHandler) {
     initLayout();
