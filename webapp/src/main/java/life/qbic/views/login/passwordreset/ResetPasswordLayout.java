@@ -25,13 +25,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Reset Password")
 @Route(value = "reset-password", layout = LandingPageLayout.class)
-@CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 public class ResetPasswordLayout extends VerticalLayout{
 
   public EmailField email;
   public Button sendButton;
-  public Span loginSpan;
+  public Span registerSpan;
   public BoxLayout enterEmailLayout;
   public LinkSentLayout linkSent;
 
@@ -46,7 +45,7 @@ public class ResetPasswordLayout extends VerticalLayout{
   }
 
   private void initLayout() {
-    linkSent = new LinkSentLayout();
+    linkSentLayout = new LinkSentLayout();
     linkSent.setVisible(false);
 
     enterEmailLayout = new BoxLayout();
@@ -77,7 +76,7 @@ public class ResetPasswordLayout extends VerticalLayout{
 
   private void createSpan() {
     RouterLink link = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    loginSpan = new Span(new Text("Need an account? "), link);
+    registerSpan = new Span(new Text("Need an account? "), link);
   }
 
   private void createSendButton() {
