@@ -1,5 +1,7 @@
 package life.qbic;
 
+import life.qbic.identityaccess.application.user.NewPassword;
+import life.qbic.identityaccess.application.user.NewPasswordInput;
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetRequest;
 import life.qbic.shared.application.notification.EventStore;
@@ -91,5 +93,10 @@ public class AppConfig {
   @Bean
   public PasswordResetInput passwordResetInput(UserRegistrationService userRegistrationService) {
     return new PasswordResetRequest(userRegistrationService);
+  }
+
+  @Bean
+  public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
+    return new NewPassword(userRegistrationService);
   }
 }

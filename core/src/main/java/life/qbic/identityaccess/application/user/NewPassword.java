@@ -34,10 +34,19 @@ public class NewPassword implements NewPasswordInput {
 
     ApplicationResponse response = userRegistrationService.newUserPassword(userId, newRawPassword);
 
-    response.ifSuccessOrElse(ignored -> useCaseOutput.onSuccessfullNewPassword(),
+    response.ifSuccessOrElse(ignored -> {
+          log.info(String.format("Successful password reset for user %s", userId));
+          useCaseOutput.onSuccessfulNewPassword();
+        },
         it -> it.failures().stream().filter(e -> e instanceof PasswordValidationException).findAny()
-            .ifPresentOrElse(ignored -> useCaseOutput.onPasswordValidationFailure(),
-                () -> useCaseOutput.onUnexpectedFailure()));
+            .ifPresentOrElse(ignored -> {
+                  log.error(String.format("Could not set new password for user: %s", userId));
+                  useCaseOutput.onPasswordValidationFailure();
+                },
+                () -> {
+                  log.error(String.format("Unexpected failure on password reset for user: %s", userId));
+                  useCaseOutput.onUnexpectedFailure();
+                }));
 
   }
 }

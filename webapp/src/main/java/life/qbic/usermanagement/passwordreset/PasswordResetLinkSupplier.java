@@ -19,7 +19,7 @@ public class PasswordResetLinkSupplier {
 
   private final String host;
 
-  private int port;
+  private final int port;
 
   private final String resetEndpoint;
 

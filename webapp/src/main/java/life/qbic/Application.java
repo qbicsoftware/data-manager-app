@@ -16,6 +16,8 @@ import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
 import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
+import life.qbic.identityaccess.application.user.NewPassword;
+import life.qbic.identityaccess.application.user.NewPasswordOutput;
 import life.qbic.identityaccess.application.user.PasswordResetOutput;
 import life.qbic.identityaccess.application.user.PasswordResetRequest;
 import life.qbic.identityaccess.domain.DomainRegistry;
@@ -29,6 +31,7 @@ import life.qbic.usermanagement.EmailFactory;
 import life.qbic.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.views.login.LoginHandler;
+import life.qbic.views.login.newpassword.NewPasswordHandler;
 import life.qbic.views.login.passwordreset.PasswordResetHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -81,6 +84,10 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var passwordReset = context.getBean(PasswordResetRequest.class);
     var passwordResetHandler = (PasswordResetOutput) context.getBean(PasswordResetHandler.class);
     passwordReset.setUseCaseOutput(passwordResetHandler);
+
+    var newPassword = context.getBean(NewPassword.class);
+    var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
+    newPassword.setUseCaseOutput(newPasswordHandler);
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(
