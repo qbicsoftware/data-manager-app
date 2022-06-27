@@ -1,21 +1,14 @@
 package life.qbic.domain.usermanagement.registration
 
-import life.qbic.shared.application.notification.EventStore
-import life.qbic.shared.application.notification.MessageBusInterface
-import life.qbic.shared.application.notification.NotificationService
+import life.qbic.identityaccess.application.user.RegisterUserOutput
+import life.qbic.identityaccess.application.user.Registration
 import life.qbic.identityaccess.application.user.UserRegistrationException
 import life.qbic.identityaccess.application.user.UserRegistrationService
 import life.qbic.identityaccess.domain.DomainRegistry
-import life.qbic.identityaccess.domain.user.UserDataStorage
-import life.qbic.identityaccess.domain.user.UserRepository
-import life.qbic.identityaccess.domain.user.EmailAddress
-import life.qbic.identityaccess.domain.user.EncryptedPassword
-import life.qbic.identityaccess.domain.user.FullName
-import life.qbic.identityaccess.application.user.RegisterUserOutput
-import life.qbic.identityaccess.application.user.Registration
-import life.qbic.identityaccess.domain.user.User
-import life.qbic.identityaccess.domain.user.UserDomainService
-import life.qbic.identityaccess.domain.user.UserId
+import life.qbic.identityaccess.domain.user.*
+import life.qbic.shared.application.notification.EventStore
+import life.qbic.shared.application.notification.MessageBusInterface
+import life.qbic.shared.application.notification.NotificationService
 import spock.lang.Shared
 import spock.lang.Specification
 

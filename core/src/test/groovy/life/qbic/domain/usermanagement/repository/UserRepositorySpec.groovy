@@ -1,13 +1,6 @@
 package life.qbic.domain.usermanagement.repository
 
-
-import life.qbic.identityaccess.domain.user.EmailAddress
-import life.qbic.identityaccess.domain.user.EncryptedPassword
-import life.qbic.identityaccess.domain.user.FullName
-import life.qbic.identityaccess.domain.user.User
-import life.qbic.identityaccess.domain.user.UserDataStorage
-import life.qbic.identityaccess.domain.user.UserId
-import life.qbic.identityaccess.domain.user.UserRepository
+import life.qbic.identityaccess.domain.user.*
 import spock.lang.Specification
 
 /**

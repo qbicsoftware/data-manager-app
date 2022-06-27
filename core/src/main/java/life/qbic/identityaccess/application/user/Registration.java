@@ -59,7 +59,6 @@ public class Registration implements RegisterUserInput {
   public void register(String fullName, String email, char[] rawPassword) {
     if (registerUserOutput == null) {
       log.error("No use case output set.");
-      registerUserOutput.onUnexpectedFailure("Unexpected error occurred.");
       return;
     }
     try {
