@@ -16,6 +16,8 @@ import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
 import life.qbic.identityaccess.application.user.ConfirmEmailOutput;
 import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
+import life.qbic.identityaccess.application.user.PasswordResetOutput;
+import life.qbic.identityaccess.application.user.PasswordResetRequest;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.UserDomainService;
@@ -24,8 +26,10 @@ import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.shared.application.notification.MessageBusInterface;
 import life.qbic.shared.application.notification.MessageSubscriber;
 import life.qbic.usermanagement.EmailFactory;
+import life.qbic.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.views.login.LoginHandler;
+import life.qbic.views.login.passwordreset.PasswordResetHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -73,6 +77,10 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var emailAddressConfirmation = context.getBean(EmailAddressConfirmation.class);
     var loginHandler = (ConfirmEmailOutput) context.getBean(LoginHandler.class);
     emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
+
+    var passwordReset = context.getBean(PasswordResetRequest.class);
+    var passwordResetHandler = (PasswordResetOutput) context.getBean(PasswordResetHandler.class);
+    passwordReset.setUseCaseOutput(passwordResetHandler);
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(
@@ -105,11 +113,11 @@ public class Application extends SpringBootServletInitializer implements AppShel
       }
       try {
         var passwordResetRequest = deserializePasswordReset(message);
-        var passwordResetLink = appContext.getBean(EmailConfirmationLinkSupplier.class)
-            .emailConfirmationUrl(passwordResetRequest.userId().get());
+        var passwordResetLink = appContext.getBean(PasswordResetLinkSupplier.class)
+            .passwordResetUrl(passwordResetRequest.userId().get());
         var registrationEmailSender = appContext.getBean(
             EmailService.class);
-        var passwordResetEmail = EmailFactory.registrationEmail(qbicNoReply,
+        var passwordResetEmail = EmailFactory.passwordResetEmail(qbicNoReply,
             new Recipient(passwordResetRequest.userEmailAddress().get(),
                 passwordResetRequest.userFullName().get())
             , passwordResetLink);

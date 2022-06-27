@@ -3,6 +3,7 @@ package life.qbic.usermanagement.passwordreset;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Password Reset Link Supplier</b>
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * @since 1.0.0
  */
+@Service
 public class PasswordResetLinkSupplier {
 
   private final String protocol;
@@ -28,7 +30,7 @@ public class PasswordResetLinkSupplier {
       @Value("${service.host.name}") String host,
       @Value("${server.port}") int port,
       @Value("${password-reset-endpoint}") String resetEndpoint,
-      @Value("${email-password-reset-parameter}") String passwordResetParameter) {
+      @Value("${password-reset-parameter}") String passwordResetParameter) {
     this.protocol = protocol;
     this.host = host;
     this.port = port;

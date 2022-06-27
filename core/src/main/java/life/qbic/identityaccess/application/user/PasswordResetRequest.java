@@ -10,11 +10,11 @@ import life.qbic.shared.application.ApplicationResponse;
  *
  * @since 1.0.0
  */
-class PasswordResetRequest implements PasswordResetInput {
+public class PasswordResetRequest implements PasswordResetInput {
 
   private PasswordResetOutput output;
 
-  private UserRegistrationService registrationService;
+  private final UserRegistrationService registrationService;
 
   public PasswordResetRequest(UserRegistrationService registrationService) {
     super();
