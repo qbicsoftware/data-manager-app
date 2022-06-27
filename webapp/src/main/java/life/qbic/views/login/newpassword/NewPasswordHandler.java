@@ -13,10 +13,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>Handles the password reset</b>
+ * <b>Handles setting new passwords</b>
  *
- * <p>When a password reset is triggered the handler starts the use case. On success the view is
- * toggled and the user can login again. On failure the user sees an error notification</p>
+ * <p>When a new password is set the handler triggers the use case to update the users password</p>
  *
  * @since 1.0.0
  */
