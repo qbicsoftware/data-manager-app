@@ -34,7 +34,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
   private static final long serialVersionUID = 4884878964166607894L;
   private PasswordField newPassword;
   private Button sendButton;
-  private Span registerSpan;
+
   private BoxLayout provideNewPasswordLayout;
   private NewPasswordSetLayout newPasswordSetLayout;
 
@@ -52,10 +52,6 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
 
   public Button sendButton() {
     return sendButton;
-  }
-
-  public Span registerSpan() {
-    return registerSpan;
   }
 
   public BoxLayout provideNewPasswordLayout() {
@@ -95,8 +91,6 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
     createSendButton();
     provideNewPasswordLayout.addButtons(sendButton);
 
-    createSpan();
-    provideNewPasswordLayout.addLinkSpanContent(registerSpan);
   }
 
   private void initPasswordSetLayout() {
@@ -111,11 +105,6 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
     setSizeFull();
     setAlignItems(Alignment.CENTER);
     setJustifyContentMode(JustifyContentMode.CENTER);
-  }
-
-  private void createSpan() {
-    RouterLink link = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), link);
   }
 
   private void createSendButton() {
