@@ -82,11 +82,11 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
 
   @Override
   public void onPasswordValidationFailure() {
-
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public void onUnexpectedFailure() {
-
+    throw new UnsupportedOperationException();
   }
 }
