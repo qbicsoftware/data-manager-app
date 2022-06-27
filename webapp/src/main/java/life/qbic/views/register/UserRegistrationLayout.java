@@ -17,8 +17,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.stream.Stream;
-import life.qbic.views.components.ErrorMessage;
-import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.login.LoginLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +41,8 @@ public class UserRegistrationLayout extends VerticalLayout {
   public Button registerButton;
 
   public Span loginSpan;
-  public ErrorMessage alreadyUsedEmailMessage;
-  public ErrorMessage errorMessage;
 
-  public InformationMessage confirmationInformationMessage;
-
+  public VerticalLayout notificationLayout;
   private VerticalLayout fieldLayout;
   private final VerticalLayout contentLayout;
   private H2 layoutTitle;
@@ -68,21 +63,17 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void initLayout() {
     layoutTitle = new H2("Register");
-
-    fieldLayout = new VerticalLayout();
-    createDivs();
-    createEmailField();
-    createNameField();
-    createPasswordField();
+    createNotificationLayout();
+    createFieldLayout();
     createRegisterButton();
     createSpan();
-
     add(contentLayout);
+    contentLayout.add(layoutTitle, notificationLayout, fieldLayout, registerButton, loginSpan);
   }
 
   private void styleLayout() {
-
     styleFieldLayout();
+    styleNotificationLayout();
     styleRegisterButton();
     styleFormLayout();
     setSizeFull();
@@ -90,25 +81,16 @@ public class UserRegistrationLayout extends VerticalLayout {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void createDivs() {
-    createErrorDivs();
-    createInformationDivs();
+  private void createNotificationLayout() {
+    notificationLayout = new VerticalLayout();
   }
 
-  private void createErrorDivs() {
-    alreadyUsedEmailMessage =
-        new ErrorMessage(
-            "Email address already in use",
-            "If you have difficulties with your password you can reset it.");
-    alreadyUsedEmailMessage.setVisible(false);
-    errorMessage = new ErrorMessage("Registration failed", "Please try again.");
-    errorMessage.setVisible(false);
-  }
-
-  private void createInformationDivs() {
-    confirmationInformationMessage = new InformationMessage("Confirmation successful",
-        "You can now login with your credentials");
-    confirmationInformationMessage.setVisible(false);
+  private void createFieldLayout() {
+    fieldLayout = new VerticalLayout();
+    createEmailField();
+    createNameField();
+    createPasswordField();
+    fieldLayout.add(fullName, email, password);
   }
 
   private void createSpan() {
@@ -132,37 +114,19 @@ public class UserRegistrationLayout extends VerticalLayout {
     password = new PasswordField("Password");
   }
 
+  private void styleNotificationLayout() {
+    notificationLayout.setPadding(false);
+  }
+
   private void styleFormLayout() {
     contentLayout.setPadding(false);
     contentLayout.setMargin(false);
-    contentLayout.addClassNames(
-        "bg-base",
-        "border",
-        "rounded-m",
-        "border-contrast-10",
-        "box-border",
-        "flex",
-        "flex-col",
-        "w-full",
-        "text-s",
-        "shadow-l",
-        "min-width-300px",
-        "max-width-15vw",
-        "pb-l",
-        "pr-l",
-        "pl-l");
-    contentLayout.add(
-        layoutTitle,
-        errorMessage,
-        alreadyUsedEmailMessage,
-        confirmationInformationMessage,
-        fieldLayout,
-        registerButton,
-        loginSpan);
+    contentLayout.addClassNames("bg-base", "border", "rounded-m", "border-contrast-10",
+        "box-border", "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px",
+        "max-width-15vw", "pb-l", "pr-l", "pl-l");
   }
 
   private void styleFieldLayout() {
-    fieldLayout.add(fullName, email, password);
     password.setWidthFull();
     email.setWidthFull();
     fullName.setWidthFull();
