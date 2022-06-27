@@ -37,13 +37,13 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
         registeredPasswordResetLayout.sendButton.addClickListener(buttonClickEvent ->
             passwordReset.resetPassword(registeredPasswordResetLayout.email.getValue()));
 
-        registeredPasswordResetLayout.linkSent.loginButton.addClickListener(buttonClickEvent ->
-                registeredPasswordResetLayout.linkSent.getUI().ifPresent(ui -> ui.navigate("login")));
+        registeredPasswordResetLayout.linkSentLayout.loginButton.addClickListener(buttonClickEvent ->
+                registeredPasswordResetLayout.linkSentLayout.getUI().ifPresent(ui -> ui.navigate("login")));
     }
 
     @Override
     public void onPasswordResetSucceeded() {
-        registeredPasswordResetLayout.linkSent.setVisible(true);
+        registeredPasswordResetLayout.linkSentLayout.setVisible(true);
         registeredPasswordResetLayout.enterEmailLayout.setVisible(false);
     }
 

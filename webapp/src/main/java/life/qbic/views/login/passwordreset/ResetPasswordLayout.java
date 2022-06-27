@@ -32,7 +32,7 @@ public class ResetPasswordLayout extends VerticalLayout{
   public Button sendButton;
   public Span registerSpan;
   public BoxLayout enterEmailLayout;
-  public LinkSentLayout linkSent;
+  public LinkSentLayout linkSentLayout;
 
   public ResetPasswordLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
     initLayout();
@@ -46,7 +46,7 @@ public class ResetPasswordLayout extends VerticalLayout{
 
   private void initLayout() {
     linkSentLayout = new LinkSentLayout();
-    linkSent.setVisible(false);
+    linkSentLayout.setVisible(false);
 
     enterEmailLayout = new BoxLayout();
 
@@ -60,9 +60,9 @@ public class ResetPasswordLayout extends VerticalLayout{
     enterEmailLayout.addButtons(sendButton);
 
     createSpan();
-    enterEmailLayout.addLinkSpanContent(loginSpan);
+    enterEmailLayout.addLinkSpanContent(registerSpan);
 
-    add(enterEmailLayout,linkSent);
+    add(enterEmailLayout,linkSentLayout);
   }
 
   private void styleLayout() {
