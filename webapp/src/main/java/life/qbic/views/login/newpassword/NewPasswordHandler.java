@@ -68,7 +68,7 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
             newPasswordLayout.newPassword().getValue().toCharArray()));
     newPasswordLayout.sendButton().addClickShortcut(Key.ENTER);
 
-    newPasswordLayout.newPasswordSetLayout().loginButton.addClickListener(
+    newPasswordLayout.newPasswordSetLayout().loginButton().addClickListener(
         buttonClickEvent ->
             newPasswordLayout.newPasswordSetLayout().getUI()
                 .ifPresent(ui -> ui.navigate("login")));

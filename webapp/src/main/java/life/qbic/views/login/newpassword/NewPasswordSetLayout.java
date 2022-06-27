@@ -11,7 +11,7 @@ import life.qbic.views.components.BoxLayout;
  */
 public class NewPasswordSetLayout extends BoxLayout {
 
-  public Button loginButton;
+  private Button loginButton;
 
   public NewPasswordSetLayout() {
     fillLayoutComponents();
@@ -32,4 +32,7 @@ public class NewPasswordSetLayout extends BoxLayout {
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
   }
 
+  public Button loginButton() {
+    return loginButton;
+  }
 }
