@@ -32,18 +32,42 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
 
   @Serial
   private static final long serialVersionUID = 4884878964166607894L;
-  public PasswordField newPassword;
-  public Button sendButton;
-  public Span registerSpan;
-  public BoxLayout provideNewPasswordLayout;
-  public NewPasswordSetLayout newPasswordSetLayout;
+  private PasswordField newPassword;
+  private Button sendButton;
+  private Span registerSpan;
+  private BoxLayout provideNewPasswordLayout;
+  private NewPasswordSetLayout newPasswordSetLayout;
 
-  public NewPasswordHandlerInterface handlerInterface;
+  private NewPasswordHandlerInterface handlerInterface;
 
   public NewPasswordLayout(@Autowired NewPasswordHandlerInterface passwordResetHandler) {
     initLayout();
     styleLayout();
     registerToHandler(passwordResetHandler);
+  }
+
+  public PasswordField newPassword() {
+    return newPassword;
+  }
+
+  public Button sendButton() {
+    return sendButton;
+  }
+
+  public Span registerSpan() {
+    return registerSpan;
+  }
+
+  public BoxLayout provideNewPasswordLayout() {
+    return provideNewPasswordLayout;
+  }
+
+  public NewPasswordSetLayout newPasswordSetLayout() {
+    return newPasswordSetLayout;
+  }
+
+  public NewPasswordHandlerInterface handlerInterface() {
+    return handlerInterface;
   }
 
   private void registerToHandler(NewPasswordHandlerInterface passwordResetHandler) {

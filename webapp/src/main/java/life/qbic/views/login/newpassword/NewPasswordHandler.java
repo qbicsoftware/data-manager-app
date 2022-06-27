@@ -63,21 +63,21 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
   }
 
   private void addClickListeners() {
-    newPasswordLayout.sendButton.addClickListener(buttonClickEvent ->
+    newPasswordLayout.sendButton().addClickListener(buttonClickEvent ->
         passwordReset.setNewUserPassword(currentUserId,
-            newPasswordLayout.newPassword.getValue().toCharArray()));
-    newPasswordLayout.sendButton.addClickShortcut(Key.ENTER);
+            newPasswordLayout.newPassword().getValue().toCharArray()));
+    newPasswordLayout.sendButton().addClickShortcut(Key.ENTER);
 
-    newPasswordLayout.newPasswordSetLayout.loginButton.addClickListener(
+    newPasswordLayout.newPasswordSetLayout().loginButton.addClickListener(
         buttonClickEvent ->
-            newPasswordLayout.newPasswordSetLayout.getUI()
+            newPasswordLayout.newPasswordSetLayout().getUI()
                 .ifPresent(ui -> ui.navigate("login")));
   }
 
   @Override
   public void onSuccessfulNewPassword() {
-    newPasswordLayout.provideNewPasswordLayout.setVisible(false);
-    newPasswordLayout.newPasswordSetLayout.setVisible(true);
+    newPasswordLayout.provideNewPasswordLayout().setVisible(false);
+    newPasswordLayout.newPasswordSetLayout().setVisible(true);
   }
 
   @Override
