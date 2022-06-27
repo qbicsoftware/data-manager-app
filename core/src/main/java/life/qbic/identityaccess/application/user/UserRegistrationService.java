@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import life.qbic.identityaccess.application.ApplicationException;
+import life.qbic.identityaccess.application.ServiceException;
 import life.qbic.identityaccess.domain.DomainRegistry;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
@@ -14,6 +14,7 @@ import life.qbic.identityaccess.domain.user.EncryptedPassword;
 import life.qbic.identityaccess.domain.user.EncryptedPassword.PasswordValidationException;
 import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.FullName.FullNameValidationException;
+import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.User;
 import life.qbic.identityaccess.domain.user.UserActivated;
 import life.qbic.identityaccess.domain.user.UserEmailConfirmed;
@@ -21,9 +22,11 @@ import life.qbic.identityaccess.domain.user.UserId;
 import life.qbic.identityaccess.domain.user.UserNotFoundException;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
+import life.qbic.shared.application.ApplicationResponse;
 import life.qbic.shared.application.notification.EventStore;
 import life.qbic.shared.application.notification.Notification;
 import life.qbic.shared.application.notification.NotificationService;
+import life.qbic.shared.domain.events.DomainEvent;
 import life.qbic.shared.domain.events.DomainEventPublisher;
 import life.qbic.shared.domain.events.DomainEventSubscriber;
 
@@ -65,7 +68,7 @@ public final class UserRegistrationService {
    * not.
    * @since 1.0.0
    */
-  public RegistrationResponse registerUser(final String fullName, final String email,
+  public ApplicationResponse registerUser(final String fullName, final String email,
       final char[] rawPassword) {
 
     var registrationResponse = validateInput(fullName, email, rawPassword);
@@ -79,7 +82,7 @@ public final class UserRegistrationService {
     }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override
-      public Class<UserRegistered> subscribedToEventType() {
+      public Class<? extends DomainEvent> subscribedToEventType() {
         return UserRegistered.class;
       }
 
@@ -106,7 +109,7 @@ public final class UserRegistrationService {
     var userPassword = EncryptedPassword.from(rawPassword);
 
     if (userRepository.findByEmail(userEmail).isPresent()) {
-      return RegistrationResponse.failureResponse(new UserExistsException());
+      return ApplicationResponse.failureResponse(new UserExistsException());
     }
 
     // Trigger the user creation in the domain service
@@ -114,10 +117,10 @@ public final class UserRegistrationService {
 
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
-    return RegistrationResponse.successResponse();
+    return ApplicationResponse.successResponse();
   }
 
-  private RegistrationResponse validateInput(String fullName, String email, char[] rawPassword) {
+  private ApplicationResponse validateInput(String fullName, String email, char[] rawPassword) {
     List<RuntimeException> failures = new ArrayList<>();
 
     try {
@@ -137,81 +140,96 @@ public final class UserRegistrationService {
     }
 
     if (failures.isEmpty()) {
-      return RegistrationResponse.successResponse();
+      return ApplicationResponse.successResponse();
     }
 
-    return RegistrationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
+    return ApplicationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
   }
 
-  public static class RegistrationResponse {
-
-    private enum Type {SUCCESSFUL, FAILED}
-
-    private Type type;
-
-    private List<RuntimeException> exceptions;
-
-    public static RegistrationResponse successResponse() {
-      var successResponse = new RegistrationResponse();
-      successResponse.setType(Type.SUCCESSFUL);
-      return successResponse;
+  /**
+   * Requests a password reset for a user.
+   *
+   * @param userEmailAddress the user's email address for whom the password reset shall be issued
+   * @return application response with success or failure information
+   * @since 1.0.0
+   */
+  public ApplicationResponse requestPasswordReset(String userEmailAddress) {
+    EmailAddress emailAddress;
+    try {
+      emailAddress = EmailAddress.from(userEmailAddress);
+    } catch (EmailValidationException e) {
+      return ApplicationResponse.failureResponse(e);
+    }
+    // fetch user
+    var optionalUser = userRepository.findByEmail(emailAddress);
+    if (optionalUser.isEmpty()) {
+      return ApplicationResponse.failureResponse(new UserNotFoundException());
     }
 
-    public static RegistrationResponse failureResponse(RuntimeException... exceptions) {
-      if (exceptions == null) {
-        throw new IllegalArgumentException("Null references are not allowed.");
+    // trigger password reset
+    var user = optionalUser.get();
+    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<PasswordReset>() {
+      @Override
+      public Class<? extends DomainEvent> subscribedToEventType() {
+        return PasswordReset.class;
       }
-      var failureResponse = new RegistrationResponse();
-      failureResponse.setType(Type.FAILED);
-      failureResponse.setExceptions(exceptions);
-      return failureResponse;
-    }
 
-    private RegistrationResponse() {
-      super();
-    }
-
-    private void setType(Type type) {
-      this.type = type;
-    }
-
-    public Type getType() {
-      return type;
-    }
-
-    private void setExceptions(RuntimeException... exceptions) {
-      this.exceptions = Arrays.stream(exceptions).toList();
-    }
-
-    public boolean hasFailures() {
-      return type == Type.FAILED;
-    }
-
-    public List<RuntimeException> failures() {
-      return exceptions;
-    }
-
-    /**
-     * Depending on the response, two type of downstream actions can be passed to the
-     * {@link RegistrationResponse}.
-     * <p>
-     * If the instance contains failures, the downstream failure {@link Consumer} action will be
-     * triggered and a reference to itself passed as argument. Otherwise, the downstream failure
-     * consumer is called.
-     *
-     * @param downstreamSuccess consumer for success responses
-     * @param downstreamFailure consumer for failure responses
-     * @since 1.0.0
-     */
-    public void ifSuccessOrElse(Consumer<RegistrationResponse> downstreamSuccess,
-        Consumer<RegistrationResponse> downstreamFailure) {
-      if (hasFailures()) {
-        downstreamFailure.accept(this);
-      } else {
-        downstreamSuccess.accept(this);
+      @Override
+      public void handleEvent(PasswordReset event) {
+        eventStore.append(event);
+        sendNotification(event, notificationService);
       }
+    });
+
+    user.resetPassword();
+    return ApplicationResponse.successResponse();
+  }
+
+  private static void sendNotification(DomainEvent event, NotificationService notificationService) {
+    var notificationId = notificationService.newNotificationId();
+    var notification =
+        Notification.create(
+            event.getClass().getSimpleName(),
+            event.occurredOn(),
+            notificationId,
+            event);
+    notificationService.send(notification);
+  }
+
+  /**
+   * Sets a new password for a given user.
+   * <p>
+   * Success or failures of the request need to be evaluated by the client via the
+   * {@link ApplicationResponse}.
+   *
+   * @param userId         the user's id for whom the new password shall be set
+   * @param newRawPassword the user's request new password
+   * @return an application response. In the case of a password validation failure, the
+   * {@link ApplicationResponse#failures()} will contain an exception with type
+   * {@link PasswordValidationException}.
+   * @since 1.0.0
+   */
+  public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
+    UserId id = UserId.from(userId);
+    EncryptedPassword encryptedPassword;
+    try {
+      encryptedPassword = EncryptedPassword.from(newRawPassword);
+    } catch (PasswordValidationException e) {
+      return ApplicationResponse.failureResponse(e);
     }
 
+    var optionalUser = userRepository.findById(id);
+
+    if (optionalUser.isEmpty()) {
+      return ApplicationResponse.failureResponse(new ServiceException("Unknown user id"));
+    }
+
+    optionalUser.ifPresent(user -> {
+      user.setNewPassword(encryptedPassword);
+      userRepository.updateUser(user);
+    });
+
+    return ApplicationResponse.successResponse();
   }
 
   public static class UserExistsException extends ApplicationException {
@@ -242,18 +260,7 @@ public final class UserRegistrationService {
       @Override
       public void handleEvent(UserActivated event) {
         eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserActivated event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
+        sendNotification(event, notificationService);
       }
     });
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserEmailConfirmed>() {

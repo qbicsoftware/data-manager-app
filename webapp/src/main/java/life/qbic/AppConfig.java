@@ -1,5 +1,9 @@
 package life.qbic;
 
+import life.qbic.identityaccess.application.user.NewPassword;
+import life.qbic.identityaccess.application.user.NewPasswordInput;
+import life.qbic.identityaccess.application.user.PasswordResetInput;
+import life.qbic.identityaccess.application.user.PasswordResetRequest;
 import life.qbic.shared.application.notification.EventStore;
 import life.qbic.email.EmailService;
 import life.qbic.events.SimpleEventStore;
@@ -13,7 +17,7 @@ import life.qbic.identityaccess.application.user.UserRegistrationService;
 import life.qbic.identityaccess.domain.user.UserDataStorage;
 import life.qbic.identityaccess.domain.user.UserRepository;
 import life.qbic.messaging.Exchange;
-import life.qbic.usermanagement.registration.RegistrationEmailSender;
+import life.qbic.usermanagement.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -78,11 +82,21 @@ public class AppConfig {
 
   @Bean
   public EmailService emailService() {
-    return new RegistrationEmailSender();
+    return new EmailSubmissionService();
   }
 
   @Bean
   public MessageBusInterface messageBusInterface() {
     return Exchange.instance();
+  }
+
+  @Bean
+  public PasswordResetInput passwordResetInput(UserRegistrationService userRegistrationService) {
+    return new PasswordResetRequest(userRegistrationService);
+  }
+
+  @Bean
+  public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
+    return new NewPassword(userRegistrationService);
   }
 }

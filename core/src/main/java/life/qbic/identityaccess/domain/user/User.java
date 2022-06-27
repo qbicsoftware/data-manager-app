@@ -137,6 +137,28 @@ public class User implements Serializable {
     activate();
   }
 
+  /**
+   * Requests a password reset.
+   * <p>
+   * Calling this method will publish a {@link PasswordReset} domain event.
+   *
+   * @since 1.0.0
+   */
+  public void resetPassword() {
+    PasswordReset event = PasswordReset.create(id, fullName, emailAddress);
+    DomainEventPublisher.instance().publish(event);
+  }
+
+  /**
+   * Overrides the previous password and sets a new one.
+   *
+   * @param newPassword the new user password
+   * @since 1.0.0
+   */
+  public void setNewPassword(EncryptedPassword newPassword) {
+    this.setEncryptedPassword(newPassword);
+  }
+
   private void activate() {
     this.active = true;
     UserActivated event = UserActivated.create(id.get());

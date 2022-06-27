@@ -1,6 +1,7 @@
 package life.qbic.events
 
-import life.qbic.domain.usermanagement.registration.UserRegistered
+
+import life.qbic.identityaccess.domain.user.UserRegistered
 import spock.lang.Specification
 
 class EventStoreSpec extends Specification {
