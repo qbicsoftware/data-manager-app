@@ -2,9 +2,12 @@ package life.qbic.views.register;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
-import life.qbic.apps.datamanager.services.UserRegistrationException;
-import life.qbic.domain.usermanagement.registration.RegisterUserInput;
-import life.qbic.domain.usermanagement.registration.RegisterUserOutput;
+import life.qbic.identityaccess.application.user.RegisterUserInput;
+import life.qbic.identityaccess.application.user.RegisterUserOutput;
+import life.qbic.identityaccess.application.user.UserRegistrationException;
+import com.vaadin.flow.router.QueryParameters;
+import java.util.Map;
+import life.qbic.views.components.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +24,6 @@ public class UserRegistrationHandler
   private static final org.apache.logging.log4j.Logger log =
       org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
   private UserRegistrationLayout userRegistrationLayout;
-
   private final RegisterUserInput registrationUseCase;
 
   @Autowired
@@ -54,7 +56,7 @@ public class UserRegistrationHandler
 
     userRegistrationLayout.registerButton.addClickListener(
         event -> {
-          resetErrorMessages();
+          clearNotifications();
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
               userRegistrationLayout.email.getValue(),
@@ -62,14 +64,29 @@ public class UserRegistrationHandler
         });
   }
 
-  private void resetErrorMessages() {
-    userRegistrationLayout.alreadyUsedEmailMessage.setVisible(false);
-    userRegistrationLayout.errorMessage.setVisible(false);
+  private void clearNotifications() {
+    userRegistrationLayout.notificationLayout.removeAll();
+  }
+
+  private void showError(String title, String description) {
+    clearNotifications();
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    userRegistrationLayout.notificationLayout.add(errorMessage);
+  }
+
+  private void showAlreadyUsedEmailError() {
+    showError("Email address already in use",
+        "If you have difficulties with your password you can reset it.");
+  }
+
+  private void showUnexpectedError() {
+    showError("Registration failed", "Please try again.");
   }
 
   @Override
   public void onUserRegistrationSucceeded() {
-    UI.getCurrent().navigate("/login");
+    QueryParameters registrationParams = QueryParameters.simple(Map.of("userRegistered", "true"));
+    UI.getCurrent().navigate("/login", registrationParams);
   }
 
   @Override
@@ -79,7 +96,7 @@ public class UserRegistrationHandler
 
   @Override
   public void onUnexpectedFailure(String reason) {
-    userRegistrationLayout.errorMessage.setVisible(true);
+    showUnexpectedError();
   }
 
   private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
@@ -93,10 +110,10 @@ public class UserRegistrationHandler
       userRegistrationLayout.email.setInvalid(true);
     }
     if (userRegistrationException.userExistsException().isPresent()) {
-      userRegistrationLayout.alreadyUsedEmailMessage.setVisible(true);
+      showAlreadyUsedEmailError();
     }
     if (userRegistrationException.unexpectedException().isPresent()) {
-      userRegistrationLayout.errorMessage.setVisible(true);
+      showUnexpectedError();
     }
   }
 }

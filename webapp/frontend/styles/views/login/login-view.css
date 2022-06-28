@@ -6,14 +6,6 @@
     min-width: 300px;
 }
 
-.title {
-    margin: 0;
-    margin-top: var(--lumo-font-size-xxs);
+#login-form vaadin-login-form-wrapper::part(form) {
     padding: 0;
-    padding-top: var(--lumo-space-l);
-    padding-left: var(--lumo-space-l);
-}
-
-.registration {
-    padding: var(--lumo-space-l);
 }

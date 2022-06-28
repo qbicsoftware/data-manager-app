@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-    <artifactId>webapp</artifactId>
+    <artifactId>datamanagement-webapp</artifactId>
     <name>Data Manager Webapp</name>
     <version>0.3.0</version>
     <packaging>jar</packaging>
@@ -66,29 +66,30 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>life.qbic</groupId>
-                <artifactId>domain</artifactId>
-                <version>0.3.0</version>
-            </dependency>
-            <dependency>
                 <groupId>com.vaadin</groupId>
                 <artifactId>vaadin-bom</artifactId>
                 <version>${vaadin.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>life.qbic</groupId>
+                <artifactId>datamanagement-core</artifactId>
+                <version>0.3.0</version>
+                <scope>compile</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
         <dependency>
-            <groupId>life.qbic</groupId>
-            <artifactId>domain</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>vaadin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>life.qbic</groupId>
+            <artifactId>datamanagement-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -114,12 +115,6 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>exampledata</artifactId>
-            <version>4.1.2</version>
         </dependency>
 
         <dependency>
@@ -165,12 +160,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <version>2.1-groovy-3.0</version>
-        <scope>test</scope>
-      </dependency>
+        <dependency>
+            <groupId>org.spockframework</groupId>
+            <artifactId>spock-core</artifactId>
+            <scope>test</scope>
+        </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-mail</artifactId>

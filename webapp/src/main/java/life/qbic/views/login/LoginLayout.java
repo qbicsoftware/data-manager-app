@@ -16,8 +16,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import life.qbic.views.components.ErrorMessage;
-import life.qbic.views.components.InformationMessage;
 import life.qbic.views.landing.LandingPageLayout;
 import life.qbic.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +33,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private VerticalLayout contentLayout;
 
-  private VerticalLayout informationContainer;
-
-  private VerticalLayout errorContainer;
+  public VerticalLayout notificationLayout;
   private H2 title;
 
   private ConfigurableLoginForm loginForm;
@@ -57,18 +53,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private void initLayout() {
     contentLayout = new VerticalLayout();
-    this.loginForm = new ConfigurableLoginForm();
-    loginForm.setAction("login");
-
+    createNotificationLayout();
+    createLoginForm();
     this.registrationSection = initRegistrationSection();
-
-    informationContainer = new VerticalLayout();
-    errorContainer = new VerticalLayout();
-
     title = new H2("Log in");
-
-    contentLayout.add(title, informationContainer, errorContainer, loginForm, registrationSection);
-
+    contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     add(contentLayout);
   }
 
@@ -77,13 +66,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private void styleLayout() {
+    styleNotificationLayout();
     styleFormLayout();
     setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    title.setClassName("title");
-    loginForm.setUsernameText("Email");
-    registrationSection.addClassName("registration");
   }
 
   private void styleFormLayout() {
@@ -101,7 +88,20 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "text-s",
         "shadow-l",
         "min-width-300px",
-        "max-width-15vw");
+        "max-width-15vw",
+        "pb-l",
+        "pr-l",
+        "pl-l");
+  }
+
+  private void createNotificationLayout() {
+    notificationLayout = new VerticalLayout();
+  }
+
+  private void createLoginForm() {
+    this.loginForm = new ConfigurableLoginForm();
+    loginForm.setAction("login");
+    loginForm.setUsernameText("Email");
   }
 
   private Div initRegistrationSection() {
@@ -109,24 +109,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     return new Div(new Text("Need an account? "), routerLink);
   }
 
-  public void clearErrors() {
-    errorContainer.setVisible(false);
-    errorContainer.removeAll();
-  }
-
-  public void showError(ErrorMessage errorMessage) {
-    errorContainer.add(new ErrorMessage(errorMessage.title(), errorMessage.message()));
-    errorContainer.setVisible(true);
-  }
-
-  public void showInformation(InformationMessage message) {
-    informationContainer.add(new InformationMessage(message.title(), message.message()));
-    informationContainer.setVisible(true);
-  }
-
-  public void clearInformation() {
-    informationContainer.setVisible(false);
-    informationContainer.removeAll();
+  private void styleNotificationLayout() {
+    notificationLayout.setPadding(false);
   }
 
   public void addLoginListener(ComponentEventListener<LoginEvent> loginListener) {
