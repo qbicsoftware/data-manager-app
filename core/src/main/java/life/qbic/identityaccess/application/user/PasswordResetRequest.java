@@ -26,12 +26,10 @@ public class PasswordResetRequest implements PasswordResetInput {
     Objects.requireNonNull(output, "No use case output was set");
     ApplicationResponse response = registrationService.requestPasswordReset(emailAddress);
     response.ifSuccessOrElse(success -> output.onPasswordResetSucceeded(),
-        failure -> output.onPasswordResetFailed());
+        failure -> output.onPasswordResetFailed(failure));
   }
 
   public void setUseCaseOutput(PasswordResetOutput output) {
     this.output = output;
   }
-
-
 }
