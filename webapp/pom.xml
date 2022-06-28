@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-    <artifactId>datamanager-webapp</artifactId>
+    <artifactId>datamanagement-webapp</artifactId>
     <name>Data Manager Webapp</name>
     <version>0.3.0</version>
     <packaging>jar</packaging>
@@ -74,7 +74,7 @@
             </dependency>
             <dependency>
                 <groupId>life.qbic</groupId>
-                <artifactId>datamanager-core</artifactId>
+                <artifactId>datamanagement-core</artifactId>
                 <version>0.3.0</version>
                 <scope>compile</scope>
             </dependency>
@@ -89,7 +89,7 @@
         </dependency>
         <dependency>
             <groupId>life.qbic</groupId>
-            <artifactId>datamanager-core</artifactId>
+            <artifactId>datamanagement-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
