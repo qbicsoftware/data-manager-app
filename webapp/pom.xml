@@ -83,10 +83,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>life.qbic</groupId>
-            <artifactId>core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>vaadin</artifactId>
