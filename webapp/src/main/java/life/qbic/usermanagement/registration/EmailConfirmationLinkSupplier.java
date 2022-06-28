@@ -26,7 +26,7 @@ public class EmailConfirmationLinkSupplier {
   public EmailConfirmationLinkSupplier(
       @Value("${service.host.protocol}") String protocol,
       @Value("${service.host.name}") String host,
-      @Value("${server.port}") int port,
+      @Value("${service.host.port}") int port,
       @Value("${email-confirmation-endpoint}") String loginEndpoint,
       @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
     this.protocol = protocol;
