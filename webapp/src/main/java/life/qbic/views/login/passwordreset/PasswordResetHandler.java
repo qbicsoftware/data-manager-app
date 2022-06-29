@@ -87,8 +87,6 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
         showPasswordResetFailedError(
             failure.getMessage(), "The account needs to be active to reset the password.");
       } else {
-        System.out.println(failure.getMessage());
-        System.out.println(failure.getClass());
         showPasswordResetFailedError(
             "An error occurred", "Please contact support@qbic.zendesk.com for help.");
       }

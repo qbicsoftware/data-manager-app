@@ -27,3 +27,4 @@ error-screenshots/
 webapp/webpack.generated.js
 /webapp/frontend/generated/theme.d.ts
 /target/
+/package-lock.json

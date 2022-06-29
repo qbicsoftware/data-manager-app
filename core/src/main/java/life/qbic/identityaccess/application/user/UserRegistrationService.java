@@ -163,7 +163,7 @@ public final class UserRegistrationService {
     // fetch user
     var optionalUser = userRepository.findByEmail(emailAddress);
     if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new UserNotFoundException());
+      return ApplicationResponse.failureResponse(new UserNotFoundException("User not found"));
     }
 
     // get user

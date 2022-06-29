@@ -38,7 +38,7 @@ public class EmailAddress implements Serializable {
   public static EmailAddress from(String s) throws EmailValidationException {
     PolicyCheckReport policyCheckReport = EmailFormatPolicy.instance().validate(s);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
-      throw new EmailValidationException(policyCheckReport, s);
+      throw new EmailValidationException(policyCheckReport, s, "Invalid email address format");
     }
     return new EmailAddress(s);
   }
@@ -95,8 +95,8 @@ public class EmailAddress implements Serializable {
     private final transient PolicyCheckReport emailPolicyCheckReport;
 
     EmailValidationException(PolicyCheckReport emailAddressCheckReport,
-        String invalidEmailAddress) {
-      super();
+        String invalidEmailAddress, String message) {
+      super(message);
       this.emailPolicyCheckReport = emailAddressCheckReport;
       this.invalidEmailAddress = invalidEmailAddress;
     }
