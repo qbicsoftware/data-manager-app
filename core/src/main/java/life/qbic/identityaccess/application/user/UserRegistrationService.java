@@ -301,6 +301,12 @@ public final class UserRegistrationService {
     });
   }
 
+  /**
+   * <p>
+   * An exception to be thrown if an user is not activated.
+   * This implies that the user cannot login into the application
+   * </p>
+   */
   public class UserNotActivatedException extends ApplicationException {
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
