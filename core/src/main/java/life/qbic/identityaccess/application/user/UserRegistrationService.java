@@ -305,15 +305,8 @@ public final class UserRegistrationService {
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
 
-    private final String userNotActive;
-
-    UserNotActivatedException(String userNotActive) {
-      super();
-      this.userNotActive = userNotActive;
-    }
-
-    public String getMessage() {
-      return userNotActive;
+    UserNotActivatedException(String message) {
+      super(message);
     }
   }
 }
