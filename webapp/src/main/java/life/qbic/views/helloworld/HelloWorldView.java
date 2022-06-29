@@ -7,7 +7,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 import javax.annotation.security.PermitAll;
 import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.User;
