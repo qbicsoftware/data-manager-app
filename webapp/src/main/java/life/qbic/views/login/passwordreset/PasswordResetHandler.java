@@ -81,14 +81,14 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
         showPasswordResetFailedError(failure.getMessage(), "Please provide a valid email address.");
       }
       else if (failure instanceof UserNotFoundException) {
-        showPasswordResetFailedError(failure.getMessage(), "No user registered for the email.");
+        showPasswordResetFailedError(failure.getMessage(), "No user registered for the provided email.");
       }
       else if (failure instanceof UserRegistrationService.UserNotActivatedException) {
         showPasswordResetFailedError(
-            failure.getMessage(), "The account needs to be active to reset the password.");
+            failure.getMessage(), "Activate your account to reset the password.");
       } else {
         showPasswordResetFailedError(
-            "An error occurred", "Please contact support@qbic.zendesk.com for help.");
+            "An unexpected error occurred", "Please contact support@qbic.zendesk.com for help.");
       }
     }
   }
