@@ -7,6 +7,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 import javax.annotation.security.PermitAll;
 import life.qbic.identityaccess.domain.user.FullName;
 import life.qbic.identityaccess.domain.user.User;
@@ -15,7 +16,7 @@ import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Hello World")
-@Route(value = "hello", layout = MainLayout.class)
+@Route(value = "", layout = MainLayout.class)
 @PermitAll
 public class HelloWorldView extends VerticalLayout {
 
