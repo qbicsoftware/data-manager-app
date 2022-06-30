@@ -26,7 +26,7 @@ public class PasswordEncryptionPolicy {
       2; // the index of the hash content in the encoded password String
   private static final int ITERATIONS =
       10_000; // the iteration count used for the encryption algorithm
-  private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
+  private static final int KEY_SIZE_BITS = 256; // the key size value in bits for the encryption algorithm
   private static final int SALT_BYTES = 20; // the salt byte value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
 
@@ -63,7 +63,7 @@ public class PasswordEncryptionPolicy {
 
   private static byte[] pbe(char[] password, byte[] salt, int iterations) {
     KeySpec spec =
-        new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_BYTES * 8);
+        new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_SIZE_BITS);
     SecretKeyFactory factory = getSecretKeyFactory();
     return createSecretKey(factory, spec).getEncoded();
   }

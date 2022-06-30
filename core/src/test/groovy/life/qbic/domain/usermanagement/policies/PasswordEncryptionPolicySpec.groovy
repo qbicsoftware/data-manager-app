@@ -82,4 +82,21 @@ class PasswordEncryptionPolicySpec extends Specification {
         password = "abcdefghihdeo"
     }
 
+    def "Equal raw user passwords must not create the same secret" () {
+        when:
+        String encryptedPasswordA = PasswordEncryptionPolicy.instance().encrypt(passwordA.toCharArray())
+        String encryptedPasswordB = PasswordEncryptionPolicy.instance().encrypt(passwordB.toCharArray())
+        String secretA = encryptedPasswordA.split(":")[2]
+        String secretB = encryptedPasswordB.split(":")[2]
+
+        then:
+        secretA != secretB
+
+        where:
+        passwordA = "helloworld"
+
+        and:
+        passwordB = "helloworld"
+    }
+
 }
