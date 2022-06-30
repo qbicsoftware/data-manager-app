@@ -15,7 +15,7 @@ import life.qbic.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Hello World")
-@Route(value = "hello", layout = MainLayout.class)
+@Route(value = "", layout = MainLayout.class)
 @PermitAll
 public class HelloWorldView extends VerticalLayout {
 

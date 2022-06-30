@@ -83,7 +83,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void onLoginSucceeded() {
     clearNotifications();
-    UI.getCurrent().navigate("/hello");
+    UI.getCurrent().navigate("/");
   }
 
   @Override

@@ -86,11 +86,11 @@ are therefore not mandatory to set
 
 | environment variable | description          |
 |----------------------|----------------------|
-| `PORT`               | The application port |
+| `DM_PORT`            | The application port |
 | `USER_DB_DRIVER`     | The database driver  |
 
 ```properties
-server.port=${PORT:8080}
+server.port=${DM_PORT:8080}
 spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
 ```
 
@@ -100,7 +100,8 @@ As the application needs to send emails, you have to configure an smtp server as
 |----------------------|------------------------------------------------------|
 | `MAIL_HOST`          | The smtp server host (e.g. smtp.gmail.com)           |
 | `MAIL_PASSWORD`      | The password to authenticate against the mail server |
-| `Mail_USERNAME`      | The username to authenticate against the mail server |
+| `MAIL_USERNAME`      | The username to authenticate against the mail server |
+| `MAIL_PORT`          | The port to use for the SMTP connection              |
 
 ```properties
 spring.mail.username=${MAIL_USERNAME}
@@ -114,18 +115,31 @@ the following properties:
 
 | environment variable           | description                                                       |
 |--------------------------------|-------------------------------------------------------------------|
-| `HOST`                         | The server address                                                |
+| `DM_SERVICE_HOST`              | The server address (if behind a proxy, the proxy domain name)     |
+| `DM_HOST_PROTOCOL`             | The server protocol (http or https)                               |
+| `DM_SERVICE_PORT`              | The server port (-1 for default)                                  |
 | `EMAIL_CONFIRMATION_PARAMETER` | The name of the parameter to which to pass the confirmation token |
-| `LOGIN_ENDPOINT`               | The endpoint for the login                                        |
+| `EMAIL_CONFIRMATION_ENDPOINT`  | The endpoint for the email configuration entry                    |
+| `PASSWORD_RESET_ENDPOINT`      | The endpoint for the password reset entry                         |
+| `PASSWORD_RESET_PARAMETER`     | The name for the password reset query parameter in the URL        |
 
 Generated email confirmation links will look like `localhost:8080/login?confirm-email=<token>` with
 the
 default configuration.
 
 ```properties
-host.name=${HOST:localhost}
-login-endpoint=${LOGIN_ENDPOINT:login}
+# global service route configuration for email interaction requests
+service.host.name=${DM_SERVICE_HOST:localhost}
+service.host.protocol=${DM_HOST_PROTOCOL:https}
+service.host.port=${DM_SERVICE_PORT:-1}
+
+# route for email confirmation consumption
+email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
+
+# route for password reset
+password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
+password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
 ```
 
 #### Properties
@@ -134,18 +148,41 @@ The environment variables can either be set in the runtime configuration of your
 the [application properties file](https://github.com/qbicsoftware/data-manager-app/blob/main/webapp/src/main/resources/application.properties):
 
 ```properties
+server.port=${DM_PORT:8080}
+logging.level.org.atmosphere=warn
+spring.mustache.check-template-location=false
+# Launch the default browser when starting the application in development mode
+vaadin.launch-browser=true
+# To improve the performance during development.
+# For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
+vaadin.whitelisted-packages=com.vaadin,org.vaadin,dev.hilla,life.qbic
+# Database setup configuration
 spring.datasource.url=${USER_DB_URL:localhost}
+spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
 spring.datasource.username=${USER_DB_USER_NAME:myusername}
 spring.datasource.password=${USER_DB_USER_PW:astrongpassphrase!}
-server.port=${PORT:8080}
-spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+spring.jpa.hibernate.ddl-auto=update
+
+# email configuration
 spring.mail.username=${MAIL_USERNAME}
 spring.mail.password=${MAIL_PASSWORD}
 spring.mail.host=${MAIL_HOST:smtp.gmail.com}
+spring.mail.default-encoding=UTF-8
 spring.mail.port=${MAIL_PORT:587}
-host.name=${HOST:localhost}
-login-endpoint=${LOGIN_ENDPOINT:login}
+
+# global service route configuration for email interaction requests
+service.host.name=${DM_SERVICE_HOST:localhost}
+service.host.protocol=${DM_HOST_PROTOCOL:https}
+service.host.port=${DM_SERVICE_PORT:-1}
+
+# route for email confirmation consumption
+email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
+
+# route for password reset
+password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
+password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
+
 ```
 
 ### Local testing
