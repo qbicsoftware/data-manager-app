@@ -3,6 +3,7 @@ package life.qbic.security;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.identityaccess.domain.user.EmailAddress;
+import life.qbic.identityaccess.domain.user.EmailAddress.EmailValidationException;
 import life.qbic.identityaccess.domain.user.User;
 import life.qbic.identityaccess.domain.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    var user = userRepository.findByEmail(EmailAddress.from(username));
+    EmailAddress email;
+    // Check if the email address is valid
+    try {
+      email = EmailAddress.from(username);
+    } catch (EmailValidationException e) {
+      throw new UsernameNotFoundException("Cannot find user");
+    }
+    // Then search for a user with the provided email address
+    var user = userRepository.findByEmail(email);
     return new QbicUserDetails(
         user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
   }
