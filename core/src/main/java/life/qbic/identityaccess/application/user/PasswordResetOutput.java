@@ -1,5 +1,7 @@
 package life.qbic.identityaccess.application.user;
 
+import life.qbic.shared.application.ApplicationResponse;
+
 /**
  * <b>Password Reset Use Case Output</b>
  *
@@ -21,5 +23,5 @@ public interface PasswordResetOutput {
    *
    * @since 1.0.0
    */
-  void onPasswordResetFailed();
+  void onPasswordResetFailed(ApplicationResponse response);
 }

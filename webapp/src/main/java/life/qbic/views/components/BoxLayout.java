@@ -20,6 +20,7 @@ public class BoxLayout extends VerticalLayout {
 
   private H2 layoutTitle;
   private Text descriptionText;
+  private VerticalLayout notificationLayout;
   private VerticalLayout fieldLayout;
   private VerticalLayout textLayout;
   private VerticalLayout buttonLayout;
@@ -41,7 +42,7 @@ public class BoxLayout extends VerticalLayout {
     textLayout = new VerticalLayout();
     descriptionText = new Text("Enter description text");
     textLayout.add(descriptionText);
-
+    notificationLayout = new VerticalLayout();
     fieldLayout = new VerticalLayout();
     buttonLayout = new VerticalLayout();
 
@@ -50,6 +51,7 @@ public class BoxLayout extends VerticalLayout {
   }
 
   private void styleLayout() {
+    styleNotificationLayout();
     styleFieldLayout();
     styleFormLayout();
     styleButtonLayout();
@@ -79,7 +81,7 @@ public class BoxLayout extends VerticalLayout {
         "pb-l",
         "pr-l",
         "pl-l");
-    contentLayout.add(layoutTitle, descriptionText, fieldLayout, buttonLayout, linkSpan);
+    contentLayout.add(layoutTitle, notificationLayout, descriptionText, fieldLayout, buttonLayout, linkSpan);
   }
 
   private void styleFieldLayout() {
@@ -92,6 +94,12 @@ public class BoxLayout extends VerticalLayout {
     buttonLayout.setSpacing(false);
     buttonLayout.setMargin(false);
     buttonLayout.setPadding(false);
+  }
+
+  private void styleNotificationLayout(){
+    notificationLayout.setSpacing(false);
+    notificationLayout.setMargin(false);
+    notificationLayout.setPadding(false);
   }
 
   private void styleDescriptionText(){
@@ -128,6 +136,20 @@ public class BoxLayout extends VerticalLayout {
    */
   public void setDescriptionText(String text){
     descriptionText.setText(text);
+  }
+
+  /**
+   * Adds a DisplayMessage {@link DisplayMessage} based notification to the BoxLayout
+   * @param displayMessage The notification to be shown to the viewer.
+   */
+  public void setNotification(DisplayMessage displayMessage) {
+    notificationLayout.add(displayMessage);
+  }
+  /**
+   * Removes all DisplayMessage {@link DisplayMessage} based Notifications from the BoxLayout
+   */
+  public void removeNotifications(){
+    notificationLayout.removeAll();
   }
 
   /**

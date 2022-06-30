@@ -163,7 +163,7 @@ public final class UserRegistrationService {
     // fetch user
     var optionalUser = userRepository.findByEmail(emailAddress);
     if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new UserNotFoundException());
+      return ApplicationResponse.failureResponse(new UserNotFoundException("User not found"));
     }
 
     // get user
@@ -171,7 +171,7 @@ public final class UserRegistrationService {
 
     // We only allow password reset for users with confirmed email address
     if (!user.isActive()) {
-      return ApplicationResponse.failureResponse(new ServiceException("User not active"));
+      return ApplicationResponse.failureResponse(new UserNotActivatedException("User not active"));
     }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<PasswordReset>() {
       @Override
@@ -299,5 +299,20 @@ public final class UserRegistrationService {
     }, () -> {
       throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
     });
+  }
+
+  /**
+   * <p>
+   * An exception to be thrown if an user is not activated.
+   * This implies that the user cannot login into the application
+   * </p>
+   */
+  public class UserNotActivatedException extends ApplicationException {
+    @Serial
+    private static final long serialVersionUID = -4253849498611530692L;
+
+    UserNotActivatedException(String message) {
+      super(message);
+    }
   }
 }
