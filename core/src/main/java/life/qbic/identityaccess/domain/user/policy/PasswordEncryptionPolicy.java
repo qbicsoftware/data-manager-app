@@ -31,7 +31,7 @@ public class PasswordEncryptionPolicy {
   private static final String CIPHER = "AES";
 
   private static final int KEY_SIZE_BITS = 256; // the key size value in bits for the encryption algorithm
-  private static final int SALT_LENGTH_BITS = 256; // the salt bit value for the salt generation
+  private static final int SALT_LENGTH_BYTES = 20; // the salt bit value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
 
   /**
@@ -59,7 +59,7 @@ public class PasswordEncryptionPolicy {
    */
   public String encrypt(char[] rawPassword) {
     SecureRandom random = new SecureRandom();
-    byte[] salt = new byte[SALT_LENGTH_BITS];
+    byte[] salt = new byte[SALT_LENGTH_BYTES];
     random.nextBytes(salt);
     byte[] hash = pbe(rawPassword, salt, ITERATIONS);
     return ITERATIONS + ":" + toHex(salt) + ":" + toHex(hash);
