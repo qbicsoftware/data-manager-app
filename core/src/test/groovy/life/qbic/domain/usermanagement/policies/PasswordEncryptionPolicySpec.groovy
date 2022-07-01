@@ -1,6 +1,7 @@
 package life.qbic.domain.usermanagement.policies
 
 import life.qbic.identityaccess.domain.user.policy.PasswordEncryptionPolicy
+import spock.lang.Shared
 import spock.lang.Specification
 
 /**
@@ -10,6 +11,9 @@ import spock.lang.Specification
  */
 class PasswordEncryptionPolicySpec extends Specification {
 
+  @Shared
+  private final List<String> rawPasswords = ["abcdefghijklmno", "123456789", "qwerty", "password", "monkey", "This_Is_A_Real_Password123!", "Hunter1", " ", "DEFAULT"]
+
   def "The password is not stored in clear text"() {
     when:
     String encryptedPassword = PasswordEncryptionPolicy.instance().encrypt(password.toCharArray())
@@ -18,7 +22,8 @@ class PasswordEncryptionPolicySpec extends Specification {
     encryptedPassword != password
 
     where:
-    password = "12345678"
+    password << rawPasswords
+
   }
 
   def "The password policy matches same passwords"() {
@@ -30,7 +35,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     result
 
     where:
-    password = "12345678"
+    password << rawPasswords
   }
 
   def "Two different passwords cannot be matched"() {
@@ -42,8 +47,8 @@ class PasswordEncryptionPolicySpec extends Specification {
     !result
 
     where:
-    password = "12345678"
-    anotherPassword = "abcdefghijkl"
+    password << rawPasswords
+    anotherPassword = "AUniquePassword123"
   }
 
   def "The encrypted password starts with the number of iterations"() {
@@ -55,7 +60,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     passwordElements[0].startsWith("10000") // number of iterations
 
     where:
-    password = "abcdefghihdeo"
+    password << rawPasswords
   }
 
   def "The encrypted password contains a salt with a length of 20 bytes"() {
@@ -67,7 +72,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     passwordElements[1].length() == 40 //contains a salt with length of 20 bytes
 
     where:
-    password = "abcdefghihdeo"
+    password << rawPasswords
   }
 
   def "The encrypted password ends with the hashed password"() {
@@ -79,7 +84,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     passwordElements[2] != password // contains a hash that is not the same as the clear text password
 
     where:
-    password = "abcdefghihdeo"
+    password << rawPasswords
   }
 
   def "Equal raw user passwords must not create the same secret"() {
@@ -93,10 +98,10 @@ class PasswordEncryptionPolicySpec extends Specification {
     secretA != secretB
 
     where:
-    passwordA = "helloworld"
+    passwordA << rawPasswords
 
     and:
-    passwordB = "helloworld"
+    passwordB << rawPasswords
   }
 
   def "The encrypted password has a length of 256 bits independent of the raw password length"() {
@@ -107,15 +112,6 @@ class PasswordEncryptionPolicySpec extends Specification {
     encryptedPassword.length() == 111
 
     where:
-    password                      | _
-    "abcdefghijklmno"             | _
-    "123456789"                   | _
-    "qwerty"                      | _
-    "password"                    | _
-    "monkey"                      | _
-    "This_Is_A_Real_Password123!" | _
-    "Hunter1"                     | _
-    " "                           | _
-    "DEFAULT"                     | _
+    password << rawPasswords
   }
 }
