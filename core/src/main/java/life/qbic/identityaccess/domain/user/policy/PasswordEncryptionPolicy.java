@@ -7,6 +7,7 @@ import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * <b>Password encryption policy</b>
@@ -26,8 +27,11 @@ public class PasswordEncryptionPolicy {
       2; // the index of the hash content in the encoded password String
   private static final int ITERATIONS =
       10_000; // the iteration count used for the encryption algorithm
-  private static final int KEY_BYTES = 20; // the key byte value for the encryption algorithm
-  private static final int SALT_BYTES = 20; // the salt byte value for the salt generation
+
+  private static final String CIPHER = "AES";
+
+  private static final int KEY_SIZE_BITS = 256; // the key size value in bits for the encryption algorithm
+  private static final int SALT_LENGTH_BYTES = 20; // the salt bit value for the salt generation
   private static PasswordEncryptionPolicy INSTANCE;
 
   /**
@@ -55,7 +59,7 @@ public class PasswordEncryptionPolicy {
    */
   public String encrypt(char[] rawPassword) {
     SecureRandom random = new SecureRandom();
-    byte[] salt = new byte[SALT_BYTES];
+    byte[] salt = new byte[SALT_LENGTH_BYTES];
     random.nextBytes(salt);
     byte[] hash = pbe(rawPassword, salt, ITERATIONS);
     return ITERATIONS + ":" + toHex(salt) + ":" + toHex(hash);
@@ -63,9 +67,9 @@ public class PasswordEncryptionPolicy {
 
   private static byte[] pbe(char[] password, byte[] salt, int iterations) {
     KeySpec spec =
-        new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_BYTES * 8);
+        new PBEKeySpec(password, salt, iterations, PasswordEncryptionPolicy.KEY_SIZE_BITS);
     SecretKeyFactory factory = getSecretKeyFactory();
-    return createSecretKey(factory, spec).getEncoded();
+    return new SecretKeySpec(createSecretKey(factory, spec).getEncoded(), CIPHER).getEncoded();
   }
 
   /**
@@ -134,7 +138,7 @@ public class PasswordEncryptionPolicy {
 
   private static SecretKeyFactory getSecretKeyFactory() {
     try {
-      return SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+      return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
     } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
       throw new EncryptionException(
           "Unexpected exception, encryption failed.", noSuchAlgorithmException);
