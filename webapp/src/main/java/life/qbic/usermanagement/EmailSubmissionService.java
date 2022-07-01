@@ -1,5 +1,6 @@
 package life.qbic.usermanagement;
 
+import java.io.Serial;
 import java.util.Properties;
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -12,6 +13,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
+import life.qbic.identityaccess.application.ApplicationException;
+import life.qbic.shared.application.ApplicationResponse;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -21,6 +24,8 @@ import org.springframework.beans.factory.annotation.Value;
  */
 public class EmailSubmissionService implements EmailService {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
+      EmailSubmissionService.class);
   @Value("${spring.mail.password}")
   private String password;
 
@@ -33,7 +38,7 @@ public class EmailSubmissionService implements EmailService {
   @Value("${spring.mail.port}")
   private Integer smtpPort;
 
-  private void sendPlainEmail(Email email) {
+  private ApplicationResponse sendPlainEmail(Email email) {
     Properties props = new Properties();
     props.put("mail.smtp.auth", "true");
     props.put("mail.smtp.starttls.enable", "true");
@@ -52,17 +57,43 @@ public class EmailSubmissionService implements EmailService {
       msg.setRecipient(RecipientType.TO, new InternetAddress(email.to().address()));
       msg.setSubject(email.subject());
       msg.setText(email.content());
-
       Transport.send(msg);
     } catch (MessagingException e) {
-      throw new RuntimeException(e);
+      return ApplicationResponse.failureResponse(new EmailSendingException(e.getMessage(), email));
     }
+    return ApplicationResponse.successResponse();
   }
 
   @Override
   public void send(Email email) {
     if (email.mimeType().equals("text/plain")) {
-      sendPlainEmail(email);
+      try {
+        sendPlainEmail(email).ifSuccessOrElse(this::reportSuccess, response -> response.failures()
+            .forEach(exception -> log.error(exception.getMessage(), exception)));
+      } catch (Exception e) {
+        log.error("Email sending failed", e.getCause());
+      }
+    }
+  }
+
+  private void reportSuccess(ApplicationResponse applicationResponse) {
+    //ToDo Implement ApplicationEventPublisher with SendEmail Event?
+  }
+
+  public static class EmailSendingException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = -8023119236306814904L;
+
+    private final Email email;
+
+    public EmailSendingException(String message, Email email) {
+      super(message);
+      this.email = email;
+    }
+
+    public Email getEmail() {
+      return email;
     }
   }
 }
