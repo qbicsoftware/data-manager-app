@@ -99,16 +99,16 @@ class PasswordEncryptionPolicySpec extends Specification {
     passwordB = "helloworld"
   }
 
-  def "The encrypted password has a length of 256 bits independent of the original password length"() {
+  def "The encrypted password has a length of 256 bits independent of the raw password length"() {
     when:
     String encryptedPassword = PasswordEncryptionPolicy.instance().encrypt(password.toCharArray())
 
     then:
-    encryptedPassword.length() == 111 //contains a salt with length of 20 bytes
+    encryptedPassword.length() == 111
 
     where:
     password                      | _
-    "abcdefghihdeo"               | _
+    "abcdefghijklmno"             | _
     "123456789"                   | _
     "qwerty"                      | _
     "password"                    | _
