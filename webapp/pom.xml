@@ -6,7 +6,7 @@
     <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
     <artifactId>datamanagement-webapp</artifactId>
     <name>Data Manager Webapp</name>
-    <version>0.4.3</version>
+    <version>0.4.4</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -16,7 +16,7 @@
     <parent>
         <groupId>life.qbic</groupId>
         <artifactId>datamanager</artifactId>
-        <version>0.4.3</version>
+        <version>0.4.4</version>
     </parent>
 
     <repositories>
@@ -75,7 +75,7 @@
             <dependency>
                 <groupId>life.qbic</groupId>
                 <artifactId>datamanagement-core</artifactId>
-                <version>0.4.3</version>
+                <version>0.4.4</version>
                 <scope>compile</scope>
             </dependency>
         </dependencies>
