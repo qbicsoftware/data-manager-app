@@ -64,7 +64,7 @@ public class DomainEventPublisher {
    * method will return <code>false</code>.
    *
    * @return false, when there are currently domain events published to signal that the removal was
-   * not performed. If the method returns true, the publisher was not in the process of publishing
+   * not performed; true, when the publisher was not in the process of publishing
    * and all subscribers have been removed.
    * @since 1.0.0
    */

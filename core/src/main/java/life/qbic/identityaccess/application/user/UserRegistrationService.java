@@ -86,6 +86,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
+        throw new RuntimeException("Unexpected interrupt.", ignored);
       }
     }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
@@ -187,6 +188,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
+        throw new RuntimeException("Unexpected interrupt.", ignored);
       }
     }
 
@@ -278,6 +280,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
+        log.error(ignored);
       }
     }
     domainEventPublisher.subscribe(new DomainEventSubscriber<UserActivated>() {
@@ -327,8 +330,8 @@ public final class UserRegistrationService {
 
   /**
    * <p>
-   * An exception to be thrown if an user is not activated. This implies that the user cannot login
-   * into the application
+   * An exception to be thrown if a user is not activated. This implies that the user cannot log in
+   * to the application
    * </p>
    */
   public class UserNotActivatedException extends ApplicationException {
