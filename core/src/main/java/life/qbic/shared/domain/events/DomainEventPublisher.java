@@ -72,7 +72,10 @@ public class DomainEventPublisher {
     if (publishing.get()) {
       return false;
     }
-    subscribers.get().clear();
+    var listSubscribers = subscribers.get();
+    if (listSubscribers != null) {
+      listSubscribers.clear();
+    }
     return true;
   }
 }
