@@ -80,6 +80,14 @@ public final class UserRegistrationService {
     if (userDomainService.isEmpty()) {
       throw new RuntimeException("User registration failed.");
     }
+
+    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
+    while (!domainEventPublisher.clear()) {
+      try {
+        Thread.sleep(1);
+      } catch (InterruptedException ignored) {
+      }
+    }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override
       public Class<? extends DomainEvent> subscribedToEventType() {
@@ -173,7 +181,16 @@ public final class UserRegistrationService {
     if (!user.isActive()) {
       return ApplicationResponse.failureResponse(new UserNotActivatedException("User not active"));
     }
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<PasswordReset>() {
+
+    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
+    while (!domainEventPublisher.clear()) {
+      try {
+        Thread.sleep(1);
+      } catch (InterruptedException ignored) {
+      }
+    }
+
+    domainEventPublisher.subscribe(new DomainEventSubscriber<PasswordReset>() {
       @Override
       public Class<? extends DomainEvent> subscribedToEventType() {
         return PasswordReset.class;
@@ -256,7 +273,14 @@ public final class UserRegistrationService {
    * @since 1.0.0
    */
   public void confirmUserEmail(String userId) throws UserNotFoundException {
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserActivated>() {
+    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
+    while (!domainEventPublisher.clear()) {
+      try {
+        Thread.sleep(1);
+      } catch (InterruptedException ignored) {
+      }
+    }
+    domainEventPublisher.subscribe(new DomainEventSubscriber<UserActivated>() {
       @Override
       public Class<UserActivated> subscribedToEventType() {
         return UserActivated.class;
@@ -303,11 +327,12 @@ public final class UserRegistrationService {
 
   /**
    * <p>
-   * An exception to be thrown if an user is not activated.
-   * This implies that the user cannot login into the application
+   * An exception to be thrown if an user is not activated. This implies that the user cannot login
+   * into the application
    * </p>
    */
   public class UserNotActivatedException extends ApplicationException {
+
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
 
