@@ -86,7 +86,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
-        throw new RuntimeException("Unexpected interrupt.", ignored);
+        Thread.currentThread().interrupt();
       }
     }
     DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
@@ -188,7 +188,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
-        throw new RuntimeException("Unexpected interrupt.", ignored);
+        Thread.currentThread().interrupt();
       }
     }
 
@@ -280,7 +280,7 @@ public final class UserRegistrationService {
       try {
         Thread.sleep(1);
       } catch (InterruptedException ignored) {
-        log.error(ignored);
+        Thread.currentThread().interrupt();
       }
     }
     domainEventPublisher.subscribe(new DomainEventSubscriber<UserActivated>() {
