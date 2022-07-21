@@ -88,10 +88,6 @@
             <artifactId>vaadin</artifactId>
         </dependency>
         <dependency>
-            <groupId>life.qbic</groupId>
-            <artifactId>datamanagement-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot-starter</artifactId>
         </dependency>
@@ -166,10 +162,6 @@
             <scope>test</scope>
         </dependency>
       <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-mail</artifactId>
-      </dependency>
-      <dependency>
         <groupId>life.qbic</groupId>
         <artifactId>authentication</artifactId>
         <version>0.4.3</version>
@@ -184,6 +176,12 @@
         <dependency>
             <groupId>life.qbic</groupId>
             <artifactId>mariadb-connector</artifactId>
+            <version>0.4.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>life.qbic</groupId>
+            <artifactId>newsreader</artifactId>
             <version>0.4.3</version>
             <scope>compile</scope>
         </dependency>

@@ -10,7 +10,6 @@
   <version>0.4.3</version>
   <modules>
     <module>webapp</module>
-    <module>core</module>
     <module>authentication</module>
     <module>authorization</module>
     <module>broadcasting</module>
