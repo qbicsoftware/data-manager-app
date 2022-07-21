@@ -11,6 +11,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
+import life.qbic.broadcasting.MessageSubscriber;
+import life.qbic.broadcasting.MessageSubscription;
 import life.qbic.email.Email;
 import life.qbic.email.EmailService;
 import life.qbic.email.Recipient;
@@ -25,8 +27,6 @@ import life.qbic.identityaccess.domain.user.PasswordReset;
 import life.qbic.identityaccess.domain.user.UserDomainService;
 import life.qbic.identityaccess.domain.user.UserRegistered;
 import life.qbic.identityaccess.domain.user.UserRepository;
-import life.qbic.shared.application.notification.MessageBusInterface;
-import life.qbic.shared.application.notification.MessageSubscriber;
 import life.qbic.usermanagement.EmailFactory;
 import life.qbic.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.usermanagement.registration.EmailConfirmationLinkSupplier;
@@ -68,7 +68,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
-    var messageBus = appContext.getBean(MessageBusInterface.class);
+    var messageBus = appContext.getBean(MessageSubscription.class);
     messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
     messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), "PasswordReset");

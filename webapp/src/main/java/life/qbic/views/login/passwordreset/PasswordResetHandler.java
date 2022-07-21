@@ -1,12 +1,12 @@
 package life.qbic.views.login.passwordreset;
 
 import com.vaadin.flow.component.Key;
+import life.qbic.identityaccess.application.ApplicationResponse;
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetOutput;
 import life.qbic.identityaccess.application.user.UserRegistrationService;
 import life.qbic.identityaccess.domain.user.EmailAddress;
 import life.qbic.identityaccess.domain.user.UserNotFoundException;
-import life.qbic.shared.application.ApplicationResponse;
 import life.qbic.views.components.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

@@ -11,6 +11,11 @@
   <modules>
     <module>webapp</module>
     <module>core</module>
+    <module>authentication</module>
+    <module>authorization</module>
+    <module>broadcasting</module>
+    <module>newsreader</module>
+    <module>mariadb-connector</module>
   </modules>
   <packaging>pom</packaging>
 

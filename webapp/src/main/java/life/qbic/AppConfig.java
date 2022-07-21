@@ -1,22 +1,22 @@
 package life.qbic;
 
+import life.qbic.broadcasting.Exchange;
+import life.qbic.email.EmailService;
+import life.qbic.events.SimpleEventStore;
+import life.qbic.events.TemporaryEventRepository;
+import life.qbic.identityaccess.application.notification.EventStore;
+import life.qbic.identityaccess.application.notification.MessageBusSubmission;
+import life.qbic.identityaccess.application.notification.NotificationService;
+import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.application.user.NewPassword;
 import life.qbic.identityaccess.application.user.NewPasswordInput;
 import life.qbic.identityaccess.application.user.PasswordResetInput;
 import life.qbic.identityaccess.application.user.PasswordResetRequest;
-import life.qbic.shared.application.notification.EventStore;
-import life.qbic.email.EmailService;
-import life.qbic.events.SimpleEventStore;
-import life.qbic.events.TemporaryEventRepository;
-import life.qbic.shared.application.notification.MessageBusInterface;
-import life.qbic.shared.application.notification.NotificationService;
-import life.qbic.identityaccess.application.user.EmailAddressConfirmation;
 import life.qbic.identityaccess.application.user.RegisterUserInput;
 import life.qbic.identityaccess.application.user.Registration;
 import life.qbic.identityaccess.application.user.UserRegistrationService;
 import life.qbic.identityaccess.domain.user.UserDataStorage;
 import life.qbic.identityaccess.domain.user.UserRepository;
-import life.qbic.messaging.Exchange;
 import life.qbic.usermanagement.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,7 +76,7 @@ public class AppConfig {
   }
 
   @Bean
-  public NotificationService notificationService(MessageBusInterface messageBusInterface) {
+  public NotificationService notificationService(MessageBusSubmission messageBusInterface) {
     return new NotificationService(messageBusInterface);
   }
 
@@ -86,7 +86,7 @@ public class AppConfig {
   }
 
   @Bean
-  public MessageBusInterface messageBusInterface() {
+  public MessageBusSubmission messageBusInterface() {
     return Exchange.instance();
   }
 

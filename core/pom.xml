@@ -40,5 +40,11 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
+      <dependency>
+        <groupId>life.qbic</groupId>
+        <artifactId>authentication</artifactId>
+        <version>0.4.3</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
 </project>

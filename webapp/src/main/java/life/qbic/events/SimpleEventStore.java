@@ -2,8 +2,11 @@ package life.qbic.events;
 
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.shared.application.notification.EventStore;
-import life.qbic.shared.domain.events.DomainEvent;
+import life.qbic.identityaccess.application.notification.EventStore;
+import life.qbic.identityaccess.domain.events.DomainEvent;
+import life.qbic.identityaccess.domain.events.DomainEventSerializer;
+import life.qbic.identityaccess.domain.events.EventRepository;
+import life.qbic.identityaccess.domain.events.StoredEvent;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain
