@@ -1,9 +1,10 @@
 package life.qbic.identity.domain.user
 
+import life.qbic.identity.domain.user.concept.FullName
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link FullName}</b>
+ * <b>Tests for the {@link life.qbic.identity.domain.user.concept.FullName}</b>
  *
  * @since 1.0.0
  */

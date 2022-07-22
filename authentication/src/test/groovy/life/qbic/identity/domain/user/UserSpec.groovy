@@ -1,13 +1,18 @@
 package life.qbic.identity.domain.user
 
-import life.qbic.identity.domain.events.DomainEventPublisher
-import life.qbic.identity.domain.events.DomainEventSubscriber
+import life.qbic.identity.domain.event.DomainEventPublisher
+import life.qbic.identity.domain.event.DomainEventSubscriber
+import life.qbic.identity.domain.user.concept.EmailAddress
+import life.qbic.identity.domain.user.concept.EncryptedPassword
+import life.qbic.identity.domain.user.concept.FullName
+import life.qbic.identity.domain.user.concept.User
+import life.qbic.identity.domain.user.event.PasswordReset
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- * <b>Tests for the {@link User}</b>
+ * <b>Tests for the {@link life.qbic.identity.domain.user.concept.User}</b>
  *
  * @since 1.0.0
  */

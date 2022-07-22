@@ -1,9 +1,10 @@
 package life.qbic.identity.domain.user
 
+import life.qbic.identity.domain.user.concept.EncryptedPassword
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link EncryptedPassword}</b>
+ * <b>Tests for the {@link life.qbic.identity.domain.user.concept.EncryptedPassword}</b>
  *
  * @since 1.0.0
  */

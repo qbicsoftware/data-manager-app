@@ -2,7 +2,7 @@ package life.qbic.datamanager;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import com.helger.commons.base64.Base64;
+import java.util.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
@@ -13,17 +13,17 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import life.qbic.broadcasting.MessageSubscriber;
 import life.qbic.broadcasting.MessageSubscription;
-import life.qbic.identity.application.user.ConfirmEmailOutput;
-import life.qbic.identity.application.user.EmailAddressConfirmation;
-import life.qbic.identity.application.user.NewPassword;
-import life.qbic.identity.application.user.NewPasswordOutput;
-import life.qbic.identity.application.user.PasswordResetOutput;
-import life.qbic.identity.application.user.PasswordResetRequest;
+import life.qbic.identity.application.user.registration.ConfirmEmailOutput;
+import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
+import life.qbic.identity.application.user.password.NewPassword;
+import life.qbic.identity.application.user.password.NewPasswordOutput;
+import life.qbic.identity.application.user.password.PasswordResetOutput;
+import life.qbic.identity.application.user.password.PasswordResetRequest;
 import life.qbic.identity.domain.DomainRegistry;
-import life.qbic.identity.domain.user.PasswordReset;
-import life.qbic.identity.domain.user.UserDomainService;
-import life.qbic.identity.domain.user.UserRegistered;
-import life.qbic.identity.domain.user.UserRepository;
+import life.qbic.identity.domain.user.event.PasswordReset;
+import life.qbic.identity.domain.user.repository.UserDomainService;
+import life.qbic.identity.domain.user.event.UserRegistered;
+import life.qbic.identity.domain.user.repository.UserRepository;
 import life.qbic.newsreader.usermanagement.email.Email;
 import life.qbic.newsreader.usermanagement.email.EmailFactory;
 import life.qbic.newsreader.usermanagement.email.EmailService;
@@ -39,7 +39,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-
 /**
  * The entry point of the Spring Boot application.
  *
@@ -148,7 +147,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   static UserRegistered deserializeUserRegistered(String event)
       throws IOException, ClassNotFoundException {
-    byte[] content = Base64.decode(event);
+    byte[] content = Base64.getDecoder().decode(event);
     ByteArrayInputStream bais = new ByteArrayInputStream(content);
     ObjectInputStream ois = new ObjectInputStream(bais);
     return (UserRegistered) ois.readObject();
@@ -156,7 +155,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   static PasswordReset deserializePasswordReset(String event)
       throws IOException, ClassNotFoundException {
-    byte[] content = Base64.decode(event);
+    byte[] content = Base64.getDecoder().decode(event);
     ByteArrayInputStream bais = new ByteArrayInputStream(content);
     ObjectInputStream ois = new ObjectInputStream(bais);
     return (PasswordReset) ois.readObject();

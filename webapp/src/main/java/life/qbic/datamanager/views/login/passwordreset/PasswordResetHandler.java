@@ -3,11 +3,11 @@ package life.qbic.datamanager.views.login.passwordreset;
 import com.vaadin.flow.component.Key;
 import life.qbic.datamanager.views.components.ErrorMessage;
 import life.qbic.identity.application.ApplicationResponse;
-import life.qbic.identity.application.user.PasswordResetInput;
-import life.qbic.identity.application.user.PasswordResetOutput;
-import life.qbic.identity.application.user.UserRegistrationService;
-import life.qbic.identity.domain.user.EmailAddress;
-import life.qbic.identity.domain.user.UserNotFoundException;
+import life.qbic.identity.application.user.password.PasswordResetInput;
+import life.qbic.identity.application.user.password.PasswordResetOutput;
+import life.qbic.identity.application.user.registration.UserRegistrationService;
+import life.qbic.identity.domain.user.concept.EmailAddress;
+import life.qbic.identity.domain.user.repository.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,7 +1,7 @@
 package life.qbic.identity.domain;
 
 import java.util.Optional;
-import life.qbic.identity.domain.user.UserDomainService;
+import life.qbic.identity.domain.user.repository.UserDomainService;
 
 /**
  * <b>Domain Registry</b>

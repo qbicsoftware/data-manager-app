@@ -118,7 +118,7 @@
       <dependency>
           <groupId>org.spockframework</groupId>
           <artifactId>spock-core</artifactId>
-          <version>2.1-groovy-3.0</version>
+          <version>2.2-M3-groovy-4.0</version>
           <scope>test</scope>
       </dependency>
     </dependencies>
@@ -165,6 +165,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
         <configuration>
+          <useModulePath>false</useModulePath>
           <includes>
             <include>**/*Spec</include>
           </includes>

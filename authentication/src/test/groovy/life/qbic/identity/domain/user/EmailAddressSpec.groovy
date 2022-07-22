@@ -1,10 +1,10 @@
 package life.qbic.identity.domain.user
 
-
+import life.qbic.identity.domain.user.concept.EmailAddress
 import spock.lang.Specification
 
 /**
- * <b>Tests for the {@link EmailAddress}</b>
+ * <b>Tests for the {@link life.qbic.identity.domain.user.concept.EmailAddress}</b>
  *
  * @since 1.0.0
  */
