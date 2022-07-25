@@ -9,7 +9,7 @@
   <name>Data Manager</name>
   <version>0.4.3</version>
   <modules>
-    <module>webapp</module>
+    <module>vaadin-frontend</module>
     <module>authentication</module>
     <module>authorization</module>
     <module>broadcasting</module>
