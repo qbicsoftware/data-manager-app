@@ -85,7 +85,7 @@ public final class UserRegistrationService {
     while (!domainEventPublisher.clear()) {
       try {
         Thread.sleep(1);
-      } catch (InterruptedException ignored) {
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
@@ -187,7 +187,7 @@ public final class UserRegistrationService {
     while (!domainEventPublisher.clear()) {
       try {
         Thread.sleep(1);
-      } catch (InterruptedException ignored) {
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
@@ -279,7 +279,7 @@ public final class UserRegistrationService {
     while (!domainEventPublisher.clear()) {
       try {
         Thread.sleep(1);
-      } catch (InterruptedException ignored) {
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
