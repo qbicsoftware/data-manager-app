@@ -59,6 +59,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
   private static final String qbicNoReply = "no-reply@qbic.life";
+  public static final String USER_REGISTERED = "UserRegistered";
+  public static final String PASSWORD_RESET = "PasswordReset";
+  public static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
 
   public static void main(String[] args) {
     var appContext = SpringApplication.run(Application.class, args);
@@ -68,9 +71,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
     var messageBus = appContext.getBean(MessageSubscription.class);
-    messageBus.subscribe(whenUserRegisteredSendEmail(appContext), "UserRegistered");
-    messageBus.subscribe(whenUserRegisteredLogUserInfo(), "UserRegistered");
-    messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), "PasswordReset");
+    messageBus.subscribe(whenUserRegisteredSendEmail(appContext), USER_REGISTERED);
+    messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
+    messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
     setupUseCases(appContext);
   }
@@ -92,7 +95,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
   private static MessageSubscriber whenUserRegisteredSendEmail(
       ConfigurableApplicationContext appContext) {
     return (message, messageParams) -> {
-      if (!messageParams.messageType.equals("UserRegistered")) {
+      if (!messageParams.messageType.equals(USER_REGISTERED)) {
         return;
       }
       try {
@@ -101,7 +104,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
             .emailConfirmationUrl(userRegistered.userId());
         EmailService registrationEmailSender = appContext.getBean(
             EmailService.class);
-        Email registrationMail = EmailFactory.registrationEmail("no-reply@qbic.life",
+        Email registrationMail = EmailFactory.registrationEmail(NO_REPLY_QBIC_LIFE,
             new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
             , emailConfirmationUrl);
         registrationEmailSender.send(registrationMail);
@@ -114,7 +117,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
   private static MessageSubscriber whenPasswordResetRequestSendEmail(
       ConfigurableApplicationContext appContext) {
     return (message, messageParams) -> {
-      if (!messageParams.messageType.equals("PasswordReset")) {
+      if (!messageParams.messageType.equals(PASSWORD_RESET)) {
         return;
       }
       try {
