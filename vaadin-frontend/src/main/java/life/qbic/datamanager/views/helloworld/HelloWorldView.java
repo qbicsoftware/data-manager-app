@@ -7,6 +7,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.User;
@@ -19,12 +20,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class HelloWorldView extends VerticalLayout {
 
+  @Serial
+  private static final long serialVersionUID = 4170996960459734911L;
   private final TextField name;
   private final Button sayHello;
 
   private final H1 personalWelcomeMessage;
 
-  private final SecurityService securityService;
+  private final transient SecurityService securityService;
 
   public HelloWorldView(@Autowired SecurityService securityService) {
     this.securityService = securityService;
