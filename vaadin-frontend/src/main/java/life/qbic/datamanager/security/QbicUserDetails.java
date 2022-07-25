@@ -1,5 +1,6 @@
 package life.qbic.datamanager.security;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.authentication.domain.user.concept.User;
@@ -20,7 +21,9 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class QbicUserDetails implements UserDetails {
 
-  private User user;
+  @Serial
+  private static final long serialVersionUID = 5812210012669790933L;
+  private final transient User user;
 
   /**
    * Constructor to use and embed a {@link User} entity.
