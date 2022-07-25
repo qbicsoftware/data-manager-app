@@ -18,7 +18,9 @@ import life.qbic.authentication.application.user.registration.UserRegistrationSe
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.newsreader.usermanagement.email.EmailSubmissionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -30,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
+@ComponentScan({"life.qbic.authentication.persistence"})
 public class AppConfig {
 
   /**

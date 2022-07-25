@@ -28,6 +28,8 @@ open module life.qbic.vaadinfrontend {
   requires spring.web;
   requires org.apache.tomcat.embed.core;
   requires spring.data.commons;
+  requires life.qbic.mariadbconnector;
+  requires spring.data.jpa;
 
   exports life.qbic.datamanager;
 

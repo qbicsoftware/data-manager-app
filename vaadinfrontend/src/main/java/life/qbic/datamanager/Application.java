@@ -35,10 +35,15 @@ import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
 /**
  * The entry point of the Spring Boot application.
  *
@@ -52,6 +57,10 @@ import org.springframework.context.ConfigurableApplicationContext;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
+@ComponentScan({"life.qbic.authentication.persistence"})
+@ComponentScan({"life.qbic"})
+@EnableJpaRepositories(basePackages = "life.qbic")
+@EntityScan(basePackages = "life.qbic")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
   private static final Logger log = getLogger(Application.class);
