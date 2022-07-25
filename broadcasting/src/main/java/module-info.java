@@ -1,4 +1,4 @@
-module broadcasting {
-  requires life.qbic.authentication;
+module life.qbic.broadcasting {
+
   exports life.qbic.broadcasting;
 }

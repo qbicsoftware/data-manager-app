@@ -18,13 +18,13 @@ module webapp {
   requires flow.html.components;
   requires vaadin.text.field.flow;
   requires java.annotation;
-  requires broadcasting;
   requires newsreader;
   requires vaadin.notification.flow;
   requires vaadin.icons.flow;
   requires vaadin.login.flow;
   requires org.apache.commons.lang3;
   requires org.apache.tomcat.embed.core;
+  requires life.qbic.broadcasting;
 
   exports life.qbic.datamanager;
 }

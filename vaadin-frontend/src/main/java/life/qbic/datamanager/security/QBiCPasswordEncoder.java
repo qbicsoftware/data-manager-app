@@ -1,6 +1,6 @@
 package life.qbic.datamanager.security;
 
-import life.qbic.identity.domain.user.policy.PasswordEncryptionPolicy;
+import life.qbic.authentication.domain.user.policy.PasswordEncryptionPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**

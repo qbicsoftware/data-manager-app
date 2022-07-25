@@ -2,7 +2,7 @@ package life.qbic.datamanager.security;
 
 import java.util.Collection;
 import java.util.List;
-import life.qbic.identity.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

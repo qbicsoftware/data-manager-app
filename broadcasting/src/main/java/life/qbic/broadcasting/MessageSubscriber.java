@@ -1,7 +1,5 @@
 package life.qbic.broadcasting;
 
-import life.qbic.identity.application.notification.MessageParameters;
-
 /**
  * Interface for notification subscribers. This interface needs to be implemented, when a client
  * wants to subscribe to certain event types.

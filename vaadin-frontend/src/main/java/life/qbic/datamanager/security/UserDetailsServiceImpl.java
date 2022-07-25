@@ -2,10 +2,10 @@ package life.qbic.datamanager.security;
 
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.identity.domain.user.concept.EmailAddress;
-import life.qbic.identity.domain.user.concept.EmailAddress.EmailValidationException;
-import life.qbic.identity.domain.user.concept.User;
-import life.qbic.identity.domain.user.repository.UserRepository;
+import life.qbic.authentication.domain.user.concept.EmailAddress;
+import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
+import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

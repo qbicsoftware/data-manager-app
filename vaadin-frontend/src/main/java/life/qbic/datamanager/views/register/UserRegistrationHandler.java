@@ -5,9 +5,9 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.QueryParameters;
 import java.util.Map;
 import life.qbic.datamanager.views.components.ErrorMessage;
-import life.qbic.identity.application.user.registration.RegisterUserInput;
-import life.qbic.identity.application.user.registration.RegisterUserOutput;
-import life.qbic.identity.application.user.registration.UserRegistrationException;
+import life.qbic.authentication.application.user.registration.RegisterUserInput;
+import life.qbic.authentication.application.user.registration.RegisterUserOutput;
+import life.qbic.authentication.application.user.registration.UserRegistrationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
