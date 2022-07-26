@@ -1,7 +1,7 @@
 package life.qbic.authentication.application.user.password;
 
 import java.util.Objects;
-import life.qbic.authentication.application.ApplicationResponse;
+import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 
 /**

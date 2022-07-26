@@ -1,4 +1,4 @@
-package life.qbic.authentication.application;
+package life.qbic.application.commons;
 
 import java.util.Arrays;
 import java.util.List;

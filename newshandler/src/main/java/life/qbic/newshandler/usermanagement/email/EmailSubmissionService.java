@@ -1,5 +1,6 @@
 package life.qbic.newshandler.usermanagement.email;
 
+import java.io.Serial;
 import java.util.Properties;
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -10,6 +11,8 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationResponse;
 import org.springframework.beans.factory.annotation.Value;
 
 /**

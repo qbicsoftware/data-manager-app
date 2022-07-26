@@ -1,8 +1,9 @@
 package life.qbic.datamanager.views.login.passwordreset;
 
 import com.vaadin.flow.component.Key;
+
+import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.datamanager.views.components.ErrorMessage;
-import life.qbic.authentication.application.ApplicationResponse;
 import life.qbic.authentication.application.user.password.PasswordResetInput;
 import life.qbic.authentication.application.user.password.PasswordResetOutput;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;

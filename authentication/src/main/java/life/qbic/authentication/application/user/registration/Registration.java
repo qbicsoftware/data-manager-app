@@ -1,6 +1,6 @@
 package life.qbic.authentication.application.user.registration;
 
-import life.qbic.authentication.application.ApplicationResponse;
+import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.authentication.application.user.registration.UserRegistrationService.UserExistsException;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;

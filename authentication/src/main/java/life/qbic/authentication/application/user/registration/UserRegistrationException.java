@@ -2,7 +2,7 @@ package life.qbic.authentication.application.user.registration;
 
 import java.io.Serial;
 import java.util.Optional;
-import life.qbic.authentication.application.ApplicationException;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.application.user.registration.UserRegistrationService.UserExistsException;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;

@@ -6,4 +6,5 @@ open module life.qbic.authentication {
   requires org.junit.platform.engine;
   requires org.spockframework.core;
   requires life.qbic.broadcasting;
+  requires life.qbic.commons;
 }

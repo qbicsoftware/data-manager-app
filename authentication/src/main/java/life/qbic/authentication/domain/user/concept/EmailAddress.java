@@ -3,7 +3,7 @@ package life.qbic.authentication.domain.user.concept;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.authentication.application.ApplicationException;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.domain.policy.PolicyCheckReport;
 import life.qbic.authentication.domain.policy.PolicyStatus;
 import life.qbic.authentication.domain.user.policy.EmailFormatPolicy;

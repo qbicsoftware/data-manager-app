@@ -1,6 +1,7 @@
 package life.qbic.authentication.application.user.password;
 
-import life.qbic.authentication.application.ApplicationResponse;
+
+import life.qbic.application.commons.ApplicationResponse;
 
 /**
  * <b>Password Reset Use Case Output</b>

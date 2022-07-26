@@ -9,8 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>life.qbic.application</groupId>
-  <artifactId>commons</artifactId>
+  <artifactId>application-commons</artifactId>
 
   <properties>
     <maven.compiler.source>17</maven.compiler.source>

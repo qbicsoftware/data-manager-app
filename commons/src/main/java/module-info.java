@@ -1,2 +1,3 @@
-module $MODULE_NAME$ {
+module life.qbic.commons {
+  exports life.qbic.application.commons;
 }

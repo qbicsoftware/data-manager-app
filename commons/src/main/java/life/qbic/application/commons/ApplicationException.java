@@ -1,4 +1,4 @@
-package life.qbic.authentication.application;
+package life.qbic.application.commons;
 
 /**
  * <b><class short description - 1 Line!></b>

@@ -30,6 +30,7 @@ open module life.qbic.vaadinfrontend {
   requires spring.data.commons;
   requires life.qbic.mariadbconnector;
   requires spring.data.jpa;
+  requires life.qbic.commons;
 
   exports life.qbic.datamanager;
 

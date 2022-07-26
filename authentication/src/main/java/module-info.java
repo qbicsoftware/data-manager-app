@@ -2,6 +2,7 @@ module life.qbic.authentication {
   requires org.slf4j;
   requires java.persistence;
   requires life.qbic.broadcasting;
+  requires life.qbic.commons;
 
   exports life.qbic.authentication.domain.user.concept;
   exports life.qbic.authentication.application;
@@ -22,6 +23,7 @@ module life.qbic.authentication {
   requires spring.data.jpa;
   // We need that to have persistence support with the default Hibernate usage
   requires org.hibernate.orm.core;
+
 
   opens life.qbic.authentication.domain.user.concept;
 
