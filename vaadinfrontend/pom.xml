@@ -9,10 +9,6 @@
     <version>0.4.3</version>
     <packaging>jar</packaging>
 
-    <properties>
-        <vaadin.version>23.0.1</vaadin.version>
-    </properties>
-
     <parent>
         <groupId>life.qbic</groupId>
         <artifactId>datamanager</artifactId>
