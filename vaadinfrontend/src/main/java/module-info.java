@@ -1,5 +1,5 @@
 open module life.qbic.vaadinfrontend {
-  requires newsreader;
+  requires life.qbic.newshandler;
   requires spring.boot.autoconfigure;
   requires spring.boot;
   requires spring.context;

@@ -13,7 +13,7 @@
     <module>authentication</module>
     <module>authorization</module>
     <module>broadcasting</module>
-    <module>newsreader</module>
+    <module>newshandler</module>
     <module>mariadb-connector</module>
   </modules>
   <packaging>pom</packaging>

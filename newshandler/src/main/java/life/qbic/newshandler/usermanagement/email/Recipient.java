@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.email;
+package life.qbic.newshandler.usermanagement.email;
 
 /**
  * A recipient of an email. Provides an email address and a full name.

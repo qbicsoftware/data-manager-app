@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.email;
+package life.qbic.newshandler.usermanagement.email;
 
 import java.util.Properties;
 import javax.mail.Authenticator;

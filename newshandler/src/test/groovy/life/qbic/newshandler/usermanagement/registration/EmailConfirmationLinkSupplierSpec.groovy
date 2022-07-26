@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.registration
+package life.qbic.newshandler.usermanagement.registration
 
 
 import spock.lang.Specification

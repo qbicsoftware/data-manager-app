@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.registration;
+package life.qbic.newshandler.usermanagement.registration;
 
 import java.net.MalformedURLException;
 import java.net.URL;

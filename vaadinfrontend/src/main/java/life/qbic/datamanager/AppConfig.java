@@ -1,7 +1,7 @@
 package life.qbic.datamanager;
 
 import life.qbic.broadcasting.Exchange;
-import life.qbic.newsreader.usermanagement.email.EmailService;
+import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.authentication.domain.event.SimpleEventStore;
 import life.qbic.authentication.domain.event.TemporaryEventRepository;
 import life.qbic.authentication.domain.user.event.EventStore;
@@ -17,8 +17,7 @@ import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.newsreader.usermanagement.email.EmailSubmissionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.passwordreset;
+package life.qbic.newshandler.usermanagement.passwordreset;
 
 import java.net.MalformedURLException;
 import java.net.URL;

@@ -1,4 +1,4 @@
-package life.qbic.newsreader.usermanagement.email;
+package life.qbic.newshandler.usermanagement.email;
 
 /**
  * A simple representation of an Email
