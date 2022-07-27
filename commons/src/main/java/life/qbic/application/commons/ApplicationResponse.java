@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  */
 public class ApplicationResponse {
 
-  private enum Type {SUCCESSFUL, FAILED}
+  public enum Type {SUCCESSFUL, FAILED}
 
   private ApplicationResponse.Type type;
 
