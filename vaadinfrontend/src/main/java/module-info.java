@@ -3,7 +3,6 @@ open module life.qbic.vaadinfrontend {
   requires spring.boot.autoconfigure;
   requires spring.boot;
   requires spring.context;
-  requires org.slf4j;
   requires life.qbic.authentication;
   requires flow.server;
   requires life.qbic.broadcasting;
@@ -23,7 +22,6 @@ open module life.qbic.vaadinfrontend {
   requires vaadin.notification.flow;
   requires vaadin.login.flow;
   requires org.apache.commons.lang3;
-  requires org.apache.logging.log4j;
   requires spring.core;
   requires spring.web;
   requires org.apache.tomcat.embed.core;
@@ -31,6 +29,7 @@ open module life.qbic.vaadinfrontend {
   requires life.qbic.mariadbconnector;
   requires spring.data.jpa;
   requires life.qbic.commons;
+  requires life.qbic.logging;
 
   exports life.qbic.datamanager;
 

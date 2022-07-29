@@ -1,5 +1,4 @@
 module life.qbic.authentication {
-  requires org.slf4j;
   requires java.persistence;
   requires life.qbic.broadcasting;
   requires life.qbic.commons;

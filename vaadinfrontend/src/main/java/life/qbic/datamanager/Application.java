@@ -1,7 +1,5 @@
 package life.qbic.datamanager;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 import java.util.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
@@ -24,6 +22,8 @@ import life.qbic.authentication.domain.user.event.PasswordReset;
 import life.qbic.authentication.domain.user.repository.UserDomainService;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.newshandler.usermanagement.email.Email;
 import life.qbic.newshandler.usermanagement.email.EmailFactory;
 import life.qbic.newshandler.usermanagement.email.EmailService;
@@ -33,7 +33,6 @@ import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSu
 import life.qbic.datamanager.views.login.LoginHandler;
 import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
-import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -62,7 +61,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackages = "life.qbic")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
-  private static final Logger log = getLogger(Application.class);
+  private static final Logger logger = LoggerFactory.logger(Application.class);
 
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
@@ -71,6 +70,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
   public static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
 
   public static void main(String[] args) {
+    logger.info("Starting data manager app...");
     var appContext = SpringApplication.run(Application.class, args);
 
     // We need to set up the domain registry and register important services:
@@ -148,9 +148,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
     return (message, messageParams) -> {
       try {
         UserRegistered userRegistered = deserializeUserRegistered(message);
-        log.info(String.valueOf(userRegistered));
+        logger.info(String.valueOf(userRegistered));
       } catch (IOException | ClassNotFoundException e) {
-        log.error(e.getMessage(), e);
+        logger.error(e.getMessage(), e);
       }
     };
   }

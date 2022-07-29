@@ -67,12 +67,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>life.qbic</groupId>
-                <artifactId>datamanagement-core</artifactId>
-                <version>0.4.3</version>
-                <scope>compile</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -194,6 +188,24 @@
             <version>0.4.3</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>life.qbic</groupId>
+            <artifactId>logging</artifactId>
+            <version>0.4.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.11</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
