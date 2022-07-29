@@ -24,7 +24,7 @@ public class UserRegistrationHandler
     implements UserRegistrationHandlerInterface, RegisterUserOutput {
 
   private static final Logger log =
-     LoggerFactory.logger(UserRegistrationHandler.class);
+     LoggerFactory.logger(UserRegistrationHandler.class.getName());
   private UserRegistrationLayout userRegistrationLayout;
   private final RegisterUserInput registrationUseCase;
 

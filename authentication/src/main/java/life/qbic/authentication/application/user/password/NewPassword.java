@@ -3,6 +3,8 @@ package life.qbic.authentication.application.user.password;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 
 /**
  * <b>New password use case</b>
@@ -13,7 +15,7 @@ import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordVa
  */
 public class NewPassword implements NewPasswordInput {
 
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(NewPassword.class);
+  private static final Logger log = LoggerFactory.logger(NewPassword.class.getName());
   private final UserRegistrationService userRegistrationService;
   private NewPasswordOutput useCaseOutput;
 

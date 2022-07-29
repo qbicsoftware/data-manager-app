@@ -2,6 +2,7 @@ module life.qbic.authentication {
   requires java.persistence;
   requires life.qbic.broadcasting;
   requires life.qbic.commons;
+  requires life.qbic.logging;
 
   exports life.qbic.authentication.domain.user.concept;
   exports life.qbic.authentication.application;

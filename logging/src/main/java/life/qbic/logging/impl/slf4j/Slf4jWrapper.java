@@ -14,8 +14,8 @@ public class Slf4jWrapper {
 
   private final Logger logger;
 
-  public static Slf4jWrapper create(Class<?> clazz) {
-    return new Slf4jWrapper(LoggerFactory.getLogger(clazz));
+  public static Slf4jWrapper create(String name) {
+    return new Slf4jWrapper(LoggerFactory.getLogger(name));
   }
 
   private Slf4jWrapper(Logger logger) {

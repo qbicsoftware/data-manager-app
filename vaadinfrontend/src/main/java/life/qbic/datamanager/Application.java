@@ -61,7 +61,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackages = "life.qbic")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
-  private static final Logger logger = LoggerFactory.logger(Application.class);
+  private static final Logger logger = LoggerFactory.logger(Application.class.getName());
 
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;

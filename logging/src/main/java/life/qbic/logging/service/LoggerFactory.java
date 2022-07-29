@@ -16,6 +16,10 @@ public class LoggerFactory {
 
   private static final Publisher publisher = PublisherFactory.createSimplePublisher();
 
+  public static Logger logger(String name) {
+    return LoggerFacade.from(name, publisher);
+  }
+
   public static Logger logger(Class<?> clazz) {
     return LoggerFacade.from(clazz, publisher);
   }

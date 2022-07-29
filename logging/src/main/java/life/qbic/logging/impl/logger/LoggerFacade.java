@@ -20,13 +20,18 @@ public class LoggerFacade implements Logger {
 
   private final Publisher publisher;
 
-  public static LoggerFacade from(Class<?> clazz, Publisher publisher) {
+  public static LoggerFacade from(String name, Publisher publisher) {
     Objects.requireNonNull(publisher);
-    return new LoggerFacade(clazz, publisher);
+    return new LoggerFacade(name, publisher);
   }
 
-  private LoggerFacade(Class<?> clazz, Publisher publisher) {
-    this.slf4jWrapper = Slf4jWrapper.create(clazz);
+  public static LoggerFacade from(Class<?> clazz, Publisher publisher) {
+    Objects.requireNonNull(publisher);
+    return from(clazz.getName(), publisher);
+  }
+
+  private LoggerFacade(String name, Publisher publisher) {
+    this.slf4jWrapper = Slf4jWrapper.create(name);
     this.publisher = publisher;
   }
 

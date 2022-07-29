@@ -5,6 +5,8 @@ import life.qbic.authentication.application.user.registration.UserRegistrationSe
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
 import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 
 /**
  * <b>User Registration use case</b>
@@ -18,7 +20,7 @@ import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationE
  */
 public class Registration implements RegisterUserInput {
 
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Registration.class);
+  private static final Logger log = LoggerFactory.logger(Registration.class.getName());
 
   private RegisterUserOutput registerUserOutput;
 
