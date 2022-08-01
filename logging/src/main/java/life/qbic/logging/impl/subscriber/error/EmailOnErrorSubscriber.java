@@ -1,14 +1,12 @@
-package life.qbic.logging.impl.subscriber;
+package life.qbic.logging.impl.subscriber.error;
 
 import life.qbic.logging.api.LogMessage;
 import life.qbic.logging.api.Subscriber;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Example email on error {@link Subscriber} implementation.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailOnErrorSubscriber implements Subscriber {
 

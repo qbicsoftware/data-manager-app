@@ -1,42 +1,119 @@
 package life.qbic.logging.impl.publisher;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import life.qbic.logging.api.LogMessage;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.api.Subscriber;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Basic implementation of the {@link Publisher} interface.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class SimplePublisher implements Publisher {
 
-  private final Set<Subscriber> subscribers;
+  private static final int DEFAULT_MESSAGE_CAPACITY = 100;
+
+  private final Collection<Subscriber> subscribers;
+
+  private final Queue<LogMessage> logMessages;
 
   public SimplePublisher() {
-    subscribers = new HashSet<>();
+    subscribers = Collections.synchronizedCollection(new HashSet<>());
+    logMessages = new ArrayBlockingQueue<>(DEFAULT_MESSAGE_CAPACITY);
+    Broadcasting broadcasting = new Broadcasting(subscribers, this);
+    broadcasting.start();
   }
 
   @Override
   public void subscribe(Subscriber s) {
     Objects.requireNonNull(s, "Subscriber must not be null");
-    subscribers.add(s);
+    synchronized (subscribers) {
+      subscribers.add(s);
+    }
   }
 
   @Override
   public void unsubscribe(Subscriber s) {
     Objects.requireNonNull(s, "Subscriber must not be null");
-    subscribers.remove(s);
+    synchronized (subscribers) {
+      subscribers.remove(s);
+    }
   }
 
   @Override
-  public void publish(LogMessage logMessage) {
+  public synchronized void publish(LogMessage logMessage) {
     Objects.requireNonNull(logMessage, "LogMessage must not be null");
-    subscribers.forEach((s) -> s.onNewMessage(logMessage));
+    logMessages.add(logMessage);
+    notifyAll();
   }
+
+  protected synchronized LogMessage nextLogMessage() {
+    while (logMessages.isEmpty()) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    var logMessage = logMessages.remove();
+    notifyAll();
+    return logMessage;
+  }
+
+  /**
+   * Helper class for broadcasting the actual log messages in an own thread to ensure a non-blocking
+   * message publication on the client side.
+   *
+   * @since 1.0.0
+   */
+  static class Broadcasting extends Thread {
+
+    private final Collection<Subscriber> subscribers;
+    private final SimplePublisher publisher;
+
+    Broadcasting(Collection<Subscriber> subscribers, SimplePublisher publisher) {
+      this.subscribers = subscribers;
+      this.publisher = publisher;
+    }
+
+    @Override
+    public void run() {
+      while (true) {
+        if (Thread.currentThread().isInterrupted()) {
+          cleanup();
+          return;
+        }
+        try {
+          handleBroadcasting();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+
+    private void cleanup() {
+      //Potential clean up tasks
+    }
+
+    private void handleBroadcasting() throws InterruptedException {
+      var logMessage = publisher.nextLogMessage();
+      if (Objects.isNull(logMessage)) {
+        return;
+      }
+      submit(logMessage);
+    }
+
+    private void submit(LogMessage logMessage) {
+      synchronized (subscribers) {
+        subscribers.forEach(s -> s.onNewMessage(logMessage));
+      }
+    }
+  }
+
 }

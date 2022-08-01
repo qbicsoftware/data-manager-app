@@ -1,7 +1,15 @@
 package life.qbic.logging.api;
 
+/**
+ * Enum class representing different logging levels.
+ *
+ * @since 1.0.0
+ */
 public enum LogLevel {
 
-  INFO, WARNING, ERROR
+  DEBUG,
+  ERROR,
+  INFO,
+  WARNING
 
 }

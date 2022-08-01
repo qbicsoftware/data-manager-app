@@ -8,11 +8,20 @@ import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Simple implementation of the {@link Logger} interface.
+ * <p>
+ * This class serves as log event hook and splits the logging data flow into two new paths:
+ * <p>
+ * 1. The original logging intention, delegating the logging to an underlying Slf4j API call
+ * <p>
+ * 2. Publishing the log event to a publisher implementation that enables to account for event
+ * specific business actions, for example sending an email to the developer mailing list when an
+ * error is reported.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * The {@link LoggerFacade} does not contain any business logic, other than informing the publisher
+ * and the logging implementation wrapper instance.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class LoggerFacade implements Logger {
 

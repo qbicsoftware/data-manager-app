@@ -5,6 +5,8 @@ import life.qbic.logging.api.LogMessage
 import life.qbic.logging.api.Subscriber
 import spock.lang.Specification
 
+import java.nio.charset.Charset
+
 /**
  * <b><class short description - 1 Line!></b>
  *
@@ -23,7 +25,7 @@ class SimplePublisherSpec extends Specification {
         def subscriberOne = new Subscriber() {
             @Override
             void onNewMessage(LogMessage logMessage) {
-                println logMessage.message()
+                byteStream.write(logMessage.message().getBytes(Charset.defaultCharset()))
             }
         }
         publisher.subscribe(subscriberOne)
@@ -39,6 +41,10 @@ class SimplePublisherSpec extends Specification {
 
         when:
         publisher.publish(new LogMessage("SpockTest", LogLevel.INFO, "message", null))
+        // Because the submission works concurrently in an own thread,
+        // we need to anticipate a small delay until the
+        // subscribers write to the output stream
+        Thread.sleep(1000)
 
         then:
         byteStream.toString().count("message") == 2

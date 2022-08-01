@@ -1,10 +1,17 @@
 package life.qbic.logging.api;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Simple logging message record that holds basic information like:
+ * <ul>
+ *   <li>application</li>
+ *   <li>log level</li>
+ *   <li>message</li>
+ *   <li>throwable</li>
+ * </ul>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-public record LogMessage(String application, LogLevel logLevel, String message, Throwable throwable) {}
+public record LogMessage(String application, LogLevel logLevel, String message,
+                         Throwable throwable) {
+
+}

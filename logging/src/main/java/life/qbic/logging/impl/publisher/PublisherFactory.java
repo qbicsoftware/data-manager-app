@@ -1,17 +1,21 @@
 package life.qbic.logging.impl.publisher;
 
-import java.util.Objects;
 import life.qbic.logging.api.Publisher;
-import life.qbic.logging.impl.subscriber.EmailOnErrorSubscriber;
+import life.qbic.logging.impl.subscriber.error.EmailOnErrorSubscriber;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Factory for creating logging publishers providing the {@link Publisher} interface.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class PublisherFactory {
+
+  /**
+   * Creates a simple publisher that includes a {@link EmailOnErrorSubscriber} subscription.
+   *
+   * @return an instance of type {@link Publisher}
+   * @since 1.0.0
+   */
   public static Publisher createSimplePublisher() {
     var publisher = new SimplePublisher();
     var emailOnErrorSubscriber = new EmailOnErrorSubscriber();
