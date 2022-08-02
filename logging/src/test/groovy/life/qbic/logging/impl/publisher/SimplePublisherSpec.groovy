@@ -7,13 +7,6 @@ import spock.lang.Specification
 
 import java.nio.charset.Charset
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
- */
 class SimplePublisherSpec extends Specification {
 
     def "The publisher informs all subscriber about new incoming log messages"() {

@@ -2,13 +2,6 @@ package life.qbic.logging.impl.slf4j
 
 import spock.lang.Specification
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
- */
 class Slf4jWrapperSpec extends Specification {
 
     def "logging on info level is redirected to the slf4j api and its binder"() {
