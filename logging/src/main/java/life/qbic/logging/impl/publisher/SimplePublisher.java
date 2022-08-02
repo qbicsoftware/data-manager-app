@@ -63,7 +63,7 @@ class SimplePublisher implements Publisher {
         Thread.currentThread().interrupt();
       }
     }
-    return logMessages.remove();
+    return logMessages.poll();
   }
 
   /**

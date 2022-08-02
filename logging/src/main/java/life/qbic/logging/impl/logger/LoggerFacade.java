@@ -60,8 +60,8 @@ public class LoggerFacade implements Logger {
     return create(logLevel, message, null);
   }
 
-  private LogMessage create(LogLevel logLevel, String message, Throwable t) {
-    return new LogMessage(slf4jWrapper.name(), logLevel, message, t);
+  private LogMessage create(LogLevel logLevel, String message, Throwable cause) {
+    return new LogMessage(slf4jWrapper.name(), logLevel, message, cause);
   }
 
   @Override
