@@ -30,7 +30,6 @@ open module life.qbic.vaadinfrontend {
   requires spring.data.jpa;
   requires life.qbic.commons;
   requires life.qbic.logging;
-  requires jakarta.activation;
 
   exports life.qbic.datamanager;
 
