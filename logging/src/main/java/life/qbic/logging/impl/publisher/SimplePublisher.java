@@ -1,9 +1,11 @@
 package life.qbic.logging.impl.publisher;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import life.qbic.logging.api.LogMessage;
@@ -32,7 +34,7 @@ class SimplePublisher implements Publisher {
 
   @Override
   public void subscribe(Subscriber s) {
-    Objects.requireNonNull(s, "Subscriber must not be null");
+    requireNonNull(s, "Subscriber must not be null");
     synchronized (subscribers) {
       subscribers.add(s);
     }
@@ -40,7 +42,7 @@ class SimplePublisher implements Publisher {
 
   @Override
   public void unsubscribe(Subscriber s) {
-    Objects.requireNonNull(s, "Subscriber must not be null");
+    requireNonNull(s, "Subscriber must not be null");
     synchronized (subscribers) {
       subscribers.remove(s);
     }
@@ -48,7 +50,7 @@ class SimplePublisher implements Publisher {
 
   @Override
   public synchronized void publish(LogMessage logMessage) {
-    Objects.requireNonNull(logMessage, "LogMessage must not be null");
+    requireNonNull(logMessage, "LogMessage must not be null");
     logMessages.add(logMessage);
     notifyAll();
   }
@@ -61,9 +63,7 @@ class SimplePublisher implements Publisher {
         Thread.currentThread().interrupt();
       }
     }
-    var logMessage = logMessages.remove();
-    notifyAll();
-    return logMessage;
+    return logMessages.remove();
   }
 
   /**
@@ -85,7 +85,7 @@ class SimplePublisher implements Publisher {
     @Override
     public void run() {
       while (true) {
-        if (Thread.currentThread().isInterrupted()) {
+        if (Thread.interrupted()) {
           cleanup();
           return;
         }
@@ -103,7 +103,7 @@ class SimplePublisher implements Publisher {
 
     private void handleBroadcasting() throws InterruptedException {
       var logMessage = publisher.nextLogMessage();
-      if (Objects.isNull(logMessage)) {
+      if (isNull(logMessage)) {
         return;
       }
       submit(logMessage);
