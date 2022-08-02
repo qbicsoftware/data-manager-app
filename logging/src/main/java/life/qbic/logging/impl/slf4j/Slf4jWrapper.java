@@ -29,8 +29,6 @@ public class Slf4jWrapper {
     logger.debug(message);
   }
 
-  ;
-
   public void error(String message) {
     logger.error(message);
   }

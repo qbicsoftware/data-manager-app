@@ -13,7 +13,7 @@ import spock.lang.Specification
  */
 class LoggerFacadeSpec extends Specification {
 
-    def "On info message, publish the log message and call the logger binding"() {
+    def "When an info message is logged, all subscribers are notified and the message is contained in the log"() {
         given:
         def publisher = Mock(Publisher.class)
 
@@ -33,7 +33,7 @@ class LoggerFacadeSpec extends Specification {
 
     }
 
-    def "On error message, publish the log message and call the logger binding"() {
+    def "When an error message is logged, all subscribers are notified and the message is contained in the log"()```
         given:
         def publisher = Mock(Publisher.class)
 
@@ -53,7 +53,8 @@ class LoggerFacadeSpec extends Specification {
 
     }
 
-    def "On debug message, publish the log message and call the logger binding"() {
+    def "When a debug message is logged, all subscribers are notified and the message is contained in the log"() {
+    ```
         given:
         def publisher = Mock(Publisher.class)
 
