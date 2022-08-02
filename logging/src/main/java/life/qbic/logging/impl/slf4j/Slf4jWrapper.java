@@ -46,4 +46,12 @@ public class Slf4jWrapper {
   public String name() {
     return this.logger.getName();
   }
+
+  public void debug(String message, Throwable cause) {
+    logger.debug(message, cause);
+  }
+
+  public void warn(String message) {
+    logger.warn(message);
+  }
 }

@@ -56,6 +56,12 @@ public class LoggerFacade implements Logger {
   }
 
   @Override
+  public void debug(String message, Throwable cause) {
+    publish(create(LogLevel.DEBUG, message, cause));
+    logDebug(message, cause);
+  }
+
+  @Override
   public void error(String message) {
     publish(create(LogLevel.ERROR, message));
     logError(message);
@@ -80,9 +86,23 @@ public class LoggerFacade implements Logger {
     logInfo(message);
   }
 
+  @Override
+  public void warn(String message) {
+    publish(create(LogLevel.WARNING, message));
+    logWarn(message);
+  }
+
+  private void logWarn(String message) {
+    slf4jWrapper.warn(message);
+  }
+
 
   private void logDebug(String message) {
     slf4jWrapper.debug(message);
+  }
+
+  private void logDebug(String message, Throwable cause) {
+    slf4jWrapper.debug(message, cause);
   }
 
   private void logError(String message) {

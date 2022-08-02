@@ -17,6 +17,15 @@ public interface Logger {
   void debug(String message);
 
   /**
+   * Logs a message on DEBUG level
+   *
+   * @param message the message content
+   * @param cause   the cause of the finding to report
+   * @since 1.0.0
+   */
+  void debug(String message, Throwable cause);
+
+  /**
    * Logs a message on ERROR level
    *
    * @param message the message content
@@ -40,5 +49,13 @@ public interface Logger {
    * @since 1.0.0
    */
   void info(String message);
+
+  /**
+   * Logs a message on WARNING level
+   *
+   * @param message the message content
+   * @since 1.0.0
+   */
+  void warn(String message);
 
 }
