@@ -17,7 +17,7 @@ import life.qbic.logging.impl.slf4j.Slf4jWrapper;
  * 2. Publishing the log event to a publisher implementation that enables to account for event
  * specific business actions, for example sending an email to the developer mailing list when an
  * error is reported.
- *
+ * <p>
  * The {@link LoggerFacade} does not contain any business logic, other than informing the publisher
  * and the logging implementation wrapper instance.
  *
@@ -36,11 +36,16 @@ public class LoggerFacade implements Logger {
 
   public static LoggerFacade from(Class<?> clazz, Publisher publisher) {
     Objects.requireNonNull(publisher);
-    return from(clazz.getName(), publisher);
+    return new LoggerFacade(clazz, publisher);
   }
 
   private LoggerFacade(String name, Publisher publisher) {
     this.slf4jWrapper = Slf4jWrapper.create(name);
+    this.publisher = publisher;
+  }
+
+  public LoggerFacade(Class<?> clazz, Publisher publisher) {
+    this.slf4jWrapper = Slf4jWrapper.create(clazz);
     this.publisher = publisher;
   }
 
