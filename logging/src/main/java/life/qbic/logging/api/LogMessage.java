@@ -6,12 +6,12 @@ package life.qbic.logging.api;
  *   <li>application</li>
  *   <li>log level</li>
  *   <li>message</li>
- *   <li>throwable</li>
+ *   <li>cause</li>
  * </ul>
  *
  * @since 1.0.0
  */
 public record LogMessage(String application, LogLevel logLevel, String message,
-                         Throwable throwable) {
+                         Throwable cause) {
 
 }
