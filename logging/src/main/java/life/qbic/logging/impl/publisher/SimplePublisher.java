@@ -111,7 +111,7 @@ class SimplePublisher implements Publisher {
 
     private void submit(LogMessage logMessage) {
       synchronized (subscribers) {
-        subscribers.forEach(s -> s.onNewMessage(logMessage));
+        subscribers.forEach(s -> s.onMessageArrived(logMessage));
       }
     }
   }

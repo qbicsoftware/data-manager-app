@@ -11,7 +11,7 @@ import life.qbic.logging.api.Subscriber;
 public class EmailOnErrorSubscriber implements Subscriber {
 
   @Override
-  public void onNewMessage(LogMessage logMessage) {
+  public void onMessageArrived(LogMessage logMessage) {
     System.out.println("From the subscriber: " + logMessage.message());
   }
 }

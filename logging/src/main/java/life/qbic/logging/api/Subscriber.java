@@ -2,7 +2,7 @@ package life.qbic.logging.api;
 
 /**
  * Describes a simple {@link Subscriber} that can be informed via its public method
- * {@link Subscriber#onNewMessage(LogMessage)}.
+ * {@link Subscriber#onMessageArrived(LogMessage)}.
  *
  * @since 1.0.0
  */
@@ -14,6 +14,6 @@ public interface Subscriber {
    * @param logMessage the log message that was broadcast
    * @since 1.0.0
    */
-  void onNewMessage(LogMessage logMessage);
+  void onMessageArrived(LogMessage logMessage);
 
 }

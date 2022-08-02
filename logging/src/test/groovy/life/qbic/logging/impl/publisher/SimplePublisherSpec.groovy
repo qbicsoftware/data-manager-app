@@ -24,7 +24,7 @@ class SimplePublisherSpec extends Specification {
         def publisher = new SimplePublisher()
         def subscriberOne = new Subscriber() {
             @Override
-            void onNewMessage(LogMessage logMessage) {
+            void onMessageArrived(LogMessage logMessage) {
                 byteStream.write(logMessage.message().getBytes(Charset.defaultCharset()))
             }
         }
@@ -33,7 +33,7 @@ class SimplePublisherSpec extends Specification {
         and:
         def subscriberTwo = new Subscriber() {
             @Override
-            void onNewMessage(LogMessage logMessage) {
+            void onMessageArrived(LogMessage logMessage) {
                 println logMessage.message()
             }
         }
