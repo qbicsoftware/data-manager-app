@@ -13,6 +13,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -22,7 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
  */
 public class EmailSubmissionService implements EmailService {
 
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
+  private static final Logger log = LoggerFactory.logger(
       EmailSubmissionService.class);
   @Value("${spring.mail.password}")
   private String password;

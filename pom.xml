@@ -16,6 +16,7 @@
     <module>newshandler</module>
     <module>mariadb-connector</module>
     <module>commons</module>
+    <module>logging</module>
   </modules>
   <packaging>pom</packaging>
 
