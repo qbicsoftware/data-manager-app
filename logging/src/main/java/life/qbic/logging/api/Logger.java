@@ -28,10 +28,10 @@ public interface Logger {
    * Logs a message on ERROR level with a {@link Throwable} provided
    *
    * @param message the message content
-   * @param t       the throwable to report
+   * @param cause   the throwable that represents the cause
    * @since 1.0.0
    */
-  void error(String message, Throwable t);
+  void error(String message, Throwable cause);
 
   /**
    * Logs a message on INFO level

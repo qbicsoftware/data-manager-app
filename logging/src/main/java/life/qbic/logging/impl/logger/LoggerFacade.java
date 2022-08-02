@@ -65,8 +65,8 @@ public class LoggerFacade implements Logger {
   }
 
   @Override
-  public void error(String message, Throwable t) {
-    publish(create(LogLevel.ERROR, message, t));
+  public void error(String message, Throwable cause) {
+    publish(create(LogLevel.ERROR, message, cause));
   }
 
   @Override
