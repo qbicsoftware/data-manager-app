@@ -11,11 +11,11 @@ import life.qbic.authentication.domain.user.event.UserRegistered;
 /**
  * <b>User Domain Service</b>
  *
- * <p>Domain service within the usermanagement context. Takes over the user creation and publishes
+ * <p>Domain services within the usermanagement context. Takes over the user creation and publishes
  * a
  * {@link DomainEvent} of type {@link UserRegistered} once the user has been
  * successfully registered in the domain.
- * <p>Domain service within the usermanagement context. Takes over the user creation and publishes
+ * <p>Domain services within the usermanagement context. Takes over the user creation and publishes
  * a {@link DomainEvent} of type {@link UserRegistered} once the user has
  * been successfully registered in the domain.
  *
@@ -42,7 +42,7 @@ public class UserDomainService {
    * @since 1.0.0
    */
   public void createUser(FullName fullName, EmailAddress emailAddress, EncryptedPassword password) {
-    // Ensure idempotent behaviour of the service
+    // Ensure idempotent behaviour of the services
     if (userRepository.findByEmail(emailAddress).isPresent()) {
       return;
     }

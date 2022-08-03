@@ -36,7 +36,7 @@ public class Registration implements RegisterUserInput {
    * after the use case has been executed via
    * {@link Registration#register(String, String, char[])}.
    *
-   * @param userRegistrationService the user registration service to save the new user to.
+   * @param userRegistrationService the user registration services to save the new user to.
    * @since 1.0.0
    */
   public Registration(UserRegistrationService userRegistrationService) {

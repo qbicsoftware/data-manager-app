@@ -17,6 +17,8 @@
     <module>mariadb-connector</module>
     <module>commons</module>
     <module>logging</module>
+    <module>subscription</module>
+    <module>subscription-api</module>
   </modules>
   <packaging>pom</packaging>
 
