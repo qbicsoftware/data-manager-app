@@ -10,13 +10,18 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>life.qbic.logging</groupId>
-  <artifactId>subscription</artifactId>
+  <artifactId>subscription-provider</artifactId>
   <dependencies>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-api</artifactId>
       <version>0.4.3</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
