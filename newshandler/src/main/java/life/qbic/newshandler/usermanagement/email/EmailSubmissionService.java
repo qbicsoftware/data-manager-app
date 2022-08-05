@@ -92,15 +92,15 @@ public class EmailSubmissionService implements EmailService {
   }
 
   /**
-   * <h1>Exception that indicates violations during the mail submission process</h1>
+   * <h1>Exception that indicates violations during the email submission process</h1>
    *
-   * <p>This exception is supposed to be thrown, if an mail could not be send during the mail
-   * submission process It's intention is to contain the mail information for which the exception
+   * <p>This exception is supposed to be thrown, if an email could not be send during the email
+   * submission process It's intention is to contain the email information for which the exception
    * was thrown. This exception differs from {@link EmailValidationException}, which checks if a
-   * provided mail address is semantically correct
+   * provided email address is semantically correct
    * </p>
    * <p>
-   * Example: A user provides an mail address which is semantically correct but does not exist
+   * Example: A user provides an email address which is semantically correct but does not exist
    *
    * @since 1.0.0
    */
