@@ -1,10 +1,9 @@
-package life.qbic.logging.subscription.provider.property;
+package life.qbic.logging.subscription.provider.email.property;
 
 import static java.util.Objects.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -18,13 +17,8 @@ public class EmailPropertyLoader {
 
   private static final String PROPERTIES = "mail.properties";
 
-  private static EmailPropertyLoader instance;
-
-  public static EmailPropertyLoader instance() {
-    if (isNull(instance)) {
-      instance = new EmailPropertyLoader();
-    }
-    return instance;
+  public static EmailPropertyLoader create() {
+    return new EmailPropertyLoader();
   }
 
   public Properties load() throws IOException {

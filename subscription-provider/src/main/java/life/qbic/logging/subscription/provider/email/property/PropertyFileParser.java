@@ -1,4 +1,4 @@
-package life.qbic.logging.subscription.provider.property;
+package life.qbic.logging.subscription.provider.email.property;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;

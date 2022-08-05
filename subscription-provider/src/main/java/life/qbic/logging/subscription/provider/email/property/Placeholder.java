@@ -1,4 +1,4 @@
-package life.qbic.logging.subscription.provider.property;
+package life.qbic.logging.subscription.provider.email.property;
 
 /**
  * <b><class short description - 1 Line!></b>
