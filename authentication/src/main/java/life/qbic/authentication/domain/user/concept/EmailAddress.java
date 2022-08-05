@@ -25,20 +25,20 @@ public class EmailAddress implements Serializable {
   private final String value;
 
   /**
-   * Creates an email object instance from a String representation of an mail value.
+   * Creates an email object instance from a String representation of an email value.
    * <p>
    * This method performs a format validation.
    *
    * @param s the email value String
    * @return an email
-   * @throws EmailValidationException if the email format is not a valid mail format specified by
+   * @throws EmailValidationException if the email format is not a valid email format specified by
    *                                  RFC5322
    * @since 1.0.0
    */
   public static EmailAddress from(String s) throws EmailValidationException {
     PolicyCheckReport policyCheckReport = EmailFormatPolicy.instance().validate(s);
     if (policyCheckReport.status() == PolicyStatus.FAILED) {
-      throw new EmailValidationException(policyCheckReport, s, "Invalid mail address format");
+      throw new EmailValidationException(policyCheckReport, s, "Invalid email address format");
     }
     return new EmailAddress(s);
   }
