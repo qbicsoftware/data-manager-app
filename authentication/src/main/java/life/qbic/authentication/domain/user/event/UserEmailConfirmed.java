@@ -77,7 +77,7 @@ public class UserEmailConfirmed extends DomainEvent {
   public String toString() {
     return "UserEmailConfirmed{" +
         "userId='" + userId + '\'' +
-        ", mail='" + email + '\'' +
+        ", email='" + email + '\'' +
         ", occurredOn=" + occurredOn +
         '}';
   }
