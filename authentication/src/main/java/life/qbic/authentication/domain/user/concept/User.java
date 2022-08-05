@@ -35,7 +35,7 @@ public class User implements Serializable {
   @Convert(converter = FullNameConverter.class)
   private FullName fullName;
 
-  @Column(name = "mail")
+  @Column(name = "email")
   @Convert(converter = EmailConverter.class)
   private EmailAddress emailAddress;
 
@@ -58,7 +58,7 @@ public class User implements Serializable {
    * has been encrypted.
    *
    * @param fullName          the full name of the user
-   * @param emailAddress      the mail address value of the user
+   * @param emailAddress      the email address value of the user
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
@@ -132,7 +132,7 @@ public class User implements Serializable {
   }
 
   /**
-   * Confirms the mail address.
+   * Confirms the email address.
    */
   public void confirmEmail() {
     UserEmailConfirmed event = UserEmailConfirmed.create(id.get(), emailAddress.get());
