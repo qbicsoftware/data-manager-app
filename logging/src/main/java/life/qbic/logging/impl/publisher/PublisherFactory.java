@@ -1,9 +1,6 @@
 package life.qbic.logging.impl.publisher;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.ServiceLoader;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
 import life.qbic.logging.subscription.api.Subscriber;
@@ -36,7 +33,7 @@ public class PublisherFactory {
     if (subscribers.isEmpty()) {
       log.warn("No Subscriber.class provider found.");
     } else {
-      log.info("Found " + subscribers.size() + " subscriber.");
+      log.info("Found " + subscribers.size() + " logging subscriber.");
     }
     return Subscriber.subscribers();
   }
