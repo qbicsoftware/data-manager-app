@@ -91,7 +91,7 @@ public class UserRegistered extends DomainEvent {
         return "UserRegistered{" +
             "occurredOn=" + occurredOn +
             ", fullName='" + fullName + '\'' +
-            ", mail='" + email + '\'' +
+            ", email='" + email + '\'' +
             ", userId='" + userId + '\'' +
             '}';
     }
