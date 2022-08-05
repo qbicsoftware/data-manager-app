@@ -13,7 +13,7 @@ import life.qbic.authentication.application.ServiceException;
 /**
  * <b>Notification Service</b>
  *
- * <p>A services to send notifications out to broadcast important business events.
+ * <p>A service to send notifications out to broadcast important business events.
  *
  * @since 1.0.0
  */
@@ -22,7 +22,7 @@ public class NotificationService {
   private final MessageBusSubmission messageBus;
 
   /**
-   * Creates a new notification services. The services will prepare all incoming notifications and
+   * Creates a new notification service. The service will prepare all incoming notifications and
    * send them to the {@link MessageBusSubmission}.
    *
    * @param messageBus an implementation of the {@link MessageBusSubmission}

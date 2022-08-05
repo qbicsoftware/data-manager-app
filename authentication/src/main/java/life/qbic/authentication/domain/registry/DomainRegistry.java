@@ -6,7 +6,7 @@ import life.qbic.authentication.domain.user.repository.UserDomainService;
 /**
  * <b>Domain Registry</b>
  *
- * <p>Provides access to registered domain services.
+ * <p>Provides access to registered domain service.
  *
  * @since 1.0.0
  */
@@ -26,9 +26,9 @@ public class DomainRegistry {
   /**
    * Registers a {@link UserDomainService} in the domain registry.
    *
-   * <p>Successive calls will overwrite the previous registered services reference.
+   * <p>Successive calls will overwrite the previous registered service reference.
    *
-   * @param aUserDomainService a user domain services
+   * @param aUserDomainService a user domain service
    * @since 1.0.0
    */
   public void registerService(UserDomainService aUserDomainService) {
@@ -38,7 +38,7 @@ public class DomainRegistry {
   /**
    * Queries for a registered {@link UserDomainService}.
    *
-   * @return a registered services, or {@link Optional#empty()} if none is registered.
+   * @return a registered service, or {@link Optional#empty()} if none is registered.
    * @since 1.0.0
    */
   public Optional<UserDomainService> userDomainService() {

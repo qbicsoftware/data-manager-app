@@ -33,7 +33,7 @@ import life.qbic.authentication.domain.user.repository.UserRepository;
 /**
  * <b>User Registration Service</b>
  *
- * <p>Application services that can be used to register users for the user management domain
+ * <p>Application service that can be used to register users for the user management domain
  * context.
  *
  * @since 1.0.0
@@ -121,7 +121,7 @@ public final class UserRegistrationService {
       return ApplicationResponse.failureResponse(new UserExistsException());
     }
 
-    // Trigger the user creation in the domain services
+    // Trigger the user creation in the domain service
     userDomainService.get().createUser(userFullName, userEmail, userPassword);
 
     // Overwrite the password
