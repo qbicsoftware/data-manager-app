@@ -26,13 +26,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     EmailAddress email;
-    // Check if the email address is valid
+    // Check if the mail address is valid
     try {
       email = EmailAddress.from(username);
     } catch (EmailValidationException e) {
       throw new UsernameNotFoundException("Cannot find user");
     }
-    // Then search for a user with the provided email address
+    // Then search for a user with the provided mail address
     var user = userRepository.findByEmail(email);
     return new QbicUserDetails(
         user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));

@@ -15,7 +15,7 @@ import life.qbic.logging.subscription.api.LogMessage;
  * 1. The original logging intention, delegating the logging to an underlying Slf4j API call
  * <p>
  * 2. Publishing the log event to a publisher implementation that enables to account for event
- * specific business actions, for example sending an email to the developer mailing list when an
+ * specific business actions, for example sending an mail to the developer mailing list when an
  * error is reported.
  * <p>
  * The {@link LoggerFacade} does not contain any business logic, other than informing the publisher

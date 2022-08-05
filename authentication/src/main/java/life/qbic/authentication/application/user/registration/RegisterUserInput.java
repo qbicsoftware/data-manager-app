@@ -13,7 +13,7 @@ public interface RegisterUserInput {
    * <p>The raw password passed needs to be cleared, after it has been successfully processed.
    *
    * @param fullName the full name of the user
-   * @param email the user's email address
+   * @param email the user's mail address
    * @param rawPassword the user selected raw password for authentication
    * @since 1.0.0
    */

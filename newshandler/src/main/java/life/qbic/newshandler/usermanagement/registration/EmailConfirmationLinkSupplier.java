@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- * Supplies email confirmation routes
+ * Supplies mail confirmation routes
  *
  * @since 1.0.0
  */

@@ -62,7 +62,7 @@ public final class UserRegistrationService {
    * client's responsibility to handle the raw password.
    *
    * @param fullName    the full name of the user
-   * @param email       the email address of the user
+   * @param email       the mail address of the user
    * @param rawPassword the raw password provided by the user
    * @return a registration response with information about if the registration was successful or
    * not.
@@ -158,7 +158,7 @@ public final class UserRegistrationService {
   /**
    * Requests a password reset for a user.
    *
-   * @param userEmailAddress the user's email address for whom the password reset shall be issued
+   * @param userEmailAddress the user's mail address for whom the password reset shall be issued
    * @return application response with success or failure information
    * @since 1.0.0
    */
@@ -178,7 +178,7 @@ public final class UserRegistrationService {
     // get user
     var user = optionalUser.get();
 
-    // We only allow password reset for users with confirmed email address
+    // We only allow password reset for users with confirmed mail address
     if (!user.isActive()) {
       return ApplicationResponse.failureResponse(new UserNotActivatedException("User not active"));
     }
@@ -324,7 +324,7 @@ public final class UserRegistrationService {
       user.confirmEmail();
       userRepository.updateUser(user);
     }, () -> {
-      throw new UserNotFoundException("Unknown user. Could not confirm the email address.");
+      throw new UserNotFoundException("Unknown user. Could not confirm the mail address.");
     });
   }
 

@@ -1,4 +1,4 @@
-package life.qbic.logging.subscription.provider.email;
+package life.qbic.logging.subscription.provider.mail;
 
 import static java.util.Objects.requireNonNull;
 
@@ -16,15 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>E-mail Service</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * Implementation of the {@link MailService} that submits e-mail notifications.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class SimpleEmailService implements EmailService {
+public class EMailService implements MailService {
 
-  private static final Logger log = LoggerFactory.getLogger(SimpleEmailService.class);
+  private static final Logger log = LoggerFactory.getLogger(EMailService.class);
 
   private final Session session;
 
@@ -40,17 +40,17 @@ public class SimpleEmailService implements EmailService {
 
   private static final String MAIL_SMTP_USERNAME = "mail.smtp.user";
 
-  public static EmailService create(Properties properties) {
+  public static MailService create(Properties properties) {
     requireNonNull(properties.getProperty(MAIL_SMTP_HOST));
     requireNonNull(properties.get(MAIL_SMTP_PORT));
     requireNonNull(properties.getProperty(MAIL_SMTP_USERNAME));
     requireNonNull(properties.get(MAIL_SMTP_PASSWORD));
     requireNonNull(properties.get(MAIL_SMTP_AUTH));
     requireNonNull(properties.get(MAIL_SMTP_STARTTLS_ENABLE));
-    return new SimpleEmailService(properties);
+    return new EMailService(properties);
   }
 
-  public SimpleEmailService(Properties props) {
+  private EMailService(Properties props) {
     session = Session.getDefaultInstance(props, new Authenticator() {
       @Override
       protected PasswordAuthentication getPasswordAuthentication() {

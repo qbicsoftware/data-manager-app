@@ -37,7 +37,7 @@ public class UserDomainService {
    * will be created.
    *
    * @param fullName    the full name of the user
-   * @param emailAddress       a valid email address
+   * @param emailAddress       a valid mail address
    * @param password the password desired by the user
    * @since 1.0.0
    */

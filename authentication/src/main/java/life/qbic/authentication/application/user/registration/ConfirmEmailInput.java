@@ -8,9 +8,9 @@ package life.qbic.authentication.application.user.registration;
 public interface ConfirmEmailInput {
 
   /**
-   * Confirms the user's email address
+   * Confirms the user's mail address
    *
-   * @param userID the user whose email address is to be confirmed
+   * @param userID the user whose mail address is to be confirmed
    * @since 1.0.0
    */
   void confirmEmailAddress(String userID);

@@ -3,19 +3,18 @@ package life.qbic.logging.subscription.provider;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
-import java.util.Objects;
 import life.qbic.logging.subscription.api.LogLevel;
 import life.qbic.logging.subscription.api.LogMessage;
 import life.qbic.logging.subscription.api.Subscriber;
-import life.qbic.logging.subscription.provider.email.EmailService;
-import life.qbic.logging.subscription.provider.email.property.EmailPropertyLoader;
+import life.qbic.logging.subscription.provider.mail.MailService;
+import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
 
 /**
- * Example email on error {@link Subscriber} implementation.
+ * Example mail on error {@link Subscriber} implementation.
  *
  * @since 1.0.0
  */
-public class EmailOnErrorSubscriber implements Subscriber {
+public class MailOnErrorSubscriber implements Subscriber {
 
   private static final String NOTIFICATION_MAIL_SENDER = "notification.mail.sender";
 
@@ -25,12 +24,12 @@ public class EmailOnErrorSubscriber implements Subscriber {
 
   private final String recipient;
 
-  private final EmailService emailService;
-  public EmailOnErrorSubscriber() throws IOException {
-    var props = EmailPropertyLoader.create().load();
+  private final MailService emailService;
+  public MailOnErrorSubscriber() throws IOException {
+    var props = MailPropertyLoader.create().load();
     sender = requireNonNull(props.getProperty(NOTIFICATION_MAIL_SENDER));
     recipient = requireNonNull(props.getProperty(NOTIFICATION_MAIL_RECIPIENT));
-    emailService = EmailService.instance();
+    emailService = MailService.instance();
   }
 
   @Override

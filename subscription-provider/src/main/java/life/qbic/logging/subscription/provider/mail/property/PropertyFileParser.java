@@ -1,4 +1,4 @@
-package life.qbic.logging.subscription.provider.email.property;
+package life.qbic.logging.subscription.provider.mail.property;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
@@ -32,7 +32,16 @@ import java.util.Properties;
  */
 public class PropertyFileParser {
 
-  public static Properties parse(File file) throws IllegalArgumentException, IOException {
+  /**
+   * Parses a file for defined properties and resolves present placeholder against visible
+   * environment variables.
+   *
+   * @param file properties file containing line-separated property tuples
+   * @return a {@link Properties} object with the parsed properties
+   * @throws IOException if the file cannot be accessed
+   * @since 1.0.0
+   */
+  public static Properties parse(File file) throws IOException {
     requireNonNull(file, "File must not be null");
 
     var properties = new Properties();
@@ -49,7 +58,7 @@ public class PropertyFileParser {
       try {
         var placeholder = Placeholder.create((String) value);
         var envVarValue = EnvironmentVariableResolver.resolve(
-            placeholder.value());
+            placeholder.name());
         if (isNull(envVarValue)) {
           throw new IllegalArgumentException("Could not resolve placeholder '" + value + "'");
         }

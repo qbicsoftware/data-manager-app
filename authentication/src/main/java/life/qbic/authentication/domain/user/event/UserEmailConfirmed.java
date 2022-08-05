@@ -5,7 +5,7 @@ import java.time.Instant;
 import life.qbic.authentication.domain.event.DomainEvent;
 
 /**
- * <b>A user email was confirmed</b>
+ * <b>A user mail was confirmed</b>
  *
  * @since 1.0.0
  */
@@ -23,8 +23,8 @@ public class UserEmailConfirmed extends DomainEvent {
   }
 
   /**
-   * @param userId     the id of the user for which the email was confirmed
-   * @param email      the confirmed email address
+   * @param userId     the id of the user for which the mail was confirmed
+   * @param email      the confirmed mail address
    * @param occurredOn the timestamp this event happened
    * @since 1.0.0
    */
@@ -77,7 +77,7 @@ public class UserEmailConfirmed extends DomainEvent {
   public String toString() {
     return "UserEmailConfirmed{" +
         "userId='" + userId + '\'' +
-        ", email='" + email + '\'' +
+        ", mail='" + email + '\'' +
         ", occurredOn=" + occurredOn +
         '}';
   }

@@ -1,6 +1,6 @@
-package life.qbic.logging.subscription.provider.email.property
+package life.qbic.logging.subscription.provider.mail.property
 
-import life.qbic.logging.subscription.provider.email.property.PropertyFileParser
+
 import spock.lang.Specification
 
 /**

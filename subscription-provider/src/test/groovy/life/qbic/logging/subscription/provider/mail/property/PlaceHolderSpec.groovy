@@ -1,6 +1,6 @@
-package life.qbic.logging.subscription.provider.email.property
+package life.qbic.logging.subscription.provider.mail.property
 
-import life.qbic.logging.subscription.provider.email.property.Placeholder
+
 import spock.lang.Specification
 
 /**
@@ -17,7 +17,7 @@ class PlaceHolderSpec extends Specification {
         def placeholder = Placeholder.create(testPlaceholder)
 
         then:
-        placeholder.value().equals("SUPER_PLACEHOLDER")
+        placeholder.name().equals("SUPER_PLACEHOLDER")
 
         where:
         testPlaceholder                     | _
