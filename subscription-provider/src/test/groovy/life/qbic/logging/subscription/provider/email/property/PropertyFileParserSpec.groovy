@@ -12,20 +12,6 @@ import spock.lang.Specification
  */
 class PropertyFileParserSpec extends Specification {
 
-    def "Given a property file with placeholders, throw an IllegalArgumentException when the placeholder cannot be resolved"() {
-        given:
-        def input = this.getClass().getResource("/mail-failing.properties").file
-
-        and:
-
-        when:
-        def properties = PropertyFileParser.parse(new File(input))
-
-        then:
-        thrown(IllegalArgumentException)
-
-    }
-
     def "Given a property file without placeholders, parse them accordingly"() {
         given:
         def input = this.getClass().getResource("/mail-valid.properties").file

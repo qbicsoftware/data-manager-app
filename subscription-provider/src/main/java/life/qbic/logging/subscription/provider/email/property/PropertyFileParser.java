@@ -9,11 +9,26 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Property File Parser</b>
+ * <p>
+ * Parses a property file and saves all properties in a {@link Properties} object. The property
+ * syntax must follow the convention:
+ * <p>
+ * <code>property-name=property-value</code>
+ * <p>
+ * separated by line.
+ * <p>
+ * The parser also supports automated resolvent of placeholders, with a default behaviour that
+ * resolves them against available system environment variables.
+ * <p>
+ * The syntax for placeholders is like the following:
+ * <p>
+ * <code>property-name=${MY_ENV_VAR}</code>
+ * <p>
+ * The resolvent of the placeholder is case sensitive, so make sure that it has the same
+ * capitalization as the environment variable.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class PropertyFileParser {
 
@@ -30,14 +45,16 @@ public class PropertyFileParser {
 
   private static Properties resolvePlaceholders(Properties properties) {
     var resolvedProperties = new Properties();
-    properties.forEach( (property, value) -> {
-      if (Placeholder.isPlaceholder((String) value)) {
-        var envVarValue = EnvironmentVariableResolver.resolve(Placeholder.placeholderName((String) value));
+    properties.forEach((property, value) -> {
+      try {
+        var placeholder = Placeholder.create((String) value);
+        var envVarValue = EnvironmentVariableResolver.resolve(
+            placeholder.value());
         if (isNull(envVarValue)) {
           throw new IllegalArgumentException("Could not resolve placeholder '" + value + "'");
         }
         resolvedProperties.setProperty((String) property, envVarValue);
-      } else {
+      } catch (IllegalArgumentException ignored) {
         resolvedProperties.setProperty((String) property, (String) value);
       }
     });

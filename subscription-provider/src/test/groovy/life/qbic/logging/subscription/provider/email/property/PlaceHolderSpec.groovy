@@ -13,35 +13,32 @@ import spock.lang.Specification
 class PlaceHolderSpec extends Specification {
 
     def "given a placeholder, return the placeholder variable name"() {
-        given:
-        def extractedName = Placeholder.placeholderName(testPlaceholder)
+        when:
+        def placeholder = Placeholder.create(testPlaceholder)
 
-        expect:
-        Placeholder.isPlaceholder(testPlaceholder)
-        extractedName.equals("SUPER_PLACEHOLDER")
+        then:
+        placeholder.value().equals("SUPER_PLACEHOLDER")
 
         where:
-        testPlaceholder | _
-        '${SUPER_PLACEHOLDER}' | _
-        '   ${     SUPER_PLACEHOLDER}' | _
-        '${     SUPER_PLACEHOLDER}' | _
-        '${SUPER_PLACEHOLDER }    ' | _
-        '${SUPER_PLACEHOLDER    }' | _
-        '${SUPER_PLACEHOLDER }    ' | _
+        testPlaceholder                     | _
+        '${SUPER_PLACEHOLDER}'              | _
+        '   ${     SUPER_PLACEHOLDER}'      | _
+        '${     SUPER_PLACEHOLDER}'         | _
+        '${SUPER_PLACEHOLDER }    '         | _
+        '${SUPER_PLACEHOLDER    }'          | _
+        '${SUPER_PLACEHOLDER }    '         | _
         '${     SUPER_PLACEHOLDER    }    ' | _
     }
 
     def "given an invalid placeholder, return an empty placeholder name"() {
+        when:
+        Placeholder.create(testPlaceholder)
 
-        given:
-        def extractedName = Placeholder.placeholderName(testPlaceholder as String)
-
-        expect:
-        assert !Placeholder.isPlaceholder(testPlaceholder as String)
-        extractedName.isEmpty()
+        then:
+        thrown(IllegalArgumentException)
 
         where:
-        testPlaceholder | _
+        testPlaceholder       | _
         '{SUPER_PLACEHOLDER}' | _
         '${SUPER_PLACEHOLDER' | _
         '$SUPER_PLACEHOLDER}' | _

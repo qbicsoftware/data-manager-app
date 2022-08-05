@@ -1,24 +1,32 @@
 package life.qbic.logging.subscription.provider.email.property;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Placeholder</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class Placeholder {
 
   private static final String PLACEHOLDER_START_CHARS_REGEX = "\\$\\{";
 
   private static final String PLACEHOLDER_END_CHARS_REGEX = "}";
+  private final String placeholder;
 
-  public static boolean isPlaceholder(String str) {
-    return !parsePlaceholder(str).isBlank();
+  public Placeholder(String placeholder) {
+    this.placeholder = placeholder;
   }
 
-  public static String placeholderName(String str) {
-    return parsePlaceholder(str);
+  public String value() {
+    return this.placeholder;
+  }
+
+  static Placeholder create(String str) {
+    var placeholder = parsePlaceholder(str);
+    if (placeholder.equals(str)) {
+      throw new IllegalArgumentException(
+          "Input string is not a known placeholder. Placeholder must start with '${' and end with '}'");
+    }
+    return new Placeholder(placeholder);
   }
 
   private static String parsePlaceholder(String str) {
@@ -26,7 +34,7 @@ public class Placeholder {
     var start = placeholderStart(str);
     var end = placeholderEnd(str);
     if (start == -1 || end == -1) {
-      return "";
+      return str;
     }
     placeholder.append(str, start, end);
     return extractPlaceholderName(placeholder.toString()).trim();
