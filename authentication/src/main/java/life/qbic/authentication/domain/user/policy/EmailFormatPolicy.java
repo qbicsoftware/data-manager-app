@@ -7,7 +7,7 @@ import life.qbic.authentication.domain.policy.PolicyStatus;
 /**
  * <b>EmailAddress Format Policy</b>
  *
- * <p>Validates a String against the RFC5322 mail format specification (<a
+ * <p>Validates a String against the RFC5322 email format specification (<a
  * href="https://www.rfc-editor.org/rfc/rfc5322">https://www.rfc-editor.org/rfc/rfc5322</a>).
  *
  * @since 1.0.0
@@ -30,9 +30,9 @@ public class EmailFormatPolicy {
   }
 
   /**
-   * Validates a given putative mail address against the RFC5322 address-spec.
+   * Validates a given putative email address against the RFC5322 address-spec.
    *
-   * @param email the mail to validate
+   * @param email the email address to validate
    * @return a check report with the validation information
    * @since 1.0.0
    */
