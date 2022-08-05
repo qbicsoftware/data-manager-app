@@ -11,7 +11,7 @@ import life.qbic.authentication.domain.user.policy.EmailFormatPolicy;
 /**
  * <b>EmailAddress</b>
  * <p>
- * Represents a valid mail value, specified by RFC5322.
+ * Represents a valid email value, specified by RFC5322.
  * <p>
  * For mor details please check {@link EmailFormatPolicy}.
  *
@@ -25,13 +25,13 @@ public class EmailAddress implements Serializable {
   private final String value;
 
   /**
-   * Creates an mail object instance from a String representation of an mail value.
+   * Creates an email object instance from a String representation of an mail value.
    * <p>
    * This method performs a format validation.
    *
-   * @param s the mail value String
-   * @return an mail
-   * @throws EmailValidationException if the mail format is not a valid mail format specified by
+   * @param s the email value String
+   * @return an email
+   * @throws EmailValidationException if the email format is not a valid mail format specified by
    *                                  RFC5322
    * @since 1.0.0
    */
@@ -49,9 +49,9 @@ public class EmailAddress implements Serializable {
   }
 
   /**
-   * Queries the mail value as String representation.
+   * Queries the email value as String representation.
    *
-   * @return mail value as String
+   * @return email value as String
    * @since 1.0.0
    */
   public String get() {
@@ -77,10 +77,10 @@ public class EmailAddress implements Serializable {
 
 
   /**
-   * <h1>Exception that indicates violations during the mail value validation process</h1>
+   * <h1>Exception that indicates violations during the email value validation process</h1>
    *
-   * <p>This exception is supposed to be thrown, if the provided mail value for an user violates
-   * the format specified by RFC5322 It's intention is to contain the invalid mail value and the
+   * <p>This exception is supposed to be thrown, if the provided email value for an user violates
+   * the format specified by RFC5322 It's intention is to contain the invalid email value and the
    * PolicyCheckReport for the violated policy</p>
    *
    * @since 1.0.0
