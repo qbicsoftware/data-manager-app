@@ -1,4 +1,4 @@
-package life.qbic.logging.api;
+package life.qbic.logging.subscription.api;
 
 /**
  * Simple logging message record that holds basic information like:

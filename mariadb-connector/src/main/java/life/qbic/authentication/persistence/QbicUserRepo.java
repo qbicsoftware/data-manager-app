@@ -22,10 +22,10 @@ import org.springframework.stereotype.Repository;
 public interface QbicUserRepo extends CrudRepository<User, UserId> {
 
   /**
-   * Find users by email address in the persistent data storage
+   * Find users by mail address in the persistent data storage
    *
-   * @param emailAddress the email address to filter users for
-   * @return a list of matching users that have the given email address
+   * @param emailAddress the mail address to filter users for
+   * @return a list of matching users that have the given mail address
    * @since 1.0.0
    */
   List<User> findUsersByEmailAddress(EmailAddress emailAddress);

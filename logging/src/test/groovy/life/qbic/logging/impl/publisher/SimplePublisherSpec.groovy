@@ -1,8 +1,8 @@
 package life.qbic.logging.impl.publisher
 
-import life.qbic.logging.api.LogLevel
-import life.qbic.logging.api.LogMessage
-import life.qbic.logging.api.Subscriber
+import life.qbic.logging.subscription.api.LogMessage
+import life.qbic.logging.subscription.api.LogLevel
+import life.qbic.logging.subscription.api.Subscriber
 import spock.lang.Specification
 
 import java.nio.charset.Charset

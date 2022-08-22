@@ -13,7 +13,7 @@ import life.qbic.logging.service.LoggerFactory;
  *
  * <p>Tries to register a new user and create a user account.
  *
- * <p>In case a user with the provided email already exists, the registration will fail and calls
+ * <p>In case a user with the provided mail already exists, the registration will fail and calls
  * the failure output method.
  *
  * @since 1.0.0

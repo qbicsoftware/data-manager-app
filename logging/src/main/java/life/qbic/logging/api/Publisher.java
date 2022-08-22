@@ -1,5 +1,8 @@
 package life.qbic.logging.api;
 
+import life.qbic.logging.subscription.api.LogMessage;
+import life.qbic.logging.subscription.api.Subscriber;
+
 /**
  * Simplistic interface of a {@link Publisher} that enables subscription and unsubscription of
  * {@link Subscriber} instances that get notified when a new {@link LogMessage} is published.

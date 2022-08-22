@@ -8,9 +8,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
-import life.qbic.logging.api.LogMessage;
 import life.qbic.logging.api.Publisher;
-import life.qbic.logging.api.Subscriber;
+import life.qbic.logging.subscription.api.LogMessage;
+import life.qbic.logging.subscription.api.Subscriber;
 
 /**
  * Basic implementation of the {@link Publisher} interface.

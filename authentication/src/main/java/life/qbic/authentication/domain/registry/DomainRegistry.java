@@ -6,7 +6,7 @@ import life.qbic.authentication.domain.user.repository.UserDomainService;
 /**
  * <b>Domain Registry</b>
  *
- * <p>Provides access to registered domain services.
+ * <p>Provides access to registered domain service.
  *
  * @since 1.0.0
  */

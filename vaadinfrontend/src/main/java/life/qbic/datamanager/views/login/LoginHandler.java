@@ -28,7 +28,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Autowired
   LoginHandler(ConfirmEmailInput confirmEmailInput,
-      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
+      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-mail}") String emailConfirmationParameter) {
     this.confirmEmailInput = confirmEmailInput;
     this.emailConfirmationParameter = emailConfirmationParameter;
   }
@@ -55,8 +55,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void showEmailConfirmationReminder() {
-    showInformation("Registration email sent",
-        "Please check your email inbox to confirm your registration");
+    showInformation("Registration mail sent",
+        "Please check your mail inbox to confirm your registration");
   }
 
   public void clearNotifications() {
