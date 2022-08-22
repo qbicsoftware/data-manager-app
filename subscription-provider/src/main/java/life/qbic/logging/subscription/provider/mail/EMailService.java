@@ -42,11 +42,11 @@ public class EMailService implements MailService {
 
   public static MailService create(Properties properties) {
     requireNonNull(properties.getProperty(MAIL_SMTP_HOST));
-    requireNonNull(properties.get(MAIL_SMTP_PORT));
+    requireNonNull(properties.getProperty(MAIL_SMTP_PORT));
     requireNonNull(properties.getProperty(MAIL_SMTP_USERNAME));
-    requireNonNull(properties.get(MAIL_SMTP_PASSWORD));
-    requireNonNull(properties.get(MAIL_SMTP_AUTH));
-    requireNonNull(properties.get(MAIL_SMTP_STARTTLS_ENABLE));
+    requireNonNull(properties.getProperty(MAIL_SMTP_PASSWORD));
+    requireNonNull(properties.getProperty(MAIL_SMTP_AUTH));
+    requireNonNull(properties.getProperty(MAIL_SMTP_STARTTLS_ENABLE));
     return new EMailService(properties);
   }
 
