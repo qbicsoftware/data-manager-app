@@ -19,6 +19,7 @@
     <module>logging</module>
     <module>subscription-provider</module>
     <module>subscription-api</module>
+    <module>projectmanagement</module>
   </modules>
   <packaging>pom</packaging>
 
