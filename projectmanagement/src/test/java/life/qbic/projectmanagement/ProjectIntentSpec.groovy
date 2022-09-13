@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement
 
-import life.qbic.projectmanagement.domain.ProjectIntent
+import life.qbic.projectmanagement.domain.project.ProjectIntent
 import spock.lang.Specification
 
 class ProjectIntentSpec extends Specification {
