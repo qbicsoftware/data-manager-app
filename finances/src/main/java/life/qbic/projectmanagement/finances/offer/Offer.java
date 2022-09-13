@@ -3,17 +3,16 @@ package life.qbic.projectmanagement.finances.offer;
 import static java.util.Objects.requireNonNull;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer</b>
+ * <p>
+ * Describes an offer object in the context of project management.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity
 @Table(name = "offers")
@@ -30,10 +29,18 @@ public class Offer {
 
   }
 
-  public static Offer from(ProjectTitle title, OfferId offerId) {
-    requireNonNull(title);
+  /**
+   * Creates a new instance of {@link Offer} from a title and offer id.
+   *
+   * @param projectTitle the project title found in an offer
+   * @param offerId      the offer id, uniquely representing the offer resource
+   * @return an offer instance
+   * @since 1.0.0
+   */
+  public static Offer from(ProjectTitle projectTitle, OfferId offerId) {
+    requireNonNull(projectTitle);
     requireNonNull(offerId);
-    return new Offer(title.title(), offerId.id());
+    return new Offer(projectTitle.title(), offerId.id());
   }
 
   private Offer(String projectTitle, String offerId) {
