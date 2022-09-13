@@ -20,6 +20,7 @@
     <module>subscription-provider</module>
     <module>subscription-api</module>
     <module>finances</module>
+    <module>projectmanagement</module>
   </modules>
   <packaging>pom</packaging>
 
