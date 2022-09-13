@@ -5,7 +5,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * <b> An ErrorMessage component which shows an error message with a getProjectTitle and a detailed
+ * <b> An ErrorMessage component which shows an error message with a title and a detailed
  * description. </b>
  *
  * @since 1.0.0

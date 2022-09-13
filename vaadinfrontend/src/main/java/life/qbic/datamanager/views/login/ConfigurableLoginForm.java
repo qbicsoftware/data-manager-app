@@ -6,7 +6,7 @@ import com.vaadin.flow.component.login.LoginI18n.ErrorMessage;
 
 /**
  * <b>A login form that remembers the text it displays.</b>
- * <p>This login form does not show a getProjectTitle.
+ * <p>This login form does not show a title.
  *
  * @since 1.0.0
  */

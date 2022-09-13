@@ -11,7 +11,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 /**
  * <b>Box Layout</b>
  *
- * <p>A box with a shadow containing a getProjectTitle, description, a layout for fields, a layout for buttons and a span to add links.
+ * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons and a span to add links.
  * Furthermore, the description text can be toggled visible or invisible
  *
  * @since 1.0.0
@@ -107,8 +107,8 @@ public class BoxLayout extends VerticalLayout {
   }
 
   /**
-   * Sets the getProjectTitle text
-   * @param text The text for the getProjectTitle
+   * Sets the title text
+   * @param text The text for the title
    */
   public void setTitleText(String text) {
     layoutTitle.setText(text);

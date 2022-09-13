@@ -7,7 +7,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
  * <b> A InformationMessage component which shows a primarily styled information message with a
- * getProjectTitle and a detailed description. </b>
+ * title and a detailed description. </b>
  *
  * @since 1.0.0
  */
