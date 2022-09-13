@@ -85,11 +85,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
     messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
-    // TODO delete
-    var offerSearchService = appContext.getBean(OfferSearchService.class);
-    var result = offerSearchService.findByProjectTitleOrOfferId("fillinger", "fillinger");
-    //var result = offerSearchService.findAll();
-    result.forEach(offerOverview -> logger.info(offerOverview.offerId().id() + ": " + offerOverview.getProjectTitle().title()));
     setupUseCases(appContext);
   }
 
