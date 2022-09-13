@@ -37,7 +37,7 @@ public class AppConfig {
   /**
    * Creates the registration use case.
    *
-   * @param userRegistrationService the user registration service used by this use case
+   * @param userRegistrationService the user registration services used by this use case
    * @return the use case input
    * @since 1.0.0
    */

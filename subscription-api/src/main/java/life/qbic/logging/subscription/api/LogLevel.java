@@ -1,4 +1,4 @@
-package life.qbic.logging.api;
+package life.qbic.logging.subscription.api;
 
 /**
  * Enum class representing different logging levels.

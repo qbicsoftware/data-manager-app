@@ -65,9 +65,9 @@ public class PasswordReset extends DomainEvent {
   }
 
   /**
-   * Returns the user's registered email address
+   * Returns the user's registered mail address
    *
-   * @return the user's email address
+   * @return the user's mail address
    * @since 1.0.0
    */
   public EmailAddress userEmailAddress() {

@@ -1,11 +1,11 @@
 package life.qbic.logging.impl.logger;
 
 import java.util.Objects;
-import life.qbic.logging.api.LogLevel;
-import life.qbic.logging.api.LogMessage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
+import life.qbic.logging.subscription.api.LogLevel;
+import life.qbic.logging.subscription.api.LogMessage;
 
 /**
  * Simple implementation of the {@link Logger} interface.
@@ -15,7 +15,7 @@ import life.qbic.logging.impl.slf4j.Slf4jWrapper;
  * 1. The original logging intention, delegating the logging to an underlying Slf4j API call
  * <p>
  * 2. Publishing the log event to a publisher implementation that enables to account for event
- * specific business actions, for example sending an email to the developer mailing list when an
+ * specific business actions, for example sending an mail to the developer mailing list when an
  * error is reported.
  * <p>
  * The {@link LoggerFacade} does not contain any business logic, other than informing the publisher
