@@ -17,20 +17,15 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SimpleOfferSearchService implements OfferSearchService {
-  private final OfferOverviewRepository offerOverviewRepository;
+  private final OfferRepository offerRepository;
 
   @Override
-  public List<Offer> findByProjectTitleOrOfferId(ProjectTitle projectTitle, OfferId offerId) {
-    return offerOverviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(projectTitle.title(), offerId.id());
-  }
-
-  @Override
-  public List<Offer> findAll() {
-    return (List<Offer>) offerOverviewRepository.findAll();
+  public List<Offer> findByProjectTitleOrOfferId(String projectTitle, String offerId) {
+    return offerRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(projectTitle, offerId);
   }
 
   @Autowired
-  public SimpleOfferSearchService(OfferOverviewRepository offerOverviewRepository) {
-    this.offerOverviewRepository = offerOverviewRepository;
+  public SimpleOfferSearchService(OfferRepository offerRepository) {
+    this.offerRepository = offerRepository;
   }
 }

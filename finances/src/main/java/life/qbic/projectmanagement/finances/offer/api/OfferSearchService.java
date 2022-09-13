@@ -6,16 +6,27 @@ import life.qbic.projectmanagement.finances.offer.OfferId;
 import life.qbic.projectmanagement.finances.offer.ProjectTitle;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer Search Service</b>
+ * <p>
+ * Service that enables queries for offer information.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface OfferSearchService {
 
-  List<Offer> findByProjectTitleOrOfferId(ProjectTitle projectTitle, OfferId offerId);
-
-  List<Offer> findAll();
+  /**
+   * Lists all existing offers that contain a given character sequence in the project title or offer
+   * id.
+   * <p>
+   * Note: the search implementation ignores the case.
+   *
+   * @param projectTitle the character sequence that need to be contained in the project title of an
+   *                     offer
+   * @param offerId      the character sequence that need to be contained in the offer id of an
+   *                     offer
+   * @return a list of {@link Offer} matching the search criteria
+   * @since 1.0.0
+   */
+  List<Offer> findByProjectTitleOrOfferId(String projectTitle, String offerId);
 
 }

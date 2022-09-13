@@ -87,7 +87,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
     // TODO delete
     var offerSearchService = appContext.getBean(OfferSearchService.class);
-    var result = offerSearchService.findByProjectTitleOrOfferId(new ProjectTitle("fillinger"), OfferId.of("fillinger"));
+    var result = offerSearchService.findByProjectTitleOrOfferId("fillinger", "fillinger");
     //var result = offerSearchService.findAll();
     result.forEach(offerOverview -> logger.info(offerOverview.offerId().id() + ": " + offerOverview.getProjectTitle().title()));
     setupUseCases(appContext);
