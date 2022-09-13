@@ -32,6 +32,13 @@ public class Project {
     return new Project(uuid, projectIntent);
   }
 
+  /**
+   * Generates a project with the specified values injected.
+   *
+   * @param uuid          the uuid of the project
+   * @param projectIntent the project intent
+   * @return a project with the given identity and project intent
+   */
   public static Project of(UUID uuid, ProjectIntent projectIntent) {
     return new Project(uuid, projectIntent);
   }
