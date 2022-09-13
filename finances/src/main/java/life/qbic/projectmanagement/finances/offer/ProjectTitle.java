@@ -1,19 +1,31 @@
 package life.qbic.projectmanagement.finances.offer;
 
+import java.util.Objects;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Title</b>
+ * <p>
+ * Describes a project title associated with an offer
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectTitle {
 
   private final String title;
 
-  public ProjectTitle(String title) {
+  /**
+   * Creates a new instance of an {@link ProjectTitle}
+   *
+   * @param title the value for the title
+   * @return a new instance of project title
+   * @since 1.0.0
+   */
+  public static ProjectTitle of(String title) {
+    return new ProjectTitle(title);
+  }
+
+  private ProjectTitle(String title) {
     this.title = title;
   }
 
@@ -26,16 +38,20 @@ public class ProjectTitle {
     return title;
   }
 
-  public static class Converter implements AttributeConverter<ProjectTitle, String> {
-
-    @Override
-    public String convertToDatabaseColumn(ProjectTitle projectTitle) {
-      return projectTitle.title();
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @Override
-    public ProjectTitle convertToEntityAttribute(String s) {
-      return new ProjectTitle(s);
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    ProjectTitle that = (ProjectTitle) o;
+    return Objects.equals(title, that.title);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(title);
   }
 }

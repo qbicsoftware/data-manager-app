@@ -1,19 +1,25 @@
 package life.qbic.projectmanagement.finances.offer;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer Id</b>
+ * <p>
+ * Describes an identifier for an offer.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class OfferId {
 
   private String id;
 
+  /**
+   * Creates an instance of an {@link OfferId}
+   *
+   * @param id the value for the offer id
+   * @return a new instance of an offer id
+   * @since 1.0.0
+   */
   public static OfferId of(String id) {
     return new OfferId(id);
   }
@@ -30,16 +36,20 @@ public class OfferId {
     this.id = id;
   }
 
-  public static class Converter implements AttributeConverter<OfferId, String> {
-
-    @Override
-    public String convertToDatabaseColumn(OfferId offerId) {
-      return offerId.id();
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @Override
-    public OfferId convertToEntityAttribute(String s) {
-      return OfferId.of(s);
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    OfferId offerId = (OfferId) o;
+    return Objects.equals(id, offerId.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
   }
 }
