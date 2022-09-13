@@ -13,17 +13,15 @@ class OfferIdSpec extends Specification {
 
   def "expect creation from String to work"() {
     expect: "creation from String to work"
-    def offerId = OfferId.from("O_koch_abcd_1")
+    def offerId = new OfferId("SomeValue")
     offerId != null
-    offerId.projectConservedPart() == new ProjectConservedPart("koch")
-    offerId.randomPart() == new RandomPart("abcd")
-    offerId.version() == new Version(1)
+    offerId.value() == "SomeValue"
   }
 
 
   def "expect creation with null parameters not possible"() {
     when: "attempting to create with null parameter"
-    new OfferId(null, null, null)
+    new OfferId(null)
     then: "an exception is thrown"
     thrown(NullPointerException)
   }

@@ -8,7 +8,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>projectmanagement</artifactId>
-  <name>Archetype - projectmanagement</name>
+  <name>projectmanagement</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>
