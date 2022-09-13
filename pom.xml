@@ -17,6 +17,7 @@
     <module>mariadb-connector</module>
     <module>commons</module>
     <module>logging</module>
+    <module>finances</module>
   </modules>
   <packaging>pom</packaging>
 

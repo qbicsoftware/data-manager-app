@@ -5,7 +5,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * <b> A SuccessMessage component which shows a success message with a title and a detailed
+ * <b> A SuccessMessage component which shows a success message with a getProjectTitle and a detailed
  * description. </b>
  *
  * @since 1.0.0

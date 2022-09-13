@@ -1,6 +1,5 @@
 package life.qbic.datamanager;
 
-import java.util.Base64;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
@@ -9,19 +8,23 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
-import life.qbic.broadcasting.MessageSubscriber;
-import life.qbic.broadcasting.MessageSubscription;
-import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
-import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
+import java.util.Base64;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordOutput;
 import life.qbic.authentication.application.user.password.PasswordResetOutput;
 import life.qbic.authentication.application.user.password.PasswordResetRequest;
+import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
+import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.domain.registry.DomainRegistry;
 import life.qbic.authentication.domain.user.event.PasswordReset;
-import life.qbic.authentication.domain.user.repository.UserDomainService;
 import life.qbic.authentication.domain.user.event.UserRegistered;
+import life.qbic.authentication.domain.user.repository.UserDomainService;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.broadcasting.MessageSubscriber;
+import life.qbic.broadcasting.MessageSubscription;
+import life.qbic.datamanager.views.login.LoginHandler;
+import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
+import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.newshandler.usermanagement.email.Email;
@@ -30,9 +33,9 @@ import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.Recipient;
 import life.qbic.newshandler.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSupplier;
-import life.qbic.datamanager.views.login.LoginHandler;
-import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
-import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
+import life.qbic.projectmanagement.finances.offer.OfferId;
+import life.qbic.projectmanagement.finances.offer.ProjectTitle;
+import life.qbic.projectmanagement.finances.offer.api.OfferSearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -82,6 +85,11 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
     messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
+    // TODO delete
+    var offerSearchService = appContext.getBean(OfferSearchService.class);
+    var result = offerSearchService.findByProjectTitleOrOfferId(new ProjectTitle("fillinger"), OfferId.of("fillinger"));
+    //var result = offerSearchService.findAll();
+    result.forEach(offerOverview -> logger.info(offerOverview.offerId().id() + ": " + offerOverview.getProjectTitle().title()));
     setupUseCases(appContext);
   }
 

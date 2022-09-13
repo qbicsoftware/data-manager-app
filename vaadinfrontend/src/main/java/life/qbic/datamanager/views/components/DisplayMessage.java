@@ -9,7 +9,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 /**
  * <b> A DisplayMessage component which shows an unspecific styled information message with a
- * title and a detailed description. </b>
+ * getProjectTitle and a detailed description. </b>
  *
  * @since 1.0.0
  */
