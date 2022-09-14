@@ -6,6 +6,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.DataManagerLayout;
+import life.qbic.datamanager.views.components.SearchDialog;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -38,7 +39,7 @@ public class LandingPageLayout extends DataManagerLayout {
     register = new Button("Register");
     login = new Button("Login");
 
-    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
+    HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login, new SearchDialog());
     loggedOutButtonLayout.addClassName("button-layout-spacing");
 
     styleHeaderButtons();
