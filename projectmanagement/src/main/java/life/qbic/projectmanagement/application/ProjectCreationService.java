@@ -15,12 +15,12 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class OfferSearchService {
+public class ProjectCreationService {
 
   private final life.qbic.projectmanagement.finances.offer.api.OfferSearchService offerSearchService;
 
   @Autowired
-  public OfferSearchService(
+  public ProjectCreationService(
       life.qbic.projectmanagement.finances.offer.api.OfferSearchService offerSearchService) {
     this.offerSearchService = offerSearchService;
   }
