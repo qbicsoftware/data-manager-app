@@ -1,4 +1,5 @@
-package life.qbic.projectmanagement
+package life.qbic.projectmanagement.domain
+
 
 import spock.lang.Specification
 
