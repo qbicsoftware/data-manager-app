@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.offer
 
+import life.qbic.projectmanagement.domain.offer.OfferId
 import spock.lang.Specification
 
 /**
