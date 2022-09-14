@@ -2,6 +2,12 @@ package life.qbic.projectmanagement.domain.finances.offer;
 
 import javax.persistence.AttributeConverter;
 
+/**
+ * Experimental design description in an offer
+ *
+ * @param description the description
+ * @since 1.0.0
+ */
 public record ExperimentalDesignDescription(String description) {
 
   public static ExperimentalDesignDescription from(String description) {

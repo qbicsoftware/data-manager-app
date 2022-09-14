@@ -7,11 +7,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer entity</b>
+ * <p>
+ * Represents an offer in the project management context
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity
 @Table(name = "offers")
@@ -33,7 +33,8 @@ public class Offer {
   @Convert(converter = ExperimentalDesignDescription.Converter.class)
   private ExperimentalDesignDescription experimentalDesignDescription;
 
-  protected Offer(){}
+  protected Offer() {
+  }
 
   public Long getId() {
     return id;

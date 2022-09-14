@@ -3,11 +3,10 @@ package life.qbic.projectmanagement.domain.finances.offer;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * The project objective of an offer
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @param objective the project objective
+ * @since 1.0.0
  */
 public record ProjectObjective(String objective) {
 

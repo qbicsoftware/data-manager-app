@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.finances.offer;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * <b>OfferPreview Search Service</b>
- *
+ * <p>
  * Enables search queries for offers.
  *
  * @since 1.0.0
@@ -38,21 +37,21 @@ public class OfferLookupService {
    * @return list of {@link OfferPreview} matching the criteria
    * @since 1.0.0
    */
-  public List<OfferPreview> findOfferContainingProjectTitleOrId(String projectTitle, String offerId) {
+  public List<OfferPreview> findOfferContainingProjectTitleOrId(String projectTitle,
+      String offerId) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId);
   }
 
   /**
    * Searches for an offer based on a given offer id
+   *
    * @param offerId the offer id
-   * @return
-   * @since
+   * @return an optional offer, is {@link Optional#empty()} if no matching offer was found
+   * @since 1.0.0
    */
   public Optional<Offer> findOfferById(OfferId offerId) {
     return offerSearchService.findByOfferId(offerId.id());
   }
-
-
 
 
 }
