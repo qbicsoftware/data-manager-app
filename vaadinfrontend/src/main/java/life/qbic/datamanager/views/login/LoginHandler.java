@@ -28,7 +28,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Autowired
   LoginHandler(ConfirmEmailInput confirmEmailInput,
-      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-mail}") String emailConfirmationParameter) {
+      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
     this.confirmEmailInput = confirmEmailInput;
     this.emailConfirmationParameter = emailConfirmationParameter;
   }
