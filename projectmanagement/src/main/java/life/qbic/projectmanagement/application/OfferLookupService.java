@@ -1,14 +1,16 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.projectmanagement.domain.offer.OfferId;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b>Offer Search Service</b>
+ * <b>OfferPreview Search Service</b>
  *
  * Enables search queries for offers.
  *
@@ -33,14 +35,22 @@ public class OfferLookupService {
    *
    * @param projectTitle a character sequence to search for in the project title of an offer
    * @param offerId      a character sequence to search for in the offer id of an offer
-   * @return {@link OfferSearchResult} matching the criteria
+   * @return {@link OfferPreviewSearchResult} matching the criteria
    * @since 1.0.0
    */
-  List<OfferSearchResult> findOfferContainingProjectTitleOrId(String projectTitle, String offerId) {
+  public List<OfferPreviewSearchResult> findOfferContainingProjectTitleOrId(String projectTitle, String offerId) {
     var searchResults = offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId);
     return searchResults.stream().map(
-        offer -> new OfferSearchResult(new OfferId(offer.offerId().id()),
+        offer -> new OfferPreviewSearchResult(new OfferId(offer.offerId().id()),
             new ProjectTitle(offer.getProjectTitle().title()))).collect(Collectors.toList());
   }
+
+  public Optional<OfferPreview> findOfferById(OfferId offerId) {
+    Optional<OfferPreview> test;
+    return Optional.empty();
+  }
+
+
+
 
 }

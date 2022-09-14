@@ -1,89 +1,77 @@
 package life.qbic.projectmanagement.finances.offer;
 
-import static java.util.Objects.requireNonNull;
-
-import java.util.Objects;
-import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b>Offer</b>
- * <p>
- * Describes an offer object in the context of project management.
+ * <b><class short description - 1 Line!></b>
  *
- * @since 1.0.0
+ * <p><More detailed description - When to use, what it solves, etc.></p>
+ *
+ * @since <version tag>
  */
 @Entity
 @Table(name = "offers")
 public class Offer {
 
-  private String projectTitle;
-
-  private String offerId;
   @Id
-  @Column(name = "id")
   private Long id;
 
-  protected Offer() {
+  @Convert(converter = OfferId.Converter.class)
+  private OfferId offerId;
 
+  @Convert(converter = ProjectTitle.Converter.class)
+  private ProjectTitle projectTitle;
+
+  @Convert(converter = ProjectObjective.Converter.class)
+  private ProjectObjective projectObjective;
+
+  @Convert(converter = ExperimentalDesignDescription.Converter.class)
+  private ExperimentalDesignDescription experimentalDesignDescription;
+
+  protected Offer(){}
+
+  public Long getId() {
+    return id;
   }
 
-  /**
-   * Creates a new instance of {@link Offer} from a title and offer id.
-   *
-   * @param projectTitle the project title found in an offer
-   * @param offerId      the offer id, uniquely representing the offer resource
-   * @return an offer instance
-   * @since 1.0.0
-   */
-  public static Offer from(ProjectTitle projectTitle, OfferId offerId) {
-    requireNonNull(projectTitle);
-    requireNonNull(offerId);
-    return new Offer(projectTitle.title(), offerId.id());
-  }
-
-  private Offer(String projectTitle, String offerId) {
-    this.projectTitle = projectTitle;
-    this.offerId = offerId;
-  }
-
-  public ProjectTitle getProjectTitle() {
-    return ProjectTitle.of(projectTitle);
-  }
-
-  public void setProjectTitle(String projectTitle) {
-    this.projectTitle = projectTitle;
-  }
-
-  public OfferId offerId() {
-    return OfferId.of(offerId);
-  }
-
-  private void setOfferId(OfferId offerId) {
-    this.offerId = offerId.id();
-  }
-
-  private void setId(Long id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    Offer offer = (Offer) o;
-    return Objects.equals(projectTitle, offer.projectTitle) && Objects.equals(
-        offerId, offer.offerId) && Objects.equals(id, offer.id);
+  public OfferId offerId() {
+    return offerId;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(projectTitle, offerId, id);
+  public void setOfferId(OfferId offerId) {
+    this.offerId = offerId;
+  }
+
+  public ProjectTitle projectTitle() {
+    return projectTitle;
+  }
+
+  private void setProjectTitle(ProjectTitle projectTitle) {
+    this.projectTitle = projectTitle;
+  }
+
+  public ProjectObjective projectObjective() {
+    return projectObjective;
+  }
+
+  private void setProjectObjective(
+      ProjectObjective projectObjective) {
+    this.projectObjective = projectObjective;
+  }
+
+  public ExperimentalDesignDescription experimentalDesignDescription() {
+    return experimentalDesignDescription;
+  }
+
+  private void setExperimentalDesignDescription(
+      ExperimentalDesignDescription experimentalDesignDescription) {
+    this.experimentalDesignDescription = experimentalDesignDescription;
   }
 }

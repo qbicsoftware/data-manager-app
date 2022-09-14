@@ -13,5 +13,5 @@ module life.qbic.finances {
 
 
   opens life.qbic.projectmanagement.finances.offer to org.hibernate.orm.core, spring.core;
-  exports life.qbic.projectmanagement.finances.offer to spring.beans, life.qbic.mariadbconnector, life.qbic.vaadinfrontend, org.hibernate.orm.core;
+  exports life.qbic.projectmanagement.finances.offer;
 }

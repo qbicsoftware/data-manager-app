@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.finances.offer.api;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.finances.offer.Offer;
-import life.qbic.projectmanagement.finances.offer.OfferId;
-import life.qbic.projectmanagement.finances.offer.ProjectTitle;
+import life.qbic.projectmanagement.finances.offer.OfferPreview;
 
 /**
- * <b>Offer Search Service</b>
+ * <b>OfferPreview Search Service</b>
  * <p>
  * Service that enables queries for offer information.
  *
@@ -24,9 +24,11 @@ public interface OfferSearchService {
    *                     offer
    * @param offerId      the character sequence that need to be contained in the offer id of an
    *                     offer
-   * @return a list of {@link Offer} matching the search criteria
+   * @return a list of {@link OfferPreview} matching the search criteria
    * @since 1.0.0
    */
-  List<Offer> findByProjectTitleOrOfferId(String projectTitle, String offerId);
+  List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId);
+
+  Optional<Offer> findByOfferId(String offerId);
 
 }

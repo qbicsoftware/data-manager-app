@@ -21,7 +21,7 @@ public class ProjectTitle {
    * @return a new instance of project title
    * @since 1.0.0
    */
-  public static ProjectTitle of(String title) {
+  public static ProjectTitle from(String title) {
     return new ProjectTitle(title);
   }
 
@@ -53,5 +53,18 @@ public class ProjectTitle {
   @Override
   public int hashCode() {
     return Objects.hash(title);
+  }
+
+  public static class Converter implements AttributeConverter<ProjectTitle, String> {
+
+    @Override
+    public String convertToDatabaseColumn(ProjectTitle projectTitle) {
+      return projectTitle.title();
+    }
+
+    @Override
+    public ProjectTitle convertToEntityAttribute(String s) {
+      return ProjectTitle.from(s);
+    }
   }
 }

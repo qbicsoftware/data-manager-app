@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.finances.offer;
 
 import java.util.Objects;
+import javax.persistence.AttributeConverter;
 
 /**
- * <b>Offer Id</b>
+ * <b>OfferPreview Id</b>
  * <p>
  * Describes an identifier for an offer.
  *
@@ -20,7 +21,7 @@ public class OfferId {
    * @return a new instance of an offer id
    * @since 1.0.0
    */
-  public static OfferId of(String id) {
+  public static OfferId from(String id) {
     return new OfferId(id);
   }
 
@@ -51,5 +52,18 @@ public class OfferId {
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  public static class Converter implements AttributeConverter<OfferId, String> {
+
+    @Override
+    public String convertToDatabaseColumn(OfferId offerId) {
+      return offerId.id();
+    }
+
+    @Override
+    public OfferId convertToEntityAttribute(String s) {
+      return OfferId.from(s);
+    }
   }
 }
