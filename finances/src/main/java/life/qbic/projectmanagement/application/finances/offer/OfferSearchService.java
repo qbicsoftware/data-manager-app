@@ -1,9 +1,9 @@
-package life.qbic.projectmanagement.finances.offer.api;
+package life.qbic.projectmanagement.application.finances.offer;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.finances.offer.Offer;
-import life.qbic.projectmanagement.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 
 /**
  * <b>OfferPreview Search Service</b>
@@ -29,6 +29,13 @@ public interface OfferSearchService {
    */
   List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId);
 
+  /**
+   * Searches for an offer based on the provided identifier.
+   *
+   * @param offerId the offer identifier to use for the offer search.
+   * @return the offer when found, otherwise {@link Optional#empty()}
+   * @since 1.0.0
+   */
   Optional<Offer> findByOfferId(String offerId);
 
 }

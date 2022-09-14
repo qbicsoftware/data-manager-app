@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.finances.offer;
+package life.qbic.projectmanagement.domain.finances.offer;
 
 import java.util.Objects;
 import javax.persistence.AttributeConverter;

@@ -1,7 +1,7 @@
 package life.qbic.finance.persistence;
 
 import java.util.List;
-import life.qbic.projectmanagement.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.data.repository.CrudRepository;
 
 /**

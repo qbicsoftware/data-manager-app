@@ -31,6 +31,7 @@ open module life.qbic.vaadinfrontend {
   requires life.qbic.commons;
   requires life.qbic.logging;
   requires life.qbic.finances;
+  requires life.qbic.projectmanagement;
 
   exports life.qbic.datamanager;
 

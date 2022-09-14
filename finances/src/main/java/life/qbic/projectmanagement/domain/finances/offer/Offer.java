@@ -1,5 +1,6 @@
-package life.qbic.projectmanagement.finances.offer;
+package life.qbic.projectmanagement.domain.finances.offer;
 
+import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -28,6 +29,7 @@ public class Offer {
   @Convert(converter = ProjectObjective.Converter.class)
   private ProjectObjective projectObjective;
 
+  @Column(name = "experimentalDesign")
   @Convert(converter = ExperimentalDesignDescription.Converter.class)
   private ExperimentalDesignDescription experimentalDesignDescription;
 
