@@ -3,19 +3,20 @@ package life.qbic.projectmanagement.application;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.projectmanagement.domain.Project;
 
 /**
  * A response for project creations.
  */
 public class ProjectCreationResponse extends ApplicationResponse {
 
-  private String projectTitle;
+  private Project createdProject;
 
 
-  public static ProjectCreationResponse successResponse(String projectTitle) {
+  public static ProjectCreationResponse successResponse(Project project) {
     var successResponse = new ProjectCreationResponse();
     successResponse.setType(Type.SUCCESSFUL);
-    successResponse.setProjectTitle(projectTitle);
+    successResponse.setCreatedProject(project);
     return successResponse;
   }
 
@@ -29,12 +30,12 @@ public class ProjectCreationResponse extends ApplicationResponse {
     return failureResponse;
   }
 
-  protected void setProjectTitle(String projectId) {
-    this.projectTitle = projectId;
+  protected void setCreatedProject(Project createdProject) {
+    this.createdProject = createdProject;
   }
 
-  public Optional<String> createdProject() {
-    return Optional.ofNullable(projectTitle);
+  public Optional<Project> createdProject() {
+    return Optional.ofNullable(createdProject);
   }
 
   @Override
@@ -51,13 +52,13 @@ public class ProjectCreationResponse extends ApplicationResponse {
 
     ProjectCreationResponse that = (ProjectCreationResponse) o;
 
-    return Objects.equals(projectTitle, that.projectTitle);
+    return Objects.equals(createdProject, that.createdProject);
   }
 
   @Override
   public int hashCode() {
     int result = super.hashCode();
-    result = 31 * result + (projectTitle != null ? projectTitle.hashCode() : 0);
+    result = 31 * result + (createdProject != null ? createdProject.hashCode() : 0);
     return result;
   }
 }

@@ -22,8 +22,4 @@ public record ProjectId(UUID uuid) {
   public static ProjectId create() {
     return new ProjectId();
   }
-
-  public String exportToString() {
-    return uuid.toString();
-  }
 }
