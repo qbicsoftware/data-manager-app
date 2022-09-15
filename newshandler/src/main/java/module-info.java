@@ -3,8 +3,7 @@ module life.qbic.newshandler {
   requires spring.context;
   requires life.qbic.commons;
   requires life.qbic.logging;
-  requires jakarta.mail;
-  requires jakarta.activation;
+  requires java.mail;
 
   exports life.qbic.newshandler.usermanagement.registration;
   exports life.qbic.newshandler.usermanagement.email;
