@@ -9,10 +9,10 @@ import life.qbic.projectmanagement.domain.ProjectId;
 /**
  * An integration event indicating successful project creation.
  */
-public record ProjectCreatedEvent(UUID eventId, ProjectId projectId, Instant occurredOn) {
+public record ProjectCreatedEvent(UUID eventId, String projectId, Instant occurredOn) {
 
   public ProjectCreatedEvent(ProjectId projectId) {
-    this(UUID.randomUUID(), projectId, Instant.now());
+    this(UUID.randomUUID(), projectId.exportToString(), Instant.now());
   }
 
   public ProjectCreatedEvent {
