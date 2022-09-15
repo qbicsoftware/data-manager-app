@@ -4,6 +4,8 @@ package life.qbic.projectmanagement.application
 import life.qbic.projectmanagement.domain.ProjectRepository
 import spock.lang.Specification
 
+import static java.util.Objects.nonNull
+
 /**
  * <b>short description</b>
  *
@@ -16,34 +18,34 @@ class ProjectCreationServiceSpec extends Specification {
   ProjectRepository projectRepository = Stub()
   ProjectCreationService projectCreationService = new ProjectCreationService(projectRepository)
 
-  def "expect null input will cause a failure response"() {
+  def "expect null input will cause an exception"() {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    def response = projectCreationService.createProject(null)
+    projectCreationService.createProject(null)
     then: "the response is not successful"
-    !response.isSuccess()
+    thrown(RuntimeException)
   }
 
   def "expect an empty title to fail"() {
     given:
     projectRepository.add(_) >> {}
     when: "empty title is provided"
-    def response = projectCreationService.createProject("")
+    projectCreationService.createProject("")
 
-    then: "the response is not successful"
-    !response.isSuccess()
+    then: "an exception is thrown"
+    thrown(Exception)
   }
 
   def "expect project creation is successful for a non-empty title"() {
     given:
     projectRepository.add(_) >> {}
     when: "a project is created with a non-empty title"
-    def response = projectCreationService.createProject("test")
+    def project = projectCreationService.createProject("test")
 
-    then: "the response is a success"
-    response.isSuccess()
-    response.projectCreatedEvent().isPresent()
+    then: "the created project is returned"
+    nonNull(project)
+
   }
 
   def "expect unsuccessful save of a new project causes failure response"() {
@@ -51,9 +53,9 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepository.add(_) >> { throw new RuntimeException("expected exception") }
 
     when:
-    def response = projectCreationService.createProject("test")
+    projectCreationService.createProject("test")
 
     then:
-    !response.isSuccess()
+    thrown(Exception)
   }
 }
