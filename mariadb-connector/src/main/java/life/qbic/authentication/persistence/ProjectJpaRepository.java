@@ -1,12 +1,11 @@
 package life.qbic.authentication.persistence;
 
 import life.qbic.authentication.domain.user.repository.ProjectDataStorage;
-import life.qbic.projectmanagement.ProjectTitle;
 import life.qbic.projectmanagement.Project;
+import life.qbic.projectmanagement.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 
 
@@ -34,18 +33,12 @@ public class ProjectJpaRepository implements ProjectDataStorage {
   }
 
   @Override
-  public List<Project> findProjectsByTitle(ProjectTitle projectTitle) {
-    return projectRepo.findProjectsByTitle(projectTitle);
-  }
-
-  @Override
-  public void save(Project project) {
+  public void add(Project project) {
     projectRepo.save(project);
   }
 
   @Override
   public Optional<Project> findProjectById(ProjectId projectId) {
-    return projectRepo.findProjectsByTitle(projectId);
+    return projectRepo.findProjectById(projectId);
   }
-
 }

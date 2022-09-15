@@ -1,5 +1,8 @@
 package life.qbic.authentication.domain.user.repository;
 
+import life.qbic.projectmanagement.Project;
+import life.qbic.projectmanagement.ProjectId;
+
 import java.io.Serializable;
 import java.util.Optional;
 
@@ -35,21 +38,9 @@ public class ProjectRepository implements Serializable {
   }
 
   /**
-   * Searches for a project with the provided title
-   *
-   *
-   * @param title the title to find a matching project entry for
-   * @return list of title objects if found, otherwise empty list
-   * @since 1.0.0
-   */
-  public List<Project> findByTitle(ProjectTitle title) {
-    return dataStorage.findProjectsByTitle(title);
-  }
-
-  /**
    * Searches for a project matching a provided projectId
    *
-   * @param projectId the project's unique id, accessible via {@link Project#id()}
+   * @param projectId the project's unique id, accessible via {@link Project#getId()}
    * @return the project if present in the repository, else returns an {@link Optional#empty()}.
    * @since 1.0.0
    */
@@ -69,24 +60,12 @@ public class ProjectRepository implements Serializable {
     saveProject(project);
   }
 
-  /**
-   * Updates a user in the repository. Publishes all domain events of the user if successful. If
-   * unsuccessful, throws a {@link ProjectStorageException}
-   *
-   * @param project the updated project state to write to the repository
-   * @throws ProjectStorageException if the project could not be updated in the repository
-   * @since 1.0.0
-   */
-  public void updateUser(Project project) throws UserRepository.UserStorageException {
-    if (!doesProjectExistWithId(uprojectser.id())) {
-      throw new UserRepository.UserStorageException();
-    }
-    saveProject(project);
-  }
-
   private void saveProject(Project project) {
     try {
-      dataStorage.save(project);
+      if(doesProjectExistWithId(project.getId())) {
+        throw new ProjectRepository.ProjectStorageException();
+      }
+      dataStorage.add(project);
     } catch (Exception e) {
       throw new ProjectRepository.ProjectStorageException(e);
     }

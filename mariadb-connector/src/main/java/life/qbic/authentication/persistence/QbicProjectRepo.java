@@ -1,10 +1,9 @@
 package life.qbic.authentication.persistence;
 
 import life.qbic.projectmanagement.Project;
-import life.qbic.projectmanagement.ProjectTitle;
+import life.qbic.projectmanagement.ProjectId;
 import org.springframework.data.repository.CrudRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -18,16 +17,7 @@ import java.util.Optional;
  *
  * @since 1.0.0
  */
-public interface QbicProjectRepo extends CrudRepository<Project, ProjectTitle> {
-
-  /**
-   * Find projects by title in the persistent data storage
-   *
-   * @param projectTitle the title to filter projects for
-   * @return a list of matching project that have the given title
-   * @since 1.0.0
-   */
-  List<Project> findProjectsByTitle(ProjectTitle projectTitle);
+public interface QbicProjectRepo extends CrudRepository<Project, ProjectId> {
 
   /**
    * Find project by mail address in the persistent data storage
