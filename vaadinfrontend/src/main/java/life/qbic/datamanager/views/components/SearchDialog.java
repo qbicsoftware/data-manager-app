@@ -41,11 +41,7 @@ public class SearchDialog extends Dialog {
     private void styleSearchBox(){
         searchField = new ComboBox<>();
         searchField.setPlaceholder("Search");
-        //todo replace icon
-        searchField.getElement().getStyle().set("--lumo-icons-dropdown", "lumo:search");
-        //.getElement().getStyle().set("--lumo-icons-dropdown", "\"\\ea23\"");
-        //(VaadinIcon.SEARCH.create());
-
+        searchField.setClassName("searchbox");
         contentLayout = new HorizontalLayout(searchField);
     }
 
