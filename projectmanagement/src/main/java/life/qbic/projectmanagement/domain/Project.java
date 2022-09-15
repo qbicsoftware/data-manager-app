@@ -2,8 +2,6 @@ package life.qbic.projectmanagement.domain;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.UUID;
-
 /**
  * A project planned and run at QBiC.
  *
@@ -11,13 +9,13 @@ import java.util.UUID;
  */
 public class Project {
 
-  private final UUID uuid;
+  private final ProjectId projectId;
   private final ProjectIntent projectIntent;
 
-  private Project(UUID uuid, ProjectIntent projectIntent) {
-    requireNonNull(uuid);
+  private Project(ProjectId projectId, ProjectIntent projectIntent) {
+    requireNonNull(projectId);
     requireNonNull(projectIntent);
-    this.uuid = uuid;
+    this.projectId = projectId;
     this.projectIntent = projectIntent;
   }
 
@@ -28,19 +26,18 @@ public class Project {
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent) {
-    UUID uuid = UUID.randomUUID();
-    return new Project(uuid, projectIntent);
+    return new Project(ProjectId.create(), projectIntent);
   }
 
   /**
    * Generates a project with the specified values injected.
    *
-   * @param uuid          the uuid of the project
+   * @param projectId     the identifier of the project
    * @param projectIntent the project intent
    * @return a project with the given identity and project intent
    */
-  public static Project of(UUID uuid, ProjectIntent projectIntent) {
-    return new Project(uuid, projectIntent);
+  public static Project of(ProjectId projectId, ProjectIntent projectIntent) {
+    return new Project(projectId, projectIntent);
   }
 
   @Override
@@ -54,11 +51,11 @@ public class Project {
 
     Project project = (Project) o;
 
-    return uuid.equals(project.uuid);
+    return projectId.equals(project.projectId);
   }
 
   @Override
   public int hashCode() {
-    return uuid.hashCode();
+    return projectId.hashCode();
   }
 }
