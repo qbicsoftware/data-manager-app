@@ -9,13 +9,13 @@ import life.qbic.application.commons.ApplicationResponse;
  */
 public class ProjectCreationResponse extends ApplicationResponse {
 
-  private String projectId;
+  private String projectTitle;
 
 
-  public static ProjectCreationResponse successResponse(String projectId) {
+  public static ProjectCreationResponse successResponse(String projectTitle) {
     var successResponse = new ProjectCreationResponse();
     successResponse.setType(Type.SUCCESSFUL);
-    successResponse.setProjectId(projectId);
+    successResponse.setProjectTitle(projectTitle);
     return successResponse;
   }
 
@@ -29,12 +29,12 @@ public class ProjectCreationResponse extends ApplicationResponse {
     return failureResponse;
   }
 
-  protected void setProjectId(String projectId) {
-    this.projectId = projectId;
+  protected void setProjectTitle(String projectId) {
+    this.projectTitle = projectId;
   }
 
   public Optional<String> createdProject() {
-    return Optional.ofNullable(projectId);
+    return Optional.ofNullable(projectTitle);
   }
 
   @Override
@@ -51,13 +51,13 @@ public class ProjectCreationResponse extends ApplicationResponse {
 
     ProjectCreationResponse that = (ProjectCreationResponse) o;
 
-    return Objects.equals(projectId, that.projectId);
+    return Objects.equals(projectTitle, that.projectTitle);
   }
 
   @Override
   public int hashCode() {
     int result = super.hashCode();
-    result = 31 * result + (projectId != null ? projectId.hashCode() : 0);
+    result = 31 * result + (projectTitle != null ? projectTitle.hashCode() : 0);
     return result;
   }
 }
