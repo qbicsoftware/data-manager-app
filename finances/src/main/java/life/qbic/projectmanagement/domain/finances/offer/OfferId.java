@@ -4,7 +4,7 @@ import java.util.Objects;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b>OfferPreview Id</b>
+ * <b>Offer Id</b>
  * <p>
  * Describes an identifier for an offer.
  *
