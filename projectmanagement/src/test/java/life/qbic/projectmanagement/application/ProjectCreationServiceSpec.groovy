@@ -11,10 +11,10 @@ import spock.lang.Specification
  *
  * @since <version tag>
  */
-class ProjectCreationServiceImplSpec extends Specification {
+class ProjectCreationServiceSpec extends Specification {
 
   ProjectRepository projectRepository = Stub()
-  ProjectCreationService projectCreationService = new ProjectCreationServiceImpl(projectRepository)
+  ProjectCreationService projectCreationService = new ProjectCreationService(projectRepository)
 
   def "expect null input will cause a failure response"() {
     given:

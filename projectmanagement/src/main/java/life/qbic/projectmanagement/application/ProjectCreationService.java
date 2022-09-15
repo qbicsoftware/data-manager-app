@@ -1,9 +1,21 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.Objects;
+import life.qbic.projectmanagement.domain.Project;
+import life.qbic.projectmanagement.domain.ProjectIntent;
+import life.qbic.projectmanagement.domain.ProjectRepository;
+import life.qbic.projectmanagement.domain.ProjectTitle;
+
 /**
- * Creates a project containing certain information.
+ * Application service facilitating the creation of projects.
  */
-public interface ProjectCreationService {
+public class ProjectCreationService {
+
+  private final ProjectRepository projectRepository;
+
+  public ProjectCreationService(ProjectRepository projectRepository) {
+    this.projectRepository = projectRepository;
+  }
 
   /**
    * Create a new project based on the information provided.
@@ -11,6 +23,17 @@ public interface ProjectCreationService {
    * @param title the title of the project.
    * @return a {@link ProjectCreationResponse} indicating success or failure
    */
-  ProjectCreationResponse createProject(String title);
-
+  public ProjectCreationResponse createProject(String title) {
+    if (Objects.isNull(title)) {
+      return ProjectCreationResponse.failureResponse(
+          new IllegalArgumentException("Project title must not be null"));
+    }
+    try {
+      Project project = Project.create(new ProjectIntent(new ProjectTitle(title)));
+      projectRepository.add(project);
+      return ProjectCreationResponse.successResponse(project);
+    } catch (RuntimeException e) {
+      return ProjectCreationResponse.failureResponse(e);
+    }
+  }
 }
