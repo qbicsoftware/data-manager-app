@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement;
+package life.qbic.projectmanagement.domain.project;
 
 import static java.util.Objects.requireNonNull;
 

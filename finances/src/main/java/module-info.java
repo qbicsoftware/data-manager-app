@@ -1,5 +1,4 @@
 module life.qbic.finances {
-  exports life.qbic.projectmanagement.finances.offer.api;
   requires spring.context;
   requires spring.beans;
   requires spring.data.commons;
@@ -12,6 +11,8 @@ module life.qbic.finances {
   requires java.persistence;
 
 
-  opens life.qbic.projectmanagement.finances.offer to org.hibernate.orm.core, spring.core;
-  exports life.qbic.projectmanagement.finances.offer to spring.beans, life.qbic.mariadbconnector, life.qbic.vaadinfrontend, org.hibernate.orm.core;
+  opens life.qbic.projectmanagement.application.finances.offer to org.hibernate.orm.core, spring.core;
+  exports life.qbic.projectmanagement.application.finances.offer;
+  exports life.qbic.projectmanagement.domain.finances.offer;
+  opens life.qbic.projectmanagement.domain.finances.offer to org.hibernate.orm.core, spring.core;
 }

@@ -1,27 +1,23 @@
 package life.qbic.finance.persistence;
 
-import java.util.List;
-import life.qbic.projectmanagement.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import org.springframework.data.repository.CrudRepository;
 
 /**
- * JPA repository for {@link Offer} queries.
+ * Offer JPA repository
  *
  * @since 1.0.0
  */
 public interface OfferRepository extends CrudRepository<Offer, Long> {
 
   /**
-   * Case-insensitive search for offers that contain a given project title or offer id character
-   * sequence
+   * Searches for an {@link Offer} based on the provided offer id.
    *
-   * @param projectTitle the project title character sequence contained in the project title of an
-   *                     offer
-   * @param offerId      the offer id character sequence contained in the offer id of an offer
-   * @return matching search results
+   * @param offerId the offer identifier
+   * @return the offer if found, else null
    * @since 1.0.0
    */
-  List<Offer> findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
-      String projectTitle, String offerId);
+  Offer findByOfferId(OfferId offerId);
 
 }

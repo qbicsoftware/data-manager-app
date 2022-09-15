@@ -32,8 +32,9 @@ open module life.qbic.vaadinfrontend {
   requires life.qbic.logging;
   requires life.qbic.finances;
   requires vaadin.dialog.flow;
-    requires vaadin.combo.box.flow;
+  requires vaadin.combo.box.flow;
+  requires life.qbic.projectmanagement;
 
-    exports life.qbic.datamanager;
+  exports life.qbic.datamanager;
 
 }
