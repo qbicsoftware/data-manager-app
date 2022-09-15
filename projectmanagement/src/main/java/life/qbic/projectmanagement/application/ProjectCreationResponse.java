@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationResponse;
 
@@ -34,5 +35,29 @@ public class ProjectCreationResponse extends ApplicationResponse {
 
   public Optional<ProjectCreatedEvent> projectCreatedEvent() {
     return Optional.ofNullable(projectCreatedEvent);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+
+    ProjectCreationResponse that = (ProjectCreationResponse) o;
+
+    return Objects.equals(projectCreatedEvent, that.projectCreatedEvent);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (projectCreatedEvent != null ? projectCreatedEvent.hashCode() : 0);
+    return result;
   }
 }
