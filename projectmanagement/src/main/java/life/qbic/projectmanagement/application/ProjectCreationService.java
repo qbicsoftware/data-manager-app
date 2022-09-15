@@ -25,10 +25,21 @@ public class ProjectCreationService {
    */
   public Project createProject(String title) {
     if (Objects.isNull(title)) {
-      throw new IllegalArgumentException("Project title must not be null");
+      throw new ProjectManagementException("Project title must not be null. Provided: " + title,
+          new IllegalArgumentException("Project title must not be null"));
     }
-    Project project = Project.create(new ProjectIntent(new ProjectTitle(title)));
-    projectRepository.add(project);
+
+    Project project;
+    try {
+      project = Project.create(new ProjectIntent(new ProjectTitle(title)));
+    } catch (Exception e) {
+      throw new ProjectManagementException("Could not create project with title: " + title, e);
+    }
+    try {
+      projectRepository.add(project);
+    } catch (Exception e) {
+      throw new ProjectManagementException("Could not add project: " + project, e);
+    }
     return project;
   }
 }
