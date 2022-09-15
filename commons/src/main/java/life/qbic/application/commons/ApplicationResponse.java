@@ -16,9 +16,9 @@ public class ApplicationResponse {
 
   protected enum Type {SUCCESSFUL, FAILED}
 
-  private Type type;
+  protected Type type;
 
-  private final List<RuntimeException> exceptions;
+  protected final List<RuntimeException> exceptions;
 
   public static ApplicationResponse successResponse() {
     var successResponse = new ApplicationResponse();
@@ -36,11 +36,11 @@ public class ApplicationResponse {
     return failureResponse;
   }
 
-  private ApplicationResponse() {
+  protected ApplicationResponse() {
     exceptions = new ArrayList<>();
   }
 
-  private void setType(Type type) {
+  protected void setType(Type type) {
     this.type = type;
   }
 
@@ -51,7 +51,7 @@ public class ApplicationResponse {
     return type.equals(Type.SUCCESSFUL);
   }
 
-  private void setExceptions(RuntimeException... exceptions) {
+  protected void setExceptions(RuntimeException... exceptions) {
     this.exceptions.clear();
     this.exceptions.addAll(Arrays.stream(exceptions).toList());
   }

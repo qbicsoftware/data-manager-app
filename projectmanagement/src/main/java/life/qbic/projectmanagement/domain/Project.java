@@ -40,6 +40,10 @@ public class Project {
     return new Project(projectId, projectIntent);
   }
 
+  public ProjectId getId() {
+    return projectId;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
