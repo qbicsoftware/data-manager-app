@@ -41,7 +41,7 @@ public class LandingPageLayout extends DataManagerLayout {
     login = new Button("Login");
 
     //Todo remove searchdialog here
-    Dialog dialog = new Dialog();
+    SearchDialog dialog = new SearchDialog();
     dialog.open();
 
     HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);

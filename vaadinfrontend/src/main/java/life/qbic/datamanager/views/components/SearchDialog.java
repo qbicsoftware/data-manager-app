@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.components;
 
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.TextField;
 
@@ -12,12 +11,11 @@ import com.vaadin.flow.component.textfield.TextField;
  *
  * @since <version tag>
  */
-public class SearchDialog extends Composite<Dialog> {
+public class SearchDialog extends Dialog {
 
     TextField searchField;
 
-
-    SearchDialog(){
+    public SearchDialog(){
         super();
     }
 
