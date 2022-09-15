@@ -101,6 +101,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
     logger.info("works");
+    logger.error("Does not work");
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(

@@ -36,8 +36,10 @@
     <!-- https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
     <dependency>
       <groupId>com.sun.mail</groupId>
-      <artifactId>jakarta.mail</artifactId>
+      <artifactId>javax.mail</artifactId>
+      <version>1.6.2</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
