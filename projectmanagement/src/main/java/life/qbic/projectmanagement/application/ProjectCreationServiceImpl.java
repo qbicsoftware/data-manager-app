@@ -26,7 +26,7 @@ public class ProjectCreationServiceImpl implements ProjectCreationService {
     try {
       Project project = Project.create(new ProjectIntent(new ProjectTitle(title)));
       projectRepository.add(project);
-      return ProjectCreationResponse.successResponse(new ProjectCreatedEvent(project.getId()));
+      return ProjectCreationResponse.successResponse(project.getId().exportToString());
     } catch (RuntimeException e) {
       return ProjectCreationResponse.failureResponse(e);
     }
