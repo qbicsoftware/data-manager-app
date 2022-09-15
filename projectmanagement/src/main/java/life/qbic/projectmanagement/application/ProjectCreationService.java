@@ -21,19 +21,14 @@ public class ProjectCreationService {
    * Create a new project based on the information provided.
    *
    * @param title the title of the project.
-   * @return a {@link ProjectCreationResponse} indicating success or failure
+   * @return the created project
    */
-  public ProjectCreationResponse createProject(String title) {
+  public Project createProject(String title) {
     if (Objects.isNull(title)) {
-      return ProjectCreationResponse.failureResponse(
-          new IllegalArgumentException("Project title must not be null"));
+      throw new IllegalArgumentException("Project title must not be null");
     }
-    try {
-      Project project = Project.create(new ProjectIntent(new ProjectTitle(title)));
-      projectRepository.add(project);
-      return ProjectCreationResponse.successResponse(project);
-    } catch (RuntimeException e) {
-      return ProjectCreationResponse.failureResponse(e);
-    }
+    Project project = Project.create(new ProjectIntent(new ProjectTitle(title)));
+    projectRepository.add(project);
+    return project;
   }
 }
