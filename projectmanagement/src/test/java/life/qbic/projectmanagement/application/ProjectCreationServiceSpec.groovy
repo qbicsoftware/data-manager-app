@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application
 
-
+import life.qbic.application.commons.ApplicationException
 import life.qbic.projectmanagement.domain.ProjectRepository
 import spock.lang.Specification
 
@@ -24,7 +24,8 @@ class ProjectCreationServiceSpec extends Specification {
     when: "null input is provided"
     projectCreationService.createProject(null)
     then: "an exception is thrown"
-    thrown(RuntimeException)
+    def e = thrown(ProjectManagementException)
+    e.errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
   }
 
   def "expect an empty title will cause an exception"() {
@@ -34,7 +35,9 @@ class ProjectCreationServiceSpec extends Specification {
     projectCreationService.createProject("")
 
     then: "an exception is thrown"
-    thrown(Exception)
+    def e = thrown(ProjectManagementException)
+    e.errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
+
   }
 
   def "expect project creation returnes the created project for a non-empty title"() {
@@ -56,6 +59,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectCreationService.createProject("test")
 
     then:
-    thrown(Exception)
+    def e = thrown(ProjectManagementException)
+    e.errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 }

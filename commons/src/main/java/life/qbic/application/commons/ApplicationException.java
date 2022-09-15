@@ -16,7 +16,8 @@ import java.util.Optional;
 public abstract class ApplicationException extends RuntimeException {
 
   public enum ErrorCode {
-    GENERAL
+    GENERAL,
+    INVALID_PROJECT_TITLE
   }
 
   public static class ErrorParameters {

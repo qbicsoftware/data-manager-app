@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.Objects;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.projectmanagement.domain.Project;
 import life.qbic.projectmanagement.domain.ProjectIntent;
 import life.qbic.projectmanagement.domain.ProjectRepository;
@@ -24,14 +25,17 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Project createProject(String title) {
-    if (Objects.isNull(title)) {
-      throw new ProjectManagementException("Project title must not be null. Provided: " + title,
-          new IllegalArgumentException("Project title must not be null"));
+    ProjectTitle projectTitle;
+    try {
+      projectTitle = new ProjectTitle(title);
+    } catch (Exception e) {
+      throw new ProjectManagementException("Could not create project title for: " + title, e,
+          ErrorCode.INVALID_PROJECT_TITLE, ErrorParameters.create().with("projectTitle", title));
     }
 
     Project project;
     try {
-      project = Project.create(new ProjectIntent(new ProjectTitle(title)));
+      project = Project.create(new ProjectIntent(projectTitle));
     } catch (Exception e) {
       throw new ProjectManagementException("Could not create project with title: " + title, e);
     }
