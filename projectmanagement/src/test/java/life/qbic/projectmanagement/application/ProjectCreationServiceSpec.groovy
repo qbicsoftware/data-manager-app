@@ -23,11 +23,11 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepository.add(_) >> {}
     when: "null input is provided"
     projectCreationService.createProject(null)
-    then: "the response is not successful"
+    then: "an exception is thrown"
     thrown(RuntimeException)
   }
 
-  def "expect an empty title to fail"() {
+  def "expect an empty title will cause an exception"() {
     given:
     projectRepository.add(_) >> {}
     when: "empty title is provided"
@@ -37,7 +37,7 @@ class ProjectCreationServiceSpec extends Specification {
     thrown(Exception)
   }
 
-  def "expect project creation is successful for a non-empty title"() {
+  def "expect project creation returnes the created project for a non-empty title"() {
     given:
     projectRepository.add(_) >> {}
     when: "a project is created with a non-empty title"
@@ -48,7 +48,7 @@ class ProjectCreationServiceSpec extends Specification {
 
   }
 
-  def "expect unsuccessful save of a new project causes failure response"() {
+  def "expect unsuccessful save of a new project throws an exception"() {
     given:
     projectRepository.add(_) >> { throw new RuntimeException("expected exception") }
 
