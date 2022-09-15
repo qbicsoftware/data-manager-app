@@ -38,17 +38,6 @@ public class ProjectRepository implements Serializable {
   }
 
   /**
-   * Searches for a project matching a provided projectId
-   *
-   * @param projectId the project's unique id, accessible via {@link Project#getId()}
-   * @return the project if present in the repository, else returns an {@link Optional#empty()}.
-   * @since 1.0.0
-   */
-  public Optional<Project> findById(ProjectId projectId) {
-    return dataStorage.findProjectById(projectId);
-  }
-
-  /**
    * Adds a user to the repository. Publishes all domain events of the project if successful. If
    * unsuccessful, throws a {@link ProjectStorageException} Exception.
    *
@@ -57,10 +46,10 @@ public class ProjectRepository implements Serializable {
    * @since 1.0.0
    */
   public void addProject(Project project) throws ProjectStorageException {
-    saveProject(project);
+    saveProjectIfNonexistent(project);
   }
 
-  private void saveProject(Project project) {
+  private void saveProjectIfNonexistent(Project project) {
     try {
       if(doesProjectExistWithId(project.getId())) {
         throw new ProjectStorageException();
@@ -72,8 +61,8 @@ public class ProjectRepository implements Serializable {
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
-    return findById(id).isPresent();
-  }
+      return dataStorage.findProjectById(id).isPresent();
+    }
 
   public static class ProjectStorageException extends RuntimeException {
 
