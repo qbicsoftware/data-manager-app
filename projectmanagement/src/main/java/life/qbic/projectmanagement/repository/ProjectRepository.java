@@ -1,4 +1,4 @@
-package life.qbic.authentication.domain.user.repository;
+package life.qbic.projectmanagement.repository;
 
 import life.qbic.projectmanagement.Project;
 import life.qbic.projectmanagement.ProjectId;
@@ -63,11 +63,11 @@ public class ProjectRepository implements Serializable {
   private void saveProject(Project project) {
     try {
       if(doesProjectExistWithId(project.getId())) {
-        throw new ProjectRepository.ProjectStorageException();
+        throw new ProjectStorageException();
       }
       dataStorage.add(project);
     } catch (Exception e) {
-      throw new ProjectRepository.ProjectStorageException(e);
+      throw new ProjectStorageException(e);
     }
   }
 

@@ -1,6 +1,6 @@
-package life.qbic.authentication.persistence;
+package life.qbic.projectmanagement.persistence;
 
-import life.qbic.authentication.domain.user.repository.ProjectDataStorage;
+import life.qbic.projectmanagement.repository.ProjectDataStorage;
 import life.qbic.projectmanagement.Project;
 import life.qbic.projectmanagement.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;

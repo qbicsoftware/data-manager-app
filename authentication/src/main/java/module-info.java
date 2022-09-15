@@ -3,7 +3,6 @@ module life.qbic.authentication {
   requires life.qbic.broadcasting;
   requires life.qbic.commons;
   requires life.qbic.logging;
-  requires life.qbic.projectmanagement;
 
   exports life.qbic.authentication.domain.user.concept;
   exports life.qbic.authentication.application;

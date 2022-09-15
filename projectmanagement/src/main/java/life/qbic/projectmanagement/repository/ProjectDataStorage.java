@@ -1,4 +1,4 @@
-package life.qbic.authentication.domain.user.repository;
+package life.qbic.projectmanagement.repository;
 
 import life.qbic.projectmanagement.Project;
 import life.qbic.projectmanagement.ProjectId;

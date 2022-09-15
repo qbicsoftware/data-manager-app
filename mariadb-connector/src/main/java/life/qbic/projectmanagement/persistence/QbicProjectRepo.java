@@ -1,4 +1,4 @@
-package life.qbic.authentication.persistence;
+package life.qbic.projectmanagement.persistence;
 
 import life.qbic.projectmanagement.Project;
 import life.qbic.projectmanagement.ProjectId;
