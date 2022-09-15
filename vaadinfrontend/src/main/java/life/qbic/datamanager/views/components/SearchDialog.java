@@ -17,6 +17,9 @@ public class SearchDialog extends Composite<Dialog> {
     TextField searchField;
 
 
+    SearchDialog(){
+        super();
+    }
 
 
 
