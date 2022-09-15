@@ -50,45 +50,45 @@ public abstract class ApplicationException extends RuntimeException {
 
   private final ErrorParameters errorParameters;
 
-  public ApplicationException() {
+  protected ApplicationException() {
     this(ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  public ApplicationException(String message) {
+  protected ApplicationException(String message) {
     this(message, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  public ApplicationException(String message, Throwable cause) {
+  protected ApplicationException(String message, Throwable cause) {
     this(message, cause, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  public ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
+  protected ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  public ApplicationException(String message, ErrorCode errorCode,
+  protected ApplicationException(String message, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  public ApplicationException(String message, Throwable cause, ErrorCode errorCode,
+  protected ApplicationException(String message, Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message, cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  public ApplicationException(Throwable cause, ErrorCode errorCode,
+  protected ApplicationException(Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  public ApplicationException(String message, Throwable cause, boolean enableSuppression,
+  protected ApplicationException(String message, Throwable cause, boolean enableSuppression,
       boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace);
     this.errorCode = errorCode;
