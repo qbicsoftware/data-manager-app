@@ -6,11 +6,8 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.combobox.ComboBox;
 
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 
 /**
@@ -62,20 +59,27 @@ public class SearchDialog extends Dialog {
     }
 
     private void listener(){
+        //causes error:
+        // "java: interface JsonArray is public, should be declared in a file named JsonArray.java"
+        searchField.addValueChangeListener( e -> {
+            filter(e.getValue());
+            System.out.println("here");
+        });
 
+    }
+
+
+    private void filter(String filterString) {
+        System.out.println("Called this method");
+        System.out.println(filterString);
         List<String> dummy = new ArrayList<>();
         dummy.add("Hello");
         dummy.add("xyz");
         dummy.add("alkjdflasjdfklsdf");
         dummy.add("asldfjasldfjiowaefnafnasdfawsfwae fas asdfasefawerf");
 
-        //causes error:
-        // "java: interface JsonArray is public, should be declared in a file named JsonArray.java"
-        /*searchField.setItems(query -> {
-            return dummy.stream().filter(it -> it.contains(query.toString()));
-        });
-         */
-        searchField.setItems(dummy);
-    }
+        String likeFilter = "%" + filterString + "%";
 
+        searchField.setItems(q -> dummy.stream().filter(it -> it.contains(likeFilter)));
+    }
 }
