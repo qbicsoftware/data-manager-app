@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.finances.offer;
+package life.qbic.projectmanagement.domain.finances.offer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -9,7 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b>Offer</b>
+ * <b>OfferPreview</b>
  * <p>
  * Describes an offer object in the context of project management.
  *
@@ -17,7 +17,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "offers")
-public class Offer {
+public class OfferPreview {
 
   private String projectTitle;
 
@@ -26,31 +26,31 @@ public class Offer {
   @Column(name = "id")
   private Long id;
 
-  protected Offer() {
+  protected OfferPreview() {
 
   }
 
   /**
-   * Creates a new instance of {@link Offer} from a title and offer id.
+   * Creates a new instance of {@link OfferPreview} from a title and offer id.
    *
    * @param projectTitle the project title found in an offer
    * @param offerId      the offer id, uniquely representing the offer resource
    * @return an offer instance
    * @since 1.0.0
    */
-  public static Offer from(ProjectTitle projectTitle, OfferId offerId) {
+  public static OfferPreview from(ProjectTitle projectTitle, OfferId offerId) {
     requireNonNull(projectTitle);
     requireNonNull(offerId);
-    return new Offer(projectTitle.title(), offerId.id());
+    return new OfferPreview(projectTitle.title(), offerId.id());
   }
 
-  private Offer(String projectTitle, String offerId) {
+  private OfferPreview(String projectTitle, String offerId) {
     this.projectTitle = projectTitle;
     this.offerId = offerId;
   }
 
   public ProjectTitle getProjectTitle() {
-    return ProjectTitle.of(projectTitle);
+    return ProjectTitle.from(projectTitle);
   }
 
   public void setProjectTitle(String projectTitle) {
@@ -58,7 +58,7 @@ public class Offer {
   }
 
   public OfferId offerId() {
-    return OfferId.of(offerId);
+    return OfferId.from(offerId);
   }
 
   private void setOfferId(OfferId offerId) {
@@ -77,9 +77,9 @@ public class Offer {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Offer offer = (Offer) o;
-    return Objects.equals(projectTitle, offer.projectTitle) && Objects.equals(
-        offerId, offer.offerId) && Objects.equals(id, offer.id);
+    OfferPreview offerPreview = (OfferPreview) o;
+    return Objects.equals(projectTitle, offerPreview.projectTitle) && Objects.equals(
+        offerId, offerPreview.offerId) && Objects.equals(id, offerPreview.id);
   }
 
   @Override

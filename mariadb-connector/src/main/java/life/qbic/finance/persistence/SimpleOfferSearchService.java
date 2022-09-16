@@ -1,13 +1,16 @@
 package life.qbic.finance.persistence;
 
 import java.util.List;
-import life.qbic.projectmanagement.finances.offer.Offer;
-import life.qbic.projectmanagement.finances.offer.api.OfferSearchService;
+import java.util.Optional;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b>Simple Offer Search Service</b>
+ * <b>Simple OfferPreview Search Service</b>
  * <p>
  * Basic implementation of the {@link OfferSearchService} interface.
  *
@@ -16,16 +19,25 @@ import org.springframework.stereotype.Service;
 @Service
 public class SimpleOfferSearchService implements OfferSearchService {
 
+  private final OfferPreviewRepository offerPreviewRepository;
+
   private final OfferRepository offerRepository;
 
   @Override
-  public List<Offer> findByProjectTitleOrOfferId(String projectTitle, String offerId) {
-    return offerRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
+  public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId) {
+    return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
         projectTitle, offerId);
   }
 
+  @Override
+  public Optional<Offer> findByOfferId(String offerId) {
+    return Optional.ofNullable(offerRepository.findByOfferId(OfferId.from(offerId)));
+  }
+
   @Autowired
-  public SimpleOfferSearchService(OfferRepository offerRepository) {
+  public SimpleOfferSearchService(OfferPreviewRepository offerPreviewRepository,
+      OfferRepository offerRepository) {
+    this.offerPreviewRepository = offerPreviewRepository;
     this.offerRepository = offerRepository;
   }
 }
