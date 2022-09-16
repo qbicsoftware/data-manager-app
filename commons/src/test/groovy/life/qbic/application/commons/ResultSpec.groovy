@@ -5,7 +5,6 @@ import spock.lang.Specification
 
 import java.util.function.Consumer
 import java.util.function.Function
-import java.util.function.Supplier
 
 class ResultSpec extends Specification {
 
@@ -30,7 +29,7 @@ class ResultSpec extends Specification {
     def "A result shall throw an NPE, when the error parameter is null"() {
         when:
         Exception e = null
-        Result<String, Exception> result = Result.error(e)
+        Result<String, Exception> result = Result.exception(e)
 
         then:
         thrown(NullPointerException)
@@ -59,7 +58,7 @@ class ResultSpec extends Specification {
             return s.toUpperCase()}
 
         and:
-        def result = Result.error(new RuntimeException("test exception"))
+        def result = Result.exception(new RuntimeException("test exception"))
 
         when:
         def processedResult = result.map(toUpperCase)
@@ -94,7 +93,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.error(e)
+        Result<String, Exception> result = Result.exception(e)
 
         when:
         result.ifSuccess(consumer)
@@ -111,7 +110,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.error(e)
+        Result<String, Exception> result = Result.exception(e)
 
         when:
         result.ifError(consumer)
@@ -165,7 +164,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.error(e)
+        Result<String, Exception> result = Result.exception(e)
 
         when:
         result.ifSuccessOrElse(successConsumer, errorConsumer)
@@ -183,7 +182,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("error")
 
         and:
-        Result<String, Exception> result = Result.error(e)
+        Result<String, Exception> result = Result.exception(e)
 
         when:
         result.orElseThrow(exceptionSupplier)

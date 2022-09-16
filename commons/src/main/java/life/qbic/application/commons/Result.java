@@ -39,12 +39,12 @@ import java.util.function.Supplier;
 class Result<V, E extends Exception> {
 
   private final V value;
-  private final E err;
+  private final E exception;
 
   private final Type type;
 
   private enum Type {
-    ERROR, SUCCESS
+    EXCEPTION, SUCCESS
   }
 
   /**
@@ -63,24 +63,24 @@ class Result<V, E extends Exception> {
    * Static constructor method for creating a result object instance of type <code>V,E</code>
    * wrapping an error <code>E</code>.
    *
-   * @param error the suspicious error to get wrapped in a result object
+   * @param exception the suspicious error to get wrapped in a result object
    * @return a new result object instance
    */
-  public static <V, E extends Exception> Result<V, E> error(E error) {
-    Objects.requireNonNull(error);
-    return new Result<>(error);
+  public static <V, E extends Exception> Result<V, E> exception(E exception) {
+    Objects.requireNonNull(exception);
+    return new Result<>(exception);
   }
 
   private Result(V value) {
     this.value = value;
-    this.err = null;
+    this.exception = null;
     this.type = Type.SUCCESS;
   }
 
   private Result(E exception) {
     this.value = null;
-    this.err = exception;
-    this.type = Type.ERROR;
+    this.exception = exception;
+    this.type = Type.EXCEPTION;
   }
 
   /**
@@ -103,10 +103,10 @@ class Result<V, E extends Exception> {
    * @throws NoSuchElementException if no error exists in the result object
    */
   E getError() throws NoSuchElementException {
-    if (Objects.isNull(err)) {
+    if (Objects.isNull(exception)) {
       throw new NoSuchElementException("Result with value has no error.");
     }
-    return err;
+    return exception;
   }
 
   /**
@@ -117,7 +117,7 @@ class Result<V, E extends Exception> {
    * @return true, if the result object has an error, else false
    */
   public Boolean hasError() {
-    return type.equals(Type.ERROR);
+    return type.equals(Type.EXCEPTION);
   }
 
   /**
@@ -147,7 +147,7 @@ class Result<V, E extends Exception> {
     Objects.requireNonNull(function);
     Result<U, E> result = null;
     switch (this.type) {
-      case ERROR -> result = Result.error(this.err);
+      case EXCEPTION -> result = Result.exception(this.exception);
       case SUCCESS -> result = apply(function, this.getValue());
     }
     return result;
@@ -160,15 +160,15 @@ class Result<V, E extends Exception> {
   }
 
   public void ifError(Consumer<? super E> consumer) {
-    if (type.equals(Type.ERROR)) {
-      consumer.accept(err);
+    if (type.equals(Type.EXCEPTION)) {
+      consumer.accept(exception);
     }
   }
 
   public void ifSuccessOrElse(Consumer<? super V> consumerOfValue,
       Consumer<? super E> consumerOfError) {
-    if (type.equals(Type.ERROR)) {
-      consumerOfError.accept(err);
+    if (type.equals(Type.EXCEPTION)) {
+      consumerOfError.accept(exception);
     } else {
       consumerOfValue.accept(value);
     }
@@ -187,7 +187,7 @@ class Result<V, E extends Exception> {
     try {
       result = Result.success(function.apply(value));
     } catch (Exception e) {
-      result = (Result<U, E>) Result.error(e);
+      result = (Result<U, E>) Result.exception(e);
     }
     return result;
   }
