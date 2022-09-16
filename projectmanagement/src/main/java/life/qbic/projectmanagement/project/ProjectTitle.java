@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement;
+package life.qbic.projectmanagement.project;
 
 import java.util.Objects;
 

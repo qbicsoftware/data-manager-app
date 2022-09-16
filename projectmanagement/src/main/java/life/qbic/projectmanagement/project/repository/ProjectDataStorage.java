@@ -1,7 +1,7 @@
-package life.qbic.projectmanagement.repository;
+package life.qbic.projectmanagement.project.repository;
 
-import life.qbic.projectmanagement.Project;
-import life.qbic.projectmanagement.ProjectId;
+import life.qbic.projectmanagement.project.Project;
+import life.qbic.projectmanagement.project.ProjectId;
 
 import java.util.Optional;
 

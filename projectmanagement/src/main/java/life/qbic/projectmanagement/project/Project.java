@@ -1,6 +1,9 @@
-package life.qbic.projectmanagement;
+package life.qbic.projectmanagement.project;
+
+import life.qbic.projectmanagement.project.repository.jpa.ProjectIntentConverter;
 
 import static java.util.Objects.requireNonNull;
+import javax.persistence.Convert;
 
 /**
  * A project planned and run at QBiC.
@@ -10,6 +13,7 @@ import static java.util.Objects.requireNonNull;
 public class Project {
 
   private final ProjectId projectId;
+  @Convert(converter = ProjectIntentConverter.class)
   private final ProjectIntent projectIntent;
 
   private Project(ProjectId projectId, ProjectIntent projectIntent) {

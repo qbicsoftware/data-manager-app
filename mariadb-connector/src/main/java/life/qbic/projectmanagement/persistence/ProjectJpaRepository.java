@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.repository.ProjectDataStorage;
-import life.qbic.projectmanagement.Project;
-import life.qbic.projectmanagement.ProjectId;
+import life.qbic.projectmanagement.project.repository.ProjectDataStorage;
+import life.qbic.projectmanagement.project.Project;
+import life.qbic.projectmanagement.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

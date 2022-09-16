@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement
 
+import life.qbic.projectmanagement.project.Project
+import life.qbic.projectmanagement.project.ProjectIntent
+import life.qbic.projectmanagement.project.ProjectTitle
 import spock.lang.Specification
 
 /**

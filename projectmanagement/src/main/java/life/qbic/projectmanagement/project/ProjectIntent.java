@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement;
+package life.qbic.projectmanagement.project;
 
 import static java.util.Objects.requireNonNull;
 
@@ -10,5 +10,13 @@ public record ProjectIntent(ProjectTitle projectTitle) {
 
   public ProjectIntent {
     requireNonNull(projectTitle);
+  }
+
+  public static ProjectIntent from(String s) {
+    return new ProjectIntent(new ProjectTitle(s));
+  }
+
+  public String get() {
+    return projectTitle.title();
   }
 }

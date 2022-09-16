@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement
 
+import life.qbic.projectmanagement.project.ProjectManagementDomainException
+import life.qbic.projectmanagement.project.ProjectTitle
 import spock.lang.Specification
 
 class ProjectTitleSpec extends Specification {
