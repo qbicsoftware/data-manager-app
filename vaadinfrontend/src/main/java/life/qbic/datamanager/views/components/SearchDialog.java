@@ -1,13 +1,16 @@
 package life.qbic.datamanager.views.components;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.combobox.ComboBox;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
+import org.slf4j.Logger;
 
 
 /**
@@ -19,13 +22,16 @@ import java.util.List;
  */
 public class SearchDialog extends Dialog {
 
+    private static final Logger log = getLogger(SearchDialog.class);
+
+
     public ComboBox<String> searchField;
     private HorizontalLayout footerButtonLayout;
     private HorizontalLayout contentLayout;
     public Button cancel;
     public Button ok;
 
-    public SearchDialog(){
+    public SearchDialog() {
         super();
         styleSearchBox();
         createButtonLayout();
@@ -42,10 +48,13 @@ public class SearchDialog extends Dialog {
         this.getFooter().add(footerButtonLayout);
     }
 
-    private void styleSearchBox(){
+    private void styleSearchBox() {
         searchField = new ComboBox<>();
         searchField.setPlaceholder("Search");
         searchField.setClassName("searchbox");
+        var repo = new Repository();
+        searchField.setItems(
+            query -> repo.find(query.getFilter().orElse(""), query.getOffset(), query.getLimit()));
         contentLayout = new HorizontalLayout(searchField);
     }
 
@@ -62,6 +71,7 @@ public class SearchDialog extends Dialog {
         //causes error:
         // "java: interface JsonArray is public, should be declared in a file named JsonArray.java"
         searchField.addValueChangeListener( e -> {
+            log.info("blub");
             filter(e.getValue());
             System.out.println("here");
         });
@@ -72,14 +82,28 @@ public class SearchDialog extends Dialog {
     private void filter(String filterString) {
         System.out.println("Called this method");
         System.out.println(filterString);
-        List<String> dummy = new ArrayList<>();
-        dummy.add("Hello");
-        dummy.add("xyz");
-        dummy.add("alkjdflasjdfklsdf");
-        dummy.add("asldfjasldfjiowaefnafnasdfawsfwae fas asdfasefawerf");
-
-        String likeFilter = "%" + filterString + "%";
-
-        searchField.setItems(q -> dummy.stream().filter(it -> it.contains(likeFilter)));
     }
+
+    private static class Repository {
+
+        private final List<String> dummy;
+
+        public Repository() {
+            dummy = new ArrayList<>();
+            dummy.add("Hello");
+            dummy.add("xyz");
+            dummy.add("alkjdflasjdfklsdf");
+            dummy.add("asldfjasldfjiowaefnafnasdfawsfwae fas asdfasefawerf");
+        }
+
+        public Stream<String> find(String filter, int offset, int limit) {
+            return dummy.stream()
+                .filter(it -> it.toUpperCase().contains(filter.toUpperCase()))
+                .sorted()
+                .skip(offset)
+                .limit(limit);
+        }
+    }
+
+
 }
