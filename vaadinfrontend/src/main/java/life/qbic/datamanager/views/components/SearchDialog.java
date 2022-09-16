@@ -6,6 +6,12 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.combobox.ComboBox;
 
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 
 /**
  * <b>short description</b>
@@ -16,17 +22,18 @@ import com.vaadin.flow.component.combobox.ComboBox;
  */
 public class SearchDialog extends Dialog {
 
-    ComboBox<String> searchField;
+    public ComboBox<String> searchField;
     private HorizontalLayout footerButtonLayout;
     private HorizontalLayout contentLayout;
-    Button cancel;
-    Button ok;
+    public Button cancel;
+    public Button ok;
 
     public SearchDialog(){
         super();
         styleSearchBox();
         createButtonLayout();
         test();
+        listener();
     }
 
     private void test(){
@@ -54,14 +61,21 @@ public class SearchDialog extends Dialog {
         footerButtonLayout = new HorizontalLayout(cancel,ok);
     }
 
-    public void setDataProvider(){
-        //todo change data provider based on feedback send after search
-        searchField.getDataProvider();
+    private void listener(){
 
+        List<String> dummy = new ArrayList<>();
+        dummy.add("Hello");
+        dummy.add("xyz");
+        dummy.add("alkjdflasjdfklsdf");
+        dummy.add("asldfjasldfjiowaefnafnasdfawsfwae fas asdfasefawerf");
+
+        //causes error:
+        // "java: interface JsonArray is public, should be declared in a file named JsonArray.java"
+        /*searchField.setItems(query -> {
+            return dummy.stream().filter(it -> it.contains(query.toString()));
+        });
+         */
+        searchField.setItems(dummy);
     }
-
-
-
-
 
 }

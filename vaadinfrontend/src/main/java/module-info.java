@@ -34,7 +34,8 @@ open module life.qbic.vaadinfrontend {
   requires vaadin.dialog.flow;
   requires vaadin.combo.box.flow;
   requires life.qbic.projectmanagement;
+    requires flow.data;
 
-  exports life.qbic.datamanager;
+    exports life.qbic.datamanager;
 
 }

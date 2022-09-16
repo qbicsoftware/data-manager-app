@@ -2,13 +2,16 @@ package life.qbic.datamanager.views.landing;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.components.SearchDialog;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <b> The landing page that allows logging in for the user. </b>
@@ -39,8 +42,6 @@ public class LandingPageLayout extends DataManagerLayout {
   private HorizontalLayout createHeaderButtonLayout() {
     register = new Button("Register");
     login = new Button("Login");
-
-    //Todo remove searchdialog here
     SearchDialog dialog = new SearchDialog();
     dialog.open();
 

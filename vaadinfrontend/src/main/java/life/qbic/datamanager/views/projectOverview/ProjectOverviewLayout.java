@@ -3,7 +3,11 @@ package life.qbic.datamanager.views.projectOverview;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.DataManagerLayout;
+import life.qbic.datamanager.views.components.SearchDialog;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 /**
  * <b>short description</b>
@@ -19,20 +23,24 @@ public class ProjectOverviewLayout extends DataManagerLayout {
     //todo add vaadin components here eg
     //a grid containing the projects
     //create new button
-    //searchbar
+    //create dialogs:
+    //select creation mode dialog
+    //search offer dialog
+    SearchDialog searchDialog;
 
     public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface) {
+        registerToHandler(handlerInterface);
         createLayoutContent();
-        //registerToHandler(handlerInterface);
     }
 
-    //private void registerToHandler(ProjectOverviewHandlerInterface handler) {
-    //    handler.handle(this);
-    //}
+    private void registerToHandler(ProjectOverviewHandlerInterface handler) {
+        handler.handle(this);
+    }
 
     private void createLayoutContent() {
-
+        searchDialog = new SearchDialog();
+        //todo open it after offer creation mode was selected
+        searchDialog.open();
     }
-
 
 }
