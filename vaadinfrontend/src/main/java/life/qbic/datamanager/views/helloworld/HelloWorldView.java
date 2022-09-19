@@ -50,6 +50,7 @@ public class HelloWorldView extends VerticalLayout {
     add(personalWelcomeMessage, name, sayHello);
     //FIXME remove this test addition
     CreateProjectLayout createProjectLayout = new CreateProjectLayout();
+    createProjectLayout.getContent().setWidthFull();
     addAndExpand(createProjectLayout);
   }
 }
