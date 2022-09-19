@@ -98,12 +98,12 @@ class Result<V, E extends Exception> {
   }
 
   /**
-   * Access the wrapped error if present
+   * Access the wrapped exception if present
    *
    * @return the wrapped exception
    * @throws NoSuchElementException if no error exists in the result object
    */
-  E error() throws NoSuchElementException {
+  E exception() throws NoSuchElementException {
     if (Objects.isNull(exception)) {
       throw new NoSuchElementException("Result with value has no exception.");
     }

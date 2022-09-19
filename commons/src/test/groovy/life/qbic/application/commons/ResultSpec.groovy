@@ -56,7 +56,7 @@ class ResultSpec extends Specification {
 
         then:
         processedResult.isFailure()
-        processedResult.error().message == "test exception"
+        processedResult.exception().message == "test exception"
     }
 
     def "When a result contains a value, pass the value to the consumer"() {
