@@ -1,11 +1,9 @@
 package life.qbic.datamanager.views.projectOverview;
 
 /**
- * <b>short description</b>
+ * <b> Interface to handle the {@link ProjectOverviewLayout} to the {@link ProjectOverviewHandler}. </b>
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface ProjectOverviewHandlerInterface {
 

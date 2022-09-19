@@ -7,28 +7,21 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.OfferSearchDialog;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.security.PermitAll;
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
 
 /**
- * <b>short description</b>
+ * <b>Projects Overview</b>
  *
- * <p>detailed description</p>
+ * <p>The page the user is navigated to after successful login</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @PageTitle("Project Overview")
 @Route(value = "", layout = MainLayout.class)
 @PermitAll
-public class ProjectOverviewLayout extends VerticalLayout implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -4665004581087726748L;
+public class ProjectOverviewLayout extends VerticalLayout {
 
     //todo add vaadin components here eg
     //a grid containing the projects
@@ -39,13 +32,8 @@ public class ProjectOverviewLayout extends VerticalLayout implements Serializabl
     //search offer dialog
     OfferSearchDialog searchDialog;
 
-    private final OfferLookupService offerLookupService;
 
-
-    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface, @Autowired OfferLookupService offerLookupService) {
-        Objects.requireNonNull(offerLookupService);
-        this.offerLookupService = offerLookupService;
-
+    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface) {
         createLayoutContent();
         registerToHandler(handlerInterface);
     }
@@ -58,9 +46,8 @@ public class ProjectOverviewLayout extends VerticalLayout implements Serializabl
         create = new Button("Create");
         create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        searchDialog = new OfferSearchDialog(offerLookupService);
+        searchDialog = new OfferSearchDialog();
 
         add(create);
     }
-
 }

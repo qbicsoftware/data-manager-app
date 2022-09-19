@@ -33,7 +33,6 @@ import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.Recipient;
 import life.qbic.newshandler.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSupplier;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -100,15 +99,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     newPassword.setUseCaseOutput(newPasswordHandler);
     logger.info("works");
     //logger.error("Does not work");
-    logger.info(String.valueOf(
-        context.getBean(OfferLookupService.class).findOfferContainingProjectTitleOrId("test", "test").size()));
-    logger.error("Does not work");
-
-    //todo remove
-    context.getBean(OfferLookupService.class)
-        .findOfferContainingProjectTitleOrId("test", "test", 2, 2)
-        .forEach(o -> logger.info(o.getProjectTitle().title()));
-
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(
