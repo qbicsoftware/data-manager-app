@@ -1,13 +1,16 @@
 package life.qbic.datamanager.views.projectOverview;
 
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import life.qbic.datamanager.views.DataManagerLayout;
+import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.OfferSearchDialog;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -20,8 +23,9 @@ import java.util.Objects;
  * @since <version tag>
  */
 @PageTitle("Project Overview")
-@Route(value = "")
-public class ProjectOverviewLayout extends DataManagerLayout implements Serializable {
+@Route(value = "projects", layout = MainLayout.class)
+@PermitAll
+public class ProjectOverviewLayout extends VerticalLayout implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -4665004581087726748L;
@@ -29,6 +33,7 @@ public class ProjectOverviewLayout extends DataManagerLayout implements Serializ
     //todo add vaadin components here eg
     //a grid containing the projects
     //create new button
+    Button create;
     //create dialogs:
     //select creation mode dialog
     //search offer dialog
@@ -41,9 +46,8 @@ public class ProjectOverviewLayout extends DataManagerLayout implements Serializ
         Objects.requireNonNull(offerLookupService);
         this.offerLookupService = offerLookupService;
 
-        registerToHandler(handlerInterface);
         createLayoutContent();
-        addListeners();
+        registerToHandler(handlerInterface);
     }
 
     private void registerToHandler(ProjectOverviewHandlerInterface handler) {
@@ -51,26 +55,12 @@ public class ProjectOverviewLayout extends DataManagerLayout implements Serializ
     }
 
     private void createLayoutContent() {
-        //searchDialog = new SearchDialog();
-        //todo open it after offer creation mode was selected
-        //todo remove
+        create = new Button("Create");
+        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
         searchDialog = new OfferSearchDialog(offerLookupService);
-        searchDialog.open();
-    }
 
-    private void addListeners(){
-        searchDialog.cancel.addClickListener(e -> {
-            searchDialog.close();
-        });
-
-        searchDialog.ok.addClickListener(e -> {
-            //check if value is selected
-            if(searchDialog.searchField.getOptionalValue().isPresent()){
-                //Selected Offer
-                OfferPreview selectedOfferPreview = searchDialog.searchField.getValue();
-                //todo forward to service to load into create offer UI
-            }
-        });
+        add(create);
     }
 
 }

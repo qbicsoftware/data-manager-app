@@ -8,8 +8,6 @@ import com.vaadin.flow.router.Route;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
-import life.qbic.datamanager.views.components.OfferSearchDialog;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -26,14 +24,9 @@ public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
-  private final OfferLookupService offerLookupService;
-
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface,
-      @Autowired OfferLookupService offerLookupService) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     System.out.println("Initialized landing page");
     Objects.requireNonNull(handlerInterface);
-    Objects.requireNonNull(offerLookupService);
-    this.offerLookupService = offerLookupService;
 
     createNavBarContent();
     registerToHandler(handlerInterface);
@@ -52,9 +45,6 @@ public class LandingPageLayout extends DataManagerLayout {
   private HorizontalLayout createHeaderButtonLayout() {
     register = new Button("Register");
     login = new Button("Login");
-    //todo remove
-    OfferSearchDialog dialog = new OfferSearchDialog(offerLookupService);
-    dialog.open();
 
     HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
     loggedOutButtonLayout.addClassName("button-layout-spacing");

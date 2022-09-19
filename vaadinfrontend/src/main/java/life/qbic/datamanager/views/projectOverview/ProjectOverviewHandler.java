@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.projectOverview;
 
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.vaadin.flow.component.Text;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,10 +15,8 @@ import org.springframework.stereotype.Component;
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
 
     private ProjectOverviewLayout registeredProjectOverview;
-    private OfferLookupService offerLookupService;
 
-    ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService){
-        this.offerLookupService = offerLookupService;
+    ProjectOverviewHandler(){
     }
 
     @Override
@@ -30,10 +28,20 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     }
 
     private void addClickListeners() {
+        registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
 
-        //List<String> mapped = searchResult.stream().map(offerPreview -> offerPreview.offerId() + ", " +  offerPreview.getProjectTitle()).collect(Collectors.toList());
-        //List<OfferPreview> searchResult = offerLookupService.findOfferContainingProjectTitleOrId(searchValue,searchValue);
+        registeredProjectOverview.create.addClickListener( e-> registeredProjectOverview.searchDialog.open());
 
+        registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
+                //check if value is selected
+            if(registeredProjectOverview.searchDialog.searchField.getOptionalValue().isPresent()){
+                //Selected Offer
+                OfferPreview selectedOfferPreview = registeredProjectOverview.searchDialog.searchField.getValue();
+                registeredProjectOverview.add(new Text(selectedOfferPreview.offerId()+", "+selectedOfferPreview.getProjectTitle()));
+                registeredProjectOverview.searchDialog.close();
+                //todo forward to service to load into create offer UI
+            }
+        });
     }
 
 }
