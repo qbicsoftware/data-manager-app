@@ -44,17 +44,6 @@ public class ProjectJpaRepository implements ProjectRepository {
     return projectRepo.findById(projectId);
   }
 
-  /**
-   * Adds a user to the repository. Publishes all domain events of the project if successful. If
-   * unsuccessful, throws a {@link ProjectStorageException} Exception.
-   *
-   * @param project the project that shall be added to the repository
-   * @throws ProjectStorageException if the project could not be added to the repository
-   * @since 1.0.0
-   */
-  public void addProject(Project project) throws ProjectStorageException {
-    saveProjectIfNonexistent(project);
-  }
 
   private void saveProjectIfNonexistent(Project project) {
     try {
