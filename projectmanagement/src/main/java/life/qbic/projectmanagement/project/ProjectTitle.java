@@ -16,11 +16,8 @@ public record ProjectTitle(String title) {
     }
   }
 
-  public static ProjectTitle from(String s) {
-    return new ProjectTitle(s);
+  public static ProjectTitle create(String title) {
+    return new ProjectTitle(title);
   }
 
-  public String get() {
-    return title();
-  }
 }

@@ -18,11 +18,11 @@ public class ProjectTitleConverter implements AttributeConverter<ProjectTitle, S
 
   @Override
   public String convertToDatabaseColumn(ProjectTitle title) {
-    return title.get();
+    return title.title();
   }
 
   @Override
-  public ProjectTitle convertToEntityAttribute(String s) {
-    return ProjectTitle.from(s);
+  public ProjectTitle convertToEntityAttribute(String string) {
+    return ProjectTitle.create(string);
   }
 }

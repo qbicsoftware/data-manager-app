@@ -4,6 +4,7 @@ import life.qbic.projectmanagement.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.project.Project;
 import life.qbic.projectmanagement.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -23,9 +24,9 @@ import java.util.Optional;
  * @since 1.0.0
  */
 @Component
+@Scope("singleton")
 public class ProjectJpaRepository implements ProjectRepository {
 
-  private static ProjectJpaRepository INSTANCE;
   private final QbicProjectRepo projectRepo;
 
   @Autowired
@@ -41,23 +42,6 @@ public class ProjectJpaRepository implements ProjectRepository {
   @Override
   public Optional<Project> findProjectById(ProjectId projectId) {
     return projectRepo.findById(projectId);
-  }
-
-
-  /**
-   * Retrieves a Singleton instance of a user {@link ProjectJpaRepository}. In case this method is called
-   * the first time, a new instance is created.
-   *
-   * @param projectRepo an implementation of {@link QbicProjectRepo}, handling the low level
-   *                    persistence layer access.
-   * @return a Singleton instance of a project repository.
-   * @since 1.0.0
-   */
-  public static ProjectJpaRepository getInstance(QbicProjectRepo projectRepo) {
-    if (INSTANCE == null) {
-      INSTANCE = new ProjectJpaRepository(projectRepo);
-    }
-    return INSTANCE;
   }
 
   /**
