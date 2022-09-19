@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.project.repository.jpa;
 
-import life.qbic.projectmanagement.project.ProjectIntent;
 import life.qbic.projectmanagement.project.ProjectTitle;
 
 import javax.persistence.AttributeConverter;

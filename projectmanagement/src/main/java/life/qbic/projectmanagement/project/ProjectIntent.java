@@ -27,4 +27,19 @@ public class ProjectIntent {
   protected ProjectIntent() {
 
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ProjectIntent)) return false;
+
+    ProjectIntent that = (ProjectIntent) o;
+
+    return projectTitle.equals(that.projectTitle);
+  }
+
+  @Override
+  public int hashCode() {
+    return projectTitle.hashCode();
+  }
 }
