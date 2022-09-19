@@ -7,6 +7,8 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 /**
@@ -27,6 +29,13 @@ public class SimpleOfferSearchService implements OfferSearchService {
   public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId) {
     return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
         projectTitle, offerId);
+  }
+
+  @Override
+  public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId,
+      int offset, int limit) {
+    return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
+        projectTitle, offerId, new OffsetBasedRequest(offset, limit)).stream().toList();
   }
 
   @Override

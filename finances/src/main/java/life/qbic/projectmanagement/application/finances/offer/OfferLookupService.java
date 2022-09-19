@@ -43,6 +43,22 @@ public class OfferLookupService {
   }
 
   /**
+   * Same as {@link OfferSearchService#findByProjectTitleOrOfferId(String, String)} but with a
+   * possibility for pagination by providing an offset and query result size limit.
+   *
+   * @param projectTitle a character sequence to search for in the project title of an offer
+   * @param offerId      a character sequence to search for in the offer id of an offer
+   * @param offset       the offset to start listing the matching search results
+   * @param limit        the maximum number of matching search results
+   * @return list of {@link OfferPreview} matching the criteria
+   * @since 1.0.0
+   */
+  public List<OfferPreview> findOfferContainingProjectTitleOrId(String projectTitle, String offerId,
+      int offset, int limit) {
+    return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId, offset, limit);
+  }
+
+  /**
    * Searches for an offer based on a given offer id
    *
    * @param offerId the offer id
