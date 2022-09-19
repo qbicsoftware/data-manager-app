@@ -8,15 +8,6 @@ import java.util.function.Function
 
 class ResultSpec extends Specification {
 
-    def "run"() {
-        when:
-        String s = "hi"
-
-        then:
-        assert s == "hi"
-
-    }
-
     def "A result shall throw an NPE, when the value parameter is null"() {
         when:
         String s = null
