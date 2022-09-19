@@ -3,9 +3,7 @@ package life.qbic.projectmanagement.persistence;
 import life.qbic.projectmanagement.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.project.Project;
 import life.qbic.projectmanagement.project.ProjectId;
-import life.qbic.projectmanagement.project.repository.ProjectRepositoryToBeDeleted;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -64,24 +62,24 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   /**
    * Adds a user to the repository. Publishes all domain events of the project if successful. If
-   * unsuccessful, throws a {@link ProjectRepositoryToBeDeleted.ProjectStorageException} Exception.
+   * unsuccessful, throws a {@link ProjectStorageException} Exception.
    *
    * @param project the project that shall be added to the repository
-   * @throws ProjectRepositoryToBeDeleted.ProjectStorageException if the project could not be added to the repository
+   * @throws ProjectStorageException if the project could not be added to the repository
    * @since 1.0.0
    */
-  public void addProject(Project project) throws ProjectRepositoryToBeDeleted.ProjectStorageException {
+  public void addProject(Project project) throws ProjectStorageException {
     saveProjectIfNonexistent(project);
   }
 
   private void saveProjectIfNonexistent(Project project) {
     try {
       if(doesProjectExistWithId(project.getId())) {
-        throw new ProjectRepositoryToBeDeleted.ProjectStorageException();
+        throw new ProjectStorageException();
       }
       projectRepo.save(project);
     } catch (Exception e) {
-      throw new ProjectRepositoryToBeDeleted.ProjectStorageException(e);
+      throw new ProjectStorageException(e);
     }
   }
 
