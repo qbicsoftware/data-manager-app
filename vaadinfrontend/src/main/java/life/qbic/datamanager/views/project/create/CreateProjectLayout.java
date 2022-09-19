@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Tag("create-project")
 public class CreateProjectLayout extends Composite<VerticalLayout> {
@@ -20,6 +21,10 @@ public class CreateProjectLayout extends Composite<VerticalLayout> {
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
+
+  public CreateProjectLayout(@Autowired CreateProjectHandlerInterface handler) {
+    registerToHandler(handler);
+  }
 
   @Override
   protected VerticalLayout initContent() {
@@ -39,5 +44,9 @@ public class CreateProjectLayout extends Composite<VerticalLayout> {
     headerBar.setWidthFull();
 
     return new VerticalLayout(headerBar, formLayout);
+  }
+
+  private void registerToHandler(CreateProjectHandlerInterface handler) {
+    handler.handle(this);
   }
 }

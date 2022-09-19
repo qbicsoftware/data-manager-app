@@ -13,6 +13,7 @@ import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.datamanager.security.SecurityService;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.project.create.CreateProjectHandler;
 import life.qbic.datamanager.views.project.create.CreateProjectLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -49,7 +50,7 @@ public class HelloWorldView extends VerticalLayout {
     this.personalWelcomeMessage.getElement().setText("Welcome " + username);
     add(personalWelcomeMessage, name, sayHello);
     //FIXME remove this test addition
-    CreateProjectLayout createProjectLayout = new CreateProjectLayout();
+    CreateProjectLayout createProjectLayout = new CreateProjectLayout(new CreateProjectHandler());
     createProjectLayout.getContent().setWidthFull();
     addAndExpand(createProjectLayout);
   }
