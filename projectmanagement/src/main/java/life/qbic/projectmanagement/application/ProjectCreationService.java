@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.application;
 
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
+import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.Project;
 import life.qbic.projectmanagement.domain.ProjectIntent;
 import life.qbic.projectmanagement.domain.ProjectRepository;
@@ -24,26 +26,29 @@ public class ProjectCreationService {
    * @param title the title of the project.
    * @return the created project
    */
-  public Project createProject(String title) {
+  public Result<Project, ApplicationException> createProject(String title) {
     ProjectTitle projectTitle;
     try {
       projectTitle = new ProjectTitle(title);
     } catch (Exception e) {
-      throw new ProjectManagementException("Could not create project title for: " + title, e,
-          ErrorCode.INVALID_PROJECT_TITLE, ErrorParameters.create().with("projectTitle", title));
+      return Result.failure(
+          new ProjectManagementException("Could not create project title for: " + title, e,
+              ErrorCode.INVALID_PROJECT_TITLE,
+              ErrorParameters.create().with("projectTitle", title)));
     }
-
     Project project;
     try {
       project = Project.create(new ProjectIntent(projectTitle));
     } catch (Exception e) {
-      throw new ProjectManagementException("Could not create project with title: " + title, e);
+      return Result.failure(
+          new ProjectManagementException(
+              "Could not create project intent with title: " + projectTitle, e));
     }
     try {
       projectRepository.add(project);
     } catch (Exception e) {
-      throw new ProjectManagementException("Could not add project: " + project, e);
+      return Result.failure(new ProjectManagementException("Could not add project: " + project, e));
     }
-    return project;
+    return Result.success(project);
   }
 }
