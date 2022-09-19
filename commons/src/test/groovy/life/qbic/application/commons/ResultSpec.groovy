@@ -20,7 +20,7 @@ class ResultSpec extends Specification {
     def "A result shall throw an NPE, when the error parameter is null"() {
         when:
         Exception e = null
-        Result<String, Exception> result = Result.exception(e)
+        Result<String, Exception> result = Result.failure(e)
 
         then:
         thrown(NullPointerException)
@@ -49,7 +49,7 @@ class ResultSpec extends Specification {
             return s.toUpperCase()}
 
         and:
-        def result = Result.exception(new RuntimeException("test exception"))
+        def result = Result.failure(new RuntimeException("test exception"))
 
         when:
         def processedResult = result.map(toUpperCase)
@@ -84,7 +84,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.exception(e)
+        Result<String, Exception> result = Result.failure(e)
 
         when:
         result.ifSuccess(consumer)
@@ -101,7 +101,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.exception(e)
+        Result<String, Exception> result = Result.failure(e)
 
         when:
         result.ifFailure(consumer)
@@ -155,7 +155,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("test")
 
         and:
-        Result<String, Exception> result = Result.exception(e)
+        Result<String, Exception> result = Result.failure(e)
 
         when:
         result.ifSuccessOrElse(successConsumer, errorConsumer)
@@ -173,7 +173,7 @@ class ResultSpec extends Specification {
         Exception e = new RuntimeException("error")
 
         and:
-        Result<String, Exception> result = Result.exception(e)
+        Result<String, Exception> result = Result.failure(e)
 
         when:
         result.orElseThrow(exceptionSupplier)

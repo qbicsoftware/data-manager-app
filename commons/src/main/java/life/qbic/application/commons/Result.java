@@ -67,7 +67,7 @@ class Result<V, E extends Exception> {
    * @param exception the exception to get wrapped in a result object
    * @return a new result object instance
    */
-  public static <V, E extends Exception> Result<V, E> exception(E exception) {
+  public static <V, E extends Exception> Result<V, E> failure(E exception) {
     Objects.requireNonNull(exception);
     return new Result<>(exception);
   }
@@ -148,7 +148,7 @@ class Result<V, E extends Exception> {
     Objects.requireNonNull(function);
     Result<U, ? extends E> result = null;
     switch (this.type) {
-      case FAILURE -> result = Result.exception(this.exception);
+      case FAILURE -> result = Result.failure(this.exception);
       case SUCCESS -> result = apply(function, this.value());
     }
     return result;
@@ -235,7 +235,7 @@ class Result<V, E extends Exception> {
     try {
       result = Result.success(function.apply(value));
     } catch (Exception e) {
-      result = (Result<U, E>) Result.exception(e);
+      result = (Result<U, E>) Result.failure(e);
     }
     return result;
   }
