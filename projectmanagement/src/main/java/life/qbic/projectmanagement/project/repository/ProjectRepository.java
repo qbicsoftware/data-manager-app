@@ -3,74 +3,32 @@ package life.qbic.projectmanagement.project.repository;
 import life.qbic.projectmanagement.project.Project;
 import life.qbic.projectmanagement.project.ProjectId;
 
-import java.io.Serializable;
+import java.util.Optional;
+
 
 /**
- * <b> Provides stateless access and storage functionality for {@link Project} entities. </b>
+ * <b>Project Data Storage Interface</b>
+ *
+ * <p>Provides access to the persistence layer that handles the {@link Project} data storage.
  *
  * @since 1.0.0
  */
-public class ProjectRepository implements Serializable {
-
-  private static ProjectRepository INSTANCE;
-
-  private final ProjectDataStorage dataStorage;
+public interface ProjectRepository {
 
   /**
-   * Retrieves a Singleton instance of a user {@link ProjectRepository}. In case this method is called
-   * the first time, a new instance is created.
+   * Saves a {@link Project} entity permanently.
    *
-   * @param dataStorage an implementation of {@link ProjectDataStorage}, handling the low level
-   *                    persistence layer access.
-   * @return a Singleton instance of a project repository.
+   * @param project the project to store
    * @since 1.0.0
    */
-  public static ProjectRepository getInstance(ProjectDataStorage dataStorage) {
-    if (INSTANCE == null) {
-      INSTANCE = new ProjectRepository(dataStorage);
-    }
-    return INSTANCE;
-  }
-
-  protected ProjectRepository(ProjectDataStorage dataStorage) {
-    this.dataStorage = dataStorage;
-  }
+  void add(Project project);
 
   /**
-   * Adds a user to the repository. Publishes all domain events of the project if successful. If
-   * unsuccessful, throws a {@link ProjectStorageException} Exception.
+   * Searches for a project matching a provided projectId
    *
-   * @param project the project that shall be added to the repository
-   * @throws ProjectStorageException if the project could not be added to the repository
+   * @param projectId the project's unique id, accessible via {@link Project#getId()}
+   * @return the project if present in the repository, else returns an {@link Optional#empty()}.
    * @since 1.0.0
    */
-  public void addProject(Project project) throws ProjectStorageException {
-    saveProjectIfNonexistent(project);
-  }
-
-  private void saveProjectIfNonexistent(Project project) {
-    try {
-      if(doesProjectExistWithId(project.getId())) {
-        throw new ProjectStorageException();
-      }
-      dataStorage.add(project);
-    } catch (Exception e) {
-      throw new ProjectStorageException(e);
-    }
-  }
-
-  private boolean doesProjectExistWithId(ProjectId id) {
-      return dataStorage.findProjectById(id).isPresent();
-    }
-
-  public static class ProjectStorageException extends RuntimeException {
-
-
-    public ProjectStorageException() {
-    }
-
-    public ProjectStorageException(Throwable cause) {
-      super(cause);
-    }
-  }
+  Optional<Project> findProjectById(ProjectId projectId);
 }

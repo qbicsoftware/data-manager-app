@@ -3,23 +3,40 @@ package life.qbic.projectmanagement.project;
 import life.qbic.projectmanagement.project.repository.jpa.ProjectIntentConverter;
 
 import static java.util.Objects.requireNonNull;
-import javax.persistence.Convert;
+
+import javax.persistence.*;
 
 /**
  * A project planned and run at QBiC.
  *
  * @since <version tag>
  */
+@Entity
+@Table(name = "projects_datamanager")
 public class Project {
 
-  private final ProjectId projectId;
+  @EmbeddedId
+  private ProjectId projectId;
   @Convert(converter = ProjectIntentConverter.class)
-  private final ProjectIntent projectIntent;
+  @Column(name = "projectIntent")
+  private ProjectIntent projectIntent;
 
   private Project(ProjectId projectId, ProjectIntent projectIntent) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
     this.projectId = projectId;
+    this.projectIntent = projectIntent;
+  }
+
+  protected Project() {
+
+  }
+
+  protected void setProjectId(ProjectId projectId) {
+    this.projectId = projectId;
+  }
+
+  protected void setProjectIntent(ProjectIntent projectIntent) {
     this.projectIntent = projectIntent;
   }
 
