@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.helloworld;
 
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
@@ -51,7 +52,7 @@ public class HelloWorldView extends VerticalLayout {
     add(personalWelcomeMessage, name, sayHello);
     //FIXME remove this test addition
     CreateProjectLayout createProjectLayout = new CreateProjectLayout(new CreateProjectHandler());
-    createProjectLayout.getContent().setWidthFull();
-    addAndExpand(createProjectLayout);
+    createProjectLayout.getContent().setWidth(50, Unit.PERCENTAGE);
+    add(createProjectLayout);
   }
 }
