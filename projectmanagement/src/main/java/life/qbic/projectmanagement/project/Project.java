@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.project;
 
-import life.qbic.projectmanagement.project.repository.jpa.ProjectIntentConverter;
+import life.qbic.projectmanagement.project.repository.jpa.ProjectTitleConverter;
 
 import static java.util.Objects.requireNonNull;
 
@@ -17,8 +17,8 @@ public class Project {
 
   @EmbeddedId
   private ProjectId projectId;
-  @Convert(converter = ProjectIntentConverter.class)
-  @Column(name = "projectIntent")
+
+  @Embedded
   private ProjectIntent projectIntent;
 
   private Project(ProjectId projectId, ProjectIntent projectIntent) {
