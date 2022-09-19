@@ -144,9 +144,9 @@ class Result<V, E extends Exception> {
    * @param function a function transforming data of type <code>V</code> to <code>U</code>
    * @return a new result object instance of type <code>U,E</code>
    */
-  public <U> Result<U, ? extends E> map(Function<V, U> function) {
+  public <U> Result<U, ? extends Exception> map(Function<V, U> function) {
     Objects.requireNonNull(function);
-    Result<U, ? extends E> result = null;
+    Result<U, ? extends Exception> result = null;
     switch (this.type) {
       case FAILURE -> result = Result.failure(this.exception);
       case SUCCESS -> result = apply(function, this.value());
@@ -230,12 +230,12 @@ class Result<V, E extends Exception> {
     }
   }
 
-  private <U> Result<U, E> apply(Function<V, U> function, V value) {
-    Result<U, E> result;
+  private <U> Result<U, ? extends Exception> apply(Function<V, U> function, V value) {
+    Result<U, ? extends Exception> result;
     try {
       result = Result.success(function.apply(value));
     } catch (Exception e) {
-      result = (Result<U, E>) Result.failure(e);
+      result = Result.failure(e);
     }
     return result;
   }
