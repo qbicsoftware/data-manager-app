@@ -9,6 +9,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import life.qbic.finance.persistence.SimpleOfferSearchService;
@@ -40,6 +41,7 @@ public class SearchDialog extends Dialog {
 
     public SearchDialog(OfferLookupService offerLookupService) {
         super();
+        Objects.requireNonNull(offerLookupService);
         this.offerLookupService = offerLookupService;
         styleSearchBox();
         createButtonLayout();

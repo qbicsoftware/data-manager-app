@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.io.Serial;
+import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.components.SearchDialog;
 import life.qbic.finance.persistence.SimpleOfferSearchService;
@@ -24,14 +26,22 @@ import java.util.stream.Collectors;
 @Route(value = "landing")
 public class LandingPageLayout extends DataManagerLayout {
 
+  @Serial
+  private static final long serialVersionUID = 8899881833038660866L;
+
   public Button register;
   public Button login;
   private final OfferLookupService offerLookupService;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired OfferLookupService offerLookupService) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface,
+      @Autowired OfferLookupService offerLookupService) {
+    System.out.println("Initialized landing page");
+    Objects.requireNonNull(handlerInterface);
+    Objects.requireNonNull(offerLookupService);
+    this.offerLookupService = offerLookupService;
     createNavBarContent();
     registerToHandler(handlerInterface);
-    this.offerLookupService = offerLookupService;
+
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
