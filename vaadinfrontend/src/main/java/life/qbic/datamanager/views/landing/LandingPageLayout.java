@@ -25,7 +25,6 @@ public class LandingPageLayout extends DataManagerLayout {
   public Button register;
   public Button login;
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
-    System.out.println("Initialized landing page");
     Objects.requireNonNull(handlerInterface);
 
     createNavBarContent();

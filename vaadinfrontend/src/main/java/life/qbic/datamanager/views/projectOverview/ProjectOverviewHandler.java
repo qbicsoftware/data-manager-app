@@ -44,15 +44,18 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
         });
 
         registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
-                //check if value is selected
+            //check if value is selected
             if(registeredProjectOverview.searchDialog.searchField.getOptionalValue().isPresent()){
-                //Selected Offer
-                OfferPreview selectedOfferPreview = registeredProjectOverview.searchDialog.searchField.getValue();
-                registeredProjectOverview.add(new Text(selectedOfferPreview.offerId()+", "+selectedOfferPreview.getProjectTitle()));
-                registeredProjectOverview.searchDialog.close();
-                //todo forward to service to load into create offer UI
+                forwardSelectedOffer();
             }
         });
+    }
+
+    private void forwardSelectedOffer() {
+        //todo forward to service to load into create offer UI
+        OfferPreview selectedOfferPreview = registeredProjectOverview.searchDialog.searchField.getValue();
+        registeredProjectOverview.add(new Text(selectedOfferPreview.offerId()+", "+selectedOfferPreview.getProjectTitle()));
+        registeredProjectOverview.searchDialog.close();
     }
 
     private void loadItemsWithService(OfferLookupService service) {
