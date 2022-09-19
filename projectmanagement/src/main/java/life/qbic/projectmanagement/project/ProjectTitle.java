@@ -1,9 +1,5 @@
 package life.qbic.projectmanagement.project;
 
-import life.qbic.projectmanagement.project.repository.jpa.ProjectTitleConverter;
-
-import javax.persistence.Column;
-import javax.persistence.Convert;
 import java.util.Objects;
 
 /**
