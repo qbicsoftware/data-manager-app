@@ -30,8 +30,12 @@ public class ProjectIntent {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ProjectIntent)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     ProjectIntent that = (ProjectIntent) o;
 
