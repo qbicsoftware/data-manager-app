@@ -10,7 +10,14 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import life.qbic.finance.persistence.SimpleOfferSearchService;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 
 /**
@@ -24,15 +31,16 @@ public class SearchDialog extends Dialog {
 
     private static final Logger log = getLogger(SearchDialog.class);
 
-
+    private OfferLookupService offerLookupService;
     public ComboBox<String> searchField;
     private HorizontalLayout footerButtonLayout;
     private HorizontalLayout contentLayout;
     public Button cancel;
     public Button ok;
 
-    public SearchDialog() {
+    public SearchDialog(OfferLookupService offerLookupService) {
         super();
+        this.offerLookupService = offerLookupService;
         styleSearchBox();
         createButtonLayout();
         test();
@@ -52,10 +60,14 @@ public class SearchDialog extends Dialog {
         searchField = new ComboBox<>();
         searchField.setPlaceholder("Search");
         searchField.setClassName("searchbox");
-        var repo = new Repository();
+
         searchField.setItems(
-            query -> repo.find(query.getFilter().orElse(""), query.getOffset(), query.getLimit()));
+            query -> offerLookupService.findOfferContainingProjectTitleOrId(query.getFilter().orElse(""),
+                            query.getFilter().orElse(""))
+                    .stream()
+                    .map(preview -> preview.offerId().id() +", "+preview.getProjectTitle().title()));
         contentLayout = new HorizontalLayout(searchField);
+
     }
 
     private void createButtonLayout(){
@@ -68,25 +80,18 @@ public class SearchDialog extends Dialog {
     }
 
     private void listener(){
-        //causes error:
-        // "java: interface JsonArray is public, should be declared in a file named JsonArray.java"
         searchField.addValueChangeListener( e -> {
             log.info("blub");
-            filter(e.getValue());
             System.out.println("here");
         });
-
     }
 
-
-    private void filter(String filterString) {
-        System.out.println("Called this method");
-        System.out.println(filterString);
-    }
-
+    @Service
     private static class Repository {
 
         private final List<String> dummy;
+        @Autowired
+        private OfferLookupService offerSearchService;
 
         public Repository() {
             dummy = new ArrayList<>();
@@ -94,14 +99,22 @@ public class SearchDialog extends Dialog {
             dummy.add("xyz");
             dummy.add("alkjdflasjdfklsdf");
             dummy.add("asldfjasldfjiowaefnafnasdfawsfwae fas asdfasefawerf");
+
+
         }
 
         public Stream<String> find(String filter, int offset, int limit) {
-            return dummy.stream()
+            /*return dummy.stream()
                 .filter(it -> it.toUpperCase().contains(filter.toUpperCase()))
                 .sorted()
                 .skip(offset)
-                .limit(limit);
+                .limit(limit);*/
+            return offerSearchService.findOfferContainingProjectTitleOrId(filter, filter)
+                    .stream()
+                    .map(preview -> preview.offerId().id() +", "+preview.getProjectTitle().title())
+                    .sorted()
+                    .skip(offset)
+                    .limit(limit);
         }
     }
 

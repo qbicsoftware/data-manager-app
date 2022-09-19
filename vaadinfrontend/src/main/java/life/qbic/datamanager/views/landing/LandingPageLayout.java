@@ -7,6 +7,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.components.SearchDialog;
+import life.qbic.finance.persistence.SimpleOfferSearchService;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -24,10 +26,12 @@ public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
+  private final OfferLookupService offerLookupService;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired OfferLookupService offerLookupService) {
     createNavBarContent();
     registerToHandler(handlerInterface);
+    this.offerLookupService = offerLookupService;
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
@@ -42,7 +46,8 @@ public class LandingPageLayout extends DataManagerLayout {
   private HorizontalLayout createHeaderButtonLayout() {
     register = new Button("Register");
     login = new Button("Login");
-    SearchDialog dialog = new SearchDialog();
+    //todo remove
+    SearchDialog dialog = new SearchDialog(offerLookupService);
     dialog.open();
 
     HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);

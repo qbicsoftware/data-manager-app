@@ -38,9 +38,9 @@ public class ProjectOverviewLayout extends DataManagerLayout {
     }
 
     private void createLayoutContent() {
-        searchDialog = new SearchDialog();
+        //searchDialog = new SearchDialog();
         //todo open it after offer creation mode was selected
-        searchDialog.open();
+        //searchDialog.open();
     }
 
 }
