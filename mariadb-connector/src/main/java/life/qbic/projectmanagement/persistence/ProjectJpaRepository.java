@@ -39,11 +39,6 @@ public class ProjectJpaRepository implements ProjectRepository {
     saveProjectIfNonexistent(project);
   }
 
-  @Override
-  public Optional<Project> findProjectById(ProjectId projectId) {
-    return projectRepo.findById(projectId);
-  }
-
   /**
    * Adds a user to the repository. Publishes all domain events of the project if successful. If
    * unsuccessful, throws a {@link ProjectStorageException} Exception.
