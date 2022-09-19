@@ -12,7 +12,8 @@ import java.util.function.Supplier;
  * <p>This class introduces the Rust idiom to use Result objects to enforce the client code
  * to apply some best practises to safe value access and proper exception handling.</p>
  *
- * <p>Results can be used to wrap an actual value of type <code>V</code> or an exception of type
+ * <p>Results can be used to wrap an actual value of type <code>V</code>, which indicates a
+ * success, or an exception of type
  * <code>E</code>. An object of type Result can only contain either a value or an exception, not
  * both in the same instance.</p>
  * <p>
@@ -44,7 +45,7 @@ class Result<V, E extends Exception> {
   private final Type type;
 
   private enum Type {
-    EXCEPTION, SUCCESS
+    FAILURE, SUCCESS
   }
 
   /**
@@ -61,9 +62,9 @@ class Result<V, E extends Exception> {
 
   /**
    * Static constructor method for creating a result object instance of type <code>V,E</code>
-   * wrapping an error <code>E</code>.
+   * wrapping an exception <code>E</code>.
    *
-   * @param exception the suspicious error to get wrapped in a result object
+   * @param exception the exception to get wrapped in a result object
    * @return a new result object instance
    */
   public static <V, E extends Exception> Result<V, E> exception(E exception) {
@@ -80,7 +81,7 @@ class Result<V, E extends Exception> {
   private Result(E exception) {
     this.value = null;
     this.exception = exception;
-    this.type = Type.EXCEPTION;
+    this.type = Type.FAILURE;
   }
 
   /**
@@ -89,9 +90,9 @@ class Result<V, E extends Exception> {
    * @return the wrapped value
    * @throws NoSuchElementException if no value exists in the result object
    */
-  V getValue() throws NoSuchElementException {
+  V value() throws NoSuchElementException {
     if (Objects.isNull(value)) {
-      throw new NoSuchElementException("Result with error has no value.");
+      throw new NoSuchElementException("Result with exception has no value.");
     }
     return value;
   }
@@ -102,32 +103,32 @@ class Result<V, E extends Exception> {
    * @return the wrapped exception
    * @throws NoSuchElementException if no error exists in the result object
    */
-  E getError() throws NoSuchElementException {
+  E error() throws NoSuchElementException {
     if (Objects.isNull(exception)) {
-      throw new NoSuchElementException("Result with value has no error.");
+      throw new NoSuchElementException("Result with value has no exception.");
     }
     return exception;
   }
 
   /**
    * Returns <code>true</code>, if the result object contains an error. Is always the negation of
-   * {@link Result#hasValue()} ()}.
-   * <p>So <code>{@link Result#hasError()} ()} == !{@link Result#hasValue()}</code></p>
+   * {@link Result#isSuccess()} ()}.
+   * <p>So <code>{@link Result#isFailure()} ()} == !{@link Result#isSuccess()}</code></p>
    *
    * @return true, if the result object has an error, else false
    */
-  public Boolean hasError() {
-    return type.equals(Type.EXCEPTION);
+  public Boolean isFailure() {
+    return type.equals(Type.FAILURE);
   }
 
   /**
    * Returns <code>true</code>, if the result object contains an error. Is always the negation of
-   * {@link Result#hasError()} ()}.
-   * <p>So <code>{@link Result#hasValue()} ()} == !{@link Result#hasError()} ()}</code></p>
+   * {@link Result#isFailure()} ()}.
+   * <p>So <code>{@link Result#isSuccess()} ()} == !{@link Result#isFailure()} ()}</code></p>
    *
    * @return true, if the result object has a value, else false
    */
-  public Boolean hasValue() {
+  public Boolean isSuccess() {
     return type.equals(Type.SUCCESS);
   }
 
@@ -143,42 +144,89 @@ class Result<V, E extends Exception> {
    * @param function a function transforming data of type <code>V</code> to <code>U</code>
    * @return a new result object instance of type <code>U,E</code>
    */
-  public <U> Result<U, E> map(Function<V, U> function) {
+  public <U> Result<U, ? extends E> map(Function<V, U> function) {
     Objects.requireNonNull(function);
-    Result<U, E> result = null;
+    Result<U, ? extends E> result = null;
     switch (this.type) {
-      case EXCEPTION -> result = Result.exception(this.exception);
-      case SUCCESS -> result = apply(function, this.getValue());
+      case FAILURE -> result = Result.exception(this.exception);
+      case SUCCESS -> result = apply(function, this.value());
     }
     return result;
   }
 
+  /**
+   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
+   * when the result object contains a value of type V.
+   * <p>
+   * If the result object does not contain a value but an exception, the method does nothing.
+   *
+   * @param consumer A target consumer object reference that can consume the value of type
+   *                 <code>V</code>
+   * @since 1.0.0
+   */
   public void ifSuccess(Consumer<? super V> consumer) {
+    Objects.requireNonNull(consumer);
     if (type.equals(Type.SUCCESS) && Objects.nonNull(value)) {
       consumer.accept(value);
     }
   }
 
-  public void ifError(Consumer<? super E> consumer) {
-    if (type.equals(Type.EXCEPTION)) {
+  /**
+   * Takes a {@link Consumer &lt;? super E>} and calls its {@link Consumer#accept(Object)} method, *
+   * when the result object contains an exception.
+   * <p>
+   * If the result object contains a value, the method does nothing.
+   *
+   * @param consumer A target consumer object reference that can consume an exception of type *
+   *                 <code>E</code>
+   * @since 1.0.0
+   */
+  public void ifFailure(Consumer<? super E> consumer) {
+    Objects.requireNonNull(consumer);
+    if (type.equals(Type.FAILURE)) {
       consumer.accept(exception);
     }
   }
 
+  /**
+   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
+   * when the result object represents a success and contains a value and takes a
+   * {@link Consumer &lt;? super E>} and calls its {@link Consumer#accept(Object)}, if the result
+   * contains a failure.
+   *
+   * @param consumerOfValue A target consumer object reference that can consume a value of type *
+   *                        <code>V</code>
+   * @param consumerOfError A target consumer object reference that can consume an exception of
+   *                        type
+   *                        <code>E</code>
+   * @since 1.0.0
+   */
   public void ifSuccessOrElse(Consumer<? super V> consumerOfValue,
       Consumer<? super E> consumerOfError) {
-    if (type.equals(Type.EXCEPTION)) {
+    if (type.equals(Type.FAILURE)) {
       consumerOfError.accept(exception);
     } else {
       consumerOfValue.accept(value);
     }
   }
 
-  public <X extends Throwable> V orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+  /**
+   * Returns the value of type <code>V</code> if present or takes an {@link Supplier} of type
+   * <code>X</code> and throws an object of type {@link Throwable} if the result contains an
+   * exception.
+   *
+   * @param <X>               a subtype of {@link Throwable}
+   * @param throwableSupplier a throwable supplier to get, when the result object contains an
+   *                          exception
+   * @return the value <code>V</code>
+   * @throws X which is a subtype of {@link Throwable}
+   * @since 1.0.0
+   */
+  public <X extends Throwable> V orElseThrow(Supplier<? extends X> throwableSupplier) throws X {
     if (type.equals(Type.SUCCESS)) {
       return value;
     } else {
-      throw exceptionSupplier.get();
+      throw throwableSupplier.get();
     }
   }
 

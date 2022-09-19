@@ -39,8 +39,8 @@ class ResultSpec extends Specification {
         Result<String, Exception> processed = result.map(toUpperCase)
 
         then:
-        processed.hasValue()
-        processed.getValue() == word.toUpperCase()
+        processed.isSuccess()
+        processed.value() == word.toUpperCase()
     }
 
     def "When a result contains an exception, dont apply the provided function but return the original result"() {
@@ -55,8 +55,8 @@ class ResultSpec extends Specification {
         def processedResult = result.map(toUpperCase)
 
         then:
-        processedResult.hasError()
-        processedResult.getError().message == "test exception"
+        processedResult.isFailure()
+        processedResult.error().message == "test exception"
     }
 
     def "When a result contains a value, pass the value to the consumer"() {
@@ -104,7 +104,7 @@ class ResultSpec extends Specification {
         Result<String, Exception> result = Result.exception(e)
 
         when:
-        result.ifError(consumer)
+        result.ifFailure(consumer)
 
         then:
         1 * consumer.accept(_)
@@ -121,7 +121,7 @@ class ResultSpec extends Specification {
         Result<String, Exception> result = Result.success(value)
 
         when:
-        result.ifError(consumer)
+        result.ifFailure(consumer)
 
         then:
         0 * consumer.accept(_)
