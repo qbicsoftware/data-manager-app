@@ -102,6 +102,13 @@ public class Application extends SpringBootServletInitializer implements AppShel
     //logger.error("Does not work");
     logger.info(String.valueOf(
         context.getBean(OfferLookupService.class).findOfferContainingProjectTitleOrId("test", "test").size()));
+    logger.error("Does not work");
+
+    //todo remove
+    context.getBean(OfferLookupService.class)
+        .findOfferContainingProjectTitleOrId("test", "test", 2, 2)
+        .forEach(o -> logger.info(o.getProjectTitle().title()));
+
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(

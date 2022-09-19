@@ -5,6 +5,7 @@ import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.components.OfferSearchDialog;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.Serial;
@@ -19,7 +20,7 @@ import java.util.Objects;
  * @since <version tag>
  */
 @PageTitle("Project Overview")
-@Route(value = "projects")
+@Route(value = "")
 public class ProjectOverviewLayout extends DataManagerLayout implements Serializable {
 
     @Serial
@@ -42,6 +43,7 @@ public class ProjectOverviewLayout extends DataManagerLayout implements Serializ
 
         registerToHandler(handlerInterface);
         createLayoutContent();
+        addListeners();
     }
 
     private void registerToHandler(ProjectOverviewHandlerInterface handler) {
@@ -54,6 +56,21 @@ public class ProjectOverviewLayout extends DataManagerLayout implements Serializ
         //todo remove
         searchDialog = new OfferSearchDialog(offerLookupService);
         searchDialog.open();
+    }
+
+    private void addListeners(){
+        searchDialog.cancel.addClickListener(e -> {
+            searchDialog.close();
+        });
+
+        searchDialog.ok.addClickListener(e -> {
+            //check if value is selected
+            if(searchDialog.searchField.getOptionalValue().isPresent()){
+                //Selected Offer
+                OfferPreview selectedOfferPreview = searchDialog.searchField.getValue();
+                //todo forward to service to load into create offer UI
+            }
+        });
     }
 
 }

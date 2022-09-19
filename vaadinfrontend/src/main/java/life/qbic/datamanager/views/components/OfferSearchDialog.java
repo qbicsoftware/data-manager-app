@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.components;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -11,7 +12,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.slf4j.Logger;
 
 
@@ -27,7 +30,7 @@ public class OfferSearchDialog extends Dialog {
     private static final Logger log = getLogger(OfferSearchDialog.class);
 
     private final OfferLookupService offerLookupService;
-    public ComboBox<String> searchField;
+    public ComboBox<OfferPreview> searchField;
     private HorizontalLayout footerButtonLayout;
     private HorizontalLayout contentLayout;
     public Button cancel;
@@ -69,7 +72,16 @@ public class OfferSearchDialog extends Dialog {
 
     private void setItems() {
         searchField.setItems(
-            query -> find(query.getFilter().orElse(""),query.getOffset(), query.getLimit()));
+            query -> offerLookupService.findOfferContainingProjectTitleOrId(query.getFilter().orElse(""),
+                    query.getFilter().orElse(""),query.getOffset(), query.getLimit()).stream());
+
+        searchField.setRenderer(new ComponentRenderer<Text,OfferPreview>(preview -> {
+            return new Text(preview.offerId().id() +", "+preview.getProjectTitle().title());
+        }));
+
+        searchField.addValueChangeListener(e->{
+            System.out.println(e.getValue());
+        });
     }
 
     private void createButtonLayout(){
@@ -79,13 +91,5 @@ public class OfferSearchDialog extends Dialog {
         ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         footerButtonLayout = new HorizontalLayout(cancel,ok);
-    }
-    private Stream<String> find(String filter, int offset, int limit) {
-        return offerLookupService.findOfferContainingProjectTitleOrId(filter, filter)
-                .stream()
-                .map(preview -> preview.offerId().id() +", "+preview.getProjectTitle().title())
-                .sorted()
-                .skip(offset)
-                .limit(limit);
     }
 }
