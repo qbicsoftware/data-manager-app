@@ -22,13 +22,4 @@ public interface ProjectRepository {
    * @since 1.0.0
    */
   void add(Project project);
-
-  /**
-   * Searches for a project matching a provided projectId
-   *
-   * @param projectId the project's unique id, accessible via {@link Project#getId()}
-   * @return the project if present in the repository, else returns an {@link Optional#empty()}.
-   * @since 1.0.0
-   */
-  Optional<Project> findProjectById(ProjectId projectId);
 }
