@@ -23,7 +23,7 @@ import java.util.Objects;
  * @since <version tag>
  */
 @PageTitle("Project Overview")
-@Route(value = "projects", layout = MainLayout.class)
+@Route(value = "", layout = MainLayout.class)
 @PermitAll
 public class ProjectOverviewLayout extends VerticalLayout implements Serializable {
 
