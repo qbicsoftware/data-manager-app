@@ -1,6 +1,4 @@
-package life.qbic.projectmanagement.project;
-
-import life.qbic.projectmanagement.project.repository.jpa.ProjectTitleConverter;
+package life.qbic.projectmanagement.domain;
 
 import static java.util.Objects.requireNonNull;
 

@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.project;
+package life.qbic.projectmanagement.domain;
 
 /**
  * Thrown whenever the domain ends up in an exceptional state.

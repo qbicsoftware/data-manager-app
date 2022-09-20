@@ -1,9 +1,6 @@
-package life.qbic.projectmanagement.project.repository;
+package life.qbic.projectmanagement.domain.repository;
 
-import life.qbic.projectmanagement.project.Project;
-import life.qbic.projectmanagement.project.ProjectId;
-
-import java.util.Optional;
+import life.qbic.projectmanagement.domain.Project;
 
 
 /**

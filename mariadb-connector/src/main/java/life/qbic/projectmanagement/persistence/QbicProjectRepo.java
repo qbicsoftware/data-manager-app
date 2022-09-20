@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.project.Project;
-import life.qbic.projectmanagement.project.ProjectId;
+import life.qbic.projectmanagement.domain.Project;
+import life.qbic.projectmanagement.domain.ProjectId;
 import org.springframework.data.repository.CrudRepository;
 
 /**
