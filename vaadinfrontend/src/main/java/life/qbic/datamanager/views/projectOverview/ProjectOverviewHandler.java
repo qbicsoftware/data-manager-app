@@ -22,7 +22,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     private ProjectOverviewLayout registeredProjectOverview;
     private final OfferLookupService offerLookupService;
 
-    ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService){
+    public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService){
         Objects.requireNonNull(offerLookupService);
         this.offerLookupService = offerLookupService;
     }
