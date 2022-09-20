@@ -11,8 +11,12 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +25,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/create", layout = MainLayout.class)
 @PermitAll
 @Tag("create-project")
-public class CreateProjectLayout extends Composite<VerticalLayout> {
+public class CreateProjectLayout extends Composite<VerticalLayout> implements HasUrlParameter<String> {
 
   final H2 layoutTitle = new H2();
   final TextField titleField = new TextField();
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
+  final CreateProjectHandlerInterface handler;
+
 
   public CreateProjectLayout(@Autowired CreateProjectHandlerInterface handler) {
+    Objects.requireNonNull(handler);
     registerToHandler(handler);
+    this.handler = handler;
   }
 
   @Override
@@ -55,5 +63,10 @@ public class CreateProjectLayout extends Composite<VerticalLayout> {
 
   private void registerToHandler(CreateProjectHandlerInterface handler) {
     handler.handle(this);
+  }
+
+  @Override
+  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String s) {
+    handler.handleEvent(beforeEvent);
   }
 }
