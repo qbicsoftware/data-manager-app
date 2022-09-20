@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement
 
-import life.qbic.projectmanagement.domain.project.Project
+
+import life.qbic.projectmanagement.domain.project.Project2
 import life.qbic.projectmanagement.domain.project.ProjectIntent
 import life.qbic.projectmanagement.domain.project.ProjectTitle
 import spock.lang.Specification
@@ -21,8 +22,8 @@ class ProjectSpec extends Specification {
     def intentTwo = new ProjectIntent(new ProjectTitle("Another project"))
 
     expect: "projects with the same uuid are equal"
-    def projectOne = Project.of(uuid, intentOne)
-    def projectTwo = Project.of(uuid, intentTwo)
+    def projectOne = Project2.of(uuid, intentOne)
+    def projectTwo = Project2.of(uuid, intentTwo)
 
     projectOne == projectTwo
     projectOne.hashCode() == projectTwo.hashCode()
@@ -36,8 +37,8 @@ class ProjectSpec extends Specification {
     def intent = new ProjectIntent(new ProjectTitle("A project"))
 
     expect: "projects with different uuid are not equal"
-    def projectOne = Project.of(uuidOne, intent)
-    def projectTwo = Project.of(uuidTwo, intent)
+    def projectOne = Project2.of(uuidOne, intent)
+    def projectTwo = Project2.of(uuidTwo, intent)
 
     projectOne != projectTwo
     projectOne.hashCode() != projectTwo.hashCode()
