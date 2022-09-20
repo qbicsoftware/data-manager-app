@@ -11,10 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@PageTitle("Data Manager ")
+@PageTitle("Data Manager")
 @Route(value = "data")
 public class MainLayout extends DataManagerLayout {
-
   public Button logout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {

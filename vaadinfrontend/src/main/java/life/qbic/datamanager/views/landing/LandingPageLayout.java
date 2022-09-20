@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.io.Serial;
+import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,12 +19,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "landing")
 public class LandingPageLayout extends DataManagerLayout {
 
+  @Serial
+  private static final long serialVersionUID = 8899881833038660866L;
+
   public Button register;
   public Button login;
-
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
+    Objects.requireNonNull(handlerInterface);
+
     createNavBarContent();
     registerToHandler(handlerInterface);
+
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {

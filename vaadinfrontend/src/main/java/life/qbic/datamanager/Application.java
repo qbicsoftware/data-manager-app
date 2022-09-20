@@ -33,7 +33,6 @@ import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.Recipient;
 import life.qbic.newshandler.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSupplier;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -56,7 +55,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
-@ComponentScan({"life.qbic.authentication.persistence"})
 @ComponentScan({"life.qbic"})
 @EnableJpaRepositories(basePackages = "life.qbic")
 @EntityScan(basePackages = "life.qbic")
@@ -99,12 +97,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
     logger.info("works");
-    logger.error("Does not work");
-
-    context.getBean(OfferLookupService.class)
-        .findOfferContainingProjectTitleOrId("test", "test", 2, 2)
-        .forEach(o -> logger.info(o.getProjectTitle().title()));
-
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(
