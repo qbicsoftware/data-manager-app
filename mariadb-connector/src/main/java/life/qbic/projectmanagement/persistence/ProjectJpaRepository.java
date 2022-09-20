@@ -36,27 +36,23 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   @Override
   public void add(Project project) {
-    saveProjectIfNonexistent(project);
-  }
-
-  private void saveProjectIfNonexistent(Project project) {
-      if(doesProjectExistWithId(project.getId())) {
-        throw new ProjectStorageException(new Throwable("Project with that id already exists."));
-      }
-      projectRepo.save(project);
+    if(doesProjectExistWithId(project.getId())) {
+      throw new ProjectExistsException();
+    }
+    projectRepo.save(project);
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
   }
 
-  public static class ProjectStorageException extends RuntimeException {
+  public static class ProjectExistsException extends RuntimeException {
 
 
-    public ProjectStorageException() {
+    public ProjectExistsException() {
     }
 
-    public ProjectStorageException(Throwable cause) {
+    public ProjectExistsException(Throwable cause) {
       super(cause);
     }
   }
