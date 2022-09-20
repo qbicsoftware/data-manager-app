@@ -7,11 +7,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Thrown whenever an exception occurred during an execution in the application layer. This
+ * exception provides an error code and error parameters that are translated into a user-readable
+ * message. Custom contexts provide an implementation of this class.
+ * <p>
+ * Each error code should help the user to change his input so that the functionality can be
+ * completed correctly. Errors and exceptions independent of the user input should always be
+ * assigned the GENERAL error code.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public abstract class ApplicationException extends RuntimeException {
 
