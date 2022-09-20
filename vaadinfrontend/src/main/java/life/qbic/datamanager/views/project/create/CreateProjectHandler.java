@@ -65,17 +65,6 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     createProjectLayout.titleField.setValue(offer.projectTitle().title());
   }
 
-  private Map<String, String> parseFromUrlParameter(String parameter)
-      throws IllegalArgumentException {
-    String[] parameterArray = parameter.trim().split("=");
-    if (parameterArray.length != 2) {
-      throw new IllegalArgumentException("Unknown parameter syntax " + parameter);
-    }
-    Map<String, String> paramMap = new HashMap<>();
-    paramMap.put(parameterArray[0], parameterArray[1]);
-    return paramMap;
-  }
-
   private void addSaveClickListener() {
     createProjectLayout.saveButton.addClickListener(it -> saveClicked());
   }
