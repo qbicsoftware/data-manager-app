@@ -13,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import java.util.Objects;
@@ -65,7 +66,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
   }
 
   @Override
-  public void setParameter(BeforeEvent beforeEvent, String s) {
-    handler.receiveUrlParameter(s);
+  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String s) {
+    handler.handleEvent(beforeEvent);
   }
 }

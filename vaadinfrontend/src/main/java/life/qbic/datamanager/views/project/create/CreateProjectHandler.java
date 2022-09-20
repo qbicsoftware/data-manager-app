@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.router.BeforeEvent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.offer.OfferId;
@@ -24,15 +26,12 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   }
 
   @Override
-  public void receiveUrlParameter(String parameter) {
-    var params = parseFromUrlParameter(parameter);
-    processUrlParameter(params);
-  }
-
-  private void processUrlParameter(Map<String, String> params) {
-    Objects.requireNonNull(params);
-    if (params.containsKey(OFFER_ID_QUERY_PARAM)) {
-      preloadContentFromOffer(params.get(OFFER_ID_QUERY_PARAM));
+  public void handleEvent(BeforeEvent event) {
+    Map<String, List<String>> queryParams = event.getLocation().getQueryParameters()
+        .getParameters();
+    if (queryParams.containsKey(OFFER_ID_QUERY_PARAM)) {
+      String offerId = queryParams.get(OFFER_ID_QUERY_PARAM).iterator().next();
+      preloadContentFromOffer(offerId);
     }
   }
 
