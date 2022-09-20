@@ -46,6 +46,9 @@ public class ProjectJpaRepository implements ProjectRepository {
     return projectRepo.findById(id).isPresent();
   }
 
+  /**
+   * Is thrown if a project that should be created already exists, as denoted by the project id
+   */
   public static class ProjectExistsException extends RuntimeException {
 
 
