@@ -11,8 +11,15 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import javax.annotation.security.PermitAll;
+import life.qbic.datamanager.views.MainLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@PageTitle("Create Project")
+@Route(value = "projects/create", layout = MainLayout.class)
+@PermitAll
 @Tag("create-project")
 public class CreateProjectLayout extends Composite<VerticalLayout> {
 
