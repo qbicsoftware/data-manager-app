@@ -61,11 +61,30 @@ public class SelectCreationModeDialog extends Dialog {
     }
 
     private void createCreationModeButtons() {
-        blankButton = new Button("", new Icon(VaadinIcon.PLUS));
+        blankButton = new Button("", new Icon(VaadinIcon.PLUS_CIRCLE_O));
         blankButton.setSizeFull();
+        blankButton.setClassName("secondary");
+
 
         fromOfferButton = new Button("", new Icon(VaadinIcon.FILE));
         fromOfferButton.setSizeFull();
+        fromOfferButton.setClassName("tertiary");
+
+        listener();
+    }
+
+    private void listener(){
+        blankButton.addClickListener(e -> {
+            //fromOfferButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            blankButton.setClassName("selected");
+            fromOfferButton.setClassName("tertiary");
+        });
+
+        fromOfferButton.addClickListener(e -> {
+            fromOfferButton.setClassName("selected");
+            blankButton.setClassName("secondary");
+            // blankButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        });
     }
 
     private void styleDialog(){

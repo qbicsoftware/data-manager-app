@@ -1,0 +1,14 @@
+.secondary {
+    color: var(--lumo-primary-text-color);
+    background-color: var(--lumo-primary-color-10pct);
+}
+
+.selected {
+    color: var(--lumo-primary-contrast-color);
+    background-color: var(--lumo-primary-color);
+}
+
+.tertiary {
+    color: var(--lumo-body-text-color);
+    background-color: var(--lumo-contrast-10pct);
+}
