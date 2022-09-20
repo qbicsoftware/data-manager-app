@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * <p>Orchestrates the layout {@link ProjectOverviewLayout} and determines how the components behave.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{

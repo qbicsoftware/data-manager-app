@@ -55,7 +55,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
-//@ComponentScan(basePackages = {"life.qbic.authentication.persistence"})
 @ComponentScan({"life.qbic"})
 @EnableJpaRepositories(basePackages = "life.qbic")
 @EntityScan(basePackages = "life.qbic")
@@ -98,7 +97,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
     logger.info("works");
-    //logger.error("Does not work");
   }
 
   private static MessageSubscriber whenUserRegisteredSendEmail(
