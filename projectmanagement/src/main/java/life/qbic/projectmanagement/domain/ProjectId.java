@@ -22,4 +22,8 @@ public record ProjectId(UUID uuid) {
   public static ProjectId create() {
     return new ProjectId();
   }
+
+  public static ProjectId of(UUID uuid) {
+    return new ProjectId(uuid);
+  }
 }
