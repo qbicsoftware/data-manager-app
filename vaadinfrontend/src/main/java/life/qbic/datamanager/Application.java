@@ -55,7 +55,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
-@ComponentScan({"life.qbic.authentication.persistence"})
 @ComponentScan({"life.qbic"})
 @EnableJpaRepositories(basePackages = "life.qbic")
 @EntityScan(basePackages = "life.qbic")
