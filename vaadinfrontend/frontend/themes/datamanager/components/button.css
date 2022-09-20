@@ -8,7 +8,7 @@
     background-color: var(--lumo-primary-color);
 }
 
-.tertiary {
+.contrast {
     color: var(--lumo-body-text-color);
     background-color: var(--lumo-contrast-10pct);
 }

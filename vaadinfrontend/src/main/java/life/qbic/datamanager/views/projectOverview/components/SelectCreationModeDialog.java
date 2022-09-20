@@ -37,6 +37,7 @@ public class SelectCreationModeDialog extends Dialog {
         cancel = new Button("Cancel");
 
         setupButtonLayout();
+        isCloseOnEsc();
     }
 
     private void setupButtonLayout(){
@@ -63,27 +64,25 @@ public class SelectCreationModeDialog extends Dialog {
     private void createCreationModeButtons() {
         blankButton = new Button("", new Icon(VaadinIcon.PLUS_CIRCLE_O));
         blankButton.setSizeFull();
-        blankButton.setClassName("secondary");
+        setSecondaryButtonStyle(blankButton);
 
 
         fromOfferButton = new Button("", new Icon(VaadinIcon.FILE));
         fromOfferButton.setSizeFull();
-        fromOfferButton.setClassName("tertiary");
+        setContrastButtonStyle(fromOfferButton);
 
         listener();
     }
 
     private void listener(){
         blankButton.addClickListener(e -> {
-            //fromOfferButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            blankButton.setClassName("selected");
-            fromOfferButton.setClassName("tertiary");
+            setSelectedStyle(blankButton);
+            setContrastButtonStyle(fromOfferButton);
         });
 
         fromOfferButton.addClickListener(e -> {
-            fromOfferButton.setClassName("selected");
-            blankButton.setClassName("secondary");
-            // blankButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            setSelectedStyle(fromOfferButton);
+            setSecondaryButtonStyle(blankButton);
         });
     }
 
@@ -95,6 +94,17 @@ public class SelectCreationModeDialog extends Dialog {
         createDialogControlButtons();
     }
 
+    private void setSelectedStyle(Button button){
+        button.setClassName("selected");
+    }
+
+    private void setSecondaryButtonStyle(Button button){
+        button.setClassName("secondary");
+    }
+
+    private void setContrastButtonStyle(Button button){
+        button.setClassName("contrast");
+    }
 
 
 }

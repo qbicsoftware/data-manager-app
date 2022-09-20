@@ -23,6 +23,8 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     private ProjectOverviewLayout registeredProjectOverview;
     private final OfferLookupService offerLookupService;
 
+    private CreationMode creationMode = CreationMode.NONE;
+
     public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService){
         Objects.requireNonNull(offerLookupService);
         this.offerLookupService = offerLookupService;
@@ -32,28 +34,46 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     public void handle(ProjectOverviewLayout layout) {
         if (registeredProjectOverview != layout) {
             this.registeredProjectOverview = layout;
-            configureDialogButtons();
             configureSearchDropbox();
+            configureSelectionModeDialog();
         }
     }
 
-    private void configureDialogButtons() {
-        registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
+    private void configureSelectionModeDialog(){
+        registeredProjectOverview.selectCreationModeDialog.blankButton.addClickListener(e -> creationMode = CreationMode.BLANK);
+        registeredProjectOverview.selectCreationModeDialog.fromOfferButton.addClickListener(e -> creationMode = CreationMode.FROM_OFFER);
 
-        registeredProjectOverview.create.addClickListener( e-> {
-            loadItemsWithService(offerLookupService);
-            registeredProjectOverview.searchDialog.open();
+        registeredProjectOverview.selectCreationModeDialog.next.addClickListener(e ->{
+            switch (creationMode){
+                case BLANK -> {
+                    //todo link the route to the project ui
+                    return;
+                }
+                case FROM_OFFER -> {
+                    registeredProjectOverview.selectCreationModeDialog.close();
+                    loadItemsWithService(offerLookupService);
+                    registeredProjectOverview.searchDialog.open();
+                }
+            }
         });
-
+        registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> registeredProjectOverview.selectCreationModeDialog.close());
     }
 
     private void configureSearchDropbox(){
+        configureDialogButtons();
+
         registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
             //check if value is selected
             if(registeredProjectOverview.searchDialog.searchField.getOptionalValue().isPresent()){
                 forwardSelectedOffer();
             }
         });
+    }
+    private void configureDialogButtons() {
+        registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
+
+        registeredProjectOverview.create.addClickListener( e-> registeredProjectOverview.selectCreationModeDialog.open());
+
     }
 
     private void forwardSelectedOffer() {
@@ -73,6 +93,10 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
 
         registeredProjectOverview.searchDialog.searchField.setItemLabelGenerator((ItemLabelGenerator<OfferPreview>) preview ->
                 preview.offerId().id() +", "+preview.getProjectTitle().title());
+    }
+
+    enum CreationMode{
+        BLANK, FROM_OFFER, NONE
     }
 
 }
