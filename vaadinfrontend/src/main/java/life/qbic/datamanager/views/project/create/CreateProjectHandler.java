@@ -19,20 +19,20 @@ import org.springframework.stereotype.Component;
 public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
 
-  private static Logger log = LoggerFactory.logger(CreateProjectHandler.class);
+  private static final Logger log = LoggerFactory.logger(CreateProjectHandler.class);
 
   private static final String OFFER_ID_QUERY_PARAM = "offerId";
 
   private CreateProjectLayout createProjectLayout;
 
+  private final ProjectCreationService projectCreationService;
   private final OfferLookupService offerLookupService;
 
-  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectCreationService projectCreationService) {
+  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService,
+      @Autowired ProjectCreationService projectCreationService) {
     this.offerLookupService = offerLookupService;
     this.projectCreationService = projectCreationService;
-    }
-
-  private final ProjectCreationService projectCreationService;
+  }
 
   @Override
   public void handle(CreateProjectLayout createProjectLayout) {
@@ -56,7 +56,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     log.info("Receiving offerId " + offerId);
     OfferId id = OfferId.from(offerId);
     Optional<Offer> offer = offerLookupService.findOfferById(id);
-    offer.ifPresentOrElse(this::loadOfferContent, () -> log.error("No offer found with id: " + offerId));
+    offer.ifPresentOrElse(this::loadOfferContent,
+        () -> log.error("No offer found with id: " + offerId));
   }
 
   private void loadOfferContent(Offer offer) {

@@ -51,5 +51,6 @@ public class HelloWorldView extends VerticalLayout {
     this.personalWelcomeMessage = new H1();
     this.personalWelcomeMessage.getElement().setText("Welcome " + username);
     add(personalWelcomeMessage, name, sayHello);
+
   }
 }
