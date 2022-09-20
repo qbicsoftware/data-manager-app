@@ -19,7 +19,7 @@ import javax.annotation.security.PermitAll;
  * @since 1.0.0
  */
 @PageTitle("Project Overview")
-@Route(value = "", layout = MainLayout.class)
+@Route(value = "projects", layout = MainLayout.class)
 @PermitAll
 public class ProjectOverviewLayout extends VerticalLayout {
 
