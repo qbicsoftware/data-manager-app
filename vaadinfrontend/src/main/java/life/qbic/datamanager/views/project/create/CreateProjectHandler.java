@@ -1,11 +1,19 @@
 package life.qbic.datamanager.views.project.create;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import life.qbic.projectmanagement.domain.offer.OfferId;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
+  private static final String OFFER_ID_QUERY_PARAM = "offerId";
+
   private CreateProjectLayout createProjectLayout;
+
+  public CreateProjectHandler(){}
 
   @Override
   public void handle(CreateProjectLayout createProjectLayout) {
@@ -13,6 +21,36 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
       this.createProjectLayout = createProjectLayout;
       addSaveClickListener();
     }
+  }
+
+  @Override
+  public void receiveUrlParameter(String parameter) {
+    var params = parseFromUrlParameter(parameter);
+    processUrlParameter(params);
+  }
+
+  private void processUrlParameter(Map<String, String> params) {
+    Objects.requireNonNull(params);
+    if (params.containsKey(OFFER_ID_QUERY_PARAM)) {
+      preloadContentFromOffer(params.get(OFFER_ID_QUERY_PARAM));
+    }
+  }
+
+  private void preloadContentFromOffer(String offerId) {
+    System.out.println("Receiving offerId " + offerId);
+    OfferId offer = new OfferId(offerId);
+    // TODO call Offer Lookup Service
+    // TODO fill field from offer query result
+  }
+
+  private Map<String, String> parseFromUrlParameter(String parameter) throws IllegalArgumentException {
+    String[]  parameterArray = parameter.trim().split("=");
+    if (parameterArray.length != 2) {
+      throw new IllegalArgumentException("Unknown parameter syntax " + parameter);
+    }
+    Map<String, String> paramMap = new HashMap<>();
+    paramMap.put(parameterArray[0], parameterArray[1]);
+    return paramMap;
   }
 
   private void addSaveClickListener() {
