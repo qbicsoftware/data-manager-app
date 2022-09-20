@@ -8,6 +8,7 @@ import com.vaadin.flow.router.Route;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
+import life.qbic.datamanager.views.projectOverview.components.SelectCreationModeDialog;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -49,6 +50,9 @@ public class LandingPageLayout extends DataManagerLayout {
     loggedOutButtonLayout.addClassName("button-layout-spacing");
 
     styleHeaderButtons();
+
+    SelectCreationModeDialog dialog = new SelectCreationModeDialog();
+    dialog.open();
 
     return loggedOutButtonLayout;
   }

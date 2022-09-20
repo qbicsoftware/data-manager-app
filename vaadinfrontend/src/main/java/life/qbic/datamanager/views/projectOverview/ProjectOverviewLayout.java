@@ -6,7 +6,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.components.OfferSearchDialog;
+import life.qbic.datamanager.views.projectOverview.components.OfferSearchDialog;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.security.PermitAll;
