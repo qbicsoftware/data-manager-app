@@ -15,5 +15,17 @@
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>application-commons</artifactId>
+      <version>0.4.3</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>logging</artifactId>
+      <version>0.4.3</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>
