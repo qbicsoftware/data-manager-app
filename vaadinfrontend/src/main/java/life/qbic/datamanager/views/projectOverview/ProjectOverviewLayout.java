@@ -23,13 +23,7 @@ import javax.annotation.security.PermitAll;
 @PermitAll
 public class ProjectOverviewLayout extends VerticalLayout {
 
-    //todo add vaadin components here eg
-    //a grid containing the projects
-    //create new button
     Button create;
-    //create dialogs:
-    //select creation mode dialog
-    //search offer dialog
     OfferSearchDialog searchDialog;
 
 
