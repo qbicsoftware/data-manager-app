@@ -7,11 +7,11 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.Project;
-import life.qbic.projectmanagement.domain.ProjectIntent;
-import life.qbic.projectmanagement.domain.ProjectManagementDomainException;
-import life.qbic.projectmanagement.domain.ProjectRepository;
-import life.qbic.projectmanagement.domain.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 
 /**
  * Application service facilitating the creation of projects.

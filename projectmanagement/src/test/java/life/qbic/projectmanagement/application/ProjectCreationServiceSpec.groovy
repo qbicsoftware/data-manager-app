@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.ApplicationException
-import life.qbic.projectmanagement.domain.ProjectRepository
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
 import spock.lang.Specification
 
 import static java.util.Objects.nonNull

@@ -1,4 +1,9 @@
-package life.qbic.projectmanagement.domain;
+package life.qbic.projectmanagement.domain.project;
+
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 import static java.util.Objects.requireNonNull;
 
@@ -7,15 +12,32 @@ import static java.util.Objects.requireNonNull;
  *
  * @since <version tag>
  */
+@Entity
+@Table(name = "projects_datamanager")
 public class Project {
 
-  private final ProjectId projectId;
-  private final ProjectIntent projectIntent;
+  @EmbeddedId
+  private ProjectId projectId;
+
+  @Embedded
+  private ProjectIntent projectIntent;
 
   private Project(ProjectId projectId, ProjectIntent projectIntent) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
     this.projectId = projectId;
+    this.projectIntent = projectIntent;
+  }
+
+  protected Project() {
+
+  }
+
+  protected void setProjectId(ProjectId projectId) {
+    this.projectId = projectId;
+  }
+
+  protected void setProjectIntent(ProjectIntent projectIntent) {
     this.projectIntent = projectIntent;
   }
 

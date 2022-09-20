@@ -1,6 +1,10 @@
 package life.qbic.projectmanagement.domain
 
 
+import life.qbic.projectmanagement.domain.project.Project
+import life.qbic.projectmanagement.domain.project.ProjectId
+import life.qbic.projectmanagement.domain.project.ProjectIntent
+import life.qbic.projectmanagement.domain.project.ProjectTitle
 import spock.lang.Specification
 
 class ProjectSpec extends Specification {

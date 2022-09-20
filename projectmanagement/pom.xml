@@ -10,10 +10,23 @@
   <artifactId>projectmanagement</artifactId>
   <name>projectmanagement</name>
   <url>http://maven.apache.org</url>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>javax.persistence</groupId>
+        <artifactId>javax.persistence-api</artifactId>
+        <version>2.2</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
