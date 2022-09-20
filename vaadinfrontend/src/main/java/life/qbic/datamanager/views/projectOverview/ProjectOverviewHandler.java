@@ -54,7 +54,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     private void forwardSelectedOffer() {
         //todo forward to service to load into create offer UI
         OfferPreview selectedOfferPreview = registeredProjectOverview.searchDialog.searchField.getValue();
-        registeredProjectOverview.add(new Text(selectedOfferPreview.offerId()+", "+selectedOfferPreview.getProjectTitle()));
+        registeredProjectOverview.add(new Text(selectedOfferPreview.offerId().id()+", "+selectedOfferPreview.getProjectTitle().title()));
         registeredProjectOverview.searchDialog.close();
     }
 

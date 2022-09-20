@@ -66,4 +66,8 @@ public class OfferId {
       return OfferId.from(s);
     }
   }
+  @Override
+  public String toString() {
+    return id();
+  }
 }
