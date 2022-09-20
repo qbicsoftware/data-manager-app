@@ -40,14 +40,10 @@ public class ProjectJpaRepository implements ProjectRepository {
   }
 
   private void saveProjectIfNonexistent(Project project) {
-    try {
       if(doesProjectExistWithId(project.getId())) {
-        throw new ProjectStorageException();
+        throw new ProjectStorageException(new Throwable("Project with that id already exists."));
       }
       projectRepo.save(project);
-    } catch (Exception e) {
-      throw new ProjectStorageException(e);
-    }
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
