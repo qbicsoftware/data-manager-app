@@ -6,13 +6,6 @@ import spock.lang.Specification
 
 import static java.util.Objects.nonNull
 
-/**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 class ProjectCreationServiceSpec extends Specification {
 
   ProjectRepository projectRepository = Stub()
