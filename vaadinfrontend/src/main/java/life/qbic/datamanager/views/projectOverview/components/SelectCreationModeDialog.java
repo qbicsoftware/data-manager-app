@@ -64,11 +64,13 @@ public class SelectCreationModeDialog extends Dialog {
     private void createCreationModeButtons() {
         blankButton = new Button("", new Icon(VaadinIcon.PLUS_CIRCLE_O));
         blankButton.setSizeFull();
+        blankButton.addClassName("dialogue-button");
         setSecondaryButtonStyle(blankButton);
 
 
         fromOfferButton = new Button("", new Icon(VaadinIcon.FILE));
         fromOfferButton.setSizeFull();
+        fromOfferButton.addClassName("dialogue-button");
         setContrastButtonStyle(fromOfferButton);
 
         listener();

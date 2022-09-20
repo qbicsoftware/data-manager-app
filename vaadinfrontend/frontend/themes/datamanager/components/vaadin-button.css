@@ -1,0 +1,20 @@
+:host(.dialogue-button) {
+  width: 9rem;
+  height: 9rem;
+  border-radius: 1rem;
+  padding: 0;
+}
+
+:host(.dialogue-button) ::slotted(vaadin-icon){
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+:host(.dialogue-button) [part="label"]{
+  font-size: var(--lumo-font-size-s);
+}
+
+:host(.dialogue-button) .vaadin-button-container {
+  display: grid;
+}
