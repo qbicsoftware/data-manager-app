@@ -31,11 +31,12 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     public void handle(ProjectOverviewLayout layout) {
         if (registeredProjectOverview != layout) {
             this.registeredProjectOverview = layout;
-            addClickListeners();
+            configureDialogButtons();
+            configureSearchDropbox();
         }
     }
 
-    private void addClickListeners() {
+    private void configureDialogButtons() {
         registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
 
         registeredProjectOverview.create.addClickListener( e-> {
@@ -43,6 +44,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
             registeredProjectOverview.searchDialog.open();
         });
 
+    }
+
+    private void configureSearchDropbox(){
         registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
             //check if value is selected
             if(registeredProjectOverview.searchDialog.searchField.getOptionalValue().isPresent()){
