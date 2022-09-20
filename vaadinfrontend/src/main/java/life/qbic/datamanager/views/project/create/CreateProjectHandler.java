@@ -4,18 +4,29 @@ import com.vaadin.flow.router.BeforeEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import life.qbic.projectmanagement.domain.offer.OfferId;
+import java.util.Optional;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
+  private static Logger log = LoggerFactory.logger(CreateProjectHandler.class);
+
   private static final String OFFER_ID_QUERY_PARAM = "offerId";
 
   private CreateProjectLayout createProjectLayout;
 
-  public CreateProjectHandler(){}
+  private final OfferLookupService offerLookupService;
+
+  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService) {
+    this.offerLookupService = offerLookupService;
+  }
 
   @Override
   public void handle(CreateProjectLayout createProjectLayout) {
@@ -36,14 +47,20 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   }
 
   private void preloadContentFromOffer(String offerId) {
-    System.out.println("Receiving offerId " + offerId);
-    OfferId offer = new OfferId(offerId);
-    // TODO call Offer Lookup Service
-    // TODO fill field from offer query result
+    log.info("Receiving offerId " + offerId);
+    OfferId id = OfferId.from(offerId);
+    Optional<Offer> offer = offerLookupService.findOfferById(id);
+    offer.ifPresentOrElse(this::loadOfferContent, () -> log.error("No offer found with id: " + offerId));
   }
 
-  private Map<String, String> parseFromUrlParameter(String parameter) throws IllegalArgumentException {
-    String[]  parameterArray = parameter.trim().split("=");
+  private void loadOfferContent(Offer offer) {
+    log.info("Loading content from offer " + offer.offerId().id());
+    createProjectLayout.titleField.setValue(offer.projectTitle().title());
+  }
+
+  private Map<String, String> parseFromUrlParameter(String parameter)
+      throws IllegalArgumentException {
+    String[] parameterArray = parameter.trim().split("=");
     if (parameterArray.length != 2) {
       throw new IllegalArgumentException("Unknown parameter syntax " + parameter);
     }
