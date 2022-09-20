@@ -1,6 +1,6 @@
-package life.qbic.projectmanagement.domain.repository;
+package life.qbic.projectmanagement.domain.project.repository;
 
-import life.qbic.projectmanagement.domain.Project;
+import life.qbic.projectmanagement.domain.project.Project;
 
 
 /**

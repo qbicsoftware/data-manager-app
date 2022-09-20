@@ -1,8 +1,11 @@
-package life.qbic.projectmanagement.domain;
+package life.qbic.projectmanagement.domain.project;
+
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 import static java.util.Objects.requireNonNull;
-
-import javax.persistence.*;
 
 /**
  * A project planned and run at QBiC.

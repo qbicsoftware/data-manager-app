@@ -29,8 +29,16 @@
       <artifactId>javax.persistence-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.persistence</groupId>
-      <artifactId>javax.persistence-api</artifactId>
+      <groupId>life.qbic</groupId>
+      <artifactId>application-commons</artifactId>
+      <version>0.4.3</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>logging</artifactId>
+      <version>0.4.3</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

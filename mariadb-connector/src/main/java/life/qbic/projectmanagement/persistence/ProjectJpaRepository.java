@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.domain.repository.ProjectRepository;
-import life.qbic.projectmanagement.domain.Project;
-import life.qbic.projectmanagement.domain.ProjectId;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;

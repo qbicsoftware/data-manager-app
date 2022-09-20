@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain;
+package life.qbic.projectmanagement.domain.project;
 
 import java.util.Objects;
 
@@ -12,7 +12,7 @@ public record ProjectTitle(String title) {
   public ProjectTitle {
     Objects.requireNonNull(title);
     if (title.isEmpty()) {
-      throw new ProjectManagementDomainException("Project title " + title + " is empty or null.");
+      throw new ProjectManagementDomainException("Project title " + title + " is empty.");
     }
   }
 

@@ -1,12 +1,12 @@
-package life.qbic.projectmanagement.domain;
+package life.qbic.projectmanagement.domain.project;
 
-import life.qbic.projectmanagement.domain.repository.jpa.ProjectTitleConverter;
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
+
+import static java.util.Objects.requireNonNull;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * A project intent contains information on the project that is related to the intent of the
@@ -47,3 +47,4 @@ public class ProjectIntent {
     return projectTitle.hashCode();
   }
 }
+

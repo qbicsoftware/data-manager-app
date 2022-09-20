@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain;
+package life.qbic.projectmanagement.domain.project;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -26,5 +26,9 @@ public record ProjectId(UUID uuid) implements Serializable {
 
   public static ProjectId create() {
     return new ProjectId();
+  }
+
+  public static ProjectId of(UUID uuid) {
+    return new ProjectId(uuid);
   }
 }

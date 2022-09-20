@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.offer
+package life.qbic.projectmanagement.domain.offer
 
 import life.qbic.projectmanagement.domain.offer.OfferId
 import spock.lang.Specification
