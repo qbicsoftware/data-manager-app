@@ -10,11 +10,14 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import com.vaadin.flow.component.notification.Notification;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CreateProjectHandler implements CreateProjectHandlerInterface {
+
 
   private static Logger log = LoggerFactory.logger(CreateProjectHandler.class);
 
@@ -24,9 +27,12 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private final OfferLookupService offerLookupService;
 
-  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService) {
+  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectCreationService projectCreationService) {
     this.offerLookupService = offerLookupService;
-  }
+    this.projectCreationService = projectCreationService;
+    }
+
+  private final ProjectCreationService projectCreationService;
 
   @Override
   public void handle(CreateProjectLayout createProjectLayout) {
@@ -75,6 +81,11 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private void saveClicked() {
     String titleFieldValue = createProjectLayout.titleField.getValue();
-    //TODO pass information to service
+    projectCreationService.createProject(titleFieldValue)
+        .ifSuccess(it -> displaySuccessfulProjectCreationNotification());
+  }
+
+  private void displaySuccessfulProjectCreationNotification() {
+    Notification.show("Project creation succeeded.");
   }
 }

@@ -1,23 +1,25 @@
 package life.qbic.datamanager;
 
-import life.qbic.broadcasting.Exchange;
-import life.qbic.newshandler.usermanagement.email.EmailService;
-import life.qbic.authentication.domain.event.SimpleEventStore;
-import life.qbic.authentication.domain.event.TemporaryEventRepository;
-import life.qbic.authentication.domain.user.event.EventStore;
-import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
 import life.qbic.authentication.application.user.password.PasswordResetInput;
 import life.qbic.authentication.application.user.password.PasswordResetRequest;
+import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
+import life.qbic.authentication.domain.event.SimpleEventStore;
+import life.qbic.authentication.domain.event.TemporaryEventRepository;
+import life.qbic.authentication.domain.user.event.EventStore;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.broadcasting.Exchange;
+import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
+import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -69,6 +71,11 @@ public class AppConfig {
       NotificationService notificationService, UserRepository userRepository,
       EventStore eventStore) {
     return new UserRegistrationService(notificationService, userRepository, eventStore);
+  }
+
+  @Bean
+  public ProjectCreationService projectCreationService(ProjectRepository projectRepository) {
+    return new ProjectCreationService(projectRepository);
   }
 
 
