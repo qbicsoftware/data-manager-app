@@ -12,9 +12,9 @@ import java.util.UUID;
 public class Project2 {
 
   private final UUID uuid;
-  private final ProjectIntent projectIntent;
+  private final ProjectIntent2 projectIntent;
 
-  private Project2(UUID uuid, ProjectIntent projectIntent) {
+  private Project2(UUID uuid, ProjectIntent2 projectIntent) {
     requireNonNull(uuid);
     requireNonNull(projectIntent);
     this.uuid = uuid;
@@ -27,7 +27,7 @@ public class Project2 {
    * @param projectIntent the intent of the project
    * @return a new project instance
    */
-  public static Project2 create(ProjectIntent projectIntent) {
+  public static Project2 create(ProjectIntent2 projectIntent) {
     UUID uuid = UUID.randomUUID();
     return new Project2(uuid, projectIntent);
   }
@@ -39,7 +39,7 @@ public class Project2 {
    * @param projectIntent the project intent
    * @return a project with the given identity and project intent
    */
-  public static Project2 of(UUID uuid, ProjectIntent projectIntent) {
+  public static Project2 of(UUID uuid, ProjectIntent2 projectIntent) {
     return new Project2(uuid, projectIntent);
   }
 
