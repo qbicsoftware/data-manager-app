@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projectOverview;
 
+import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -67,9 +68,11 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
                 query -> service.findOfferContainingProjectTitleOrId(query.getFilter().orElse(""),
                         query.getFilter().orElse(""),query.getOffset(), query.getLimit()).stream());
 
-        registeredProjectOverview.searchDialog.searchField.setRenderer(new ComponentRenderer<Text, OfferPreview>(preview -> {
-            return new Text(preview.offerId().id() +", "+preview.getProjectTitle().title());
-        }));
+        registeredProjectOverview.searchDialog.searchField.setRenderer(new ComponentRenderer<>(preview ->
+                new Text(preview.offerId().id() + ", " + preview.getProjectTitle().title())));
+
+        registeredProjectOverview.searchDialog.searchField.setItemLabelGenerator((ItemLabelGenerator<OfferPreview>) preview ->
+                preview.offerId().id() +", "+preview.getProjectTitle().title());
     }
 
 }
