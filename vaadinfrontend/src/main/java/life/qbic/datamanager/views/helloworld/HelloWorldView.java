@@ -32,12 +32,13 @@ public class HelloWorldView extends VerticalLayout {
 
   private final transient SecurityService securityService;
 
-  public HelloWorldView(@Autowired SecurityService securityService) {
+  public HelloWorldView(@Autowired SecurityService securityService,
+      @Autowired CreateProjectHandler createProjectHandler) {
     this.securityService = securityService;
 
     String username = securityService.get().map(User::fullName)
-    .map(FullName::get)
-    .orElse("Your name");
+        .map(FullName::get)
+        .orElse("Your name");
     name = new TextField(username);
 
     sayHello = new Button("Say hello");
@@ -51,7 +52,7 @@ public class HelloWorldView extends VerticalLayout {
     this.personalWelcomeMessage.getElement().setText("Welcome " + username);
     add(personalWelcomeMessage, name, sayHello);
     //FIXME remove this test addition
-    CreateProjectLayout createProjectLayout = new CreateProjectLayout(new CreateProjectHandler());
+    CreateProjectLayout createProjectLayout = new CreateProjectLayout(createProjectHandler);
     createProjectLayout.getContent().setWidth(50, Unit.PERCENTAGE);
     add(createProjectLayout);
   }
