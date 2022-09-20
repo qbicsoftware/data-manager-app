@@ -9,7 +9,13 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>mariadb-connector</artifactId>
+  <artifactId>finances</artifactId>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -20,12 +26,6 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>authentication</artifactId>
-      <version>0.4.3</version>
-      <scope>compile</scope>
-    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -42,29 +42,6 @@
       <groupId>javax.persistence</groupId>
       <artifactId>javax.persistence-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>finances</artifactId>
-      <version>0.4.3</version>
-      <scope>compile</scope>
-    </dependency>
-      <dependency>
-          <groupId>life.qbic</groupId>
-          <artifactId>projectmanagement</artifactId>
-          <version>0.4.3</version>
-          <scope>compile</scope>
-      </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>projectmanagement</artifactId>
-      <version>0.4.3</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-  </properties>
 
 </project>
