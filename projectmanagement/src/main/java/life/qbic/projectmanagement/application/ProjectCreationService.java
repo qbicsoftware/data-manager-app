@@ -1,11 +1,15 @@
 package life.qbic.projectmanagement.application;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.Project;
 import life.qbic.projectmanagement.domain.ProjectIntent;
+import life.qbic.projectmanagement.domain.ProjectManagementDomainException;
 import life.qbic.projectmanagement.domain.ProjectRepository;
 import life.qbic.projectmanagement.domain.ProjectTitle;
 
@@ -13,6 +17,8 @@ import life.qbic.projectmanagement.domain.ProjectTitle;
  * Application service facilitating the creation of projects.
  */
 public class ProjectCreationService {
+
+  private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
 
@@ -30,24 +36,27 @@ public class ProjectCreationService {
     ProjectTitle projectTitle;
     try {
       projectTitle = new ProjectTitle(title);
-    } catch (Exception e) {
+    } catch (ProjectManagementDomainException e) {
       return Result.failure(
           new ProjectManagementException("Could not create project title for: " + title, e,
               ErrorCode.INVALID_PROJECT_TITLE,
               ErrorParameters.create().with("projectTitle", title)));
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException());
     }
     Project project;
     try {
       project = Project.create(new ProjectIntent(projectTitle));
     } catch (Exception e) {
-      return Result.failure(
-          new ProjectManagementException(
-              "Could not create project intent with title: " + projectTitle, e));
+      log.error("could not create project with title " + projectTitle, e);
+      return Result.failure(new ProjectManagementException());
     }
     try {
       projectRepository.add(project);
     } catch (Exception e) {
-      return Result.failure(new ProjectManagementException("Could not add project: " + project, e));
+      log.error("could not add project " + project, e);
+      return Result.failure(new ProjectManagementException());
     }
     return Result.success(project);
   }
