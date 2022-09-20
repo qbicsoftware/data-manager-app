@@ -3,11 +3,9 @@ package life.qbic.projectmanagement.application;
 import life.qbic.application.commons.ApplicationException;
 
 /**
- * <b>short description</b>
+ * An exception thrown by the application layer in the project management context.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectManagementException extends ApplicationException {
 
