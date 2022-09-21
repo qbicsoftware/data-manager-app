@@ -7,7 +7,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projectOverview.components.OfferSearchDialog;
-import life.qbic.datamanager.views.projectOverview.components.SelectCreationModeDialog;
+import life.qbic.datamanager.views.projectOverview.components.CreationModeDialog;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.security.PermitAll;
@@ -27,7 +27,7 @@ public class ProjectOverviewLayout extends VerticalLayout {
     Button create;
     OfferSearchDialog searchDialog;
 
-    SelectCreationModeDialog selectCreationModeDialog;
+    CreationModeDialog selectCreationModeDialog;
 
 
     public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface) {
@@ -44,7 +44,7 @@ public class ProjectOverviewLayout extends VerticalLayout {
         create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         searchDialog = new OfferSearchDialog();
-        selectCreationModeDialog = new SelectCreationModeDialog();
+        selectCreationModeDialog = new CreationModeDialog();
 
         add(create);
     }

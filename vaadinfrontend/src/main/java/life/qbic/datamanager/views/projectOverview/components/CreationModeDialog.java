@@ -17,7 +17,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  *
  * @since 1.0.0
  */
-public class SelectCreationModeDialog extends Dialog {
+public class CreationModeDialog extends Dialog {
 
     private HorizontalLayout contentLayout;
 
@@ -26,7 +26,7 @@ public class SelectCreationModeDialog extends Dialog {
     public Button cancel;
     public Button next;
 
-    public SelectCreationModeDialog(){
+    public CreationModeDialog(){
         setupContent();
         styleDialog();
     }
@@ -49,28 +49,23 @@ public class SelectCreationModeDialog extends Dialog {
         createCreationModeButtons();
         VerticalLayout blankLayout = new VerticalLayout(blankButton, new Text("Blank"));
         blankLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        //blankLayout.setSizeFull();
 
         VerticalLayout offerLayout = new VerticalLayout(fromOfferButton, new Text("From Offer"));
         offerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        //offerLayout.setSizeFull();
 
         contentLayout = new HorizontalLayout(blankLayout,offerLayout);
         contentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        //contentLayout.setSizeFull();
 
         contentLayout.setPadding(true);
     }
 
     private void createCreationModeButtons() {
         blankButton = new Button("", new Icon(VaadinIcon.PLUS_CIRCLE_O));
-        //blankButton.setSizeFull();
         blankButton.addClassName("dialogue-button");
         setSecondaryButtonStyle(blankButton);
 
 
         fromOfferButton = new Button("", new Icon(VaadinIcon.FILE_TEXT_O));
-        //fromOfferButton.setSizeFull();
         fromOfferButton.addClassName("dialogue-button");
         setContrastButtonStyle(fromOfferButton);
 
@@ -110,6 +105,14 @@ public class SelectCreationModeDialog extends Dialog {
     private void setContrastButtonStyle(Button button){
         button.setClassName("contrast");
         button.addClassName("dialogue-button");
+    }
+
+    /**
+     * Rests the content of the dialog. This means specifically to reset the styles of the selected buttons.
+     */
+    public void reset(){
+        setSecondaryButtonStyle(blankButton);
+        setContrastButtonStyle(fromOfferButton);
     }
 
 

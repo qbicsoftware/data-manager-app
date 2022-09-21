@@ -40,14 +40,17 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     }
 
     private void configureSelectionModeDialog(){
+        configureSelectionModeDialogFooterButtons();
+
         registeredProjectOverview.selectCreationModeDialog.blankButton.addClickListener(e -> creationMode = CreationMode.BLANK);
         registeredProjectOverview.selectCreationModeDialog.fromOfferButton.addClickListener(e -> creationMode = CreationMode.FROM_OFFER);
+    }
 
+    private void configureSelectionModeDialogFooterButtons() {
         registeredProjectOverview.selectCreationModeDialog.next.addClickListener(e ->{
             switch (creationMode){
                 case BLANK -> {
                     //todo link the route to the project ui
-                    return;
                 }
                 case FROM_OFFER -> {
                     registeredProjectOverview.selectCreationModeDialog.close();
@@ -56,11 +59,14 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
                 }
             }
         });
-        registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> registeredProjectOverview.selectCreationModeDialog.close());
+        registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> {
+            registeredProjectOverview.selectCreationModeDialog.close();
+            registeredProjectOverview.selectCreationModeDialog.reset();
+        });
     }
 
     private void configureSearchDropbox(){
-        configureDialogButtons();
+        configureSearchDialogFooterButtons();
 
         registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
             //check if value is selected
@@ -69,7 +75,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
             }
         });
     }
-    private void configureDialogButtons() {
+    private void configureSearchDialogFooterButtons() {
         registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
 
         registeredProjectOverview.create.addClickListener( e-> registeredProjectOverview.selectCreationModeDialog.open());
