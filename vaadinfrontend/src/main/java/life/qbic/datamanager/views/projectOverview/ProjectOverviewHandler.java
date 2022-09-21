@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projectOverview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -50,7 +51,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
         registeredProjectOverview.selectCreationModeDialog.next.addClickListener(e ->{
             switch (creationMode){
                 case BLANK -> {
-                    //todo link the route to the project ui
+                    UI.getCurrent().navigate("projects/create");
+                    registeredProjectOverview.selectCreationModeDialog.close();
+                    registeredProjectOverview.selectCreationModeDialog.reset();
                 }
                 case FROM_OFFER -> {
                     registeredProjectOverview.selectCreationModeDialog.close();
