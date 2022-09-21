@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * @param <E> the type of error this result can hold
  * @since 1.0.0
  */
-class Result<V, E extends Exception> {
+public class Result<V, E extends Exception> {
 
   private final V value;
   private final E exception;
@@ -90,7 +90,7 @@ class Result<V, E extends Exception> {
    * @return the wrapped value
    * @throws NoSuchElementException if no value exists in the result object
    */
-  V value() throws NoSuchElementException {
+  public V value() throws NoSuchElementException {
     if (Objects.isNull(value)) {
       throw new NoSuchElementException("Result with exception has no value.");
     }
@@ -103,7 +103,7 @@ class Result<V, E extends Exception> {
    * @return the wrapped exception
    * @throws NoSuchElementException if no error exists in the result object
    */
-  E exception() throws NoSuchElementException {
+  public E exception() throws NoSuchElementException {
     if (Objects.isNull(exception)) {
       throw new NoSuchElementException("Result with value has no exception.");
     }

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.helloworld;
 
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
@@ -13,6 +14,8 @@ import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.datamanager.security.SecurityService;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.project.create.CreateProjectHandler;
+import life.qbic.datamanager.views.project.create.CreateProjectLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Hello World")
@@ -29,12 +32,13 @@ public class HelloWorldView extends VerticalLayout {
 
   private final transient SecurityService securityService;
 
-  public HelloWorldView(@Autowired SecurityService securityService) {
+  public HelloWorldView(@Autowired SecurityService securityService,
+      @Autowired CreateProjectHandler createProjectHandler) {
     this.securityService = securityService;
 
     String username = securityService.get().map(User::fullName)
-    .map(FullName::get)
-    .orElse("Your name");
+        .map(FullName::get)
+        .orElse("Your name");
     name = new TextField(username);
 
     sayHello = new Button("Say hello");
@@ -47,5 +51,6 @@ public class HelloWorldView extends VerticalLayout {
     this.personalWelcomeMessage = new H1();
     this.personalWelcomeMessage.getElement().setText("Welcome " + username);
     add(personalWelcomeMessage, name, sayHello);
+
   }
 }
