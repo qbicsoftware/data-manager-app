@@ -95,6 +95,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
                 preview.offerId().id() +", "+preview.getProjectTitle().title());
     }
 
+    /**
+     * Enum to define in which mode the project will be created
+     */
     enum CreationMode{
         BLANK, FROM_OFFER, NONE
     }

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projectOverview.components;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -46,30 +47,30 @@ public class SelectCreationModeDialog extends Dialog {
 
     private void setupContent(){
         createCreationModeButtons();
-        VerticalLayout blankLayout = new VerticalLayout(blankButton);
+        VerticalLayout blankLayout = new VerticalLayout(blankButton, new Text("Blank"));
         blankLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        blankLayout.setSizeFull();
+        //blankLayout.setSizeFull();
 
-        VerticalLayout offerLayout = new VerticalLayout(fromOfferButton);
+        VerticalLayout offerLayout = new VerticalLayout(fromOfferButton, new Text("From Offer"));
         offerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        offerLayout.setSizeFull();
+        //offerLayout.setSizeFull();
 
         contentLayout = new HorizontalLayout(blankLayout,offerLayout);
         contentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-        contentLayout.setSizeFull();
+        //contentLayout.setSizeFull();
 
         contentLayout.setPadding(true);
     }
 
     private void createCreationModeButtons() {
         blankButton = new Button("", new Icon(VaadinIcon.PLUS_CIRCLE_O));
-        blankButton.setSizeFull();
+        //blankButton.setSizeFull();
         blankButton.addClassName("dialogue-button");
         setSecondaryButtonStyle(blankButton);
 
 
-        fromOfferButton = new Button("", new Icon(VaadinIcon.FILE));
-        fromOfferButton.setSizeFull();
+        fromOfferButton = new Button("", new Icon(VaadinIcon.FILE_TEXT_O));
+        //fromOfferButton.setSizeFull();
         fromOfferButton.addClassName("dialogue-button");
         setContrastButtonStyle(fromOfferButton);
 
@@ -98,14 +99,17 @@ public class SelectCreationModeDialog extends Dialog {
 
     private void setSelectedStyle(Button button){
         button.setClassName("selected");
+        button.addClassName("dialogue-button");
     }
 
     private void setSecondaryButtonStyle(Button button){
         button.setClassName("secondary");
+        button.addClassName("dialogue-button");
     }
 
     private void setContrastButtonStyle(Button button){
         button.setClassName("contrast");
+        button.addClassName("dialogue-button");
     }
 
 
