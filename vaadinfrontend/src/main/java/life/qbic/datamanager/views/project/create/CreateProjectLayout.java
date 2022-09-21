@@ -5,11 +5,13 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -25,6 +27,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> {
 
   final H2 layoutTitle = new H2();
   final TextField titleField = new TextField();
+  final TextArea experimentalDesignField = new TextArea();
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
@@ -39,6 +42,9 @@ public class CreateProjectLayout extends Composite<VerticalLayout> {
 
     FormLayout formLayout = new FormLayout();
     formLayout.addFormItem(titleField, "Project Title");
+    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    // set form layout to only have one column (for any width)
+    formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
 
     saveButton.setText("Save");
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
