@@ -63,6 +63,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private void loadOfferContent(Offer offer) {
     log.info("Loading content from offer " + offer.offerId().id());
     createProjectLayout.titleField.setValue(offer.projectTitle().title());
+    createProjectLayout.projectObjective.setValue(offer.projectObjective().objective());
   }
 
   private void addSaveClickListener() {

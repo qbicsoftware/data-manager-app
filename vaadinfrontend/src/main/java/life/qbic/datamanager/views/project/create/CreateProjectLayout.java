@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
@@ -32,6 +33,8 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
+  final TextField projectObjective = new TextField();
+
   final CreateProjectHandlerInterface handler;
 
 
@@ -47,6 +50,10 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
 
     FormLayout formLayout = new FormLayout();
     formLayout.addFormItem(titleField, "Project Title");
+    formLayout.addFormItem(projectObjective, "Project Objective");
+    formLayout.setResponsiveSteps(new ResponsiveStep("200px", 1));
+    titleField.setSizeFull();
+
 
     saveButton.setText("Save");
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
