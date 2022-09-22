@@ -33,7 +33,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
-  final TextField projectObjective = new TextField();
+  final TextArea projectObjective = new TextArea();
 
   final CreateProjectHandlerInterface handler;
 
@@ -51,7 +51,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     FormLayout formLayout = new FormLayout();
     formLayout.addFormItem(titleField, "Project Title");
     formLayout.addFormItem(projectObjective, "Project Objective");
-    formLayout.setResponsiveSteps(new ResponsiveStep("200px", 1));
+    formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     titleField.setSizeFull();
 
 
