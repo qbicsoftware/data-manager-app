@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projectOverview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -23,6 +24,8 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     private ProjectOverviewLayout registeredProjectOverview;
     private final OfferLookupService offerLookupService;
 
+    private CreationMode creationMode = CreationMode.NONE;
+
     public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService){
         Objects.requireNonNull(offerLookupService);
         this.offerLookupService = offerLookupService;
@@ -32,28 +35,55 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
     public void handle(ProjectOverviewLayout layout) {
         if (registeredProjectOverview != layout) {
             this.registeredProjectOverview = layout;
-            configureDialogButtons();
             configureSearchDropbox();
+            configureSelectionModeDialog();
         }
     }
 
-    private void configureDialogButtons() {
-        registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
+    private void configureSelectionModeDialog(){
+        configureSelectionModeDialogFooterButtons();
 
-        registeredProjectOverview.create.addClickListener( e-> {
-            loadItemsWithService(offerLookupService);
-            registeredProjectOverview.searchDialog.open();
+        registeredProjectOverview.selectCreationModeDialog.blankButton.addClickListener(e -> creationMode = CreationMode.BLANK);
+        registeredProjectOverview.selectCreationModeDialog.fromOfferButton.addClickListener(e -> creationMode = CreationMode.FROM_OFFER);
+    }
+
+    private void configureSelectionModeDialogFooterButtons() {
+        registeredProjectOverview.selectCreationModeDialog.next.addClickListener(e ->{
+            switch (creationMode){
+                case BLANK -> {
+                    UI.getCurrent().navigate("projects/create");
+                    registeredProjectOverview.selectCreationModeDialog.close();
+                    registeredProjectOverview.selectCreationModeDialog.reset();
+                }
+                case FROM_OFFER -> {
+                    registeredProjectOverview.selectCreationModeDialog.close();
+                    loadItemsWithService(offerLookupService);
+                    registeredProjectOverview.searchDialog.open();
+                }
+            }
         });
-
+        registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> {
+            registeredProjectOverview.selectCreationModeDialog.close();
+            registeredProjectOverview.selectCreationModeDialog.reset();
+            creationMode = CreationMode.NONE;
+        });
     }
 
     private void configureSearchDropbox(){
+        configureSearchDialogFooterButtons();
+
         registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
             //check if value is selected
             if(registeredProjectOverview.searchDialog.searchField.getOptionalValue().isPresent()){
                 forwardSelectedOffer();
             }
         });
+    }
+    private void configureSearchDialogFooterButtons() {
+        registeredProjectOverview.searchDialog.cancel.addClickListener(e -> registeredProjectOverview.searchDialog.close());
+
+        registeredProjectOverview.create.addClickListener( e-> registeredProjectOverview.selectCreationModeDialog.open());
+
     }
 
     private void forwardSelectedOffer() {
@@ -73,6 +103,13 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
 
         registeredProjectOverview.searchDialog.searchField.setItemLabelGenerator((ItemLabelGenerator<OfferPreview>) preview ->
                 preview.offerId().id() +", "+preview.getProjectTitle().title());
+    }
+
+    /**
+     * Enum to define in which mode the project will be created
+     */
+    enum CreationMode{
+        BLANK, FROM_OFFER, NONE
     }
 
 }
