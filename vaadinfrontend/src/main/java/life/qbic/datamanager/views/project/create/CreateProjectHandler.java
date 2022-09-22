@@ -72,8 +72,6 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private void saveClicked() {
     String titleFieldValue = createProjectLayout.titleField.getValue();
     String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
-    //add exp design
-
     projectCreationService.createProject(titleFieldValue, objectiveFieldValue)
         .ifSuccess(it -> displaySuccessfulProjectCreationNotification());
   }

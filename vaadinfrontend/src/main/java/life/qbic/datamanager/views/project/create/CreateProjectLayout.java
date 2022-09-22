@@ -54,7 +54,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     formLayout.addFormItem(projectObjective, "Project Objective");
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     titleField.setSizeFull();
-
+    projectObjective.setWidthFull();
 
     saveButton.setText("Save");
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
