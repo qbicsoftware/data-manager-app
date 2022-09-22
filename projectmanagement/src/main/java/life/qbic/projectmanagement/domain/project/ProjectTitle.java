@@ -12,7 +12,7 @@ public record ProjectTitle(String title) {
   public ProjectTitle {
     Objects.requireNonNull(title);
     if (title.isEmpty()) {
-      throw new ProjectManagementDomainException("Project title " + title + " is empty.");
+      throw new ProjectManagementDomainException("Project title is empty.");
     }
   }
 

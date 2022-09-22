@@ -51,9 +51,6 @@ public class HelloWorldView extends VerticalLayout {
     this.personalWelcomeMessage = new H1();
     this.personalWelcomeMessage.getElement().setText("Welcome " + username);
     add(personalWelcomeMessage, name, sayHello);
-    //FIXME remove this test addition
-    CreateProjectLayout createProjectLayout = new CreateProjectLayout(createProjectHandler);
-    createProjectLayout.getContent().setWidth(50, Unit.PERCENTAGE);
-    add(createProjectLayout);
+
   }
 }

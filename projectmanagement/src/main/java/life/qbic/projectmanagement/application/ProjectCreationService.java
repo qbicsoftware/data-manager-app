@@ -7,6 +7,7 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -32,7 +33,7 @@ public class ProjectCreationService {
    * @param title the title of the project.
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String title) {
+  public Result<Project, ApplicationException> createProject(String title, String objective) {
     ProjectTitle projectTitle;
     try {
       projectTitle = ProjectTitle.create(title);
@@ -42,8 +43,17 @@ public class ProjectCreationService {
           ErrorParameters.of(200, title)));
     }
 
+    ProjectObjective projectObjective;
     try {
-      ProjectIntent intent = new ProjectIntent(projectTitle);
+      projectObjective = ProjectObjective.create(objective);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
+          ErrorParameters.create()));
+    }
+
+    try {
+      ProjectIntent intent = new ProjectIntent(projectTitle, projectObjective);
       Project project = Project.create(intent);
       projectRepository.add(project);
       return Result.success(project);
@@ -54,7 +64,9 @@ public class ProjectCreationService {
   }
 
   public Result<Project, ApplicationException> createProjectWithExperimentalDesign(String title,
+      String objective,
       String experimentalDesign) {
+
     ProjectTitle projectTitle;
     try {
       projectTitle = ProjectTitle.create(title);
@@ -63,6 +75,16 @@ public class ProjectCreationService {
       return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
           ErrorParameters.of(title)));
     }
+
+    ProjectObjective projectObjective;
+    try {
+      projectObjective = ProjectObjective.create(objective);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
+          ErrorParameters.create()));
+    }
+
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
       experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
@@ -73,7 +95,8 @@ public class ProjectCreationService {
     }
 
     try {
-      ProjectIntent intent = new ProjectIntent(projectTitle).with(experimentalDesignDescription);
+      ProjectIntent intent = new ProjectIntent(projectTitle, projectObjective).with(
+          experimentalDesignDescription);
       Project project = Project.create(intent);
       projectRepository.add(project);
       return Result.success(project);
@@ -82,5 +105,4 @@ public class ProjectCreationService {
       return Result.failure(new ProjectManagementException());
     }
   }
-
 }
