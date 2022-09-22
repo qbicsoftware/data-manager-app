@@ -1,8 +1,5 @@
 package life.qbic.projectmanagement.domain.project;
 
-import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
-import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
-
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
@@ -11,8 +8,8 @@ import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ExperimentalDesignDescriptionConverter;
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
-import java.util.Objects;
 
 /**
  * A project intent contains information on the project that is related to the intent of the
@@ -62,5 +59,32 @@ public class ProjectIntent {
     return Optional.ofNullable(experimentalDesignDescription);
   }
 
-  //FIXME equals and hash
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    ProjectIntent that = (ProjectIntent) o;
+
+    if (!projectTitle.equals(that.projectTitle)) {
+      return false;
+    }
+    if (!projectObjective.equals(that.projectObjective)) {
+      return false;
+    }
+    return Objects.equals(experimentalDesignDescription, that.experimentalDesignDescription);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = projectTitle.hashCode();
+    result = 31 * result + projectObjective.hashCode();
+    result = 31 * result + (experimentalDesignDescription != null
+        ? experimentalDesignDescription.hashCode() : 0);
+    return result;
+  }
 }
