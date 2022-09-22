@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.projectOverview.components;
 
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -47,10 +47,14 @@ public class CreationModeDialog extends Dialog {
 
     private void setupContent(){
         createCreationModeButtons();
-        VerticalLayout blankLayout = new VerticalLayout(blankButton, new Text("Blank"));
+        Label blankLabel = new Label("From Offer");
+        blankLabel.addClassName("dialogue-button-label");
+        VerticalLayout blankLayout = new VerticalLayout(blankButton, blankLabel);
         blankLayout.setAlignItems(FlexComponent.Alignment.CENTER);
 
-        VerticalLayout offerLayout = new VerticalLayout(fromOfferButton, new Text("From Offer"));
+        Label fromOfferLabel = new Label("From Offer");
+        fromOfferLabel.addClassName("dialogue-button-label");
+        VerticalLayout offerLayout = new VerticalLayout(fromOfferButton, fromOfferLabel);
         offerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
 
         contentLayout = new HorizontalLayout(blankLayout,offerLayout);

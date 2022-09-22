@@ -65,6 +65,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface{
         registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> {
             registeredProjectOverview.selectCreationModeDialog.close();
             registeredProjectOverview.selectCreationModeDialog.reset();
+            creationMode = CreationMode.NONE;
         });
     }
 
