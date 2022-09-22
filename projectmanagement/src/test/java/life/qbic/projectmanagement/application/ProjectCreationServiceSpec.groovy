@@ -49,7 +49,6 @@ class ProjectCreationServiceSpec extends Specification {
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
   }
 
-
   def "expect project creation returns the created project for a non-empty title"() {
     given:
     projectRepository.add(_) >> {}
