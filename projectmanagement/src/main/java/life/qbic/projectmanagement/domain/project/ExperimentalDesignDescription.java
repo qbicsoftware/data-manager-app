@@ -16,6 +16,12 @@ public record ExperimentalDesignDescription(String value) {
     if (Objects.isNull(value)) {
       throw new IllegalArgumentException("experimental design cannot be created from null");
     }
+    if (value.length() > MAX_LENGTH) {
+      throw new IllegalArgumentException(
+          "To many characters (" + value.length()
+              + "). The maximal length for experimental design descriptions is "
+              + MAX_LENGTH);
+    }
     Objects.requireNonNull(value);
   }
 

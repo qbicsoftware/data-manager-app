@@ -1,11 +1,5 @@
 package life.qbic.application.commons;
 
-import static java.util.Collections.unmodifiableMap;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 /**
  * Thrown whenever an exception occurred during an execution in the application layer. This
  * exception provides an error code and error parameters that are translated into a user-readable
@@ -21,32 +15,18 @@ public abstract class ApplicationException extends RuntimeException {
 
   public enum ErrorCode {
     GENERAL,
+    INVALID_EXPERIMENTAL_DESIGN,
     INVALID_PROJECT_TITLE
   }
 
-  public static class ErrorParameters {
-
-    private final HashMap<String, Object> mappings = new HashMap<>();
-
-    public Optional<Object> get(String key) {
-      return Optional.ofNullable(mappings.get(key));
-    }
-
-    public void put(String key, Object value) {
-      mappings.put(key, value);
-    }
+  public record ErrorParameters(Object[] value) {
 
     public static ErrorParameters create() {
-      return new ErrorParameters();
+      return new ErrorParameters(new Object[]{});
     }
 
-    public ErrorParameters with(String key, Object value) {
-      this.put(key, value);
-      return this;
-    }
-
-    public Map<String, Object> asMap() {
-      return unmodifiableMap(mappings);
+    public static ErrorParameters of(Object... parameters) {
+      return new ErrorParameters(parameters);
     }
   }
 

@@ -39,7 +39,7 @@ public class ProjectCreationService {
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
-          ErrorParameters.of(title)));
+          ErrorParameters.of(200, title)));
     }
 
     try {
