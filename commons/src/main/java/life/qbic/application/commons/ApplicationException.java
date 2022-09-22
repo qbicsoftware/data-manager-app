@@ -1,5 +1,7 @@
 package life.qbic.application.commons;
 
+import java.util.Arrays;
+
 /**
  * Thrown whenever an exception occurred during an execution in the application layer. This
  * exception provides an error code and error parameters that are translated into a user-readable
@@ -16,7 +18,8 @@ public abstract class ApplicationException extends RuntimeException {
   public enum ErrorCode {
     GENERAL,
     INVALID_EXPERIMENTAL_DESIGN,
-    INVALID_PROJECT_OBJECTIVE, INVALID_PROJECT_TITLE
+    INVALID_PROJECT_OBJECTIVE,
+    INVALID_PROJECT_TITLE
   }
 
   public record ErrorParameters(Object[] value) {
@@ -27,6 +30,25 @@ public abstract class ApplicationException extends RuntimeException {
 
     public static ErrorParameters of(Object... parameters) {
       return new ErrorParameters(parameters);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ErrorParameters that = (ErrorParameters) o;
+
+      return Arrays.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(value);
     }
   }
 
