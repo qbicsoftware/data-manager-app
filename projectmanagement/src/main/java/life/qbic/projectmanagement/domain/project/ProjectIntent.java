@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project;
 
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
 
 import static java.util.Objects.requireNonNull;
@@ -19,9 +20,16 @@ public class ProjectIntent {
   @Column(name = "projectTitle")
   private ProjectTitle projectTitle;
 
-  public ProjectIntent(ProjectTitle projectTitle) {
+  @Convert(converter = ProjectObjectiveConverter.class)
+  @Column(name = "objective")
+  private ProjectObjective projectObjective;
+
+  public ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
     requireNonNull(projectTitle);
+    requireNonNull(objective);
+
     this.projectTitle = projectTitle;
+    this.projectObjective = objective;
   }
 
   protected ProjectIntent() {
@@ -39,12 +47,11 @@ public class ProjectIntent {
 
     ProjectIntent that = (ProjectIntent) o;
 
-    return projectTitle.equals(that.projectTitle);
+    return projectTitle.equals(that.projectTitle) && projectObjective.equals(that.projectObjective);
   }
 
   @Override
   public int hashCode() {
-    return projectTitle.hashCode();
+    return projectTitle.hashCode(); //todo integrate objective hash -> du it with project intent?
   }
 }
-
