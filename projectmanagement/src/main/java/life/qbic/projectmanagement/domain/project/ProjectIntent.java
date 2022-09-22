@@ -30,7 +30,7 @@ public class ProjectIntent {
   @Column(name = "experimentalDesignDescription")
   private ExperimentalDesignDescription experimentalDesignDescription;
 
-  public ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
+  private ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
     requireNonNull(projectTitle);
     requireNonNull(objective);
 
@@ -40,6 +40,10 @@ public class ProjectIntent {
 
   protected ProjectIntent() {
 
+  }
+
+  public static ProjectIntent of(ProjectTitle projectTitle, ProjectObjective projectObjective) {
+    return new ProjectIntent(projectTitle, projectObjective);
   }
 
   public ProjectIntent with(ExperimentalDesignDescription experimentalDesignDescription) {

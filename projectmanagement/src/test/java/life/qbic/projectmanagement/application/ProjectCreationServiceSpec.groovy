@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.ApplicationException
+import life.qbic.application.commons.Result
+import life.qbic.projectmanagement.domain.project.Project
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
 import spock.lang.Specification
 
@@ -11,48 +13,59 @@ class ProjectCreationServiceSpec extends Specification {
   ProjectRepository projectRepository = Stub()
   ProjectCreationService projectCreationService = new ProjectCreationService(projectRepository)
 
-  def "expect null input will cause an exception"() {
+  def "invalid project title leads to INVALID_PROJECT_TITLE code"() {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    projectCreationService.createProject(null)
+    Result<Project, ApplicationException> result = projectCreationService.createProject(null, "objective")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProjectWithExperimentalDesign(null, "objective", "design")
     then: "an exception is thrown"
-    def e = thrown(ProjectManagementException)
-    e.errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
+    result.isFailure()
+    resultWithExperimentalDesign.isFailure()
+    result.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
+    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
   }
 
-  def "expect an empty title will cause an exception"() {
+  def "invalid objective leads to INVALID_PROJECT_OBJECTIVE code"() {
     given:
     projectRepository.add(_) >> {}
-    when: "empty title is provided"
-    projectCreationService.createProject("")
-
+    when: "null input is provided"
+    Result<Project, ApplicationException> result = projectCreationService.createProject("title", null)
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", null)
     then: "an exception is thrown"
-    def e = thrown(ProjectManagementException)
-    e.errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
-
+    result.isFailure()
+    resultWithExperimentalDesign.isFailure()
+    result.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
+    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
   }
 
-  def "expect project creation returnes the created project for a non-empty title"() {
+
+  def "expect project creation returns the created project for a non-empty title"() {
     given:
     projectRepository.add(_) >> {}
     when: "a project is created with a non-empty title"
-    def project = projectCreationService.createProject("test")
+    def result = projectCreationService.createProject("test", "objective")
+    def resultWithExperimentalDesign = projectCreationService.createProject("test", "objective")
 
     then: "the created project is returned"
-    nonNull(project)
-
+    result.isSuccess()
+    resultWithExperimentalDesign.isSuccess()
+    nonNull(result.value())
+    nonNull(resultWithExperimentalDesign.value())
   }
 
-  def "expect unsuccessful save of a new project throws an exception"() {
+  def "expect unsuccessful save of a new project returns GENERAL error code"() {
     given:
     projectRepository.add(_) >> { throw new RuntimeException("expected exception") }
 
     when:
-    projectCreationService.createProject("test")
+    Result<Project, ApplicationException> result = projectCreationService.createProject("test", "objective")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("test", "objective")
 
     then:
-    def e = thrown(ProjectManagementException)
-    e.errorCode() == ApplicationException.ErrorCode.GENERAL
+    result.isFailure()
+    resultWithExperimentalDesign.isFailure()
+    result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
+    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 }

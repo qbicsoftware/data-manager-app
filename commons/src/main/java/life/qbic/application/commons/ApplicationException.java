@@ -16,7 +16,7 @@ public abstract class ApplicationException extends RuntimeException {
   public enum ErrorCode {
     GENERAL,
     INVALID_EXPERIMENTAL_DESIGN,
-    INVALID_PROJECT_TITLE
+    INVALID_PROJECT_OBJECTIVE, INVALID_PROJECT_TITLE
   }
 
   public record ErrorParameters(Object[] value) {

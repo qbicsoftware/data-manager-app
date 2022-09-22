@@ -7,10 +7,10 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 
@@ -49,11 +49,11 @@ public class ProjectCreationService {
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
-          ErrorParameters.create()));
+          ErrorParameters.of(objective)));
     }
 
     try {
-      ProjectIntent intent = new ProjectIntent(projectTitle, projectObjective);
+      ProjectIntent intent = ProjectIntent.of(projectTitle, projectObjective);
       Project project = Project.create(intent);
       projectRepository.add(project);
       return Result.success(project);
@@ -82,7 +82,7 @@ public class ProjectCreationService {
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
-          ErrorParameters.create()));
+          ErrorParameters.of(objective)));
     }
 
     ExperimentalDesignDescription experimentalDesignDescription;
@@ -95,8 +95,8 @@ public class ProjectCreationService {
     }
 
     try {
-      ProjectIntent intent = new ProjectIntent(projectTitle, projectObjective).with(
-          experimentalDesignDescription);
+      ProjectIntent intent = ProjectIntent.of(projectTitle, projectObjective)
+          .with(experimentalDesignDescription);
       Project project = Project.create(intent);
       projectRepository.add(project);
       return Result.success(project);
