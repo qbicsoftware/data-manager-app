@@ -5,11 +5,14 @@ import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import javax.persistence.AttributeConverter;
 
 /**
- * <b>short description</b>
+ * <b>Converts {@link ProjectObjective} into a String and vice versa></b>
  *
- * <p>detailed description</p>
+ * <p>Converts the String value stored in the database to an
+ * {@link ProjectObjective}. Additionally converts the
+ * {@link ProjectObjective} to a string value to be stored in the database.
+ * </p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectObjectiveConverter implements AttributeConverter<ProjectObjective, String> {
     @Override

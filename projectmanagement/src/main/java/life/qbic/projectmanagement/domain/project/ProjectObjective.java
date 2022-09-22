@@ -3,11 +3,10 @@ package life.qbic.projectmanagement.domain.project;
 import java.util.Objects;
 
 /**
- * <b>short description</b>
+ * The objective of a project.
+ * <li> Must not be empty or null
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record ProjectObjective(String objective) {
 
