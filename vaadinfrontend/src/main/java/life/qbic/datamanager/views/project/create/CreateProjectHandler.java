@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.router.BeforeEvent;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +62,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private void loadOfferContent(Offer offer) {
     log.info("Loading content from offer " + offer.offerId().id());
     createProjectLayout.titleField.setValue(offer.projectTitle().title());
+    createProjectLayout.projectObjective.setValue(offer.projectObjective().objective());
   }
 
   private void addSaveClickListener() {
@@ -71,7 +71,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private void saveClicked() {
     String titleFieldValue = createProjectLayout.titleField.getValue();
-    projectCreationService.createProject(titleFieldValue)
+    String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
+    projectCreationService.createProject(titleFieldValue, objectiveFieldValue)
         .ifSuccess(it -> displaySuccessfulProjectCreationNotification());
   }
 

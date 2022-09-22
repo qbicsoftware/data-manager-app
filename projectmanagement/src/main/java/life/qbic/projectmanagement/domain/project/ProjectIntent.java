@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project;
 
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
 
 import static java.util.Objects.requireNonNull;
@@ -7,6 +8,7 @@ import static java.util.Objects.requireNonNull;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import java.util.Objects;
 
 /**
  * A project intent contains information on the project that is related to the intent of the
@@ -19,9 +21,16 @@ public class ProjectIntent {
   @Column(name = "projectTitle")
   private ProjectTitle projectTitle;
 
-  public ProjectIntent(ProjectTitle projectTitle) {
+  @Convert(converter = ProjectObjectiveConverter.class)
+  @Column(name = "objective")
+  private ProjectObjective projectObjective;
+
+  public ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
     requireNonNull(projectTitle);
+    requireNonNull(objective);
+
     this.projectTitle = projectTitle;
+    this.projectObjective = objective;
   }
 
   protected ProjectIntent() {
@@ -30,21 +39,14 @@ public class ProjectIntent {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     ProjectIntent that = (ProjectIntent) o;
-
-    return projectTitle.equals(that.projectTitle);
+    return Objects.equals(projectTitle, that.projectTitle) && Objects.equals(projectObjective, that.projectObjective);
   }
 
   @Override
   public int hashCode() {
-    return projectTitle.hashCode();
+    return Objects.hash(projectTitle, projectObjective);
   }
 }
-

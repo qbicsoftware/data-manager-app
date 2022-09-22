@@ -7,10 +7,7 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectIntent;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 
 /**
@@ -32,10 +29,12 @@ public class ProjectCreationService {
    * @param title the title of the project.
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String title) {
+  public Result<Project, ApplicationException> createProject(String title, String objective) {
     ProjectTitle projectTitle;
+    ProjectObjective projectObjective;
     try {
       projectTitle = new ProjectTitle(title);
+      projectObjective = new ProjectObjective(objective);
     } catch (ProjectManagementDomainException e) {
       return Result.failure(
           new ProjectManagementException("Could not create project title for: " + title, e,
@@ -47,15 +46,15 @@ public class ProjectCreationService {
     }
     Project project;
     try {
-      project = Project.create(new ProjectIntent(projectTitle));
+      project = Project.create(new ProjectIntent(projectTitle,projectObjective));
     } catch (Exception e) {
-      log.error("could not create project with title " + projectTitle, e);
+      log.error("Could not create project with title " + projectTitle, e);
       return Result.failure(new ProjectManagementException());
     }
     try {
       projectRepository.add(project);
     } catch (Exception e) {
-      log.error("could not add project " + project, e);
+      log.error("Could not add project " + project, e);
       return Result.failure(new ProjectManagementException());
     }
     return Result.success(project);
