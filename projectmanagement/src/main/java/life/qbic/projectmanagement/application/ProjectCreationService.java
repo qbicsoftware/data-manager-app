@@ -32,7 +32,6 @@ public class ProjectCreationService {
   public Result<Project, ApplicationException> createProject(String title, String objective) {
     ProjectTitle projectTitle;
     ProjectObjective projectObjective;
-    //add exp. design
     try {
       projectTitle = new ProjectTitle(title);
       projectObjective = new ProjectObjective(objective);
