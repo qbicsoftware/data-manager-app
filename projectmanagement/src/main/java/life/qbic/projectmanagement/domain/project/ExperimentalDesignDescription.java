@@ -9,6 +9,8 @@ import java.util.Objects;
  */
 public record ExperimentalDesignDescription(String value) {
 
+  private static final long MAX_LENGTH = 1500;
+
 
   public ExperimentalDesignDescription {
     if (Objects.isNull(value)) {
@@ -19,5 +21,9 @@ public record ExperimentalDesignDescription(String value) {
 
   public static ExperimentalDesignDescription create(String value) {
     return new ExperimentalDesignDescription(value);
+  }
+
+  public static long maxLength() {
+    return MAX_LENGTH;
   }
 }

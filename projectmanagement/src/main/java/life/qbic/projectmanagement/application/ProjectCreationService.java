@@ -7,9 +7,9 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 
@@ -35,29 +35,52 @@ public class ProjectCreationService {
   public Result<Project, ApplicationException> createProject(String title) {
     ProjectTitle projectTitle;
     try {
-      projectTitle = new ProjectTitle(title);
-    } catch (ProjectManagementDomainException e) {
-      return Result.failure(
-          new ProjectManagementException("Could not create project title for: " + title, e,
-              ErrorCode.INVALID_PROJECT_TITLE,
-              ErrorParameters.create().with("projectTitle", title)));
-    } catch (Exception e) {
+      projectTitle = ProjectTitle.create(title);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
+          ErrorParameters.of(title)));
+    }
+
+    try {
+      ProjectIntent intent = new ProjectIntent(projectTitle);
+      Project project = Project.create(intent);
+      projectRepository.add(project);
+      return Result.success(project);
+    } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       return Result.failure(new ProjectManagementException());
     }
-    Project project;
-    try {
-      project = Project.create(new ProjectIntent(projectTitle));
-    } catch (Exception e) {
-      log.error("could not create project with title " + projectTitle, e);
-      return Result.failure(new ProjectManagementException());
-    }
-    try {
-      projectRepository.add(project);
-    } catch (Exception e) {
-      log.error("could not add project " + project, e);
-      return Result.failure(new ProjectManagementException());
-    }
-    return Result.success(project);
   }
+
+  public Result<Project, ApplicationException> createProjectWithExperimentalDesign(String title,
+      String experimentalDesign) {
+    ProjectTitle projectTitle;
+    try {
+      projectTitle = ProjectTitle.create(title);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
+          ErrorParameters.of(title)));
+    }
+    ExperimentalDesignDescription experimentalDesignDescription;
+    try {
+      experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
+          ErrorParameters.of(ExperimentalDesignDescription.maxLength(), experimentalDesign)));
+    }
+
+    try {
+      ProjectIntent intent = new ProjectIntent(projectTitle).with(experimentalDesignDescription);
+      Project project = Project.create(intent);
+      projectRepository.add(project);
+      return Result.success(project);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.failure(new ProjectManagementException());
+    }
+  }
+
 }
