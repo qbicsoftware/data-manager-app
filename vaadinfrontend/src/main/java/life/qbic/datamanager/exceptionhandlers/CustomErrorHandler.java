@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.ErrorEvent;
 import com.vaadin.flow.server.ErrorHandler;
 import java.util.Locale;
@@ -12,6 +11,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.datamanager.views.components.ErrorMessage;
+import life.qbic.datamanager.views.components.StyledNotification;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -63,9 +63,8 @@ public class CustomErrorHandler implements ErrorHandler,
   private void showErrorDialog(UserFriendlyErrorMessage userFriendlyError) {
     ErrorMessage errorMessage = new ErrorMessage(userFriendlyError.title(),
         userFriendlyError.message());
-    Notification notification = new Notification(errorMessage);
-    notification.setDuration(2000);
-    notification.open();
+    StyledNotification styledNotification = new StyledNotification(errorMessage);
+    styledNotification.open();
   }
 
   @Override

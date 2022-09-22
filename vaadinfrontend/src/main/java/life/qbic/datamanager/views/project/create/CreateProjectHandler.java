@@ -5,18 +5,17 @@ import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.finances.offer.OfferId;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.views.components.StyledNotification;
 import life.qbic.datamanager.views.components.SuccessMessage;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -98,8 +97,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private void displaySuccessfulProjectCreationNotification() {
     SuccessMessage successMessage = new SuccessMessage("Project creation succeeded.", "");
-    Notification notification = new Notification(successMessage);
-    notification.setPosition(Position.MIDDLE);
+    StyledNotification notification = new StyledNotification(successMessage);
     notification.open();
   }
 }
