@@ -8,6 +8,7 @@ import static java.util.Objects.requireNonNull;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import java.util.Objects;
 
 /**
  * A project intent contains information on the project that is related to the intent of the
@@ -38,20 +39,14 @@ public class ProjectIntent {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     ProjectIntent that = (ProjectIntent) o;
-
-    return projectTitle.equals(that.projectTitle) && projectObjective.equals(that.projectObjective);
+    return Objects.equals(projectTitle, that.projectTitle) && Objects.equals(projectObjective, that.projectObjective);
   }
 
   @Override
   public int hashCode() {
-    return projectTitle.hashCode(); //todo integrate objective hash -> du it with project intent?
+    return Objects.hash(projectTitle, projectObjective);
   }
 }
