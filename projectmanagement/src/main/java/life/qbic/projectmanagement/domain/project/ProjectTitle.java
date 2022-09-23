@@ -9,6 +9,8 @@ import java.util.Objects;
 
 public record ProjectTitle(String title) {
 
+  private static final long MAX_LENGTH = 180;
+
   public ProjectTitle {
     Objects.requireNonNull(title);
     if (title.isEmpty()) {
@@ -18,6 +20,10 @@ public record ProjectTitle(String title) {
 
   public static ProjectTitle create(String title) {
     return new ProjectTitle(title);
+  }
+
+  public static long maxLength() {
+    return MAX_LENGTH;
   }
 
 }
