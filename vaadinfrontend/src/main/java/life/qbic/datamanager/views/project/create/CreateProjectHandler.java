@@ -73,6 +73,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     log.info("Loading content from offer " + offer.offerId().id());
     createProjectLayout.titleField.setValue(offer.projectTitle().title());
     createProjectLayout.projectObjective.setValue(offer.projectObjective().objective());
+    offer.experimentalDesignDescription()
+        .ifPresent(it -> createProjectLayout.experimentalDesignField.setValue(it.description()));
   }
 
   private void addSaveClickListener() {
