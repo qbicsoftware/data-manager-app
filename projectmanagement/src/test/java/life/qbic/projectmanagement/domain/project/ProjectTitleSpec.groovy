@@ -21,6 +21,16 @@ class ProjectTitleSpec extends Specification {
     thrown(ProjectManagementDomainException)
   }
 
+  def "expect creation with exactly max chars allowed works"() {
+    given: "an input with exactly the maximal amount of characters allowed"
+    String inputExactlyMaxAllowedLength = maxLengthInput();
+    when:
+    def title = ProjectTitle.create(inputExactlyMaxAllowedLength)
+    then:
+    noExceptionThrown()
+    Objects.nonNull(title)
+  }
+
   def "expect creation with more characters than the max length throws RuntimeException"() {
     given: "input exceeding the max length"
     String inputExceedingMaxLength = maxLengthInput() + "a"
@@ -28,11 +38,10 @@ class ProjectTitleSpec extends Specification {
     ProjectTitle.create(inputExceedingMaxLength)
     then:
     thrown(RuntimeException)
-
   }
 
   private String maxLengthInput() {
-    return Stream.of(0..<ProjectTitle.maxLength())
+    return Stream.of((0..<ProjectTitle.maxLength()).toArray())
             .map(it -> "i")
             .collect(Collectors.joining())
   }
