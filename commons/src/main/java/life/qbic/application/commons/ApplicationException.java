@@ -1,6 +1,7 @@
 package life.qbic.application.commons;
 
 import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * Thrown whenever an exception occurred during an execution in the application layer. This
@@ -49,6 +50,13 @@ public abstract class ApplicationException extends RuntimeException {
     @Override
     public int hashCode() {
       return Arrays.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", ErrorParameters.class.getSimpleName() + "[", "]")
+          .add("value=" + Arrays.toString(value))
+          .toString();
     }
   }
 

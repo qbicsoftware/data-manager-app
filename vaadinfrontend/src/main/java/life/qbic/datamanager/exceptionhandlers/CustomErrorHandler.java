@@ -42,9 +42,8 @@ public class CustomErrorHandler implements ErrorHandler,
     };
     if (throwable instanceof ApplicationException) {
       applicationException = (ApplicationException) throwable;
-    } else {
-      log.error(throwable.getMessage(), throwable);
     }
+    log.error(throwable.getMessage(), throwable);
     handle(UI.getCurrent(), applicationException);
   }
 
