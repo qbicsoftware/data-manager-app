@@ -23,7 +23,7 @@ class ProjectTitleSpec extends Specification {
 
   def "expect creation with exactly max chars allowed works"() {
     given: "an input with exactly the maximal amount of characters allowed"
-    String inputExactlyMaxAllowedLength = maxLengthInput();
+    String inputExactlyMaxAllowedLength = maxLengthInput()
     when:
     def title = ProjectTitle.create(inputExactlyMaxAllowedLength)
     then:

@@ -16,6 +16,10 @@ public record ProjectTitle(String title) {
     if (title.isEmpty()) {
       throw new ProjectManagementDomainException("Project title is empty.");
     }
+    if (title.length() > MAX_LENGTH) {
+      throw new ProjectManagementDomainException(
+          "Project title is too long. Allowed: " + MAX_LENGTH + "; Provided: " + title.length());
+    }
   }
 
   public static ProjectTitle create(String title) {
