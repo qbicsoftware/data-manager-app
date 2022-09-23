@@ -1,6 +1,9 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
@@ -41,7 +44,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private final OfferLookupService offerLookupService;
 
   public CreateProjectHandler(@Autowired OfferLookupService offerLookupService,
-      @Autowired ProjectCreationService projectCreationService, @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ProjectCreationService projectCreationService,
+      @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.offerLookupService = offerLookupService;
     this.projectCreationService = projectCreationService;
     this.exceptionHandler = exceptionHandler;
@@ -66,18 +70,26 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     createProjectLayout.projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
     createProjectLayout.experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
 
-    createProjectLayout.titleField.addValueChangeListener(e -> {
-      e.getSource().setHelperText(
-          e.getValue().length() + "/" + createProjectLayout.titleField.getMaxLength());
-    });
-    createProjectLayout.projectObjective.addValueChangeListener(e -> {
-      e.getSource().setHelperText(
-          e.getValue().length() + "/" + createProjectLayout.projectObjective.getMaxLength());
-    });
-    createProjectLayout.experimentalDesignField.addValueChangeListener(e -> {
-      e.getSource().setHelperText(
-          e.getValue().length() + "/" + createProjectLayout.experimentalDesignField.getMaxLength());
-    });
+    createProjectLayout.titleField.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.titleField));
+    createProjectLayout.projectObjective.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.projectObjective));
+    createProjectLayout.experimentalDesignField.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.experimentalDesignField));
+  }
+
+  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextArea, String> e,
+      TextArea textArea) {
+    int maxLength = textArea.getMaxLength();
+    int consumedLength = e.getValue().length();
+    e.getSource().setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextField, String> e,
+      TextField textField) {
+    int maxLength = textField.getMaxLength();
+    int consumedLength = e.getValue().length();
+    e.getSource().setHelperText(consumedLength + "/" + maxLength);
   }
 
   @Override
