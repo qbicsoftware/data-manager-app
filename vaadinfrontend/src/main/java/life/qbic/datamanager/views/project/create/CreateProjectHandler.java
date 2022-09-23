@@ -60,6 +60,19 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     createProjectLayout.projectObjective.setMaxLength((int) ProjectObjective.maxLength());
     createProjectLayout.experimentalDesignField.setMaxLength(
         (int) ExperimentalDesignDescription.maxLength());
+
+    createProjectLayout.titleField.addValueChangeListener(e -> {
+      e.getSource().setHelperText(
+          e.getValue().length() + "/" + createProjectLayout.titleField.getMaxLength());
+    });
+    createProjectLayout.projectObjective.addValueChangeListener(e -> {
+      e.getSource().setHelperText(
+          e.getValue().length() + "/" + createProjectLayout.projectObjective.getMaxLength());
+    });
+    createProjectLayout.experimentalDesignField.addValueChangeListener(e -> {
+      e.getSource().setHelperText(
+          e.getValue().length() + "/" + createProjectLayout.experimentalDesignField.getMaxLength());
+    });
   }
 
   @Override
