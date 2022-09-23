@@ -49,7 +49,7 @@ public class ProjectCreationService {
       return Result.success(project);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
-      throw new ProjectManagementException();
+      return Result.failure(new ProjectManagementException());
     }
   }
 
