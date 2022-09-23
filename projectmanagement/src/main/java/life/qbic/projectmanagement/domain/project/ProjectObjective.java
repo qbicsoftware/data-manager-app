@@ -17,6 +17,11 @@ public record ProjectObjective(String objective) {
         if (objective.isEmpty()) {
             throw new ProjectManagementDomainException("Project objective is empty.");
         }
+        if (objective.length() > MAX_LENGTH) {
+            throw new ProjectManagementDomainException(
+                "Project objective is too long. Allowed max size: " + MAX_LENGTH
+                    + ";Provided size: " + objective.length());
+        }
     }
 
     public static ProjectObjective create(String objective) {
