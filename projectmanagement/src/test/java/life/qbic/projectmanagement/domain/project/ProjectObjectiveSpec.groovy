@@ -7,6 +7,15 @@ import java.util.stream.Stream
 
 class ProjectObjectiveSpec extends Specification {
 
+    def "expect project objective creation from input with max length to not throw an< exception"() {
+        given: "an input with exactly max length length"
+        String input = maxLengthInput()
+        when:
+        ProjectObjective.create(input)
+        then:
+        noExceptionThrown()
+    }
+
     def "expect project objective creation from input exceeding max length to throw RuntimeException"() {
         given: "an input exceeding the maximal length"
         String input = maxLengthInput() + "a";
@@ -14,7 +23,6 @@ class ProjectObjectiveSpec extends Specification {
         ProjectObjective.create(input)
         then:
         thrown(RuntimeException)
-
     }
 
     private String maxLengthInput() {
