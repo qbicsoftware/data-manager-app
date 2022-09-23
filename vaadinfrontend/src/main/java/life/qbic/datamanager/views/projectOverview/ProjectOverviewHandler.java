@@ -60,7 +60,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     registeredProjectOverview.selectCreationModeDialog.next.addClickListener(e -> {
       switch (creationMode) {
         case BLANK -> {
-          UI.getCurrent().navigate("projects/create");
+          UI.getCurrent().navigate(PROJECT_CREATION_URL);
           registeredProjectOverview.selectCreationModeDialog.close();
           registeredProjectOverview.selectCreationModeDialog.reset();
         }
