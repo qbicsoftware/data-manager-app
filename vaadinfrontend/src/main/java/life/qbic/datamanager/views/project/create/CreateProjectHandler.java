@@ -84,17 +84,12 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private void saveClicked() {
     String titleFieldValue = createProjectLayout.titleField.getValue();
     String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
-    Result<Project, ApplicationException> project =
-        createProjectLayout.experimentalDesignField.isEmpty()
-            ? projectCreationService.createProject(titleFieldValue, objectiveFieldValue)
-            : projectCreationService.createProjectWithExperimentalDesign(titleFieldValue,
-                objectiveFieldValue,
-                createProjectLayout.experimentalDesignField.getValue());
-
-    project
-        .ifSuccessOrElse(
-            result -> displaySuccessfulProjectCreationNotification(),
-            applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
+    String experimentalDesignDescription = createProjectLayout.experimentalDesignField.getValue();
+    Result<Project, ApplicationException> project = projectCreationService.createProject(
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription);
+    project.ifSuccessOrElse(
+        result -> displaySuccessfulProjectCreationNotification(),
+        applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
   }
 
   private void displaySuccessfulProjectCreationNotification() {
