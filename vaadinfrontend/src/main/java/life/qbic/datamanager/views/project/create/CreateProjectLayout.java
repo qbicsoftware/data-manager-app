@@ -2,15 +2,15 @@ package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
@@ -21,15 +21,16 @@ import com.vaadin.flow.router.Route;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.components.CardLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Create Project")
 @Route(value = "projects/create", layout = MainLayout.class)
 @PermitAll
 @Tag("create-project")
-public class CreateProjectLayout extends Composite<VerticalLayout> implements HasUrlParameter<String> {
+public class CreateProjectLayout extends Composite<CardLayout> implements HasUrlParameter<String> {
 
-  final H2 layoutTitle = new H2();
+  final Label layoutTitle = new Label();
   final TextField titleField = new TextField();
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
@@ -46,7 +47,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
   }
 
   @Override
-  protected VerticalLayout initContent() {
+  protected CardLayout initContent() {
     layoutTitle.setText("Project Information");
 
     FormLayout formLayout = new FormLayout();
@@ -65,8 +66,15 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     headerBar.setVerticalComponentAlignment(Alignment.START, layoutTitle);
     headerBar.setVerticalComponentAlignment(Alignment.END, formButtons);
     headerBar.setWidthFull();
-
-    return new VerticalLayout(headerBar, formLayout);
+    CardLayout cardLayout = new CardLayout();
+    cardLayout.addButtons(cancelButton, saveButton);
+    cardLayout.addFields(formLayout);
+    cardLayout.setTitleText("Project Information");
+    cardLayout.setAlignItems(Alignment.START);
+    //ToDo should this be a fixed width and height or a max width and height?
+    cardLayout.setHeight(90, Unit.PERCENTAGE);
+    cardLayout.setWidth(60,Unit.PERCENTAGE);
+    return cardLayout;
   }
 
   private void registerToHandler(CreateProjectHandlerInterface handler) {
