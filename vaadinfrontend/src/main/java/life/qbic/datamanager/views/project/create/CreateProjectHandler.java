@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,10 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     createProjectLayout.projectObjective.setMaxLength((int) ProjectObjective.maxLength());
     createProjectLayout.experimentalDesignField.setMaxLength(
         (int) ExperimentalDesignDescription.maxLength());
+
+    createProjectLayout.titleField.setValueChangeMode(ValueChangeMode.EAGER);
+    createProjectLayout.projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
+    createProjectLayout.experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
 
     createProjectLayout.titleField.addValueChangeListener(e -> {
       e.getSource().setHelperText(
