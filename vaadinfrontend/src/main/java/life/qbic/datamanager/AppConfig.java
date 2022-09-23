@@ -16,10 +16,13 @@ import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
 import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -107,5 +110,10 @@ public class AppConfig {
   @Bean
   public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
     return new NewPassword(userRegistrationService);
+  }
+
+  @Bean
+  public ApplicationExceptionHandler applicationExceptionHandler(MessageSource messageSource) {
+    return new CustomErrorHandler(messageSource);
   }
 }
