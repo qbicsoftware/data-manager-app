@@ -20,7 +20,7 @@ public record ProjectObjective(String objective) {
         if (objective.length() > MAX_LENGTH) {
             throw new ProjectManagementDomainException(
                 "Project objective is too long. Allowed max size: " + MAX_LENGTH
-                    + ";Provided size: " + objective.length());
+                    + "; Provided size: " + objective.length());
         }
     }
 
