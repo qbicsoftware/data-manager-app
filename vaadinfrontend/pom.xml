@@ -205,6 +205,11 @@
             <version>0.4.3</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>life.qbic.logging</groupId>
+            <artifactId>subscription-provider</artifactId>
+            <version>0.4.3</version>
+        </dependency>
 
 
     </dependencies>

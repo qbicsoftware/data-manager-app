@@ -82,6 +82,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
     setupUseCases(appContext);
+    logger.error("Oh oh");
   }
 
   private static void setupUseCases(ConfigurableApplicationContext context) {
