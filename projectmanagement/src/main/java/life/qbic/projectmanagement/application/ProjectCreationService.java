@@ -47,6 +47,8 @@ public class ProjectCreationService {
         project = createProjectWithExperimentalDesign(title, objective, experimentalDesign);
       }
       return Result.success(project);
+    } catch (ProjectManagementException projectManagementException) {
+      return Result.failure(projectManagementException);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       return Result.failure(new ProjectManagementException());
