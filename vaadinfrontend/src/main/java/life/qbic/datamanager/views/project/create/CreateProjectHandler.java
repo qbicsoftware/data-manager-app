@@ -16,7 +16,10 @@ import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +51,15 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     if (this.createProjectLayout != createProjectLayout) {
       this.createProjectLayout = createProjectLayout;
       addSaveClickListener();
+      restrictInputLength();
     }
+  }
+
+  private void restrictInputLength() {
+    createProjectLayout.titleField.setMaxLength((int) ProjectTitle.maxLength());
+    createProjectLayout.projectObjective.setMaxLength((int) ProjectObjective.maxLength());
+    createProjectLayout.experimentalDesignField.setMaxLength(
+        (int) ExperimentalDesignDescription.maxLength());
   }
 
   @Override
