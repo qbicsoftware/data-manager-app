@@ -69,6 +69,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
           loadItemsWithService(offerLookupService);
           registeredProjectOverview.searchDialog.open();
         }
+        case NONE -> {
+          // Nothing to do, user has not made a selection
+        }
       }
     });
     registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(e -> {
