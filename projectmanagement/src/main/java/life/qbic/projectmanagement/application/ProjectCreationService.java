@@ -86,7 +86,7 @@ public class ProjectCreationService {
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
-          ErrorParameters.of(200, title));
+          ErrorParameters.of(ProjectTitle.maxLength(), title));
     }
 
     ProjectObjective projectObjective;
