@@ -1,6 +1,10 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +20,10 @@ import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,7 +44,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private final OfferLookupService offerLookupService;
 
   public CreateProjectHandler(@Autowired OfferLookupService offerLookupService,
-      @Autowired ProjectCreationService projectCreationService, @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ProjectCreationService projectCreationService,
+      @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.offerLookupService = offerLookupService;
     this.projectCreationService = projectCreationService;
     this.exceptionHandler = exceptionHandler;
@@ -48,7 +56,40 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     if (this.createProjectLayout != createProjectLayout) {
       this.createProjectLayout = createProjectLayout;
       addSaveClickListener();
+      restrictInputLength();
     }
+  }
+
+  private void restrictInputLength() {
+    createProjectLayout.titleField.setMaxLength((int) ProjectTitle.maxLength());
+    createProjectLayout.projectObjective.setMaxLength((int) ProjectObjective.maxLength());
+    createProjectLayout.experimentalDesignField.setMaxLength(
+        (int) ExperimentalDesignDescription.maxLength());
+
+    createProjectLayout.titleField.setValueChangeMode(ValueChangeMode.EAGER);
+    createProjectLayout.projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
+    createProjectLayout.experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
+
+    createProjectLayout.titleField.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.titleField));
+    createProjectLayout.projectObjective.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.projectObjective));
+    createProjectLayout.experimentalDesignField.addValueChangeListener(
+        e -> addConsumedLengthHelper(e, createProjectLayout.experimentalDesignField));
+  }
+
+  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextArea, String> e,
+      TextArea textArea) {
+    int maxLength = textArea.getMaxLength();
+    int consumedLength = e.getValue().length();
+    e.getSource().setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextField, String> e,
+      TextField textField) {
+    int maxLength = textField.getMaxLength();
+    int consumedLength = e.getValue().length();
+    e.getSource().setHelperText(consumedLength + "/" + maxLength);
   }
 
   @Override
