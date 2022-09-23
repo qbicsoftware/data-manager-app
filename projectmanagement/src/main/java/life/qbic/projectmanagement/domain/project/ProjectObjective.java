@@ -10,6 +10,8 @@ import java.util.Objects;
  */
 public record ProjectObjective(String objective) {
 
+    private static final long MAX_LENGTH = 1500;
+
     public ProjectObjective {
         Objects.requireNonNull(objective);
         if (objective.isEmpty()) {
@@ -19,5 +21,9 @@ public record ProjectObjective(String objective) {
 
     public static ProjectObjective create(String objective) {
         return new ProjectObjective(objective);
+    }
+
+    public static long maxLength() {
+        return MAX_LENGTH;
     }
 }
