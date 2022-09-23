@@ -51,7 +51,7 @@ public class EMailService implements MailService {
   }
 
   private EMailService(Properties props) {
-    session = Session.getDefaultInstance(props, new Authenticator() {
+    session = Session.getInstance(props, new Authenticator() {
       @Override
       protected PasswordAuthentication getPasswordAuthentication() {
         return new PasswordAuthentication(props.getProperty(MAIL_SMTP_USERNAME),

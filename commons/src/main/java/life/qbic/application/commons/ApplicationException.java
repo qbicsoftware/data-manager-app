@@ -1,10 +1,7 @@
 package life.qbic.application.commons;
 
-import static java.util.Collections.unmodifiableMap;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * Thrown whenever an exception occurred during an execution in the application layer. This
@@ -21,32 +18,45 @@ public abstract class ApplicationException extends RuntimeException {
 
   public enum ErrorCode {
     GENERAL,
+    INVALID_EXPERIMENTAL_DESIGN,
+    INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE
   }
 
-  public static class ErrorParameters {
-
-    private final HashMap<String, Object> mappings = new HashMap<>();
-
-    public Optional<Object> get(String key) {
-      return Optional.ofNullable(mappings.get(key));
-    }
-
-    public void put(String key, Object value) {
-      mappings.put(key, value);
-    }
+  public record ErrorParameters(Object[] value) {
 
     public static ErrorParameters create() {
-      return new ErrorParameters();
+      return new ErrorParameters(new Object[]{});
     }
 
-    public ErrorParameters with(String key, Object value) {
-      this.put(key, value);
-      return this;
+    public static ErrorParameters of(Object... parameters) {
+      return new ErrorParameters(parameters);
     }
 
-    public Map<String, Object> asMap() {
-      return unmodifiableMap(mappings);
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ErrorParameters that = (ErrorParameters) o;
+
+      return Arrays.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", ErrorParameters.class.getSimpleName() + "[", "]")
+          .add("value=" + Arrays.toString(value))
+          .toString();
     }
   }
 

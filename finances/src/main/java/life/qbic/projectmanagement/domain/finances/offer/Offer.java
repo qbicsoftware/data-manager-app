@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -69,8 +70,8 @@ public class Offer {
     this.projectObjective = projectObjective;
   }
 
-  public ExperimentalDesignDescription experimentalDesignDescription() {
-    return experimentalDesignDescription;
+  public Optional<ExperimentalDesignDescription> experimentalDesignDescription() {
+    return Optional.ofNullable(experimentalDesignDescription);
   }
 
   private void setExperimentalDesignDescription(

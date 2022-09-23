@@ -30,10 +30,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class CreateProjectLayout extends Composite<VerticalLayout> implements HasUrlParameter<String> {
 
   final H2 layoutTitle = new H2();
-  final TextField titleField = new TextField();
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
 
+  final TextField titleField = new TextField();
+  final TextArea experimentalDesignField = new TextArea();
   final TextArea projectObjective = new TextArea();
 
   final CreateProjectHandlerInterface handler;
@@ -41,8 +42,8 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
 
   public CreateProjectLayout(@Autowired CreateProjectHandlerInterface handler) {
     Objects.requireNonNull(handler);
-    registerToHandler(handler);
     this.handler = handler;
+    registerToHandler();
   }
 
   @Override
@@ -52,9 +53,12 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     FormLayout formLayout = new FormLayout();
     formLayout.addFormItem(titleField, "Project Title");
     formLayout.addFormItem(projectObjective, "Project Objective");
+    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     titleField.setSizeFull();
     projectObjective.setWidthFull();
+    experimentalDesignField.setWidthFull();
 
     titleField.setMaxLength(180); //TODO check with domain
     projectObjective.setMaxLength(1500); //TODO check with domain
@@ -73,7 +77,7 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     return new VerticalLayout(headerBar, formLayout);
   }
 
-  private void registerToHandler(CreateProjectHandlerInterface handler) {
+  private void registerToHandler() {
     handler.handle(this);
   }
 

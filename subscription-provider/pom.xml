@@ -11,6 +11,7 @@
 
   <groupId>life.qbic.logging</groupId>
   <artifactId>subscription-provider</artifactId>
+
   <dependencies>
     <dependency>
       <groupId>life.qbic.logging</groupId>
