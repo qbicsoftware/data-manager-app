@@ -56,6 +56,10 @@ public class CreateProjectLayout extends Composite<VerticalLayout> implements Ha
     titleField.setSizeFull();
     projectObjective.setWidthFull();
 
+    titleField.setMaxLength(180); //TODO check with domain
+    projectObjective.setMaxLength(1500); //TODO check with domain
+    //todo set max length for experimental design
+
     saveButton.setText("Save");
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
