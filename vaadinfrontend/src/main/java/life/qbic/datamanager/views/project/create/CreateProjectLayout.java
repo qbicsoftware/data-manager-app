@@ -71,9 +71,6 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
     cardLayout.addFields(formLayout);
     cardLayout.setTitleText("Project Information");
     cardLayout.setAlignItems(Alignment.START);
-    //ToDo should this be a fixed width and height or a max width and height?
-    cardLayout.setHeight(90, Unit.PERCENTAGE);
-    cardLayout.setWidth(60,Unit.PERCENTAGE);
     return cardLayout;
   }
 

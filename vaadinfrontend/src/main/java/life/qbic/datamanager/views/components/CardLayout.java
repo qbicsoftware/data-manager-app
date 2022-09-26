@@ -1,8 +1,8 @@
 package life.qbic.datamanager.views.components;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -11,94 +11,94 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 /**
  * <b>Card Layout</b>
  *
- * <p>A card with a shadow containing a title, description, a layout for fields, a layout for buttons and a span to add links.
+ * <p>A card with a shadow containing a title, description, a layout for fields, a layout for
+ * buttons and a span to add links.
  * Furthermore, the description text can be toggled visible or invisible
  *
  * @since 1.0.0
  */
+@CssImport("./styles/components/card-layout.css")
 public class CardLayout extends VerticalLayout {
 
   private Label layoutTitle;
-  private HorizontalLayout headerLayout;
+
+  private VerticalLayout contentLayout;
+  private VerticalLayout leftLayout;
+  private VerticalLayout rightLayout;
   private HorizontalLayout buttonLayout;
-  private final VerticalLayout contentLayout;
   private VerticalLayout fieldLayout;
 
   public CardLayout() {
-    contentLayout = new VerticalLayout();
     initLayout();
     styleLayout();
   }
 
   private void initLayout() {
     layoutTitle = new Label("Set Title");
-    headerLayout = new HorizontalLayout();
+    contentLayout = new VerticalLayout();
     buttonLayout = new HorizontalLayout();
-    headerLayout.add(layoutTitle, buttonLayout);
     fieldLayout = new VerticalLayout();
+    leftLayout = new VerticalLayout();
+    rightLayout = new VerticalLayout();
+    leftLayout.add(layoutTitle, fieldLayout);
+    rightLayout.add(buttonLayout);
+    contentLayout.add(leftLayout, rightLayout);
     add(contentLayout);
   }
 
   private void styleLayout() {
-    styleCardLayout();
-    styleHeaderLayout();
-    styleLayoutTitle();
-    styleButtonLayout();
-    styleFieldLayout();
+    setDefaultCardLayoutStyle();
+    setDefaultTitleStyle();
+    setDefaultButtonLayoutStyle();
+    setDefaultFieldLayoutStyle();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void styleCardLayout() {
-    contentLayout.setPadding(false);
-    contentLayout.setMargin(false);
-    contentLayout.setWidthFull();
-    contentLayout.setHeightFull();
+  private void setDefaultCardLayoutStyle() {
+    this.setSizeFull();
+    contentLayout.setSizeFull();
     contentLayout.addClassNames(
+        "min-size-to-content",
         "bg-base",
         "border",
         "rounded-m",
         "border-contrast-10",
         "box-border",
+        "rounded-m",
         "flex",
-        "flex-col",
+        "flex-row",
         "text-s",
         "shadow-l",
-        "pb-l",
-        "pr-l",
-        "pl-l");
-    contentLayout.add(headerLayout, fieldLayout);
+        "p-xl",
+        "m-xl"
+    );
+    leftLayout.setPadding(false);
+    leftLayout.setMargin(false);
+    leftLayout.setAlignItems(Alignment.START);
+    leftLayout.setSizeFull();
+    rightLayout.setPadding(false);
+    rightLayout.setMargin(false);
+    rightLayout.setAlignItems(Alignment.END);
+    rightLayout.setSizeUndefined();
   }
 
-  //ToDo rename styling methods to setDefaultStyling method
-  private void styleLayoutTitle(){
+  private void setDefaultTitleStyle() {
     layoutTitle.addClassNames(
         "text-2xl",
-        "text-header",
-        "font-bold"
-        );
-  }
-
-  private void styleHeaderLayout(){
-    headerLayout.setSpacing(false);
-    headerLayout.setMargin(false);
-    headerLayout.setPadding(false);
-    headerLayout.addClassNames(
-        "mt-m",
-        "mb-s"
+        "font-bold",
+        "text-secondary"
     );
-    headerLayout.setWidthFull();
-    headerLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
   }
 
-  private void styleButtonLayout(){
+  private void setDefaultButtonLayoutStyle() {
     buttonLayout.setMargin(false);
     buttonLayout.setPadding(false);
     buttonLayout.setSpacing(false);
     buttonLayout.setClassName("gap-s");
   }
 
-  private void styleFieldLayout() {
+  private void setDefaultFieldLayoutStyle() {
     fieldLayout.setSpacing(false);
     fieldLayout.setMargin(false);
     fieldLayout.setPadding(false);
@@ -107,6 +107,7 @@ public class CardLayout extends VerticalLayout {
 
   /**
    * Sets the title text
+   *
    * @param text The text for the title
    */
   public void setTitleText(String text) {
@@ -115,6 +116,7 @@ public class CardLayout extends VerticalLayout {
 
   /**
    * Adds the field components to the field layout
+   *
    * @param fields The fields could be TextFields, EmailFields, PasswordFields
    */
   public void addFields(Component... fields) {
@@ -123,6 +125,7 @@ public class CardLayout extends VerticalLayout {
 
   /**
    * Adds buttons to the button layout
+   *
    * @param buttons The buttons that need to be part of the layout
    */
   public void addButtons(Button... buttons) {
