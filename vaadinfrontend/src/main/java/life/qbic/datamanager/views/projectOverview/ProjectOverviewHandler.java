@@ -7,8 +7,8 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.QueryParameters;
 import life.qbic.datamanager.views.Command;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +35,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private CreationMode creationMode = CreationMode.NONE;
 
-  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService) {
+  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
   }
