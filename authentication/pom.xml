@@ -60,12 +60,6 @@
       <version>0.5.0</version>
       <scope>compile</scope>
     </dependency>
-      <dependency>
-          <groupId>life.qbic</groupId>
-          <artifactId>projectmanagement</artifactId>
-          <version>0.4.3</version>
-          <scope>compile</scope>
-      </dependency>
   </dependencies>
 
   <properties>
