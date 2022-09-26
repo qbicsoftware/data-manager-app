@@ -9,7 +9,7 @@ import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projectOverview.components.OfferSearchDialog;
 import life.qbic.datamanager.views.projectOverview.components.CreationModeDialog;
-import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.security.PermitAll;
@@ -27,7 +27,7 @@ import javax.annotation.security.PermitAll;
 public class ProjectOverviewLayout extends VerticalLayout {
 
     Button create;
-    Grid<Project> projectGrid;
+    Grid<ProjectPreview> projectGrid;
     OfferSearchDialog searchDialog;
 
     CreationModeDialog selectCreationModeDialog;
@@ -49,7 +49,8 @@ public class ProjectOverviewLayout extends VerticalLayout {
         searchDialog = new OfferSearchDialog();
         selectCreationModeDialog = new CreationModeDialog();
 
-        projectGrid = new Grid<>();
+        projectGrid = new Grid<>(ProjectPreview.class, false);
+        projectGrid.addColumn(ProjectPreview::getProjectTitle).setHeader("Title");
 
         add(create, projectGrid);
     }

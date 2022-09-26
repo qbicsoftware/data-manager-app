@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
+import life.qbic.OffsetBasedRequest;
+import life.qbic.projectmanagement.domain.project.ProjectPreview;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -30,9 +32,12 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   private final QbicProjectRepo projectRepo;
 
+  private final ProjectPreviewRepository projectPreviewRepo;
+
   @Autowired
-  public ProjectJpaRepository(QbicProjectRepo projectRepo) {
+  public ProjectJpaRepository(QbicProjectRepo projectRepo, ProjectPreviewRepository projectPreviewRepo) {
     this.projectRepo = projectRepo;
+    this.projectPreviewRepo = projectPreviewRepo;
   }
 
   @Override
@@ -44,10 +49,10 @@ public class ProjectJpaRepository implements ProjectRepository {
   }
 
   @Override
-  public List<Project> getAll() {
-    List<Project> projects = new ArrayList<>();
+  public List<ProjectPreview> getAllPreviews(int offset, int limit) {
+    List<ProjectPreview> projects = new ArrayList<>();
     //todo how to handle projects with null values for e.g proejct objective?
-    projectRepo.findAll().forEach(projects::add);
+    projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).forEach(projects::add);
 
     return projects;
   }

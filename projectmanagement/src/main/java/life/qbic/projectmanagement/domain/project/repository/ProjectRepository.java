@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.repository;
 
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectPreview;
 
 import java.util.List;
 
@@ -23,9 +24,9 @@ public interface ProjectRepository {
   void add(Project project);
 
   /**
-   * Returns all stored {@link Project} entities.
+   * Returns a list of {@link ProjectPreview} entities.
    *
    * @return a list of projects
    */
-  List<Project> getAll();
+  List<ProjectPreview> getAllPreviews(int offset, int limit);
 }

@@ -55,7 +55,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   }
 
   private void setProjectsToGrid(){
-    registeredProjectOverview.projectGrid.setItems(projectRepository.getAll());
+    registeredProjectOverview.projectGrid.setItems(query -> projectRepository.getAllPreviews(query.getOffset(), query.getLimit()).stream());
   }
 
   private void configureSelectionModeDialog() {
