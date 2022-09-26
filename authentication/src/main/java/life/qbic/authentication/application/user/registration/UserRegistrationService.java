@@ -62,7 +62,7 @@ public final class UserRegistrationService {
    * client's responsibility to handle the raw password.
    *
    * @param fullName    the full name of the user
-   * @param email       the email address of the user
+   * @param email       the mail address of the user
    * @param rawPassword the raw password provided by the user
    * @return a registration response with information about if the registration was successful or
    * not.

@@ -17,10 +17,6 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mail</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
       <scope>test</scope>
@@ -30,6 +26,27 @@
       <artifactId>application-commons</artifactId>
       <version>0.5.0</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>logging</artifactId>
+      <version>0.5.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
+    <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>javax.mail</artifactId>
+      <version>1.6.2</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
     </dependency>
   </dependencies>
 

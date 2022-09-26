@@ -1,23 +1,28 @@
 package life.qbic.datamanager;
 
-import life.qbic.broadcasting.Exchange;
-import life.qbic.newshandler.usermanagement.email.EmailService;
-import life.qbic.authentication.domain.event.SimpleEventStore;
-import life.qbic.authentication.domain.event.TemporaryEventRepository;
-import life.qbic.authentication.domain.user.event.EventStore;
-import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
 import life.qbic.authentication.application.user.password.PasswordResetInput;
 import life.qbic.authentication.application.user.password.PasswordResetRequest;
+import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
+import life.qbic.authentication.domain.event.SimpleEventStore;
+import life.qbic.authentication.domain.event.TemporaryEventRepository;
+import life.qbic.authentication.domain.user.event.EventStore;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.broadcasting.Exchange;
+import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
+import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
+import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +42,7 @@ public class AppConfig {
   /**
    * Creates the registration use case.
    *
-   * @param userRegistrationService the user registration service used by this use case
+   * @param userRegistrationService the user registration services used by this use case
    * @return the use case input
    * @since 1.0.0
    */
@@ -71,6 +76,11 @@ public class AppConfig {
     return new UserRegistrationService(notificationService, userRepository, eventStore);
   }
 
+  @Bean
+  public ProjectCreationService projectCreationService(ProjectRepository projectRepository) {
+    return new ProjectCreationService(projectRepository);
+  }
+
 
   @Bean
   public SimpleEventStore eventStore() {
@@ -100,5 +110,10 @@ public class AppConfig {
   @Bean
   public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
     return new NewPassword(userRegistrationService);
+  }
+
+  @Bean
+  public ApplicationExceptionHandler applicationExceptionHandler(MessageSource messageSource) {
+    return new CustomErrorHandler(messageSource);
   }
 }

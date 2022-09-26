@@ -1,5 +1,6 @@
 package life.qbic.application.commons;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,15 +14,15 @@ import java.util.function.Consumer;
  */
 public class ApplicationResponse {
 
-  private enum Type {SUCCESSFUL, FAILED}
+  protected enum Type {SUCCESSFUL, FAILED}
 
-  private ApplicationResponse.Type type;
+  protected Type type;
 
-  private List<RuntimeException> exceptions;
+  protected final List<RuntimeException> exceptions;
 
   public static ApplicationResponse successResponse() {
     var successResponse = new ApplicationResponse();
-    successResponse.setType(ApplicationResponse.Type.SUCCESSFUL);
+    successResponse.setType(Type.SUCCESSFUL);
     return successResponse;
   }
 
@@ -35,20 +36,24 @@ public class ApplicationResponse {
     return failureResponse;
   }
 
-  private ApplicationResponse() {
-    super();
+  protected ApplicationResponse() {
+    exceptions = new ArrayList<>();
   }
 
-  private void setType(ApplicationResponse.Type type) {
+  protected void setType(Type type) {
     this.type = type;
   }
 
-  public ApplicationResponse.Type getType() {
-    return type;
+  /**
+   * @return true if the response represents a success, false otherwise
+   */
+  public boolean isSuccess() {
+    return type.equals(Type.SUCCESSFUL);
   }
 
-  private void setExceptions(RuntimeException... exceptions) {
-    this.exceptions = Arrays.stream(exceptions).toList();
+  protected void setExceptions(RuntimeException... exceptions) {
+    this.exceptions.clear();
+    this.exceptions.addAll(Arrays.stream(exceptions).toList());
   }
 
   public boolean hasFailures() {
@@ -80,4 +85,27 @@ public class ApplicationResponse {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    ApplicationResponse that = (ApplicationResponse) o;
+
+    if (type != that.type) {
+      return false;
+    }
+    return exceptions.equals(that.exceptions);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = type.hashCode();
+    result = 31 * result + exceptions.hashCode();
+    return result;
+  }
 }

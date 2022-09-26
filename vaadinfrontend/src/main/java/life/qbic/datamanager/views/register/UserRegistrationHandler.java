@@ -8,6 +8,8 @@ import life.qbic.datamanager.views.components.ErrorMessage;
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.RegisterUserOutput;
 import life.qbic.authentication.application.user.registration.UserRegistrationException;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +23,8 @@ import org.springframework.stereotype.Component;
 public class UserRegistrationHandler
     implements UserRegistrationHandlerInterface, RegisterUserOutput {
 
-  private static final org.apache.logging.log4j.Logger log =
-      org.apache.logging.log4j.LogManager.getLogger(UserRegistrationHandler.class);
+  private static final Logger log =
+     LoggerFactory.logger(UserRegistrationHandler.class.getName());
   private UserRegistrationLayout userRegistrationLayout;
   private final RegisterUserInput registrationUseCase;
 
@@ -45,7 +47,7 @@ public class UserRegistrationHandler
   private void initFields() {
     userRegistrationLayout.fullName.setPattern("\\S.*");
     userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
-    userRegistrationLayout.email.setErrorMessage("Please provide a valid email address");
+    userRegistrationLayout.email.setErrorMessage("Please provide a valid mail address");
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");

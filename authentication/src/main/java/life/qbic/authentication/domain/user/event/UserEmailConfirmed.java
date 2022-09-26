@@ -23,7 +23,7 @@ public class UserEmailConfirmed extends DomainEvent {
   }
 
   /**
-   * @param userId     the id of the user for which the email was confirmed
+   * @param userId     the id of the user for which the mail was confirmed
    * @param email      the confirmed email address
    * @param occurredOn the timestamp this event happened
    * @since 1.0.0

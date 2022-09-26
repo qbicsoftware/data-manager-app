@@ -55,8 +55,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void showEmailConfirmationReminder() {
-    showInformation("Registration email sent",
-        "Please check your email inbox to confirm your registration");
+    showInformation("Registration mail sent",
+        "Please check your mail inbox to confirm your registration");
   }
 
   public void clearNotifications() {
@@ -83,7 +83,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void onLoginSucceeded() {
     clearNotifications();
-    UI.getCurrent().navigate("/");
+    UI.getCurrent().navigate("/projects");
   }
 
   @Override

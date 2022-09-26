@@ -32,13 +32,13 @@ public class EmailFormatPolicy {
   /**
    * Validates a given putative email address against the RFC5322 address-spec.
    *
-   * @param email the email to validate
+   * @param email the email address to validate
    * @return a check report with the validation information
    * @since 1.0.0
    */
   public PolicyCheckReport validate(String email) {
     if (!honoursRFCSpec(email)) {
-      return new PolicyCheckReport(PolicyStatus.FAILED, "Invalid email address format.");
+      return new PolicyCheckReport(PolicyStatus.FAILED, "Invalid mail address format.");
     }
     return new PolicyCheckReport(PolicyStatus.PASSED, "");
   }

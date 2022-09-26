@@ -5,20 +5,22 @@ import life.qbic.authentication.application.user.registration.UserRegistrationSe
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
 import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 
 /**
  * <b>User Registration use case</b>
  *
  * <p>Tries to register a new user and create a user account.
  *
- * <p>In case a user with the provided email already exists, the registration will fail and calls
+ * <p>In case a user with the provided mail already exists, the registration will fail and calls
  * the failure output method.
  *
  * @since 1.0.0
  */
 public class Registration implements RegisterUserInput {
 
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Registration.class);
+  private static final Logger log = LoggerFactory.logger(Registration.class.getName());
 
   private RegisterUserOutput registerUserOutput;
 
