@@ -32,12 +32,16 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private static final String QUERY_PARAMETER_SEPARATOR = "=";
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
+  private final ProjectRepository projectRepository;
 
   private CreationMode creationMode = CreationMode.NONE;
 
   public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
+
+    Objects.requireNonNull(projectRepository);
+    this.projectRepository = projectRepository;
   }
 
   @Override
@@ -46,7 +50,12 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
       this.registeredProjectOverview = layout;
       configureSearchDropbox();
       configureSelectionModeDialog();
+      setProjectsToGrid();
     }
+  }
+
+  private void setProjectsToGrid(){
+    registeredProjectOverview.projectGrid.setItems(projectRepository.getAll());
   }
 
   private void configureSelectionModeDialog() {

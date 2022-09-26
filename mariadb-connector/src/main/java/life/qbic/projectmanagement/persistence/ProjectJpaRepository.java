@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * <b>Project JPA repository</b>
@@ -38,6 +41,15 @@ public class ProjectJpaRepository implements ProjectRepository {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);
+  }
+
+  @Override
+  public List<Project> getAll() {
+    List<Project> projects = new ArrayList<>();
+    //todo how to handle projects with null values for e.g proejct objective?
+    projectRepo.findAll().forEach(projects::add);
+
+    return projects;
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {

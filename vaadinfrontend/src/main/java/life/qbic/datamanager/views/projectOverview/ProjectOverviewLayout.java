@@ -51,6 +51,6 @@ public class ProjectOverviewLayout extends VerticalLayout {
 
         projectGrid = new Grid<>();
 
-        add(create);
+        add(create, projectGrid);
     }
 }

@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.domain.project.repository;
 
 import life.qbic.projectmanagement.domain.project.Project;
 
+import java.util.List;
+
 
 /**
  * <b>Project Data Storage Interface</b>
@@ -19,4 +21,11 @@ public interface ProjectRepository {
    * @since 1.0.0
    */
   void add(Project project);
+
+  /**
+   * Returns all stored {@link Project} entities.
+   *
+   * @return a list of projects
+   */
+  List<Project> getAll();
 }
