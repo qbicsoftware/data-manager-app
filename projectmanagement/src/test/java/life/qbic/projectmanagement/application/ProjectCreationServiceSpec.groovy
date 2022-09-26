@@ -17,12 +17,9 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    Result<Project, ApplicationException> result = projectCreationService.createProject(null, "objective")
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProjectWithExperimentalDesign(null, "objective", "design")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject(null, "objective", "design")
     then: "an exception is thrown"
-    result.isFailure()
     resultWithExperimentalDesign.isFailure()
-    result.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
   }
 
@@ -30,20 +27,21 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    Result<Project, ApplicationException> result = projectCreationService.createProject("title", null)
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProjectWithExperimentalDesign("title", null, "design")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", null, "design")
     then: "an exception is thrown"
-    result.isFailure()
     resultWithExperimentalDesign.isFailure()
-    result.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
   }
 
   def "invalid experimental design description leads to INVALID_EXPERIMENTAL_DESIGN code"() {
     given:
     projectRepository.add(_) >> {}
+
+    and:
+    String tooLongDesign = "test" * 1000
+
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProjectWithExperimentalDesign("title", "objective", null)
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", "objective", tooLongDesign)
     then: "an exception is thrown"
     resultWithExperimentalDesign.isFailure()
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
@@ -53,14 +51,10 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "a project is created with a non-empty title"
-    def result = projectCreationService.createProject("test", "objective")
-    def resultWithExperimentalDesign = projectCreationService.createProject("test", "objective")
-
+    def result = projectCreationService.createProject("test", "objective", null)
     then: "the created project is returned"
     result.isSuccess()
-    resultWithExperimentalDesign.isSuccess()
     nonNull(result.value())
-    nonNull(resultWithExperimentalDesign.value())
   }
 
   def "expect unsuccessful save of a new project returns GENERAL error code"() {
@@ -68,13 +62,10 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepository.add(_) >> { throw new RuntimeException("expected exception") }
 
     when:
-    Result<Project, ApplicationException> result = projectCreationService.createProject("test", "objective")
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("test", "objective")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("test", "objective", null)
 
     then:
-    result.isFailure()
     resultWithExperimentalDesign.isFailure()
-    result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 }

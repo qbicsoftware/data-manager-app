@@ -57,7 +57,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>0.4.3</version>
+      <version>0.5.0</version>
       <scope>compile</scope>
     </dependency>
       <dependency>
