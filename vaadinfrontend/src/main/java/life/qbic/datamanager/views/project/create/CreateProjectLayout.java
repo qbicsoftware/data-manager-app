@@ -31,14 +31,16 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
   final FormLayout formLayout = new FormLayout();
+
+  final TextArea experimentalDesignField = new TextArea();
   final TextArea projectObjective = new TextArea();
   private final CardLayout cardLayout = new CardLayout();
   final CreateProjectHandlerInterface handler;
 
   public CreateProjectLayout(@Autowired CreateProjectHandlerInterface handler) {
     Objects.requireNonNull(handler);
-    registerToHandler(handler);
     this.handler = handler;
+    registerToHandler();
   }
 
   @Override
@@ -52,6 +54,8 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
   private void initFormLayout() {
     formLayout.addFormItem(titleField, "Project Title");
     formLayout.addFormItem(projectObjective, "Project Objective");
+    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
 
@@ -68,7 +72,7 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
     formLayout.setClassName("create-project-form");
   }
 
-  private void registerToHandler(CreateProjectHandlerInterface handler) {
+  private void registerToHandler() {
     handler.handle(this);
   }
 

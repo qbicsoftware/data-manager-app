@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
+import java.util.Objects;
 import javax.persistence.AttributeConverter;
 
 /**
@@ -20,13 +21,18 @@ public record ExperimentalDesignDescription(String description) {
     @Override
     public String convertToDatabaseColumn(
         ExperimentalDesignDescription experimentalDesignDescription) {
+      if (Objects.isNull(experimentalDesignDescription)) {
+        return "";
+      }
       return experimentalDesignDescription.description();
     }
 
     @Override
-    public ExperimentalDesignDescription convertToEntityAttribute(String s) {
-      return ExperimentalDesignDescription.from(s);
+    public ExperimentalDesignDescription convertToEntityAttribute(String dbData) {
+      if (Objects.isNull(dbData) || dbData.isEmpty()) {
+        return null;
+      }
+      return ExperimentalDesignDescription.from(dbData);
     }
   }
-
 }
