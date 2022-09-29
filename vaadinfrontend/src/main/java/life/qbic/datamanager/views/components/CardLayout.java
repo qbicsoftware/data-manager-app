@@ -11,9 +11,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 /**
  * <b>Card Layout</b>
  *
- * <p>A card with a shadow containing a title, description, a layout for fields, a layout for
- * buttons and a span to add links.
- * Furthermore, the description text can be toggled visible or invisible
+ * <p>A card Component with a shadow containing customizable components such as a title, a layout
+ * for fields and a layout for buttons.
  *
  * @since 1.0.0
  */
@@ -21,10 +20,10 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 public class CardLayout extends VerticalLayout {
 
   private Label layoutTitle;
-
   private VerticalLayout contentLayout;
   private VerticalLayout leftLayout;
   private VerticalLayout rightLayout;
+  private HorizontalLayout titleLayout;
   private HorizontalLayout buttonLayout;
   private VerticalLayout fieldLayout;
 
@@ -34,20 +33,22 @@ public class CardLayout extends VerticalLayout {
   }
 
   private void initLayout() {
-    layoutTitle = new Label("Set Title");
     contentLayout = new VerticalLayout();
-    buttonLayout = new HorizontalLayout();
-    fieldLayout = new VerticalLayout();
     leftLayout = new VerticalLayout();
     rightLayout = new VerticalLayout();
-    leftLayout.add(layoutTitle, fieldLayout);
+    buttonLayout = new HorizontalLayout();
+    fieldLayout = new VerticalLayout();
+    titleLayout = new HorizontalLayout();
+    layoutTitle = new Label("");
+    titleLayout.add(layoutTitle);
+    leftLayout.add(titleLayout, fieldLayout);
     rightLayout.add(buttonLayout);
     contentLayout.add(leftLayout, rightLayout);
     add(contentLayout);
   }
 
   private void styleLayout() {
-    setDefaultCardLayoutStyle();
+    setCardLayoutStyle();
     setDefaultTitleStyle();
     setDefaultButtonLayoutStyle();
     setDefaultFieldLayoutStyle();
@@ -55,7 +56,7 @@ public class CardLayout extends VerticalLayout {
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }
 
-  private void setDefaultCardLayoutStyle() {
+  private void setCardLayoutStyle() {
     this.setSizeFull();
     contentLayout.setSizeFull();
     contentLayout.addClassNames(
@@ -70,8 +71,7 @@ public class CardLayout extends VerticalLayout {
         "flex-row",
         "text-s",
         "shadow-l",
-        "p-xl",
-        "m-xl"
+        "p-l"
     );
     leftLayout.setPadding(false);
     leftLayout.setMargin(false);
@@ -84,7 +84,7 @@ public class CardLayout extends VerticalLayout {
   }
 
   private void setDefaultTitleStyle() {
-    layoutTitle.addClassNames(
+    titleLayout.addClassNames(
         "text-2xl",
         "font-bold",
         "text-secondary"
@@ -106,25 +106,7 @@ public class CardLayout extends VerticalLayout {
   }
 
   /**
-   * Sets the title text
-   *
-   * @param text The text for the title
-   */
-  public void setTitleText(String text) {
-    layoutTitle.setText(text);
-  }
-
-  /**
-   * Adds the field components to the field layout
-   *
-   * @param fields The fields could be TextFields, EmailFields, PasswordFields
-   */
-  public void addFields(Component... fields) {
-    fieldLayout.add(fields);
-  }
-
-  /**
-   * Adds buttons to the button layout
+   * Adds buttons to the button layout within the CardLayout
    *
    * @param buttons The buttons that need to be part of the layout
    */
@@ -133,7 +115,129 @@ public class CardLayout extends VerticalLayout {
   }
 
   /**
-   * Removes all DisplayMessage {@link DisplayMessage} based Notifications from the BoxLayout
+   * Adds the field components to the field layout within the CardLayout
+   *
+   * @param fields The fields could be a collection of vaadin components
    */
-  //Todo Add methods to allow styling of components in card
+  public void addFields(Component... fields) {
+    fieldLayout.add(fields);
+  }
+
+  /**
+   * Adds a title with a specified text to the card
+   *
+   * @param text The text for the title
+   */
+  public void addTitle(String text) {
+    if (!titleLayout.getChildren().toList().contains(layoutTitle)) {
+      titleLayout.add(layoutTitle);
+    }
+    layoutTitle.setText(text);
+  }
+
+  /**
+   * Removes specified buttons from the CardLayout
+   */
+  public void removeButtons(Button... buttons) {
+    buttonLayout.remove(buttons);
+  }
+
+  /**
+   * Removes specified fields from the CardLayout
+   */
+  public void removeFields(Component... components) {
+    fieldLayout.remove(components);
+  }
+
+  /**
+   * Removes the title from the CardLayout
+   */
+  public void removeTitle() {
+    titleLayout.removeAll();
+  }
+
+  /**
+   * Adds custom css styling to the ButtonLayout within the CardLayout
+   *
+   * @param buttonStyles String representations of vaadin css classNames that will be added to the
+   *                     buttonLayout
+   */
+  public void addButtonStyles(String... buttonStyles) {
+    buttonLayout.addClassNames(buttonStyles);
+  }
+
+  /**
+   * Adds custom css styling to the fieldLayout within the CardLayout
+   *
+   * @param fieldStyles String representations of vaadin css classNames that will be added to the
+   *                    fieldLayout
+   */
+  public void addFieldStyles(String... fieldStyles) {
+    fieldLayout.addClassNames(fieldStyles);
+  }
+
+  /**
+   * Adds custom css styling to the fieldLayout within the CardLayout
+   *
+   * @param titleStyles String representations of vaadin css classNames that will be removed from
+   *                    the titleLayout
+   */
+  public void addTitleStyles(String... titleStyles) {
+    titleLayout.addClassNames(titleStyles);
+  }
+
+  /**
+   * Removes specified css styling of the buttonLayout within the CardLayout
+   *
+   * @param buttonStyles String representations of vaadin css classNames that will be removed from
+   *                     the buttonLayout
+   */
+  public void removeButtonStyles(String... buttonStyles) {
+    buttonLayout.removeClassNames(buttonStyles);
+  }
+
+  /**
+   * Removes specified css styling of the fieldLayout within the CardLayout
+   *
+   * @param fieldStyles String representations of vaadin css classNames that will be removed from
+   *                    the fieldLayout
+   */
+  public void removeFieldStyles(String... fieldStyles) {
+    fieldLayout.removeClassNames(fieldStyles);
+  }
+
+  /**
+   * Removes specified css styling of the titleLayout within the CardLayout
+   *
+   * @param titleStyles String representations of vaadin css classNames that will be added to the
+   *                    titleLayout
+   */
+  public void removeTitleStyles(String... titleStyles) {
+    titleLayout.removeClassNames(titleStyles);
+  }
+
+  /**
+   * Removes all styling of the buttonLayout within the CardLayout
+   */
+  public void removeAllButtonStyles() {
+    String[] currentButtonLayoutStyles = buttonLayout.getClassNames().toArray(String[]::new);
+    buttonLayout.removeClassNames(currentButtonLayoutStyles);
+  }
+
+  /**
+   * Removes all styling of the fieldLayout within the CardLayout
+   */
+  public void removeAllFieldStyles() {
+    String[] currentFieldLayoutStyles = fieldLayout.getClassNames().toArray(String[]::new);
+    fieldLayout.removeClassNames(currentFieldLayoutStyles);
+  }
+
+  /**
+   * Removes all styling of the titleLayout within the CardLayout
+   */
+  public void removeAllTitleStyles() {
+    String[] currentTitleLayoutStyles = titleLayout.getClassNames().toArray(String[]::new);
+    titleLayout.removeClassNames(currentTitleLayoutStyles);
+  }
+
 }

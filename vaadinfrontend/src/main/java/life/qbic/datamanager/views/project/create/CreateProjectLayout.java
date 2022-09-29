@@ -2,15 +2,11 @@ package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.Label;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
@@ -28,17 +24,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/create", layout = MainLayout.class)
 @PermitAll
 @Tag("create-project")
+@CssImport("./styles/components/create-project.css")
 public class CreateProjectLayout extends Composite<CardLayout> implements HasUrlParameter<String> {
 
-  final Label layoutTitle = new Label();
   final TextField titleField = new TextField();
   final Button saveButton = new Button("Save");
   final Button cancelButton = new Button("Cancel");
-
+  final FormLayout formLayout = new FormLayout();
   final TextArea projectObjective = new TextArea();
-
+  private final CardLayout cardLayout = new CardLayout();
   final CreateProjectHandlerInterface handler;
-
 
   public CreateProjectLayout(@Autowired CreateProjectHandlerInterface handler) {
     Objects.requireNonNull(handler);
@@ -48,30 +43,29 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
 
   @Override
   protected CardLayout initContent() {
-    layoutTitle.setText("Project Information");
+    initFormLayout();
+    initCardLayout();
+    setComponentStyles();
+    return cardLayout;
+  }
 
-    FormLayout formLayout = new FormLayout();
+  private void initFormLayout() {
     formLayout.addFormItem(titleField, "Project Title");
     formLayout.addFormItem(projectObjective, "Project Objective");
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    titleField.setSizeFull();
-    projectObjective.setWidthFull();
+  }
 
-    saveButton.setText("Save");
-    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-    HorizontalLayout formButtons = new HorizontalLayout(cancelButton, saveButton);
-    HorizontalLayout headerBar = new HorizontalLayout(layoutTitle, formButtons);
-    headerBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
-    headerBar.setVerticalComponentAlignment(Alignment.START, layoutTitle);
-    headerBar.setVerticalComponentAlignment(Alignment.END, formButtons);
-    headerBar.setWidthFull();
-    CardLayout cardLayout = new CardLayout();
+  private void initCardLayout() {
     cardLayout.addButtons(cancelButton, saveButton);
     cardLayout.addFields(formLayout);
-    cardLayout.setTitleText("Project Information");
-    cardLayout.setAlignItems(Alignment.START);
-    return cardLayout;
+    cardLayout.addTitle("Create Project");
+  }
+
+  private void setComponentStyles() {
+    titleField.setSizeFull();
+    projectObjective.setWidthFull();
+    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    formLayout.setClassName("create-project-form");
   }
 
   private void registerToHandler(CreateProjectHandlerInterface handler) {
