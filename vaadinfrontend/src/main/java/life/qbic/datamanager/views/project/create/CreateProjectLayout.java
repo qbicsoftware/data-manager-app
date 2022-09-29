@@ -68,6 +68,7 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
   private void setComponentStyles() {
     titleField.setSizeFull();
     projectObjective.setWidthFull();
+    experimentalDesignField.setWidthFull();
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     formLayout.setClassName("create-project-form");
   }
