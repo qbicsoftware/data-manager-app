@@ -37,7 +37,8 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private CreationMode creationMode = CreationMode.NONE;
 
-  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectRepository projectRepository) {
+  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
+      @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
 
@@ -59,13 +60,23 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private void setupSearchBar() {
     registeredProjectOverview.projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     registeredProjectOverview.projectSearchField
-        .addValueChangeListener(listener -> registeredProjectOverview.projectGrid.setItems(
-            query -> projectRepository.query(registeredProjectOverview.projectSearchField.getValue(),
-                query.getOffset(), query.getLimit()).stream()));
+        .addValueChangeListener(listener -> loadProjectPreview().execute());
   }
 
-  private void setProjectsToGrid(){
-    registeredProjectOverview.projectGrid.setItems(query -> projectRepository.query(query.getOffset(), query.getLimit()).stream());
+  private Command loadProjectPreview() {
+    var searchTerm = registeredProjectOverview.projectSearchField.getValue().trim();
+    return loadProjectPreview(searchTerm);
+  }
+
+  private Command loadProjectPreview(String filter) {
+    return () -> registeredProjectOverview.projectGrid.setItems(
+        query -> projectRepository.query(filter,
+            query.getOffset(), query.getLimit()).stream());
+  }
+
+  private void setProjectsToGrid() {
+    registeredProjectOverview.projectGrid.setItems(
+        query -> projectRepository.query(query.getOffset(), query.getLimit()).stream());
   }
 
   private void configureSelectionModeDialog() {
