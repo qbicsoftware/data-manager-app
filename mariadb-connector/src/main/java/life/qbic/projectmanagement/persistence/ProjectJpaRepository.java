@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -18,10 +17,12 @@ import java.util.List;
  *
  * <p>Implementation for the {@link ProjectRepository} interface.
  *
- * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact with
+ * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
+ * with
  * persistent {@link Project} data in the storage layer.
  *
- * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as dependency
+ * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as
+ * dependency
  * upon creation.
  *
  * @since 1.0.0
@@ -35,22 +36,29 @@ public class ProjectJpaRepository implements ProjectRepository {
   private final ProjectPreviewRepository projectPreviewRepo;
 
   @Autowired
-  public ProjectJpaRepository(QbicProjectRepo projectRepo, ProjectPreviewRepository projectPreviewRepo) {
+  public ProjectJpaRepository(QbicProjectRepo projectRepo,
+      ProjectPreviewRepository projectPreviewRepo) {
     this.projectRepo = projectRepo;
     this.projectPreviewRepo = projectPreviewRepo;
   }
 
   @Override
   public void add(Project project) {
-    if(doesProjectExistWithId(project.getId())) {
+    if (doesProjectExistWithId(project.getId())) {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);
   }
 
   @Override
-  public List<ProjectPreview> getAllPreviews(int offset, int limit) {
+  public List<ProjectPreview> query(int offset, int limit) {
     return projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).getContent();
+  }
+
+  @Override
+  public List<ProjectPreview> query(String filter, int offset, int limit) {
+    return projectPreviewRepo.findByProjectTitleContainingIgnoreCase(filter,
+        new OffsetBasedRequest(offset, limit)).getContent();
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
