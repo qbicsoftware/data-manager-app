@@ -17,9 +17,8 @@ import java.util.Objects;
 @Table(name = "projects_datamanager")
 public class ProjectPreview {
 
-  @Id
-  @Column(name = "uuid")
-  private Long id;
+  @EmbeddedId()
+  private ProjectId id;
 
   private String projectTitle;
 
@@ -45,8 +44,8 @@ public class ProjectPreview {
     return projectTitle;
   }
 
-  private void setId(Long id) {
-    this.id = id;
+  private void setId(ProjectId projectId) {
+    this.id = projectId;
   }
 
   @Override
