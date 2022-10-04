@@ -1,9 +1,10 @@
-package life.qbic.datamanager.views.projectOverview;
+package life.qbic.datamanager.views.project.overview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
 import life.qbic.datamanager.views.Command;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -51,11 +52,20 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
       configureSearchDropbox();
       configureSelectionModeDialog();
       setProjectsToGrid();
+      setupSearchBar();
     }
   }
 
+  private void setupSearchBar() {
+    registeredProjectOverview.projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
+    registeredProjectOverview.projectSearchField
+        .addValueChangeListener(listener -> registeredProjectOverview.projectGrid.setItems(
+            query -> projectRepository.query(registeredProjectOverview.projectSearchField.getValue(),
+                query.getOffset(), query.getLimit()).stream()));
+  }
+
   private void setProjectsToGrid(){
-    registeredProjectOverview.projectGrid.setItems(query -> projectRepository.getAllPreviews(query.getOffset(), query.getLimit()).stream());
+    registeredProjectOverview.projectGrid.setItems(query -> projectRepository.query(query.getOffset(), query.getLimit()).stream());
   }
 
   private void configureSelectionModeDialog() {

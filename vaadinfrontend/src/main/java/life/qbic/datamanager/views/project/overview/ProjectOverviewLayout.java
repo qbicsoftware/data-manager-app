@@ -1,14 +1,16 @@
-package life.qbic.datamanager.views.projectOverview;
+package life.qbic.datamanager.views.project.overview;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.projectOverview.components.OfferSearchDialog;
-import life.qbic.datamanager.views.projectOverview.components.CreationModeDialog;
+import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
+import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
 import life.qbic.projectmanagement.domain.project.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,6 +32,8 @@ public class ProjectOverviewLayout extends VerticalLayout {
     Grid<ProjectPreview> projectGrid;
     OfferSearchDialog searchDialog;
 
+    TextField projectSearchField;
+
     CreationModeDialog selectCreationModeDialog;
 
 
@@ -49,9 +53,14 @@ public class ProjectOverviewLayout extends VerticalLayout {
         searchDialog = new OfferSearchDialog();
         selectCreationModeDialog = new CreationModeDialog();
 
+        projectSearchField = new TextField();
+        projectSearchField.setPlaceholder("Search");
+        projectSearchField.setClearButtonVisible(true);
+        projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+
         projectGrid = new Grid<>(ProjectPreview.class, false);
         projectGrid.addColumn(ProjectPreview::getProjectTitle).setHeader("Title");
 
-        add(create, projectGrid);
+        add(create, projectSearchField, projectGrid);
     }
 }

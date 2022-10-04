@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -49,8 +48,15 @@ public class ProjectJpaRepository implements ProjectRepository {
   }
 
   @Override
-  public List<ProjectPreview> getAllPreviews(int offset, int limit) {
+  public List<ProjectPreview> query(int offset, int limit) {
     return projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).getContent();
+  }
+
+  @Override
+  public List<ProjectPreview> query(String filter, int offset, int limit) {
+    var result = projectPreviewRepo.findByProjectTitleContainingIgnoreCase(filter, new OffsetBasedRequest(offset, limit)).getContent();
+    return result;
+
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
