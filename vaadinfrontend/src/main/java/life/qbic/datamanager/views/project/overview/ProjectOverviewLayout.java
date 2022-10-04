@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
 import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
-import life.qbic.projectmanagement.domain.project.ProjectPreview;
+import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.security.PermitAll;

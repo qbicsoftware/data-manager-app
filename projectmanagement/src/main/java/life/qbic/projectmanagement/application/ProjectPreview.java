@@ -1,10 +1,13 @@
-package life.qbic.projectmanagement.domain.project;
+package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
 
 
 import javax.persistence.*;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**
  * A limited view of the more complex {@link Project}.

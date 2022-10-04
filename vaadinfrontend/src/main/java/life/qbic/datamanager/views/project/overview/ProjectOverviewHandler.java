@@ -7,6 +7,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
 import life.qbic.datamanager.views.Command;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
@@ -35,15 +36,21 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private final OfferLookupService offerLookupService;
   private final ProjectRepository projectRepository;
 
+  private final ProjectInformationService projectInformationService;
+
   private CreationMode creationMode = CreationMode.NONE;
 
   public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
-      @Autowired ProjectRepository projectRepository) {
+      @Autowired ProjectRepository projectRepository,
+      @Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
 
     Objects.requireNonNull(projectRepository);
     this.projectRepository = projectRepository;
+
+    Objects.requireNonNull(projectInformationService);
+    this.projectInformationService = projectInformationService;
   }
 
   @Override
@@ -70,7 +77,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private Command loadProjectPreview(String filter) {
     return () -> registeredProjectOverview.projectGrid.setItems(
-        query -> projectRepository.query(filter,
+        query -> projectInformationService.queryPreview(filter,
             query.getOffset(), query.getLimit()).stream());
   }
 
