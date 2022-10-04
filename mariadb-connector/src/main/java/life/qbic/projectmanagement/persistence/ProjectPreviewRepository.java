@@ -5,9 +5,7 @@ import life.qbic.projectmanagement.domain.project.ProjectPreview;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
+ * Simple project preview repository to query concise project information
  *
  * @since 1.0.0
  */

@@ -7,9 +7,7 @@ import javax.persistence.*;
 import java.util.Objects;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
+ * A limited view of the more complex {@link Project}.
  *
  * @since 1.0.0
  */
@@ -22,21 +20,22 @@ public class ProjectPreview {
 
   private String projectTitle;
 
-  protected ProjectPreview(){
+  protected ProjectPreview() {
 
   }
 
   /**
+   * Creates a new instance based on the project title
    *
-   * @param projectTitle
-   * @return
+   * @param projectTitle the desired project title
+   * @return a new instance of a project preview
    */
-  public static ProjectPreview from(ProjectTitle projectTitle){
+  public static ProjectPreview from(ProjectTitle projectTitle) {
     requireNonNull(projectTitle);
     return new ProjectPreview(projectTitle.title());
   }
 
-  private ProjectPreview(String title){
+  private ProjectPreview(String title) {
     this.projectTitle = title;
   }
 
@@ -50,8 +49,12 @@ public class ProjectPreview {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ProjectPreview that = (ProjectPreview) o;
     return projectTitle.equals(that.projectTitle);
   }
