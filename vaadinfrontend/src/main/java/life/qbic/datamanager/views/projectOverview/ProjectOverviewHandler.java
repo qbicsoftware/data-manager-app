@@ -7,8 +7,8 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.QueryParameters;
 import life.qbic.datamanager.views.Command;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,12 +32,16 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private static final String QUERY_PARAMETER_SEPARATOR = "=";
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
+  private final ProjectRepository projectRepository;
 
   private CreationMode creationMode = CreationMode.NONE;
 
-  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService) {
+  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService, @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
+
+    Objects.requireNonNull(projectRepository);
+    this.projectRepository = projectRepository;
   }
 
   @Override
@@ -46,7 +50,12 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
       this.registeredProjectOverview = layout;
       configureSearchDropbox();
       configureSelectionModeDialog();
+      setProjectsToGrid();
     }
+  }
+
+  private void setProjectsToGrid(){
+    registeredProjectOverview.projectGrid.setItems(query -> projectRepository.getAllPreviews(query.getOffset(), query.getLimit()).stream());
   }
 
   private void configureSelectionModeDialog() {

@@ -66,6 +66,10 @@ public class Project {
     return projectId;
   }
 
+  public ProjectIntent getProjectIntent() {
+    return projectIntent;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

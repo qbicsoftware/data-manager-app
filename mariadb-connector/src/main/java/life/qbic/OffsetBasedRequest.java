@@ -1,4 +1,4 @@
-package life.qbic.finance.persistence;
+package life.qbic;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
