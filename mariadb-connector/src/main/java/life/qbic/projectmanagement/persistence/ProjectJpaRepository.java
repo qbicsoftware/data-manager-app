@@ -50,11 +50,7 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   @Override
   public List<ProjectPreview> getAllPreviews(int offset, int limit) {
-    List<ProjectPreview> projects = new ArrayList<>();
-    //todo how to handle projects with null values for e.g proejct objective?
-    projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).forEach(projects::add);
-
-    return projects;
+    return projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).getContent();
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
