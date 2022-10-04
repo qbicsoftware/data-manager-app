@@ -60,7 +60,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private void setupSearchBar() {
     registeredProjectOverview.projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     registeredProjectOverview.projectSearchField
-        .addValueChangeListener(listener -> loadProjectPreview().execute());
+        .addValueChangeListener(event -> loadProjectPreview(event.getValue()).execute());
   }
 
   private Command loadProjectPreview() {
