@@ -1,9 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
-import java.util.List;
-import life.qbic.OffsetBasedRequest;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.ProjectPreview;
+import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;

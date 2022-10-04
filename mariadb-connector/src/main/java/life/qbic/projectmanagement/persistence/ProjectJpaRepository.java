@@ -1,15 +1,11 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.OffsetBasedRequest;
-import life.qbic.projectmanagement.domain.project.ProjectPreview;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 
 /**
@@ -33,13 +29,9 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   private final QbicProjectRepo projectRepo;
 
-  private final ProjectPreviewRepository projectPreviewRepo;
-
   @Autowired
-  public ProjectJpaRepository(QbicProjectRepo projectRepo,
-      ProjectPreviewRepository projectPreviewRepo) {
+  public ProjectJpaRepository(QbicProjectRepo projectRepo) {
     this.projectRepo = projectRepo;
-    this.projectPreviewRepo = projectPreviewRepo;
   }
 
   @Override
@@ -48,17 +40,6 @@ public class ProjectJpaRepository implements ProjectRepository {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);
-  }
-
-  @Override
-  public List<ProjectPreview> query(int offset, int limit) {
-    return projectPreviewRepo.findAll(new OffsetBasedRequest(offset, limit)).getContent();
-  }
-
-  @Override
-  public List<ProjectPreview> query(String filter, int offset, int limit) {
-    return projectPreviewRepo.findByProjectTitleContainingIgnoreCase(filter,
-        new OffsetBasedRequest(offset, limit)).getContent();
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
