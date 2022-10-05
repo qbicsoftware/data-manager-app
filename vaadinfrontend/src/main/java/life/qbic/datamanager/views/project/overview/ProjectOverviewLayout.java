@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.PageTitle;
@@ -23,7 +22,6 @@ import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
 import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
 import life.qbic.projectmanagement.application.ProjectPreview;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -46,8 +44,6 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
 
     final TextField projectSearchField = new TextField();
 
-    private final CardLayout cardLayout = new CardLayout();
-
     final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
 
     private final ClientDetailsProvider clientDetailsProvider;
@@ -56,21 +52,15 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
     public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
         @Autowired ClientDetailsProvider clientDetailsProvider) {
         this.clientDetailsProvider = clientDetailsProvider;
-        createLayoutContent();
+        layoutComponents();
         registerToHandler(handlerInterface);
-    }
-
-    @Override
-    protected CardLayout initContent() {
-        createLayoutContent();
-        return cardLayout;
     }
 
     private void registerToHandler(ProjectOverviewHandlerInterface handler) {
         handler.handle(this);
     }
 
-    private void createLayoutContent() {
+    private void layoutComponents() {
         create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         projectSearchField.setPlaceholder("Search");
@@ -81,7 +71,7 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
         projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
                 asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
             .setHeader("Last Modified");
-        cardLayout.addFields(create, projectSearchField, projectGrid);
+        getContent().addFields(create, projectSearchField, projectGrid);
     }
 
     private LocalDateTime asClientLocalDateTime(Instant instant) {
