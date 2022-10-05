@@ -9,7 +9,7 @@ import java.util.Optional;
  * Receives client details from vaadin and provides them internally.
  */
 @SpringComponent
-public class ClientDetailsProvideImpl implements ExtendedClientDetailsReceiver,
+public class ClientDetailsProviderImpl implements ExtendedClientDetailsReceiver,
     ClientDetailsProvider {
 
   private ExtendedClientDetails extendedClientDetails;
@@ -19,6 +19,7 @@ public class ClientDetailsProvideImpl implements ExtendedClientDetailsReceiver,
     this.extendedClientDetails = extendedClientDetails;
   }
 
+  @Override
   public Optional<ClientDetails> latestDetails() {
     return Optional.ofNullable(extendedClientDetails)
         .map(it -> new ClientDetails(it.getTimeZoneId()));
