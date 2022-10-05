@@ -10,6 +10,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import java.io.Serial;
+import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
@@ -17,8 +18,6 @@ import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog
 import life.qbic.projectmanagement.application.ProjectPreview;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.security.PermitAll;
 
 /**
  * <b>Projects Overview</b>
@@ -67,9 +66,10 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
         projectSearchField.setClearButtonVisible(true);
         projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
-        projectGrid.addColumn(ProjectPreview::getProjectTitle).setHeader("Title");
-
-        cardLayout.addTitle("Your projects");
-        cardLayout.addFields(create, projectSearchField, projectGrid);
+        projectGrid = new Grid<>(ProjectPreview.class, false);
+        projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
+        projectGrid.addColumn(ProjectPreview::lastModified).setAutoWidth(true)
+            .setHeader("Last Modified");
+        add(create, projectSearchField, projectGrid);
     }
 }
