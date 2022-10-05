@@ -47,7 +47,7 @@ public class CreationModeDialog extends Dialog {
 
     private void setupContent(){
         createCreationModeButtons();
-        Label blankLabel = new Label("From Offer");
+        Label blankLabel = new Label("Blank");
         blankLabel.addClassName("dialogue-button-label");
         VerticalLayout blankLayout = new VerticalLayout(blankButton, blankLabel);
         blankLayout.setAlignItems(FlexComponent.Alignment.CENTER);
