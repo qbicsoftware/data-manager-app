@@ -7,10 +7,17 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import java.io.Serial;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import javax.annotation.security.PermitAll;
+import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
@@ -33,18 +40,23 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
 
     @Serial
     private static final long serialVersionUID = 5435551053955979169L;
-    Button create = new Button("Create");
-    Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-    OfferSearchDialog searchDialog = new OfferSearchDialog();
+    final Button create = new Button("Create");
+    final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
+    final OfferSearchDialog searchDialog = new OfferSearchDialog();
 
-    TextField projectSearchField = new TextField();
+    final TextField projectSearchField = new TextField();
 
-    private CardLayout cardLayout = new CardLayout();
+    private final CardLayout cardLayout = new CardLayout();
 
-    CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
+    final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
+
+    private final ClientDetailsProvider clientDetailsProvider;
 
 
-    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface) {
+    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
+        @Autowired ClientDetailsProvider clientDetailsProvider) {
+        this.clientDetailsProvider = clientDetailsProvider;
+        createLayoutContent();
         registerToHandler(handlerInterface);
     }
 
@@ -66,8 +78,18 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
         projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
         projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
-        projectGrid.addColumn(ProjectPreview::lastModified).setAutoWidth(true)
+        projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
+                asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
             .setHeader("Last Modified");
         cardLayout.addFields(create, projectSearchField, projectGrid);
     }
+
+    private LocalDateTime asClientLocalDateTime(Instant instant) {
+        String clientTimeZone = clientDetailsProvider.latestDetails()
+            .map(ClientDetails::timeZoneId)
+            .orElse("UTC");
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(clientTimeZone));
+        return zonedDateTime.toLocalDateTime();
+    }
+
 }
