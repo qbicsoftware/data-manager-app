@@ -6,9 +6,16 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import javax.annotation.security.PermitAll;
+import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
 import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
@@ -35,8 +42,12 @@ public class ProjectOverviewLayout extends VerticalLayout {
 
     CreationModeDialog selectCreationModeDialog;
 
+    private final ClientDetailsProvider clientDetailsProvider;
 
-    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface) {
+
+    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
+        @Autowired ClientDetailsProvider clientDetailsProvider) {
+        this.clientDetailsProvider = clientDetailsProvider;
         createLayoutContent();
         registerToHandler(handlerInterface);
     }
@@ -59,8 +70,19 @@ public class ProjectOverviewLayout extends VerticalLayout {
 
         projectGrid = new Grid<>(ProjectPreview.class, false);
         projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
-        projectGrid.addColumn(ProjectPreview::lastModified).setAutoWidth(true)
+        projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
+                asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
             .setHeader("Last Modified");
         add(create, projectSearchField, projectGrid);
     }
+
+    private LocalDateTime asClientLocalDateTime(Instant instant) {
+        String clientTimeZone = clientDetailsProvider.latestDetails()
+            .map(ClientDetails::timeZoneId)
+            .orElse("UTC");
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(clientTimeZone));
+        return zonedDateTime.toLocalDateTime();
+    }
+
+
 }
