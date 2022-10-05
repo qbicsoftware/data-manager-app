@@ -61,15 +61,13 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
     private void createLayoutContent() {
         create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-
         projectSearchField.setPlaceholder("Search");
         projectSearchField.setClearButtonVisible(true);
         projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
-        projectGrid = new Grid<>(ProjectPreview.class, false);
         projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
         projectGrid.addColumn(ProjectPreview::lastModified).setAutoWidth(true)
             .setHeader("Last Modified");
-        add(create, projectSearchField, projectGrid);
+        cardLayout.addFields(create, projectSearchField, projectGrid);
     }
 }
