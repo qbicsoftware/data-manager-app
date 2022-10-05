@@ -8,13 +8,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
 import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.security.PermitAll;
 
 /**
  * <b>Projects Overview</b>
@@ -59,8 +58,9 @@ public class ProjectOverviewLayout extends VerticalLayout {
         projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
         projectGrid = new Grid<>(ProjectPreview.class, false);
-        projectGrid.addColumn(ProjectPreview::getProjectTitle).setHeader("Title");
-
+        projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
+        projectGrid.addColumn(ProjectPreview::lastModified).setAutoWidth(true)
+            .setHeader("Last Modified");
         add(create, projectSearchField, projectGrid);
     }
 }
