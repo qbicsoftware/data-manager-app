@@ -2,9 +2,11 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
 
-
-import javax.persistence.*;
-import java.util.Objects;
+import java.time.Instant;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
@@ -22,6 +24,9 @@ public class ProjectPreview {
   private ProjectId id;
 
   private String projectTitle;
+
+  @Column(name = "lastModified")
+  private Instant lastModified;
 
   protected ProjectPreview() {
 
@@ -42,12 +47,12 @@ public class ProjectPreview {
     this.projectTitle = title;
   }
 
-  public String getProjectTitle() {
+  public String projectTitle() {
     return projectTitle;
   }
 
-  private void setId(ProjectId projectId) {
-    this.id = projectId;
+  public Instant lastModified() {
+    return lastModified;
   }
 
   @Override
@@ -58,12 +63,23 @@ public class ProjectPreview {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+
     ProjectPreview that = (ProjectPreview) o;
-    return projectTitle.equals(that.projectTitle);
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+    if (!projectTitle().equals(that.projectTitle())) {
+      return false;
+    }
+    return lastModified().equals(that.lastModified());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(projectTitle);
+    int result = id.hashCode();
+    result = 31 * result + projectTitle.hashCode();
+    result = 31 * result + lastModified().hashCode();
+    return result;
   }
 }
