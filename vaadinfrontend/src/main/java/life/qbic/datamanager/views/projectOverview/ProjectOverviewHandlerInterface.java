@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.overview;
+package life.qbic.datamanager.views.projectOverview;
 
 /**
  * <b> Interface to handle the {@link ProjectOverviewLayout} to the {@link ProjectOverviewHandler}. </b>

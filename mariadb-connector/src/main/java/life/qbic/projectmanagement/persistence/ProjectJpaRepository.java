@@ -13,12 +13,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>Implementation for the {@link ProjectRepository} interface.
  *
- * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
- * with
+ * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact with
  * persistent {@link Project} data in the storage layer.
  *
- * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as
- * dependency
+ * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as dependency
  * upon creation.
  *
  * @since 1.0.0
@@ -36,7 +34,7 @@ public class ProjectJpaRepository implements ProjectRepository {
 
   @Override
   public void add(Project project) {
-    if (doesProjectExistWithId(project.getId())) {
+    if(doesProjectExistWithId(project.getId())) {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);

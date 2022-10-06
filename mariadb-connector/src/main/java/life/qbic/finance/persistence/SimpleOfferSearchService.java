@@ -2,13 +2,13 @@ package life.qbic.finance.persistence;
 
 import java.util.List;
 import java.util.Optional;
-
-import life.qbic.OffsetBasedRequest;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 /**

@@ -8,7 +8,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 /**
  * <b>Main layout of the app</b>
  *
- * <p>Defines the look of the header and the project title
+ * <p>Defines the look of the header and the getProjectTitle
  *
  * @since 1.0.0
  */

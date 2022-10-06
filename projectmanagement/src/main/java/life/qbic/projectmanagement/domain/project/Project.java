@@ -1,13 +1,11 @@
 package life.qbic.projectmanagement.domain.project;
 
-import static java.util.Objects.requireNonNull;
-
-import java.time.Instant;
-import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A project planned and run at QBiC.
@@ -24,14 +22,11 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
-  @Column(name = "lastModified", nullable = false)
-  private Instant lastModified;
-
   private Project(ProjectId projectId, ProjectIntent projectIntent) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
-    setProjectId(projectId);
-    setProjectIntent(projectIntent);
+    this.projectId = projectId;
+    this.projectIntent = projectIntent;
   }
 
   protected Project() {
@@ -40,12 +35,10 @@ public class Project {
 
   protected void setProjectId(ProjectId projectId) {
     this.projectId = projectId;
-    this.lastModified = Instant.now();
   }
 
   protected void setProjectIntent(ProjectIntent projectIntent) {
     this.projectIntent = projectIntent;
-    this.lastModified = Instant.now();
   }
 
   /**
@@ -71,10 +64,6 @@ public class Project {
 
   public ProjectId getId() {
     return projectId;
-  }
-
-  public ProjectIntent getProjectIntent() {
-    return projectIntent;
   }
 
   @Override
