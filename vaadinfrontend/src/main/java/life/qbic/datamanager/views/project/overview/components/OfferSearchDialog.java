@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projectOverview.components;
+package life.qbic.datamanager.views.project.overview.components;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
