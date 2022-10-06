@@ -6,6 +6,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -46,6 +47,17 @@ public class PropertyFileParser {
 
     var properties = new Properties();
     properties.load(new FileInputStream(file));
+
+    properties = resolvePlaceholders(properties);
+
+    return properties;
+  }
+
+  public static Properties parse(InputStream inputStream) throws IOException {
+    requireNonNull(inputStream, "Input stream must not be null");
+
+    var properties = new Properties();
+    properties.load(inputStream);
 
     properties = resolvePlaceholders(properties);
 
