@@ -1,14 +1,16 @@
-package life.qbic.datamanager.views.projectOverview;
+package life.qbic.datamanager.views.project.overview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
 import life.qbic.datamanager.views.Command;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,12 +34,23 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private static final String QUERY_PARAMETER_SEPARATOR = "=";
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
+  private final ProjectRepository projectRepository;
+
+  private final ProjectInformationService projectInformationService;
 
   private CreationMode creationMode = CreationMode.NONE;
 
-  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService) {
+  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
+      @Autowired ProjectRepository projectRepository,
+      @Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
+
+    Objects.requireNonNull(projectRepository);
+    this.projectRepository = projectRepository;
+
+    Objects.requireNonNull(projectInformationService);
+    this.projectInformationService = projectInformationService;
   }
 
   @Override
@@ -46,7 +59,30 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
       this.registeredProjectOverview = layout;
       configureSearchDropbox();
       configureSelectionModeDialog();
+      setProjectsToGrid();
+      setupSearchBar();
     }
+  }
+
+  private void setupSearchBar() {
+    registeredProjectOverview.projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
+    registeredProjectOverview.projectSearchField
+        .addValueChangeListener(event -> loadProjectPreview(event.getValue()).execute());
+  }
+
+  private Command loadProjectPreview() {
+    var searchTerm = registeredProjectOverview.projectSearchField.getValue().trim();
+    return loadProjectPreview(searchTerm);
+  }
+
+  private Command loadProjectPreview(String filter) {
+    return () -> registeredProjectOverview.projectGrid.setItems(
+        query -> projectInformationService.queryPreview(filter,
+            query.getOffset(), query.getLimit()).stream());
+  }
+
+  private void setProjectsToGrid() {
+    loadProjectPreview().execute();
   }
 
   private void configureSelectionModeDialog() {
