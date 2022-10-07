@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
@@ -34,6 +35,8 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
 
   final TextArea experimentalDesignField = new TextArea();
   final TextArea projectObjective = new TextArea();
+
+  final Label loadedOfferIdentifier = new Label();
   private final CardLayout cardLayout = new CardLayout();
   final CreateProjectHandlerInterface handler;
 
@@ -61,7 +64,7 @@ public class CreateProjectLayout extends Composite<CardLayout> implements HasUrl
 
   private void initCardLayout() {
     cardLayout.addButtons(cancelButton, saveButton);
-    cardLayout.addFields(formLayout);
+    cardLayout.addFields(formLayout, loadedOfferIdentifier);
     cardLayout.addTitle("Create Project");
   }
 

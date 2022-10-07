@@ -58,6 +58,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
       addSaveClickListener();
       restrictInputLength();
     }
+    createProjectLayout.loadedOfferIdentifier.setVisible(false);
   }
 
   private void restrictInputLength() {
@@ -116,6 +117,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     createProjectLayout.projectObjective.setValue(offer.projectObjective().objective());
     offer.experimentalDesignDescription()
         .ifPresent(it -> createProjectLayout.experimentalDesignField.setValue(it.description()));
+    createProjectLayout.loadedOfferIdentifier.setText(offer.offerId().id());
+    createProjectLayout.loadedOfferIdentifier.setVisible(true);
   }
 
   private void addSaveClickListener() {
@@ -126,8 +129,9 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     String titleFieldValue = createProjectLayout.titleField.getValue();
     String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
     String experimentalDesignDescription = createProjectLayout.experimentalDesignField.getValue();
+    String loadedOfferId = createProjectLayout.loadedOfferIdentifier.getText();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        titleFieldValue, objectiveFieldValue, experimentalDesignDescription);
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
     project.ifSuccessOrElse(
         result -> displaySuccessfulProjectCreationNotification(),
         applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
