@@ -28,14 +28,12 @@ public class CreateProjectLayout extends Composite<HorizontalLayout> implements
   final CreateProjectHandlerInterface handler;
 
   public CreateProjectLayout(@Autowired ProjectInformationLayout projectInformationLayout,
-      @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired CreateProjectHandlerInterface handler) {
     Objects.requireNonNull(handler);
     Objects.requireNonNull(projectInformationLayout);
-    Objects.requireNonNull(projectLinksComponent);
 
     this.projectInformationLayout = projectInformationLayout;
-    this.projectLinksComponent = projectLinksComponent;
+    this.projectLinksComponent = new ProjectLinksComponent();
     getContent().add(projectInformationLayout, projectLinksComponent);
     this.handler = handler;
     this.handler.handle(this);
