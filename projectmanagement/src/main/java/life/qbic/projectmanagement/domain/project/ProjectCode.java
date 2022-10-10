@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -14,7 +15,7 @@ import java.util.function.Supplier;
  */
 public class ProjectCode {
 
-  static final String[] BLACKLIST = new String[]{"FUCK", "SHIT"};
+  public static final String[] BLACKLIST = new String[]{"FUCK", "SHIT"};
 
   private final String value;
 
@@ -63,7 +64,7 @@ public class ProjectCode {
   }
 
   private static boolean isValid(String code) {
-    return code.startsWith(PREFIX) && code.length() == (LENGTH + PREFIX.length());
+    return code.startsWith(PREFIX) && (code.length() == LENGTH);
   }
 
   private static boolean isInvalid(String code) {
@@ -80,6 +81,23 @@ public class ProjectCode {
 
   public String value() {
     return this.value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ProjectCode that = (ProjectCode) o;
+    return Objects.equals(value, that.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(value);
   }
 
   private static class RandomCodeGenerator {
