@@ -62,7 +62,7 @@ public class ProjectCreationService {
     }
   }
 
-  private ProjectCode createRandomCode() {
+  private ProjectCode randomAvailableCode() {
     ProjectCode code = ProjectCode.random();
     while (!projectRepository.find(code).isEmpty()) {
       log.warn(String.format("Random generated code exists: %s", code.value()));
@@ -74,7 +74,7 @@ public class ProjectCreationService {
 
   private Project createProjectWithoutExperimentalDesign(String title, String objective) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    return Project.create(intent, createRandomCode());
+    return Project.create(intent, randomAvailableCode());
   }
 
   private Project createProjectWithExperimentalDesign(String title,
@@ -91,7 +91,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode());
+    return Project.create(intent, randomAvailableCode());
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

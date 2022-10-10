@@ -86,7 +86,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     String titleFieldValue = createProjectLayout.projectInformationLayout.titleField.getValue();
     String objectiveFieldValue = createProjectLayout.projectInformationLayout.projectObjective.getValue();
     String experimentalDesignDescription = createProjectLayout.projectInformationLayout.experimentalDesignField.getValue();
-    String loadedOfferId = createProjectLayout.projectInformationLayout.loadedOfferIdentifier.getText();
+    String loadedOfferId = createProjectLayout.projectLinksComponent.linkedOffers().stream()
+        .findFirst().orElse(null);
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
     project.ifSuccessOrElse(

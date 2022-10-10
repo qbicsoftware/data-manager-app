@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.util.List;
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 
@@ -20,6 +21,10 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   public void addLink(Offer offer) {
     offerLinks.addLink(offer);
+  }
+
+  public List<String> linkedOffers() {
+    return offerLinks.getItems().stream().map(it -> it.offerId().id()).toList();
   }
 
 

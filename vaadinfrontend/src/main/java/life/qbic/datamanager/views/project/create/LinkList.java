@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -49,7 +48,6 @@ public class LinkList<T, C extends Component & LinkElement> extends Composite<Di
   }
 
   private void removeElement(T element) {
-    UI.getCurrent().getPage().reload();
     if (!elements.containsKey(element)) {
       return;
     }
