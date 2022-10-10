@@ -23,20 +23,20 @@ public class CreateProjectLayout extends Composite<HorizontalLayout> implements
     HasUrlParameter<String> {
 
   final ProjectInformationLayout projectInformationLayout;
-  final ProjectLinksLayout projectLinksLayout;
+  final ProjectLinksComponent projectLinksComponent;
 
   final CreateProjectHandlerInterface handler;
 
   public CreateProjectLayout(@Autowired ProjectInformationLayout projectInformationLayout,
-      @Autowired ProjectLinksLayout projectLinksLayout,
+      @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired CreateProjectHandlerInterface handler) {
     Objects.requireNonNull(handler);
     Objects.requireNonNull(projectInformationLayout);
-    Objects.requireNonNull(projectLinksLayout);
+    Objects.requireNonNull(projectLinksComponent);
 
     this.projectInformationLayout = projectInformationLayout;
-    this.projectLinksLayout = projectLinksLayout;
-    getContent().add(projectInformationLayout, projectLinksLayout);
+    this.projectLinksComponent = projectLinksComponent;
+    getContent().add(projectInformationLayout, projectLinksComponent);
     this.handler = handler;
     this.handler.handle(this);
   }

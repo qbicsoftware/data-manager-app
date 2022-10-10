@@ -75,6 +75,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private void loadOfferContent(Offer offer) {
     projectInformationHandler.loadOfferContent(offer);
+    createProjectLayout.projectLinksComponent.addLink(offer);
   }
 
   private void addSaveClickListener() {
