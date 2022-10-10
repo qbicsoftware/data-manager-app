@@ -47,6 +47,17 @@ class ProjectCodeSpec extends Specification {
         wrongLength << ["ABC", "12345"]
     }
 
+    def "Parsing a project code with a invalid character throws an IllegalArgumentException"() {
+        when:
+        ProjectCode.parse("Q" + wrongLength)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        wrongLength << ["ABCÖ", "YABC", "~TES"]
+    }
+
 
 
 }

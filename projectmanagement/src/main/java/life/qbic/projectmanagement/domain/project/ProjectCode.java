@@ -7,9 +7,9 @@ import java.util.function.Supplier;
 
 /**
  * QBiC Project Code
- *
- * Represents a project code, that is usually communicated with customers and internally
- * to reference a project.
+ * <p>
+ * Represents a project code, that is usually communicated with customers and internally to
+ * reference a project.
  *
  * @since 1.0.0
  */
@@ -23,6 +23,10 @@ public class ProjectCode {
 
   private static final String PREFIX = "Q";
 
+  public static final char[] ALLOWED_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX".toCharArray();
+
+  public static final char[] ALLOWED_NUMBERS = "0123456789".toCharArray();
+
   /**
    * Creates a random project code containing of letters from the English alphabet and natural
    * numbers.
@@ -33,7 +37,7 @@ public class ProjectCode {
    * @since 1.0.0
    */
   public static ProjectCode random() {
-    var randomCodeGenerator = new RandomCodeGenerator();
+    var randomCodeGenerator = new RandomCodeGenerator(ALLOWED_LETTERS, ALLOWED_NUMBERS);
     String code = randomCodeGenerator.next(LENGTH - 1);
     while (isBlackListed(code)) {
       code = randomCodeGenerator.next(LENGTH - 1);
@@ -56,6 +60,9 @@ public class ProjectCode {
     if (isInvalid(str)) {
       throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
     }
+    if (containsInvalidCharacters(str)) {
+      throw new IllegalArgumentException(String.format("%s contains invalid characters", str));
+    }
     if (isBlackListed(str.substring(1))) {
       throw new IllegalArgumentException(
           String.format("%s contains a blacklisted expression", str));
@@ -65,6 +72,55 @@ public class ProjectCode {
 
   private static boolean isValid(String code) {
     return code.startsWith(PREFIX) && (code.length() == LENGTH);
+  }
+
+  private static boolean containsInvalidCharacters(String code) {
+    return !containsValidCharacters(code);
+  }
+
+  private static boolean containsValidCharacters(String code) {
+    char[] codeArray = code.toCharArray();
+    for (int character = 0; character < code.length(); character++) {
+      char currentCharacter = codeArray[character];
+      if (isInvalidCharacter(currentCharacter)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isInvalidCharacter(char c) {
+    if (isInvalidLetter(c)) {
+      return isInvalidNumber(c);
+    }
+    return false;
+
+  }
+
+  private static boolean isInvalidNumber(char c) {
+    return !isValidNumber(c);
+  }
+
+  private static boolean isValidNumber(char c) {
+    for (char allowedNumber : ALLOWED_NUMBERS) {
+      if (c == allowedNumber) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isInvalidLetter(char c) {
+    return !isValidLetter(c);
+  }
+
+  private static boolean isValidLetter(char c) {
+    for (char allowedLetter : ALLOWED_LETTERS) {
+      if (c == allowedLetter) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static boolean isInvalid(String code) {
@@ -102,9 +158,14 @@ public class ProjectCode {
 
   private static class RandomCodeGenerator {
 
-    static final char[] LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    final char[] letters;
 
-    static final char[] NUMBERS = "0123456789".toCharArray();
+    final char[] numbers;
+
+    public RandomCodeGenerator(char[] letterAlphabet, char[] numberAlphabet) {
+      this.letters = letterAlphabet;
+      this.numbers = numberAlphabet;
+    }
 
     public String next(int length) {
       Coin coin = new Coin();
@@ -120,11 +181,11 @@ public class ProjectCode {
     }
 
     private char randomLetter() {
-      return LETTERS[new Random().nextInt(LETTERS.length)];
+      return letters[new Random().nextInt(letters.length)];
     }
 
     private char randomNumber() {
-      return NUMBERS[new Random().nextInt(NUMBERS.length)];
+      return numbers[new Random().nextInt(numbers.length)];
     }
 
   }
