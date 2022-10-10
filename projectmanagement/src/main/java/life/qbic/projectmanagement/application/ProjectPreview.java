@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Converter;
@@ -73,23 +74,24 @@ public class ProjectPreview {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-
     ProjectPreview that = (ProjectPreview) o;
-
-    if (!id.equals(that.id)) {
-      return false;
-    }
-    if (!projectTitle().equals(that.projectTitle())) {
-      return false;
-    }
-    return lastModified().equals(that.lastModified());
+    return Objects.equals(id, that.id) && Objects.equals(projectTitle,
+        that.projectTitle) && Objects.equals(projectCode, that.projectCode)
+        && Objects.equals(lastModified, that.lastModified);
   }
 
   @Override
   public int hashCode() {
-    int result = id.hashCode();
-    result = 31 * result + projectTitle.hashCode();
-    result = 31 * result + lastModified().hashCode();
-    return result;
+    return Objects.hash(id, projectTitle, projectCode, lastModified);
+  }
+
+  @Override
+  public String toString() {
+    return "ProjectPreview{" +
+        "id=" + id +
+        ", projectTitle='" + projectTitle + '\'' +
+        ", projectCode='" + projectCode + '\'' +
+        ", lastModified=" + lastModified +
+        '}';
   }
 }
