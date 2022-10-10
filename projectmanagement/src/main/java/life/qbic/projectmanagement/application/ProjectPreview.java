@@ -4,10 +4,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
 import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Converter;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
@@ -24,6 +27,9 @@ public class ProjectPreview {
   private ProjectId id;
 
   private String projectTitle;
+
+  @Column(name = "projectCode")
+  private String projectCode;
 
   @Column(name = "lastModified")
   private Instant lastModified;
@@ -53,6 +59,10 @@ public class ProjectPreview {
 
   public Instant lastModified() {
     return lastModified;
+  }
+
+  public String projectCode() {
+    return projectCode;
   }
 
   @Override

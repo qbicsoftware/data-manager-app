@@ -32,8 +32,8 @@ public class ProjectPreviewJpaRepository implements ProjectPreviewLookup {
 
   @Override
   public List<ProjectPreview> query(String filter, int offset, int limit) {
-    return projectPreviewRepository.findByProjectTitleContainingIgnoreCase(filter,
-        new OffsetBasedRequest(offset, limit)).getContent();
+    return projectPreviewRepository.findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
+        filter, filter, new OffsetBasedRequest(offset, limit)).getContent();
   }
 
 }

@@ -217,7 +217,7 @@ public class ProjectCode {
     }
   }
 
-  protected static class Converter implements AttributeConverter<ProjectCode, String> {
+  public static class Converter implements AttributeConverter<ProjectCode, String> {
 
     @Override
     public String convertToDatabaseColumn(ProjectCode projectCode) {
