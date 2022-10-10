@@ -29,7 +29,6 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private static final String OFFER_ID_QUERY_PARAM = "offerId";
 
   private final ProjectInformationHandler projectInformationHandler;
-  private final ProjectLinksHandler projectLinksHandler;
   private final ApplicationExceptionHandler exceptionHandler;
 
 
@@ -41,12 +40,10 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   public CreateProjectHandler(@Autowired ApplicationExceptionHandler exceptionHandler,
       @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ProjectInformationHandler projectInformationHandler,
-      @Autowired ProjectLinksHandler projectLinksHandler) {
+      @Autowired ProjectInformationHandler projectInformationHandler) {
     this.offerLookupService = offerLookupService;
     this.projectCreationService = projectCreationService;
     this.projectInformationHandler = projectInformationHandler;
-    this.projectLinksHandler = projectLinksHandler;
     this.exceptionHandler = exceptionHandler;
   }
 
@@ -78,7 +75,6 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private void loadOfferContent(Offer offer) {
     projectInformationHandler.loadOfferContent(offer);
-    projectLinksHandler.addLink(offer);
   }
 
   private void addSaveClickListener() {
