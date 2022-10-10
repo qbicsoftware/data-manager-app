@@ -5,11 +5,12 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * QBiC Project Code
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * Represents a project code, that is usually communicated with customers and internally
+ * to reference a project.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectCode {
 
@@ -17,21 +18,60 @@ public class ProjectCode {
 
   private final String value;
 
-  private static final int LENGTH = 4;
+  private static final int LENGTH = 5;
 
   private static final String PREFIX = "Q";
 
+  /**
+   * Creates a random project code containing of letters from the English alphabet and natural
+   * numbers.
+   * <p>
+   * A project code always starts with the prefix 'Q' and has a total length of 5.
+   *
+   * @return a random project code
+   * @since 1.0.0
+   */
   public static ProjectCode random() {
     var randomCodeGenerator = new RandomCodeGenerator();
-    String code = randomCodeGenerator.next(LENGTH);
+    String code = randomCodeGenerator.next(LENGTH - 1);
     while (isBlackListed(code)) {
-      code = randomCodeGenerator.next(LENGTH);
+      code = randomCodeGenerator.next(LENGTH - 1);
     }
     return new ProjectCode(PREFIX + code);
   }
 
+
+  /**
+   * Parses a putative project code in String representation into its object representation.
+   *
+   * @param str the putative project code
+   * @return the code in its object representation
+   * @throws IllegalArgumentException if the argument is not a valid project code, for example when
+   *                                  it does not have the correct length (5), does not start with
+   *                                  the prefix 'Q' or contains a blacklisted expression
+   * @since 1.0.0
+   */
+  public static ProjectCode parse(String str) throws IllegalArgumentException {
+    if (isInvalid(str)) {
+      throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
+    }
+    if (isBlackListed(str.substring(1))) {
+      throw new IllegalArgumentException(
+          String.format("%s contains a blacklisted expression", str));
+    }
+    return new ProjectCode(str);
+  }
+
+  private static boolean isValid(String code) {
+    return code.startsWith(PREFIX) && code.length() == (LENGTH + PREFIX.length());
+  }
+
+  private static boolean isInvalid(String code) {
+    return !isValid(code);
+  }
+
   private static boolean isBlackListed(String word) {
-    return Arrays.stream(BLACKLIST).anyMatch(word::equals);
+    return Arrays.asList(BLACKLIST).contains(word);
   }
 
   private ProjectCode(String value) {
@@ -42,8 +82,7 @@ public class ProjectCode {
     return this.value;
   }
 
-  static class RandomCodeGenerator {
-
+  private static class RandomCodeGenerator {
 
     static final char[] LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
@@ -78,7 +117,7 @@ public class ProjectCode {
       HEAD, TAILS
     }
 
-    public SIDE flip() {
+    SIDE flip() {
       double randomValue = new Random().nextDouble(1);
       if (randomValue < 0.5) {
         return SIDE.HEAD;
@@ -87,7 +126,7 @@ public class ProjectCode {
       }
     }
 
-    public Supplier<Character> flip(Supplier<Character> supplierIfHead,
+    Supplier<Character> flip(Supplier<Character> supplierIfHead,
         Supplier<Character> supplierIfTails) {
       var side = flip();
       if (side.equals(SIDE.HEAD)) {
