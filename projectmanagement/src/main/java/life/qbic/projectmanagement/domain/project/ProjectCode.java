@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Supplier;
+import javax.persistence.AttributeConverter;
 
 /**
  * QBiC Project Code
@@ -213,6 +214,19 @@ public class ProjectCode {
       } else {
         return supplierIfTails;
       }
+    }
+  }
+
+  protected static class Converter implements AttributeConverter<ProjectCode, String> {
+
+    @Override
+    public String convertToDatabaseColumn(ProjectCode projectCode) {
+      return projectCode.value();
+    }
+
+    @Override
+    public ProjectCode convertToEntityAttribute(String s) {
+      return ProjectCode.parse(s);
     }
   }
 }

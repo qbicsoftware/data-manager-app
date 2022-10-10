@@ -10,6 +10,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
@@ -57,7 +58,7 @@ public class ProjectCreationService {
 
   private Project createProjectWithoutExperimentalDesign(String title, String objective) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    Project project = Project.create(intent);
+    Project project = Project.create(intent, ProjectCode.random());
     projectRepository.add(project);
     return project;
   }
@@ -76,7 +77,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    Project project = Project.create(intent);
+    Project project = Project.create(intent, ProjectCode.random());
     projectRepository.add(project);
     return project;
   }

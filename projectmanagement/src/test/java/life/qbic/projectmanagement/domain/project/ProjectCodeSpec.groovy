@@ -49,7 +49,7 @@ class ProjectCodeSpec extends Specification {
 
     def "Parsing a project code with a invalid character throws an IllegalArgumentException"() {
         when:
-        ProjectCode.parse("Q" + wrongLength)
+        ProjectCode.parse("Q" + invalidChar)
 
         then:
         thrown(IllegalArgumentException)
