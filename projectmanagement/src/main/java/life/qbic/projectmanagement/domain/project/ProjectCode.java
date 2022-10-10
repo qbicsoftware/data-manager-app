@@ -157,6 +157,13 @@ public class ProjectCode {
     return Objects.hash(value);
   }
 
+  @Override
+  public String toString() {
+    return "ProjectCode{" +
+        "value='" + value + '\'' +
+        '}';
+  }
+
   private static class RandomCodeGenerator {
 
     final char[] letters;

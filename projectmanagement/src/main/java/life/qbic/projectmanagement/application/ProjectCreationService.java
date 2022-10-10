@@ -43,9 +43,10 @@ public class ProjectCreationService {
     try {
       Project project;
       if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
-        project = createProjectWithoutExperimentalDesign(title, objective);
+        project = createProjectWithoutExperimentalDesign(title, objective, createRandomCode());
       } else {
-        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign);
+        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign,
+            createRandomCode());
       }
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
@@ -56,16 +57,28 @@ public class ProjectCreationService {
     }
   }
 
-  private Project createProjectWithoutExperimentalDesign(String title, String objective) {
+  private ProjectCode createRandomCode() {
+    ProjectCode code = ProjectCode.random();
+    while (!projectRepository.find(code).isEmpty()) {
+      log.warn(String.format("Random generated code exists: %s", code.value()));
+      code = ProjectCode.random();
+    }
+    log.info(String.format("Created new random project code '%s'", code.value()));
+    return code;
+  }
+
+  private Project createProjectWithoutExperimentalDesign(String title, String objective,
+      ProjectCode projectCode) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    Project project = Project.create(intent, ProjectCode.random());
+    Project project = Project.create(intent, projectCode);
     projectRepository.add(project);
     return project;
   }
 
   private Project createProjectWithExperimentalDesign(String title,
       String objective,
-      String experimentalDesign) {
+      String experimentalDesign,
+      ProjectCode projectCode) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -77,7 +90,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    Project project = Project.create(intent, ProjectCode.random());
+    Project project = Project.create(intent, projectCode);
     projectRepository.add(project);
     return project;
   }
