@@ -6,9 +6,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CollectionTable;
+import java.util.ArrayList;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
+import javax.persistence.Convert;
+import javax.persistence.Converter;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
@@ -32,6 +35,10 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
+  @Convert(converter = ProjectCode.Converter.class)
+  @Column(name = "projectCode", nullable = false)
+  private ProjectCode projectCode;
+
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
 
@@ -41,12 +48,18 @@ public class Project {
   @Column(name = "offerIdentifier")
   private List<OfferIdentifier> linkedOffers;
 
-  private Project(ProjectId projectId, ProjectIntent projectIntent) {
+  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
+    requireNonNull(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
+    setProjectCode(projectCode);
     linkedOffers = new ArrayList<>();
+  }
+
+  private void setProjectCode(ProjectCode projectCode) {
+    this.projectCode = projectCode;
   }
 
   protected Project() {
@@ -77,8 +90,8 @@ public class Project {
    * @param projectIntent the intent of the project
    * @return a new project instance
    */
-  public static Project create(ProjectIntent projectIntent) {
-    return new Project(ProjectId.create(), projectIntent);
+  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode) {
+    return new Project(ProjectId.create(), projectIntent, projectCode);
   }
 
   /**
@@ -88,8 +101,9 @@ public class Project {
    * @param projectIntent the project intent
    * @return a project with the given identity and project intent
    */
-  public static Project of(ProjectId projectId, ProjectIntent projectIntent) {
-    return new Project(projectId, projectIntent);
+  public static Project of(ProjectId projectId, ProjectIntent projectIntent,
+      ProjectCode projectCode) {
+    return new Project(projectId, projectIntent, projectCode);
   }
 
   public ProjectId getId() {

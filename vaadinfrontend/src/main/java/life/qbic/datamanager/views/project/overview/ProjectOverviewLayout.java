@@ -36,50 +36,53 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class ProjectOverviewLayout extends Composite<CardLayout> {
 
-    @Serial
-    private static final long serialVersionUID = 5435551053955979169L;
-    final Button create = new Button("Create");
-    final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-    final OfferSearchDialog searchDialog = new OfferSearchDialog();
+  @Serial
+  private static final long serialVersionUID = 5435551053955979169L;
+  final Button create = new Button("Create");
+  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
+  final OfferSearchDialog searchDialog = new OfferSearchDialog();
 
-    final TextField projectSearchField = new TextField();
+  final TextField projectSearchField = new TextField();
 
-    final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
+  final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
 
-    private final ClientDetailsProvider clientDetailsProvider;
+  private final ClientDetailsProvider clientDetailsProvider;
 
 
-    public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
-        @Autowired ClientDetailsProvider clientDetailsProvider) {
-        this.clientDetailsProvider = clientDetailsProvider;
-        layoutComponents();
-        registerToHandler(handlerInterface);
-    }
+  public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
+      @Autowired ClientDetailsProvider clientDetailsProvider) {
+    this.clientDetailsProvider = clientDetailsProvider;
+    layoutComponents();
+    registerToHandler(handlerInterface);
+  }
 
-    private void registerToHandler(ProjectOverviewHandlerInterface handler) {
-        handler.handle(this);
-    }
+  private void registerToHandler(ProjectOverviewHandlerInterface handler) {
+    handler.handle(this);
+  }
 
-    private void layoutComponents() {
-        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  private void layoutComponents() {
+    create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        projectSearchField.setPlaceholder("Search");
-        projectSearchField.setClearButtonVisible(true);
-        projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+    projectSearchField.setPlaceholder("Search");
+    projectSearchField.setClearButtonVisible(true);
+    projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
-        projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
-        projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
-                asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
-            .setHeader("Last Modified");
-        getContent().addFields(create, projectSearchField, projectGrid);
-    }
+    projectGrid.addColumn(ProjectPreview::projectCode).setHeader("Code").setWidth("7em")
+        .setFlexGrow(0);
+    projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
+    projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
+            asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
+        .setHeader("Last Modified");
+    getContent().addFields(create, projectSearchField, projectGrid);
 
-    private LocalDateTime asClientLocalDateTime(Instant instant) {
-        String clientTimeZone = clientDetailsProvider.latestDetails()
-            .map(ClientDetails::timeZoneId)
-            .orElse("UTC");
-        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(clientTimeZone));
-        return zonedDateTime.toLocalDateTime();
-    }
+  }
+
+  private LocalDateTime asClientLocalDateTime(Instant instant) {
+    String clientTimeZone = clientDetailsProvider.latestDetails()
+        .map(ClientDetails::timeZoneId)
+        .orElse("UTC");
+    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(clientTimeZone));
+    return zonedDateTime.toLocalDateTime();
+  }
 
 }

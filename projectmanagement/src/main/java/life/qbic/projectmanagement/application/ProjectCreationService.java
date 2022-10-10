@@ -12,6 +12,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
@@ -61,9 +62,19 @@ public class ProjectCreationService {
     }
   }
 
+  private ProjectCode createRandomCode() {
+    ProjectCode code = ProjectCode.random();
+    while (!projectRepository.find(code).isEmpty()) {
+      log.warn(String.format("Random generated code exists: %s", code.value()));
+      code = ProjectCode.random();
+    }
+    log.info(String.format("Created new random project code '%s'", code.value()));
+    return code;
+  }
+
   private Project createProjectWithoutExperimentalDesign(String title, String objective) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    return Project.create(intent);
+    return Project.create(intent, createRandomCode());
   }
 
   private Project createProjectWithExperimentalDesign(String title,
@@ -80,7 +91,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent);
+    return Project.create(intent, createRandomCode());
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

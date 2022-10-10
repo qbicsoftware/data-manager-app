@@ -11,7 +11,9 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  *
  * @since 1.0.0
  */
-public interface ProjectPreviewRepository extends PagingAndSortingRepository<ProjectPreview, ProjectId> {
+public interface ProjectPreviewRepository extends
+    PagingAndSortingRepository<ProjectPreview, ProjectId> {
 
-  Page<ProjectPreview> findByProjectTitleContainingIgnoreCase(String projectTitle, Pageable pageable);
+  Page<ProjectPreview> findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
+      String projectTitle, String projectCode, Pageable pageable);
 }
