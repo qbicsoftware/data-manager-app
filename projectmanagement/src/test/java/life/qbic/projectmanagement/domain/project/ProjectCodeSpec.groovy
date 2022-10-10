@@ -55,7 +55,7 @@ class ProjectCodeSpec extends Specification {
         thrown(IllegalArgumentException)
 
         where:
-        wrongLength << ["ABCÖ", "YABC", "~TES"]
+        invalidChar << ["ABCÖ", "YABC", "~TES"]
     }
 
 
