@@ -1,10 +1,6 @@
 package life.qbic.datamanager.views.project.create;
 
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +16,7 @@ import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +28,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
 
   private static final String OFFER_ID_QUERY_PARAM = "offerId";
 
+  private final ProjectInformationHandler projectInformationHandler;
+  private final ProjectLinksHandler projectLinksHandler;
   private final ApplicationExceptionHandler exceptionHandler;
 
 
@@ -43,11 +38,15 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   private final ProjectCreationService projectCreationService;
   private final OfferLookupService offerLookupService;
 
-  public CreateProjectHandler(@Autowired OfferLookupService offerLookupService,
+  public CreateProjectHandler(@Autowired ApplicationExceptionHandler exceptionHandler,
+      @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ProjectInformationHandler projectInformationHandler,
+      @Autowired ProjectLinksHandler projectLinksHandler) {
     this.offerLookupService = offerLookupService;
     this.projectCreationService = projectCreationService;
+    this.projectInformationHandler = projectInformationHandler;
+    this.projectLinksHandler = projectLinksHandler;
     this.exceptionHandler = exceptionHandler;
   }
 
@@ -56,41 +55,7 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     if (this.createProjectLayout != createProjectLayout) {
       this.createProjectLayout = createProjectLayout;
       addSaveClickListener();
-      restrictInputLength();
     }
-    createProjectLayout.loadedOfferIdentifier.setVisible(false);
-  }
-
-  private void restrictInputLength() {
-    createProjectLayout.titleField.setMaxLength((int) ProjectTitle.maxLength());
-    createProjectLayout.projectObjective.setMaxLength((int) ProjectObjective.maxLength());
-    createProjectLayout.experimentalDesignField.setMaxLength(
-        (int) ExperimentalDesignDescription.maxLength());
-
-    createProjectLayout.titleField.setValueChangeMode(ValueChangeMode.EAGER);
-    createProjectLayout.projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-    createProjectLayout.experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
-
-    createProjectLayout.titleField.addValueChangeListener(
-        e -> addConsumedLengthHelper(e, createProjectLayout.titleField));
-    createProjectLayout.projectObjective.addValueChangeListener(
-        e -> addConsumedLengthHelper(e, createProjectLayout.projectObjective));
-    createProjectLayout.experimentalDesignField.addValueChangeListener(
-        e -> addConsumedLengthHelper(e, createProjectLayout.experimentalDesignField));
-  }
-
-  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextArea, String> e,
-      TextArea textArea) {
-    int maxLength = textArea.getMaxLength();
-    int consumedLength = e.getValue().length();
-    e.getSource().setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  private void addConsumedLengthHelper(ComponentValueChangeEvent<TextField, String> e,
-      TextField textField) {
-    int maxLength = textField.getMaxLength();
-    int consumedLength = e.getValue().length();
-    e.getSource().setHelperText(consumedLength + "/" + maxLength);
   }
 
   @Override
@@ -112,24 +77,19 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
   }
 
   private void loadOfferContent(Offer offer) {
-    log.info("Loading content from offer " + offer.offerId().id());
-    createProjectLayout.titleField.setValue(offer.projectTitle().title());
-    createProjectLayout.projectObjective.setValue(offer.projectObjective().objective());
-    offer.experimentalDesignDescription()
-        .ifPresent(it -> createProjectLayout.experimentalDesignField.setValue(it.description()));
-    createProjectLayout.loadedOfferIdentifier.setText(offer.offerId().id());
-    createProjectLayout.loadedOfferIdentifier.setVisible(true);
+    projectInformationHandler.loadOfferContent(offer);
+    projectLinksHandler.addLink(offer);
   }
 
   private void addSaveClickListener() {
-    createProjectLayout.saveButton.addClickListener(it -> saveClicked());
+    createProjectLayout.projectInformationLayout.saveButton.addClickListener(it -> saveClicked());
   }
 
   private void saveClicked() {
-    String titleFieldValue = createProjectLayout.titleField.getValue();
-    String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
-    String experimentalDesignDescription = createProjectLayout.experimentalDesignField.getValue();
-    String loadedOfferId = createProjectLayout.loadedOfferIdentifier.getText();
+    String titleFieldValue = createProjectLayout.projectInformationLayout.titleField.getValue();
+    String objectiveFieldValue = createProjectLayout.projectInformationLayout.projectObjective.getValue();
+    String experimentalDesignDescription = createProjectLayout.projectInformationLayout.experimentalDesignField.getValue();
+    String loadedOfferId = createProjectLayout.projectInformationLayout.loadedOfferIdentifier.getText();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
     project.ifSuccessOrElse(
