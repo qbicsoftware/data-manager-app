@@ -5,11 +5,11 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.Converter;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectManagerConverter;
 
 /**
  * A project planned and run at QBiC.
@@ -29,6 +29,10 @@ public class Project {
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
   private ProjectCode projectCode;
+
+  @Convert(converter = ProjectManagerConverter.class)
+  @Column(name = "projectManager", nullable = false)
+  private ProjectManager projectManager;
 
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
