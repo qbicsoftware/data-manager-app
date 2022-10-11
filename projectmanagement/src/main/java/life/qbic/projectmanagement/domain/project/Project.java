@@ -44,6 +44,7 @@ public class Project {
 
   private void setProjectCode(ProjectCode projectCode) {
     this.projectCode = projectCode;
+    this.lastModified = Instant.now();
   }
 
   protected Project() {
@@ -64,6 +65,7 @@ public class Project {
    * Creates a new project with code and project intent
    *
    * @param projectIntent the intent of the project
+   * @param projectCode   the human-readable code of a project
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode) {
@@ -75,6 +77,7 @@ public class Project {
    *
    * @param projectId     the identifier of the project
    * @param projectIntent the project intent
+   * @param projectCode   the human-readable code of a project
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
@@ -84,10 +87,6 @@ public class Project {
 
   public ProjectId getId() {
     return projectId;
-  }
-
-  public ProjectIntent getProjectIntent() {
-    return projectIntent;
   }
 
   @Override
