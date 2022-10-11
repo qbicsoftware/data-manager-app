@@ -46,9 +46,14 @@ public class Project {
     setProjectCode(projectCode);
   }
 
+  public void setProjectManager(ProjectManager projectManager) {
+    this.projectManager = projectManager;
+    updateModificationDate();
+  }
+
   private void setProjectCode(ProjectCode projectCode) {
     this.projectCode = projectCode;
-    this.lastModified = Instant.now();
+    updateModificationDate();
   }
 
   protected Project() {
@@ -57,12 +62,12 @@ public class Project {
 
   protected void setProjectId(ProjectId projectId) {
     this.projectId = projectId;
-    this.lastModified = Instant.now();
+    updateModificationDate();
   }
 
   protected void setProjectIntent(ProjectIntent projectIntent) {
     this.projectIntent = projectIntent;
-    this.lastModified = Instant.now();
+    updateModificationDate();
   }
 
   /**
@@ -91,6 +96,10 @@ public class Project {
 
   public ProjectId getId() {
     return projectId;
+  }
+
+  private void updateModificationDate() {
+    this.lastModified = Instant.now();
   }
 
   @Override
