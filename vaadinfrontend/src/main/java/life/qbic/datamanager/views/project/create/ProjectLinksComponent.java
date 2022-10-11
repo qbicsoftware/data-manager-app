@@ -5,18 +5,17 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.components.CardLayout;
-import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 
 /**
  * A component displaying all links of a project
  */
+@SpringComponent
 public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private final LinkList<Offer, OfferLinkComponent> offerLinks;
@@ -48,7 +47,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     );
     projectLinks.setItems(list);
 
-
     getContent().addTitle("Links");
     getContent().addFields(projectLinks);
   }
@@ -56,11 +54,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   public void addLink(Offer offer) {
     offerLinks.addLink(offer);
 
-    list.add(new ProjectLinkComponent("Offer",offer.offerId().id()));
-  }
-
-  public void addProjectLinks(ProjectLinkComponent component){
-
+    list.add(new ProjectLinkComponent("Offer", offer.offerId().id()));
   }
 
   public List<String> linkedOffers() {
