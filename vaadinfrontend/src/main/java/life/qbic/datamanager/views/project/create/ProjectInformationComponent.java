@@ -10,6 +10,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -24,22 +25,30 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  * @since <version tag>
  */
 @SpringComponent
+@UIScope
 public class ProjectInformationComponent extends Composite<CardLayout> {
 
-  private final Handler handler = new Handler();
+  private final Handler handler;
 
-  private final TextField titleField = new TextField();
-  final Button saveButton = new Button("Save");
-  final Button cancelButton = new Button("Cancel");
-  private final FormLayout formLayout = new FormLayout();
+  private final TextField titleField;
+  final Button saveButton;
+  final Button cancelButton;
+  private final FormLayout formLayout;
 
-  private final TextArea experimentalDesignField = new TextArea();
-  private final TextArea projectObjective = new TextArea();
+  private final TextArea experimentalDesignField;
+  private final TextArea projectObjective;
 
   public ProjectInformationComponent() {
+    titleField = new TextField();
+    saveButton = new Button("Save");
+    cancelButton = new Button("Cancel");
+    formLayout = new FormLayout();
+    experimentalDesignField = new TextArea();
+    projectObjective = new TextArea();
     configureCardLayout();
     initForm();
     styleForm();
+    handler = new Handler();
     handler.handle();
   }
 
@@ -82,7 +91,6 @@ public class ProjectInformationComponent extends Composite<CardLayout> {
     return experimentalDesignField.getValue();
   }
 
-  @SpringComponent
   private class Handler {
 
     private void handle() {

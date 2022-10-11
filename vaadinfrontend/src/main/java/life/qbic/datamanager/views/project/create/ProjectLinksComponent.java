@@ -7,6 +7,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.components.CardLayout;
@@ -16,6 +17,7 @@ import life.qbic.projectmanagement.domain.finances.offer.Offer;
  * A component displaying all links of a project
  */
 @SpringComponent
+@UIScope
 public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private final LinkList<Offer, OfferLinkComponent> offerLinks;
