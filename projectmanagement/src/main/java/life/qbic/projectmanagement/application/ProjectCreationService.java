@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.project.ProjectManager;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
@@ -36,17 +37,21 @@ public class ProjectCreationService {
    * @param title              the title of the project.
    * @param objective          the objective of the project
    * @param experimentalDesign a description of the experimental design
+   * @param projectManager     the manager of a project
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
-      String experimentalDesign) {
+      String experimentalDesign, String projectManager) {
+
     try {
+      ProjectManager projectManagerObject = ProjectManager.of(projectManager);
       Project project;
       if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
-        project = createProjectWithoutExperimentalDesign(title, objective, createRandomCode());
+        project = createProjectWithoutExperimentalDesign(title, objective, createRandomCode(),
+            projectManagerObject);
       } else {
         project = createProjectWithExperimentalDesign(title, objective, experimentalDesign,
-            createRandomCode());
+            createRandomCode(), projectManagerObject);
       }
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
@@ -68,9 +73,9 @@ public class ProjectCreationService {
   }
 
   private Project createProjectWithoutExperimentalDesign(String title, String objective,
-      ProjectCode projectCode) {
+      ProjectCode projectCode, ProjectManager projectManager) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    Project project = Project.create(intent, projectCode);
+    Project project = Project.create(intent, projectCode, projectManager);
     projectRepository.add(project);
     return project;
   }
@@ -78,7 +83,8 @@ public class ProjectCreationService {
   private Project createProjectWithExperimentalDesign(String title,
       String objective,
       String experimentalDesign,
-      ProjectCode projectCode) {
+      ProjectCode projectCode,
+      ProjectManager projectManager) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -90,7 +96,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    Project project = Project.create(intent, projectCode);
+    Project project = Project.create(intent, projectCode, projectManager);
     projectRepository.add(project);
     return project;
   }

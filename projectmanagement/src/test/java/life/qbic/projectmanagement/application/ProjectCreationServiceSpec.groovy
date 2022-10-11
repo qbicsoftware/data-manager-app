@@ -17,7 +17,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject(null, "objective", "design")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject(null, "objective", "design", "Test manager")
     then: "an exception is thrown"
     resultWithExperimentalDesign.isFailure()
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
@@ -27,7 +27,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", null, "design")
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", null, "design", "Test manager")
     then: "an exception is thrown"
     resultWithExperimentalDesign.isFailure()
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
@@ -41,7 +41,7 @@ class ProjectCreationServiceSpec extends Specification {
     String tooLongDesign = "test" * 1000
 
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", "objective", tooLongDesign)
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("title", "objective", tooLongDesign, "Test manager")
     then: "an exception is thrown"
     resultWithExperimentalDesign.isFailure()
     resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
@@ -51,7 +51,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepository.add(_) >> {}
     when: "a project is created with a non-empty title"
-    def result = projectCreationService.createProject("test", "objective", null)
+    def result = projectCreationService.createProject("test", "objective", null, "Test manager")
     then: "the created project is returned"
     result.isSuccess()
     nonNull(result.value())
@@ -62,7 +62,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepository.add(_) >> { throw new RuntimeException("expected exception") }
 
     when:
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("test", "objective", null)
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationService.createProject("test", "objective", null, "Test manager")
 
     then:
     resultWithExperimentalDesign.isFailure()

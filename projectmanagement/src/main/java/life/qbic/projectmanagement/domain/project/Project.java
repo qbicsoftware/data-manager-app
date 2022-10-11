@@ -37,13 +37,17 @@ public class Project {
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
 
-  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode) {
+  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
+      ProjectManager projectManager) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
     requireNonNull(projectCode);
+    requireNonNull(projectManager);
+
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectCode(projectCode);
+    setProjectManager(projectManager);
   }
 
   public void setProjectManager(ProjectManager projectManager) {
@@ -73,25 +77,28 @@ public class Project {
   /**
    * Creates a new project with code and project intent
    *
-   * @param projectIntent the intent of the project
-   * @param projectCode   the human-readable code of a project
+   * @param projectIntent  the intent of the project
+   * @param projectCode    the human-readable code of a project
+   * @param projectManager the manager of the project
    * @return a new project instance
    */
-  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode) {
-    return new Project(ProjectId.create(), projectIntent, projectCode);
+  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
+      ProjectManager projectManager) {
+    return new Project(ProjectId.create(), projectIntent, projectCode, projectManager);
   }
 
   /**
    * Generates a project with the specified values injected.
    *
-   * @param projectId     the identifier of the project
-   * @param projectIntent the project intent
-   * @param projectCode   the human-readable code of a project
+   * @param projectId      the identifier of the project
+   * @param projectIntent  the project intent
+   * @param projectCode    the human-readable code of a project
+   * @param projectManager the manager of the project
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
-      ProjectCode projectCode) {
-    return new Project(projectId, projectIntent, projectCode);
+      ProjectCode projectCode, ProjectManager projectManager) {
+    return new Project(projectId, projectIntent, projectCode, projectManager);
   }
 
   public ProjectId getId() {

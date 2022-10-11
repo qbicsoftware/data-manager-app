@@ -127,7 +127,8 @@ public class CreateProjectHandler implements CreateProjectHandlerInterface {
     String objectiveFieldValue = createProjectLayout.projectObjective.getValue();
     String experimentalDesignDescription = createProjectLayout.experimentalDesignField.getValue();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        titleFieldValue, objectiveFieldValue, experimentalDesignDescription);
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription,
+        "Bilbo Beutlin"); //TODO add project manager
     project.ifSuccessOrElse(
         result -> displaySuccessfulProjectCreationNotification(),
         applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
