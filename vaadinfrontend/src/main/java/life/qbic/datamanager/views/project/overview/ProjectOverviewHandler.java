@@ -6,6 +6,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import life.qbic.datamanager.views.Command;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -51,6 +52,8 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
+
+    System.out.println();
   }
 
   @Override

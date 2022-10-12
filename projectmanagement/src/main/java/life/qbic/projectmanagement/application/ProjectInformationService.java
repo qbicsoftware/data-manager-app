@@ -2,7 +2,11 @@ package life.qbic.projectmanagement.application;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +20,13 @@ public class ProjectInformationService {
 
   private final ProjectPreviewLookup projectPreviewLookup;
 
-  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup) {
+  private final ProjectRepository projectRepository;
+
+  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
+      @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
+    this.projectRepository = projectRepository;
   }
 
   /**
@@ -42,8 +50,13 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit){
+  public List<ProjectPreview> queryPreview(String filter, int offset, int limit) {
     return projectPreviewLookup.query(filter, offset, limit);
   }
+
+  public Optional<Project> find(UUID projectId) {
+    return Optional.empty();
+  }
+
 
 }
