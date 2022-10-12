@@ -10,6 +10,8 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 
@@ -20,48 +22,42 @@ import life.qbic.projectmanagement.domain.finances.offer.Offer;
 @UIScope
 public class ProjectLinksComponent extends Composite<CardLayout> {
 
-  private final LinkList<Offer, OfferLinkComponent> offerLinks;
-  final Grid<ProjectLinkComponent> projectLinks;
+  final Grid<ProjectLink> projectLinks;
 
-  private final List<ProjectLinkComponent> list;
+  private final List<ProjectLink> linkList;
 
 
   public ProjectLinksComponent() {
-    this.offerLinks = new LinkList<>(new ComponentRenderer<>(OfferLinkComponent::of));
 
-    list = new ArrayList<>();
+    linkList = new ArrayList<>();
 
-    projectLinks = new Grid<>(ProjectLinkComponent.class);
-    projectLinks.addColumn(ProjectLinkComponent::type).setHeader("Type");
-    projectLinks.addColumn(ProjectLinkComponent::reference).setHeader("Reference");
+    projectLinks = new Grid<>(ProjectLink.class);
+    projectLinks.addColumn(ProjectLink::type).setHeader("Type");
+    projectLinks.addColumn(ProjectLink::reference).setHeader("Reference");
     projectLinks.addColumn(
         new ComponentRenderer<>(Button::new, (button, projectLink) -> {
           button.addThemeVariants(ButtonVariant.LUMO_ICON,
               ButtonVariant.LUMO_ERROR,
               ButtonVariant.LUMO_TERTIARY);
           button.addClickListener(e -> {
-            list.remove(projectLink);
+            linkList.remove(projectLink);
             projectLinks.getDataProvider().refreshAll();
             }
           );
           button.setIcon(new Icon("lumo","cross"));
         })
     );
-    projectLinks.setItems(list);
+    projectLinks.setItems(linkList);
 
     getContent().addTitle("Links");
     getContent().addFields(projectLinks);
   }
 
   public void addLink(Offer offer) {
-    offerLinks.addLink(offer);
-
-    list.add(new ProjectLinkComponent("Offer", offer.offerId().id()));
+    linkList.add(new ProjectLink("Offer", offer.offerId().id()));
   }
 
   public List<String> linkedOffers() {
-    return offerLinks.getItems().stream().map(it -> it.offerId().id()).toList();
+    return linkList.stream().filter(it -> Objects.equals(it.type(), "Offer")).map(ProjectLink::reference).toList();
   }
-
-
 }
