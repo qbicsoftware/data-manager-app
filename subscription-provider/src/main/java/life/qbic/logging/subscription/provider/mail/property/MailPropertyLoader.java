@@ -4,6 +4,7 @@ import static java.util.Objects.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -22,9 +23,9 @@ public class MailPropertyLoader {
   }
 
   public Properties load() throws IOException {
-    String file = requireNonNull(getClass().getClassLoader().getResource(PROPERTIES),
-        "Cannot find property file. Please make sure to provide a file 'mail.properties' in the resources").getFile();
-    return PropertyFileParser.parse(new File(file));
+    InputStream stream = requireNonNull(getClass().getClassLoader().getResourceAsStream(PROPERTIES),
+        "Cannot find property file. Please make sure to provide a file 'mail.properties' in the resources");
+    return PropertyFileParser.parse(stream);
   }
 
 }
