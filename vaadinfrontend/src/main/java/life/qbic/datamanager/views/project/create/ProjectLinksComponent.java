@@ -54,7 +54,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   }
 
   public void addLink(Offer offer) {
-    linkList.add(new ProjectLink("Offer", offer.offerId().id()));
+    linkList.add(ProjectLink.of("Offer", offer.offerId().id()));
   }
 
   public List<String> linkedOffers() {
