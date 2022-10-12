@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.create;
+package life.qbic.datamanager.views.components;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import life.qbic.datamanager.views.components.CardLayout;
+import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 
 /**

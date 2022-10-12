@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.components;
+package life.qbic.datamanager.views.layouts;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;

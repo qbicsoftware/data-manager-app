@@ -2,10 +2,8 @@ package life.qbic.datamanager.views.project.overview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.router.QueryParameters;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -13,9 +11,8 @@ import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.Command;
-import life.qbic.datamanager.views.components.StyledNotification;
-import life.qbic.datamanager.views.components.SuccessMessage;
-import life.qbic.datamanager.views.project.create.CreateProjectComponent;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;

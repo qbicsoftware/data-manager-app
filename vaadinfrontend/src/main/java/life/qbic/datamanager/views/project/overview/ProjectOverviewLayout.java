@@ -18,10 +18,8 @@ import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.components.CardLayout;
-import life.qbic.datamanager.views.project.create.ProjectInformationComponent;
-import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
-import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
+import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -40,14 +38,12 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = 5435551053955979169L;
   final Button create = new Button("Create");
-  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-  final OfferSearchDialog searchDialog = new OfferSearchDialog();
 
+  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final TextField projectSearchField = new TextField();
 
-  final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
 
-  final ProjectInformationComponent projectInformationDialog = new ProjectInformationComponent();
+  final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
 
   private final ClientDetailsProvider clientDetailsProvider;
 

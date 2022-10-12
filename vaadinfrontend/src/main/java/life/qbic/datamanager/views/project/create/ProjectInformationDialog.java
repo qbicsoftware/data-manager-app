@@ -27,7 +27,7 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  */
 @SpringComponent
 @UIScope
-public class ProjectInformationComponent extends Dialog {
+public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
 
@@ -41,7 +41,7 @@ public class ProjectInformationComponent extends Dialog {
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
 
-  public ProjectInformationComponent() {
+  public ProjectInformationDialog() {
     titleField = new TextField();
     saveButton = new Button("Save");
     cancelButton = new Button("Cancel");
