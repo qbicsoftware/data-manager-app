@@ -8,20 +8,27 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.Command;
 import life.qbic.datamanager.views.components.StyledNotification;
 import life.qbic.datamanager.views.components.SuccessMessage;
+import life.qbic.datamanager.views.project.create.CreateProjectComponent;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>Handler</b>
@@ -34,11 +41,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
-  private static final String PROJECT_CREATION_URL = "projects/create";
+  private static final Logger log = logger(ProjectOverviewHandler.class);
 
-  private static final String OFFER_ID_QUERY_PARAMETER = "offerId";
-
-  private static final String QUERY_PARAMETER_SEPARATOR = "=";
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
   private final ProjectCreationService projectCreationService;
@@ -156,6 +160,20 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     // Generate labels like the rendering
     registeredProjectOverview.projectInformationDialog.searchField.setItemLabelGenerator(
         (ItemLabelGenerator<OfferPreview>) ProjectOverviewHandler::previewToString);
+
+    registeredProjectOverview.projectInformationDialog.searchField.addValueChangeListener(e -> {
+      if(registeredProjectOverview.projectInformationDialog.searchField.getValue() != null){
+        preloadContentFromOffer(registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id());
+      }
+    });
+  }
+
+  private void preloadContentFromOffer(String offerId) {
+    log.info("Receiving offerId " + offerId);
+    OfferId id = OfferId.from(offerId);
+    Optional<Offer> offer = offerLookupService.findOfferById(id);
+    offer.ifPresentOrElse(it -> registeredProjectOverview.projectInformationDialog.setOffer(it),
+        () -> log.error("No offer found with id: " + offerId));
   }
 
   /**
