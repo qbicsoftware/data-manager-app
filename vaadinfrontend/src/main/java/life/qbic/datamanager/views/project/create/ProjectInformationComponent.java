@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.project.create;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -12,6 +13,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
@@ -28,6 +30,8 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
 public class ProjectInformationComponent extends Dialog {
 
   private final Handler handler;
+
+  public ComboBox<OfferPreview> searchField;
 
   private final TextField titleField;
   public final Button saveButton;
@@ -60,8 +64,10 @@ public class ProjectInformationComponent extends Dialog {
 
   private void configureCardLayout() {
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    styleSearchBox();
 
     add("Create Project");
+    add(searchField);
     add(formLayout);
     add(cancelButton, saveButton);
   }
@@ -72,6 +78,17 @@ public class ProjectInformationComponent extends Dialog {
     formLayout.addFormItem(experimentalDesignField, "Experimental Design");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
+  }
+
+  private void styleSearchBox() {
+    searchField = new ComboBox<>();
+    searchField.setPlaceholder("Search");
+    searchField.setClassName("searchbox");
+    searchField.addClassNames("flex",
+        "flex-col",
+        "w-full",
+        "min-width-300px",
+        "max-width-15vw");
   }
 
   public void setOffer(Offer offer) {

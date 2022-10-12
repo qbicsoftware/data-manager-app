@@ -71,6 +71,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
       configurePageButtons();
       configureProjectCreationDialog();
+      loadOfferPreview();
 
       setProjectsToGrid();
       setupSearchBar();
@@ -140,30 +141,20 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     notification.open();
   }
 
-  private Command navigateToProjectPage(OfferPreview offerPreview) {
-    return () -> {
-      registeredProjectOverview.projectInformationDialog.close();
-      //QueryParameters queryParameters = QueryParameters.fromString(
-      //OFFER_ID_QUERY_PARAMETER + QUERY_PARAMETER_SEPARATOR + offerPreview.offerId().id());
-      //todo load generated project here
-      //UI.getCurrent().navigate(PROJECT_CREATION_URL, queryParameters);
-    };
-  }
-
   private void loadOfferPreview() {
     // Configure the filter and pagination for the lazy loaded OfferPreview items
-    registeredProjectOverview.searchDialog.searchField.setItems(
+    registeredProjectOverview.projectInformationDialog.searchField.setItems(
         query -> offerLookupService.findOfferContainingProjectTitleOrId(
             query.getFilter().orElse(""),
             query.getFilter().orElse(""), query.getOffset(), query.getLimit()).stream());
 
     // Render the preview
-    registeredProjectOverview.searchDialog.searchField.setRenderer(
+    registeredProjectOverview.projectInformationDialog.searchField.setRenderer(
         new ComponentRenderer<>(preview ->
             new Text(previewToString(preview))));
 
     // Generate labels like the rendering
-    registeredProjectOverview.searchDialog.searchField.setItemLabelGenerator(
+    registeredProjectOverview.projectInformationDialog.searchField.setItemLabelGenerator(
         (ItemLabelGenerator<OfferPreview>) ProjectOverviewHandler::previewToString);
   }
 
