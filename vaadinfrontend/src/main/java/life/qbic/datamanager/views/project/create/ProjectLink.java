@@ -1,11 +1,10 @@
 package life.qbic.datamanager.views.project.create;
 
 /**
- * <b>short description</b>
  *
- * <p>detailed description</p>
+ * <p>Represents a project link in the {@link ProjectLinksComponent}</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record ProjectLink(String type, String reference) {
 }
