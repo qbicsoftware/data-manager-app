@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -11,28 +11,27 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**
- * <b>short description</b>
+ * <b>Create Project Component</b>
  *
- * <p>detailed description</p>
+ * <p>Component to create a project based on a project intent</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @SpringComponent
 @UIScope
-public class ProjectInformationComponent extends Composite<CardLayout> {
+public class ProjectInformationComponent extends Dialog {
 
   private final Handler handler;
 
   private final TextField titleField;
-  final Button saveButton;
-  final Button cancelButton;
+  public final Button saveButton;
+  public final Button cancelButton;
   private final FormLayout formLayout;
 
   private final TextArea experimentalDesignField;
@@ -62,9 +61,9 @@ public class ProjectInformationComponent extends Composite<CardLayout> {
   private void configureCardLayout() {
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    getContent().addButtons(cancelButton, saveButton);
-    getContent().addFields(formLayout);
-    getContent().addTitle("Create Project");
+    add("Create Project");
+    add(formLayout);
+    add(cancelButton, saveButton);
   }
 
   private void initForm() {
@@ -89,6 +88,11 @@ public class ProjectInformationComponent extends Composite<CardLayout> {
 
   public String getExperimentalDesign() {
     return experimentalDesignField.getValue();
+
+  }
+
+  public void reset(){
+    //todo implement
   }
 
   private class Handler {

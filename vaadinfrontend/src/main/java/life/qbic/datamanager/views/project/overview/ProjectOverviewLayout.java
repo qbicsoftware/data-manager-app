@@ -19,6 +19,7 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.CardLayout;
+import life.qbic.datamanager.views.project.create.ProjectInformationComponent;
 import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
 import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
 import life.qbic.projectmanagement.application.ProjectPreview;
@@ -45,6 +46,8 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
   final TextField projectSearchField = new TextField();
 
   final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
+
+  final ProjectInformationComponent projectInformationDialog = new ProjectInformationComponent();
 
   private final ClientDetailsProvider clientDetailsProvider;
 
