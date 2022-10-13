@@ -1,7 +1,7 @@
 package life.qbic.logging.impl.publisher
 
-import life.qbic.logging.subscription.api.LogMessage
 import life.qbic.logging.subscription.api.LogLevel
+import life.qbic.logging.subscription.api.LogMessage
 import life.qbic.logging.subscription.api.Subscriber
 import spock.lang.Specification
 

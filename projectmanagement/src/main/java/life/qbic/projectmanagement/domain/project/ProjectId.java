@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.domain.project;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.rmi.server.UID;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;

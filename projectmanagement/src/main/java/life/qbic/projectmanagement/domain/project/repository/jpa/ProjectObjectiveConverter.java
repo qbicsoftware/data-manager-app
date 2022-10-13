@@ -1,8 +1,7 @@
 package life.qbic.projectmanagement.domain.project.repository.jpa;
 
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-
 import javax.persistence.AttributeConverter;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
 
 /**
  * <b>Converts {@link ProjectObjective} into a String and vice versa></b>

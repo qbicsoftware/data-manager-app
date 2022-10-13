@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.helloworld;
 
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
@@ -15,7 +14,6 @@ import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.datamanager.security.SecurityService;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.create.CreateProjectHandler;
-import life.qbic.datamanager.views.project.create.CreateProjectLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Hello World")

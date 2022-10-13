@@ -1,8 +1,7 @@
 package life.qbic.authentication.domain.event
 
+import life.qbic.authentication.domain.user.event.UserRegistered
 import spock.lang.Specification
-
-import life.qbic.authentication.domain.user.event.UserRegistered;
 
 class DomainEventSerializerSpec extends Specification {
     final DomainEventSerializer domainEventSerializer = new DomainEventSerializer()

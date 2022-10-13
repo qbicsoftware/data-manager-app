@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.persistence;
 
 import java.util.List;
-import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;

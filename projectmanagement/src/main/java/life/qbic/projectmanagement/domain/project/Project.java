@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.Converter;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
