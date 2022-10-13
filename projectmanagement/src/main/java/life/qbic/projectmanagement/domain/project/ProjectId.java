@@ -46,6 +46,10 @@ public final class ProjectId implements Serializable {
     return new ProjectId(id);
   }
 
+  public String value() {
+    return value;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ProjectId.class.getSimpleName() + "[", "]")

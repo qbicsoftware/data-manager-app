@@ -4,19 +4,23 @@ import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import javax.annotation.security.PermitAll;
+
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
@@ -49,10 +53,11 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
 
   private final ClientDetailsProvider clientDetailsProvider;
+  private static final String PROJECT_VIEW_URL = "projects/view/";
 
 
   public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
-      @Autowired ClientDetailsProvider clientDetailsProvider) {
+                               @Autowired ClientDetailsProvider clientDetailsProvider) {
     this.clientDetailsProvider = clientDetailsProvider;
     layoutComponents();
     registerToHandler(handlerInterface);
@@ -79,9 +84,11 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END,create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START,projectSearchField);
 
-    projectGrid.addColumn(ProjectPreview::projectCode).setHeader("Code").setWidth("7em")
+    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode()))).setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
-    projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
+
+    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle()))).setHeader("Title");
+
     projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
             asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
         .setHeader("Last Modified");

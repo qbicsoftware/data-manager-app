@@ -63,6 +63,10 @@ public class ProjectPreview {
     return projectCode;
   }
 
+  public ProjectId projectId() {
+    return this.id;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
