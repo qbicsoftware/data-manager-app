@@ -92,7 +92,7 @@ public class ProjectInformationDialog extends Dialog {
     searchField.setPlaceholder("Search");
     searchField.setClassName("searchbox");
     searchField.addClassNames("flex",
-        "flex-col",
+        "flex-row",
         "w-full",
         "min-width-300px",
         "max-width-15vw");
