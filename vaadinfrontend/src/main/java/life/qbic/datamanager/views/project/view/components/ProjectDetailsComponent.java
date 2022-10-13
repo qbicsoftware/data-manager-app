@@ -57,7 +57,6 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   }
 
   public void projectId(String projectId) {
-    //this.projectInformationService.
     handler.projectId(projectId);
 
   }
