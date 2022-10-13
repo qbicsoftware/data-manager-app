@@ -6,9 +6,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.UUID;
+import life.qbic.authentication.application.ServiceException;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.broadcasting.MessageParameters;
-import life.qbic.authentication.application.ServiceException;
 
 /**
  * <b>Notification Service</b>

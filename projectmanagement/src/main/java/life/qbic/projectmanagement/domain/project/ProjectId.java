@@ -5,19 +5,23 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
 
 
 /**
  * The unique identifier of a project
  */
+@Embeddable
 public final class ProjectId implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 7904987287799381970L;
 
-  private UUID uuid;
+  @Column(name = "uuid")
+  private final String value;
 
-  private ProjectId() {
+  protected ProjectId() {
     this(UUID.randomUUID());
   }
 
@@ -26,7 +30,7 @@ public final class ProjectId implements Serializable {
       throw new IllegalArgumentException("uuid must be provided");
     }
     Objects.requireNonNull(uuid);
-    this.uuid = uuid;
+    this.value = uuid.toString();
   }
 
   public static ProjectId create() {
@@ -37,10 +41,15 @@ public final class ProjectId implements Serializable {
     return new ProjectId(uuid);
   }
 
+  public static ProjectId parse(String str) throws IllegalArgumentException {
+    UUID id = UUID.fromString(str);
+    return new ProjectId(id);
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ProjectId.class.getSimpleName() + "[", "]")
-        .add("uuid=" + uuid)
+        .add("uuid=" + value)
         .toString();
   }
 
@@ -55,11 +64,11 @@ public final class ProjectId implements Serializable {
 
     ProjectId projectId = (ProjectId) o;
 
-    return uuid.equals(projectId.uuid);
+    return value.equals(projectId.value);
   }
 
   @Override
   public int hashCode() {
-    return uuid.hashCode();
+    return value.hashCode();
   }
 }

@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;

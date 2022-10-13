@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.persistence;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -48,6 +48,11 @@ public class ProjectJpaRepository implements ProjectRepository {
   @Override
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
+  }
+
+  @Override
+  public Optional<Project> find(ProjectId projectId) {
+    return projectRepo.findById(projectId);
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {

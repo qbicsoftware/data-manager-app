@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.domain.project.repository;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 
 
 /**
@@ -30,4 +32,6 @@ public interface ProjectRepository {
    * @since 1.0.0
    */
   List<Project> find(ProjectCode projectCode);
+
+  Optional<Project> find(ProjectId projectId);
 }
