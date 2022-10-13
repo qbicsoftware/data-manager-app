@@ -51,7 +51,7 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
   final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
 
   private final ClientDetailsProvider clientDetailsProvider;
-  private final String PROJECT_VIEW_URL = "projects/view/";
+  private static final String PROJECT_VIEW_URL = "projects/view/";
 
 
   public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
