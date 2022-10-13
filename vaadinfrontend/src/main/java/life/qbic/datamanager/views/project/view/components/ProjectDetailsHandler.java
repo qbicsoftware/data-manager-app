@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.project.view.components;
 
-import java.util.UUID;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -26,14 +25,19 @@ class ProjectDetailsHandler {
   }
 
   public void projectId(String projectId) {
-    projectInformationService.find(ProjectId.of(UUID.fromString(projectId))).ifPresentOrElse(
+    projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
         this::loadProjectData,
-        () -> component.textField.setValue("Not found"));
+        () -> component.titleField.setValue("Not found"));
   }
 
   public void loadProjectData(Project project) {
     this.selectedProject = project.getId();
-    component.textField.setValue(project.getProjectIntent().projectTitle().title());
+    component.titleField.setValue(project.getProjectIntent().projectTitle().title());
+    component.projectObjective.setValue(project.getProjectIntent().objective().value());
+    project.getProjectIntent().experimentalDesign().ifPresentOrElse(
+        experimentalDesignDescription -> component.experimentalDesignField.setValue(
+            experimentalDesignDescription.value()),
+        () -> component.experimentalDesignField.setPlaceholder("No description yet."));
   }
 
 }
