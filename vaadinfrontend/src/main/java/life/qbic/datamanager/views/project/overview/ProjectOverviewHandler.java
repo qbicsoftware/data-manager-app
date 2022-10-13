@@ -50,8 +50,6 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
-
-    System.out.println();
   }
 
   @Override
