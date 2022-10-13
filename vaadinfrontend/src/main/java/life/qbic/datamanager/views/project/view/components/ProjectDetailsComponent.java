@@ -22,6 +22,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
 
+  private static final String TITLE = "Project Information";
+
   final TextField titleField = new TextField();
   final FormLayout formLayout = new FormLayout();
 
@@ -44,6 +46,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
+    getContent().addTitle(TITLE);
   }
 
   private void setComponentStyles() {
