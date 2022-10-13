@@ -6,13 +6,12 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Handler for the project view page that routes request parameter to the components.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class ProjectViewHandler {
+
   private final ProjectDetailsComponent projectDetailsComponent;
 
   private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
@@ -22,10 +21,13 @@ class ProjectViewHandler {
     this.projectDetailsComponent = projectDetailsComponent;
   }
 
+  /**
+   * Forwards a route parameter to all page components
+   *
+   * @param parameter the route parameter
+   * @since 1.0.0
+   */
   public void routeParameter(String parameter) {
     this.projectDetailsComponent.projectId(parameter);
   }
-
-
-
 }

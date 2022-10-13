@@ -11,11 +11,11 @@ import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Project Details Component
+ * <p>
+ * Shows project details to the user.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectDetailsComponent extends Composite<CardLayout> {
 

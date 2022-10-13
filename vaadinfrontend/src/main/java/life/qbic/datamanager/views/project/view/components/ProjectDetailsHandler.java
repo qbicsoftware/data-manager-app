@@ -5,11 +5,9 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Component logic for the {@link ProjectDetailsComponent}
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class ProjectDetailsHandler {
 

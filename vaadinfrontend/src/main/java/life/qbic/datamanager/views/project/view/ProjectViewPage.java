@@ -14,11 +14,10 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Project view page that shows project information and additional components to manage project
+ * data.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Route(value = "projects/view", layout = MainLayout.class)
 @PermitAll
@@ -35,7 +34,8 @@ public class ProjectViewPage extends Div implements
   private transient final ProjectViewHandler handler;
 
   public ProjectViewPage(@Autowired ProjectInformationService projectInformationService) {
-    ProjectDetailsComponent projectDetailsComponent = new ProjectDetailsComponent(projectInformationService);
+    ProjectDetailsComponent projectDetailsComponent = new ProjectDetailsComponent(
+        projectInformationService);
     handler = new ProjectViewHandler(projectDetailsComponent);
     add(projectDetailsComponent);
   }
