@@ -75,12 +75,13 @@ public class ProjectInformationDialog extends Dialog {
     styleSearchBox();
 
     setHeaderTitle("Create Project");
-    add(searchField);
+    //add(searchField);
     add(formLayout);
     getFooter().add(cancelButton, saveButton);
   }
 
   private void initForm() {
+    formLayout.add(searchField);
     formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
