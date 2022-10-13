@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.login.passwordreset;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import life.qbic.datamanager.views.components.BoxLayout;
+import life.qbic.datamanager.views.layouts.BoxLayout;
 
 /**
  * <b> Defines the look of the password reset layout. </b>

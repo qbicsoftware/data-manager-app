@@ -1,9 +1,10 @@
 package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -11,43 +12,53 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**
- * <b>short description</b>
+ * <b>Create Project Component</b>
  *
- * <p>detailed description</p>
+ * <p>Component to create a project based on a project intent</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @SpringComponent
 @UIScope
-public class ProjectInformationComponent extends Composite<CardLayout> {
+public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
 
+  public ComboBox<OfferPreview> searchField;
+
   private final TextField titleField;
-  final Button saveButton;
-  final Button cancelButton;
+  public final Button createButton;
+  public final Button cancelButton;
   private final FormLayout formLayout;
 
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
 
-  public ProjectInformationComponent() {
-    titleField = new TextField();
-    saveButton = new Button("Save");
-    cancelButton = new Button("Cancel");
+  public ProjectInformationDialog() {
+    searchField = new ComboBox<>("Offer");
+
     formLayout = new FormLayout();
-    experimentalDesignField = new TextArea();
-    projectObjective = new TextArea();
-    configureCardLayout();
+
+    titleField = new TextField("Title");
+    titleField.setRequired(true);
+    experimentalDesignField = new TextArea("Experimental Design");
+    projectObjective = new TextArea("Objective");
+    projectObjective.setRequired(true);
+
+    createButton = new Button("Create");
+    cancelButton = new Button("Cancel");
+
+    configureDialogLayout();
     initForm();
     styleForm();
+
     handler = new Handler();
     handler.handle();
   }
@@ -59,20 +70,32 @@ public class ProjectInformationComponent extends Composite<CardLayout> {
     formLayout.setClassName("create-project-form");
   }
 
-  private void configureCardLayout() {
-    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  private void configureDialogLayout() {
+    createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    styleSearchBox();
 
-    getContent().addButtons(cancelButton, saveButton);
-    getContent().addFields(formLayout);
-    getContent().addTitle("Create Project");
+    setHeaderTitle("Create Project");
+    add(formLayout);
+    getFooter().add(cancelButton, createButton);
   }
 
   private void initForm() {
-    formLayout.addFormItem(titleField, "Project Title");
-    formLayout.addFormItem(projectObjective, "Project Objective");
-    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    formLayout.add(searchField);
+    formLayout.add(titleField);
+    formLayout.add(projectObjective);
+    formLayout.add(experimentalDesignField);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
+  }
+
+  private void styleSearchBox() {
+    searchField.setPlaceholder("Search");
+    searchField.setClassName("searchbox");
+    searchField.addClassNames("flex",
+        "flex-row",
+        "w-full",
+        "min-width-300px",
+        "max-width-15vw");
   }
 
   public void setOffer(Offer offer) {
@@ -89,6 +112,17 @@ public class ProjectInformationComponent extends Composite<CardLayout> {
 
   public String getExperimentalDesign() {
     return experimentalDesignField.getValue();
+
+  }
+
+  /**
+   * Resets all user-defined values set for this dialog
+   */
+  public void reset(){
+    searchField.clear();
+    titleField.clear();
+    projectObjective.clear();
+    experimentalDesignField.clear();
   }
 
   private class Handler {

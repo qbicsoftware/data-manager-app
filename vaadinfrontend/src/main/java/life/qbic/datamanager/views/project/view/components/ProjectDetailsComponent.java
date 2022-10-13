@@ -7,7 +7,8 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.io.Serial;
 import java.util.Objects;
-import life.qbic.datamanager.views.components.CardLayout;
+
+import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 
 /**

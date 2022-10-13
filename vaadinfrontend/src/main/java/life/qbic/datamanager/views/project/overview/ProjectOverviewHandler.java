@@ -5,15 +5,29 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.router.QueryParameters;
+
 import java.util.Objects;
+import java.util.Optional;
+
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
+import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.views.Command;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>Handler</b>
@@ -26,22 +40,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
-  private static final String PROJECT_CREATION_URL = "projects/create";
+  private static final Logger log = logger(ProjectOverviewHandler.class);
+  private final ApplicationExceptionHandler exceptionHandler;
 
-  private static final String OFFER_ID_QUERY_PARAMETER = "offerId";
-
-  private static final String QUERY_PARAMETER_SEPARATOR = "=";
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
+  private final ProjectCreationService projectCreationService;
+
   private final ProjectRepository projectRepository;
 
   private final ProjectInformationService projectInformationService;
 
-  private CreationMode creationMode = CreationMode.NONE;
 
   public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
-      @Autowired ProjectRepository projectRepository,
-      @Autowired ProjectInformationService projectInformationService) {
+                                @Autowired ProjectRepository projectRepository,
+                                @Autowired ProjectInformationService projectInformationService,
+                                @Autowired ProjectCreationService projectCreationService,
+                                @Autowired ApplicationExceptionHandler exceptionHandler) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
 
@@ -50,14 +65,23 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
+
+    Objects.requireNonNull(projectCreationService);
+    this.projectCreationService = projectCreationService;
+
+    Objects.requireNonNull(exceptionHandler);
+    this.exceptionHandler = exceptionHandler;
   }
 
   @Override
   public void handle(ProjectOverviewLayout layout) {
     if (registeredProjectOverview != layout) {
       this.registeredProjectOverview = layout;
-      configureSearchDropbox();
-      configureSelectionModeDialog();
+
+      configurePageButtons();
+      configureProjectCreationDialog();
+      loadOfferPreview();
+
       setProjectsToGrid();
       setupSearchBar();
     }
@@ -84,92 +108,80 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     loadProjectPreview().execute();
   }
 
-  private void configureSelectionModeDialog() {
-    configureSelectionModeDialogFooterButtons();
+  private void configurePageButtons() {
+    registeredProjectOverview.create.addClickListener(
+        e -> registeredProjectOverview.projectInformationDialog.open());
 
-    registeredProjectOverview.selectCreationModeDialog.blankButton.addClickListener(
-        e -> creationMode = CreationMode.BLANK);
-    registeredProjectOverview.selectCreationModeDialog.fromOfferButton.addClickListener(
-        e -> creationMode = CreationMode.FROM_OFFER);
   }
 
-  private void configureSelectionModeDialogFooterButtons() {
-    registeredProjectOverview.selectCreationModeDialog.next.addClickListener(
-        e -> navigateToProjectCreation().execute());
-    registeredProjectOverview.selectCreationModeDialog.cancel.addClickListener(
+  private void configureProjectCreationDialog() {
+    registeredProjectOverview.projectInformationDialog.createButton.addClickListener(
+        e -> createClicked());
+    registeredProjectOverview.projectInformationDialog.cancelButton.addClickListener(
         e -> cancelSelection().execute());
-  }
-
-  private Command navigateToProjectCreation() {
-    return switch (creationMode) {
-      case BLANK -> () -> {
-        UI.getCurrent().navigate(PROJECT_CREATION_URL);
-        registeredProjectOverview.selectCreationModeDialog.close();
-        registeredProjectOverview.selectCreationModeDialog.reset();
-      };
-      case FROM_OFFER -> () -> {
-        registeredProjectOverview.selectCreationModeDialog.close();
-        loadOfferPreview();
-        registeredProjectOverview.searchDialog.open();
-      };
-      case NONE -> () -> {
-        // Nothing to do, user has not made a selection
-      };
-    };
+    registeredProjectOverview.projectInformationDialog.isCloseOnEsc();
   }
 
   private Command cancelSelection() {
     return () -> {
-      registeredProjectOverview.selectCreationModeDialog.close();
-      registeredProjectOverview.selectCreationModeDialog.reset();
-      creationMode = CreationMode.NONE;
+      registeredProjectOverview.projectInformationDialog.close();
+      registeredProjectOverview.projectInformationDialog.reset();
     };
   }
 
-  private void configureSearchDropbox() {
-    configureSearchDialogFooterButtons();
+  private void createClicked() {
+    String titleFieldValue = registeredProjectOverview.projectInformationDialog.getTitle();
+    String objectiveFieldValue = registeredProjectOverview.projectInformationDialog.getObjective();
+    String experimentalDesignDescription = registeredProjectOverview.projectInformationDialog.getExperimentalDesign();
 
-    registeredProjectOverview.searchDialog.ok.addClickListener(e -> {
-      //check if value is selected
-      registeredProjectOverview.searchDialog.searchField.getOptionalValue()
-          .map(this::navigateToProjectCreation)
-          .ifPresent(Command::execute);
-    });
+    String loadedOfferId = registeredProjectOverview.projectInformationDialog.searchField.getValue() != null ? registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id() : null;
+
+    Result<Project, ApplicationException> project = projectCreationService.createProject(
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
+
+    project.ifSuccessOrElse(
+        result -> displaySuccessfulProjectCreationNotification(),
+        applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
+
+    registeredProjectOverview.projectInformationDialog.close();
+    registeredProjectOverview.projectGrid.getDataProvider().refreshAll();
   }
 
-  private void configureSearchDialogFooterButtons() {
-    registeredProjectOverview.searchDialog.cancel.addClickListener(
-        e -> registeredProjectOverview.searchDialog.close());
-
-    registeredProjectOverview.create.addClickListener(
-        e -> registeredProjectOverview.selectCreationModeDialog.open());
-
-  }
-
-  private Command navigateToProjectCreation(OfferPreview offerPreview) {
-    return () -> {
-      registeredProjectOverview.searchDialog.close();
-      QueryParameters queryParameters = QueryParameters.fromString(
-          OFFER_ID_QUERY_PARAMETER + QUERY_PARAMETER_SEPARATOR + offerPreview.offerId().id());
-      UI.getCurrent().navigate(PROJECT_CREATION_URL, queryParameters);
-    };
+  private void displaySuccessfulProjectCreationNotification() {
+    SuccessMessage successMessage = new SuccessMessage("Project creation succeeded.", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
   }
 
   private void loadOfferPreview() {
     // Configure the filter and pagination for the lazy loaded OfferPreview items
-    registeredProjectOverview.searchDialog.searchField.setItems(
+    registeredProjectOverview.projectInformationDialog.searchField.setItems(
         query -> offerLookupService.findOfferContainingProjectTitleOrId(
             query.getFilter().orElse(""),
             query.getFilter().orElse(""), query.getOffset(), query.getLimit()).stream());
 
     // Render the preview
-    registeredProjectOverview.searchDialog.searchField.setRenderer(
+    registeredProjectOverview.projectInformationDialog.searchField.setRenderer(
         new ComponentRenderer<>(preview ->
             new Text(previewToString(preview))));
 
     // Generate labels like the rendering
-    registeredProjectOverview.searchDialog.searchField.setItemLabelGenerator(
-        (ItemLabelGenerator<OfferPreview>) ProjectOverviewHandler::previewToString);
+    registeredProjectOverview.projectInformationDialog.searchField.setItemLabelGenerator(
+        (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
+
+    registeredProjectOverview.projectInformationDialog.searchField.addValueChangeListener(e -> {
+      if (registeredProjectOverview.projectInformationDialog.searchField.getValue() != null) {
+        preloadContentFromOffer(registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id());
+      }
+    });
+  }
+
+  private void preloadContentFromOffer(String offerId) {
+    log.info("Receiving offerId " + offerId);
+    OfferId id = OfferId.from(offerId);
+    Optional<Offer> offer = offerLookupService.findOfferById(id);
+    offer.ifPresentOrElse(it -> registeredProjectOverview.projectInformationDialog.setOffer(it),
+        () -> log.error("No offer found with id: " + offerId));
   }
 
   /**
@@ -183,11 +195,5 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
   }
 
-  /**
-   * Enum to define in which mode the project will be created
-   */
-  private enum CreationMode {
-    BLANK, FROM_OFFER, NONE
-  }
 
 }

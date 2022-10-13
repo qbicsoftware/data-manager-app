@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.create;
+package life.qbic.datamanager.views.components;
 
 import java.util.Objects;
 
