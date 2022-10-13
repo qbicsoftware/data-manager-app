@@ -71,6 +71,10 @@ public class Project {
     linkedOffers.remove(offerIdentifier);
   }
 
+  public List<OfferIdentifier> linkedOffers() {
+    return linkedOffers.stream().toList();
+  }
+
   protected void setProjectId(ProjectId projectId) {
     this.projectId = projectId;
     this.lastModified = Instant.now();

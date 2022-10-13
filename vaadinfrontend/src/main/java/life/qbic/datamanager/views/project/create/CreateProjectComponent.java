@@ -22,6 +22,7 @@ import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.components.StyledNotification;
 import life.qbic.datamanager.views.components.SuccessMessage;
+import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
