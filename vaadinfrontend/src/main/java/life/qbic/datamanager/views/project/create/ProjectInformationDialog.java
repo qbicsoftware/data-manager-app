@@ -34,7 +34,7 @@ public class ProjectInformationDialog extends Dialog {
   public ComboBox<OfferPreview> searchField;
 
   private final TextField titleField;
-  public final Button saveButton;
+  public final Button createButton;
   public final Button cancelButton;
   private final FormLayout formLayout;
 
@@ -52,7 +52,7 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
 
-    saveButton = new Button("Save");
+    createButton = new Button("Create");
     cancelButton = new Button("Cancel");
 
     configureDialogLayout();
@@ -71,12 +71,12 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void configureDialogLayout() {
-    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     styleSearchBox();
 
     setHeaderTitle("Create Project");
     add(formLayout);
-    getFooter().add(cancelButton, saveButton);
+    getFooter().add(cancelButton, createButton);
   }
 
   private void initForm() {

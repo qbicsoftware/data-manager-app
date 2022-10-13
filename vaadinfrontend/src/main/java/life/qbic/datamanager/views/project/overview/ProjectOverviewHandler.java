@@ -12,7 +12,6 @@ import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
-import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
 import life.qbic.datamanager.views.Command;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -116,8 +115,8 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   }
 
   private void configureProjectCreationDialog() {
-    registeredProjectOverview.projectInformationDialog.saveButton.addClickListener(
-        e -> saveClicked());
+    registeredProjectOverview.projectInformationDialog.createButton.addClickListener(
+        e -> createClicked());
     registeredProjectOverview.projectInformationDialog.cancelButton.addClickListener(
         e -> cancelSelection().execute());
     registeredProjectOverview.projectInformationDialog.isCloseOnEsc();
@@ -130,23 +129,22 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     };
   }
 
-  private void saveClicked() {
+  private void createClicked() {
     String titleFieldValue = registeredProjectOverview.projectInformationDialog.getTitle();
     String objectiveFieldValue = registeredProjectOverview.projectInformationDialog.getObjective();
     String experimentalDesignDescription = registeredProjectOverview.projectInformationDialog.getExperimentalDesign();
 
-    String loadedOfferId = registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id();
+    String loadedOfferId = registeredProjectOverview.projectInformationDialog.searchField.getValue() != null ? registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id() : null;
 
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
-    //todo
+
     project.ifSuccessOrElse(
         result -> displaySuccessfulProjectCreationNotification(),
         applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
 
-    //todo store project
-
     registeredProjectOverview.projectInformationDialog.close();
+    registeredProjectOverview.projectGrid.getDataProvider().refreshAll();
   }
 
   private void displaySuccessfulProjectCreationNotification() {
@@ -172,7 +170,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
         (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
 
     registeredProjectOverview.projectInformationDialog.searchField.addValueChangeListener(e -> {
-      if(registeredProjectOverview.projectInformationDialog.searchField.getValue() != null){
+      if (registeredProjectOverview.projectInformationDialog.searchField.getValue() != null) {
         preloadContentFromOffer(registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id());
       }
     });
