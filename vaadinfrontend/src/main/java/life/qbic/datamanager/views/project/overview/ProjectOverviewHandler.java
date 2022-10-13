@@ -11,6 +11,7 @@ import life.qbic.datamanager.views.Command;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,8 @@ import org.springframework.stereotype.Component;
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private static final String PROJECT_CREATION_URL = "projects/create";
+
+  private static final String PROJECT_VIEW_URL = "projects/view";
 
   private static final String OFFER_ID_QUERY_PARAMETER = "offerId";
 
@@ -60,6 +63,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
       configureSelectionModeDialog();
       setProjectsToGrid();
       setupSearchBar();
+      configureProjectSelection();
     }
   }
 
@@ -82,6 +86,12 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private void setProjectsToGrid() {
     loadProjectPreview().execute();
+  }
+
+  private void configureProjectSelection() {
+    registeredProjectOverview.projectGrid.addSelectionListener(
+        selectionEvent -> selectionEvent.getFirstSelectedItem().ifPresent(
+            projectPreview -> navigateToProjectDetails(projectPreview.projectId()).execute()));
   }
 
   private void configureSelectionModeDialog() {
@@ -144,6 +154,12 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     registeredProjectOverview.create.addClickListener(
         e -> registeredProjectOverview.selectCreationModeDialog.open());
 
+  }
+
+  private Command navigateToProjectDetails(ProjectId projectId) {
+    return () -> {
+      UI.getCurrent().navigate(PROJECT_VIEW_URL + "/" + projectId.value());
+    };
   }
 
   private Command navigateToProjectCreation(OfferPreview offerPreview) {
