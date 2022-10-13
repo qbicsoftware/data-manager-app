@@ -75,7 +75,6 @@ public class ProjectInformationDialog extends Dialog {
     styleSearchBox();
 
     setHeaderTitle("Create Project");
-    //add(searchField);
     add(formLayout);
     getFooter().add(cancelButton, saveButton);
   }
