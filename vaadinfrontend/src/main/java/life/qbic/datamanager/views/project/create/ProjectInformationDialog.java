@@ -42,15 +42,23 @@ public class ProjectInformationDialog extends Dialog {
   private final TextArea projectObjective;
 
   public ProjectInformationDialog() {
-    titleField = new TextField();
+    searchField = new ComboBox<>("Offer");
+
+    formLayout = new FormLayout();
+
+    titleField = new TextField("Title");
+    titleField.setRequired(true);
+    experimentalDesignField = new TextArea("Experimental Design");
+    projectObjective = new TextArea("Objective");
+    projectObjective.setRequired(true);
+
     saveButton = new Button("Save");
     cancelButton = new Button("Cancel");
-    formLayout = new FormLayout();
-    experimentalDesignField = new TextArea();
-    projectObjective = new TextArea();
-    configureCardLayout();
+
+    configureDialogLayout();
     initForm();
     styleForm();
+
     handler = new Handler();
     handler.handle();
   }
@@ -62,26 +70,25 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.setClassName("create-project-form");
   }
 
-  private void configureCardLayout() {
+  private void configureDialogLayout() {
     saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     styleSearchBox();
 
-    add("Create Project");
+    setHeaderTitle("Create Project");
     add(searchField);
     add(formLayout);
-    add(cancelButton, saveButton);
+    getFooter().add(cancelButton, saveButton);
   }
 
   private void initForm() {
-    formLayout.addFormItem(titleField, "Project Title");
-    formLayout.addFormItem(projectObjective, "Project Objective");
-    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    formLayout.add(titleField);
+    formLayout.add(projectObjective);
+    formLayout.add(experimentalDesignField);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
 
   private void styleSearchBox() {
-    searchField = new ComboBox<>();
     searchField.setPlaceholder("Search");
     searchField.setClassName("searchbox");
     searchField.addClassNames("flex",
@@ -108,8 +115,14 @@ public class ProjectInformationDialog extends Dialog {
 
   }
 
+  /**
+   * Resets all user-defined values set for this dialog
+   */
   public void reset(){
-    //todo implement
+    searchField.clear();
+    titleField.clear();
+    projectObjective.clear();
+    experimentalDesignField.clear();
   }
 
   private class Handler {

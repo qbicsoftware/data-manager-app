@@ -156,7 +156,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     // Generate labels like the rendering
     registeredProjectOverview.projectInformationDialog.searchField.setItemLabelGenerator(
-        (ItemLabelGenerator<OfferPreview>) ProjectOverviewHandler::previewToString);
+        (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
 
     registeredProjectOverview.projectInformationDialog.searchField.addValueChangeListener(e -> {
       if(registeredProjectOverview.projectInformationDialog.searchField.getValue() != null){
