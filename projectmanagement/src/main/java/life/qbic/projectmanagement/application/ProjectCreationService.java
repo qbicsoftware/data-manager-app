@@ -3,12 +3,14 @@ package life.qbic.projectmanagement.application;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -39,15 +41,18 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
-      String experimentalDesign) {
+      String experimentalDesign, String sourceOffer) {
     try {
       Project project;
       if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
-        project = createProjectWithoutExperimentalDesign(title, objective, createRandomCode());
+        project = createProjectWithoutExperimentalDesign(title, objective);
       } else {
-        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign,
-            createRandomCode());
+        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign);
       }
+      Optional.ofNullable(sourceOffer)
+          .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
+          .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
+      projectRepository.add(project);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -67,18 +72,14 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProjectWithoutExperimentalDesign(String title, String objective,
-      ProjectCode projectCode) {
+  private Project createProjectWithoutExperimentalDesign(String title, String objective) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    Project project = Project.create(intent, projectCode);
-    projectRepository.add(project);
-    return project;
+    return Project.create(intent, createRandomCode());
   }
 
   private Project createProjectWithExperimentalDesign(String title,
       String objective,
-      String experimentalDesign,
-      ProjectCode projectCode) {
+      String experimentalDesign) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -90,9 +91,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    Project project = Project.create(intent, projectCode);
-    projectRepository.add(project);
-    return project;
+    return Project.create(intent, createRandomCode());
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {
