@@ -28,6 +28,10 @@ public record ProjectObjective(String objective) {
         return new ProjectObjective(objective);
     }
 
+    public String value() {
+        return this.objective();
+    }
+
     public static long maxLength() {
         return MAX_LENGTH;
     }
