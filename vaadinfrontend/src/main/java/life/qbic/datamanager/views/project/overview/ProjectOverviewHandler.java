@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.project.overview;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 
@@ -10,6 +11,8 @@ import java.util.Optional;
 
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
 import life.qbic.datamanager.views.Command;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -39,6 +42,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   private static final Logger log = logger(ProjectOverviewHandler.class);
+  private final ApplicationExceptionHandler exceptionHandler;
 
   private ProjectOverviewLayout registeredProjectOverview;
   private final OfferLookupService offerLookupService;
@@ -51,7 +55,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
   public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
                                 @Autowired ProjectRepository projectRepository,
-                                @Autowired ProjectInformationService projectInformationService, @Autowired ProjectCreationService projectCreationService) {
+                                @Autowired ProjectInformationService projectInformationService,
+                                @Autowired ProjectCreationService projectCreationService,
+                                @Autowired ApplicationExceptionHandler exceptionHandler) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
 
@@ -63,6 +69,9 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     Objects.requireNonNull(projectCreationService);
     this.projectCreationService = projectCreationService;
+
+    Objects.requireNonNull(exceptionHandler);
+    this.exceptionHandler = exceptionHandler;
   }
 
   @Override
@@ -125,14 +134,18 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     String titleFieldValue = registeredProjectOverview.projectInformationDialog.getTitle();
     String objectiveFieldValue = registeredProjectOverview.projectInformationDialog.getObjective();
     String experimentalDesignDescription = registeredProjectOverview.projectInformationDialog.getExperimentalDesign();
-    //String loadedOfferId = registeredProjectOverview.projectInformationDialog.linkedOffers().stream()
-    //    .findFirst().orElse(null);
+
+    String loadedOfferId = registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id();
+
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, null);
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
     //todo
-    /*project.ifSuccessOrElse(
+    project.ifSuccessOrElse(
         result -> displaySuccessfulProjectCreationNotification(),
-        applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));*/
+        applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
+
+    //todo store project
+
     registeredProjectOverview.projectInformationDialog.close();
   }
 
