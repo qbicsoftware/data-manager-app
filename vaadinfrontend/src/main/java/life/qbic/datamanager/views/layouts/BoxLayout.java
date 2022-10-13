@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.components;
+package life.qbic.datamanager.views.layouts;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -7,6 +7,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import life.qbic.datamanager.views.notifications.DisplayMessage;
 
 /**
  * <b>Box Layout</b>

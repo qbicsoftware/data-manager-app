@@ -7,7 +7,7 @@ import life.qbic.authentication.application.user.password.PasswordResetOutput;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.repository.UserNotFoundException;
-import life.qbic.datamanager.views.components.ErrorMessage;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

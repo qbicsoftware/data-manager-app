@@ -7,7 +7,7 @@ import java.util.Map;
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.RegisterUserOutput;
 import life.qbic.authentication.application.user.registration.UserRegistrationException;
-import life.qbic.datamanager.views.components.ErrorMessage;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
