@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectInformationService {
 
+  private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
 
   private final ProjectRepository projectRepository;
@@ -54,8 +58,9 @@ public class ProjectInformationService {
     return projectPreviewLookup.query(filter, offset, limit);
   }
 
-  public Optional<Project> find(UUID projectId) {
-    return Optional.empty();
+  public Optional<Project> find(ProjectId projectId) {
+    log.debug("Search for project with id: " + projectId.toString());
+    return projectRepository.find(projectId);
   }
 
 

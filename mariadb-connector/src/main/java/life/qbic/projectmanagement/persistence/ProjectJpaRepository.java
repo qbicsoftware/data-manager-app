@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
@@ -48,6 +49,11 @@ public class ProjectJpaRepository implements ProjectRepository {
   @Override
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
+  }
+
+  @Override
+  public Optional<Project> find(ProjectId projectId) {
+    return projectRepo.findById(projectId);
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {

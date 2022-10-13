@@ -13,18 +13,13 @@ import life.qbic.logging.service.LoggerFactory;
  * @since <version tag>
  */
 class ProjectViewHandler {
-
-  private final ProjectViewPage view;
   private final ProjectDetailsComponent projectDetailsComponent;
 
   private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
 
-  public ProjectViewHandler(ProjectViewPage view, ProjectDetailsComponent projectDetailsComponent) {
-    Objects.requireNonNull(view);
+  public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent) {
     Objects.requireNonNull(projectDetailsComponent);
-    this.view = view;
     this.projectDetailsComponent = projectDetailsComponent;
-    log.debug("Registered layout " + view.getClass().getName() + ":" + System.identityHashCode(view));
   }
 
   public void routeParameter(String parameter) {
