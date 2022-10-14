@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.components;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -8,15 +8,12 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * A component displaying all links of a project
@@ -25,19 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 public class ProjectLinksComponent extends Composite<CardLayout> {
 
-  @Serial
-  private static final long serialVersionUID = 8598696156022371367L;
-
   final Grid<ProjectLink> projectLinks;
 
   private final List<ProjectLink> linkList;
 
-  private final ProjectInformationService projectInformationService;
 
+  public ProjectLinksComponent() {
 
-  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService) {
-    Objects.requireNonNull(projectInformationService);
-    this.projectInformationService = projectInformationService;
     linkList = new ArrayList<>();
 
     projectLinks = new Grid<>(ProjectLink.class);
@@ -68,10 +59,5 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   public List<String> linkedOffers() {
     return linkList.stream().filter(it -> Objects.equals(it.type(), "Offer")).map(ProjectLink::reference).toList();
-  }
-
-  public void projectId(String projectId) {
-    var linkedOffers = projectInformationService.queryLinkedOffers(ProjectId.parse(projectId));
-    linkedOffers.forEach(offerId -> linkList.add(ProjectLink.of("Offer", offerId.value())));
   }
 }

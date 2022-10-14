@@ -4,23 +4,28 @@ import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import javax.annotation.security.PermitAll;
+
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.components.CardLayout;
-import life.qbic.datamanager.views.project.overview.components.CreationModeDialog;
-import life.qbic.datamanager.views.project.overview.components.OfferSearchDialog;
+import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -38,19 +43,21 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = 5435551053955979169L;
-  final Button create = new Button("Create");
-  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-  final OfferSearchDialog searchDialog = new OfferSearchDialog();
 
+  final Button create = new Button("Create");
   final TextField projectSearchField = new TextField();
 
-  final CreationModeDialog selectCreationModeDialog = new CreationModeDialog();
+  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
+
+
+  final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
 
   private final ClientDetailsProvider clientDetailsProvider;
+  private static final String PROJECT_VIEW_URL = "projects/view/";
 
 
   public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
-      @Autowired ClientDetailsProvider clientDetailsProvider) {
+                               @Autowired ClientDetailsProvider clientDetailsProvider) {
     this.clientDetailsProvider = clientDetailsProvider;
     layoutComponents();
     registerToHandler(handlerInterface);
@@ -61,19 +68,31 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
   }
 
   private void layoutComponents() {
+    HorizontalLayout layout = new HorizontalLayout();
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    create.addClassNames("mt-s",
+        "mb-s");
 
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
     projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+    projectSearchField.addClassNames("mt-xs",
+        "mb-xs");
 
-    projectGrid.addColumn(ProjectPreview::projectCode).setHeader("Code").setWidth("7em")
+    layout.add(projectSearchField,create);
+    layout.setWidthFull();
+    layout.setVerticalComponentAlignment(FlexComponent.Alignment.END,create);
+    layout.setVerticalComponentAlignment(FlexComponent.Alignment.START,projectSearchField);
+
+    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode()))).setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
-    projectGrid.addColumn(ProjectPreview::projectTitle).setHeader("Title");
+
+    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle()))).setHeader("Title");
+
     projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
             asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
         .setHeader("Last Modified");
-    getContent().addFields(create, projectSearchField, projectGrid);
+    getContent().addFields(layout, projectGrid);
 
   }
 

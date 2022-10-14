@@ -20,8 +20,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.components.StyledNotification;
-import life.qbic.datamanager.views.components.SuccessMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectCreationService;
@@ -49,18 +49,18 @@ public class CreateProjectComponent extends Composite<HorizontalLayout> implemen
 
   private final ProjectLinksComponent projectLinksComponent;
   private final Handler handler;
-  private final ProjectInformationComponent projectInformationComponent;
+  private final ProjectInformationDialog projectInformationDialog;
 
 
   public CreateProjectComponent(@Autowired ApplicationExceptionHandler exceptionHandler,
       @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ProjectInformationComponent projectInformationComponent,
+      @Autowired ProjectInformationDialog projectInformationDialog,
       @Autowired ProjectLinksComponent projectLinksComponent) {
 
     this.projectLinksComponent = projectLinksComponent;
-    this.projectInformationComponent = projectInformationComponent;
-    getContent().add(projectInformationComponent, projectLinksComponent);
+    this.projectInformationDialog = projectInformationDialog;
+    getContent().add(projectInformationDialog, projectLinksComponent);
     this.handler = new Handler(exceptionHandler, offerLookupService, projectCreationService);
     handler.handle();
   }
@@ -111,18 +111,18 @@ public class CreateProjectComponent extends Composite<HorizontalLayout> implemen
     }
 
     private void loadOfferContent(Offer offer) {
-      projectInformationComponent.setOffer(offer);
+      projectInformationDialog.setOffer(offer);
       projectLinksComponent.addLink(offer);
     }
 
     private void addSaveClickListener() {
-      projectInformationComponent.saveButton.addClickListener(it -> saveClicked());
+      projectInformationDialog.createButton.addClickListener(it -> saveClicked());
     }
 
     private void saveClicked() {
-      String titleFieldValue = projectInformationComponent.getTitle();
-      String objectiveFieldValue = projectInformationComponent.getObjective();
-      String experimentalDesignDescription = projectInformationComponent.getExperimentalDesign();
+      String titleFieldValue = projectInformationDialog.getTitle();
+      String objectiveFieldValue = projectInformationDialog.getObjective();
+      String experimentalDesignDescription = projectInformationDialog.getExperimentalDesign();
       String loadedOfferId = projectLinksComponent.linkedOffers().stream()
           .findFirst().orElse(null);
       Result<Project, ApplicationException> project = projectCreationService.createProject(

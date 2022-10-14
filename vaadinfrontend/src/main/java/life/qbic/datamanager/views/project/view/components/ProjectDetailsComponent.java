@@ -9,7 +9,8 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
-import life.qbic.datamanager.views.components.CardLayout;
+
+import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
