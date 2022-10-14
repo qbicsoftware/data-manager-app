@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
+import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -12,12 +13,17 @@ import life.qbic.logging.service.LoggerFactory;
  */
 class ProjectViewHandler {
 
+  private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
+  private final ProjectLinksComponent projectLinksComponent;
+
   private final ProjectDetailsComponent projectDetailsComponent;
 
-  private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
-
-  public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent) {
+  public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent,
+      ProjectLinksComponent projectLinksComponent) {
     Objects.requireNonNull(projectDetailsComponent);
+    Objects.requireNonNull(projectLinksComponent);
+
+    this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
   }
 
@@ -29,5 +35,6 @@ class ProjectViewHandler {
    */
   public void routeParameter(String parameter) {
     this.projectDetailsComponent.projectId(parameter);
+    this.projectLinksComponent.projectId(parameter);
   }
 }

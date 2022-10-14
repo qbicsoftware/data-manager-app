@@ -5,11 +5,14 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project Details Component
@@ -18,6 +21,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
  *
  * @since 1.0.0
  */
+@SpringComponent
+@UIScope
 public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   @Serial
@@ -33,7 +38,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private transient final ProjectDetailsHandler handler;
 
-  public ProjectDetailsComponent(ProjectInformationService projectInformationService) {
+  public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
     initLayout();
     setComponentStyles();
