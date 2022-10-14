@@ -1,8 +1,8 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
+import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 

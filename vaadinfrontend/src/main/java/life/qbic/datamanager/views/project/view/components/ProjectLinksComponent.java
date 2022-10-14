@@ -12,7 +12,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 import life.qbic.datamanager.views.components.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -72,7 +71,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   }
 
   public void projectId(String projectId) {
-    System.out.println(projectId);
     var linkedOffers = projectInformationService.queryLinkedOffers(ProjectId.parse(projectId));
     linkedOffers.forEach(offerId -> linkList.add(ProjectLink.of("Offer", offerId.value())));
   }
