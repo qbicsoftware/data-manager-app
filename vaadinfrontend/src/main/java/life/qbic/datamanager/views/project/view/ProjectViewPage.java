@@ -39,6 +39,8 @@ public class ProjectViewPage extends Div implements
     add(projectDetailsComponent);
     add(projectLinksComponent);
 
+    addClassNames("grid","grid-cols-3", "grid-rows-2", "column-gap-50px");
+
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));

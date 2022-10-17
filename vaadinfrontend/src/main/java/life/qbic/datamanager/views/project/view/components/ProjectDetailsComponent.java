@@ -60,6 +60,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjective.setWidthFull();
     experimentalDesignField.setWidthFull();
     formLayout.setClassName("create-project-form");
+    getContent().addClassNames("col-span-2","col-span-2");
   }
 
   public void projectId(String projectId) {
