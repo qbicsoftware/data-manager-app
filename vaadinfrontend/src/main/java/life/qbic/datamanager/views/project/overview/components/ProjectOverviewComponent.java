@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.overview;
+package life.qbic.datamanager.views.project.overview.components;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -11,22 +11,25 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.annotation.security.PermitAll;
-
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
+import life.qbic.datamanager.views.project.view.ProjectViewPage;
+import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -36,35 +39,28 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@PageTitle("Project Overview")
-@Route(value = "projects", layout = MainLayout.class)
-@PermitAll
-public class ProjectOverviewLayout extends Composite<CardLayout> {
+@SpringComponent
+@UIScope
+public class ProjectOverviewComponent extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = 5435551053955979169L;
-
   final Button create = new Button("Create");
   final TextField projectSearchField = new TextField();
-
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-
-
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
-
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = "projects/view/";
+  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
+  private transient final ProjectOverviewHandler projectOverviewHandler;
 
-
-  public ProjectOverviewLayout(@Autowired ProjectOverviewHandlerInterface handlerInterface,
-                               @Autowired ClientDetailsProvider clientDetailsProvider) {
+  public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider, @Autowired OfferLookupService offerLookupService,
+      @Autowired ProjectRepository projectRepository,
+      @Autowired ProjectInformationService projectInformationService,
+      @Autowired ProjectCreationService projectCreationService,
+      @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.clientDetailsProvider = clientDetailsProvider;
+    projectOverviewHandler = new ProjectOverviewHandler(this, offerLookupService, projectRepository, projectInformationService, projectCreationService, exceptionHandler);
     layoutComponents();
-    registerToHandler(handlerInterface);
-  }
-
-  private void registerToHandler(ProjectOverviewHandlerInterface handler) {
-    handler.handle(this);
   }
 
   private void layoutComponents() {
@@ -83,7 +79,6 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
     layout.setWidthFull();
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END,create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START,projectSearchField);
-
     projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode()))).setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
@@ -93,7 +88,6 @@ public class ProjectOverviewLayout extends Composite<CardLayout> {
             asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
         .setHeader("Last Modified");
     getContent().addFields(layout, projectGrid);
-
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
