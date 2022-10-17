@@ -15,6 +15,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectModificationService;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,12 +37,17 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   private final ProjectInformationService projectInformationService;
 
   private final ProjectModificationService projectModificationService;
+
+  private final OfferSearchComponent offerSearchComponent;
   private static final String OFFER_TYPE_NAME = "Offer";
   private ProjectId projectId;
 
 
   public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ProjectModificationService projectModificationService) {
+      @Autowired ProjectModificationService projectModificationService,
+      @Autowired OfferSearchComponent offerSearchComponent) {
+    Objects.requireNonNull(offerSearchComponent);
+    this.offerSearchComponent = offerSearchComponent;
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
     Objects.requireNonNull(projectModificationService);
@@ -61,22 +67,29 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         })
     );
     projectLinks.setItems(linkList);
-
-    Button addLinkButton = new Button("Link offer");
-    addLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    addLinkButton.setIcon(new Icon("lumo", "plus"));
-    addLinkButton.addClickListener(it -> {
-      //TODO
-      return;
+    offerSearchComponent.addValueChangeListener(it -> {
+      if (Objects.isNull(it.getValue())) {
+        return;
+      }
+      if (!it.isFromClient()) {
+        return;
+      }
+      if (it.getValue() != it.getOldValue()) {
+        addLink(offerLink(it.getValue().offerId()));
+        it.getSource().clear();
+      }
     });
 
     getContent().addTitle("Links");
-    getContent().addButtons(addLinkButton);
-    getContent().addFields(projectLinks);
+    getContent().addFields(offerSearchComponent, projectLinks);
   }
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+  }
+
+  private static ProjectLink offerLink(OfferId offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.id());
   }
 
   private void addLink(ProjectLink projectLink) {
