@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.application.ProjectModificationService;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,8 +35,14 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private final ProjectInformationService projectInformationService;
 
+  private final ProjectModificationService projectModificationService;
+  private static final String OFFER_TYPE_NAME = "Offer";
+  private ProjectId projectId;
 
-  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService) {
+
+  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
+      @Autowired ProjectModificationService projectModificationService) {
+    this.projectModificationService = projectModificationService;
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
     linkList = new ArrayList<>();
@@ -48,12 +55,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           button.addThemeVariants(ButtonVariant.LUMO_ICON,
               ButtonVariant.LUMO_ERROR,
               ButtonVariant.LUMO_TERTIARY);
-          button.addClickListener(e -> {
-            linkList.remove(projectLink);
-            projectLinks.getDataProvider().refreshAll();
-            }
-          );
-          button.setIcon(new Icon("lumo","cross"));
+          button.setIcon(new Icon("lumo", "cross"));
+          button.addClickListener(e -> removeLink(projectLink));
         })
     );
     projectLinks.setItems(linkList);
@@ -62,16 +65,43 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     getContent().addFields(projectLinks);
   }
 
-  public void addLink(Offer offer) {
-    linkList.add(ProjectLink.of("Offer", offer.offerId().id()));
+  public void addLink(OfferIdentifier offerIdentifier) {
+    ProjectLink projectLink = ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+    addLink(projectLink);
+  }
+
+  private void addLink(ProjectLink projectLink) {
+    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+      projectModificationService.linkOfferToProject(projectLink.reference(),
+          this.projectId.value());
+    }
+    linkList.add(projectLink);
+    projectLinks.getDataProvider().refreshItem(projectLink);
+  }
+
+  private void removeLink(ProjectLink projectLink) {
+    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+      projectModificationService.unlinkOfferFromProject(projectLink.reference(),
+          this.projectId.value());
+    }
+    linkList.remove(projectLink);
+    projectLinks.getDataProvider().refreshItem(projectLink);
   }
 
   public List<String> linkedOffers() {
-    return linkList.stream().filter(it -> Objects.equals(it.type(), "Offer")).map(ProjectLink::reference).toList();
+    return linkList.stream().filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME))
+        .map(ProjectLink::reference).toList();
   }
 
   public void projectId(String projectId) {
-    var linkedOffers = projectInformationService.queryLinkedOffers(ProjectId.parse(projectId));
-    linkedOffers.forEach(offerId -> linkList.add(ProjectLink.of("Offer", offerId.value())));
+    this.projectId = ProjectId.parse(projectId);
+    loadContentForProject(this.projectId);
+  }
+
+  private void loadContentForProject(ProjectId projectId) {
+    linkList.clear();
+    projectLinks.getDataProvider().refreshAll();
+    var linkedOffers = projectInformationService.queryLinkedOffers(projectId);
+    linkedOffers.forEach(this::addLink);
   }
 }

@@ -1,13 +1,27 @@
 package life.qbic.projectmanagement.application;
 
+import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 /**
- * <b>short description</b>
+ * Allows for modification of existing projects
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
+@Service
 public class ProjectModificationService {
+
+  private final ProjectRepository projectRepository;
+  private final OfferSearchService offerSearchService;
+
+  public ProjectModificationService(
+      @Autowired ProjectRepository projectRepository,
+      @Autowired OfferSearchService offerSearchService) {
+    this.projectRepository = projectRepository;
+    this.offerSearchService = offerSearchService;
+  }
 
   public void linkOfferToProject(String offerIdentifier, String projectIdentifier) {
     /*
