@@ -1,15 +1,18 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
-
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,10 +48,30 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     this.handler = new ProjectDetailsHandler(this, projectInformationService);
   }
 
+  private static <T extends Component & HasValue<?, ?>> Component enablingOnDoubleClick(
+      T hasValue) {
+    VerticalLayout layout = new VerticalLayout();
+    layout.add(hasValue);
+    layout.addClickListener(it -> toggleEditableOnDoubleClick(it, hasValue));
+    layout.setSizeUndefined();
+    return layout;
+  }
+
+  private static void toggleEditableOnDoubleClick(ClickEvent<VerticalLayout> it,
+      HasValue<?, ?> hasValue) {
+    if (it.getClickCount() == 2) {
+      hasValue.setReadOnly(!hasValue.isReadOnly());
+    }
+  }
+
   private void initLayout() {
-    formLayout.addFormItem(titleField, "Project Title");
-    formLayout.addFormItem(projectObjective, "Project Objective");
-    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    titleField.setReadOnly(true);
+    projectObjective.setReadOnly(true);
+    experimentalDesignField.setReadOnly(true);
+
+    formLayout.addFormItem(enablingOnDoubleClick(titleField), "Project Title");
+    formLayout.addFormItem(enablingOnDoubleClick(projectObjective), "Project Objective");
+    formLayout.addFormItem(enablingOnDoubleClick(experimentalDesignField), "Experimental Design");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);

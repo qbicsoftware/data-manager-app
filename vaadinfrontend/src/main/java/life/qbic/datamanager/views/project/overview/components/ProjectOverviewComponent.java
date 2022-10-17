@@ -51,7 +51,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
   private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
-  private transient final ProjectOverviewHandler projectOverviewHandler;
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider, @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectRepository projectRepository,
@@ -59,7 +58,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired ProjectCreationService projectCreationService,
       @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.clientDetailsProvider = clientDetailsProvider;
-    projectOverviewHandler = new ProjectOverviewHandler(this, offerLookupService, projectRepository, projectInformationService, projectCreationService, exceptionHandler);
+    new ProjectOverviewHandler(this,
+        offerLookupService, projectRepository, projectInformationService, projectCreationService,
+        exceptionHandler);
     layoutComponents();
   }
 
