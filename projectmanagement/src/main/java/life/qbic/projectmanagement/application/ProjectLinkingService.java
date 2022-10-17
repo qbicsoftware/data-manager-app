@@ -45,8 +45,7 @@ public class ProjectLinkingService {
     log.info("un-linking offer " + offerIdentifier + " to project " + projectIdentifier);
     Offer offer = loadOfferOrThrow(offerIdentifier);
     Project project = loadProjectOrThrow(projectIdentifier);
-    OfferIdentifier offerIdentifier2 = OfferIdentifier.of(offer.offerId().id());
-    project.unlinkOffer(offerIdentifier2);
+    project.unlinkOffer(OfferIdentifier.of(offerIdentifier));
     projectRepository.update(project);
   }
 
