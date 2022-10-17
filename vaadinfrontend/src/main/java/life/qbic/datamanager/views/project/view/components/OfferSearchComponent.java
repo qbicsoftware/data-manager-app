@@ -1,8 +1,9 @@
 package life.qbic.datamanager.views.project.view.components;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.HasValue.ValueChangeListener;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -27,6 +28,25 @@ public class OfferSearchComponent extends Composite<ComboBox<OfferPreview>> {
 
   private final OfferLookupService offerLookupService;
 
+  public static class SelectedOfferChangeEvent extends
+      ComponentValueChangeEvent<OfferSearchComponent, OfferPreview> {
+
+    /**
+     * Creates a new component value change event.
+     *
+     * @param source     the source component
+     * @param hasValue   the HasValue from which the value originates
+     * @param oldValue   the old value
+     * @param fromClient whether the value change originated from the client
+     */
+    public SelectedOfferChangeEvent(OfferSearchComponent source,
+        HasValue<?, OfferPreview> hasValue, OfferPreview oldValue,
+        boolean fromClient) {
+      super(source, hasValue, oldValue, fromClient);
+    }
+  }
+
+
   public OfferSearchComponent(
       @Autowired OfferLookupService offerLookupService) {
     Objects.requireNonNull(offerLookupService);
@@ -34,14 +54,21 @@ public class OfferSearchComponent extends Composite<ComboBox<OfferPreview>> {
     setItems();
     setRenderer();
     setLabels();
+    forwardValueChangeEvents();
   }
 
-  public Registration addValueChangeListener(
-      ValueChangeListener<? super ComponentValueChangeEvent<ComboBox<OfferPreview>, OfferPreview>> listener) {
-    return getContent().addValueChangeListener(listener);
+  private void forwardValueChangeEvents() {
+    getContent().addValueChangeListener(
+        it -> fireEvent(new SelectedOfferChangeEvent(this, it.getHasValue(), it.getOldValue(),
+            it.isFromClient())));
   }
 
-  public void clear() {
+  public Registration addSelectedOfferChangeListener(
+      ComponentEventListener<SelectedOfferChangeEvent> listener) {
+    return this.addListener(SelectedOfferChangeEvent.class, listener);
+  }
+
+  public void clearSelection() {
     getContent().clear();
   }
 

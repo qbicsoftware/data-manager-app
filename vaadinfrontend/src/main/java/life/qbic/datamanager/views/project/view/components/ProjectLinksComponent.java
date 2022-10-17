@@ -37,8 +37,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   private final ProjectInformationService projectInformationService;
 
   private final ProjectModificationService projectModificationService;
-
-  private final OfferSearchComponent offerSearchComponent;
   private static final String OFFER_TYPE_NAME = "Offer";
   private ProjectId projectId;
 
@@ -47,7 +45,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
       @Autowired ProjectModificationService projectModificationService,
       @Autowired OfferSearchComponent offerSearchComponent) {
     Objects.requireNonNull(offerSearchComponent);
-    this.offerSearchComponent = offerSearchComponent;
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
     Objects.requireNonNull(projectModificationService);
@@ -67,7 +64,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         })
     );
     projectLinks.setItems(linkList);
-    offerSearchComponent.addValueChangeListener(it -> {
+    offerSearchComponent.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
       }
@@ -76,7 +73,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
       }
       if (it.getValue() != it.getOldValue()) {
         addLink(offerLink(it.getValue().offerId()));
-        it.getSource().clear();
+        it.getSource().clearSelection();
       }
     });
 
