@@ -1,9 +1,8 @@
-package life.qbic.projectmanagement.domain.project;/**
- * <b><class short description - 1 Line!></b>
- * 
- * <p><More detailed description - When to use, what it solves, etc.></p>
+package life.qbic.projectmanagement.domain.project;
+
+/**
+ * Record representing a person reference with name and contact email address
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class PersonReference {
-}
+public record PersonReference(String referenceId, String fullName, String emailAddress) {}
