@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.application;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectModificationService {
 
+  Logger log = logger(ProjectModificationService.class);
   private final ProjectRepository projectRepository;
   private final OfferSearchService offerSearchService;
 
@@ -24,6 +28,7 @@ public class ProjectModificationService {
   }
 
   public void linkOfferToProject(String offerIdentifier, String projectIdentifier) {
+    log.info("linking offer " + offerIdentifier + " to project " + projectIdentifier);
     /*
      TODO:
      - offer := query offer / verify that offer exists
@@ -34,7 +39,8 @@ public class ProjectModificationService {
   }
 
   public void unlinkOfferFromProject(String offerIdentifier, String projectIdentifier) {
-        /*
+    log.info("un-linking offer " + offerIdentifier + " to project " + projectIdentifier);
+    /*
      TODO:
      - offer := query offer / verify that offer exists
      - project := query project

@@ -66,8 +66,12 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   }
 
   public void addLink(OfferIdentifier offerIdentifier) {
-    ProjectLink projectLink = ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+    ProjectLink projectLink = offerLink(offerIdentifier);
     addLink(projectLink);
+  }
+
+  private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
 
   private void addLink(ProjectLink projectLink) {
@@ -76,7 +80,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           this.projectId.value());
     }
     linkList.add(projectLink);
-    projectLinks.getDataProvider().refreshItem(projectLink);
+    projectLinks.getDataProvider().refreshAll();
   }
 
   private void removeLink(ProjectLink projectLink) {
@@ -85,7 +89,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           this.projectId.value());
     }
     linkList.remove(projectLink);
-    projectLinks.getDataProvider().refreshItem(projectLink);
+    projectLinks.getDataProvider().refreshAll();
   }
 
   public List<String> linkedOffers() {
@@ -102,6 +106,11 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     linkList.clear();
     projectLinks.getDataProvider().refreshAll();
     var linkedOffers = projectInformationService.queryLinkedOffers(projectId);
-    linkedOffers.forEach(this::addLink);
+    List<ProjectLink> offerLinks = linkedOffers.stream()
+        .map(ProjectLinksComponent::offerLink)
+        .toList();
+    linkList.addAll(offerLinks);
+    projectLinks.getDataProvider().refreshAll();
+
   }
 }
