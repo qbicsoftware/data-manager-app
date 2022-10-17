@@ -51,7 +51,7 @@ public class ProjectLinkingService {
     projectRepository.update(project);
   }
 
-  private Offer loadOfferOrThrow(String offerIdentifier) {
+  private Offer loadOfferOrThrow(String offerIdentifier) throws ProjectManagementException {
     Optional<Offer> offerSearchResult = offerSearchService.findByOfferId(offerIdentifier);
     if (offerSearchResult.isEmpty()) {
       throw new ProjectManagementException(
@@ -60,7 +60,7 @@ public class ProjectLinkingService {
     return offerSearchResult.get();
   }
 
-  private Project loadProjectOrThrow(String projectIdentifier) {
+  private Project loadProjectOrThrow(String projectIdentifier) throws ProjectManagementException {
     ProjectId projectId = ProjectId.of(UUID.fromString(projectIdentifier));
     Optional<Project> projectSearchResult = projectRepository.find(projectId);
     if (projectSearchResult.isEmpty()) {
