@@ -35,7 +35,7 @@ public class ProjectLinkingService {
 
   public void linkOfferToProject(String offerIdentifier, String projectIdentifier) {
     log.info("linking offer " + offerIdentifier + " to project " + projectIdentifier);
-    Offer offer = loadOfferOrThrow(offerIdentifier);
+    loadOfferOrThrow(offerIdentifier);
     Project project = loadProjectOrThrow(projectIdentifier);
     project.linkOffer(OfferIdentifier.of(offerIdentifier));
     projectRepository.update(project);
@@ -43,7 +43,7 @@ public class ProjectLinkingService {
 
   public void unlinkOfferFromProject(String offerIdentifier, String projectIdentifier) {
     log.info("un-linking offer " + offerIdentifier + " to project " + projectIdentifier);
-    Offer offer = loadOfferOrThrow(offerIdentifier);
+    loadOfferOrThrow(offerIdentifier);
     Project project = loadProjectOrThrow(projectIdentifier);
     project.unlinkOffer(OfferIdentifier.of(offerIdentifier));
     projectRepository.update(project);
