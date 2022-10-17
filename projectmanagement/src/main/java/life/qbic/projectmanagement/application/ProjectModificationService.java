@@ -19,4 +19,14 @@ public class ProjectModificationService {
      */
   }
 
+  public void unlinkOfferFromProject(String offerIdentifier, String projectIdentifier) {
+        /*
+     TODO:
+     - offer := query offer / verify that offer exists
+     - project := query project
+     - project.unlinkOffer(offer.id())
+     - projectRepository.save(project)
+     */
+  }
+
 }
