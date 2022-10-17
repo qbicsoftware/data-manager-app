@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -14,7 +15,9 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.application.ProjectLinkingService;
+import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,15 +33,21 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   final Grid<ProjectLink> projectLinks;
 
-  private final List<ProjectLink> linkList;
-
   private final ProjectInformationService projectInformationService;
 
+  private final ProjectLinkingService projectLinkingService;
+  private static final String OFFER_TYPE_NAME = "Offer";
+  private ProjectId projectId;
 
-  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService) {
+
+  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
+      @Autowired ProjectLinkingService projectLinkingService,
+      @Autowired OfferSearchComponent offerSearchComponent) {
+    Objects.requireNonNull(offerSearchComponent);
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
-    linkList = new ArrayList<>();
+    Objects.requireNonNull(projectLinkingService);
+    this.projectLinkingService = projectLinkingService;
 
     projectLinks = new Grid<>(ProjectLink.class);
     projectLinks.addColumn(ProjectLink::type).setHeader("Type");
@@ -48,30 +57,69 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           button.addThemeVariants(ButtonVariant.LUMO_ICON,
               ButtonVariant.LUMO_ERROR,
               ButtonVariant.LUMO_TERTIARY);
-          button.addClickListener(e -> {
-            linkList.remove(projectLink);
-            projectLinks.getDataProvider().refreshAll();
-            }
-          );
-          button.setIcon(new Icon("lumo","cross"));
+          button.setIcon(new Icon("lumo", "cross"));
+          button.addClickListener(e -> removeLink(projectLink));
         })
     );
-    projectLinks.setItems(linkList);
+    projectLinks.setItems(new ArrayList<>());
+    offerSearchComponent.addSelectedOfferChangeListener(it -> {
+      if (Objects.isNull(it.getValue())) {
+        return;
+      }
+      if (!it.isFromClient()) {
+        return;
+      }
+      if (it.getValue() != it.getOldValue()) {
+        addLink(offerLink(it.getValue().offerId()));
+        it.getSource().clearSelection();
+      }
+    });
 
     getContent().addTitle("Links");
-    getContent().addFields(projectLinks);
+    getContent().addFields(offerSearchComponent, projectLinks);
   }
 
-  public void addLink(Offer offer) {
-    linkList.add(ProjectLink.of("Offer", offer.offerId().id()));
+  private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+  }
+
+  private static ProjectLink offerLink(OfferId offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.id());
+  }
+
+  private void addLink(ProjectLink projectLink) {
+    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+      projectLinkingService.linkOfferToProject(projectLink.reference(),
+          this.projectId.value());
+    }
+    loadContentForProject(projectId);
+  }
+
+  private void removeLink(ProjectLink projectLink) {
+    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+      projectLinkingService.unlinkOfferFromProject(projectLink.reference(),
+          this.projectId.value());
+    }
+    loadContentForProject(projectId);
   }
 
   public List<String> linkedOffers() {
-    return linkList.stream().filter(it -> Objects.equals(it.type(), "Offer")).map(ProjectLink::reference).toList();
+    return projectLinks.getDataProvider()
+        .fetch(new Query<>()).filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME))
+        .map(ProjectLink::reference)
+        .toList();
   }
 
   public void projectId(String projectId) {
-    var linkedOffers = projectInformationService.queryLinkedOffers(ProjectId.parse(projectId));
-    linkedOffers.forEach(offerId -> linkList.add(ProjectLink.of("Offer", offerId.value())));
+    this.projectId = ProjectId.parse(projectId);
+    loadContentForProject(this.projectId);
+  }
+
+  private void loadContentForProject(ProjectId projectId) {
+    var linkedOffers = projectInformationService.queryLinkedOffers(projectId);
+    List<ProjectLink> offerLinks = linkedOffers.stream()
+        .map(ProjectLinksComponent::offerLink)
+        .toList();
+    projectLinks.setItems(offerLinks);
   }
 }
