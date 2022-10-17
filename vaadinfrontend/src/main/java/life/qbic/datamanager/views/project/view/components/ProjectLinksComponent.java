@@ -42,9 +42,10 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectModificationService projectModificationService) {
-    this.projectModificationService = projectModificationService;
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
+    Objects.requireNonNull(projectModificationService);
+    this.projectModificationService = projectModificationService;
     linkList = new ArrayList<>();
 
     projectLinks = new Grid<>(ProjectLink.class);
@@ -61,7 +62,16 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     );
     projectLinks.setItems(linkList);
 
+    Button addLinkButton = new Button("Link offer");
+    addLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    addLinkButton.setIcon(new Icon("lumo", "plus"));
+    addLinkButton.addClickListener(it -> {
+      //TODO
+      return;
+    });
+
     getContent().addTitle("Links");
+    getContent().addButtons(addLinkButton);
     getContent().addFields(projectLinks);
   }
 
