@@ -37,8 +37,7 @@ public class ProjectLinkingService {
     log.info("linking offer " + offerIdentifier + " to project " + projectIdentifier);
     Offer offer = loadOfferOrThrow(offerIdentifier);
     Project project = loadProjectOrThrow(projectIdentifier);
-    OfferIdentifier offerIdentifier2 = OfferIdentifier.of(offer.offerId().id());
-    project.linkOffer(offerIdentifier2);
+    project.linkOffer(OfferIdentifier.of(offerIdentifier));
     projectRepository.update(project);
   }
 
