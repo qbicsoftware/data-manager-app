@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.overview;
+package life.qbic.datamanager.views.project.overview.components;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
@@ -24,39 +24,36 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>Handler</b>
  *
- * <p>Orchestrates the layout {@link ProjectOverviewLayout} and determines how the components
+ * <p>Orchestrates the layout {@link ProjectOverviewComponent} and determines how the components
  * behave.</p>
  *
  * @since 1.0.0
  */
-@Component
-public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
+public class ProjectOverviewHandler {
   private static final Logger log = logger(ProjectOverviewHandler.class);
   private final ApplicationExceptionHandler exceptionHandler;
-
-  private ProjectOverviewLayout registeredProjectOverview;
+  private final ProjectOverviewComponent registeredProjectOverview;
   private final OfferLookupService offerLookupService;
   private final ProjectCreationService projectCreationService;
-
   private final ProjectRepository projectRepository;
-
   private final ProjectInformationService projectInformationService;
 
+  public ProjectOverviewHandler(ProjectOverviewComponent registeredProjectOverview,
+                                OfferLookupService offerLookupService,
+                                ProjectRepository projectRepository,
+                                ProjectInformationService projectInformationService,
+                                ProjectCreationService projectCreationService,
+                                ApplicationExceptionHandler exceptionHandler) {
+    Objects.requireNonNull(registeredProjectOverview);
+    this.registeredProjectOverview = registeredProjectOverview;
 
-  public ProjectOverviewHandler(@Autowired OfferLookupService offerLookupService,
-                                @Autowired ProjectRepository projectRepository,
-                                @Autowired ProjectInformationService projectInformationService,
-                                @Autowired ProjectCreationService projectCreationService,
-                                @Autowired ApplicationExceptionHandler exceptionHandler) {
     Objects.requireNonNull(offerLookupService);
     this.offerLookupService = offerLookupService;
 
@@ -71,20 +68,11 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
 
     Objects.requireNonNull(exceptionHandler);
     this.exceptionHandler = exceptionHandler;
-  }
-
-  @Override
-  public void handle(ProjectOverviewLayout layout) {
-    if (registeredProjectOverview != layout) {
-      this.registeredProjectOverview = layout;
-
-      configurePageButtons();
-      configureProjectCreationDialog();
-      loadOfferPreview();
-
-      setProjectsToGrid();
-      setupSearchBar();
-    }
+    configurePageButtons();
+    configureProjectCreationDialog();
+    loadOfferPreview();
+    setProjectsToGrid();
+    setupSearchBar();
   }
 
   private void setupSearchBar() {
@@ -180,7 +168,7 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
     log.info("Receiving offerId " + offerId);
     OfferId id = OfferId.from(offerId);
     Optional<Offer> offer = offerLookupService.findOfferById(id);
-    offer.ifPresentOrElse(it -> registeredProjectOverview.projectInformationDialog.setOffer(it),
+    offer.ifPresentOrElse(registeredProjectOverview.projectInformationDialog::setOffer,
         () -> log.error("No offer found with id: " + offerId));
   }
 
@@ -194,6 +182,5 @@ public class ProjectOverviewHandler implements ProjectOverviewHandlerInterface {
   private static String previewToString(OfferPreview offerPreview) {
     return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
   }
-
 
 }
