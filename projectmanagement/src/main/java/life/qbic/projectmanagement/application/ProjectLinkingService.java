@@ -35,19 +35,8 @@ public class ProjectLinkingService {
 
   public void linkOfferToProject(String offerIdentifier, String projectIdentifier) {
     log.info("linking offer " + offerIdentifier + " to project " + projectIdentifier);
-    Optional<Offer> offerSearchResult = offerSearchService.findByOfferId(offerIdentifier);
-    if (offerSearchResult.isEmpty()) {
-      throw new ProjectManagementException(
-          "No offer with identifier " + offerIdentifier + " exists.");
-    }
-    Offer offer = offerSearchResult.get();
-    ProjectId projectId = ProjectId.of(UUID.fromString(projectIdentifier));
-    Optional<Project> projectSearchResult = projectRepository.find(projectId);
-    if (projectSearchResult.isEmpty()) {
-      throw new ProjectManagementException(
-          "No project with identifier " + projectIdentifier + " exists.");
-    }
-    Project project = projectSearchResult.get();
+    Offer offer = loadOfferOrThrow(offerIdentifier);
+    Project project = loadProjectOrThrow(projectIdentifier);
     OfferIdentifier offerIdentifier2 = OfferIdentifier.of(offer.offerId().id());
     project.linkOffer(offerIdentifier2);
     projectRepository.update(project);
@@ -55,29 +44,30 @@ public class ProjectLinkingService {
 
   public void unlinkOfferFromProject(String offerIdentifier, String projectIdentifier) {
     log.info("un-linking offer " + offerIdentifier + " to project " + projectIdentifier);
-    /*
-     TODO:
-     - offer := query offer / verify that offer exists
-     - project := query project
-     - project.unlinkOffer(offer.id())
-     - projectRepository.save(project)
-     */
+    Offer offer = loadOfferOrThrow(offerIdentifier);
+    Project project = loadProjectOrThrow(projectIdentifier);
+    OfferIdentifier offerIdentifier2 = OfferIdentifier.of(offer.offerId().id());
+    project.unlinkOffer(offerIdentifier2);
+    projectRepository.update(project);
+  }
+
+  private Offer loadOfferOrThrow(String offerIdentifier) {
     Optional<Offer> offerSearchResult = offerSearchService.findByOfferId(offerIdentifier);
     if (offerSearchResult.isEmpty()) {
       throw new ProjectManagementException(
           "No offer with identifier " + offerIdentifier + " exists.");
     }
-    Offer offer = offerSearchResult.get();
+    return offerSearchResult.get();
+  }
+
+  private Project loadProjectOrThrow(String projectIdentifier) {
     ProjectId projectId = ProjectId.of(UUID.fromString(projectIdentifier));
     Optional<Project> projectSearchResult = projectRepository.find(projectId);
     if (projectSearchResult.isEmpty()) {
       throw new ProjectManagementException(
           "No project with identifier " + projectIdentifier + " exists.");
     }
-    Project project = projectSearchResult.get();
-    OfferIdentifier offerIdentifier2 = OfferIdentifier.of(offer.offerId().id());
-    project.unlinkOffer(offerIdentifier2);
-    projectRepository.update(project);
+    return projectSearchResult.get();
   }
 
 }
