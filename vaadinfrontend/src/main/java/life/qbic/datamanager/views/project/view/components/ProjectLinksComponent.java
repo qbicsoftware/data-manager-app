@@ -65,11 +65,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     getContent().addFields(projectLinks);
   }
 
-  public void addLink(OfferIdentifier offerIdentifier) {
-    ProjectLink projectLink = offerLink(offerIdentifier);
-    addLink(projectLink);
-  }
-
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
