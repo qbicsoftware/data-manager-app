@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -32,8 +33,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   final Grid<ProjectLink> projectLinks;
 
-  private final List<ProjectLink> linkList;
-
   private final ProjectInformationService projectInformationService;
 
   private final ProjectLinkingService projectLinkingService;
@@ -49,7 +48,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     this.projectInformationService = projectInformationService;
     Objects.requireNonNull(projectLinkingService);
     this.projectLinkingService = projectLinkingService;
-    linkList = new ArrayList<>();
 
     projectLinks = new Grid<>(ProjectLink.class);
     projectLinks.addColumn(ProjectLink::type).setHeader("Type");
@@ -63,7 +61,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           button.addClickListener(e -> removeLink(projectLink));
         })
     );
-    projectLinks.setItems(linkList);
+    projectLinks.setItems(new ArrayList<>());
     offerSearchComponent.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
@@ -94,8 +92,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
       projectLinkingService.linkOfferToProject(projectLink.reference(),
           this.projectId.value());
     }
-    linkList.add(projectLink);
-    projectLinks.getDataProvider().refreshAll();
+    loadContentForProject(projectId);
   }
 
   private void removeLink(ProjectLink projectLink) {
@@ -103,13 +100,14 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
       projectLinkingService.unlinkOfferFromProject(projectLink.reference(),
           this.projectId.value());
     }
-    linkList.remove(projectLink);
-    projectLinks.getDataProvider().refreshAll();
+    loadContentForProject(projectId);
   }
 
   public List<String> linkedOffers() {
-    return linkList.stream().filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME))
-        .map(ProjectLink::reference).toList();
+    return projectLinks.getDataProvider()
+        .fetch(new Query<>()).filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME))
+        .map(ProjectLink::reference)
+        .toList();
   }
 
   public void projectId(String projectId) {
@@ -118,14 +116,10 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   }
 
   private void loadContentForProject(ProjectId projectId) {
-    linkList.clear();
-    projectLinks.getDataProvider().refreshAll();
     var linkedOffers = projectInformationService.queryLinkedOffers(projectId);
     List<ProjectLink> offerLinks = linkedOffers.stream()
         .map(ProjectLinksComponent::offerLink)
         .toList();
-    linkList.addAll(offerLinks);
-    projectLinks.getDataProvider().refreshAll();
-
+    projectLinks.setItems(offerLinks);
   }
 }
