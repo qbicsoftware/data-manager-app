@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectModificationService;
+import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -36,19 +36,19 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private final ProjectInformationService projectInformationService;
 
-  private final ProjectModificationService projectModificationService;
+  private final ProjectLinkingService projectLinkingService;
   private static final String OFFER_TYPE_NAME = "Offer";
   private ProjectId projectId;
 
 
   public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ProjectModificationService projectModificationService,
+      @Autowired ProjectLinkingService projectLinkingService,
       @Autowired OfferSearchComponent offerSearchComponent) {
     Objects.requireNonNull(offerSearchComponent);
     Objects.requireNonNull(projectInformationService);
     this.projectInformationService = projectInformationService;
-    Objects.requireNonNull(projectModificationService);
-    this.projectModificationService = projectModificationService;
+    Objects.requireNonNull(projectLinkingService);
+    this.projectLinkingService = projectLinkingService;
     linkList = new ArrayList<>();
 
     projectLinks = new Grid<>(ProjectLink.class);
@@ -91,7 +91,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private void addLink(ProjectLink projectLink) {
     if (projectLink.type().equals(OFFER_TYPE_NAME)) {
-      projectModificationService.linkOfferToProject(projectLink.reference(),
+      projectLinkingService.linkOfferToProject(projectLink.reference(),
           this.projectId.value());
     }
     linkList.add(projectLink);
@@ -100,7 +100,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private void removeLink(ProjectLink projectLink) {
     if (projectLink.type().equals(OFFER_TYPE_NAME)) {
-      projectModificationService.unlinkOfferFromProject(projectLink.reference(),
+      projectLinkingService.unlinkOfferFromProject(projectLink.reference(),
           this.projectId.value());
     }
     linkList.remove(projectLink);

@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class ProjectModificationService {
+public class ProjectLinkingService {
 
-  Logger log = logger(ProjectModificationService.class);
+  Logger log = logger(ProjectLinkingService.class);
   private final ProjectRepository projectRepository;
   private final OfferSearchService offerSearchService;
 
-  public ProjectModificationService(
+  public ProjectLinkingService(
       @Autowired ProjectRepository projectRepository,
       @Autowired OfferSearchService offerSearchService) {
     this.projectRepository = projectRepository;
