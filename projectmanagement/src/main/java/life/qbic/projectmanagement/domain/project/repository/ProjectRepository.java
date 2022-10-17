@@ -25,6 +25,14 @@ public interface ProjectRepository {
   void add(Project project);
 
   /**
+   * Updates a {@link Project} entity.
+   *
+   * @param project the project to update
+   * @since 1.0.0
+   */
+  void update(Project project);
+
+  /**
    * Searches for projects that contain the provided project code
    *
    * @param projectCode the project code to search for in projects

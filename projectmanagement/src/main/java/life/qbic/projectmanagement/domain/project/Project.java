@@ -64,11 +64,18 @@ public class Project {
   }
 
   public void linkOffer(OfferIdentifier offerIdentifier) {
+    if (linkedOffers.contains(offerIdentifier)) {
+      return;
+    }
     linkedOffers.add(offerIdentifier);
+    this.lastModified = Instant.now();
   }
 
   public void unlinkOffer(OfferIdentifier offerIdentifier) {
-    linkedOffers.remove(offerIdentifier);
+    boolean offerRemoved = linkedOffers.remove(offerIdentifier);
+    if (offerRemoved) {
+      this.lastModified = Instant.now();
+    }
   }
 
   public List<OfferIdentifier> linkedOffers() {
