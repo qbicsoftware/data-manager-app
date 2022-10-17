@@ -53,6 +53,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     VerticalLayout layout = new VerticalLayout();
     layout.add(hasValue);
     layout.addClickListener(it -> toggleEditableOnDoubleClick(it, hasValue));
+    layout.setPadding(false);
+    layout.setSpacing(false);
     layout.setSizeUndefined();
     return layout;
   }
