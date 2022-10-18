@@ -74,9 +74,9 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         it.getSource().clearSelection();
       }
     });
-
     getContent().addTitle("Links");
     getContent().addFields(offerSearchComponent, projectLinks);
+    projectLinks.setSizeFull();
   }
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
@@ -93,6 +93,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
           this.projectId.value());
     }
     loadContentForProject(projectId);
+    getContent().addFields(projectLinks);
+    getContent().setSizeFull();
   }
 
   private void removeLink(ProjectLink projectLink) {
@@ -121,5 +123,9 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         .map(ProjectLinksComponent::offerLink)
         .toList();
     projectLinks.setItems(offerLinks);
+  }
+
+  public void setStyles(String... componentStyles){
+    getContent().addClassNames(componentStyles);
   }
 }

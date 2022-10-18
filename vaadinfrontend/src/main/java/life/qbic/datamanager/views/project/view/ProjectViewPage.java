@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.view;
 
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @Route(value = "projects/view", layout = MainLayout.class)
 @PermitAll
+@CssImport("./styles/views/project/project-view.css")
 public class ProjectViewPage extends Div implements
     HasUrlParameter<String> {
 
@@ -38,7 +40,8 @@ public class ProjectViewPage extends Div implements
     handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
-
+    setPageStyles();
+    setComponentStyles(projectDetailsComponent, projectLinksComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -49,5 +52,12 @@ public class ProjectViewPage extends Div implements
     handler.routeParameter(s);
 
     log.debug("Route '" + ROUTE + "' called with parameter '" + s + "'");
+  }
+  public void setPageStyles(){
+    addClassNames("project-view-page");
+  }
+  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent){
+    projectDetailsComponent.setStyles("project-details-component");
+    projectLinksComponent.setStyles("project-links-component");
   }
 }

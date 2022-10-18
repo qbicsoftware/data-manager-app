@@ -100,5 +100,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   public void projectId(String projectId) {
     handler.projectId(projectId);
   }
+  public void setStyles(String... componentStyles){
+    getContent().addClassNames(componentStyles);
+  }
 
 }
