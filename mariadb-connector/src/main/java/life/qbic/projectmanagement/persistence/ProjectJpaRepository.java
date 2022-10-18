@@ -46,6 +46,14 @@ public class ProjectJpaRepository implements ProjectRepository {
   }
 
   @Override
+  public void update(Project project) {
+    if (!doesProjectExistWithId(project.getId())) {
+      throw new ProjectNotFoundException();
+    }
+    projectRepo.save(project);
+  }
+
+  @Override
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
   }
@@ -72,5 +80,19 @@ public class ProjectJpaRepository implements ProjectRepository {
       super(cause);
     }
   }
+
+  /**
+   * Thrown when a project is expected to exist but cannot be found.
+   */
+  public static class ProjectNotFoundException extends RuntimeException {
+
+    public ProjectNotFoundException() {
+    }
+
+    public ProjectNotFoundException(Throwable cause) {
+      super(cause);
+    }
+  }
+
 
 }
