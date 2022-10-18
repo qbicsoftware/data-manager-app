@@ -62,18 +62,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.setClassName("create-project-form");
   }
 
-  /**
-   * This adds styles to the component to define its size and position in the parent grid
-   * @param col_span the number of columns to span
-   * @param row_span the number of rows to span
-   */
-  public void setGridLayout(int col_span, int row_span){
-    getContent().addClassNames("col-span-" + col_span,"row-span-" + row_span);
-  }
-
   public void projectId(String projectId) {
     handler.projectId(projectId);
 
+  }
+  public void setStyles(String... componentStyles){
+    getContent().addClassNames(componentStyles);
   }
 
 }
