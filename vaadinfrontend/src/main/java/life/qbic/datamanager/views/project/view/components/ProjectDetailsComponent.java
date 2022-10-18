@@ -6,13 +6,13 @@ import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
+import java.util.function.Consumer;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,35 +43,47 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
+    setFieldsEditableOnlyOnFocus();
+    attachSubmissionActionOnBlur();
     initLayout();
     setComponentStyles();
     this.handler = new ProjectDetailsHandler(this, projectInformationService);
   }
 
-  private static <T extends Component & HasValue<?, ?> & Focusable<?>> Component editableOnFocus(
+  private static <T extends Component & HasValue<?, ?> & Focusable<?>> void editableOnFocus(
       T element) {
-    VerticalLayout layout = new VerticalLayout();
-    layout.add(element);
     element.setReadOnly(true);
-    element.addFocusListener(it -> {
-      System.out.println("focus event on " + element);
-      element.setReadOnly(false);
-    });
-    element.addBlurListener(it -> {
-      System.out.println("blur event on " + element);
-      element.setReadOnly(true);
-    });
-    layout.setPadding(false);
-    layout.setSpacing(false);
-    layout.setSizeUndefined();
-    return layout;
+    element.addFocusListener(it -> element.setReadOnly(false));
+    element.addBlurListener(it -> element.setReadOnly(true));
   }
 
+  private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnBlur(T element,
+      Consumer<V> submitAction) {
+    element.addBlurListener(it -> submitAction.accept(element.getValue()));
+  }
+
+  private void setFieldsEditableOnlyOnFocus() {
+    editableOnFocus(titleField);
+    editableOnFocus(projectObjective);
+    editableOnFocus(experimentalDesignField);
+  }
+
+  private void attachSubmissionActionOnBlur() {
+    submitOnBlur(titleField, value ->
+        //TODO replace with call to application service
+        System.out.println("submitting title = " + value));
+    submitOnBlur(projectObjective, value ->
+        //TODO replace with call to application service
+        System.out.println("submitting objective = " + value));
+    submitOnBlur(experimentalDesignField, value ->
+        //TODO replace with call to application service
+        System.out.println("submitting experimental design description = " + value));
+  }
 
   private void initLayout() {
-    formLayout.addFormItem(editableOnFocus(titleField), "Project Title");
-    formLayout.addFormItem(editableOnFocus(projectObjective), "Project Objective");
-    formLayout.addFormItem(editableOnFocus(experimentalDesignField), "Experimental Design");
+    formLayout.addFormItem(titleField, "Project Title");
+    formLayout.addFormItem(projectObjective, "Project Objective");
+    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
@@ -87,7 +99,6 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   public void projectId(String projectId) {
     handler.projectId(projectId);
-
   }
 
 }
