@@ -74,11 +74,9 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         it.getSource().clearSelection();
       }
     });
-
-    projectLinks.setItems(linkList);
-    projectLinks.setSizeFull();
     getContent().addTitle("Links");
     getContent().addFields(offerSearchComponent, projectLinks);
+    projectLinks.setSizeFull();
   }
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
@@ -126,6 +124,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         .toList();
     projectLinks.setItems(offerLinks);
   }
+
   public void setStyles(String... componentStyles){
     getContent().addClassNames(componentStyles);
   }
