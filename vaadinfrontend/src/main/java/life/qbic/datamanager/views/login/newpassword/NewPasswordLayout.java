@@ -11,7 +11,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
-import life.qbic.datamanager.views.components.BoxLayout;
+import life.qbic.datamanager.views.layouts.BoxLayout;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 

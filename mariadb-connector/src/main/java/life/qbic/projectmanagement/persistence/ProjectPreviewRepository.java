@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -11,7 +11,9 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  *
  * @since 1.0.0
  */
-public interface ProjectPreviewRepository extends PagingAndSortingRepository<ProjectPreview, ProjectId> {
+public interface ProjectPreviewRepository extends
+    PagingAndSortingRepository<ProjectPreview, ProjectId> {
 
-  Page<ProjectPreview> findByProjectTitleContainingIgnoreCase(String projectTitle, Pageable pageable);
+  Page<ProjectPreview> findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
+      String projectTitle, String projectCode, Pageable pageable);
 }

@@ -3,11 +3,19 @@ package life.qbic.projectmanagement.domain.project;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
+import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
 /**
  * A project planned and run at QBiC.
@@ -24,18 +32,54 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
+  @Convert(converter = ProjectCode.Converter.class)
+  @Column(name = "projectCode", nullable = false)
+  private ProjectCode projectCode;
+
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
 
-  private Project(ProjectId projectId, ProjectIntent projectIntent) {
+  @ElementCollection(fetch = FetchType.EAGER, targetClass = String.class)
+  @Convert(converter = OfferIdentifierConverter.class)
+  @CollectionTable(name = "projects_offers", joinColumns = @JoinColumn(name = "projectIdentifier"))
+  @Column(name = "offerIdentifier")
+  private List<OfferIdentifier> linkedOffers;
+
+  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
+    requireNonNull(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
+    setProjectCode(projectCode);
+    linkedOffers = new ArrayList<>();
+  }
+
+  private void setProjectCode(ProjectCode projectCode) {
+    this.projectCode = projectCode;
   }
 
   protected Project() {
+    linkedOffers = new ArrayList<>();
+  }
 
+  public void linkOffer(OfferIdentifier offerIdentifier) {
+    if (linkedOffers.contains(offerIdentifier)) {
+      return;
+    }
+    linkedOffers.add(offerIdentifier);
+    this.lastModified = Instant.now();
+  }
+
+  public void unlinkOffer(OfferIdentifier offerIdentifier) {
+    boolean offerRemoved = linkedOffers.remove(offerIdentifier);
+    if (offerRemoved) {
+      this.lastModified = Instant.now();
+    }
+  }
+
+  public List<OfferIdentifier> linkedOffers() {
+    return linkedOffers.stream().toList();
   }
 
   protected void setProjectId(ProjectId projectId) {
@@ -54,8 +98,8 @@ public class Project {
    * @param projectIntent the intent of the project
    * @return a new project instance
    */
-  public static Project create(ProjectIntent projectIntent) {
-    return new Project(ProjectId.create(), projectIntent);
+  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode) {
+    return new Project(ProjectId.create(), projectIntent, projectCode);
   }
 
   /**
@@ -65,8 +109,9 @@ public class Project {
    * @param projectIntent the project intent
    * @return a project with the given identity and project intent
    */
-  public static Project of(ProjectId projectId, ProjectIntent projectIntent) {
-    return new Project(projectId, projectIntent);
+  public static Project of(ProjectId projectId, ProjectIntent projectIntent,
+      ProjectCode projectCode) {
+    return new Project(projectId, projectIntent, projectCode);
   }
 
   public ProjectId getId() {

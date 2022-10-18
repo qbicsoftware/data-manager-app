@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.components;
+package life.qbic.datamanager.views.notifications;
 
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.icon.Icon;

@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.persistence;
 
+import java.util.List;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.data.repository.CrudRepository;
 
@@ -17,4 +19,5 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface QbicProjectRepo extends CrudRepository<Project, ProjectId> {
 
+  List<Project> findProjectByProjectCode(ProjectCode projectCode);
 }

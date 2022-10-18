@@ -1,8 +1,11 @@
 package life.qbic.projectmanagement.persistence;
 
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -42,6 +45,24 @@ public class ProjectJpaRepository implements ProjectRepository {
     projectRepo.save(project);
   }
 
+  @Override
+  public void update(Project project) {
+    if (!doesProjectExistWithId(project.getId())) {
+      throw new ProjectNotFoundException();
+    }
+    projectRepo.save(project);
+  }
+
+  @Override
+  public List<Project> find(ProjectCode projectCode) {
+    return projectRepo.findProjectByProjectCode(projectCode);
+  }
+
+  @Override
+  public Optional<Project> find(ProjectId projectId) {
+    return projectRepo.findById(projectId);
+  }
+
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
   }
@@ -59,5 +80,19 @@ public class ProjectJpaRepository implements ProjectRepository {
       super(cause);
     }
   }
+
+  /**
+   * Thrown when a project is expected to exist but cannot be found.
+   */
+  public static class ProjectNotFoundException extends RuntimeException {
+
+    public ProjectNotFoundException() {
+    }
+
+    public ProjectNotFoundException(Throwable cause) {
+      super(cause);
+    }
+  }
+
 
 }

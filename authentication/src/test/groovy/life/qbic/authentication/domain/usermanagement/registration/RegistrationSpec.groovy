@@ -1,21 +1,17 @@
 package life.qbic.authentication.domain.usermanagement.registration
 
-import life.qbic.authentication.domain.user.event.EventStore
-import life.qbic.broadcasting.MessageBusSubmission
 import life.qbic.authentication.application.notification.NotificationService
 import life.qbic.authentication.application.user.registration.RegisterUserOutput
 import life.qbic.authentication.application.user.registration.Registration
 import life.qbic.authentication.application.user.registration.UserRegistrationException
 import life.qbic.authentication.application.user.registration.UserRegistrationService
 import life.qbic.authentication.domain.registry.DomainRegistry
-import life.qbic.authentication.domain.user.concept.EmailAddress
-import life.qbic.authentication.domain.user.concept.EncryptedPassword
-import life.qbic.authentication.domain.user.concept.FullName
-import life.qbic.authentication.domain.user.concept.User
-import life.qbic.authentication.domain.user.concept.UserId
+import life.qbic.authentication.domain.user.concept.*
+import life.qbic.authentication.domain.user.event.EventStore
 import life.qbic.authentication.domain.user.repository.UserDataStorage
 import life.qbic.authentication.domain.user.repository.UserDomainService
 import life.qbic.authentication.domain.user.repository.UserRepository
+import life.qbic.broadcasting.MessageBusSubmission
 import spock.lang.Shared
 import spock.lang.Specification
 

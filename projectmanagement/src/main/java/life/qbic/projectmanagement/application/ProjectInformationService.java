@@ -1,8 +1,16 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +22,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectInformationService {
 
+  private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
 
-  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup) {
+  private final ProjectRepository projectRepository;
+
+  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
+      @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
+    this.projectRepository = projectRepository;
   }
 
   /**
@@ -42,8 +55,19 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit){
+  public List<ProjectPreview> queryPreview(String filter, int offset, int limit) {
     return projectPreviewLookup.query(filter, offset, limit);
   }
+
+  public Optional<Project> find(ProjectId projectId) {
+    log.debug("Search for project with id: " + projectId.toString());
+    return projectRepository.find(projectId);
+  }
+
+  public List<OfferIdentifier> queryLinkedOffers(ProjectId projectId) {
+    return projectRepository.find(projectId).map(Project::linkedOffers).orElse(
+        Collections.emptyList());
+  }
+
 
 }

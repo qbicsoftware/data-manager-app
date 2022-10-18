@@ -3,13 +3,16 @@ package life.qbic.projectmanagement.application;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
@@ -38,7 +41,7 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
-      String experimentalDesign) {
+      String experimentalDesign, String sourceOffer) {
     try {
       Project project;
       if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
@@ -46,6 +49,10 @@ public class ProjectCreationService {
       } else {
         project = createProjectWithExperimentalDesign(title, objective, experimentalDesign);
       }
+      Optional.ofNullable(sourceOffer)
+          .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
+          .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
+      projectRepository.add(project);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -55,11 +62,19 @@ public class ProjectCreationService {
     }
   }
 
+  private ProjectCode createRandomCode() {
+    ProjectCode code = ProjectCode.random();
+    while (!projectRepository.find(code).isEmpty()) {
+      log.warn(String.format("Random generated code exists: %s", code.value()));
+      code = ProjectCode.random();
+    }
+    log.info(String.format("Created new random project code '%s'", code.value()));
+    return code;
+  }
+
   private Project createProjectWithoutExperimentalDesign(String title, String objective) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    Project project = Project.create(intent);
-    projectRepository.add(project);
-    return project;
+    return Project.create(intent, createRandomCode());
   }
 
   private Project createProjectWithExperimentalDesign(String title,
@@ -76,9 +91,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    Project project = Project.create(intent);
-    projectRepository.add(project);
-    return project;
+    return Project.create(intent, createRandomCode());
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

@@ -3,8 +3,8 @@ package life.qbic.projectmanagement.persistence;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.OffsetBasedRequest;
-import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -32,8 +32,8 @@ public class ProjectPreviewJpaRepository implements ProjectPreviewLookup {
 
   @Override
   public List<ProjectPreview> query(String filter, int offset, int limit) {
-    return projectPreviewRepository.findByProjectTitleContainingIgnoreCase(filter,
-        new OffsetBasedRequest(offset, limit)).getContent();
+    return projectPreviewRepository.findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
+        filter, filter, new OffsetBasedRequest(offset, limit)).getContent();
   }
 
 }

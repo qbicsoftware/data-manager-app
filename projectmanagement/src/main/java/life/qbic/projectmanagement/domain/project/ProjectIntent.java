@@ -63,6 +63,10 @@ public class ProjectIntent {
     return Optional.ofNullable(experimentalDesignDescription);
   }
 
+  public ProjectObjective objective() {
+    return projectObjective;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
