@@ -23,7 +23,7 @@ public class PersonReferenceJpaRepository implements PersonLookupService {
 
   @Override
   public List<PersonReference> find(String filter, int offset, int limit) {
-    var personsResult = personRepo.findByFirstNameContainingIgnoreCaseOrLastNameIgnoreCase(filter,
+    var personsResult = personRepo.findPersonByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(filter,
         filter, new OffsetBasedRequest(offset, limit));
     return personsResult.getContent().stream().map(person -> new PersonReference(
         person.referenceId(), person.fullName(), person.emailAddress())).toList();

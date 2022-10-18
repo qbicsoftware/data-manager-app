@@ -6,7 +6,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 public interface PersonRepo extends PagingAndSortingRepository<Person, Long> {
 
-  Page<Person> findByFirstNameContainingIgnoreCaseOrLastNameIgnoreCase(
+  Page<Person> findPersonByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
       String firstName, String lastName, Pageable pageable);
 
 }

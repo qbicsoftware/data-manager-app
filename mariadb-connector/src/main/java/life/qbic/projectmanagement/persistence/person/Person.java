@@ -11,21 +11,22 @@ import javax.persistence.Table;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "person")
+@Table(name = "person_datamanager")
 public class Person {
 
-  @Column(name = "first_name")
+  @Column(name = "firstName")
   private String firstName;
 
-  @Column(name = "last_name")
+  @Column(name = "lastName")
   private String lastName;
 
+  @Id
   private Long id;
 
   @Column(name = "email")
   private String email;
 
-  @Column(name = "reference_id")
+  @Column(name = "referenceId")
   private String referenceId;
 
   public void setId(Long id) {
