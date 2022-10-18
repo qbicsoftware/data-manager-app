@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -14,6 +15,9 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
@@ -45,14 +49,35 @@ public class Project {
   @Column(name = "offerIdentifier")
   private List<OfferIdentifier> linkedOffers;
 
-  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode) {
+  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
+  @JoinColumn(name = "projectManagerRef")
+  private PersonReference projectManager;
+
+  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
+  @JoinColumn(name = "principalInvestigatorRef")
+  private PersonReference principalInvestigator;
+
+  private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
+      PersonReference projectManager, PersonReference principalInvestigator) {
     requireNonNull(projectId);
     requireNonNull(projectIntent);
     requireNonNull(projectCode);
+    requireNonNull(principalInvestigator);
+    requireNonNull(projectManager);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectCode(projectCode);
+    setProjectManager(projectManager);
+    setPrincipalInvestigator(principalInvestigator);
     linkedOffers = new ArrayList<>();
+  }
+
+  private void setProjectManager(PersonReference projectManager) {
+    this.projectManager = projectManager;
+  }
+
+  private void setPrincipalInvestigator(PersonReference principalInvestigator) {
+    this.principalInvestigator = principalInvestigator;
   }
 
   private void setProjectCode(ProjectCode projectCode) {
@@ -91,8 +116,10 @@ public class Project {
    * @param projectIntent the intent of the project
    * @return a new project instance
    */
-  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode) {
-    return new Project(ProjectId.create(), projectIntent, projectCode);
+  public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
+      PersonReference projectManager, PersonReference principalInvestigator) {
+    return new Project(ProjectId.create(), projectIntent, projectCode, projectManager,
+        principalInvestigator);
   }
 
   /**
@@ -103,8 +130,10 @@ public class Project {
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
-      ProjectCode projectCode) {
-    return new Project(projectId, projectIntent, projectCode);
+      ProjectCode projectCode, PersonReference projectManager,
+      PersonReference principalInvestigator) {
+    return new Project(projectId, projectIntent, projectCode, projectManager,
+        principalInvestigator);
   }
 
   public ProjectId getId() {

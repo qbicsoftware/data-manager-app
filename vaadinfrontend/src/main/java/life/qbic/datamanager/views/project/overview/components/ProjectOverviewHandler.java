@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.project.overview.components;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 
@@ -16,14 +17,17 @@ import life.qbic.datamanager.views.Command;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.persistence.person.Person;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -37,6 +41,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
  */
 
 public class ProjectOverviewHandler {
+
   private static final Logger log = logger(ProjectOverviewHandler.class);
   private final ApplicationExceptionHandler exceptionHandler;
   private final ProjectOverviewComponent registeredProjectOverview;
@@ -45,12 +50,15 @@ public class ProjectOverviewHandler {
   private final ProjectRepository projectRepository;
   private final ProjectInformationService projectInformationService;
 
+  private final PersonSearchService personSearchService;
+
   public ProjectOverviewHandler(ProjectOverviewComponent registeredProjectOverview,
-                                OfferLookupService offerLookupService,
-                                ProjectRepository projectRepository,
-                                ProjectInformationService projectInformationService,
-                                ProjectCreationService projectCreationService,
-                                ApplicationExceptionHandler exceptionHandler) {
+      OfferLookupService offerLookupService,
+      ProjectRepository projectRepository,
+      ProjectInformationService projectInformationService,
+      ProjectCreationService projectCreationService,
+      PersonSearchService personSearchService,
+      ApplicationExceptionHandler exceptionHandler) {
     Objects.requireNonNull(registeredProjectOverview);
     this.registeredProjectOverview = registeredProjectOverview;
 
@@ -68,11 +76,16 @@ public class ProjectOverviewHandler {
 
     Objects.requireNonNull(exceptionHandler);
     this.exceptionHandler = exceptionHandler;
+
+    Objects.requireNonNull(personSearchService);
+    this.personSearchService = personSearchService;
     configurePageButtons();
     configureProjectCreationDialog();
     loadOfferPreview();
     setProjectsToGrid();
     setupSearchBar();
+    setUpProjectManagerSearch();
+    setUpPrincipalInvestigatorSearch();
   }
 
   private void setupSearchBar() {
@@ -121,11 +134,17 @@ public class ProjectOverviewHandler {
     String titleFieldValue = registeredProjectOverview.projectInformationDialog.getTitle();
     String objectiveFieldValue = registeredProjectOverview.projectInformationDialog.getObjective();
     String experimentalDesignDescription = registeredProjectOverview.projectInformationDialog.getExperimentalDesign();
+    PersonReference projectManager = registeredProjectOverview.projectInformationDialog.projectManager.getValue();
+    PersonReference principalInvestigator = registeredProjectOverview.projectInformationDialog.principalInvestigator.getValue();
 
-    String loadedOfferId = registeredProjectOverview.projectInformationDialog.searchField.getValue() != null ? registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id() : null;
+    String loadedOfferId =
+        registeredProjectOverview.projectInformationDialog.searchField.getValue() != null
+            ? registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId()
+            .id() : null;
 
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId);
+        titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
+        projectManager, principalInvestigator);
 
     project.ifSuccessOrElse(
         result -> displaySuccessfulProjectCreationNotification(),
@@ -159,9 +178,30 @@ public class ProjectOverviewHandler {
 
     registeredProjectOverview.projectInformationDialog.searchField.addValueChangeListener(e -> {
       if (registeredProjectOverview.projectInformationDialog.searchField.getValue() != null) {
-        preloadContentFromOffer(registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId().id());
+        preloadContentFromOffer(
+            registeredProjectOverview.projectInformationDialog.searchField.getValue().offerId()
+                .id());
       }
     });
+  }
+
+
+  private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
+    comboBox.setItems(query ->
+        personSearchService.find(query.getFilter().orElse(""), query.getOffset(), query.getLimit())
+            .stream());
+    comboBox.setRenderer(
+        new ComponentRenderer<>(personReference -> new Text(personReference.fullName())));
+    comboBox.setItemLabelGenerator(
+        (ItemLabelGenerator<PersonReference>) PersonReference::fullName);
+  }
+
+  private void setUpProjectManagerSearch() {
+    setUpPersonSearch(registeredProjectOverview.projectInformationDialog.projectManager);
+  }
+
+  private void setUpPrincipalInvestigatorSearch() {
+    setUpPersonSearch(registeredProjectOverview.projectInformationDialog.principalInvestigator);
   }
 
   private void preloadContentFromOffer(String offerId) {

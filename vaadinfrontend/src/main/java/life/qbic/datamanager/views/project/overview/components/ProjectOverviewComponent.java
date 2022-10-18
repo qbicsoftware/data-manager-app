@@ -25,6 +25,7 @@ import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
+import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
@@ -50,16 +51,20 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
+  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
+      .getUrl(ProjectViewPage.class, "");
   private transient final ProjectOverviewHandler projectOverviewHandler;
 
-  public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider, @Autowired OfferLookupService offerLookupService,
+  public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
+      @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ApplicationExceptionHandler exceptionHandler,
+      @Autowired PersonSearchService personSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
-    projectOverviewHandler = new ProjectOverviewHandler(this, offerLookupService, projectRepository, projectInformationService, projectCreationService, exceptionHandler);
+    projectOverviewHandler = new ProjectOverviewHandler(this, offerLookupService, projectRepository,
+        projectInformationService, projectCreationService, personSearchService, exceptionHandler);
     layoutComponents();
   }
 
@@ -75,14 +80,18 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     projectSearchField.addClassNames("mt-xs",
         "mb-xs");
 
-    layout.add(projectSearchField,create);
+    layout.add(projectSearchField, create);
     layout.setWidthFull();
-    layout.setVerticalComponentAlignment(FlexComponent.Alignment.END,create);
-    layout.setVerticalComponentAlignment(FlexComponent.Alignment.START,projectSearchField);
-    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode()))).setHeader("Code").setWidth("7em")
+    layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
+    layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
+    projectGrid.addColumn(new ComponentRenderer<>(
+            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode())))
+        .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
-    projectGrid.addColumn(new ComponentRenderer<>(item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle()))).setHeader("Title");
+    projectGrid.addColumn(new ComponentRenderer<>(
+            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle())))
+        .setHeader("Title");
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
             asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
