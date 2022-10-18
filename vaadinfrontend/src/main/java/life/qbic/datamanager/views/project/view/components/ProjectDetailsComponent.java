@@ -48,7 +48,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     this.handler = new ProjectDetailsHandler(this, projectInformationService);
   }
 
-  private static <T extends Component & HasValue<?, ?> & Focusable<?>> Component editbleOnFocus(
+  private static <T extends Component & HasValue<?, ?> & Focusable<?>> Component editableOnFocus(
       T element) {
     VerticalLayout layout = new VerticalLayout();
     layout.add(element);
@@ -69,9 +69,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
 
   private void initLayout() {
-    formLayout.addFormItem(editbleOnFocus(titleField), "Project Title");
-    formLayout.addFormItem(editbleOnFocus(projectObjective), "Project Objective");
-    formLayout.addFormItem(editbleOnFocus(experimentalDesignField), "Experimental Design");
+    formLayout.addFormItem(editableOnFocus(titleField), "Project Title");
+    formLayout.addFormItem(editableOnFocus(projectObjective), "Project Objective");
+    formLayout.addFormItem(editableOnFocus(experimentalDesignField), "Experimental Design");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
