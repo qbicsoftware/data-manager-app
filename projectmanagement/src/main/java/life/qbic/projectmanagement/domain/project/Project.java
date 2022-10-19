@@ -98,10 +98,9 @@ public class Project {
 
   public void describeExperimentalDesign(
       ExperimentalDesignDescription experimentalDesignDescription) {
-    if (projectIntent.experimentalDesign().isPresent()) {
-      if (projectIntent.experimentalDesign().get().equals(experimentalDesignDescription)) {
-        return;
-      }
+    if (projectIntent.experimentalDesign().isPresent()
+        && projectIntent.experimentalDesign().get().equals(experimentalDesignDescription)) {
+      return;
     }
     projectIntent.experimentalDesign(experimentalDesignDescription);
     lastModified = Instant.now();
