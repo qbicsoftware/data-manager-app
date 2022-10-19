@@ -104,7 +104,7 @@ public class ProjectCreationService {
   private static ProjectIntent getProjectIntent(String title, String objective) {
     ProjectTitle projectTitle;
     try {
-      projectTitle = ProjectTitle.create(title);
+      projectTitle = ProjectTitle.of(title);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,

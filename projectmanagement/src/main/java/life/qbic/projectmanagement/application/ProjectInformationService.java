@@ -1,13 +1,18 @@
 package life.qbic.projectmanagement.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -60,6 +65,40 @@ public class ProjectInformationService {
   public Optional<Project> find(ProjectId projectId) {
     log.debug("Search for project with id: " + projectId.toString());
     return projectRepository.find(projectId);
+  }
+
+  public void updateTitle(String projectId, String newTitle) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    ProjectTitle projectTitle = ProjectTitle.of(newTitle);
+    project.ifPresent(p -> {
+      p.getProjectIntent().projectTitle(projectTitle);
+      p.setLastModified(Instant.now());
+      projectRepository.update(p);
+    });
+  }
+
+  public void describeExperimentalDesign(String projectId, String experimentalDesign) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
+        experimentalDesign);
+    project.ifPresent(p -> {
+      p.getProjectIntent().experimentalDesign(experimentalDesignDescription);
+      p.setLastModified(Instant.now());
+      projectRepository.update(p);
+    });
+  }
+
+  public void stateObjective(String projectId, String objective) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    ProjectObjective projectObjective = ProjectObjective.create(objective);
+    project.ifPresent(p -> {
+      p.getProjectIntent().objective(projectObjective);
+      p.setLastModified(Instant.now());
+      projectRepository.update(p);
+    });
   }
 
 

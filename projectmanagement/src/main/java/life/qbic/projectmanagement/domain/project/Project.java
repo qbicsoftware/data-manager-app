@@ -155,6 +155,15 @@ public class Project {
     return projectIntent;
   }
 
+  /**
+   * Tells the project that it was modified.
+   *
+   * @param now the time of modification.
+   */
+  public void setLastModified(Instant now) {
+    lastModified = now;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

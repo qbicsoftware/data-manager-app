@@ -30,7 +30,7 @@ class ProjectSpec extends Specification {
     given: "a uuid"
     UUID uuidOne = UUID.fromString("13c5eccd-31d4-47f0-9841-2b8865eaf458")
     UUID uuidTwo = UUID.fromString("13c5eccd-31d4-47f0-0000-2b8865eaf458")
-    def intent = ProjectIntent.of(ProjectTitle.create("A project"), ProjectObjective.create("an objective"))
+    def intent = ProjectIntent.of(ProjectTitle.of("A project"), ProjectObjective.create("an objective"))
 
     expect: "projects with different uuid are not equal"
     def projectOne = Project.of(ProjectId.of(uuidOne), intent, ProjectCode.random())
