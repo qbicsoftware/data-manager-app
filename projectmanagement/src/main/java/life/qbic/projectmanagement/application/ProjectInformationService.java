@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,8 +71,7 @@ public class ProjectInformationService {
     Optional<Project> project = projectRepository.find(projectIdentifier);
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
     project.ifPresent(p -> {
-      p.getProjectIntent().projectTitle(projectTitle);
-      p.setLastModified(Instant.now());
+      p.updateTitle(projectTitle);
       projectRepository.update(p);
     });
   }
@@ -84,8 +82,7 @@ public class ProjectInformationService {
     ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
         experimentalDesign);
     project.ifPresent(p -> {
-      p.getProjectIntent().experimentalDesign(experimentalDesignDescription);
-      p.setLastModified(Instant.now());
+      p.describeExperimentalDesign(experimentalDesignDescription);
       projectRepository.update(p);
     });
   }
@@ -95,8 +92,7 @@ public class ProjectInformationService {
     Optional<Project> project = projectRepository.find(projectIdentifier);
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     project.ifPresent(p -> {
-      p.getProjectIntent().objective(projectObjective);
-      p.setLastModified(Instant.now());
+      p.stateObjective(projectObjective);
       projectRepository.update(p);
     });
   }

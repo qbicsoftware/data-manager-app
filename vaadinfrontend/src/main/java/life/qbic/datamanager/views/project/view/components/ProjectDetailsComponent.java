@@ -120,16 +120,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     public void attachSubmissionActionOnBlur() {
       ProjectDetailsComponent.Handler.submitOnBlur(titleField, value ->
-          //TODO replace with call to application service
-          System.out.println("project " + selectedProject + ": submitting title = " + value));
+          projectInformationService.updateTitle(selectedProject.value(), value.trim()));
       ProjectDetailsComponent.Handler.submitOnBlur(projectObjective, value ->
-          //TODO replace with call to application service
-          System.out.println("project " + selectedProject + ": submitting objective = " + value));
+          projectInformationService.stateObjective(selectedProject.value(), value.trim()));
       ProjectDetailsComponent.Handler.submitOnBlur(experimentalDesignField, value ->
-          //TODO replace with call to application service
-          System.out.println(
-              "project " + selectedProject + ": submitting experimental design description = "
-                  + value));
+          projectInformationService.describeExperimentalDesign(selectedProject.value(),
+              value.trim()));
     }
 
     private static <T extends Component & HasValue<?, ?> & Focusable<?>> void editableOnFocus(

@@ -88,6 +88,34 @@ public class Project {
     linkedOffers = new ArrayList<>();
   }
 
+  public void updateTitle(ProjectTitle title) {
+    if (projectIntent.projectTitle().equals(title)) {
+      return;
+    }
+    projectIntent.projectTitle(title);
+    lastModified = Instant.now();
+  }
+
+  public void describeExperimentalDesign(
+      ExperimentalDesignDescription experimentalDesignDescription) {
+    if (projectIntent.experimentalDesign().isPresent()) {
+      if (projectIntent.experimentalDesign().get().equals(experimentalDesignDescription)) {
+        return;
+      }
+    }
+    projectIntent.experimentalDesign(experimentalDesignDescription);
+    lastModified = Instant.now();
+  }
+
+  public void stateObjective(ProjectObjective projectObjective) {
+    if (projectIntent.objective().equals(projectObjective)) {
+      return;
+    }
+    this.projectIntent.objective(projectObjective);
+    lastModified = Instant.now();
+  }
+
+
   public void linkOffer(OfferIdentifier offerIdentifier) {
     if (linkedOffers.contains(offerIdentifier)) {
       return;
@@ -153,15 +181,6 @@ public class Project {
 
   public ProjectIntent getProjectIntent() {
     return projectIntent;
-  }
-
-  /**
-   * Tells the project that it was modified.
-   *
-   * @param now the time of modification.
-   */
-  public void setLastModified(Instant now) {
-    lastModified = now;
   }
 
   @Override
