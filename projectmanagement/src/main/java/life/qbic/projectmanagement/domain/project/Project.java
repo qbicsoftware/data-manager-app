@@ -72,10 +72,12 @@ public class Project {
 
   private void setProjectManager(PersonReference projectManager) {
     this.projectManager = projectManager;
+    this.lastModified = Instant.now();
   }
 
   private void setPrincipalInvestigator(PersonReference principalInvestigator) {
     this.principalInvestigator = principalInvestigator;
+    this.lastModified = Instant.now();
   }
 
   private void setProjectCode(ProjectCode projectCode) {
