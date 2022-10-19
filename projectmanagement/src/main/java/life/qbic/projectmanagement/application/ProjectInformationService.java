@@ -1,13 +1,11 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
@@ -62,11 +60,6 @@ public class ProjectInformationService {
   public Optional<Project> find(ProjectId projectId) {
     log.debug("Search for project with id: " + projectId.toString());
     return projectRepository.find(projectId);
-  }
-
-  public List<OfferIdentifier> queryLinkedOffers(ProjectId projectId) {
-    return projectRepository.find(projectId).map(Project::linkedOffers).orElse(
-        Collections.emptyList());
   }
 
 
