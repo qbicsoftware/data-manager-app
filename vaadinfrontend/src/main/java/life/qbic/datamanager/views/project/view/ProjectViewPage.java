@@ -33,7 +33,7 @@ public class ProjectViewPage extends Div implements
 
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
 
-  private transient final ProjectViewHandler handler;
+  private final transient ProjectViewHandler handler;
 
   public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
       ProjectLinksComponent projectLinksComponent) {

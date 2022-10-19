@@ -41,7 +41,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   final TextArea experimentalDesignField = new TextArea();
   final TextArea projectObjective = new TextArea();
 
-  private transient final Handler handler;
+  private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
