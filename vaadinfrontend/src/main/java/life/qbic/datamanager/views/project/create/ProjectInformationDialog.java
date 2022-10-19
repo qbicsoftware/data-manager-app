@@ -15,6 +15,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
@@ -41,6 +42,10 @@ public class ProjectInformationDialog extends Dialog {
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
 
+  public final ComboBox<PersonReference> projectManager;
+
+  public final ComboBox<PersonReference> principalInvestigator;
+
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
 
@@ -51,6 +56,11 @@ public class ProjectInformationDialog extends Dialog {
     experimentalDesignField = new TextArea("Experimental Design");
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
+
+    projectManager = new ComboBox<>("Project Manager");
+    projectManager.setPlaceholder("Select a project manager");
+    principalInvestigator = new ComboBox<>("Principal Investigator");
+    principalInvestigator.setPlaceholder("Select a principal investigator");
 
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
@@ -84,6 +94,8 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
+    formLayout.add(projectManager);
+    formLayout.add(principalInvestigator);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
@@ -115,6 +127,7 @@ public class ProjectInformationDialog extends Dialog {
 
   }
 
+
   /**
    * Resets all user-defined values set for this dialog
    */
@@ -123,6 +136,8 @@ public class ProjectInformationDialog extends Dialog {
     titleField.clear();
     projectObjective.clear();
     experimentalDesignField.clear();
+    projectManager.clear();
+    principalInvestigator.clear();
   }
 
   private class Handler {

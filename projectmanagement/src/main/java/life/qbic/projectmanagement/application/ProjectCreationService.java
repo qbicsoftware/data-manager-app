@@ -11,6 +11,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -41,13 +42,16 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
-      String experimentalDesign, String sourceOffer) {
+      String experimentalDesign, String sourceOffer, PersonReference projectManager,
+      PersonReference principalInvestigator) {
     try {
       Project project;
       if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
-        project = createProjectWithoutExperimentalDesign(title, objective);
+        project = createProjectWithoutExperimentalDesign(title, objective, projectManager,
+            principalInvestigator);
       } else {
-        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign);
+        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign,
+            projectManager, principalInvestigator);
       }
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
@@ -72,14 +76,17 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProjectWithoutExperimentalDesign(String title, String objective) {
+  private Project createProjectWithoutExperimentalDesign(String title, String objective,
+      PersonReference projectManager,
+      PersonReference principalInvestigator) {
     ProjectIntent intent = getProjectIntent(title, objective);
-    return Project.create(intent, createRandomCode());
+    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator);
   }
 
   private Project createProjectWithExperimentalDesign(String title,
       String objective,
-      String experimentalDesign) {
+      String experimentalDesign, PersonReference projectManager,
+      PersonReference principalInvestigator) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -91,7 +98,7 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode());
+    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator);
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {
