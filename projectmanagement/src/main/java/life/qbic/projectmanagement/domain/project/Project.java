@@ -15,8 +15,6 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
@@ -120,7 +118,9 @@ public class Project {
   /**
    * Creates a new project with code and project intent
    *
-   * @param projectIntent the intent of the project
+   * @param projectIntent         the intent of the project
+   * @param projectManager        the assigned project manager
+   * @param principalInvestigator the principal investigator
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
@@ -132,8 +132,10 @@ public class Project {
   /**
    * Generates a project with the specified values injected.
    *
-   * @param projectId     the identifier of the project
-   * @param projectIntent the project intent
+   * @param projectId             the identifier of the project
+   * @param projectIntent         the project intent
+   * @param projectManager        the assigned project manager
+   * @param principalInvestigator the principal investigator
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
