@@ -51,9 +51,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
-      .getUrl(ProjectViewPage.class, "");
-  private transient final ProjectOverviewHandler projectOverviewHandler;
+  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
+  private final transient ProjectOverviewHandler projectOverviewHandler;
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,

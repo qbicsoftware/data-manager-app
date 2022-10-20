@@ -59,12 +59,27 @@ public class ProjectIntent {
     return projectTitle;
   }
 
+  public void projectTitle(ProjectTitle projectTitle) {
+    Objects.requireNonNull(projectTitle);
+    this.projectTitle = projectTitle;
+  }
+
   public Optional<ExperimentalDesignDescription> experimentalDesign() {
     return Optional.ofNullable(experimentalDesignDescription);
   }
 
+  public void experimentalDesign(ExperimentalDesignDescription experimentalDesignDescription) {
+    Objects.requireNonNull(experimentalDesignDescription);
+    this.experimentalDesignDescription = experimentalDesignDescription;
+  }
+
   public ProjectObjective objective() {
     return projectObjective;
+  }
+
+  public void objective(ProjectObjective projectObjective) {
+    Objects.requireNonNull(projectObjective);
+    this.projectObjective = projectObjective;
   }
 
   @Override
@@ -95,4 +110,5 @@ public class ProjectIntent {
         ? experimentalDesignDescription.hashCode() : 0);
     return result;
   }
+
 }

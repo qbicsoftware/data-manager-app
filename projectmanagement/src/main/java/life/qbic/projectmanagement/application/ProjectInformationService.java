@@ -1,15 +1,17 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,9 +66,35 @@ public class ProjectInformationService {
     return projectRepository.find(projectId);
   }
 
-  public List<OfferIdentifier> queryLinkedOffers(ProjectId projectId) {
-    return projectRepository.find(projectId).map(Project::linkedOffers).orElse(
-        Collections.emptyList());
+  public void updateTitle(String projectId, String newTitle) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ProjectTitle projectTitle = ProjectTitle.of(newTitle);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.updateTitle(projectTitle);
+      projectRepository.update(p);
+    });
+  }
+
+  public void describeExperimentalDesign(String projectId, String experimentalDesign) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
+        experimentalDesign);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.describeExperimentalDesign(experimentalDesignDescription);
+      projectRepository.update(p);
+    });
+  }
+
+  public void stateObjective(String projectId, String objective) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ProjectObjective projectObjective = ProjectObjective.create(objective);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.stateObjective(projectObjective);
+      projectRepository.update(p);
+    });
   }
 
 

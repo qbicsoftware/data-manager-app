@@ -25,7 +25,7 @@ class ProjectTitleSpec extends Specification {
     given: "an input with exactly the maximal amount of characters allowed"
     String inputExactlyMaxAllowedLength = maxLengthInput()
     when:
-    def title = ProjectTitle.create(inputExactlyMaxAllowedLength)
+    def title = ProjectTitle.of(inputExactlyMaxAllowedLength)
     then:
     noExceptionThrown()
     Objects.nonNull(title)
@@ -35,7 +35,7 @@ class ProjectTitleSpec extends Specification {
     given: "input exceeding the max length"
     String inputExceedingMaxLength = maxLengthInput() + "a"
     when:
-    ProjectTitle.create(inputExceedingMaxLength)
+    ProjectTitle.of(inputExceedingMaxLength)
     then:
     thrown(RuntimeException)
   }
