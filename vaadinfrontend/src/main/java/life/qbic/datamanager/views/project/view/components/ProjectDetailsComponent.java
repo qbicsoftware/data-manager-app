@@ -46,8 +46,6 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
     this.handler = new Handler(this, projectInformationService);
-    handler.setFieldsEditableOnlyOnFocus();
-    handler.attachSubmissionActionOnBlur();
     initLayout();
     setComponentStyles();
   }
@@ -93,6 +91,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         ProjectInformationService projectInformationService) {
       this.component = component;
       this.projectInformationService = projectInformationService;
+      setFieldsEditableOnlyOnFocus();
+      attachSubmissionActionOnBlur();
     }
 
     public void projectId(String projectId) {
@@ -112,13 +112,13 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
 
-    public void setFieldsEditableOnlyOnFocus() {
+    private void setFieldsEditableOnlyOnFocus() {
       editableOnFocus(titleField);
       editableOnFocus(projectObjective);
       editableOnFocus(experimentalDesignField);
     }
 
-    public void attachSubmissionActionOnBlur() {
+    private void attachSubmissionActionOnBlur() {
       ProjectDetailsComponent.Handler.submitOnBlur(titleField, value ->
           projectInformationService.updateTitle(selectedProject.value(), value.trim()));
       ProjectDetailsComponent.Handler.submitOnBlur(projectObjective, value ->
