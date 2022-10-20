@@ -35,16 +35,20 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private static final String TITLE = "Project Information";
 
-  final TextField titleField = new TextField();
-  final FormLayout formLayout = new FormLayout();
-
-  final TextArea experimentalDesignField = new TextArea();
-  final TextArea projectObjective = new TextArea();
-
+  private final TextField titleField;
+  private final FormLayout formLayout;
+  private final TextArea experimentalDesignField;
+  private final TextArea projectObjective;
   private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
+
+    titleField = new TextField();
+    formLayout = new FormLayout();
+    experimentalDesignField = new TextArea();
+    projectObjective = new TextArea();
+
     this.handler = new Handler(this, projectInformationService);
     initLayout();
     setComponentStyles();
