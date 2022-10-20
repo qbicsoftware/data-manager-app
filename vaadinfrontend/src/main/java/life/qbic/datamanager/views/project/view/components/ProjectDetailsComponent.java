@@ -111,10 +111,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void restrictInputLength() {
-      TextField titleField = component.titleField;
-      TextArea projectObjective = component.projectObjective;
-      TextArea experimentalDesignField = component.experimentalDesignField;
-
+      
       titleField.setMaxLength((int) ProjectTitle.maxLength());
       projectObjective.setMaxLength((int) ProjectObjective.maxLength());
       experimentalDesignField.setMaxLength(
