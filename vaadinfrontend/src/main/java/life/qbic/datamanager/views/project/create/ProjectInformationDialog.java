@@ -175,8 +175,6 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     private void addConsumedLengthHelper(TextArea textArea, String newValue) {
-      System.out.println("textArea = " + textArea);
-      System.out.println("newValue = " + newValue);
       int maxLength = textArea.getMaxLength();
       int consumedLength = newValue.length();
       textArea.setHelperText(consumedLength + "/" + maxLength);
