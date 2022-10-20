@@ -22,6 +22,6 @@ public class ProjectTitleConverter implements AttributeConverter<ProjectTitle, S
 
   @Override
   public ProjectTitle convertToEntityAttribute(String string) {
-    return ProjectTitle.create(string);
+    return ProjectTitle.of(string);
   }
 }

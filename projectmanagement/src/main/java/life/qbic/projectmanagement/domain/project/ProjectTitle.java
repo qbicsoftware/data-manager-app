@@ -22,7 +22,7 @@ public record ProjectTitle(String title) {
     }
   }
 
-  public static ProjectTitle create(String title) {
+  public static ProjectTitle of(String title) {
     return new ProjectTitle(title);
   }
 

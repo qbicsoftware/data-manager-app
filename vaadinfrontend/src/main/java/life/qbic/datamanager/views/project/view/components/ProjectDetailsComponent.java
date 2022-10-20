@@ -1,6 +1,9 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -9,9 +12,11 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
-
+import java.util.function.Consumer;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,19 +35,23 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private static final String TITLE = "Project Information";
 
-  final TextField titleField = new TextField();
-  final FormLayout formLayout = new FormLayout();
-
-  final TextArea experimentalDesignField = new TextArea();
-  final TextArea projectObjective = new TextArea();
-
-  private transient final ProjectDetailsHandler handler;
+  private final TextField titleField;
+  private final FormLayout formLayout;
+  private final TextArea experimentalDesignField;
+  private final TextArea projectObjective;
+  private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
+
+    titleField = new TextField();
+    formLayout = new FormLayout();
+    experimentalDesignField = new TextArea();
+    projectObjective = new TextArea();
+
+    this.handler = new Handler(this, projectInformationService);
     initLayout();
     setComponentStyles();
-    this.handler = new ProjectDetailsHandler(this, projectInformationService);
   }
 
   private void initLayout() {
@@ -64,10 +73,76 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   public void projectId(String projectId) {
     handler.projectId(projectId);
-
   }
-  public void setStyles(String... componentStyles){
+
+  public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
   }
 
+  /**
+   * Component logic for the {@link ProjectDetailsComponent}
+   *
+   * @since 1.0.0
+   */
+  private final class Handler {
+
+    private final ProjectDetailsComponent component;
+    private final ProjectInformationService projectInformationService;
+
+    private ProjectId selectedProject;
+
+    public Handler(ProjectDetailsComponent component,
+        ProjectInformationService projectInformationService) {
+      this.component = component;
+      this.projectInformationService = projectInformationService;
+      setFieldsEditableOnlyOnFocus();
+      attachSubmissionActionOnBlur();
+    }
+
+    public void projectId(String projectId) {
+      projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
+          this::loadProjectData,
+          () -> component.titleField.setValue("Not found"));
+    }
+
+    private void loadProjectData(Project project) {
+      this.selectedProject = project.getId();
+      component.titleField.setValue(project.getProjectIntent().projectTitle().title());
+      component.projectObjective.setValue(project.getProjectIntent().objective().value());
+      project.getProjectIntent().experimentalDesign().ifPresentOrElse(
+          experimentalDesignDescription -> component.experimentalDesignField.setValue(
+              experimentalDesignDescription.value()),
+          () -> component.experimentalDesignField.setPlaceholder("No description yet."));
+    }
+
+
+    private void setFieldsEditableOnlyOnFocus() {
+      editableOnFocus(titleField);
+      editableOnFocus(projectObjective);
+      editableOnFocus(experimentalDesignField);
+    }
+
+    private void attachSubmissionActionOnBlur() {
+      ProjectDetailsComponent.Handler.submitOnBlur(titleField, value ->
+          projectInformationService.updateTitle(selectedProject.value(), value.trim()));
+      ProjectDetailsComponent.Handler.submitOnBlur(projectObjective, value ->
+          projectInformationService.stateObjective(selectedProject.value(), value.trim()));
+      ProjectDetailsComponent.Handler.submitOnBlur(experimentalDesignField, value ->
+          projectInformationService.describeExperimentalDesign(selectedProject.value(),
+              value.trim()));
+    }
+
+    private static <T extends Component & HasValue<?, ?> & Focusable<?>> void editableOnFocus(
+        T element) {
+      element.setReadOnly(true);
+      element.addFocusListener(it -> element.setReadOnly(false));
+      element.addBlurListener(it -> element.setReadOnly(true));
+    }
+
+    private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnBlur(T element,
+        Consumer<V> submitAction) {
+      element.addBlurListener(it -> submitAction.accept(element.getValue()));
+    }
+
+  }
 }
