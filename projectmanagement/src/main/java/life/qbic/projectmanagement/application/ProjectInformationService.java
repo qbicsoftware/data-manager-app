@@ -68,8 +68,8 @@ public class ProjectInformationService {
 
   public void updateTitle(String projectId, String newTitle) {
     ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Optional<Project> project = projectRepository.find(projectIdentifier);
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.updateTitle(projectTitle);
       projectRepository.update(p);
@@ -78,9 +78,9 @@ public class ProjectInformationService {
 
   public void describeExperimentalDesign(String projectId, String experimentalDesign) {
     ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Optional<Project> project = projectRepository.find(projectIdentifier);
     ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
         experimentalDesign);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.describeExperimentalDesign(experimentalDesignDescription);
       projectRepository.update(p);
@@ -89,8 +89,8 @@ public class ProjectInformationService {
 
   public void stateObjective(String projectId, String objective) {
     ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Optional<Project> project = projectRepository.find(projectIdentifier);
     ProjectObjective projectObjective = ProjectObjective.create(objective);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.stateObjective(projectObjective);
       projectRepository.update(p);
