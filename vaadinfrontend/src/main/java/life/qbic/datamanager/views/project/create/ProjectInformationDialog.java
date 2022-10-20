@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.project.create;
 
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -163,26 +162,30 @@ public class ProjectInformationDialog extends Dialog {
       projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
       experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
 
+      addConsumedLengthHelper(titleField, titleField.getValue());
+      addConsumedLengthHelper(projectObjective, projectObjective.getValue());
+      addConsumedLengthHelper(experimentalDesignField, experimentalDesignField.getValue());
+
       titleField.addValueChangeListener(
-          e -> addConsumedLengthHelper(e, titleField));
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
       projectObjective.addValueChangeListener(
-          e -> addConsumedLengthHelper(e, projectObjective));
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
       experimentalDesignField.addValueChangeListener(
-          e -> addConsumedLengthHelper(e, experimentalDesignField));
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
-    private void addConsumedLengthHelper(ComponentValueChangeEvent<TextArea, String> e,
-        TextArea textArea) {
+    private void addConsumedLengthHelper(TextArea textArea, String newValue) {
       int maxLength = textArea.getMaxLength();
-      int consumedLength = e.getValue().length();
-      e.getSource().setHelperText(consumedLength + "/" + maxLength);
+      int consumedLength = newValue.length();
+      textArea.setHelperText(consumedLength + "/" + maxLength);
     }
 
-    private void addConsumedLengthHelper(ComponentValueChangeEvent<TextField, String> e,
-        TextField textField) {
+    private void addConsumedLengthHelper(TextField textField, String newValue) {
       int maxLength = textField.getMaxLength();
-      int consumedLength = e.getValue().length();
-      e.getSource().setHelperText(consumedLength + "/" + maxLength);
+      int consumedLength = newValue.length();
+      textField.setHelperText(consumedLength + "/" + maxLength);
     }
+
+
   }
 }
