@@ -209,7 +209,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
                 .map(it -> new SortOrder(it.getSorted(), it.getDirection().equals(
                     SortDirection.DESCENDING)
                 )).collect(Collectors.toList());
-            // if no order is provided by the grid order by project code (least priority)
+            // if no order is provided by the grid order by last modified (least priority)
             sortOrders.add(SortOrder.of("lastModified").descending());
             return projectInformationService.queryPreview(
                 projectPreviewFilter,
