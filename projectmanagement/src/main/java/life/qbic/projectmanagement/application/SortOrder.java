@@ -1,11 +1,9 @@
 package life.qbic.projectmanagement.application;
 
 /**
- * <b>short description</b>
+ * A sort order to be consumed by a data providing service.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record SortOrder(String propertyName, boolean isDescending) {
 
