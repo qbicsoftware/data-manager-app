@@ -2,11 +2,14 @@ package life.qbic.projectmanagement.persistence;
 
 import java.util.List;
 import java.util.Objects;
-import life.qbic.OffsetBasedRequest;
+import life.qbic.persistence.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,9 +34,19 @@ public class ProjectPreviewJpaRepository implements ProjectPreviewLookup {
   }
 
   @Override
-  public List<ProjectPreview> query(String filter, int offset, int limit) {
+  public List<ProjectPreview> query(String filter, int offset, int limit,
+      List<SortOrder> sortOrders) {
+    List<Order> orders = sortOrders.stream().map(it -> {
+      Order order;
+      if (it.isDescending()) {
+        order = Order.desc(it.propertyName());
+      } else {
+        order = Order.asc(it.propertyName());
+      }
+      return order;
+    }).toList();
     return projectPreviewRepository.findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
-        filter, filter, new OffsetBasedRequest(offset, limit)).getContent();
+        filter, filter, new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
 
 }
