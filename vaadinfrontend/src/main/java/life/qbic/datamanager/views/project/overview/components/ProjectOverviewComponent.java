@@ -86,7 +86,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired ApplicationExceptionHandler exceptionHandler,
       @Autowired PersonSearchService personSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
-    new ProjectOverviewHandler(offerLookupService,
+    new Handler(offerLookupService,
         projectRepository,
         projectInformationService,
         projectCreationService,
@@ -147,9 +147,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
    * @since 1.0.0
    */
 
-  private class ProjectOverviewHandler {
+  private class Handler {
 
-    private static final Logger log = logger(ProjectOverviewHandler.class);
+    private static final Logger log = logger(Handler.class);
     private final ApplicationExceptionHandler exceptionHandler;
     private final OfferLookupService offerLookupService;
     private final ProjectCreationService projectCreationService;
@@ -159,7 +159,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private String projectPreviewFilter = "";
     private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
 
-    public ProjectOverviewHandler(OfferLookupService offerLookupService,
+    public Handler(OfferLookupService offerLookupService,
         ProjectRepository projectRepository,
         ProjectInformationService projectInformationService,
         ProjectCreationService projectCreationService,
