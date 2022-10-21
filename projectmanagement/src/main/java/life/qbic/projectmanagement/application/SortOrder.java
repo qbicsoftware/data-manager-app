@@ -11,6 +11,14 @@ public record SortOrder(String propertyName, boolean isDescending) {
     return !isDescending();
   }
 
+  public SortOrder ascending() {
+    return new SortOrder(propertyName, false);
+  }
+
+  public SortOrder descending() {
+    return new SortOrder(propertyName, true);
+  }
+
   public static SortOrder of(String propertyName) {
     return new SortOrder(propertyName, true);
   }

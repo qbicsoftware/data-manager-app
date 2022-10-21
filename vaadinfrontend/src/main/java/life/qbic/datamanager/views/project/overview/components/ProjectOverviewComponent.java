@@ -32,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
@@ -210,12 +211,14 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
             List<SortOrder> sortOrders = query.getSortOrders().stream()
                 .map(it -> new SortOrder(it.getSorted(), it.getDirection().equals(
                     SortDirection.DESCENDING)
-                )).toList();
+                )).collect(Collectors.toList());
+            // if no order is provided by the grid order by project code (least priority)
+            sortOrders.add(SortOrder.of("projectCode").ascending());
             return projectInformationService.queryPreview(
                 projectPreviewFilter,
                 query.getOffset(),
                 query.getLimit(),
-                sortOrders).stream();
+                List.copyOf(sortOrders)).stream();
           });
     }
 
