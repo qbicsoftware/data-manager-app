@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.persistence.person;
 
 import java.util.List;
-import life.qbic.OffsetBasedRequest;
+import life.qbic.persistence.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.api.PersonLookupService;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import org.springframework.beans.factory.annotation.Autowired;

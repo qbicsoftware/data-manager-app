@@ -39,26 +39,16 @@ public class ProjectInformationService {
   /**
    * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
    *
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
+   * @param filter     the results' project title will be applied with this filter
+   * @param offset     the offset for the search result to start
+   * @param limit      the maximum number of results that should be returned
+   * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(int offset, int limit) {
-    return projectPreviewLookup.query(offset, limit);
-  }
-
-  /**
-   * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
-   *
-   * @param filter the results' project title will be applied with this filter
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
-   * @return the results in the provided range
-   * @since 1.0.0
-   */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit) {
-    return projectPreviewLookup.query(filter, offset, limit);
+  public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
+      List<SortOrder> sortOrders) {
+    return projectPreviewLookup.query(filter, offset, limit, sortOrders);
   }
 
   public Optional<Project> find(ProjectId projectId) {

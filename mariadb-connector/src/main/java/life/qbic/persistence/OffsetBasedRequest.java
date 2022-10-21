@@ -1,7 +1,9 @@
-package life.qbic;
+package life.qbic.persistence;
 
+import java.util.Objects;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 
 /**
  * Simple implementation of a {@link Pageable} interface that provides offset and limit based
@@ -36,6 +38,18 @@ public class OffsetBasedRequest implements Pageable {
     sort = Sort.by(Sort.Direction.DESC, "id");
   }
 
+  public OffsetBasedRequest(int offset, int limit, Sort sort) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("Limit must not be less than one!");
+    }
+    if (offset < 0) {
+      throw new IllegalArgumentException("Offset index must not be less than zero!");
+    }
+    this.offset = offset;
+    this.limit = limit;
+    this.sort = sort;
+  }
+
   @Override
   public int getPageNumber() {
     return offset / limit;
@@ -52,11 +66,14 @@ public class OffsetBasedRequest implements Pageable {
   }
 
   @Override
+  @NonNull
   public Sort getSort() {
+    Objects.requireNonNull(sort);
     return sort;
   }
 
   @Override
+  @NonNull
   public Pageable next() {
     return new OffsetBasedRequest((int) (getOffset() + getPageSize()), getPageSize());
   }
@@ -67,16 +84,19 @@ public class OffsetBasedRequest implements Pageable {
   }
 
   @Override
+  @NonNull
   public Pageable previousOrFirst() {
     return hasPrevious() ? previous() : first();
   }
 
   @Override
+  @NonNull
   public Pageable first() {
     return new OffsetBasedRequest(0, getPageSize());
   }
 
   @Override
+  @NonNull
   public Pageable withPage(int pageNumber) {
     return new OffsetBasedRequest(offset * pageNumber, getPageSize());
   }
