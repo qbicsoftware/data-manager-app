@@ -10,7 +10,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -120,16 +119,14 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     projectGrid.addColumn(new ComponentRenderer<>(
             item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle())))
         .setHeader("Title")
-        .setKey("projectTitle")
-        .setSortProperty("projectTitle");
+        .setKey("projectTitle");
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(projectPreview ->
             asClientLocalDateTime(projectPreview.lastModified()), "yyyy-MM-dd HH:mm:ss"))
         .setKey("lastModified")
-        .setHeader("Last Modified")
-        .setSortProperty("lastModified");
+        .setHeader("Last Modified");
+
     projectGrid.setMultiSort(true);
-    projectGrid.sort(GridSortOrder.desc(projectGrid.getColumnByKey("lastModified")).build());
     getContent().addFields(layout, projectGrid);
   }
 
@@ -213,7 +210,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
                     SortDirection.DESCENDING)
                 )).collect(Collectors.toList());
             // if no order is provided by the grid order by project code (least priority)
-            sortOrders.add(SortOrder.of("projectCode").ascending());
+            sortOrders.add(SortOrder.of("lastModified").descending());
             return projectInformationService.queryPreview(
                 projectPreviewFilter,
                 query.getOffset(),
