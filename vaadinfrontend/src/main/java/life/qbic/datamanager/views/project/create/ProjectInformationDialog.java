@@ -123,17 +123,21 @@ public class ProjectInformationDialog extends Dialog {
     return projectObjective.getValue();
   }
 
-public String getExperimentalDesign() {
- return experimentalDesignField.getValue(); 
-}
+  public String getExperimentalDesign() {
+    return experimentalDesignField.getValue();
+  }
 
   /**
-   * Resets the values and validity of all components that implement value storing and validity interfaces
+   * Resets the values and validity of all components that implement value storing and validity
+   * interfaces
    */
-  public void reset(){
-    formLayout.getChildren().filter(component -> component instanceof HasValue<?,?>).forEach(component -> ((HasValue<?, ?>) component).clear());
-    formLayout.getChildren().filter(component -> component instanceof HasValidation).forEach(component -> ((HasValidation) component).setInvalid(false));
+  public void reset() {
+    formLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
+        .forEach(component -> ((HasValue<?, ?>) component).clear());
+    formLayout.getChildren().filter(component -> component instanceof HasValidation)
+        .forEach(component -> ((HasValidation) component).setInvalid(false));
   }
+
   private class Handler {
 
     private void handle() {
