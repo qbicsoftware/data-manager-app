@@ -123,10 +123,8 @@ public class ProjectInformationDialog extends Dialog {
     return projectObjective.getValue();
   }
 
-  public String getExperimentalDesign() {
-    return experimentalDesignField.getValue();
+  public String getExperimentalDesign() { return experimentalDesignField.getValue(); }
 
-  }
   /**
    * Resets the values and validity of all components that implement value storing and validity interfaces
    */
@@ -134,12 +132,6 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.getChildren().filter(component -> component instanceof HasValue<?,?>).forEach(component -> ((HasValue<?, ?>) component).clear());
     formLayout.getChildren().filter(component -> component instanceof HasValidation).forEach(component -> ((HasValidation) component).setInvalid(false));
   }
-
-  private void resetAndClose() {
-    reset();
-    close();
-  }
-
   private class Handler {
 
     private void handle() {
@@ -196,6 +188,11 @@ public class ProjectInformationDialog extends Dialog {
     private void resetDialogueUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
       addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    }
+
+    private void resetAndClose() {
+      reset();
+      close();
     }
   }
 }
