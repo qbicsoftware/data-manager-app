@@ -228,13 +228,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private void configureProjectCreationDialog() {
       projectInformationDialog.createButton.addClickListener(
           e -> createClicked());
-      projectInformationDialog.cancelButton.addClickListener(
-          e -> cancelSelection().execute());
-      projectInformationDialog.isCloseOnEsc();
-    }
-
-    private Command cancelSelection() {
-      return projectInformationDialog::close;
     }
 
     private void createClicked() {

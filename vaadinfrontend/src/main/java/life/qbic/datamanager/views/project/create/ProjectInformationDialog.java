@@ -67,7 +67,6 @@ public class ProjectInformationDialog extends Dialog {
     cancelButton = new Button("Cancel");
 
     configureDialogLayout();
-    configureDialogClosure();
     initForm();
     styleForm();
 
@@ -129,28 +128,24 @@ public class ProjectInformationDialog extends Dialog {
 
   }
   /**
-   * Resets the values and validity of all components that implement value storing validity interfaces
+   * Resets the values and validity of all components that implement value storing and validity interfaces
    */
   public void reset(){
     formLayout.getChildren().filter(component -> component instanceof HasValue<?,?>).forEach(component -> ((HasValue<?, ?>) component).clear());
     formLayout.getChildren().filter(component -> component instanceof HasValidation).forEach(component -> ((HasValidation) component).setInvalid(false));
   }
 
-  /**
-   * Calls the reset method for all possible closure methods of the dialogue window:
-   * cancel button, clicking outside the modal view and pressing the esc button
-   */
-  private void configureDialogClosure(){
-    this.addDialogCloseActionListener(closeActionEvent -> {
-      this.reset();
-      this.close();
-    });
+  private void resetAndClose() {
+    reset();
+    close();
   }
 
   private class Handler {
 
     private void handle() {
       restrictInputLength();
+      resetDialogueUponClosure();
+      closeDialogueViaCancelButton();
     }
 
     public void loadOfferContent(Offer offer) {
@@ -194,6 +189,13 @@ public class ProjectInformationDialog extends Dialog {
       textField.setHelperText(consumedLength + "/" + maxLength);
     }
 
+    private void closeDialogueViaCancelButton() {
+      cancelButton.addClickListener(buttonClickEvent -> resetAndClose());
+    }
 
+    private void resetDialogueUponClosure() {
+      // Calls the reset method for all possible closure methods of the dialogue window:
+      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    }
   }
 }
