@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -11,6 +13,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.stream.Collectors;
+import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -65,6 +69,7 @@ public class ProjectInformationDialog extends Dialog {
     cancelButton = new Button("Cancel");
 
     configureDialogLayout();
+    configureDialogClosure();
     initForm();
     styleForm();
 
@@ -125,18 +130,23 @@ public class ProjectInformationDialog extends Dialog {
     return experimentalDesignField.getValue();
 
   }
-
-
   /**
-   * Resets all user-defined values set for this dialog
+   * Resets the values and validity of all components that implement value storing validity interfaces
    */
   public void reset(){
-    searchField.clear();
-    titleField.clear();
-    projectObjective.clear();
-    experimentalDesignField.clear();
-    projectManager.clear();
-    principalInvestigator.clear();
+    formLayout.getChildren().filter(component -> component instanceof HasValue<?,?>).forEach(component -> ((HasValue<?, ?>) component).clear());
+    formLayout.getChildren().filter(component -> component instanceof HasValidation).forEach(component -> ((HasValidation) component).setInvalid(false));
+  }
+
+  /**
+   * Calls the reset method for all possible closure methods of the dialogue window:
+   * cancel button, clicking outside the modal view and pressing the esc button
+   */
+  private void configureDialogClosure(){
+    this.addDialogCloseActionListener(closeActionEvent -> {
+      this.reset();
+      this.close();
+    });
   }
 
   private class Handler {

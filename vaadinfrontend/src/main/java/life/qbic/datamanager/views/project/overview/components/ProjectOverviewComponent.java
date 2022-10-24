@@ -234,10 +234,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private Command cancelSelection() {
-      return () -> {
-        projectInformationDialog.close();
-        projectInformationDialog.reset();
-      };
+      return projectInformationDialog::close;
     }
 
     private void createClicked() {
