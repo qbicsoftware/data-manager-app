@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -123,26 +125,25 @@ public class ProjectInformationDialog extends Dialog {
 
   public String getExperimentalDesign() {
     return experimentalDesignField.getValue();
-
   }
 
-
   /**
-   * Resets all user-defined values set for this dialog
+   * Resets the values and validity of all components that implement value storing and validity
+   * interfaces
    */
-  public void reset(){
-    searchField.clear();
-    titleField.clear();
-    projectObjective.clear();
-    experimentalDesignField.clear();
-    projectManager.clear();
-    principalInvestigator.clear();
+  public void reset() {
+    formLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
+        .forEach(component -> ((HasValue<?, ?>) component).clear());
+    formLayout.getChildren().filter(component -> component instanceof HasValidation)
+        .forEach(component -> ((HasValidation) component).setInvalid(false));
   }
 
   private class Handler {
 
     private void handle() {
       restrictInputLength();
+      resetDialogueUponClosure();
+      closeDialogueViaCancelButton();
     }
 
     public void loadOfferContent(Offer offer) {
@@ -186,6 +187,18 @@ public class ProjectInformationDialog extends Dialog {
       textField.setHelperText(consumedLength + "/" + maxLength);
     }
 
+    private void closeDialogueViaCancelButton() {
+      cancelButton.addClickListener(buttonClickEvent -> resetAndClose());
+    }
 
+    private void resetDialogueUponClosure() {
+      // Calls the reset method for all possible closure methods of the dialogue window:
+      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    }
+
+    private void resetAndClose() {
+      reset();
+      close();
+    }
   }
 }
