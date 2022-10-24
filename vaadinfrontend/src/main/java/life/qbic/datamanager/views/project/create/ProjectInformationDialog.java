@@ -123,7 +123,9 @@ public class ProjectInformationDialog extends Dialog {
     return projectObjective.getValue();
   }
 
-  public String getExperimentalDesign() { return experimentalDesignField.getValue(); }
+public String getExperimentalDesign() {
+ return experimentalDesignField.getValue(); 
+}
 
   /**
    * Resets the values and validity of all components that implement value storing and validity interfaces
