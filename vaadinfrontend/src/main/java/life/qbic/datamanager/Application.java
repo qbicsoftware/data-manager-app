@@ -33,6 +33,7 @@ import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.Recipient;
 import life.qbic.newshandler.usermanagement.passwordreset.PasswordResetLinkSupplier;
 import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSupplier;
+import life.qbic.projectmanagement.application.PersonSearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -82,6 +83,9 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
     setupUseCases(appContext);
+
+    var personSearchService = appContext.getBean(PersonSearchService.class);
+    var result = personSearchService.find("fillinger", 0, 20);
   }
 
   private static void setupUseCases(ConfigurableApplicationContext context) {

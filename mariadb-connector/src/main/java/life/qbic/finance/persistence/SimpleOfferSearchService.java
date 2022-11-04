@@ -2,7 +2,7 @@ package life.qbic.finance.persistence;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.OffsetBasedRequest;
+import life.qbic.persistence.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;

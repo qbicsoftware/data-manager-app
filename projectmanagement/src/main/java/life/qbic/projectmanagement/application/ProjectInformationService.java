@@ -1,15 +1,17 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,26 +39,16 @@ public class ProjectInformationService {
   /**
    * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
    *
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
+   * @param filter     the results' project title will be applied with this filter
+   * @param offset     the offset for the search result to start
+   * @param limit      the maximum number of results that should be returned
+   * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(int offset, int limit) {
-    return projectPreviewLookup.query(offset, limit);
-  }
-
-  /**
-   * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
-   *
-   * @param filter the results' project title will be applied with this filter
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
-   * @return the results in the provided range
-   * @since 1.0.0
-   */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit) {
-    return projectPreviewLookup.query(filter, offset, limit);
+  public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
+      List<SortOrder> sortOrders) {
+    return projectPreviewLookup.query(filter, offset, limit, sortOrders);
   }
 
   public Optional<Project> find(ProjectId projectId) {
@@ -64,9 +56,35 @@ public class ProjectInformationService {
     return projectRepository.find(projectId);
   }
 
-  public List<OfferIdentifier> queryLinkedOffers(ProjectId projectId) {
-    return projectRepository.find(projectId).map(Project::linkedOffers).orElse(
-        Collections.emptyList());
+  public void updateTitle(String projectId, String newTitle) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ProjectTitle projectTitle = ProjectTitle.of(newTitle);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.updateTitle(projectTitle);
+      projectRepository.update(p);
+    });
+  }
+
+  public void describeExperimentalDesign(String projectId, String experimentalDesign) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
+        experimentalDesign);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.describeExperimentalDesign(experimentalDesignDescription);
+      projectRepository.update(p);
+    });
+  }
+
+  public void stateObjective(String projectId, String objective) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    ProjectObjective projectObjective = ProjectObjective.create(objective);
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.stateObjective(projectObjective);
+      projectRepository.update(p);
+    });
   }
 
 

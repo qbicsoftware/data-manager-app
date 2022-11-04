@@ -1,12 +1,18 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -14,9 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
+import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,20 +40,19 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   final Grid<ProjectLink> projectLinks;
 
-  private final ProjectInformationService projectInformationService;
-
-  private final ProjectLinkingService projectLinkingService;
+  private final transient ProjectLinkingService projectLinkingService;
   private static final String OFFER_TYPE_NAME = "Offer";
   private ProjectId projectId;
 
 
-  public ProjectLinksComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ProjectLinkingService projectLinkingService,
-      @Autowired OfferSearchComponent offerSearchComponent) {
-    Objects.requireNonNull(offerSearchComponent);
-    Objects.requireNonNull(projectInformationService);
-    this.projectInformationService = projectInformationService;
+  public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
+      @Autowired OfferLookupService offerLookupService) {
+
+    Objects.requireNonNull(offerLookupService);
     Objects.requireNonNull(projectLinkingService);
+
+    OfferSearch offerSearch = new OfferSearch(offerLookupService);
+
     this.projectLinkingService = projectLinkingService;
 
     projectLinks = new Grid<>(ProjectLink.class);
@@ -62,7 +68,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         })
     );
     projectLinks.setItems(new ArrayList<>());
-    offerSearchComponent.addSelectedOfferChangeListener(it -> {
+    offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
       }
@@ -75,7 +81,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
       }
     });
     getContent().addTitle("Links");
-    getContent().addFields(offerSearchComponent, projectLinks);
+    getContent().addFields(offerSearch, projectLinks);
     projectLinks.setSizeFull();
   }
 
@@ -118,14 +124,87 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   }
 
   private void loadContentForProject(ProjectId projectId) {
-    var linkedOffers = projectInformationService.queryLinkedOffers(projectId);
+    var linkedOffers = projectLinkingService.queryLinkedOffers(projectId);
     List<ProjectLink> offerLinks = linkedOffers.stream()
         .map(ProjectLinksComponent::offerLink)
         .toList();
     projectLinks.setItems(offerLinks);
   }
 
-  public void setStyles(String... componentStyles){
+  public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
+  }
+
+  private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
+
+    private final transient OfferLookupService offerLookupService;
+
+    public static class SelectedOfferChangeEvent extends
+        ComponentValueChangeEvent<OfferSearch, OfferPreview> {
+
+      /**
+       * Creates a new component value change event.
+       *
+       * @param source     the source component
+       * @param hasValue   the HasValue from which the value originates
+       * @param oldValue   the old value
+       * @param fromClient whether the value change originated from the client
+       */
+      public SelectedOfferChangeEvent(OfferSearch source,
+          HasValue<?, OfferPreview> hasValue, OfferPreview oldValue,
+          boolean fromClient) {
+        super(source, hasValue, oldValue, fromClient);
+      }
+    }
+
+
+    public OfferSearch(
+        @Autowired OfferLookupService offerLookupService) {
+      Objects.requireNonNull(offerLookupService);
+      this.offerLookupService = offerLookupService;
+      setItems();
+      setRenderer();
+      setLabels();
+      forwardValueChangeEvents();
+    }
+
+    private void forwardValueChangeEvents() {
+      getContent().addValueChangeListener(
+          it -> fireEvent(new SelectedOfferChangeEvent(this, it.getHasValue(), it.getOldValue(),
+              it.isFromClient())));
+    }
+
+    public Registration addSelectedOfferChangeListener(
+        ComponentEventListener<SelectedOfferChangeEvent> listener) {
+      return this.addListener(SelectedOfferChangeEvent.class, listener);
+    }
+
+    public void clearSelection() {
+      getContent().clear();
+    }
+
+    private void setLabels() {
+      getContent().setItemLabelGenerator(it -> it.offerId().id());
+    }
+
+    private void setRenderer() {
+      getContent().setRenderer(new ComponentRenderer<>(OfferSearch::textFromPreview));
+    }
+
+    private static Text textFromPreview(OfferPreview preview) {
+      return new Text(preview.offerId().id() + ", " + preview.getProjectTitle().title());
+    }
+
+    private void setItems() {
+      getContent().setItems(
+          query -> offerLookupService
+              .findOfferContainingProjectTitleOrId(
+                  query.getFilter().orElse(""),
+                  query.getFilter().orElse(""),
+                  query.getOffset(),
+                  query.getLimit())
+              .stream());
+    }
+
   }
 }

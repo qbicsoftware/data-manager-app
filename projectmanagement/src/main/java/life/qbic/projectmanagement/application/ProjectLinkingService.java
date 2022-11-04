@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.application;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import life.qbic.logging.api.Logger;
@@ -66,6 +68,12 @@ public class ProjectLinkingService {
           "No project with identifier " + projectIdentifier + " exists.");
     }
     return projectSearchResult.get();
+  }
+
+  public List<OfferIdentifier> queryLinkedOffers(ProjectId projectId) {
+    return projectRepository.find(projectId)
+        .map(Project::linkedOffers)
+        .orElse(Collections.emptyList());
   }
 
 }
