@@ -6,7 +6,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -55,11 +54,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     this.projectManager = new ComboBox<>();
     this.projectManager.setPlaceholder("Select a Project Manager");
-    projectManager.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
 
-    projectManager.setItemLabelGenerator(
-        PersonReference::fullName);
+    projectManager.setItemLabelGenerator(item ->
+        item.fullName() + ", " + item.getEmailAddress());
     projectManager.setRenderer(createRenderer());
+
+    projectManager.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
+    projectManager.getStyle().set("--vaadin-combo-box-width", "16em");
+
 
     this.handler = new Handler(this, projectInformationService, personSearchService);
 
@@ -70,9 +72,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private Renderer<PersonReference> createRenderer() {
     //todo move that to css stylings
     String tpl = "<div style=\"display: flex;\">" +
-        "  <img style=\"height: var(--lumo-size-m); margin-right: var(--lumo-space-s);\" alt=\"Contact of ${item.firstName} ${item.lastName}\" />" +
         "  <div>" +
-        "    ${item.fullname}" +
+        "    ${item.fullName}" +
         "    <div style=\"font-size: var(--lumo-font-size-s); color: var(--lumo-secondary-text-color);\">${item.email}</div>" +
         "  </div>" +
         "</div>";
@@ -193,10 +194,6 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
                   query.getLimit())
               .stream());
-      comboBox.setRenderer(
-          new ComponentRenderer<>(personReference -> new Text(personReference.fullName())));
-      comboBox.setItemLabelGenerator(
-          (ItemLabelGenerator<PersonReference>) PersonReference::fullName);
     }
 
     private void setFieldsEditableOnlyOnFocus() {
