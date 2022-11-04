@@ -144,6 +144,10 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
+  public PersonReference getProjectManager() {
+    return projectManager;
+  }
+
   /**
    * Creates a new project with code and project intent
    *
