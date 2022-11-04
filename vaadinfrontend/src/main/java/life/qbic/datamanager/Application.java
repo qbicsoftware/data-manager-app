@@ -86,7 +86,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
     var personSearchService = appContext.getBean(PersonSearchService.class);
     var result = personSearchService.find("fillinger", 0, 20);
-    System.out.println(result);
   }
 
   private static void setupUseCases(ConfigurableApplicationContext context) {
