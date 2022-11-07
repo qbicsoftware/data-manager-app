@@ -78,8 +78,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   }
 
   private void configurePMcomboBox() {
-    projectManagerComboBox.setItemLabelGenerator(item ->
-        item.fullName() + ", " + item.getEmailAddress());
+    projectManagerComboBox.setItemLabelGenerator(PersonReference::fullName);
     projectManagerComboBox.setRenderer(new ComponentRenderer<>(reference -> new PersonElement(reference)));
 
     projectManagerComboBox.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
@@ -136,12 +135,23 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       attachSubmissionActionOnBlur();
       restrictInputLength();
       setUpPersonSearch(component.projectManagerComboBox);
+      contactClickListener();
+    }
 
-      //todo test
+    private void contactClickListener() {
       component.projectManagerLayout.addClickListener(click ->{
         component.pmElement.setVisible(false);
         component.projectManagerComboBox.setVisible(true);
       });
+
+      component.projectManagerComboBox.addValueChangeListener(click -> {
+        PersonReference reference = click.getValue();
+        component.pmElement.setContent(reference.fullName(),reference.getEmailAddress());
+
+        component.projectManagerComboBox.setVisible(false);
+        component.pmElement.setVisible(true);
+      });
+
     }
 
     public void projectId(String projectId) {
@@ -195,10 +205,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
               experimentalDesignDescription.value()),
           () -> component.experimentalDesignField.setPlaceholder("No description yet."));
 
-      //todo if pm is present load it otherwise use empty combobox
-      pmElement.setContent(project.getProjectManager().fullName(), project.getProjectManager().getEmailAddress());
 
-      component.projectManagerComboBox.setValue(project.getProjectManager());
+      if (project.getProjectManager().isEmpty()) component.pmElement.reset();
+
+      project.getProjectManager().ifPresent(it -> {
+        component.pmElement.setContent(it.fullName(),it.getEmailAddress());
+        component.projectManagerComboBox.setValue(it);
+      });
+
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {

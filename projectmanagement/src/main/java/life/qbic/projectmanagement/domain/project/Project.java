@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -144,8 +145,8 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
-  public PersonReference getProjectManager() {
-    return projectManager;
+  public Optional<PersonReference> getProjectManager() {
+    return Optional.of(projectManager);
   }
 
   /**
