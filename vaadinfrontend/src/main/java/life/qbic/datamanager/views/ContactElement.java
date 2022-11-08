@@ -7,17 +7,20 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 import java.util.Objects;
 
 /**
- * <b>short description</b>
+ * <b>Contact Element</b>
  *
- * <p>detailed description</p>
+ * <p>Element consisting of a vertical layout and labels to represent a {@link PersonReference} contact via full name and email.
+ * Furthermore, the element contains specific styling for the labels.
+ * </p>
+ * <p>Use this element when you want to represent contact data of a person!</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class PersonElement extends VerticalLayout {
+public class ContactElement extends VerticalLayout {
   private final Label projectManagerLabel;
   private final Label emailLabel;
 
-  public PersonElement(){
+  public ContactElement(){
     projectManagerLabel = new Label("-");
     emailLabel = new Label();
 
@@ -26,13 +29,15 @@ public class PersonElement extends VerticalLayout {
     addClassNames("flex");
     add(projectManagerLabel, emailLabel);
   }
-  public PersonElement(PersonReference personReference){
+  public ContactElement(PersonReference personReference){
     Objects.requireNonNull(personReference);
 
     projectManagerLabel = new Label(personReference.fullName());
     emailLabel = new Label(personReference.getEmailAddress());
 
     emailLabel.addClassNames("text-s","text-secondary");
+
+    this.setSpacing(false);
 
     add(projectManagerLabel, emailLabel);
   }
