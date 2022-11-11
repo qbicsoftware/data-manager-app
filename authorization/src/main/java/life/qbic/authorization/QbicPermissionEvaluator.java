@@ -1,11 +1,15 @@
 package life.qbic.authorization;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Objects;
 import life.qbic.authentication.domain.user.concept.UserId;
+import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +28,22 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
   @Override
   public boolean hasPermission(Authentication authentication, Object targetDomainObject,
       Object permission) {
-    this.authentication = authentication;
-    this.permission = new SimpleGrantedAuthority(permission.toString());
-    return hasSystemRole() || isInGlobalPermissions() || isInObjectPermissions(targetDomainObject);
+    Objects.requireNonNull(authentication, "Authentication must not be null");
+    String requiredAuthority = permission.toString();
+    List<String> loadedAuthorities = authentication.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority).toList();
+    if (loadedAuthorities.contains("ROLE_ADMIN")) {
+      return true;
+    }
+    if (loadedAuthorities.contains(requiredAuthority)) {
+      return true;
+    }
+    if (targetDomainObject instanceof Project) {
+      QbicUserDetails principal = (QbicUserDetails) authentication.getPrincipal();
+      return qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
+          ((Project) targetDomainObject).getId(), new SimpleGrantedAuthority(requiredAuthority));
+    }
+    return false;
   }
 
   @Override

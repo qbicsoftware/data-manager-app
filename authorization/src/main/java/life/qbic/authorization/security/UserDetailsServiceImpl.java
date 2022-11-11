@@ -1,4 +1,4 @@
-package life.qbic.datamanager.security;
+package life.qbic.authorization.security;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +39,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   }
 
   private static List<GrantedAuthority> getAuthorities(User testUser) {
+
     // todo fix me: implement rolemanagement, parse all roles the user has to understhand which
     // rights the user has
 

@@ -1,9 +1,10 @@
-package life.qbic.datamanager.security;
+package life.qbic.authorization.security;
 
 import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,6 +39,10 @@ public class QbicUserDetails implements UserDetails {
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return List.of(new SimpleGrantedAuthority("USER"));
+  }
+
+  public UserId getUserId() {
+    return user.id();
   }
 
   @Override

@@ -3,6 +3,7 @@ package life.qbic.authorization;
 import java.util.List;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
@@ -21,5 +22,5 @@ public interface ProjectPermissionService {
    * @param projectId
    * @return a list of {@link SimpleGrantedAuthority} for the provided project
    */
-  List<SimpleGrantedAuthority> loadUserPermissions(UserId userId, ProjectId projectId);
+  List<? extends GrantedAuthority> loadUserPermissions(UserId userId, ProjectId projectId);
 }
