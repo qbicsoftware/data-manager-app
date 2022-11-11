@@ -6,8 +6,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
-import life.qbic.authentication.domain.user.concept.UserId;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
  * <b>short description</b>
@@ -23,18 +21,18 @@ public class ProjectRole implements Serializable {
 
   @Id
   @Column(name = "userId")
-  private UserId userId;
+  private String userId;
   @Id
   @Column(name = "projectId")
-  private ProjectId projectId;
+  private String projectId;
   @Column(name = "userRoleId")
   private String userRoleId;
 
-  public UserId userId() {
+  public String userId() {
     return userId;
   }
 
-  public ProjectId projectId() {
+  public String projectId() {
     return projectId;
   }
 

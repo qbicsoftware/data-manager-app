@@ -13,17 +13,17 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
  */
 public class ProjectRoleId implements Serializable {
 
-  private UserId userId;
+  private String userId;
 
-  private ProjectId projectId;
+  private String projectId;
 
   protected ProjectRoleId() {
 
   }
 
   protected ProjectRoleId(UserId userId, ProjectId projectId) {
-    this.userId = userId;
-    this.projectId = projectId;
+    this.userId = userId.get();
+    this.projectId = projectId.value();
   }
 
   public static ProjectRoleId of(UserId userId, ProjectId projectId) {

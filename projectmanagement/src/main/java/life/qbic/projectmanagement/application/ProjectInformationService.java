@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
 
 /**
@@ -47,7 +47,7 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PreAuthorize("hasAuthority('VIEW_PROJECT')")
+  @PostFilter("hasPermission(filterObject,'VIEW_PROJECT')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     return projectPreviewLookup.query(filter, offset, limit, sortOrders);

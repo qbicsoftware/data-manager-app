@@ -214,7 +214,6 @@
       <groupId>life.qbic</groupId>
       <artifactId>authorization</artifactId>
       <version>0.9.0</version>
-      <scope>compile</scope>
     </dependency>
 
 

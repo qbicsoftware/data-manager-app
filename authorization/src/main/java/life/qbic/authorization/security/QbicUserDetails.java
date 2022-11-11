@@ -24,7 +24,11 @@ public class QbicUserDetails implements UserDetails {
 
   @Serial
   private static final long serialVersionUID = 5812210012669790933L;
-  private final transient User user;
+  private final UserId userId;
+  private final String username;
+  private final String password;
+
+  private final boolean active;
 
   /**
    * Constructor to use and embed a {@link User} entity.
@@ -33,7 +37,10 @@ public class QbicUserDetails implements UserDetails {
    * @since 1.0.0
    */
   public QbicUserDetails(User user) {
-    this.user = user;
+    this.userId = user.id();
+    this.username = user.emailAddress().get();
+    this.password = user.getEncryptedPassword().get();
+    this.active = user.isActive();
   }
 
   @Override
@@ -42,17 +49,17 @@ public class QbicUserDetails implements UserDetails {
   }
 
   public UserId getUserId() {
-    return user.id();
+    return userId;
   }
 
   @Override
   public String getPassword() {
-    return user.getEncryptedPassword().get();
+    return password;
   }
 
   @Override
   public String getUsername() {
-    return user.emailAddress().get();
+    return username;
   }
 
   @Override
@@ -72,6 +79,6 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return user.isActive();
+    return active;
   }
 }
