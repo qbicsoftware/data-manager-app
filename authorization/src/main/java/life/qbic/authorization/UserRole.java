@@ -1,0 +1,90 @@
+package life.qbic.authorization;
+
+import static java.util.Objects.requireNonNull;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.StringJoiner;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import org.springframework.security.core.GrantedAuthority;
+
+/**
+ * Represents a role of a user. A user role can provides a granted authority and can provide
+ * additional authorities when assigned permissions.
+ *
+ * @since 1.0.0
+ */
+@Entity
+@Table(name = "user_roles")
+public class UserRole implements GrantedAuthority {
+
+  @Id
+  @Column(name = "id")
+  private String id;
+
+  @Basic(optional = true, fetch = FetchType.EAGER)
+  @Column(name = "roleDescription")
+  private String description;
+
+  @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+  @JoinTable(name = "user_roles_permissions",
+      joinColumns = @JoinColumn(name = "userRoleId"),
+      inverseJoinColumns = @JoinColumn(name = "permissionId"))
+  private List<Permission> permissions = new ArrayList<>();
+
+
+  protected UserRole() {
+  }
+
+  protected UserRole(String id, String description) {
+    this.id = id;
+    this.description = description;
+  }
+
+  public void addPermission(Permission permission) {
+    permissions.add(permission);
+  }
+
+  public static UserRole with(String id, String description) {
+    return new UserRole(id, description);
+  }
+
+  public String id() {
+    requireNonNull(id);
+    return id;
+  }
+
+  public Optional<String> description() {
+    return Optional.ofNullable(description);
+  }
+
+
+  public List<Permission> permissions() {
+    return Collections.unmodifiableList(permissions);
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", UserRole.class.getSimpleName() + "[", "]")
+        .add("id='" + id + "'")
+        .add("description='" + description + "'")
+        .add("permissions=" + permissions)
+        .toString();
+  }
+
+  @Override
+  public String getAuthority() {
+    return id();
+  }
+}
