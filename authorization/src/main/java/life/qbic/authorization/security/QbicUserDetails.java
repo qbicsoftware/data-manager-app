@@ -6,7 +6,6 @@ import java.util.List;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -30,22 +29,25 @@ public class QbicUserDetails implements UserDetails {
 
   private final boolean active;
 
+  private final List<GrantedAuthority> grantedAuthorities;
+
   /**
    * Constructor to use and embed a {@link User} entity.
    *
    * @param user the user to embed
    * @since 1.0.0
    */
-  public QbicUserDetails(User user) {
+  public QbicUserDetails(User user, List<GrantedAuthority> grantedAuthorities) {
     this.userId = user.id();
     this.username = user.emailAddress().get();
     this.password = user.getEncryptedPassword().get();
     this.active = user.isActive();
+    this.grantedAuthorities = List.copyOf(grantedAuthorities);
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority("USER"));
+    return List.copyOf(grantedAuthorities);
   }
 
   public UserId getUserId() {
