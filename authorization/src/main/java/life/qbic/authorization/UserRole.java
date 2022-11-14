@@ -3,7 +3,6 @@ package life.qbic.authorization;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -33,7 +32,7 @@ public class UserRole implements GrantedAuthority {
   @Column(name = "id")
   private String id;
 
-  @Basic(optional = true, fetch = FetchType.EAGER)
+  @Basic(fetch = FetchType.EAGER)
   @Column(name = "roleDescription")
   private String description;
 
@@ -52,10 +51,6 @@ public class UserRole implements GrantedAuthority {
     this.description = description;
   }
 
-  public void addPermission(Permission permission) {
-    permissions.add(permission);
-  }
-
   public static UserRole with(String id, String description) {
     return new UserRole(id, description);
   }
@@ -71,7 +66,7 @@ public class UserRole implements GrantedAuthority {
 
 
   public List<Permission> permissions() {
-    return Collections.unmodifiableList(permissions);
+    return permissions;
   }
 
   @Override
@@ -85,6 +80,21 @@ public class UserRole implements GrantedAuthority {
 
   @Override
   public String getAuthority() {
-    return id();
+    return "ROLE_" + id();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    } else {
+      return obj instanceof GrantedAuthority && this.getAuthority()
+          .equals(((GrantedAuthority) obj).getAuthority());
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    return getAuthority().hashCode();
   }
 }

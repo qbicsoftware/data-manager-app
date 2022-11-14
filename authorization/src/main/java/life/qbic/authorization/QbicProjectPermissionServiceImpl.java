@@ -1,7 +1,6 @@
 package life.qbic.authorization;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.UserId;
@@ -31,8 +30,8 @@ public class QbicProjectPermissionServiceImpl implements ProjectPermissionServic
 
   @Override
   public List<? extends GrantedAuthority> loadUserPermissions(UserId userId, ProjectId projectId) {
-    ProjectRoleId projectRoleId = ProjectRoleId.of(userId, projectId);
-    Optional<ProjectRole> optionalProjectRole = projectRoleRepository.findById(projectRoleId);
+    Optional<ProjectRole> optionalProjectRole = projectRoleRepository.findByUserIdAndProjectId(
+        userId.get(), projectId.value());
     if (optionalProjectRole.isEmpty()) {
       return new ArrayList<>();
     }
@@ -45,7 +44,7 @@ public class QbicProjectPermissionServiceImpl implements ProjectPermissionServic
         .orElse(new ArrayList<>());
     List<GrantedAuthority> authorities = new ArrayList<>(permissions);
     authorities.add(optionalRole.get());
-    return Collections.unmodifiableList(authorities);
+    return authorities;
   }
 
 }

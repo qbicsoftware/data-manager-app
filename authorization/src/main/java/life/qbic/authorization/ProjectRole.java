@@ -4,7 +4,6 @@ import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 /**
@@ -15,14 +14,18 @@ import javax.persistence.Table;
  * @since <version tag>
  */
 @Entity
-@IdClass(ProjectRoleId.class)
 @Table(name = "users_project_roles")
 public class ProjectRole implements Serializable {
 
+  /**
+   * The database id of the link. Please do not touch.
+   */
   @Id
+  @Column(name = "id")
+  private int id;
+
   @Column(name = "userId")
   private String userId;
-  @Id
   @Column(name = "projectId")
   private String projectId;
   @Column(name = "userRoleId")

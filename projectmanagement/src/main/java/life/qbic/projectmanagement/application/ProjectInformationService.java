@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,7 +51,11 @@ public class ProjectInformationService {
   @PostFilter("hasPermission(filterObject,'VIEW_PROJECT')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
-    return projectPreviewLookup.query(filter, offset, limit, sortOrders);
+    // returned by JPA -> UnmodifiableRandomAccessList
+    List<ProjectPreview> previewList = projectPreviewLookup.query(filter, offset, limit,
+        sortOrders);
+    // the list must be modifiable for spring security to filter it
+    return new ArrayList<>(previewList);
   }
 
   public Optional<Project> find(ProjectId projectId) {
