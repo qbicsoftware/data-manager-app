@@ -40,7 +40,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   final Grid<ProjectLink> projectLinks;
 
-  private final ProjectLinkingService projectLinkingService;
+  private final transient ProjectLinkingService projectLinkingService;
   private static final String OFFER_TYPE_NAME = "Offer";
   private ProjectId projectId;
 
@@ -137,7 +137,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
 
-    private final OfferLookupService offerLookupService;
+    private final transient OfferLookupService offerLookupService;
 
     public static class SelectedOfferChangeEvent extends
         ComponentValueChangeEvent<OfferSearch, OfferPreview> {
