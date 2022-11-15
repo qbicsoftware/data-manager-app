@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views;
 
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 
@@ -15,8 +15,9 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
  * @since 1.0.0
  */
 public class ContactElement extends VerticalLayout {
-  private final Label nameLabel;
-  private final Label emailLabel;
+
+  private final Span nameLabel;
+  private final Span emailLabel;
 
   public ContactElement() {
     this("-", "");
@@ -24,8 +25,8 @@ public class ContactElement extends VerticalLayout {
 
   public ContactElement(String fullName, String emailAddress) {
 
-    nameLabel = new Label(fullName);
-    emailLabel = new Label(emailAddress);
+    nameLabel = new Span(fullName);
+    emailLabel = new Span(emailAddress);
 
     emailLabel.addClassNames("text-s", "text-secondary");
 
