@@ -4,8 +4,6 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 
-import java.util.Objects;
-
 /**
  * <b>Contact Element</b>
  *
@@ -17,39 +15,36 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public class ContactElement extends VerticalLayout {
-  private final Label projectManagerLabel;
+  private final Label nameLabel;
   private final Label emailLabel;
 
-  public ContactElement(){
-    projectManagerLabel = new Label("-");
-    emailLabel = new Label();
-
-    emailLabel.addClassNames("text-s","text-secondary");
-
-    addClassNames("flex");
-    add(projectManagerLabel, emailLabel);
+  public ContactElement() {
+    this("-", "");
   }
-  public ContactElement(PersonReference personReference){
-    Objects.requireNonNull(personReference);
 
-    projectManagerLabel = new Label(personReference.fullName());
-    emailLabel = new Label(personReference.getEmailAddress());
+  public ContactElement(String fullName, String emailAddress) {
 
-    emailLabel.addClassNames("text-s","text-secondary");
+    nameLabel = new Label(fullName);
+    emailLabel = new Label(emailAddress);
+
+    emailLabel.addClassNames("text-s", "text-secondary");
 
     this.setSpacing(false);
 
-    add(projectManagerLabel, emailLabel);
+    add(nameLabel, emailLabel);
   }
 
-  public void setContent(String fullName, String email){
-    projectManagerLabel.setText(fullName);
+  public static ContactElement from(PersonReference personReference) {
+    return new ContactElement(personReference.fullName(), personReference.getEmailAddress());
+  }
+
+  public void setContent(String fullName, String email) {
+    nameLabel.setText(fullName);
     emailLabel.setText(email);
   }
 
-  public void reset(){
-    projectManagerLabel.setText("-");
-    emailLabel.setText("");
+  public void clear() {
+    setContent("-", "");
   }
 
 }
