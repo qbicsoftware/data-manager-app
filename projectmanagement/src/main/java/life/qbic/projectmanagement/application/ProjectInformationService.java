@@ -68,7 +68,12 @@ public class ProjectInformationService {
   }
 
   public void manageProject(String projectId, PersonReference personReference) {
-    //TODO
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.setProjectManager(personReference);
+      projectRepository.update(p);
+    });
   }
 
   public void describeExperimentalDesign(String projectId, String experimentalDesign) {

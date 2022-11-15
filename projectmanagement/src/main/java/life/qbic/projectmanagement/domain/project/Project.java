@@ -70,7 +70,7 @@ public class Project {
     linkedOffers = new ArrayList<>();
   }
 
-  private void setProjectManager(PersonReference projectManager) {
+  public void setProjectManager(PersonReference projectManager) {
     this.projectManager = projectManager;
     this.lastModified = Instant.now();
   }
