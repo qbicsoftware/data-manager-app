@@ -65,37 +65,33 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     experimentalDesignField = new TextArea();
     projectObjective = new TextArea();
 
-    this.projectManagerComboBox = new ComboBox<>();
-    this.projectManagerComboBox.setPlaceholder("Select a Project Manager");
-    projectManagerComboBox.setVisible(false);
-
+    projectManagerComboBox = initProjectManagerComboBox();
     pmElement = new ContactElement();
 
     projectManagerLayout = new HorizontalLayout();
     projectManagerLayout.add(projectManagerComboBox);
     projectManagerLayout.add(pmElement);
 
-    configurePMcomboBox();
-
-    this.handler = new Handler(this, projectInformationService, personSearchService);
-
     initLayout();
     setComponentStyles();
+
+    this.handler = new Handler(projectInformationService, personSearchService);
   }
 
-  private void configurePMcomboBox() {
-    projectManagerComboBox.setItemLabelGenerator(PersonReference::fullName);
-    projectManagerComboBox.setRenderer(new ComponentRenderer<>(ContactElement::from));
-
-    projectManagerComboBox.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
-    projectManagerComboBox.getStyle().set("--vaadin-combo-box-width", "16em");
+  private ComboBox<PersonReference> initProjectManagerComboBox() {
+    ComboBox<PersonReference> comboBox = new ComboBox<>();
+    comboBox.setItemLabelGenerator(PersonReference::fullName);
+    comboBox.setRenderer(new ComponentRenderer<>(ContactElement::from));
+    comboBox.setPlaceholder("Select a Project Manager");
+    comboBox.setVisible(false);
+    return comboBox;
   }
 
   private void initLayout() {
     formLayout.addFormItem(titleField, "Project Title");
     formLayout.addFormItem(projectObjective, "Project Objective");
     formLayout.addFormItem(experimentalDesignField, "Experimental Design");
-    formLayout.addFormItem(projectManagerLayout,"Project Manager");
+    formLayout.addFormItem(projectManagerLayout, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
@@ -107,6 +103,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjective.setWidthFull();
     experimentalDesignField.setWidthFull();
     formLayout.setClassName("create-project-form");
+    projectManagerComboBox.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
+    projectManagerComboBox.getStyle().set("--vaadin-combo-box-width", "16em");
   }
 
   public void projectId(String projectId) {
@@ -124,15 +122,13 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
    */
   private final class Handler {
 
-    private final ProjectDetailsComponent component;
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
 
     private ProjectId selectedProject;
 
-    public Handler(ProjectDetailsComponent component,
-                   ProjectInformationService projectInformationService, PersonSearchService personSearchService) {
-      this.component = component;
+    public Handler(ProjectInformationService projectInformationService,
+        PersonSearchService personSearchService) {
 
       this.projectInformationService = projectInformationService;
       this.personSearchService = personSearchService;
@@ -140,36 +136,34 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       setFieldsEditableOnlyOnFocus();
       attachSubmissionActionOnBlur();
       restrictInputLength();
-      setUpPersonSearch(component.projectManagerComboBox);
-      contactClickListener();
+      setUpPersonSearch(projectManagerComboBox);
+      switchModeForProjectManagerField();
     }
 
-    private void contactClickListener() {
-      //when clicking the layout switch!
-      component.projectManagerLayout.addClickListener(click -> {
-        component.pmElement.setVisible(false);
-        component.projectManagerComboBox.setVisible(true);
-        component.projectManagerComboBox.focus();
+    private void switchModeForProjectManagerField() {
+      // click focuses the field and hide component
+      projectManagerLayout.addClickListener(click -> {
+        pmElement.setVisible(false);
+        projectManagerComboBox.setVisible(true);
+        projectManagerComboBox.focus();
       });
-
-      component.projectManagerComboBox.addBlurListener(it -> {
-        component.projectManagerComboBox.setVisible(false);
-        component.pmElement.setVisible(true);
+      // value change updates the component and blurs the field
+      projectManagerComboBox.addValueChangeListener(it -> {
+        PersonReference reference = projectManagerComboBox.getValue();
+        pmElement.setContent(reference.fullName(), reference.getEmailAddress());
+        projectManagerComboBox.blur();
       });
-
-      component.projectManagerComboBox.addValueChangeListener(
-          it -> {
-            PersonReference reference = projectManagerComboBox.getValue();
-            component.pmElement.setContent(reference.fullName(), reference.getEmailAddress());
-            component.projectManagerComboBox.blur();
-          });
-
+      // blur triggers switch back to component
+      projectManagerComboBox.addBlurListener(it -> {
+        projectManagerComboBox.setVisible(false);
+        pmElement.setVisible(true);
+      });
     }
 
     public void projectId(String projectId) {
       projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
           this::loadProjectData,
-          () -> component.titleField.setValue("Not found"));
+          () -> titleField.setValue("Not found"));
     }
 
     private void restrictInputLength() {
@@ -209,16 +203,16 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private void loadProjectData(Project project) {
       this.selectedProject = project.getId();
-      component.titleField.setValue(project.getProjectIntent().projectTitle().title());
-      component.projectObjective.setValue(project.getProjectIntent().objective().value());
-      component.pmElement.setContent(project.getProjectManager().fullName(),
+      titleField.setValue(project.getProjectIntent().projectTitle().title());
+      projectObjective.setValue(project.getProjectIntent().objective().value());
+      pmElement.setContent(project.getProjectManager().fullName(),
           project.getProjectManager().getEmailAddress());
       projectManagerComboBox.setValue(project.getProjectManager());
 
       project.getProjectIntent().experimentalDesign().ifPresentOrElse(
-          experimentalDesignDescription -> component.experimentalDesignField.setValue(
+          experimentalDesignDescription -> experimentalDesignField.setValue(
               experimentalDesignDescription.value()),
-          () -> component.experimentalDesignField.setValue(""));
+          () -> experimentalDesignField.setValue(""));
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
