@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -58,16 +57,16 @@ public class Project {
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       PersonReference projectManager, PersonReference principalInvestigator) {
+    requireNonNull(principalInvestigator);
+    requireNonNull(projectCode);
     requireNonNull(projectId);
     requireNonNull(projectIntent);
-    requireNonNull(projectCode);
-    requireNonNull(principalInvestigator);
     requireNonNull(projectManager);
+    setPrincipalInvestigator(principalInvestigator);
+    setProjectCode(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
-    setProjectCode(projectCode);
     setProjectManager(projectManager);
-    setPrincipalInvestigator(principalInvestigator);
     linkedOffers = new ArrayList<>();
   }
 
@@ -145,10 +144,6 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
-  public Optional<PersonReference> getProjectManager() {
-    return Optional.of(projectManager);
-  }
-
   /**
    * Creates a new project with code and project intent
    *
@@ -185,6 +180,10 @@ public class Project {
 
   public ProjectIntent getProjectIntent() {
     return projectIntent;
+  }
+
+  public PersonReference getProjectManager() {
+    return projectManager;
   }
 
   @Override
