@@ -147,25 +147,22 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     private void contactClickListener() {
       //when clicking the layout switch!
       component.projectManagerLayout.addClickListener(click -> {
+        component.pmElement.setVisible(false);
         component.projectManagerComboBox.setVisible(true);
         component.projectManagerComboBox.focus();
       });
 
       component.projectManagerComboBox.addBlurListener(it -> {
-        PersonReference reference = projectManagerComboBox.getValue();
-        component.pmElement.setContent(reference.fullName(), reference.getEmailAddress());
         component.projectManagerComboBox.setVisible(false);
         component.pmElement.setVisible(true);
       });
 
-      component.projectManagerComboBox.addFocusListener(it -> {
-        component.pmElement.setVisible(false);
-        component.projectManagerComboBox.setVisible(true);
-      });
-
-      component.projectManagerComboBox.addValueChangeListener(it -> {
-        component.projectManagerComboBox.blur();
-      });
+      component.projectManagerComboBox.addValueChangeListener(
+          it -> {
+            PersonReference reference = projectManagerComboBox.getValue();
+            component.pmElement.setContent(reference.fullName(), reference.getEmailAddress());
+            component.projectManagerComboBox.blur();
+          });
 
     }
 
@@ -225,8 +222,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
-      comboBox.setItems(query ->
-          personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
+      comboBox.setItems(
+          query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
                   query.getLimit())
               .stream());
     }
@@ -245,9 +242,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnBlur(experimentalDesignField, value ->
           projectInformationService.describeExperimentalDesign(selectedProject.value(),
               value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(projectManagerComboBox, value -> {
-        projectInformationService.manageProject(selectedProject.value(), value);
-      });
+      ProjectDetailsComponent.Handler.submitOnBlur(projectManagerComboBox,
+          value -> projectInformationService.manageProject(selectedProject.value(), value));
     }
 
     private static <T extends Component & HasValue<?, ?> & Focusable<?>> void editableOnFocus(
