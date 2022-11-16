@@ -51,7 +51,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private final TextArea experimentalDesignField;
 
   private final HorizontalLayout projectManagerLayout;
-  private final ContactElement pmElement;
+  private final ContactElement projectManagerContact;
   private final ComboBox<PersonReference> projectManagerComboBox;
 
   private final transient Handler handler;
@@ -66,11 +66,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjective = new TextArea();
 
     projectManagerComboBox = initProjectManagerComboBox();
-    pmElement = new ContactElement();
+    projectManagerContact = new ContactElement();
 
     projectManagerLayout = new HorizontalLayout();
     projectManagerLayout.add(projectManagerComboBox);
-    projectManagerLayout.add(pmElement);
+    projectManagerLayout.add(projectManagerContact);
 
     initLayout();
     setComponentStyles();
@@ -143,20 +143,20 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     private void switchModeForProjectManagerField() {
       // click focuses the field and hide component
       projectManagerLayout.addClickListener(click -> {
-        pmElement.setVisible(false);
+        projectManagerContact.setVisible(false);
         projectManagerComboBox.setVisible(true);
         projectManagerComboBox.focus();
       });
       // value change updates the component and blurs the field
       projectManagerComboBox.addValueChangeListener(it -> {
         PersonReference reference = projectManagerComboBox.getValue();
-        pmElement.setContent(reference.fullName(), reference.getEmailAddress());
+        projectManagerContact.setContent(reference.fullName(), reference.getEmailAddress());
         projectManagerComboBox.blur();
       });
       // blur triggers switch back to component
       projectManagerComboBox.addBlurListener(it -> {
         projectManagerComboBox.setVisible(false);
-        pmElement.setVisible(true);
+        projectManagerContact.setVisible(true);
       });
     }
 
@@ -205,7 +205,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       this.selectedProject = project.getId();
       titleField.setValue(project.getProjectIntent().projectTitle().title());
       projectObjective.setValue(project.getProjectIntent().objective().value());
-      pmElement.setContent(project.getProjectManager().fullName(),
+      projectManagerContact.setContent(project.getProjectManager().fullName(),
           project.getProjectManager().getEmailAddress());
       projectManagerComboBox.setValue(project.getProjectManager());
 
