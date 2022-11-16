@@ -8,6 +8,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
@@ -62,6 +63,15 @@ public class ProjectInformationService {
     Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.updateTitle(projectTitle);
+      projectRepository.update(p);
+    });
+  }
+
+  public void manageProject(String projectId, PersonReference personReference) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.setProjectManager(personReference);
       projectRepository.update(p);
     });
   }
