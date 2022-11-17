@@ -47,7 +47,7 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   private void UpdateDisplayValue() {
-    if (!editComponent.isEmpty()) {
+    if (editComponent.getValue() != null) {
       displayComponent = displayProvider.apply(editComponent.getValue());
     }
   }

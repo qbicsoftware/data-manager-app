@@ -7,6 +7,8 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -94,7 +96,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private Function<String, Span> createInputFunction(Span span) {
     return string -> {
-      span.setText(string);
+      if (string.length() != 0) {
+        span.setText(string);
+        //ToDo This could be moved into a dedicated iconGenerator with styling(e.g.padding between text and icon) and should be discussed with the usability expert
+        span.getElement().getThemeList().remove("badge");
+      } else {
+        span.add(new Icon(VaadinIcon.PLUS_CIRCLE), new Span("Add your input now!"));
+        span.getElement().getThemeList().add("badge");
+      }
       return span;
     };
   }
