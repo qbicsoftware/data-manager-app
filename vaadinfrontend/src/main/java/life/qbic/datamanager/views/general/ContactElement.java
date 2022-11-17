@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views;
+package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
