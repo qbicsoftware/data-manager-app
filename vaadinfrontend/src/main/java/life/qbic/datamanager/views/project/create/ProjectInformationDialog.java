@@ -151,7 +151,7 @@ public class ProjectInformationDialog extends Dialog {
       projectObjective.setValue(offer.projectObjective().objective());
       offer.experimentalDesignDescription()
           .ifPresentOrElse(it -> experimentalDesignField.setValue(it.description()),
-              () -> experimentalDesignField.setValue(""));
+              experimentalDesignField::clear);
     }
 
     private void restrictInputLength() {
