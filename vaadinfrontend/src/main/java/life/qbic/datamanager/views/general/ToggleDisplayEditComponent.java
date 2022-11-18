@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -20,18 +21,17 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   private final T editComponent;
   private S displayComponent;
 
-  public ToggleDisplayEditComponent(T EditComponent, Function<U, S> displayProvider,
-      S displayComponent) {
+  public ToggleDisplayEditComponent(T editComponent, Function<U, S> displayProvider,
+      S emptyDisplayComponent) {
+    this.displayComponent = emptyDisplayComponent;
     this.displayProvider = displayProvider;
-    this.editComponent = EditComponent;
-    this.displayComponent = displayComponent;
+    this.editComponent = editComponent;
     this.add(this.editComponent);
-    this.addComponentAsFirst(this.displayComponent);
-    EditComponent.addValueChangeListener(it -> UpdateDisplayValue());
-    EditComponent.addBlurListener(it -> switchToDisplayComponent());
+    editComponent.addValueChangeListener(it -> UpdateDisplayValue());
+    editComponent.addBlurListener(it -> switchToDisplayComponent());
     this.addClickListener(it -> switchToEditComponent());
     UpdateDisplayValue();
-    EditComponent.blur();
+    editComponent.blur();
     switchToDisplayComponent();
   }
 
@@ -47,8 +47,19 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   private void UpdateDisplayValue() {
-    if (editComponent.getValue() != null) {
-      displayComponent = displayProvider.apply(editComponent.getValue());
+    S updatedDisplayComponent;
+    if (!editComponent.isEmpty()) {
+      updatedDisplayComponent = displayProvider.apply(editComponent.getValue());
+    } else {
+      updatedDisplayComponent = displayComponent;
     }
+    this.add(updatedDisplayComponent);
+    if (Objects.nonNull(displayComponent)) {
+      boolean componentVisible = displayComponent.isVisible();
+      this.remove(displayComponent);
+      updatedDisplayComponent.setVisible(componentVisible);
+    }
+    this.addComponentAsFirst(updatedDisplayComponent);
+    this.displayComponent = updatedDisplayComponent;
   }
 }

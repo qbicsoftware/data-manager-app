@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.project.view.components;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -18,7 +19,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -47,18 +47,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private static final long serialVersionUID = -5781313306040217724L;
   private static final String TITLE = "Project Information";
   private final FormLayout formLayout;
-  private ToggleDisplayEditComponent<?, ?, ?> titleComponent;
-  private ToggleDisplayEditComponent<?, ?, ?> projectObjectiveComponent;
-  private ToggleDisplayEditComponent<?, ?, ?> experimentalDesignComponent;
-  private ToggleDisplayEditComponent<?, ?, ?> projectManagerComponent;
-  private TextField titleEditComponent;
-  private TextArea projectObjectiveEditComponent;
-  private TextArea experimentalDesignEditComponent;
-  private ComboBox<PersonReference> projectManagerEditComponent;
-  private Span titleDisplayComponent;
-  private Span projectObjectiveDisplayComponent;
-  private Span experimentalDesignDisplayComponent;
-  private ContactElement projectManagerDisplayComponent;
+  private TextField titleComponent;
+  private TextArea projectObjectiveComponent;
+  private TextArea experimentalDesignComponent;
+  private ComboBox<PersonReference> projectManagerComponent;
   private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
@@ -80,75 +72,44 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     return comboBox;
   }
 
-  private void initFormFieldComponents() {
-    initDisplayComponents();
-    initEditComponents();
-    titleComponent = new ToggleDisplayEditComponent<>(titleEditComponent,
-        createInputFunction(titleDisplayComponent), titleDisplayComponent);
-    projectObjectiveComponent = new ToggleDisplayEditComponent<>(projectObjectiveEditComponent,
-        createInputFunction(projectObjectiveDisplayComponent), projectObjectiveDisplayComponent);
-    experimentalDesignComponent = new ToggleDisplayEditComponent<>(experimentalDesignEditComponent,
-        createInputFunction(experimentalDesignDisplayComponent),
-        experimentalDesignDisplayComponent);
-    projectManagerComponent = new ToggleDisplayEditComponent<>(projectManagerEditComponent,
-        createInputFunction(projectManagerDisplayComponent), projectManagerDisplayComponent);
-  }
-
-  private Function<String, Span> createInputFunction(Span span) {
-    return string -> {
-      if (string.length() != 0) {
-        span.setText(string);
-        //ToDo This could be moved into a dedicated iconGenerator with styling(e.g.padding between text and icon) and should be discussed with the usability expert
-        span.getElement().getThemeList().remove("badge");
-      } else {
-        span.add(new Icon(VaadinIcon.PLUS_CIRCLE), new Span("Add your input now!"));
-        span.getElement().getThemeList().add("badge");
-      }
-      return span;
-    };
-  }
-
-  private Function<PersonReference, ContactElement> createInputFunction(
-      ContactElement contactElement) {
-    return personReference -> {
-      contactElement.setContent(personReference.fullName(), personReference.getEmailAddress());
-      return contactElement;
-    };
-  }
-
-  private void initDisplayComponents() {
-    titleDisplayComponent = new Span();
-    projectObjectiveDisplayComponent = new Span();
-    experimentalDesignDisplayComponent = new Span();
-    projectManagerDisplayComponent = new ContactElement();
-  }
-
-  private void initEditComponents() {
-    titleEditComponent = new TextField();
-    projectObjectiveEditComponent = new TextArea();
-    experimentalDesignEditComponent = new TextArea();
-    projectManagerEditComponent = initProjectManagerComboBox();
-  }
-
   private void initFormLayout() {
-    initFormFieldComponents();
-    formLayout.addFormItem(titleComponent, "Project Title");
-    formLayout.addFormItem(projectObjectiveComponent, "Project Objective");
-    formLayout.addFormItem(experimentalDesignComponent, "Experimental Design");
-    formLayout.addFormItem(projectManagerComponent, "Project Manager");
+    titleComponent = new TextField();
+    projectObjectiveComponent = new TextArea();
+    experimentalDesignComponent = new TextArea();
+    projectManagerComponent = initProjectManagerComboBox();
+    formLayout.addFormItem(new ToggleDisplayEditComponent<>(titleComponent, Span::new,
+        createPlaceHolderSpan("Project Title")), "Project Title");
+    formLayout.addFormItem(new ToggleDisplayEditComponent<>(projectObjectiveComponent, Span::new,
+        createPlaceHolderSpan("Project Objective")), "Project Objective");
+    formLayout.addFormItem(new ToggleDisplayEditComponent<>(experimentalDesignComponent, Span::new,
+        createPlaceHolderSpan("Experimental Design")), "Experimental Design");
+    formLayout.addFormItem(
+        new ToggleDisplayEditComponent<>(projectManagerComponent, ContactElement::from,
+            createPlaceHolderSpan("Project Manager")), "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
     getContent().addTitle(TITLE);
   }
 
+  private Span createPlaceHolderSpan(String projectDetail) {
+    Span placeholderSpan = new Span();
+    Icon placeholderIcon = new Icon(VaadinIcon.PLUS_CIRCLE);
+    Text placeholderText = new Text("Add %s".formatted(projectDetail));
+    placeholderSpan.add(placeholderIcon, placeholderText);
+    placeholderSpan.getElement().getThemeList().add("badge");
+    placeholderIcon.getElement().getStyle().set("padding", "var(--lumo-space-xs");
+    placeholderIcon.getElement().getStyle().set("margin-right", "var(--lumo-space-xs");
+    return placeholderSpan;
+  }
+
   private void setComponentStyles() {
-    titleEditComponent.setSizeFull();
-    projectObjectiveEditComponent.setWidthFull();
-    experimentalDesignEditComponent.setWidthFull();
+    titleComponent.setSizeFull();
+    projectObjectiveComponent.setWidthFull();
+    experimentalDesignComponent.setWidthFull();
     formLayout.setClassName("create-project-form");
-    projectManagerEditComponent.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
-    projectManagerEditComponent.getStyle().set("--vaadin-combo-box-width", "16em");
+    projectManagerComponent.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
+    projectManagerComponent.getStyle().set("--vaadin-combo-box-width", "16em");
   }
 
   public void projectId(String projectId) {
@@ -179,37 +140,37 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
       attachSubmissionActionOnBlur();
       restrictInputLength();
-      setUpPersonSearch(projectManagerEditComponent);
+      setUpPersonSearch(projectManagerComponent);
     }
 
     public void projectId(String projectId) {
       projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
           this::loadProjectData,
-          () -> titleEditComponent.setValue("Not found"));
+          () -> titleComponent.setValue("Not found"));
     }
 
     private void restrictInputLength() {
 
-      titleEditComponent.setMaxLength((int) ProjectTitle.maxLength());
-      projectObjectiveEditComponent.setMaxLength((int) ProjectObjective.maxLength());
-      experimentalDesignEditComponent.setMaxLength(
+      titleComponent.setMaxLength((int) ProjectTitle.maxLength());
+      projectObjectiveComponent.setMaxLength((int) ProjectObjective.maxLength());
+      experimentalDesignComponent.setMaxLength(
           (int) ExperimentalDesignDescription.maxLength());
 
-      titleEditComponent.setValueChangeMode(ValueChangeMode.EAGER);
-      projectObjectiveEditComponent.setValueChangeMode(ValueChangeMode.EAGER);
-      experimentalDesignEditComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      titleComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      projectObjectiveComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      experimentalDesignComponent.setValueChangeMode(ValueChangeMode.EAGER);
 
-      addConsumedLengthHelper(titleEditComponent, titleEditComponent.getValue());
-      addConsumedLengthHelper(projectObjectiveEditComponent,
-          projectObjectiveEditComponent.getValue());
-      addConsumedLengthHelper(experimentalDesignEditComponent,
-          experimentalDesignEditComponent.getValue());
+      addConsumedLengthHelper(titleComponent, titleComponent.getValue());
+      addConsumedLengthHelper(projectObjectiveComponent,
+          projectObjectiveComponent.getValue());
+      addConsumedLengthHelper(experimentalDesignComponent,
+          experimentalDesignComponent.getValue());
 
-      titleEditComponent.addValueChangeListener(
+      titleComponent.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      projectObjectiveEditComponent.addValueChangeListener(
+      projectObjectiveComponent.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      experimentalDesignEditComponent.addValueChangeListener(
+      experimentalDesignComponent.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
@@ -227,13 +188,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private void loadProjectData(Project project) {
       this.selectedProject = project.getId();
-      titleEditComponent.setValue(project.getProjectIntent().projectTitle().title());
-      projectObjectiveEditComponent.setValue(project.getProjectIntent().objective().value());
-      projectManagerEditComponent.setValue(project.getProjectManager());
+      titleComponent.setValue(project.getProjectIntent().projectTitle().title());
+      projectObjectiveComponent.setValue(project.getProjectIntent().objective().value());
+      projectManagerComponent.setValue(project.getProjectManager());
       project.getProjectIntent().experimentalDesign().ifPresentOrElse(
-          experimentalDesignDescription -> experimentalDesignEditComponent.setValue(
-              experimentalDesignDescription.value()),
-          () -> experimentalDesignEditComponent.setValue(""));
+          experimentalDesignDescription -> experimentalDesignComponent.setValue(
+              experimentalDesignDescription.value()), experimentalDesignComponent::clear);
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
@@ -244,14 +204,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void attachSubmissionActionOnBlur() {
-      ProjectDetailsComponent.Handler.submitOnBlur(titleEditComponent, value ->
+      ProjectDetailsComponent.Handler.submitOnBlur(titleComponent, value ->
           projectInformationService.updateTitle(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(projectObjectiveEditComponent, value ->
+      ProjectDetailsComponent.Handler.submitOnBlur(projectObjectiveComponent, value ->
           projectInformationService.stateObjective(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(experimentalDesignEditComponent, value ->
+      ProjectDetailsComponent.Handler.submitOnBlur(experimentalDesignComponent, value ->
           projectInformationService.describeExperimentalDesign(selectedProject.value(),
               value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(projectManagerEditComponent,
+      ProjectDetailsComponent.Handler.submitOnBlur(projectManagerComponent,
           value -> projectInformationService.manageProject(selectedProject.value(), value));
     }
     private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnBlur(T element,
