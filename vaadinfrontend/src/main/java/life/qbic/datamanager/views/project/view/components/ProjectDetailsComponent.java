@@ -77,6 +77,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjectiveComponent = new TextArea();
     experimentalDesignComponent = new TextArea();
     projectManagerComponent = initProjectManagerComboBox();
+    //ToDo Set Required Indicators(*) to FormItem Labels
+    titleComponent.setRequired(true);
+    projectObjectiveComponent.setRequired(true);
+    projectManagerComponent.setRequired(true);
     formLayout.addFormItem(new ToggleDisplayEditComponent<>(titleComponent, Span::new,
         createPlaceHolderSpan("Project Title")), "Project Title");
     formLayout.addFormItem(new ToggleDisplayEditComponent<>(projectObjectiveComponent, Span::new,
@@ -156,9 +160,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       experimentalDesignComponent.setMaxLength(
           (int) ExperimentalDesignDescription.maxLength());
 
-      titleComponent.setValueChangeMode(ValueChangeMode.EAGER);
-      projectObjectiveComponent.setValueChangeMode(ValueChangeMode.EAGER);
-      experimentalDesignComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      titleComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      projectObjectiveComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      experimentalDesignComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
 
       addConsumedLengthHelper(titleComponent, titleComponent.getValue());
       addConsumedLengthHelper(projectObjectiveComponent,
