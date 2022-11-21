@@ -20,12 +20,12 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   private final Function<U, S> displayProvider;
   private final T editComponent;
   private S displayComponent;
-  private final S emptyDisplayComponent;
+  private final S initialDisplayComponent;
 
   public ToggleDisplayEditComponent(T editComponent, Function<U, S> displayProvider,
-      S emptyDisplayComponent) {
-    this.displayComponent = emptyDisplayComponent;
-    this.emptyDisplayComponent = emptyDisplayComponent;
+      S initialDisplayComponent) {
+    this.displayComponent = initialDisplayComponent;
+    this.initialDisplayComponent = initialDisplayComponent;
     this.displayProvider = displayProvider;
     this.editComponent = editComponent;
     this.add(this.editComponent);
@@ -53,7 +53,7 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     if (!editComponent.isEmpty()) {
       updatedDisplayComponent = displayProvider.apply(editComponent.getValue());
     } else {
-      updatedDisplayComponent = emptyDisplayComponent;
+      updatedDisplayComponent = initialDisplayComponent;
     }
     this.add(updatedDisplayComponent);
     if (Objects.nonNull(displayComponent)) {
