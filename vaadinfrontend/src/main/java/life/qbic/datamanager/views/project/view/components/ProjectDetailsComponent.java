@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasValue;
@@ -77,17 +78,28 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjectiveComponent = new TextArea();
     experimentalDesignComponent = new TextArea();
     projectManagerComponent = initProjectManagerComboBox();
-    formLayout.addFormItem(new ToggleDisplayEditComponent<>(titleComponent, Span::new,
-        createPlaceHolderSpan("Project Title")), "Project Title");
-    formLayout.addFormItem(new ToggleDisplayEditComponent<>(projectObjectiveComponent, Span::new,
-        createPlaceHolderSpan("Project Objective")), "Project Objective");
-    formLayout.addFormItem(new ToggleDisplayEditComponent<>(experimentalDesignComponent, Span::new,
-        createPlaceHolderSpan("Experimental Design")), "Experimental Design");
-    formLayout.addFormItem(
-        new ToggleDisplayEditComponent<>(projectManagerComponent, ContactElement::from,
-            createPlaceHolderSpan("Project Manager")), "Project Manager");
+    ToggleDisplayEditComponent<Span, TextField, String> titleToggleComponent = new ToggleDisplayEditComponent<>(
+        titleComponent, Span::new,
+        createPlaceHolderSpan("Project Title"));
+    ToggleDisplayEditComponent<Span, TextArea, String> projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(
+        projectObjectiveComponent, Span::new,
+        createPlaceHolderSpan("Project Objective"));
+    ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(
+        experimentalDesignComponent, Span::new,
+        createPlaceHolderSpan("Experimental Design"));
+    ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> projectManagerToggleComponent = new ToggleDisplayEditComponent<>(
+        projectManagerComponent, ContactElement::from,
+        createPlaceHolderSpan("Project Manager"));
+    formLayout.addFormItem(titleToggleComponent, "Project Title");
+    formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
+    formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
+    formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
+    titleToggleComponent.setRequiredIndicatorVisible(true);
+    projectObjectiveToggleComponent.setRequiredIndicatorVisible(true);
+    experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
+    projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     getContent().addFields(formLayout);
     getContent().addTitle(TITLE);
   }
@@ -159,9 +171,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       experimentalDesignComponent.setMaxLength(
           (int) ExperimentalDesignDescription.maxLength());
 
-      titleComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
-      projectObjectiveComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
-      experimentalDesignComponent.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      titleComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      projectObjectiveComponent.setValueChangeMode(ValueChangeMode.EAGER);
+      experimentalDesignComponent.setValueChangeMode(ValueChangeMode.EAGER);
 
       addConsumedLengthHelper(titleComponent, titleComponent.getValue());
       addConsumedLengthHelper(projectObjectiveComponent,

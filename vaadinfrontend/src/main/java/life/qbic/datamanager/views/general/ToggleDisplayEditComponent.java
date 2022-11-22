@@ -5,7 +5,7 @@ import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.customfield.CustomField;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @since <version tag>
  */
 public class ToggleDisplayEditComponent<S extends Component, T extends Component & HasSize & HasValue<? extends HasValue.ValueChangeEvent<U>, U> & HasValidation & Focusable<T>, U> extends
-    HorizontalLayout {
+    CustomField<U> {
 
   private final Function<U, S> displayProvider;
   private final T editComponent;
@@ -30,12 +30,12 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     this.displayProvider = displayProvider;
     this.editComponent = editComponent;
     this.add(this.editComponent);
-    editComponent.addValueChangeListener(it -> updateDisplayValue());
-    editComponent.addBlurListener(it -> switchToDisplayComponent());
-    this.addClickListener(it -> switchToEditComponent());
-    updateDisplayValue();
+    addListeners();
+    setPresentationValue(generateModelValue());
     editComponent.blur();
     switchToDisplayComponent();
+    //Removes the space between elements in the contact element
+    this.getStyle().set("--lumo-text-field-size", "0");
   }
 
   private void switchToDisplayComponent() {
@@ -51,10 +51,23 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     editComponent.focus();
   }
 
-  private void updateDisplayValue() {
+  private void addListeners() {
+    editComponent.addValueChangeListener(it -> setPresentationValue(generateModelValue()));
+    editComponent.addBlurListener(it -> switchToDisplayComponent());
+    this.getElement().addEventListener("click", e -> switchToEditComponent());
+  }
+
+  @Override
+  protected U generateModelValue() {
+    return editComponent.getValue();
+  }
+
+  @Override
+  protected void setPresentationValue(U u) {
     S updatedDisplayComponent;
-    if (!editComponent.isEmpty()) {
-      updatedDisplayComponent = displayProvider.apply(editComponent.getValue());
+    //Empty value is dependent on input component ("" in TextField contrary to null for object selection)
+    if (!Objects.equals(editComponent.getEmptyValue(), u)) {
+      updatedDisplayComponent = displayProvider.apply(u);
     } else {
       updatedDisplayComponent = emptyDisplayComponent;
     }
@@ -64,7 +77,7 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
       this.remove(displayComponent);
       updatedDisplayComponent.setVisible(componentVisible);
     }
-    this.addComponentAsFirst(updatedDisplayComponent);
+    add(updatedDisplayComponent);
     this.displayComponent = updatedDisplayComponent;
   }
 }
