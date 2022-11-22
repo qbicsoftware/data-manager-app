@@ -77,10 +77,6 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjectiveComponent = new TextArea();
     experimentalDesignComponent = new TextArea();
     projectManagerComponent = initProjectManagerComboBox();
-    //ToDo Set Required Indicators(*) to FormItem Labels
-    titleComponent.setRequired(true);
-    projectObjectiveComponent.setRequired(true);
-    projectManagerComponent.setRequired(true);
     formLayout.addFormItem(new ToggleDisplayEditComponent<>(titleComponent, Span::new,
         createPlaceHolderSpan("Project Title")), "Project Title");
     formLayout.addFormItem(new ToggleDisplayEditComponent<>(projectObjectiveComponent, Span::new,
@@ -114,6 +110,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.setClassName("create-project-form");
     projectManagerComponent.getStyle().set("--vaadin-combo-box-overlay-width", "16em");
     projectManagerComponent.getStyle().set("--vaadin-combo-box-width", "16em");
+    titleComponent.setRequired(true);
+    projectObjectiveComponent.setRequired(true);
+    projectManagerComponent.setRequired(true);
   }
 
   public void projectId(String projectId) {
@@ -218,6 +217,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnBlur(projectManagerComponent,
           value -> projectInformationService.manageProject(selectedProject.value(), value));
     }
+
     private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnBlur(T element,
         Consumer<V> submitAction) {
       element.addBlurListener(it -> submitAction.accept(element.getValue()));

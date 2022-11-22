@@ -31,6 +31,7 @@ public class ContactElement extends VerticalLayout {
     emailLabel.addClassNames("text-s", "text-secondary");
 
     this.setSpacing(false);
+    this.setPadding(false);
 
     add(nameLabel, emailLabel);
   }
