@@ -19,54 +19,70 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     CustomField<U> {
 
   private final Function<U, S> displayProvider;
-  private final T editComponent;
+  private final T inputComponent;
   private S displayComponent;
   private final S emptyDisplayComponent;
 
-  public ToggleDisplayEditComponent(T editComponent, Function<U, S> displayProvider,
+  public ToggleDisplayEditComponent(T inputComponent, Function<U, S> displayProvider,
       S emptyDisplayComponent) {
     this.displayComponent = emptyDisplayComponent;
     this.emptyDisplayComponent = emptyDisplayComponent;
     this.displayProvider = displayProvider;
-    this.editComponent = editComponent;
-    this.add(this.editComponent);
+    this.inputComponent = inputComponent;
+    this.add(this.inputComponent);
+    this.setValue(inputComponent.getEmptyValue());
     addListeners();
     setPresentationValue(generateModelValue());
-    editComponent.blur();
+    inputComponent.blur();
     switchToDisplayComponent();
     //Removes the space between elements in the contact element
-    this.getStyle().set("--lumo-text-field-size", "0");
+    removeCustomFieldStyles();
   }
 
   private void switchToDisplayComponent() {
-    if (!editComponent.isInvalid()) {
+    if (!inputComponent.isInvalid()) {
       displayComponent.setVisible(true);
-      editComponent.setVisible(false);
+      inputComponent.setVisible(false);
     }
   }
 
-  private void switchToEditComponent() {
+  private void switchToInputComponent() {
     displayComponent.setVisible(false);
-    editComponent.setVisible(true);
-    editComponent.focus();
+    inputComponent.setVisible(true);
+    inputComponent.focus();
   }
 
   private void addListeners() {
-    editComponent.addValueChangeListener(it -> setPresentationValue(generateModelValue()));
-    editComponent.addBlurListener(it -> switchToDisplayComponent());
-    this.getElement().addEventListener("click", e -> switchToEditComponent());
+    inputComponent.addValueChangeListener(it -> {
+      if (inputComponent.getValue() != this.getValue()) {
+        this.setValue(inputComponent.getValue());
+      }
+    });
+    this.addValueChangeListener(it -> setPresentationValue(generateModelValue()));
+    inputComponent.addBlurListener(it -> switchToDisplayComponent());
+    this.getElement().addEventListener("click", e -> switchToInputComponent());
+  }
+
+  private void removeCustomFieldStyles() {
+    this.getStyle().set("--lumo-text-field-size", "0");
   }
 
   @Override
   protected U generateModelValue() {
-    return editComponent.getValue();
+    return this.getValue();
   }
 
   @Override
   protected void setPresentationValue(U u) {
     S updatedDisplayComponent;
+    //If the component value was set from the outside then that should be propagated to the edit field if reasonable value was provided.
+    if (Objects.nonNull(u)) {
+      inputComponent.setValue(u);
+    } else {
+      inputComponent.setValue(inputComponent.getEmptyValue());
+    }
     //Empty value is dependent on input component ("" in TextField contrary to null for object selection)
-    if (!Objects.equals(editComponent.getEmptyValue(), u)) {
+    if (!Objects.equals(inputComponent.getEmptyValue(), u)) {
       updatedDisplayComponent = displayProvider.apply(u);
     } else {
       updatedDisplayComponent = emptyDisplayComponent;
@@ -79,5 +95,17 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     }
     add(updatedDisplayComponent);
     this.displayComponent = updatedDisplayComponent;
+  }
+
+  public T getInputComponent() {
+    return inputComponent;
+  }
+
+  public S getDisplayComponent() {
+    return displayComponent;
+  }
+
+  public void setDisplayComponent(S displayComponent) {
+    this.displayComponent = displayComponent;
   }
 }
