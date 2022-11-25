@@ -156,7 +156,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.personSearchService = personSearchService;
 
-      attachSubmissionActionOnBlur();
+      attachSubmissionActionOnValueChange();
       restrictInputLength();
       setUpPersonSearch(projectManagerToggleComponent.getInputComponent());
     }
@@ -224,25 +224,25 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
               .stream());
     }
 
-    private void attachSubmissionActionOnBlur() {
-      ProjectDetailsComponent.Handler.submitOnBlur(titleToggleComponent.getInputComponent(),
+    private void attachSubmissionActionOnValueChange() {
+      ProjectDetailsComponent.Handler.submitOnValueChange(titleToggleComponent,
           value ->
               projectInformationService.updateTitle(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(
-          projectObjectiveToggleComponent.getInputComponent(), value ->
+      ProjectDetailsComponent.Handler.submitOnValueChange(
+          projectObjectiveToggleComponent, value ->
               projectInformationService.stateObjective(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(
-          experimentalDesignToggleComponent.getInputComponent(), value ->
+      ProjectDetailsComponent.Handler.submitOnValueChange(
+          experimentalDesignToggleComponent, value ->
               projectInformationService.describeExperimentalDesign(selectedProject.value(),
                   value.trim()));
-      ProjectDetailsComponent.Handler.submitOnBlur(
-          projectManagerToggleComponent.getInputComponent(),
+      ProjectDetailsComponent.Handler.submitOnValueChange(
+          projectManagerToggleComponent,
           value -> projectInformationService.manageProject(selectedProject.value(), value));
     }
 
-    private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnBlur(T element,
+    private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnValueChange(T element,
         Consumer<V> submitAction) {
-      element.addBlurListener(it -> submitAction.accept(element.getValue()));
+      element.addValueChangeListener(it -> submitAction.accept(element.getValue()));
     }
 
   }

@@ -52,16 +52,14 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
 
   private void addListeners() {
     inputComponent.addBlurListener(it -> {
-      if (!inputComponent.isInvalid()) {
-        this.setModelValue(it.getSource().getValue(), it.isFromClient());
+      setModelValue(generateModelValue(), it.isFromClient());
+      if (!isInvalid()) {
         switchToDisplayComponent();
-      } else {
-        this.setErrorMessage(inputComponent.getErrorMessage());
       }
     });
     this.addValueChangeListener(it -> {
       if (!isInvalid()) {
-        setPresentationValue(generateModelValue());
+        setPresentationValue(getValue());
       }
     });
     this.getElement().addEventListener("click", e -> switchToInputComponent());
@@ -73,7 +71,12 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
 
   @Override
   protected U generateModelValue() {
-    return this.getValue();
+    if (inputComponent.isInvalid()) {
+      this.setErrorMessage(inputComponent.getErrorMessage());
+      this.setInvalid(true);
+      return this.getValue();
+    }
+    return inputComponent.getValue();
   }
 
   @Override
