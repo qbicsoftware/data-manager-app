@@ -40,10 +40,8 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   private void switchToDisplayComponent() {
-    if (!inputComponent.isInvalid()) {
-      displayComponent.setVisible(true);
-      inputComponent.setVisible(false);
-    }
+    displayComponent.setVisible(true);
+    inputComponent.setVisible(false);
   }
 
   private void switchToInputComponent() {
@@ -53,13 +51,19 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   private void addListeners() {
-    inputComponent.addValueChangeListener(it -> {
-      if (inputComponent.getValue() != this.getValue()) {
-        this.setValue(inputComponent.getValue());
+    inputComponent.addBlurListener(it -> {
+      if (!inputComponent.isInvalid()) {
+        this.setModelValue(it.getSource().getValue(), it.isFromClient());
+        switchToDisplayComponent();
+      } else {
+        this.setErrorMessage(inputComponent.getErrorMessage());
       }
     });
-    this.addValueChangeListener(it -> setPresentationValue(generateModelValue()));
-    inputComponent.addBlurListener(it -> switchToDisplayComponent());
+    this.addValueChangeListener(it -> {
+      if (!isInvalid()) {
+        setPresentationValue(generateModelValue());
+      }
+    });
     this.getElement().addEventListener("click", e -> switchToInputComponent());
   }
 
@@ -76,7 +80,7 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   protected void setPresentationValue(U u) {
     S updatedDisplayComponent;
     //If the component value was set from the outside then that should be propagated to the edit field if reasonable value was provided.
-    if (Objects.nonNull(u)) {
+    if (Objects.nonNull(u) && !isInvalid()) {
       inputComponent.setValue(u);
     } else {
       inputComponent.setValue(inputComponent.getEmptyValue());
@@ -99,13 +103,5 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
 
   public T getInputComponent() {
     return inputComponent;
-  }
-
-  public S getDisplayComponent() {
-    return displayComponent;
-  }
-
-  public void setDisplayComponent(S displayComponent) {
-    this.displayComponent = displayComponent;
   }
 }
