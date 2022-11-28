@@ -29,11 +29,11 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     this.emptyDisplayComponent = emptyDisplayComponent;
     this.displayProvider = displayProvider;
     this.inputComponent = inputComponent;
-    this.add(this.inputComponent);
-    this.setValue(inputComponent.getEmptyValue());
+    add(inputComponent);
+    //init toggleComponent value for external listeners
+    updateValue();
     addListeners();
     setPresentationValue(generateModelValue());
-    inputComponent.blur();
     switchToDisplayComponent();
     //Removes the space between elements in the contact element
     removeCustomFieldStyles();
@@ -52,15 +52,17 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
 
   private void addListeners() {
     inputComponent.addBlurListener(it -> {
-      setModelValue(generateModelValue(), it.isFromClient());
-      if (!isInvalid()) {
+      if (!inputComponent.isInvalid()) {
         switchToDisplayComponent();
       }
+      updateValue();
     });
+    //ToDo Overwrite ValueChangeListener to check if original value in edit field differs from final value to account for combobox value change
     this.addValueChangeListener(it -> {
-      if (!isInvalid()) {
-        setPresentationValue(getValue());
+      if (!isInvalid() && !it.isFromClient()) {
+        inputComponent.setValue(getValue());
       }
+      setPresentationValue(getValue());
     });
     this.getElement().addEventListener("click", e -> switchToInputComponent());
   }
@@ -74,31 +76,34 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     if (inputComponent.isInvalid()) {
       this.setErrorMessage(inputComponent.getErrorMessage());
       this.setInvalid(true);
-      return this.getValue();
+    } else {
+      setModelValue(inputComponent.getValue(), true);
     }
-    return inputComponent.getValue();
+    return this.getValue();
   }
 
   @Override
   protected void setPresentationValue(U u) {
+    S updatedDisplayComponent = generateUpdatedDisplayComponent(u);
+    replaceDisplayComponent(updatedDisplayComponent);
+  }
+
+  private S generateUpdatedDisplayComponent(U newValue) {
     S updatedDisplayComponent;
-    //If the component value was set from the outside then that should be propagated to the edit field if reasonable value was provided.
-    if (Objects.nonNull(u) && !isInvalid()) {
-      inputComponent.setValue(u);
-    } else {
-      inputComponent.setValue(inputComponent.getEmptyValue());
-    }
-    //Empty value is dependent on input component ("" in TextField contrary to null for object selection)
-    if (!Objects.equals(inputComponent.getEmptyValue(), u)) {
-      updatedDisplayComponent = displayProvider.apply(u);
+    //Empty value is dependent on input component ("") in TextField contrary to null for object selection)
+    if (!Objects.equals(inputComponent.getEmptyValue(), newValue)) {
+      updatedDisplayComponent = displayProvider.apply(newValue);
     } else {
       updatedDisplayComponent = emptyDisplayComponent;
     }
-    this.add(updatedDisplayComponent);
+    return updatedDisplayComponent;
+  }
+
+  private void replaceDisplayComponent(S updatedDisplayComponent) {
     if (Objects.nonNull(displayComponent)) {
       boolean componentVisible = displayComponent.isVisible();
-      this.remove(displayComponent);
       updatedDisplayComponent.setVisible(componentVisible);
+      this.remove(displayComponent);
     }
     add(updatedDisplayComponent);
     this.displayComponent = updatedDisplayComponent;
