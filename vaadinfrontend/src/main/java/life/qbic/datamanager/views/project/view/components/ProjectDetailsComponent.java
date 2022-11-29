@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.project.view.components;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -86,17 +85,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   }
 
   private void initFormFields() {
-    titleToggleComponent = new ToggleDisplayEditComponent<>(
-        new TextField(), Span::new,
+    titleToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextField(),
         createPlaceHolderSpan("Project Title"));
-    projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(
-        new TextArea(), Span::new,
+    projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan("Project Objective"));
-    experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(
-        new TextArea(), Span::new,
+    experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan("Experimental Design"));
-    projectManagerToggleComponent = new ToggleDisplayEditComponent<>(
-        initProjectManagerComboBox(), ContactElement::from,
+    projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
+        initProjectManagerComboBox(),
         createPlaceHolderSpan("Project Manager"));
   }
 
@@ -228,19 +224,22 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnValueChange(titleToggleComponent,
           value ->
               projectInformationService.updateTitle(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnValueChange(
-          projectObjectiveToggleComponent, value ->
+
+      ProjectDetailsComponent.Handler.submitOnValueChange(projectObjectiveToggleComponent,
+          value ->
               projectInformationService.stateObjective(selectedProject.value(), value.trim()));
-      ProjectDetailsComponent.Handler.submitOnValueChange(
-          experimentalDesignToggleComponent, value ->
+
+      ProjectDetailsComponent.Handler.submitOnValueChange(experimentalDesignToggleComponent,
+          value ->
               projectInformationService.describeExperimentalDesign(selectedProject.value(),
                   value.trim()));
-      ProjectDetailsComponent.Handler.submitOnValueChange(
-          projectManagerToggleComponent,
-          value -> projectInformationService.manageProject(selectedProject.value(), value));
+
+      ProjectDetailsComponent.Handler.submitOnValueChange(projectManagerToggleComponent,
+          value ->
+              projectInformationService.manageProject(selectedProject.value(), value));
     }
 
-    private static <V, T extends HasValue<?, V> & Focusable<?>> void submitOnValueChange(T element,
+    private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
         Consumer<V> submitAction) {
       element.addValueChangeListener(it -> submitAction.accept(element.getValue()));
     }
