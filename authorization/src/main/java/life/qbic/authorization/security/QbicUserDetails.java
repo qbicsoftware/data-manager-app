@@ -1,11 +1,11 @@
-package life.qbic.datamanager.security;
+package life.qbic.authorization.security;
 
 import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -23,7 +23,13 @@ public class QbicUserDetails implements UserDetails {
 
   @Serial
   private static final long serialVersionUID = 5812210012669790933L;
-  private final transient User user;
+  private final UserId userId;
+  private final String username;
+  private final String password;
+
+  private final boolean active;
+
+  private final List<GrantedAuthority> grantedAuthorities;
 
   /**
    * Constructor to use and embed a {@link User} entity.
@@ -31,23 +37,31 @@ public class QbicUserDetails implements UserDetails {
    * @param user the user to embed
    * @since 1.0.0
    */
-  public QbicUserDetails(User user) {
-    this.user = user;
+  public QbicUserDetails(User user, List<GrantedAuthority> grantedAuthorities) {
+    this.userId = user.id();
+    this.username = user.emailAddress().get();
+    this.password = user.getEncryptedPassword().get();
+    this.active = user.isActive();
+    this.grantedAuthorities = List.copyOf(grantedAuthorities);
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority("USER"));
+    return List.copyOf(grantedAuthorities);
+  }
+
+  public UserId getUserId() {
+    return userId;
   }
 
   @Override
   public String getPassword() {
-    return user.getEncryptedPassword().get();
+    return password;
   }
 
   @Override
   public String getUsername() {
-    return user.emailAddress().get();
+    return username;
   }
 
   @Override
@@ -67,6 +81,6 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return user.isActive();
+    return active;
   }
 }
