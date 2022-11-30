@@ -44,7 +44,7 @@ public class ProjectLinkingService {
   }
 
   public void unlinkOfferFromProject(String offerIdentifier, String projectIdentifier) {
-    log.info("un-linking offer " + offerIdentifier + " to project " + projectIdentifier);
+    log.info("un-linking offer " + offerIdentifier + " from project " + projectIdentifier);
     loadOfferOrThrow(offerIdentifier);
     Project project = loadProjectOrThrow(projectIdentifier);
     project.unlinkOffer(OfferIdentifier.of(offerIdentifier));

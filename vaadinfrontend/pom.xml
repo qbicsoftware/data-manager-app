@@ -210,6 +210,11 @@
       <artifactId>subscription-provider</artifactId>
       <version>0.9.0</version>
     </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>authorization</artifactId>
+      <version>0.9.0</version>
+    </dependency>
 
 
   </dependencies>

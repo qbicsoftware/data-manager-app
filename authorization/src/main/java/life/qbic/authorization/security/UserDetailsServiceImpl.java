@@ -1,11 +1,10 @@
-package life.qbic.datamanager.security;
+package life.qbic.authorization.security;
 
-import java.util.ArrayList;
 import java.util.List;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
-import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.authorization.SystemPermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,9 +17,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   private final UserRepository userRepository;
 
+  private final SystemPermissionService systemPermissionService;
+
   @Autowired
-  UserDetailsServiceImpl(UserRepository userRepository) {
+  UserDetailsServiceImpl(UserRepository userRepository,
+      SystemPermissionService systemPermissionService) {
     this.userRepository = userRepository;
+    this.systemPermissionService = systemPermissionService;
   }
 
   @Override
@@ -33,15 +36,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
       throw new UsernameNotFoundException("Cannot find user");
     }
     // Then search for a user with the provided mail address
-    var user = userRepository.findByEmail(email);
-    return new QbicUserDetails(
-        user.orElseThrow(() -> new UsernameNotFoundException("Cannot find user")));
-  }
-
-  private static List<GrantedAuthority> getAuthorities(User testUser) {
-    // todo fix me: implement rolemanagement, parse all roles the user has to understhand which
-    // rights the user has
-
-    return new ArrayList<>();
+    var user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
+    List<GrantedAuthority> authorities = systemPermissionService.loadUserPermissions(user.id());
+    return new QbicUserDetails(user, authorities);
   }
 }

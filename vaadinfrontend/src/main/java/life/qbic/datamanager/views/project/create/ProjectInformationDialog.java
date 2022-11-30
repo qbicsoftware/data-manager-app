@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.project.create;
 
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -88,6 +89,7 @@ public class ProjectInformationDialog extends Dialog {
     setHeaderTitle("Create Project");
     add(formLayout);
     getFooter().add(cancelButton, createButton);
+    this.setMinWidth(66, Unit.VW);
   }
 
   private void initForm() {
@@ -150,7 +152,8 @@ public class ProjectInformationDialog extends Dialog {
       titleField.setValue(offer.projectTitle().title());
       projectObjective.setValue(offer.projectObjective().objective());
       offer.experimentalDesignDescription()
-          .ifPresent(it -> experimentalDesignField.setValue(it.description()));
+          .ifPresentOrElse(it -> experimentalDesignField.setValue(it.description()),
+              experimentalDesignField::clear);
     }
 
     private void restrictInputLength() {

@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
 
 /**
  * <b>User Id</b>
@@ -14,7 +13,6 @@ import javax.persistence.Embeddable;
  *
  * @since 1.0.0
  */
-@Embeddable
 public class UserId implements Serializable {
 
   @Serial

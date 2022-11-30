@@ -57,25 +57,25 @@ public class Project {
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       PersonReference projectManager, PersonReference principalInvestigator) {
+    requireNonNull(principalInvestigator);
+    requireNonNull(projectCode);
     requireNonNull(projectId);
     requireNonNull(projectIntent);
-    requireNonNull(projectCode);
-    requireNonNull(principalInvestigator);
     requireNonNull(projectManager);
+    setPrincipalInvestigator(principalInvestigator);
+    setProjectCode(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
-    setProjectCode(projectCode);
     setProjectManager(projectManager);
-    setPrincipalInvestigator(principalInvestigator);
     linkedOffers = new ArrayList<>();
   }
 
-  private void setProjectManager(PersonReference projectManager) {
+  public void setProjectManager(PersonReference projectManager) {
     this.projectManager = projectManager;
     this.lastModified = Instant.now();
   }
 
-  private void setPrincipalInvestigator(PersonReference principalInvestigator) {
+  public void setPrincipalInvestigator(PersonReference principalInvestigator) {
     this.principalInvestigator = principalInvestigator;
     this.lastModified = Instant.now();
   }
@@ -180,6 +180,14 @@ public class Project {
 
   public ProjectIntent getProjectIntent() {
     return projectIntent;
+  }
+
+  public PersonReference getProjectManager() {
+    return projectManager;
+  }
+
+  public PersonReference getPrincipalInvestigator() {
+    return principalInvestigator;
   }
 
   @Override
