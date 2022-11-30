@@ -9,7 +9,6 @@ import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.Synchronize;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.dom.Element;
 import java.util.Objects;
@@ -23,13 +22,9 @@ import org.slf4j.Logger;
  * @since <version tag>
  */
 @Tag("div")
-public class ToggleDisplayEditComponent<
-    S extends Component,
+public class ToggleDisplayEditComponent<S extends Component,
     T extends Component & HasSize & HasValue<? extends HasValue.ValueChangeEvent<U>, U> & HasValidation & Focusable<T>,
-    U
-    > extends AbstractField<ToggleDisplayEditComponent<S, T, U>, U> implements HasValidation,
-    HasSize {
-
+    U> extends AbstractField<ToggleDisplayEditComponent<S, T, U>, U> implements HasSize {
 
   private static final Logger log = getLogger(ToggleDisplayEditComponent.class);
 
@@ -38,6 +33,11 @@ public class ToggleDisplayEditComponent<
   private S displayComponent;
   private final S emptyDisplayComponent;
 
+  /**
+   * @param displayProvider       A function returning a display component given a value.
+   * @param inputComponent        The component used to edit the value of this field.
+   * @param emptyDisplayComponent The display component to show when the field is empty.
+   */
   public ToggleDisplayEditComponent(Function<U, S> displayProvider,
       T inputComponent,
       S emptyDisplayComponent) {
@@ -50,18 +50,24 @@ public class ToggleDisplayEditComponent<
     this.emptyDisplayComponent = emptyDisplayComponent;
     this.displayComponent = emptyDisplayComponent;
     // attach input component as child to this element
-    add(inputComponent);
-    add(displayComponent);
+    add(this.inputComponent);
+    add(this.displayComponent);
     // initially update representation with input value
-    setPresentationValue(inputComponent.getValue());
-    setValue(inputComponent.getValue());
+    setPresentationValue(this.inputComponent.getValue());
+    setValue(this.inputComponent.getValue());
 
-    inputComponent.addValueChangeListener(it -> this.setInvalid(inputComponent.isInvalid()));
     switchToDisplay();
     registerClientExitActions();
     registerClientEnterActions();
+  }
 
-
+  /**
+   * Returns the component used to edit the field value
+   *
+   * @return the component used to edit the field value
+   */
+  public T getInputComponent() {
+    return inputComponent;
   }
 
   private void registerClientEnterActions() {
@@ -76,7 +82,7 @@ public class ToggleDisplayEditComponent<
     // client exit is defined as a blur event on the input element
     inputComponent.addBlurListener(it -> {
       updateValue(it.isFromClient());
-      if (!isInvalid()) {
+      if (!inputComponent.isInvalid()) {
         switchToDisplay();
       }
     });
@@ -92,48 +98,6 @@ public class ToggleDisplayEditComponent<
     inputComponent.setVisible(true);
   }
 
-  public T getInputComponent() {
-    return inputComponent;
-  }
-
-  /**
-   * <p>
-   * This property is set to true when the control value is invalid.
-   * <p>
-   * This property is synchronized automatically from client side when a 'invalid-changed' event
-   * happens.
-   * </p>
-   *
-   * @return the {@code invalid} property from the webcomponent
-   */
-  @Synchronize(property = "invalid", value = "invalid-changed")
-  @Override
-  public boolean isInvalid() {
-    return getElement().getProperty("invalid", false);
-  }
-
-  /**
-   * <p>
-   * This property is set to true when the control value is invalid.
-   * </p>
-   *
-   * @param invalid the boolean value to set
-   */
-  @Override
-  public void setInvalid(boolean invalid) {
-    getElement().setProperty("invalid", invalid);
-  }
-
-  @Override
-  public void setErrorMessage(String errorMessage) {
-    getElement().setProperty("errorMessage", errorMessage);
-  }
-
-  @Override
-  public String getErrorMessage() {
-    return getElement().getProperty("errorMessage");
-  }
-
   private void updateValue(boolean fromClient) {
     setModelValue(generateModelValue(), fromClient);
     setPresentationValue(getValue());
@@ -146,14 +110,13 @@ public class ToggleDisplayEditComponent<
   }
 
   /**
-   * TODO
+   * Generates the model value. If there is a valid input, returns the valid input. Otherwise:
+   * returns the last valid value.
    *
-   * @return
+   * @return the current input value if valid, the last valid value otherwise.
    */
   private U generateModelValue() {
     if (inputComponent.isInvalid()) {
-//      this.setErrorMessage(inputComponent.getErrorMessage());
-//      this.setInvalid(true);
       return this.getValue();
     }
     if (inputComponent.isEmpty()) {
@@ -168,6 +131,13 @@ public class ToggleDisplayEditComponent<
     replaceDisplayComponent(updatedDisplayComponent);
   }
 
+  /**
+   * Generates a new display component for the provided value. If the value equals the empty value
+   * or is null, returns the emptyDisplayComponent.
+   *
+   * @param newValue the value for which to generate a display component
+   * @return the generated display component, or the emptyDisplayComponent if no value was provided
+   */
   private S generateUpdatedDisplayComponent(U newValue) {
     S updatedDisplayComponent;
     //Empty value is dependent on input component ("") in TextField contrary to null for object selection)
