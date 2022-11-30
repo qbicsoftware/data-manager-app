@@ -4,23 +4,20 @@ import java.util.List;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
- * <class short description - One Line!>
+ * <b>ProjectPermission Service</b>
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * A service handling project-scoped permissions.
  */
 public interface ProjectPermissionService {
 
   /**
-   * ToDo
+   * Lists the permissions granted to a specific user for a specific project
    *
-   * @param userId
-   * @param projectId
-   * @return a list of {@link SimpleGrantedAuthority} for the provided project
+   * @param userId    the identifier of the user
+   * @param projectId the identifier of the project
+   * @return a list of authorities granted to the user for the project
    */
   List<? extends GrantedAuthority> loadUserPermissions(UserId userId, ProjectId projectId);
 }

@@ -9,13 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
-/**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 @Service
 public class QbicProjectPermissionServiceImpl implements ProjectPermissionService {
 

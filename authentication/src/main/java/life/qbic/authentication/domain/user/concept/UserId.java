@@ -13,7 +13,6 @@ import javax.persistence.Column;
  *
  * @since 1.0.0
  */
-//@Embeddable
 public class UserId implements Serializable {
 
   @Serial

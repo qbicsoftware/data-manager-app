@@ -7,11 +7,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * <b>System Role class</b>
+ * <p>
+ * Defines a role of a user in the context of the system
  */
 @Entity
 @Table(name = "users_system_roles")

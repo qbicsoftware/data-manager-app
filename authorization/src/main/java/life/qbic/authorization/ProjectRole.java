@@ -7,11 +7,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * <b>Project Role class</b>
+ * <p>
+ * Defines a role of a user in the context of a project.
  */
 @Entity
 @Table(name = "users_project_roles")

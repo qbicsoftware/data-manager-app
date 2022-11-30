@@ -14,9 +14,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 /**
- * TODO
- *
- * @since <version tag>
+ * <b>QBiC's implementation of the Spring PermissionEvaluator interface</b>
+ * <p>
+ * This class shall be used to check if the current user has the permission to have access to the
+ * targetDomainObject of interest in the context of user authorization
  */
 @Service
 public class QbicPermissionEvaluator implements PermissionEvaluator {

@@ -4,11 +4,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * <b>Project Role Storage Interface</b>
+ * <p>
+ * Provides access to persistent project roles.
  */
 public interface ProjectRoleRepository extends JpaRepository<ProjectRole, Integer> {
 
