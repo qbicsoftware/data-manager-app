@@ -75,7 +75,7 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
-  private void setPrincipalInvestigator(PersonReference principalInvestigator) {
+  public void setPrincipalInvestigator(PersonReference principalInvestigator) {
     this.principalInvestigator = principalInvestigator;
     this.lastModified = Instant.now();
   }
@@ -184,6 +184,10 @@ public class Project {
 
   public PersonReference getProjectManager() {
     return projectManager;
+  }
+
+  public PersonReference getPrincipalInvestigator() {
+    return principalInvestigator;
   }
 
   @Override

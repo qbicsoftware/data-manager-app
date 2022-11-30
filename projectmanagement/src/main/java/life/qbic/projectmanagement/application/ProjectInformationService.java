@@ -76,6 +76,15 @@ public class ProjectInformationService {
     });
   }
 
+  public void investigateProject(String projectId, PersonReference personReference) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.setPrincipalInvestigator(personReference);
+      projectRepository.update(p);
+    });
+  }
+
   public void describeExperimentalDesign(String projectId, String experimentalDesign) {
     ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
     ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
