@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -33,8 +32,7 @@ public class ProjectCreationService {
   }
 
   /**
-   * Create a new project based on the information provided. If an empty experimental design
-   * description is provided, the project will not have an experimental design described.
+   * Create a new project based on the information provided.
    *
    * @param title              the title of the project.
    * @param objective          the objective of the project
@@ -46,13 +44,8 @@ public class ProjectCreationService {
       PersonReference principalInvestigator) {
     try {
       Project project;
-      if (Objects.isNull(experimentalDesign) || experimentalDesign.isEmpty()) {
-        project = createProjectWithoutExperimentalDesign(title, objective, projectManager,
-            principalInvestigator);
-      } else {
-        project = createProjectWithExperimentalDesign(title, objective, experimentalDesign,
-            projectManager, principalInvestigator);
-      }
+      project = createProject(title, objective, experimentalDesign,
+          projectManager, principalInvestigator);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
@@ -76,14 +69,7 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProjectWithoutExperimentalDesign(String title, String objective,
-      PersonReference projectManager,
-      PersonReference principalInvestigator) {
-    ProjectIntent intent = getProjectIntent(title, objective);
-    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator);
-  }
-
-  private Project createProjectWithExperimentalDesign(String title,
+  private Project createProject(String title,
       String objective,
       String experimentalDesign, PersonReference projectManager,
       PersonReference principalInvestigator) {

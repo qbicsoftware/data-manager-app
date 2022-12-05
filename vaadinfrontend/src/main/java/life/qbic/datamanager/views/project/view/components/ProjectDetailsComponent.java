@@ -130,10 +130,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         .set("--vaadin-combo-box-width", "16em");
     titleToggleComponent.getInputComponent().setRequired(true);
     projectObjectiveToggleComponent.getInputComponent().setRequired(true);
+    experimentalDesignToggleComponent.getInputComponent().setRequired(true);
     projectManagerToggleComponent.getInputComponent().setRequired(true);
     principalInvestigatorToggleComponent.getInputComponent().setRequired(true);
     titleToggleComponent.setRequiredIndicatorVisible(true);
     projectObjectiveToggleComponent.setRequiredIndicatorVisible(true);
+    experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
   }
@@ -219,9 +221,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       this.selectedProject = project.getId();
       titleToggleComponent.setValue(project.getProjectIntent().projectTitle().title());
       projectObjectiveToggleComponent.setValue(project.getProjectIntent().objective().value());
-      project.getProjectIntent().experimentalDesign().ifPresentOrElse(
-          experimentalDesignDescription -> experimentalDesignToggleComponent.setValue(
-              experimentalDesignDescription.value()), experimentalDesignToggleComponent::clear);
+      experimentalDesignToggleComponent.setValue(
+          project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
     }

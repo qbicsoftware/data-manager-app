@@ -98,8 +98,7 @@ public class Project {
 
   public void describeExperimentalDesign(
       ExperimentalDesignDescription experimentalDesignDescription) {
-    if (projectIntent.experimentalDesign().isPresent()
-        && projectIntent.experimentalDesign().get().equals(experimentalDesignDescription)) {
+    if (projectIntent.experimentalDesign().equals(experimentalDesignDescription)) {
       return;
     }
     projectIntent.experimentalDesign(experimentalDesignDescription);
