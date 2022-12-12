@@ -248,7 +248,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       project.ifSuccessOrElse(
           result -> {
             displaySuccessfulProjectCreationNotification();
-            projectInformationDialog.close();
+            projectInformationDialog.resetAndClose();
             projectGrid.getDataProvider().refreshAll();
           },
           applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));

@@ -141,6 +141,11 @@ public class ProjectInformationDialog extends Dialog {
         .forEach(component -> ((HasValidation) component).setInvalid(false));
   }
 
+  public void resetAndClose() {
+    reset();
+    close();
+  }
+
   private class Handler {
 
     private void handle() {
@@ -197,11 +202,6 @@ public class ProjectInformationDialog extends Dialog {
     private void resetDialogueUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
       addDialogCloseActionListener(closeActionEvent -> resetAndClose());
-    }
-
-    private void resetAndClose() {
-      reset();
-      close();
     }
   }
 }
