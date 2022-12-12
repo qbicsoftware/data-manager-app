@@ -246,11 +246,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectManager, principalInvestigator);
 
       project.ifSuccessOrElse(
-          result -> displaySuccessfulProjectCreationNotification(),
+          result -> {
+            displaySuccessfulProjectCreationNotification();
+            projectInformationDialog.resetAndClose();
+            projectGrid.getDataProvider().refreshAll();
+          },
           applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
-
-      projectInformationDialog.close();
-      projectGrid.getDataProvider().refreshAll();
     }
 
     private void displaySuccessfulProjectCreationNotification() {

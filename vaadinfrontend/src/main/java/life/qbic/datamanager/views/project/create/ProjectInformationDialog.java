@@ -56,6 +56,7 @@ public class ProjectInformationDialog extends Dialog {
     titleField = new TextField("Title");
     titleField.setRequired(true);
     experimentalDesignField = new TextArea("Experimental Design");
+    experimentalDesignField.setRequired(true);
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
 
@@ -140,6 +141,11 @@ public class ProjectInformationDialog extends Dialog {
         .forEach(component -> ((HasValidation) component).setInvalid(false));
   }
 
+  public void resetAndClose() {
+    reset();
+    close();
+  }
+
   private class Handler {
 
     private void handle() {
@@ -151,9 +157,8 @@ public class ProjectInformationDialog extends Dialog {
     public void loadOfferContent(Offer offer) {
       titleField.setValue(offer.projectTitle().title());
       projectObjective.setValue(offer.projectObjective().objective());
-      offer.experimentalDesignDescription()
-          .ifPresentOrElse(it -> experimentalDesignField.setValue(it.description()),
-              experimentalDesignField::clear);
+      experimentalDesignField.setValue(offer.experimentalDesignDescription().description());
+
     }
 
     private void restrictInputLength() {
@@ -197,11 +202,6 @@ public class ProjectInformationDialog extends Dialog {
     private void resetDialogueUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
       addDialogCloseActionListener(closeActionEvent -> resetAndClose());
-    }
-
-    private void resetAndClose() {
-      reset();
-      close();
     }
   }
 }

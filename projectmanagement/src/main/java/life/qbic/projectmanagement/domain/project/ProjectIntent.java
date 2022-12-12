@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.project;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
-import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
@@ -64,8 +63,9 @@ public class ProjectIntent {
     this.projectTitle = projectTitle;
   }
 
-  public Optional<ExperimentalDesignDescription> experimentalDesign() {
-    return Optional.ofNullable(experimentalDesignDescription);
+  public ExperimentalDesignDescription experimentalDesign() {
+    Objects.requireNonNull(experimentalDesignDescription);
+    return experimentalDesignDescription;
   }
 
   public void experimentalDesign(ExperimentalDesignDescription experimentalDesignDescription) {
