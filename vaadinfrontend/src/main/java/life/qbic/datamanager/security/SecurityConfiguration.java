@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
@@ -26,6 +25,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests().antMatchers("/images/*.png").permitAll();
     super.configure(http);
     setLoginView(http, LoginLayout.class, LOGOUT_URL);
   }
@@ -33,6 +33,5 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   @Override
   public void configure(WebSecurity web) throws Exception {
     super.configure(web);
-    web.ignoring().requestMatchers(new AntPathRequestMatcher("/images/*.png"));
   }
 }
