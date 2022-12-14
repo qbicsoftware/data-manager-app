@@ -1,6 +1,6 @@
 package life.qbic.datamanager.security;
 
-import com.vaadin.flow.spring.security.VaadinWebSecurityConfigurerAdapter;
+import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import life.qbic.authorization.security.QBiCPasswordEncoder;
 import life.qbic.datamanager.views.login.LoginLayout;
 import org.springframework.context.annotation.Bean;
@@ -10,11 +10,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
+public class SecurityConfiguration extends VaadinWebSecurity {
 
   public static final String LOGOUT_URL = "/";
 
@@ -32,6 +33,6 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
   @Override
   public void configure(WebSecurity web) throws Exception {
     super.configure(web);
-    web.ignoring().antMatchers("/images/*.png");
+    web.ignoring().requestMatchers(new AntPathRequestMatcher("/images/*.png"));
   }
 }
