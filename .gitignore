@@ -19,7 +19,6 @@ logs
 */webapp/frontend/index.html
 */package.json
 */tsconfig.json
-*/types.d.ts
 */webpack.config.js
 */webpack.generated.js
 
@@ -31,3 +30,11 @@ error-screenshots/
 */webapp/frontend/generated/theme.d.ts
 */package-lock.json
 /logs/
+
+# Ignore Vite generated files created since vaadin 23.2
+/frontend/index.html
+/frontend/generated/index.ts
+/vaadinfrontend/types.d.ts
+/frontend/generated/vaadin.ts
+/frontend/generated/vaadin-featureflags.ts
+/vaadinfrontend/vite.config.ts
