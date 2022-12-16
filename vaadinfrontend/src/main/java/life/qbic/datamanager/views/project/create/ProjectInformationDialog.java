@@ -6,9 +6,11 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -33,20 +35,19 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
 public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
-
   public ComboBox<OfferPreview> searchField;
-
   private final TextField titleField;
   public final Button createButton;
   public final Button cancelButton;
   private final FormLayout formLayout;
-
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
-
   public final ComboBox<PersonReference> projectManager;
-
   public final ComboBox<PersonReference> principalInvestigator;
+  public final IntegerField sampleCountField;
+  public final MultiSelectComboBox<String> organismBox;
+  public final MultiSelectComboBox<String> specimenBox;
+  public final MultiSelectComboBox<String> analyteBox;
 
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
@@ -68,6 +69,17 @@ public class ProjectInformationDialog extends Dialog {
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
 
+    sampleCountField = new IntegerField("Samples");
+    sampleCountField.setMin(1);
+    sampleCountField.setStep(1);
+    sampleCountField.setStepButtonsVisible(true);
+    organismBox = new MultiSelectComboBox<>("Organism");
+    organismBox.setItems("Organism1", "Organism2", "Organism3", "Organism4", "Organism5");
+    organismBox.addClassName("chip-badge");
+    specimenBox = new MultiSelectComboBox<>("Specimen");
+    specimenBox.setItems("Specimen1", "Specimen2", "Specimen3", "Specimen4", "Specimen5");
+    analyteBox = new MultiSelectComboBox<>("Analyte");
+    analyteBox.setItems("Analyte1", "Analyte2", "Analyte3", "Analyte4", "Analyte5");
     configureDialogLayout();
     initForm();
     styleForm();
@@ -81,12 +93,15 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective.setWidthFull();
     experimentalDesignField.setWidthFull();
     formLayout.setClassName("create-project-form");
+    sampleCountField.setMaxWidth(10, Unit.PERCENTAGE);
+    organismBox.setMaxWidth(60, Unit.PERCENTAGE);
+    specimenBox.setMaxWidth(60, Unit.PERCENTAGE);
+    analyteBox.setMaxWidth(60, Unit.PERCENTAGE);
   }
 
   private void configureDialogLayout() {
     createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     styleSearchBox();
-
     setHeaderTitle("Create Project");
     add(formLayout);
     getFooter().add(cancelButton, createButton);
@@ -98,6 +113,10 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
+    formLayout.add(sampleCountField);
+    formLayout.add(organismBox);
+    formLayout.add(specimenBox);
+    formLayout.add(analyteBox);
     formLayout.add(projectManager);
     formLayout.add(principalInvestigator);
     // set form layout to only have one column (for any width)
