@@ -186,6 +186,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       loadOfferPreview();
       setProjectsToGrid();
       setupSearchBar();
+      setUpExperimentalDesignSearch();
       setUpProjectManagerSearch();
       setUpPrincipalInvestigatorSearch();
     }
@@ -303,6 +304,16 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void setUpPrincipalInvestigatorSearch() {
       setUpPersonSearch(projectInformationDialog.principalInvestigator);
+    }
+
+    private void setUpExperimentalDesignSearch() {
+      //Todo Replace with Call to service parsing information from db and generating ItemLabels
+      projectInformationDialog.analyteBox.setItems("Analyte1", "Analyte2", "Analyte3", "Analyte4",
+          "Analyte5");
+      projectInformationDialog.specimenBox.setItems("Specimen1", "Specimen2", "Specimen3",
+          "Specimen4", "Specimen5");
+      projectInformationDialog.organismBox.setItems("Organism1", "Organism2", "Organism3",
+          "Organism4", "Organism5");
     }
 
     private void preloadContentFromOffer(String offerId) {
