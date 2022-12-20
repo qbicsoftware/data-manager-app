@@ -10,9 +10,9 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -44,8 +44,7 @@ public class ProjectInformationDialog extends Dialog {
   public final Button createButton;
   public final Button cancelButton;
   private final FormLayout formLayout;
-
-  private final Div experimentalDesignIntroduction;
+  private final VerticalLayout experimentalDesignIntroduction;
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
   public final ComboBox<PersonReference> projectManager;
@@ -63,9 +62,9 @@ public class ProjectInformationDialog extends Dialog {
     titleField.setRequired(true);
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
-    //ToDo Remove Field and move logic to multiSelectComboboxes
+    //ToDo Remove Field and move logic to MultiSelectComboBoxes
     experimentalDesignField = new TextArea();
-    experimentalDesignIntroduction = new Div();
+    experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
     sampleCountLayout = new HorizontalLayout();
@@ -141,11 +140,13 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void initExperimentalDesignIntroduction() {
-    //Todo Add linebreak between Header and Description
     Span experimentalDesignHeader = new Span("Experimental Design");
-    experimentalDesignHeader.addClassName("font-bold");
     Span experimentalDesignDescription = new Span(
         "Describe the experimental design by the following fields. Multiple values are allowed");
+    experimentalDesignHeader.addClassName("font-bold");
+    experimentalDesignIntroduction.setMargin(false);
+    experimentalDesignIntroduction.setPadding(false);
+    experimentalDesignIntroduction.addClassName("pt-m");
     experimentalDesignIntroduction.add(experimentalDesignHeader);
     experimentalDesignIntroduction.add(experimentalDesignDescription);
   }
