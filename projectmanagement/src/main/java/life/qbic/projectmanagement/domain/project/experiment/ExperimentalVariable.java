@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -13,14 +12,14 @@ import java.util.Objects;
  *
  * @since <version tag>
  */
-public class ExperimentalVariable<T extends ExperimentalValue> {
+class ExperimentalVariable<T extends ExperimentalValue> {
 
   private final List<T> levels;
 
   private final String name;
 
   @SafeVarargs
-  public ExperimentalVariable (String name, T... levels) {
+  public ExperimentalVariable(String name, T... levels) {
     this.name = name;
     this.levels = Collections.unmodifiableList(Arrays.asList(levels));
   }
