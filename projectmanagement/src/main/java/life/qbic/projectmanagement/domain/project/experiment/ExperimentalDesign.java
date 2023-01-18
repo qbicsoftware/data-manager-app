@@ -28,11 +28,16 @@ public class ExperimentalDesign {
 
   public Result<ExperimentalVariable<ExperimentalValue>, Exception> createExperimentalVariable(
       String variableName, ExperimentalValue... levels) {
-    return addExperimentalVariableOrElse(new ExperimentalVariable<>(variableName, levels),
-        () -> Result.failure(new ExperimentalVariableExistsException(
-            String.format(
-                "A variable with name '%s' is already part of the experimental design. Variable names need to be unique within the design.",
-                variableName))));
+    try {
+      var experimentalVariable = new ExperimentalVariable<>(variableName, levels);
+      return addExperimentalVariableOrElse(experimentalVariable,
+          () -> Result.failure(new ExperimentalVariableExistsException(
+              String.format(
+                  "A variable with name '%s' is already part of the experimental design. Variable names need to be unique within the design.",
+                  variableName))));
+    } catch (IllegalArgumentException e) {
+      return Result.failure(e);
+    }
   }
 
   public Result<Condition, Exception> createCondition(
@@ -112,7 +117,8 @@ public class ExperimentalDesign {
   }
 
   private boolean doesNotExist(ExperimentalVariable<ExperimentalValue> experimentalVariable) {
-    return experimentalVariables.stream().noneMatch(variable -> variable.equals(experimentalVariable));
+    return experimentalVariables.stream()
+        .noneMatch(variable -> variable.equals(experimentalVariable));
   }
-  
+
 }

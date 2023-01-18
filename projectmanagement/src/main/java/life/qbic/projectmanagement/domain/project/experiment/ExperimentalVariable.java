@@ -20,6 +20,9 @@ class ExperimentalVariable<T extends ExperimentalValue> {
 
   @SafeVarargs
   public ExperimentalVariable(String name, T... levels) {
+    if (levels.length < 1) {
+      throw new IllegalArgumentException("No levels provided. Please provide at least one.");
+    }
     this.name = name;
     this.levels = Collections.unmodifiableList(Arrays.asList(levels));
   }
