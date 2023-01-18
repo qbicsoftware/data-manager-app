@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -17,6 +18,8 @@ public class Condition {
 
   private final List<VariableLevel<ExperimentalValue>> definedVariables;
 
+  private final Long id;
+
   @SafeVarargs
   public static Condition create(VariableLevel<ExperimentalValue>... definedVariables) {
     Arrays.stream(definedVariables).forEach(Objects::requireNonNull);
@@ -28,11 +31,12 @@ public class Condition {
           "Variable levels are not from distinct experimental variables.");
     }
 
-    return new Condition(definedVariables);
+    return new Condition(new Random().nextLong(), definedVariables);
   }
 
   @SafeVarargs
-  private Condition(VariableLevel<ExperimentalValue>... definedVariables) {
+  private Condition(Long id, VariableLevel<ExperimentalValue>... definedVariables) {
+    this.id = id;
     this.definedVariables = Arrays.stream(definedVariables).toList();
   }
 
@@ -48,4 +52,24 @@ public class Condition {
     return definedVariables.stream().map(VariableLevel::experimentalVariable).toList();
   }
 
+  public Long id() {
+    return this.id;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Condition condition = (Condition) o;
+    return id.equals(condition.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 }
