@@ -26,7 +26,7 @@ class ExperimentalVariableSpec extends Specification {
         then:
         noExceptionThrown()
         variable.name().equals("Test")
-        variable.levels().get(0).equals(ExperimentalValue.create("Simple", "cm"))
+        variable.values().get(0).equals(ExperimentalValue.create("Simple", "cm"))
     }
 
 }

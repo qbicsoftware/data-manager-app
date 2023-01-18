@@ -30,7 +30,7 @@ public class VariableLevel<T extends ExperimentalValue> {
 
   boolean isValueMissingInVariableLevels(ExperimentalVariable<T> experimentalVariable,
       T experimentalValue) {
-    return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
+    return experimentalVariable.values().stream().noneMatch(experimentalValue::equals);
   }
 
   public T experimentalValue() {

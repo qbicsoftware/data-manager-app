@@ -27,7 +27,7 @@ class ExperimentalVariable<T extends ExperimentalValue> {
     this.levels = Collections.unmodifiableList(Arrays.asList(levels));
   }
 
-  public List<T> levels() {
+  public List<T> values() {
     return levels.stream().toList();
   }
 
