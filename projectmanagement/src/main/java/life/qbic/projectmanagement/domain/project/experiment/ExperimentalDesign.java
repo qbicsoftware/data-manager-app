@@ -104,15 +104,15 @@ public class ExperimentalDesign {
   private Result<ExperimentalVariable<ExperimentalValue>, Exception> addExperimentalVariableOrElse(
       ExperimentalVariable<ExperimentalValue> experimentalVariable,
       Supplier<Result<ExperimentalVariable<ExperimentalValue>, Exception>> variableExists) {
-    if (doesNotExist(experimentalVariable.name())) {
+    if (doesNotExist(experimentalVariable)) {
       experimentalVariables.add(experimentalVariable);
       return Result.success(experimentalVariable);
     }
     return variableExists.get();
   }
 
-  private boolean doesNotExist(String name) {
-    return experimentalVariables.stream().noneMatch(variable -> variable.name().equals(name));
+  private boolean doesNotExist(ExperimentalVariable<ExperimentalValue> experimentalVariable) {
+    return experimentalVariables.stream().noneMatch(variable -> variable.equals(experimentalVariable));
   }
-
+  
 }
