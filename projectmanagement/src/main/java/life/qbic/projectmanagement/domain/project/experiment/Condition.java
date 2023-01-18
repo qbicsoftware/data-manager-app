@@ -20,9 +20,14 @@ public class Condition {
 
   private final Long id;
 
+
   @SafeVarargs
   public static Condition create(VariableLevel<ExperimentalValue>... definedVariables) {
     Arrays.stream(definedVariables).forEach(Objects::requireNonNull);
+
+    if (definedVariables.length < 1) {
+      throw new IllegalArgumentException("Please define at least one variable level.");
+    }
 
     int distinctExperimentVariables = Arrays.stream(definedVariables).map(VariableLevel::experimentalVariable).collect(
         Collectors.toSet()).size();
@@ -33,6 +38,8 @@ public class Condition {
 
     return new Condition(new Random().nextLong(), definedVariables);
   }
+
+
 
   @SafeVarargs
   private Condition(Long id, VariableLevel<ExperimentalValue>... definedVariables) {
