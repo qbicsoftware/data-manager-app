@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public interface ExperimentalValue {
 
@@ -8,7 +9,7 @@ public interface ExperimentalValue {
     return new SimpleExperimentalValue(value, unit);
   }
 
-  String unit();
+  Optional<String> unit();
 
   String value();
 
@@ -18,14 +19,19 @@ public interface ExperimentalValue {
 
     private final String unit;
 
+    SimpleExperimentalValue(String value) {
+      this.unit = null;
+      this.value = value;
+    }
+
     SimpleExperimentalValue(String value, String unit) {
       this.unit = unit;
       this.value = value;
     }
 
     @Override
-    public String unit() {
-      return unit;
+    public Optional<String> unit() {
+      return Optional.ofNullable(unit);
     }
 
     @Override
