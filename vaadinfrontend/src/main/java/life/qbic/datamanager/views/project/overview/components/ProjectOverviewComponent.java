@@ -43,6 +43,7 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -82,14 +83,16 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ApplicationExceptionHandler exceptionHandler,
-      @Autowired PersonSearchService personSearchService) {
+      @Autowired PersonSearchService personSearchService,
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+      @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.clientDetailsProvider = clientDetailsProvider;
     new Handler(offerLookupService,
         projectRepository,
         projectInformationService,
         projectCreationService,
         personSearchService,
+        experimentalDesignSearchService,
         exceptionHandler);
     layoutComponents();
   }
@@ -151,6 +154,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private static final Logger log = logger(Handler.class);
     private final ApplicationExceptionHandler exceptionHandler;
     private final OfferLookupService offerLookupService;
+    private final ExperimentalDesignSearchService experimentalDesignSearchService;
     private final ProjectCreationService projectCreationService;
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
@@ -163,6 +167,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         ProjectInformationService projectInformationService,
         ProjectCreationService projectCreationService,
         PersonSearchService personSearchService,
+        ExperimentalDesignSearchService experimentalDesignSearchService,
         ApplicationExceptionHandler exceptionHandler) {
 
       Objects.requireNonNull(offerLookupService);
@@ -176,11 +181,15 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       Objects.requireNonNull(projectCreationService);
       this.projectCreationService = projectCreationService;
 
+      Objects.requireNonNull(personSearchService);
+      this.personSearchService = personSearchService;
+
+      Objects.requireNonNull(experimentalDesignSearchService);
+      this.experimentalDesignSearchService = experimentalDesignSearchService;
+
       Objects.requireNonNull(exceptionHandler);
       this.exceptionHandler = exceptionHandler;
 
-      Objects.requireNonNull(personSearchService);
-      this.personSearchService = personSearchService;
       configurePageButtons();
       configureProjectCreationDialog();
       loadOfferPreview();
@@ -307,13 +316,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void setUpExperimentalDesignSearch() {
-      //Todo Replace with Call to service parsing information from db and generating ItemLabels
-      projectInformationDialog.analyteBox.setItems("Analyte1", "Analyte2", "Analyte3", "Analyte4",
-          "Analyte5");
-      projectInformationDialog.specimenBox.setItems("Specimen1", "Specimen2", "Specimen3",
-          "Specimen4", "Specimen5");
-      projectInformationDialog.organismBox.setItems("Organism1", "Organism2", "Organism3",
-          "Organism4", "Organism5");
+      projectInformationDialog.organismBox.setItems(
+          experimentalDesignSearchService.retrieveOrganisms());
+      projectInformationDialog.specimenBox.setItems(
+          experimentalDesignSearchService.retrieveSpecimens());
+      projectInformationDialog.analyteBox.setItems(
+          experimentalDesignSearchService.retrieveAnalytes());
     }
 
     private void preloadContentFromOffer(String offerId) {
