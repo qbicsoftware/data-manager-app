@@ -15,6 +15,7 @@ class ExperimentalVariableSpec extends Specification {
         when:
         new ExperimentalVariable<>("Test")
 
+
         then:
         thrown(IllegalArgumentException)
     }
