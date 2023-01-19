@@ -13,10 +13,8 @@ import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -50,7 +48,6 @@ public class ProjectInformationDialog extends Dialog {
   public final ComboBox<PersonReference> projectManager;
   public final ComboBox<PersonReference> principalInvestigator;
   public final HorizontalLayout sampleCountLayout;
-  public final IntegerField sampleCountField;
   public final MultiSelectComboBox<String> organismBox;
   public final MultiSelectComboBox<String> specimenBox;
   public final MultiSelectComboBox<String> analyteBox;
@@ -68,8 +65,6 @@ public class ProjectInformationDialog extends Dialog {
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
     sampleCountLayout = new HorizontalLayout();
-    sampleCountField = new IntegerField("Samples");
-    sampleCountLayout.add(sampleCountField);
     organismBox = new MultiSelectComboBox<>("Organism");
     specimenBox = new MultiSelectComboBox<>("Specimen");
     analyteBox = new MultiSelectComboBox<>("Analyte");
@@ -89,7 +84,6 @@ public class ProjectInformationDialog extends Dialog {
   private void styleForm() {
     formLayout.setClassName("create-project-form");
     styleSearchBox();
-    styleSampleCountField();
     organismBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
@@ -128,15 +122,6 @@ public class ProjectInformationDialog extends Dialog {
     searchField.setClassName("searchbox");
     searchField.setMaxWidth(50, Unit.VW);
     searchField.setMinWidth(50, Unit.VW);
-  }
-
-  private void styleSampleCountField() {
-    sampleCountField.setMinWidth(150, Unit.PIXELS);
-    sampleCountField.setValue(1);
-    sampleCountField.setMin(1);
-    sampleCountField.setStep(1);
-    sampleCountField.setStepButtonsVisible(true);
-    sampleCountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
   }
 
   private void initExperimentalDesignIntroduction() {
