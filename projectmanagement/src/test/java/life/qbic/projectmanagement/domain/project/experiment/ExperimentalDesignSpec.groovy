@@ -1,6 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment
 
 import life.qbic.application.commons.Result
+import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException
+import life.qbic.projectmanagement.domain.project.experiment.exception.SampleGroupExistsException
+import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownConditionException
 import spock.lang.Specification
 
 /**

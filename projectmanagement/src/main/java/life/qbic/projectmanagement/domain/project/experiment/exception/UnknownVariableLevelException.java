@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.project.experiment;
+package life.qbic.projectmanagement.domain.project.experiment.exception;
 
 import java.io.Serial;
 

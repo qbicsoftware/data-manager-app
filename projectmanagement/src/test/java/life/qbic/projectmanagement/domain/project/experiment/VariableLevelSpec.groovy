@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment
 
-
+import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException
 import spock.lang.Specification
 
 /**

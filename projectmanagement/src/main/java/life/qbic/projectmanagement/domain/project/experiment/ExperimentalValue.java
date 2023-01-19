@@ -3,10 +3,36 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * <b>Experimental Value</b>
+ * <p>
+ * Represents an value (aka level) that is part of an experimental variable and might have a unit.
+ *
+ * @since 1.0.0
+ */
 public interface ExperimentalValue {
 
+  /**
+   * Creates a new instance of an experimental value object.
+   *
+   * @param value the value in textual representation
+   * @param unit  the unit of the value if present
+   * @return
+   * @since 1.0.0
+   */
   static ExperimentalValue create(String value, String unit) {
     return new SimpleExperimentalValue(value, unit);
+  }
+
+  /**
+   * Creates a new instance of an experimental value object without a unit.
+   *
+   * @param value the value in textual representation.
+   * @return
+   * @since 1.0.0
+   */
+  static ExperimentalValue create(String value) {
+    return new SimpleExperimentalValue(value);
   }
 
   Optional<String> unit();

@@ -1,14 +1,17 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <b>Experimental Variable</b>
+ * <p>
+ * Describes an experimental variable with a unique and declarative name. In addition, it contains
+ * {@link ExperimentalValue}s, representing the levels of the variable that are part of the
+ * experiment.
+ * <p>
+ * Experimental variables can be created via the
+ * {@link ExperimentalDesign#createExperimentalVariable(String, ExperimentalValue...)} function.
  *
  * @since <version tag>
  */
@@ -24,7 +27,7 @@ class ExperimentalVariable<T extends ExperimentalValue> {
       throw new IllegalArgumentException("No levels provided. Please provide at least one.");
     }
     this.name = name;
-    this.levels = Collections.unmodifiableList(Arrays.asList(levels));
+    this.levels = List.of(levels);
   }
 
   public List<T> values() {

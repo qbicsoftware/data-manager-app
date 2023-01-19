@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
+import life.qbic.projectmanagement.domain.project.experiment.exception.SampleGroupExistsException;
+import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownConditionException;
+import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownExperimentalVariableException;
 
 /**
  * <b>Experimental Design</b>

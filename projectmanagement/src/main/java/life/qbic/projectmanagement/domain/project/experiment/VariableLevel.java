@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
 
 /**
  * <b><class short description - 1 Line!></b>

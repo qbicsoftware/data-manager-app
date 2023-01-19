@@ -3,11 +3,12 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Sample Group</b>
+ * <p>
+ * A {@link SampleGroup} can be defined via {@link ExperimentalDesign#createSampleGroup(String, int, Long)} and represent
+ * a logical container of biological replicates of one condition in an experimental design.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class SampleGroup {
 
@@ -21,6 +22,16 @@ public class SampleGroup {
     this.biologicalReplicates = biologicalReplicates;
   }
 
+  /**
+   * Creates a new instance of a sample group object.
+   *
+   * @param label a textual tag for the condition
+   * @param condition the condition the sample group represents
+   * @param biologicalReplicates the number of true biological replicates that are part of the sample
+   *                             group
+   * @return the sample group
+   * @since 1.0.0
+   */
   public static SampleGroup with(String label, Condition condition, int biologicalReplicates) {
     Objects.requireNonNull(condition);
     if (label.isBlank()) {
