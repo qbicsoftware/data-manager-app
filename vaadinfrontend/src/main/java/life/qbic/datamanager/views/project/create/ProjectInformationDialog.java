@@ -127,7 +127,7 @@ public class ProjectInformationDialog extends Dialog {
   private void initExperimentalDesignIntroduction() {
     Span experimentalDesignHeader = new Span("Experimental Design");
     Span experimentalDesignDescription = new Span(
-        "Describe the experimental design by the following fields. Multiple values are allowed");
+        "Please specify the sample information involved in the project! Multiple values are allowed");
     experimentalDesignHeader.addClassName("font-bold");
     experimentalDesignIntroduction.setMargin(false);
     experimentalDesignIntroduction.setPadding(false);
