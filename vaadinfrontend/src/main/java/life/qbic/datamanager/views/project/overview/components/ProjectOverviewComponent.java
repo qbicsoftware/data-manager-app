@@ -186,8 +186,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       loadOfferPreview();
       setProjectsToGrid();
       setupSearchBar();
-      setUpProjectManagerSearch();
       setUpPrincipalInvestigatorSearch();
+      setUpResponsiblePersonSearch();
+      setUpProjectManagerSearch();
     }
 
     private void setupSearchBar() {
@@ -241,9 +242,13 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
               ? projectInformationDialog.searchField.getValue().offerId()
               .id() : null;
 
+      PersonReference responsiblePerson =
+          projectInformationDialog.responsiblePerson.getValue() != null
+              ? projectInformationDialog.responsiblePerson.getValue() : null;
+
       Result<Project, ApplicationException> project = projectCreationService.createProject(
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
-          projectManager, principalInvestigator);
+          projectManager, principalInvestigator, responsiblePerson);
 
       project.ifSuccessOrElse(
           result -> {
@@ -303,6 +308,10 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void setUpPrincipalInvestigatorSearch() {
       setUpPersonSearch(projectInformationDialog.principalInvestigator);
+    }
+
+    private void setUpResponsiblePersonSearch() {
+      setUpPersonSearch(projectInformationDialog.responsiblePerson);
     }
 
     private void preloadContentFromOffer(String offerId) {

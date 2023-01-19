@@ -43,10 +43,9 @@ public class ProjectInformationDialog extends Dialog {
 
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
-
-  public final ComboBox<PersonReference> projectManager;
-
   public final ComboBox<PersonReference> principalInvestigator;
+  public final ComboBox<PersonReference> responsiblePerson;
+  public final ComboBox<PersonReference> projectManager;
 
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
@@ -60,10 +59,17 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
 
-    projectManager = new ComboBox<>("Project Manager");
-    projectManager.setPlaceholder("Select a project manager");
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
+
+    responsiblePerson = new ComboBox<>("Project Responsible (optional)");
+    responsiblePerson.setPlaceholder("Select Project Responsible");
+    responsiblePerson.setHelperText("Should be contacted about project related questions");
+    //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
+    responsiblePerson.setClearButtonVisible(true);
+
+    projectManager = new ComboBox<>("Project Manager (optional)");
+    projectManager.setPlaceholder("Select a project manager");
 
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
@@ -98,8 +104,9 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
-    formLayout.add(projectManager);
     formLayout.add(principalInvestigator);
+    formLayout.add(responsiblePerson);
+    formLayout.add(projectManager);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }

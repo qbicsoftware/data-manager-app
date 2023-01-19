@@ -41,11 +41,11 @@ public class ProjectCreationService {
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
     try {
       Project project;
       project = createProject(title, objective, experimentalDesign,
-          projectManager, principalInvestigator);
+          projectManager, principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
@@ -72,7 +72,7 @@ public class ProjectCreationService {
   private Project createProject(String title,
       String objective,
       String experimentalDesign, PersonReference projectManager,
-      PersonReference principalInvestigator) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -84,7 +84,8 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator);
+    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator,
+        responsiblePerson);
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

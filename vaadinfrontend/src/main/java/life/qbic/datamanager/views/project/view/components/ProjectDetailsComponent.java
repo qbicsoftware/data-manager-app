@@ -52,6 +52,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> projectManagerToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> principalInvestigatorToggleComponent;
+  private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> responsiblePersonToggleComponent;
   private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
@@ -78,8 +79,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.addFormItem(titleToggleComponent, "Project Title");
     formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
     formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
-    formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     formLayout.addFormItem(principalInvestigatorToggleComponent, "Principal Investigator");
+    formLayout.addFormItem(responsiblePersonToggleComponent, "Responsible Person");
+    formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     getContent().addFields(formLayout);
@@ -93,12 +95,15 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         createPlaceHolderSpan("Project Objective"));
     experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan("Experimental Design"));
-    projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Project Manager"),
-        createPlaceHolderSpan("Project Manager"));
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Principal Investigator"),
         createPlaceHolderSpan("Principal Investigator"));
+    responsiblePersonToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
+        initPersonReferenceCombobox("Responsible Person"),
+        createPlaceHolderSpan("Responsible Person"));
+    projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
+        initPersonReferenceCombobox("Project Manager"),
+        createPlaceHolderSpan("Project Manager"));
   }
 
   private Span createPlaceHolderSpan(String projectDetail) {
@@ -126,8 +131,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         .set("--vaadin-combo-box-width", "16em");
     principalInvestigatorToggleComponent.getInputComponent().getStyle()
         .set("--vaadin-combo-box-overlay-width", "16em");
-    principalInvestigatorToggleComponent.getInputComponent().getStyle()
+    responsiblePersonToggleComponent.getInputComponent().getStyle()
         .set("--vaadin-combo-box-width", "16em");
+    //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
+    responsiblePersonToggleComponent.getInputComponent().setClearButtonVisible(true);
     titleToggleComponent.getInputComponent().setRequired(true);
     projectObjectiveToggleComponent.getInputComponent().setRequired(true);
     experimentalDesignToggleComponent.getInputComponent().setRequired(true);
@@ -169,6 +176,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       restrictInputLength();
       setUpPersonSearch(projectManagerToggleComponent.getInputComponent());
       setUpPersonSearch(principalInvestigatorToggleComponent.getInputComponent());
+      setUpPersonSearch(responsiblePersonToggleComponent.getInputComponent());
     }
 
     public void projectId(String projectId) {
@@ -225,6 +233,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
+      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
@@ -255,6 +264,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnValueChange(principalInvestigatorToggleComponent,
           value ->
               projectInformationService.investigateProject(selectedProject.value(), value));
+      ProjectDetailsComponent.Handler.submitOnValueChange(responsiblePersonToggleComponent,
+          value ->
+              projectInformationService.setResponsibility(selectedProject.value(), value));
     }
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
