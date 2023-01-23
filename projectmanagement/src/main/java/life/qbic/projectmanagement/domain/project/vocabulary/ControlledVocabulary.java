@@ -17,7 +17,7 @@ public class ControlledVocabulary {
     this.vocabularyTermsByName = vocabularyTermsByName;
   }
 
-  final private String identifier;
+  private final String identifier;
 
   private Map<String,String> vocabularyTermsByName;
 

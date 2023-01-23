@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository {
 
-  final private OpenBisClient openBisClient;
+  private final OpenBisClient openBisClient;
 
   public OpenbisConnector(OpenBisClient openBisClient) {
     Objects.requireNonNull(openBisClient);
