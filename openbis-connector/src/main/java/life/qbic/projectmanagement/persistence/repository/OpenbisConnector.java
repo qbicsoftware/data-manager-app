@@ -58,29 +58,29 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
 
   @Override
   public List<Species> retrieveOrganisms() {
-    List<Species> res = new ArrayList<>();
+    List<Species> organisms = new ArrayList<>();
     for(String name : getVocabularyForCode("Q_NCBI_TAXONOMY").getVocabularyTermNames()) {
-      res.add(new Species(name));
+      organisms.add(new Species(name));
     }
-    return res;
+    return organisms;
   }
 
   @Override
   public List<Specimen> retrieveSpecimens() {
-    List<Specimen> res = new ArrayList<>();
+    List<Specimen> specimen = new ArrayList<>();
     for(String name : getVocabularyForCode("Q_PRIMARY_TISSUES").getVocabularyTermNames()) {
-      res.add(new Specimen(name));
+      specimen.add(new Specimen(name));
     }
-    return res;
+    return specimen;
   }
 
   @Override
   public List<Analyte> retrieveAnalytes() {
-    List<Analyte> res = new ArrayList<>();
-    for(String name : getVocabularyForCode("Q_SAMPLE_TYPE").getVocabularyTermNames()) {
-      res.add(new Analyte(name));
+    List<Analyte> analyte = new ArrayList<>();
+    for(String name : getVocabularyForCode("Q_SAMPLE_TYPES").getVocabularyTermNames()) {
+      analyte.add(new Analyte(name));
     }
-    return res;
+    return analyte;
   }
 
 }
