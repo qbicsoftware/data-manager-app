@@ -77,7 +77,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Analyte> retrieveAnalytes() {
     List<Analyte> res = new ArrayList<>();
-    for(String name : getVocabularyForCode("Q_SAMPLE_TYPE").getVocabularyTermNames()) {
+    for(String name : getVocabularyForCode("Q_SAMPLE_TYPES").getVocabularyTermNames()) {
       res.add(new Analyte(name));
     }
     return res;
