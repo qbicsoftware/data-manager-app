@@ -6,7 +6,7 @@ import java.util.Optional;
 /**
  * <b>Experimental Value</b>
  * <p>
- * Represents an value (aka level) that is part of an experimental variable and might have a unit.
+ * Represents a value (aka level) that is part of an experimental variable and might have a unit.
  *
  * @since 1.0.0
  */
