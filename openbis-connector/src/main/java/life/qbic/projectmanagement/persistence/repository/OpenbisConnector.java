@@ -60,8 +60,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Species> retrieveOrganisms() {
     List<Species> organisms = new ArrayList<>();
-    for(String label : getVocabularyForCode("Q_NCBI_TAXONOMY").getVocabularyTermLabels()) {
-      organisms.add(new Species(label));
+    for(String label : getVocabularyForCode(OpenbisVocabularyCodes.Q_NCBI_TAXONOMY.toString()).getVocabularyTermLabels()) {
+      organisms.add(Species.create(label));
     }
     return organisms;
   }
@@ -69,8 +69,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Specimen> retrieveSpecimens() {
     List<Specimen> specimen = new ArrayList<>();
-    for(String label : getVocabularyForCode("Q_PRIMARY_TISSUES").getVocabularyTermLabels()) {
-      specimen.add(new Specimen(label));
+    for(String label : getVocabularyForCode(OpenbisVocabularyCodes.Q_PRIMARY_TISSUES.toString()).getVocabularyTermLabels()) {
+      specimen.add(Specimen.create(label));
     }
     return specimen;
   }
@@ -78,8 +78,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Analyte> retrieveAnalytes() {
     List<Analyte> analyte = new ArrayList<>();
-    for(String label : getVocabularyForCode("Q_SAMPLE_TYPES").getVocabularyTermLabels()) {
-      analyte.add(new Analyte(label));
+    for(String label : getVocabularyForCode(OpenbisVocabularyCodes.Q_SAMPLE_TYPES.toString()).getVocabularyTermLabels()) {
+      analyte.add(Analyte.create(label));
     }
     return analyte;
   }
