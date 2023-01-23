@@ -43,6 +43,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
     Map<String,String> termsByName = new HashMap<>();
     for (VocabularyTerm term : searchResult.getObjects()) {
       String code = term.getCode();
+      // we assign code to label, in case there is no label to display
       String label = code;
       if (term.getLabel() != null && !term.getLabel().isEmpty()) {
         label = term.getLabel();
