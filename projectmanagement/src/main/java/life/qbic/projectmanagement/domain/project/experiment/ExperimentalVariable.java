@@ -13,9 +13,9 @@ import java.util.Objects;
  * Experimental variables can be created via the
  * {@link ExperimentalDesign#createExperimentalVariable(String, ExperimentalValue...)} function.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-class ExperimentalVariable<T extends ExperimentalValue> {
+public class ExperimentalVariable<T extends ExperimentalValue> {
 
   private final List<T> levels;
 

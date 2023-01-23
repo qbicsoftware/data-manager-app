@@ -3,11 +3,16 @@ package life.qbic.projectmanagement.domain.project.experiment.exception;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Sample Group Exists Exception</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>
+ * Within the experimental design setup, this exception indicates that a sample group already exists
+ * within the design.
+ * <p>
+ * This exception class shall only be used in the context of the
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} behaviour.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class SampleGroupExistsException extends RuntimeException {
 

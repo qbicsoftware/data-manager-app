@@ -3,11 +3,12 @@ package life.qbic.projectmanagement.domain.project.experiment.exception;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Unknown Variable Level Exception</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * Indicates, that a certain {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue} is not part of
+ * a {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable}.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UnknownVariableLevelException extends RuntimeException {
 

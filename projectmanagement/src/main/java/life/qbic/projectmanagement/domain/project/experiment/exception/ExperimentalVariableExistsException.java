@@ -3,11 +3,16 @@ package life.qbic.projectmanagement.domain.project.experiment.exception;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experimental Variable Exists Exception</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>
+ * Within the experimental design setup, this exception can be used to indicate that a certain
+ * experimental variable already exists within the experimental design.
+ * <p>
+ * This exception shall be only used in the context of
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentalVariableExistsException extends RuntimeException {
 

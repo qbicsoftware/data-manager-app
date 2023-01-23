@@ -4,11 +4,12 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Variable Level</b>
+ * <p>
+ * A container object that presents a certain level ({@link ExperimentalValue}) of an
+ * {@link ExperimentalVariable} and is used in a{@link Condition} of a {@link SampleGroup}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class VariableLevel<T extends ExperimentalValue> {
 

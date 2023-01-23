@@ -3,11 +3,15 @@ package life.qbic.projectmanagement.domain.project.experiment.exception;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Unknown Condition Exception</b>
+ * <p>
+ * During the experimental design setup, every sample group has one condition that is supposed to be
+ * unambiguous within the design.
+ * <p>
+ * This exception shall only be used in the context of
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UnknownConditionException extends RuntimeException {
 

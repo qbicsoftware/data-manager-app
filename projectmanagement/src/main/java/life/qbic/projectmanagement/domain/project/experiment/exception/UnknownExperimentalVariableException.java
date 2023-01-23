@@ -3,9 +3,14 @@ package life.qbic.projectmanagement.domain.project.experiment.exception;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <b>Unknown Experimental Variable Exception</b>
+ * <p>
+ * In the context of experimental design creation an experimental variable is unambiguous. If access
+ * to an existing variable is requested but it is not part of the design, then this exception can be
+ * used.
+ * <p>
+ * This class shall be only used in the context of
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
  *
  * @since <version tag>
  */
