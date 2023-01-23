@@ -40,7 +40,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
     SearchResult<VocabularyTerm> searchResult =
         openBisClient.getV3().searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
 
-    Map<String,String> termsByName = new HashMap<>();
+    Map<String,String> termsByLabel = new HashMap<>();
     for (VocabularyTerm term : searchResult.getObjects()) {
       String code = term.getCode();
       // we assign code to label, in case there is no label to display
@@ -48,9 +48,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
       if (term.getLabel() != null && !term.getLabel().isEmpty()) {
         label = term.getLabel();
       }
-      termsByName.put(label, code);
+      termsByLabel.put(label, code);
     }
-    return new ControlledVocabulary(vocabularyCode, termsByName);
+    return new ControlledVocabulary(vocabularyCode, termsByLabel);
   }
 
   public String getCodeForVocabularyTermLabel(String vocabularyCode, String termLabel) {
@@ -60,8 +60,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Species> retrieveOrganisms() {
     List<Species> organisms = new ArrayList<>();
-    for(String name : getVocabularyForCode("Q_NCBI_TAXONOMY").getVocabularyTermNames()) {
-      organisms.add(new Species(name));
+    for(String label : getVocabularyForCode("Q_NCBI_TAXONOMY").getVocabularyTermLabels()) {
+      organisms.add(new Species(label));
     }
     return organisms;
   }
@@ -69,8 +69,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Specimen> retrieveSpecimens() {
     List<Specimen> specimen = new ArrayList<>();
-    for(String name : getVocabularyForCode("Q_PRIMARY_TISSUES").getVocabularyTermNames()) {
-      specimen.add(new Specimen(name));
+    for(String label : getVocabularyForCode("Q_PRIMARY_TISSUES").getVocabularyTermLabels()) {
+      specimen.add(new Specimen(label));
     }
     return specimen;
   }
@@ -78,8 +78,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   @Override
   public List<Analyte> retrieveAnalytes() {
     List<Analyte> analyte = new ArrayList<>();
-    for(String name : getVocabularyForCode("Q_SAMPLE_TYPES").getVocabularyTermNames()) {
-      analyte.add(new Analyte(name));
+    for(String label : getVocabularyForCode("Q_SAMPLE_TYPES").getVocabularyTermLabels()) {
+      analyte.add(new Analyte(label));
     }
     return analyte;
   }

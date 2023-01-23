@@ -12,28 +12,28 @@ import java.util.Map;
 public class ControlledVocabulary {
 
   public ControlledVocabulary(String identifier,
-      Map<String,String> vocabularyTermsByName) {
+      Map<String,String> vocabularyTermsByLabel) {
     this.identifier = identifier;
-    this.vocabularyTermsByName = vocabularyTermsByName;
+    this.vocabularyTermsByLabel = vocabularyTermsByLabel;
   }
 
   private final String identifier;
 
-  private Map<String,String> vocabularyTermsByName;
+  private Map<String,String> vocabularyTermsByLabel;
 
   public String getIdentifier() {
     return identifier;
   }
 
-  public List<String> getVocabularyTermNames() {
-    return new ArrayList<>(vocabularyTermsByName.keySet());
+  public List<String> getVocabularyTermLabels() {
+    return new ArrayList<>(vocabularyTermsByLabel.keySet());
   }
 
-  public String getVocabularyTermCode(String name) {
-    return vocabularyTermsByName.get(name);
+  public String getVocabularyTermCode(String label) {
+    return vocabularyTermsByLabel.get(label);
   }
 
-  public void addVocabularyTerm(String name, String code) {
-    this.vocabularyTermsByName.put(name, code);
+  public void addVocabularyTerm(String label, String code) {
+    this.vocabularyTermsByLabel.put(label, code);
   }
 }
