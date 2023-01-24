@@ -15,6 +15,7 @@
     <module>broadcasting</module>
     <module>newshandler</module>
     <module>mariadb-connector</module>
+    <module>openbis-connector</module>
     <module>commons</module>
     <module>logging</module>
     <module>subscription-provider</module>

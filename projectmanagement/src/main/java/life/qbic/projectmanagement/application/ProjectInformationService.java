@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
@@ -29,11 +30,11 @@ public class ProjectInformationService {
 
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
-
   private final ProjectRepository projectRepository;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
-      @Autowired ProjectRepository projectRepository) {
+      @Autowired ProjectRepository projectRepository,
+      @Autowired ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
