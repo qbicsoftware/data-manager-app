@@ -25,11 +25,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository {
 
-  private final OpenBisClient openBisClient;
+  private final IOpenBisClient openbisClient;
 
-  public OpenbisConnector(OpenBisClient openBisClient) {
-    Objects.requireNonNull(openBisClient);
-    this.openBisClient = openBisClient;
+  public OpenbisConnector(IOpenBisClient openbisClient) {
+    this.openbisClient = openbisClient;
   }
 
   private ControlledVocabulary getVocabularyForCode(String vocabularyCode) {
@@ -38,7 +37,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
     SearchResult<VocabularyTerm> searchResult =
-        openBisClient.getV3().searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
+        openbisClient.searchVocabularyTerms(criteria, options);
 
     Map<String,String> termsByLabel = new HashMap<>();
     for (VocabularyTerm term : searchResult.getObjects()) {

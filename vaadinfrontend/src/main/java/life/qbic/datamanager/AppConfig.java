@@ -22,6 +22,9 @@ import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.persistence.repository.IOpenBisClient;
+import life.qbic.projectmanagement.persistence.repository.OpenbisClientAdapter;
+import life.qbic.projectmanagement.persistence.repository.OpenbisConnector;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -102,6 +105,15 @@ public class AppConfig {
     return Exchange.instance();
   }
 
+  @Bean
+  public IOpenBisClient openbisClient() {
+    //TODO
+    return new OpenbisClientAdapter();
+  }
+  @Bean
+  public OpenbisConnector openbisConnector() {
+    return new OpenbisConnector(openbisClient());
+  }
   @Bean
   public PasswordResetInput passwordResetInput(UserRegistrationService userRegistrationService) {
     return new PasswordResetRequest(userRegistrationService);
