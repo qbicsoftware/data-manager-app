@@ -9,6 +9,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
@@ -56,6 +57,9 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -76,7 +80,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
+  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
+      .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,
@@ -195,7 +200,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       loadOfferPreview();
       setProjectsToGrid();
       setupSearchBar();
-      setUpExperimentalDesignSearch();
+      setUpOrganismSearch(projectInformationDialog.organismBox);
+      setUpSpecimenSearch(projectInformationDialog.specimenBox);
+      setUpAnalyteSearch(projectInformationDialog.analyteBox);
       setUpProjectManagerSearch();
       setUpPrincipalInvestigatorSearch();
     }
@@ -315,13 +322,19 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       setUpPersonSearch(projectInformationDialog.principalInvestigator);
     }
 
-    private void setUpExperimentalDesignSearch() {
-      projectInformationDialog.organismBox.setItems(
-          experimentalDesignSearchService.retrieveOrganisms());
-      projectInformationDialog.specimenBox.setItems(
-          experimentalDesignSearchService.retrieveSpecimens());
-      projectInformationDialog.analyteBox.setItems(
-          experimentalDesignSearchService.retrieveAnalytes());
+    private void setUpOrganismSearch(MultiSelectComboBox<Organism> organismMultiSelectCombobox) {
+      organismMultiSelectCombobox.setItems(experimentalDesignSearchService.retrieveOrganisms());
+      organismMultiSelectCombobox.setItemLabelGenerator(Organism::value);
+    }
+
+    private void setUpSpecimenSearch(MultiSelectComboBox<Specimen> specimenMultiSelectComboBox) {
+      specimenMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecimens());
+      specimenMultiSelectComboBox.setItemLabelGenerator(Specimen::value);
+    }
+
+    private void setUpAnalyteSearch(MultiSelectComboBox<Analyte> analyteMultiSelectComboBox) {
+      analyteMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveAnalytes());
+      analyteMultiSelectComboBox.setItemLabelGenerator(Analyte::value);
     }
 
     private void preloadContentFromOffer(String offerId) {

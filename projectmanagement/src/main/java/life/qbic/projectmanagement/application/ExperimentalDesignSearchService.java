@@ -1,7 +1,10 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.List;
-import life.qbic.projectmanagement.application.api.ExperimentalDesignLookup;
+import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,23 +16,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class ExperimentalDesignSearchService {
 
-  private final ExperimentalDesignLookup experimentalDesignLookup;
+  private final ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository;
 
   public ExperimentalDesignSearchService(
-      @Autowired ExperimentalDesignLookup experimentalDesignLookup) {
-    this.experimentalDesignLookup = experimentalDesignLookup;
+      @Autowired ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository) {
+    this.experimentalDesignVocabularyRepository = experimentalDesignVocabularyRepository;
   }
 
-  public List<String> retrieveOrganisms() {
-    return experimentalDesignLookup.retrieveOrganisms();
+  public List<Organism> retrieveOrganisms() {
+    return experimentalDesignVocabularyRepository.retrieveOrganisms();
   }
 
-  public List<String> retrieveSpecimens() {
-    return experimentalDesignLookup.retrieveSpecimens();
+  public List<Specimen> retrieveSpecimens() {
+    return experimentalDesignVocabularyRepository.retrieveSpecimens();
   }
 
-  public List<String> retrieveAnalytes() {
-    return experimentalDesignLookup.retrieveAnalytes();
+  public List<Analyte> retrieveAnalytes() {
+    return experimentalDesignVocabularyRepository.retrieveAnalytes();
   }
 
 }

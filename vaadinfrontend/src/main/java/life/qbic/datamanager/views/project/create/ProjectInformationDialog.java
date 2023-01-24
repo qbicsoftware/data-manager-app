@@ -24,6 +24,9 @@ import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 
 /**
  * <b>Create Project Component</b>
@@ -48,9 +51,9 @@ public class ProjectInformationDialog extends Dialog {
   public final ComboBox<PersonReference> projectManager;
   public final ComboBox<PersonReference> principalInvestigator;
   public final HorizontalLayout sampleCountLayout;
-  public final MultiSelectComboBox<String> organismBox;
-  public final MultiSelectComboBox<String> specimenBox;
-  public final MultiSelectComboBox<String> analyteBox;
+  public final MultiSelectComboBox<Organism> organismBox;
+  public final MultiSelectComboBox<Specimen> specimenBox;
+  public final MultiSelectComboBox<Analyte> analyteBox;
 
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
