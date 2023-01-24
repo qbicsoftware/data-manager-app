@@ -3,19 +3,17 @@ package life.qbic.datamanager.views.project.view.components;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import java.io.Serial;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -90,30 +88,25 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private void initFormFields() {
     titleToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextField(),
-        createPlaceHolderSpan("Project Title"));
+        createPlaceHolderSpan());
     projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
-        createPlaceHolderSpan("Project Objective"));
+        createPlaceHolderSpan());
     experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
-        createPlaceHolderSpan("Experimental Design"));
+        createPlaceHolderSpan());
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Principal Investigator"),
-        createPlaceHolderSpan("Principal Investigator"));
+        createPlaceHolderSpan());
     responsiblePersonToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Responsible Person"),
-        createPlaceHolderSpan("Responsible Person"));
+        createPlaceHolderSpan());
     projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Project Manager"),
-        createPlaceHolderSpan("Project Manager"));
+        createPlaceHolderSpan());
   }
 
-  private Span createPlaceHolderSpan(String projectDetail) {
-    Span placeholderSpan = new Span();
-    Icon placeholderIcon = new Icon(VaadinIcon.PLUS_CIRCLE);
-    Text placeholderText = new Text("Add %s".formatted(projectDetail));
-    placeholderSpan.add(placeholderIcon, placeholderText);
-    placeholderSpan.getElement().getThemeList().add("badge");
-    placeholderIcon.getElement().getStyle().set("padding", "var(--lumo-space-xs");
-    placeholderIcon.getElement().getStyle().set("margin-right", "var(--lumo-space-xs");
+  private Span createPlaceHolderSpan() {
+    Span placeholderSpan = new Span("None");
+    placeholderSpan.addClassName(TextColor.SECONDARY);
     return placeholderSpan;
   }
 
