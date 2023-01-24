@@ -31,7 +31,6 @@ public class ProjectInformationService {
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
   private final ProjectRepository projectRepository;
-  private final ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
       @Autowired ProjectRepository projectRepository,
@@ -39,7 +38,6 @@ public class ProjectInformationService {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
-    this.experimentalDesignVocabularyRepository = experimentalDesignVocabularyRepository;
   }
 
   /**
@@ -64,9 +62,6 @@ public class ProjectInformationService {
 
   public Optional<Project> find(ProjectId projectId) {
     log.debug("Search for project with id: " + projectId.toString());
-    System.out.println(experimentalDesignVocabularyRepository.retrieveSpecimens());
-    System.out.println(experimentalDesignVocabularyRepository.retrieveOrganisms());
-    System.out.println(experimentalDesignVocabularyRepository.retrieveAnalytes());
     return projectRepository.find(projectId);
   }
 
