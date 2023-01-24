@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.vocabulary.ControlledVocabulary;
 import life.qbic.projectmanagement.domain.project.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,10 +25,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository {
 
-  private final IOpenBisClient openbisClient;
+  private final OpenBisClient openBisClient;
 
-  public OpenbisConnector(IOpenBisClient openbisClient) {
-    this.openbisClient = openbisClient;
+  public OpenbisConnector(@Value("${openbis.user.name}") String userName,
+      @Value("${openbis.user.password}") String password,
+      @Value("${openbis.datasource.url}") String url) {
+    openBisClient = new OpenBisClient(
+        userName, password, url);
+    openBisClient.login();
+  }
+
+  public SearchResult<VocabularyTerm> searchVocabularyTerms(VocabularyTermSearchCriteria criteria,
+      VocabularyTermFetchOptions options) {
+    return openBisClient.getV3()
+        .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
   }
 
   private ControlledVocabulary getVocabularyForCode(String vocabularyCode) {
@@ -35,7 +47,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
     SearchResult<VocabularyTerm> searchResult =
-        openbisClient.searchVocabularyTerms(criteria, options);
+        searchVocabularyTerms(criteria, options);
 
     Map<String, String> termsByLabel = new HashMap<>();
     for (VocabularyTerm term : searchResult.getObjects()) {
