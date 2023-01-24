@@ -7,5 +7,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTerm
 
 public interface IOpenBisClient {
 
-  SearchResult<VocabularyTerm> searchVocabularyTerms(VocabularyTermSearchCriteria criteria, VocabularyTermFetchOptions options);
+  SearchResult<VocabularyTerm> searchVocabularyTerms(VocabularyTermSearchCriteria criteria,
+      VocabularyTermFetchOptions options);
 }
