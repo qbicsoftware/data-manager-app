@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>datamanager</artifactId>
+    <groupId>life.qbic</groupId>
+    <version>0.10.0</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>openbis-connector</artifactId>
+  <dependencyManagement>
+    <dependencies>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>authentication</artifactId>
+      <version>0.10.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-client-lib</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>projectmanagement</artifactId>
+      <version>0.10.0</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+  </properties>
+
+</project>
