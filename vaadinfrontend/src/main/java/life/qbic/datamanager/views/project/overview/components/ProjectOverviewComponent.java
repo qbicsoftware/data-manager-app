@@ -9,7 +9,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
@@ -200,9 +199,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       loadOfferPreview();
       setProjectsToGrid();
       setupSearchBar();
-      setUpOrganismSearch(projectInformationDialog.organismBox);
-      setUpSpecimenSearch(projectInformationDialog.specimenBox);
-      setUpAnalyteSearch(projectInformationDialog.analyteBox);
+      setupExperimentalDesignSearch();
       setUpProjectManagerSearch();
       setUpPrincipalInvestigatorSearch();
     }
@@ -322,19 +319,16 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       setUpPersonSearch(projectInformationDialog.principalInvestigator);
     }
 
-    private void setUpOrganismSearch(MultiSelectComboBox<Organism> organismMultiSelectCombobox) {
-      organismMultiSelectCombobox.setItems(experimentalDesignSearchService.retrieveOrganisms());
-      organismMultiSelectCombobox.setItemLabelGenerator(Organism::value);
-    }
-
-    private void setUpSpecimenSearch(MultiSelectComboBox<Specimen> specimenMultiSelectComboBox) {
-      specimenMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecimens());
-      specimenMultiSelectComboBox.setItemLabelGenerator(Specimen::value);
-    }
-
-    private void setUpAnalyteSearch(MultiSelectComboBox<Analyte> analyteMultiSelectComboBox) {
-      analyteMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveAnalytes());
-      analyteMultiSelectComboBox.setItemLabelGenerator(Analyte::value);
+    private void setupExperimentalDesignSearch() {
+      projectInformationDialog.organismBox.setItems(
+          experimentalDesignSearchService.retrieveOrganisms());
+      projectInformationDialog.organismBox.setItemLabelGenerator(Organism::value);
+      projectInformationDialog.specimenBox.setItems(
+          experimentalDesignSearchService.retrieveSpecimens());
+      projectInformationDialog.specimenBox.setItemLabelGenerator(Specimen::value);
+      projectInformationDialog.analyteBox.setItems(
+          experimentalDesignSearchService.retrieveAnalytes());
+      projectInformationDialog.analyteBox.setItemLabelGenerator(Analyte::value);
     }
 
     private void preloadContentFromOffer(String offerId) {
