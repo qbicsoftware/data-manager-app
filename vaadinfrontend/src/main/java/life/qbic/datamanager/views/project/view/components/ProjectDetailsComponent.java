@@ -257,6 +257,15 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     }
 
+    private void setupExperimentalDesignSearch() {
+      organismMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveOrganisms());
+      organismMultiSelectComboBox.setItemLabelGenerator(Organism::value);
+      specimenMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecimens());
+      specimenMultiSelectComboBox.setItemLabelGenerator(Specimen::value);
+      analyteMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveAnalytes());
+      analyteMultiSelectComboBox.setItemLabelGenerator(Analyte::value);
+    }
+
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(
           query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
