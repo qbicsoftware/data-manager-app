@@ -155,6 +155,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
+    organismMultiSelectComboBox.setMinWidth(60, Unit.VW);
+    specimenMultiSelectComboBox.setMinWidth(60, Unit.VW);
+    analyteMultiSelectComboBox.setMinWidth(60, Unit.VW);
     organismMultiSelectComboBox.setMaxWidth(60, Unit.VW);
     specimenMultiSelectComboBox.setMaxWidth(60, Unit.VW);
     analyteMultiSelectComboBox.setMaxWidth(60, Unit.VW);
