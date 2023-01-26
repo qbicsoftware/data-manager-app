@@ -158,6 +158,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     organismMultiSelectComboBox.setMaxWidth(60, Unit.VW);
     specimenMultiSelectComboBox.setMaxWidth(60, Unit.VW);
     analyteMultiSelectComboBox.setMaxWidth(60, Unit.VW);
+    formLayout.setClassName("create-project-form");
+    organismMultiSelectComboBox.addClassName("chip-badge");
+    specimenMultiSelectComboBox.addClassName("chip-badge");
+    analyteMultiSelectComboBox.addClassName("chip-badge");
   }
 
   public void projectId(String projectId) {
