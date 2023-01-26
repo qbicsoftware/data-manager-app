@@ -132,14 +132,29 @@ default configuration.
 service.host.name=${DM_SERVICE_HOST:localhost}
 service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
-
 # route for mail confirmation consumption
 email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
-
 # route for password reset
 password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
 password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
+```
+
+Since the application will retrieve experimental design values from a list of defined vocabularies
+a connection to the datasource containing this information is necessary:
+
+| environment variable         | description                              |
+|------------------------------|------------------------------------------|
+| `OPENBIS_DATASOURCE_URL`     | The vocabulary database host API address |
+| `OPENBIS_USER_NAME`          | The vocabulary database user name        |
+| `OPENBIS_USER_PASSWORD`      | The vocabulary database password         |
+
+The application properties file could look like the following:
+
+```properties
+openbis.user.name=${OPENBIS_USER_NAME:openbis-username}
+openbis.user.password=${OPENBIS_USER_PASSWORD:openbis-password}
+openbis.datasource.url=${OPENBIS_DATASOURCE_URL:openbis-url}
 ```
 
 #### Properties
@@ -162,26 +177,26 @@ spring.datasource.driver-class-name=${USER_DB_DRIVER:com.mysql.cj.jdbc.Driver}
 spring.datasource.username=${USER_DB_USER_NAME:myusername}
 spring.datasource.password=${USER_DB_USER_PW:astrongpassphrase!}
 spring.jpa.hibernate.ddl-auto=update
-
 # mail configuration
 spring.mail.username=${MAIL_USERNAME}
 spring.mail.password=${MAIL_PASSWORD}
 spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.default-encoding=UTF-8
 spring.mail.port=${MAIL_PORT:587}
-
 # global service route configuration for mail interaction requests
 service.host.name=${DM_SERVICE_HOST:localhost}
 service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
-
 # route for mail confirmation consumption
 email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
-
 # route for password reset
 password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
 password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
+# openbis-client credentials
+openbis.user.name=${OPENBIS_USER_NAME:openbis-username}
+openbis.user.password=${OPENBIS_USER_PASSWORD:openbis-password}
+openbis.datasource.url=${OPENBIS_DATASOURCE_URL:openbis-url}
 
 ```
 
