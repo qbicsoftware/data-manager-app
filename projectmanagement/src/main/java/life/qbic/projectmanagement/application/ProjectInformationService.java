@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
@@ -89,6 +89,15 @@ public class ProjectInformationService {
     Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.setPrincipalInvestigator(personReference);
+      projectRepository.update(p);
+    });
+  }
+
+  public void setResponsibility(String projectId, PersonReference personReference) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.setResponsiblePerson(personReference);
       projectRepository.update(p);
     });
   }

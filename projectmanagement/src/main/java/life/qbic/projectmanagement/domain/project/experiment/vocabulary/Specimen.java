@@ -1,7 +1,8 @@
-package life.qbic.projectmanagement.domain.project.vocabulary;
+package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
+
+import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 public record Specimen(String label) {
   public Specimen {
