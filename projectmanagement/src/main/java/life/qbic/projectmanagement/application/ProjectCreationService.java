@@ -16,6 +16,7 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 
 /**
@@ -26,9 +27,11 @@ public class ProjectCreationService {
   private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
+  private final ProjectDataRepository projectDataRepository;
 
-  public ProjectCreationService(ProjectRepository projectRepository) {
+  public ProjectCreationService(ProjectRepository projectRepository, ProjectDataRepository projectDataRepository) {
     this.projectRepository = projectRepository;
+    this.projectDataRepository = projectDataRepository;
   }
 
   /**
@@ -50,6 +53,7 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
+      projectDataRepository.add(project);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -61,7 +65,7 @@ public class ProjectCreationService {
 
   private ProjectCode createRandomCode() {
     ProjectCode code = ProjectCode.random();
-    while (!projectRepository.find(code).isEmpty()) {
+    while (!projectRepository.find(code).isEmpty() || !projectDataRepository.find(code).isEmpty()) {
       log.warn(String.format("Random generated code exists: %s", code.value()));
       code = ProjectCode.random();
     }

@@ -1,15 +1,31 @@
 package life.qbic.projectmanagement.persistence.repository;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationExecutionOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.vocabulary.ControlledVocabulary;
 import life.qbic.projectmanagement.domain.project.vocabulary.Species;
@@ -23,7 +39,10 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements ExperimentalDesignVocabularyRepository {
+public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
+    ProjectDataRepository {
+
+  private static final Logger log = logger(OpenbisConnector.class);
 
   private final OpenBisClient openBisClient;
 
@@ -94,6 +113,51 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
       analyte.add(Analyte.create(label));
     }
     return analyte;
+  }
+
+  private void createOpenbisProject(ProjectSpace space, ProjectCode projectCode, String description) {
+    ProjectCreation project = new ProjectCreation()
+    project.setCode(projectCode.toString())
+    project.setSpaceId(new SpacePermId(space.toString()))
+    project.setDescription(description)
+
+    IOperation operation = new CreateProjectsOperation(project)
+    handleOperations(operation)
+  }
+  private void handleOperations(IOperation operation) {
+    IApplicationServerApi api = openBisClient.getV3();
+
+    SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions()
+    List<IOperation> operationOptions = Arrays.asList(operation);
+    try {
+      api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions)
+    } catch (Exception e) {
+      log.error("Unexpected exception during openBIS operation.", e);
+      throw e
+    }
+  }
+
+  /**
+   * Saves a {@link Project} entity permanently.
+   *
+   * @param project the project to store
+   * @since 1.0.0
+   */
+  @Override
+  public void add(Project project) {
+
+  }
+
+  /**
+   * Searches for projects that contain the provided project code
+   *
+   * @param projectCode the project code to search for in projects
+   * @return projects that contain the project code
+   * @since 1.0.0
+   */
+  @Override
+  public List<Project> find(ProjectCode projectCode) {
+    return null;
   }
 
 }
