@@ -48,12 +48,13 @@ public class ProjectInformationDialog extends Dialog {
   private final VerticalLayout experimentalDesignIntroduction;
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
-  public final ComboBox<PersonReference> projectManager;
   public final ComboBox<PersonReference> principalInvestigator;
   public final HorizontalLayout sampleCountLayout;
   public final MultiSelectComboBox<Organism> organismBox;
   public final MultiSelectComboBox<Specimen> specimenBox;
   public final MultiSelectComboBox<Analyte> analyteBox;
+  public final ComboBox<PersonReference> responsiblePerson;
+  public final ComboBox<PersonReference> projectManager;
 
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
@@ -62,8 +63,8 @@ public class ProjectInformationDialog extends Dialog {
     titleField.setRequired(true);
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
-    //ToDo Remove Field and move logic to MultiSelectComboBoxes
-    experimentalDesignField = new TextArea();
+    //ToDo Remove Field once experimental design backend is connected
+    experimentalDesignField = new TextArea("Experimental Design");
     experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
@@ -71,10 +72,19 @@ public class ProjectInformationDialog extends Dialog {
     organismBox = new MultiSelectComboBox<>("Organism");
     specimenBox = new MultiSelectComboBox<>("Specimen");
     analyteBox = new MultiSelectComboBox<>("Analyte");
-    projectManager = new ComboBox<>("Project Manager");
-    projectManager.setPlaceholder("Select a project manager");
+
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
+
+    responsiblePerson = new ComboBox<>("Project Responsible (optional)");
+    responsiblePerson.setPlaceholder("Select Project Responsible");
+    responsiblePerson.setHelperText("Should be contacted about project related questions");
+    //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
+    responsiblePerson.setClearButtonVisible(true);
+
+    projectManager = new ComboBox<>("Project Manager (optional)");
+    projectManager.setPlaceholder("Select a project manager");
+
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
     configureDialogLayout();
@@ -93,8 +103,9 @@ public class ProjectInformationDialog extends Dialog {
     organismBox.setMaxWidth(60, Unit.VW);
     specimenBox.setMaxWidth(60, Unit.VW);
     analyteBox.setMaxWidth(60, Unit.VW);
-    projectManager.setMaxWidth(60, Unit.VW);
     principalInvestigator.setMaxWidth(60, Unit.VW);
+    responsiblePerson.setMaxWidth(60, Unit.VW);
+    projectManager.setMaxWidth(60, Unit.VW);
   }
 
   private void configureDialogLayout() {
@@ -109,14 +120,17 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(searchField);
     formLayout.add(titleField);
     formLayout.add(projectObjective);
+    formLayout.add(experimentalDesignField);
     formLayout.add(experimentalDesignIntroduction);
     formLayout.add(sampleCountLayout);
     formLayout.add(organismBox);
     formLayout.add(specimenBox);
     formLayout.add(analyteBox);
-    formLayout.add(projectManager);
     formLayout.add(principalInvestigator);
+    formLayout.add(responsiblePerson);
+    formLayout.add(projectManager);
     // Set FormLayout with one column
+    // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
 
