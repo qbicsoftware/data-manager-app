@@ -4,7 +4,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
@@ -22,6 +24,7 @@ import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -30,6 +33,9 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -52,16 +58,21 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> projectManagerToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> principalInvestigatorToggleComponent;
+  private MultiSelectComboBox<Organism> organismMultiSelectComboBox;
+  private MultiSelectComboBox<Specimen> specimenMultiSelectComboBox;
+  private MultiSelectComboBox<Analyte> analyteMultiSelectComboBox;
   private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired PersonSearchService personSearchService) {
+      @Autowired PersonSearchService personSearchService,
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(personSearchService);
     formLayout = new FormLayout();
     initFormLayout();
     setComponentStyles();
-    this.handler = new Handler(projectInformationService, personSearchService);
+    this.handler = new Handler(projectInformationService, personSearchService,
+        experimentalDesignSearchService);
   }
 
   private ComboBox<PersonReference> initPersonReferenceCombobox(String personReferenceType) {
@@ -78,6 +89,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.addFormItem(titleToggleComponent, "Project Title");
     formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
     formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
+    formLayout.addFormItem(organismMultiSelectComboBox, "Organism");
+    formLayout.addFormItem(specimenMultiSelectComboBox, "Specimen");
+    formLayout.addFormItem(analyteMultiSelectComboBox, "Analyte");
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     formLayout.addFormItem(principalInvestigatorToggleComponent, "Principal Investigator");
     // set form layout to only have one column (for any width)
@@ -99,6 +113,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Principal Investigator"),
         createPlaceHolderSpan("Principal Investigator"));
+    organismMultiSelectComboBox = new MultiSelectComboBox<>();
+    specimenMultiSelectComboBox = new MultiSelectComboBox<>();
+    analyteMultiSelectComboBox = new MultiSelectComboBox<>();
   }
 
   private Span createPlaceHolderSpan(String projectDetail) {
@@ -138,6 +155,16 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
+    organismMultiSelectComboBox.setMinWidth(60, Unit.VW);
+    specimenMultiSelectComboBox.setMinWidth(60, Unit.VW);
+    analyteMultiSelectComboBox.setMinWidth(60, Unit.VW);
+    organismMultiSelectComboBox.setMaxWidth(60, Unit.VW);
+    specimenMultiSelectComboBox.setMaxWidth(60, Unit.VW);
+    analyteMultiSelectComboBox.setMaxWidth(60, Unit.VW);
+    formLayout.setClassName("create-project-form");
+    organismMultiSelectComboBox.addClassName("chip-badge");
+    specimenMultiSelectComboBox.addClassName("chip-badge");
+    analyteMultiSelectComboBox.addClassName("chip-badge");
   }
 
   public void projectId(String projectId) {
@@ -157,18 +184,22 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
+    private final ExperimentalDesignSearchService experimentalDesignSearchService;
     private ProjectId selectedProject;
 
     public Handler(ProjectInformationService projectInformationService,
-        PersonSearchService personSearchService) {
+        PersonSearchService personSearchService,
+        ExperimentalDesignSearchService experimentalDesignSearchService) {
 
       this.projectInformationService = projectInformationService;
       this.personSearchService = personSearchService;
+      this.experimentalDesignSearchService = experimentalDesignSearchService;
 
       attachSubmissionActionOnValueChange();
       restrictInputLength();
       setUpPersonSearch(projectManagerToggleComponent.getInputComponent());
       setUpPersonSearch(principalInvestigatorToggleComponent.getInputComponent());
+      setupExperimentalDesignSearch();
     }
 
     public void projectId(String projectId) {
@@ -225,6 +256,21 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
+      /*ToDo Insert values stored in project
+      organismMultiSelectComboBox.setValue();
+      specimenMultiSelectComboBox.setValue();
+      analyteMultiSelectComboBox.setValue();
+       */
+
+    }
+
+    private void setupExperimentalDesignSearch() {
+      organismMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveOrganisms());
+      organismMultiSelectComboBox.setItemLabelGenerator(Organism::value);
+      specimenMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecimens());
+      specimenMultiSelectComboBox.setItemLabelGenerator(Specimen::value);
+      analyteMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveAnalytes());
+      analyteMultiSelectComboBox.setItemLabelGenerator(Analyte::value);
     }
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
@@ -255,6 +301,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnValueChange(principalInvestigatorToggleComponent,
           value ->
               projectInformationService.investigateProject(selectedProject.value(), value));
+      //ToDo Store selection changes for organism, specimen and analyte here
     }
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,

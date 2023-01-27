@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.domain.project.repository;
 
 import java.util.List;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 
 /**
  * Queries available vocabulary terms for organisms, specimens (tissues, cells, etc.) and the analytes of a project
@@ -12,10 +12,10 @@ import life.qbic.projectmanagement.domain.project.vocabulary.Species;
  */
 public interface ExperimentalDesignVocabularyRepository {
 
-  public List<Species> retrieveOrganisms();
+  List<Organism> retrieveOrganisms();
 
-  public List<Specimen> retrieveSpecimens();
+  List<Specimen> retrieveSpecimens();
 
-  public List<Analyte> retrieveAnalytes();
+  List<Analyte> retrieveAnalytes();
 
 }
