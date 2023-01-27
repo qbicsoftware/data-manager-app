@@ -1,0 +1,22 @@
+package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
+
+import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
+
+import java.util.Objects;
+
+public record Organism(String label) {
+    public Organism {
+        Objects.requireNonNull(label);
+        if (label.isEmpty()) {
+            throw new ProjectManagementDomainException("Vocabulary label for Organism is empty.");
+        }
+    }
+
+    public static Organism create(String label) {
+        return new Organism(label);
+    }
+
+    public String value() {
+        return this.label();
+    }
+}
