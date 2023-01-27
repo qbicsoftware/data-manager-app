@@ -43,6 +43,7 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -55,6 +56,9 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -75,21 +79,24 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope().getUrl(ProjectViewPage.class, "");
+  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
+      .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired ApplicationExceptionHandler exceptionHandler,
-      @Autowired PersonSearchService personSearchService) {
+      @Autowired PersonSearchService personSearchService,
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+      @Autowired ApplicationExceptionHandler exceptionHandler) {
     this.clientDetailsProvider = clientDetailsProvider;
     new Handler(offerLookupService,
         projectRepository,
         projectInformationService,
         projectCreationService,
         personSearchService,
+        experimentalDesignSearchService,
         exceptionHandler);
     layoutComponents();
   }
@@ -151,6 +158,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private static final Logger log = logger(Handler.class);
     private final ApplicationExceptionHandler exceptionHandler;
     private final OfferLookupService offerLookupService;
+    private final ExperimentalDesignSearchService experimentalDesignSearchService;
     private final ProjectCreationService projectCreationService;
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
@@ -163,6 +171,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         ProjectInformationService projectInformationService,
         ProjectCreationService projectCreationService,
         PersonSearchService personSearchService,
+        ExperimentalDesignSearchService experimentalDesignSearchService,
         ApplicationExceptionHandler exceptionHandler) {
 
       Objects.requireNonNull(offerLookupService);
@@ -176,18 +185,24 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       Objects.requireNonNull(projectCreationService);
       this.projectCreationService = projectCreationService;
 
+      Objects.requireNonNull(personSearchService);
+      this.personSearchService = personSearchService;
+
+      Objects.requireNonNull(experimentalDesignSearchService);
+      this.experimentalDesignSearchService = experimentalDesignSearchService;
+
       Objects.requireNonNull(exceptionHandler);
       this.exceptionHandler = exceptionHandler;
 
-      Objects.requireNonNull(personSearchService);
-      this.personSearchService = personSearchService;
       configurePageButtons();
       configureProjectCreationDialog();
       loadOfferPreview();
       setProjectsToGrid();
       setupSearchBar();
-      setUpProjectManagerSearch();
+      setupExperimentalDesignSearch();
       setUpPrincipalInvestigatorSearch();
+      setUpResponsiblePersonSearch();
+      setUpProjectManagerSearch();
     }
 
     private void setupSearchBar() {
@@ -241,9 +256,13 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
               ? projectInformationDialog.searchField.getValue().offerId()
               .id() : null;
 
+      PersonReference responsiblePerson =
+          projectInformationDialog.responsiblePerson.getValue() != null
+              ? projectInformationDialog.responsiblePerson.getValue() : null;
+
       Result<Project, ApplicationException> project = projectCreationService.createProject(
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
-          projectManager, principalInvestigator);
+          projectManager, principalInvestigator, responsiblePerson);
 
       project.ifSuccessOrElse(
           result -> {
@@ -303,6 +322,22 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void setUpPrincipalInvestigatorSearch() {
       setUpPersonSearch(projectInformationDialog.principalInvestigator);
+    }
+
+    private void setupExperimentalDesignSearch() {
+      projectInformationDialog.organismBox.setItems(
+          experimentalDesignSearchService.retrieveOrganisms());
+      projectInformationDialog.organismBox.setItemLabelGenerator(Organism::value);
+      projectInformationDialog.specimenBox.setItems(
+          experimentalDesignSearchService.retrieveSpecimens());
+      projectInformationDialog.specimenBox.setItemLabelGenerator(Specimen::value);
+      projectInformationDialog.analyteBox.setItems(
+          experimentalDesignSearchService.retrieveAnalytes());
+      projectInformationDialog.analyteBox.setItemLabelGenerator(Analyte::value);
+    }
+
+    private void setUpResponsiblePersonSearch() {
+      setUpPersonSearch(projectInformationDialog.responsiblePerson);
     }
 
     private void preloadContentFromOffer(String offerId) {

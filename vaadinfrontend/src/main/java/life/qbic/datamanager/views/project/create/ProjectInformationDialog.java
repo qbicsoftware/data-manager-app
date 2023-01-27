@@ -6,9 +6,13 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -20,6 +24,9 @@ import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 
 /**
  * <b>Create Project Component</b>
@@ -33,60 +40,76 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
 public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
-
   public ComboBox<OfferPreview> searchField;
-
   private final TextField titleField;
   public final Button createButton;
   public final Button cancelButton;
   private final FormLayout formLayout;
-
+  private final VerticalLayout experimentalDesignIntroduction;
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
-
-  public final ComboBox<PersonReference> projectManager;
-
   public final ComboBox<PersonReference> principalInvestigator;
+  public final HorizontalLayout sampleCountLayout;
+  public final MultiSelectComboBox<Organism> organismBox;
+  public final MultiSelectComboBox<Specimen> specimenBox;
+  public final MultiSelectComboBox<Analyte> analyteBox;
+  public final ComboBox<PersonReference> responsiblePerson;
+  public final ComboBox<PersonReference> projectManager;
 
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
-
     formLayout = new FormLayout();
-
     titleField = new TextField("Title");
     titleField.setRequired(true);
-    experimentalDesignField = new TextArea("Experimental Design");
-    experimentalDesignField.setRequired(true);
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
+    //ToDo Remove Field once experimental design backend is connected
+    experimentalDesignField = new TextArea("Experimental Design");
+    experimentalDesignIntroduction = new VerticalLayout();
+    initExperimentalDesignIntroduction();
+    //Layout with max width to keep the SampleCountField in a seperate row
+    sampleCountLayout = new HorizontalLayout();
+    organismBox = new MultiSelectComboBox<>("Organism");
+    specimenBox = new MultiSelectComboBox<>("Specimen");
+    analyteBox = new MultiSelectComboBox<>("Analyte");
 
-    projectManager = new ComboBox<>("Project Manager");
-    projectManager.setPlaceholder("Select a project manager");
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
 
+    responsiblePerson = new ComboBox<>("Project Responsible (optional)");
+    responsiblePerson.setPlaceholder("Select Project Responsible");
+    responsiblePerson.setHelperText("Should be contacted about project related questions");
+    //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
+    responsiblePerson.setClearButtonVisible(true);
+
+    projectManager = new ComboBox<>("Project Manager (optional)");
+    projectManager.setPlaceholder("Select a project manager");
+
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
-
     configureDialogLayout();
     initForm();
     styleForm();
-
     handler = new Handler();
     handler.handle();
   }
 
   private void styleForm() {
-    titleField.setSizeFull();
-    projectObjective.setWidthFull();
-    experimentalDesignField.setWidthFull();
     formLayout.setClassName("create-project-form");
+    styleSearchBox();
+    organismBox.addClassName("chip-badge");
+    specimenBox.addClassName("chip-badge");
+    analyteBox.addClassName("chip-badge");
+    organismBox.setMaxWidth(60, Unit.VW);
+    specimenBox.setMaxWidth(60, Unit.VW);
+    analyteBox.setMaxWidth(60, Unit.VW);
+    principalInvestigator.setMaxWidth(60, Unit.VW);
+    responsiblePerson.setMaxWidth(60, Unit.VW);
+    projectManager.setMaxWidth(60, Unit.VW);
   }
 
   private void configureDialogLayout() {
     createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    styleSearchBox();
-
     setHeaderTitle("Create Project");
     add(formLayout);
     getFooter().add(cancelButton, createButton);
@@ -98,8 +121,15 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
-    formLayout.add(projectManager);
+    formLayout.add(experimentalDesignIntroduction);
+    formLayout.add(sampleCountLayout);
+    formLayout.add(organismBox);
+    formLayout.add(specimenBox);
+    formLayout.add(analyteBox);
     formLayout.add(principalInvestigator);
+    formLayout.add(responsiblePerson);
+    formLayout.add(projectManager);
+    // Set FormLayout with one column
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
@@ -107,11 +137,20 @@ public class ProjectInformationDialog extends Dialog {
   private void styleSearchBox() {
     searchField.setPlaceholder("Search");
     searchField.setClassName("searchbox");
-    searchField.addClassNames("flex",
-        "flex-row",
-        "w-full",
-        "min-width-300px",
-        "max-width-15vw");
+    searchField.setMaxWidth(50, Unit.VW);
+    searchField.setMinWidth(50, Unit.VW);
+  }
+
+  private void initExperimentalDesignIntroduction() {
+    Span experimentalDesignHeader = new Span("Experimental Design");
+    Span experimentalDesignDescription = new Span(
+        "Please specify the sample information involved in the project! Multiple values are allowed");
+    experimentalDesignHeader.addClassName("font-bold");
+    experimentalDesignIntroduction.setMargin(false);
+    experimentalDesignIntroduction.setPadding(false);
+    experimentalDesignIntroduction.addClassName("pt-m");
+    experimentalDesignIntroduction.add(experimentalDesignHeader);
+    experimentalDesignIntroduction.add(experimentalDesignDescription);
   }
 
   public void setOffer(Offer offer) {
@@ -126,6 +165,7 @@ public class ProjectInformationDialog extends Dialog {
     return projectObjective.getValue();
   }
 
+  //ToDo Replace with values from Comboboxes
   public String getExperimentalDesign() {
     return experimentalDesignField.getValue();
   }
