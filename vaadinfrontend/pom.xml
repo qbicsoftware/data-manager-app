@@ -210,7 +210,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>openbis-connector</artifactId>
-      <version>0.10.0</version>
+      <version>0.11.0</version>
       <scope>compile</scope>
     </dependency>
 
