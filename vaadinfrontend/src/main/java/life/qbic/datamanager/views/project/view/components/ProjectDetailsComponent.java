@@ -155,12 +155,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
-    organismMultiSelectComboBox.setMinWidth(60, Unit.VW);
-    specimenMultiSelectComboBox.setMinWidth(60, Unit.VW);
-    analyteMultiSelectComboBox.setMinWidth(60, Unit.VW);
-    organismMultiSelectComboBox.setMaxWidth(60, Unit.VW);
-    specimenMultiSelectComboBox.setMaxWidth(60, Unit.VW);
-    analyteMultiSelectComboBox.setMaxWidth(60, Unit.VW);
+    organismMultiSelectComboBox.setWidth(50, Unit.VW);
+    specimenMultiSelectComboBox.setWidth(50, Unit.VW);
+    analyteMultiSelectComboBox.setWidth(50, Unit.VW);
     formLayout.setClassName("create-project-form");
     organismMultiSelectComboBox.addClassName("chip-badge");
     specimenMultiSelectComboBox.addClassName("chip-badge");
