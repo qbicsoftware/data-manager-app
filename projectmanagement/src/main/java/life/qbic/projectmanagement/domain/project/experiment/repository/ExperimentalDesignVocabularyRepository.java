@@ -13,10 +13,10 @@ import java.util.List;
  */
 public interface ExperimentalDesignVocabularyRepository {
 
-  public List<Organism> retrieveOrganisms();
+  List<Organism> retrieveOrganisms();
 
-  public List<Specimen> retrieveSpecimens();
+  List<Specimen> retrieveSpecimens();
 
-  public List<Analyte> retrieveAnalytes();
+  List<Analyte> retrieveAnalytes();
 
 }
