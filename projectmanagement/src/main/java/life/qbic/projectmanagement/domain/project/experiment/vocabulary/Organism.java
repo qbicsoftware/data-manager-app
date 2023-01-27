@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.project.vocabulary;
+package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;

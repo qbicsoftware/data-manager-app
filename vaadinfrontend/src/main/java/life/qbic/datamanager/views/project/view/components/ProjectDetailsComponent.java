@@ -17,6 +17,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import java.io.Serial;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
@@ -31,9 +32,9 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -265,11 +266,17 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      organismMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveOrganisms());
+      organismMultiSelectComboBox.setItems(
+          experimentalDesignSearchService.retrieveOrganisms().stream()
+              .sorted(Comparator.comparing(Organism::label)).toList());
       organismMultiSelectComboBox.setItemLabelGenerator(Organism::value);
-      specimenMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecimens());
+      specimenMultiSelectComboBox.setItems(
+          experimentalDesignSearchService.retrieveSpecimens().stream()
+              .sorted(Comparator.comparing(Specimen::label)).toList());
       specimenMultiSelectComboBox.setItemLabelGenerator(Specimen::value);
-      analyteMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveAnalytes());
+      analyteMultiSelectComboBox.setItems(
+          experimentalDesignSearchService.retrieveAnalytes().stream()
+              .sorted(Comparator.comparing(Analyte::label)).toList());
       analyteMultiSelectComboBox.setItemLabelGenerator(Analyte::value);
     }
 

@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.List;
-import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
-import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

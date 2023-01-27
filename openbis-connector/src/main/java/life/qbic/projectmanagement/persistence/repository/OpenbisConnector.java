@@ -1,19 +1,14 @@
 package life.qbic.projectmanagement.persistence.repository;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
-import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.ControlledVocabulary;
-import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +22,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
 
   private final OpenBisClient openBisClient;
 
-  public OpenbisConnector(@Value("${openbis.user.name}") String userName,
+  private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
       @Value("${openbis.datasource.url}") String url) {
     openBisClient = new OpenBisClient(
@@ -35,65 +30,43 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
     openBisClient.login();
   }
 
-  public SearchResult<VocabularyTerm> searchVocabularyTerms(VocabularyTermSearchCriteria criteria,
-      VocabularyTermFetchOptions options) {
-    return openBisClient.getV3()
-        .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
-  }
-
-  private ControlledVocabulary getVocabularyForCode(String vocabularyCode) {
+  private List<VocabularyTerm> getVocabularyTermsForCode(VocabularyCode vocabularyCode) {
     VocabularyTermSearchCriteria criteria = new VocabularyTermSearchCriteria();
-    criteria.withVocabulary().withCode().thatEquals(vocabularyCode);
+    criteria.withVocabulary().withCode().thatEquals(vocabularyCode.openbisCode());
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
-    SearchResult<VocabularyTerm> searchResult =
-        searchVocabularyTerms(criteria, options);
+    SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm> searchResult =
+        openBisClient.getV3()
+            .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
 
-    Map<String, String> termsByLabel = new HashMap<>();
-    for (VocabularyTerm term : searchResult.getObjects()) {
-      String code = term.getCode();
-      // we assign code to label, in case there is no label to display
-      String label = code;
-      if (term.getLabel() != null && !term.getLabel().isEmpty()) {
-        label = term.getLabel();
-      }
-      termsByLabel.put(label, code);
-    }
-    return new ControlledVocabulary(vocabularyCode, termsByLabel);
-  }
-
-  public String getCodeForVocabularyTermLabel(String vocabularyCode, String termLabel) {
-    return getVocabularyForCode(vocabularyCode).getVocabularyTermCode(termLabel);
+    return searchResult.getObjects().stream()
+        .map(it -> new VocabularyTerm(it.getCode(), it.getLabel(), it.getDescription()))
+        .toList();
   }
 
   @Override
   public List<Organism> retrieveOrganisms() {
-    List<Organism> organisms = new ArrayList<>();
-    for (String label : getVocabularyForCode(
-        OpenbisVocabularyCodes.Q_NCBI_TAXONOMY.toString()).getVocabularyTermLabels()) {
-      organisms.add(Organism.create(label));
-    }
-    return organisms;
+    return getVocabularyTermsForCode(VocabularyCode.ORGANISM).stream()
+        .map(it -> it.label().isBlank() ? it.code() : it.label())
+        .map(Organism::new).toList();
   }
 
   @Override
   public List<Specimen> retrieveSpecimens() {
-    List<Specimen> specimen = new ArrayList<>();
-    for (String label : getVocabularyForCode(
-        OpenbisVocabularyCodes.Q_PRIMARY_TISSUES.toString()).getVocabularyTermLabels()) {
-      specimen.add(Specimen.create(label));
-    }
-    return specimen;
+    return getVocabularyTermsForCode(VocabularyCode.SPECIMEN).stream()
+        .map(it -> it.label().isBlank() ? it.code() : it.label())
+        .map(Specimen::new).toList();
   }
 
   @Override
   public List<Analyte> retrieveAnalytes() {
-    List<Analyte> analyte = new ArrayList<>();
-    for (String label : getVocabularyForCode(
-        OpenbisVocabularyCodes.Q_SAMPLE_TYPES.toString()).getVocabularyTermLabels()) {
-      analyte.add(Analyte.create(label));
-    }
-    return analyte;
+    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
+        .map(it -> it.label().isBlank() ? it.code() : it.label())
+        .map(Analyte::new).toList();
+  }
+
+  record VocabularyTerm(String code, String label, String description) {
+
   }
 
 }

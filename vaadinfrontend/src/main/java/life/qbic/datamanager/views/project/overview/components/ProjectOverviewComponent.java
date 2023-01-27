@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,10 +56,10 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -326,13 +327,16 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void setupExperimentalDesignSearch() {
       projectInformationDialog.organismBox.setItems(
-          experimentalDesignSearchService.retrieveOrganisms());
+          experimentalDesignSearchService.retrieveOrganisms().stream()
+              .sorted(Comparator.comparing(Organism::label)).toList());
       projectInformationDialog.organismBox.setItemLabelGenerator(Organism::value);
       projectInformationDialog.specimenBox.setItems(
-          experimentalDesignSearchService.retrieveSpecimens());
+          experimentalDesignSearchService.retrieveSpecimens().stream()
+              .sorted(Comparator.comparing(Specimen::label)).toList());
       projectInformationDialog.specimenBox.setItemLabelGenerator(Specimen::value);
       projectInformationDialog.analyteBox.setItems(
-          experimentalDesignSearchService.retrieveAnalytes());
+          experimentalDesignSearchService.retrieveAnalytes().stream()
+              .sorted(Comparator.comparing(Analyte::label)).toList());
       projectInformationDialog.analyteBox.setItemLabelGenerator(Analyte::value);
     }
 
