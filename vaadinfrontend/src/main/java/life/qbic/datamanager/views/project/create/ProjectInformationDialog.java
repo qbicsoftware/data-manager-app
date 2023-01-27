@@ -24,9 +24,9 @@ import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
-import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
  * <b>Create Project Component</b>
