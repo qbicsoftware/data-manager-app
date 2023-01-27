@@ -12,7 +12,7 @@ import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.vocabulary.ControlledVocabulary;
-import life.qbic.projectmanagement.domain.project.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.vocabulary.Organism;
 import life.qbic.projectmanagement.domain.project.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -67,11 +67,11 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository 
   }
 
   @Override
-  public List<Species> retrieveOrganisms() {
-    List<Species> organisms = new ArrayList<>();
+  public List<Organism> retrieveOrganisms() {
+    List<Organism> organisms = new ArrayList<>();
     for (String label : getVocabularyForCode(
         OpenbisVocabularyCodes.Q_NCBI_TAXONOMY.toString()).getVocabularyTermLabels()) {
-      organisms.add(Species.create(label));
+      organisms.add(Organism.create(label));
     }
     return organisms;
   }
