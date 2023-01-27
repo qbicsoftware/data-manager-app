@@ -7,8 +7,11 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationExecutionOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
@@ -16,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -40,6 +42,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private final OpenBisClient openBisClient;
 
+  private final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
+
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
       @Value("${openbis.datasource.url}") String url) {
@@ -60,6 +64,17 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     return searchResult.getObjects().stream()
         .map(it -> new VocabularyTerm(it.getCode(), it.getLabel(), it.getDescription()))
         .toList();
+  }
+
+  private List<Project> searchProjectsByCode(String code) {
+    ProjectSearchCriteria criteria = new ProjectSearchCriteria();
+    criteria.withCode().thatEquals(code);
+
+    ProjectFetchOptions options = new ProjectFetchOptions();
+    SearchResult<Project> searchResult =
+        openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
+
+    return searchResult.getObjects();
   }
 
   @Override
@@ -87,25 +102,26 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   }
 
-  private void createOpenbisProject(ProjectSpace space, ProjectCode projectCode, String description) {
-    ProjectCreation project = new ProjectCreation()
-    project.setCode(projectCode.toString())
-    project.setSpaceId(new SpacePermId(space.toString()))
-    project.setDescription(description)
+  private void createOpenbisProject(String spaceCodeString, ProjectCode projectCode, String description) {
+    ProjectCreation project = new ProjectCreation();
+    project.setCode(projectCode.toString());
+    project.setSpaceId(new SpacePermId(spaceCodeString));
+    project.setDescription(description);
 
-    IOperation operation = new CreateProjectsOperation(project)
-    handleOperations(operation)
+    IOperation operation = new CreateProjectsOperation(project);
+    handleOperations(operation);
   }
+
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
 
-    SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions()
+    SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
     List<IOperation> operationOptions = Arrays.asList(operation);
     try {
-      api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions)
+      api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions);
     } catch (Exception e) {
       log.error("Unexpected exception during openBIS operation.", e);
-      throw e
+      throw e;
     }
   }
 
@@ -116,8 +132,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * @since 1.0.0
    */
   @Override
-  public void add(Project project) {
-
+  public void add(life.qbic.projectmanagement.domain.project.Project project) {
+    createOpenbisProject(DEFAULT_SPACE_CODE, project.getProjectCode(), project.getProjectIntent().experimentalDesign().toString());
   }
 
   /**
@@ -128,8 +144,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * @since 1.0.0
    */
   @Override
-  public List<Project> find(ProjectCode projectCode) {
-    return null;
+  public boolean projectExists(ProjectCode projectCode) {
+    return !searchProjectsByCode(projectCode.toString()).isEmpty();
   }
 
 }
