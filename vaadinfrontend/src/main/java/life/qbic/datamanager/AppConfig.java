@@ -23,6 +23,7 @@ import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -78,8 +79,8 @@ public class AppConfig {
   }
 
   @Bean
-  public ProjectCreationService projectCreationService(ProjectRepository projectRepository) {
-    return new ProjectCreationService(projectRepository);
+  public ProjectCreationService projectCreationService(ProjectRepository projectRepository, @Autowired ProjectDataRepository projectDataRepository) {
+    return new ProjectCreationService(projectRepository, projectDataRepository);
   }
 
   @Bean
