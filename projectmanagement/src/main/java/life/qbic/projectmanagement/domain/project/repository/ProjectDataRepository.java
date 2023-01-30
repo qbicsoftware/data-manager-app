@@ -16,16 +16,16 @@ public interface ProjectDataRepository {
   /**
    * Saves a {@link Project} entity permanently.
    *
-   * @param project the project to store
+   * @param projectCode the code of the project to store
    * @since 1.0.0
    */
-  void add(Project project);
+  void add(ProjectCode projectCode);
 
   /**
    * Searches for projects that contain the provided project code
    *
    * @param projectCode the project code to search for in projects
-   * @return projects that contain the project code
+   * @return true, if a project with that code already exists in the system, false if not
    * @since 1.0.0
    */
   boolean projectExists(ProjectCode projectCode);

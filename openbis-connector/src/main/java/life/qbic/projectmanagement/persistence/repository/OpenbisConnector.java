@@ -102,11 +102,10 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   }
 
-  private void createOpenbisProject(String spaceCodeString, ProjectCode projectCode, String description) {
+  private void createOpenbisProject(String spaceCodeString, ProjectCode projectCode) {
     ProjectCreation project = new ProjectCreation();
     project.setCode(projectCode.toString());
     project.setSpaceId(new SpacePermId(spaceCodeString));
-    project.setDescription(description);
 
     IOperation operation = new CreateProjectsOperation(project);
     handleOperations(operation);
@@ -125,24 +124,11 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     }
   }
 
-  /**
-   * Saves a {@link Project} entity permanently.
-   *
-   * @param project the project to store
-   * @since 1.0.0
-   */
   @Override
-  public void add(life.qbic.projectmanagement.domain.project.Project project) {
-    createOpenbisProject(DEFAULT_SPACE_CODE, project.getProjectCode(), project.getProjectIntent().experimentalDesign().toString());
+  public void add(ProjectCode projectCode) {
+    createOpenbisProject(DEFAULT_SPACE_CODE, projectCode);
   }
 
-  /**
-   * Searches for projects that contain the provided project code
-   *
-   * @param projectCode the project code to search for in projects
-   * @return projects that contain the project code
-   * @since 1.0.0
-   */
   @Override
   public boolean projectExists(ProjectCode projectCode) {
     return !searchProjectsByCode(projectCode.toString()).isEmpty();

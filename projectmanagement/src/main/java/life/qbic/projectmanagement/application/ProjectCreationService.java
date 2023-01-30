@@ -16,8 +16,10 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Application service facilitating the creation of projects.
@@ -29,7 +31,7 @@ public class ProjectCreationService {
   private final ProjectRepository projectRepository;
   private final ProjectDataRepository projectDataRepository;
 
-  public ProjectCreationService(ProjectRepository projectRepository, ProjectDataRepository projectDataRepository) {
+  public ProjectCreationService(ProjectRepository projectRepository, @Autowired ProjectDataRepository projectDataRepository) {
     this.projectRepository = projectRepository;
     this.projectDataRepository = projectDataRepository;
   }
@@ -53,7 +55,7 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      projectDataRepository.add(project);
+      projectDataRepository.add(project.getProjectCode());
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
