@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 public interface ProjectDataRepository {
 
   /**
-   * Creates a reference to a {@link Project} permanently, in order to connect project data.
+   * Creates a reference to a {@link Project} in the data repository to connect project data.
    *
    * @param projectCode the {@link ProjectCode} of the project reference to store
    * @since 1.0.0
