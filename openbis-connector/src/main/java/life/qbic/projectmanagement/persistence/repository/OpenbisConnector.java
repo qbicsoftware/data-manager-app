@@ -104,7 +104,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void createOpenbisProject(String spaceCodeString, ProjectCode projectCode) {
     ProjectCreation project = new ProjectCreation();
-    project.setCode(projectCode.toString());
+    project.setCode(projectCode.value());
     project.setSpaceId(new SpacePermId(spaceCodeString));
 
     IOperation operation = new CreateProjectsOperation(project);
