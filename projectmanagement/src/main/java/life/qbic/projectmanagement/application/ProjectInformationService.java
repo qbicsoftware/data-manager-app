@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
@@ -33,8 +34,7 @@ public class ProjectInformationService {
   private final ProjectRepository projectRepository;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
-      @Autowired ProjectRepository projectRepository,
-      @Autowired ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository) {
+      @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
