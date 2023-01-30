@@ -42,7 +42,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private final OpenBisClient openBisClient;
 
-  private final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
+  private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
 
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
