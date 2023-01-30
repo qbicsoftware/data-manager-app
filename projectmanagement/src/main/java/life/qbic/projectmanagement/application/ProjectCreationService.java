@@ -16,7 +16,6 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
