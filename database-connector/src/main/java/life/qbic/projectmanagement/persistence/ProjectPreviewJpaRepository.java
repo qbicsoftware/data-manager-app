@@ -23,7 +23,7 @@ public class ProjectPreviewJpaRepository implements ProjectPreviewLookup {
 
   private final ProjectPreviewRepository projectPreviewRepository;
 
-  public ProjectPreviewJpaRepository(@Autowired ProjectPreviewRepository projectPreviewRepository) {
+  public ProjectPreviewJpaRepository(ProjectPreviewRepository projectPreviewRepository) {
     Objects.requireNonNull(projectPreviewRepository);
     this.projectPreviewRepository = projectPreviewRepository;
   }
