@@ -170,12 +170,6 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>mariadb-connector</artifactId>
-      <version>0.11.1</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
       <artifactId>newsreader</artifactId>
       <version>0.11.1</version>
       <scope>compile</scope>
@@ -209,7 +203,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>openbis-connector</artifactId>
+      <artifactId>database-connector</artifactId>
       <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>

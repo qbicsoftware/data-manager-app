@@ -6,7 +6,6 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.*;
-import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +22,9 @@ public class ProjectCreationService {
   private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
-  private final ProjectDataRepository projectDataRepository;
 
-  public ProjectCreationService(ProjectRepository projectRepository, ProjectDataRepository projectDataRepository) {
+  public ProjectCreationService(ProjectRepository projectRepository) {
     this.projectRepository = projectRepository;
-    this.projectDataRepository = projectDataRepository;
   }
 
   /**
@@ -49,7 +46,6 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      projectDataRepository.add(project.getProjectCode());
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -61,7 +57,7 @@ public class ProjectCreationService {
 
   private ProjectCode createRandomCode() {
     ProjectCode code = ProjectCode.random();
-    while (!projectRepository.find(code).isEmpty() || projectDataRepository.projectExists(code)) {
+    while (!projectRepository.find(code).isEmpty()) {
       log.warn(String.format("Random generated code exists: %s", code.value()));
       code = ProjectCode.random();
     }

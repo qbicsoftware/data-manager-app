@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.project.repository;
+package life.qbic.projectmanagement.persistence;
 
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -11,7 +11,7 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
  *
  * @since 1.0.0
  */
-public interface ProjectDataRepository {
+public interface QbicProjectDataRepo {
 
   /**
    * Creates a reference to a {@link Project} in the data repository to connect project data.

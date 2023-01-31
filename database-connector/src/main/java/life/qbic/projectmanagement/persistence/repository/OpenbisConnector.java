@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
-
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationExecutionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
@@ -24,8 +23,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.Experime
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-
-import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
+import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +34,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
-    ProjectDataRepository {
+    QbicProjectDataRepo {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
