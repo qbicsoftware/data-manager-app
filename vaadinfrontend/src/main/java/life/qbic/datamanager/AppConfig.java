@@ -20,10 +20,6 @@ import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
 import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
-import life.qbic.projectmanagement.application.ProjectCreationService;
-import life.qbic.projectmanagement.domain.project.repository.ProjectDataRepository;
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -76,11 +72,6 @@ public class AppConfig {
       NotificationService notificationService, UserRepository userRepository,
       EventStore eventStore) {
     return new UserRegistrationService(notificationService, userRepository, eventStore);
-  }
-
-  @Bean
-  public ProjectCreationService projectCreationService(ProjectRepository projectRepository, @Autowired ProjectDataRepository projectDataRepository) {
-    return new ProjectCreationService(projectRepository, projectDataRepository);
   }
 
   @Bean
