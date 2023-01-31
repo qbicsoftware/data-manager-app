@@ -20,8 +20,6 @@ import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
 import life.qbic.datamanager.exceptionhandlers.CustomErrorHandler;
 import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
-import life.qbic.projectmanagement.application.ProjectCreationService;
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -75,12 +73,6 @@ public class AppConfig {
       EventStore eventStore) {
     return new UserRegistrationService(notificationService, userRepository, eventStore);
   }
-
-  @Bean
-  public ProjectCreationService projectCreationService(ProjectRepository projectRepository) {
-    return new ProjectCreationService(projectRepository);
-  }
-
 
   @Bean
   public SimpleEventStore eventStore() {

@@ -29,15 +29,6 @@ public class Person {
   @Column(name = "referenceId")
   private String referenceId;
 
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  @Id
-  public Long getId() {
-    return id;
-  }
-
   public String fullName() {
     return this.firstName + " " + this.lastName;
   }
@@ -48,37 +39,5 @@ public class Person {
 
   public String emailAddress() {
     return this.email;
-  }
-
-  private String getFirstName() {
-    return firstName;
-  }
-
-  private void setFirstName(String firstName) {
-    this.firstName = firstName;
-  }
-
-  private String getLastName() {
-    return lastName;
-  }
-
-  private void setLastName(String lastName) {
-    this.lastName = lastName;
-  }
-
-  private String getEmail() {
-    return email;
-  }
-
-  private void setEmail(String email) {
-    this.email = email;
-  }
-
-  private String getReferenceId() {
-    return referenceId;
-  }
-
-  private void setReferenceId(String referenceId) {
-    this.referenceId = referenceId;
   }
 }
