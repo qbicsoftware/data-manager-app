@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>mariadb-connector</artifactId>
+  <artifactId>database-connector</artifactId>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -25,6 +25,11 @@
       <artifactId>authentication</artifactId>
       <version>0.11.1</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-client-lib</artifactId>
+      <version>1.5.0</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

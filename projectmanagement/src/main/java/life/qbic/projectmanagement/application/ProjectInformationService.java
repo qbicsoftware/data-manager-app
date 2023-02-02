@@ -29,7 +29,6 @@ public class ProjectInformationService {
 
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
-
   private final ProjectRepository projectRepository;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
@@ -88,6 +87,15 @@ public class ProjectInformationService {
     Optional<Project> project = projectRepository.find(projectIdentifier);
     project.ifPresent(p -> {
       p.setPrincipalInvestigator(personReference);
+      projectRepository.update(p);
+    });
+  }
+
+  public void setResponsibility(String projectId, PersonReference personReference) {
+    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
+    Optional<Project> project = projectRepository.find(projectIdentifier);
+    project.ifPresent(p -> {
+      p.setResponsiblePerson(personReference);
       projectRepository.update(p);
     });
   }

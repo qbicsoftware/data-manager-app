@@ -1,26 +1,22 @@
 package life.qbic.projectmanagement.application;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.PersonReference;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.ProjectIntent;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Application service facilitating the creation of projects.
  */
+@Service
 public class ProjectCreationService {
 
   private static final Logger log = logger(ProjectCreationService.class);
@@ -41,11 +37,11 @@ public class ProjectCreationService {
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
     try {
       Project project;
       project = createProject(title, objective, experimentalDesign,
-          projectManager, principalInvestigator);
+          projectManager, principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
@@ -72,7 +68,7 @@ public class ProjectCreationService {
   private Project createProject(String title,
       String objective,
       String experimentalDesign, PersonReference projectManager,
-      PersonReference principalInvestigator) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -84,7 +80,8 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator);
+    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator,
+        responsiblePerson);
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

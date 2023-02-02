@@ -17,7 +17,7 @@ public class PersonReferenceJpaRepository implements PersonLookupService {
 
   private final PersonRepo personRepo;
 
-  public PersonReferenceJpaRepository(@Autowired PersonRepo personRepo) {
+  public PersonReferenceJpaRepository(PersonRepo personRepo) {
     this.personRepo = personRepo;
   }
 

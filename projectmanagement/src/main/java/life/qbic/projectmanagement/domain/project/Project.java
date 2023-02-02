@@ -55,8 +55,13 @@ public class Project {
   @JoinColumn(name = "principalInvestigatorRef")
   private PersonReference principalInvestigator;
 
+  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
+  @JoinColumn(name = "responsiblePersonRef")
+  private PersonReference responsiblePerson;
+
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
-      PersonReference projectManager, PersonReference principalInvestigator) {
+      PersonReference projectManager, PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
     requireNonNull(principalInvestigator);
     requireNonNull(projectCode);
     requireNonNull(projectId);
@@ -67,6 +72,7 @@ public class Project {
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectManager(projectManager);
+    setResponsiblePerson(responsiblePerson);
     linkedOffers = new ArrayList<>();
   }
 
@@ -77,6 +83,11 @@ public class Project {
 
   public void setPrincipalInvestigator(PersonReference principalInvestigator) {
     this.principalInvestigator = principalInvestigator;
+    this.lastModified = Instant.now();
+  }
+
+  public void setResponsiblePerson(PersonReference responsiblePerson) {
+    this.responsiblePerson = responsiblePerson;
     this.lastModified = Instant.now();
   }
 
@@ -149,12 +160,14 @@ public class Project {
    * @param projectIntent         the intent of the project
    * @param projectManager        the assigned project manager
    * @param principalInvestigator the principal investigator
+   * @param responsiblePerson     the person who should be contacted
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
-      PersonReference projectManager, PersonReference principalInvestigator) {
+      PersonReference projectManager, PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
     return new Project(ProjectId.create(), projectIntent, projectCode, projectManager,
-        principalInvestigator);
+        principalInvestigator, responsiblePerson);
   }
 
   /**
@@ -164,13 +177,14 @@ public class Project {
    * @param projectIntent         the project intent
    * @param projectManager        the assigned project manager
    * @param principalInvestigator the principal investigator
+   * @param responsiblePerson     the person who should be contacted
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
       ProjectCode projectCode, PersonReference projectManager,
-      PersonReference principalInvestigator) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
     return new Project(projectId, projectIntent, projectCode, projectManager,
-        principalInvestigator);
+        principalInvestigator, responsiblePerson);
   }
 
   public ProjectId getId() {
@@ -181,12 +195,20 @@ public class Project {
     return projectIntent;
   }
 
+  public ProjectCode getProjectCode() {
+    return projectCode;
+  }
+
   public PersonReference getProjectManager() {
     return projectManager;
   }
 
   public PersonReference getPrincipalInvestigator() {
     return principalInvestigator;
+  }
+
+  public PersonReference getResponsiblePerson() {
+    return responsiblePerson;
   }
 
   @Override
