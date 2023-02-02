@@ -1,18 +1,16 @@
 package life.qbic.projectmanagement.persistence;
 
-import java.util.Arrays;
-import java.util.List;
 import life.qbic.projectmanagement.application.api.ExperimentalDesignLookup;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Simple mock implementation of the {@link ExperimentalDesignLookup} interface.
  */
 @Component
 public class ExperimentalDesignRepository implements ExperimentalDesignLookup {
-
-  public ExperimentalDesignRepository() {
-  }
 
   @Override
   public List<String> retrieveOrganisms() {

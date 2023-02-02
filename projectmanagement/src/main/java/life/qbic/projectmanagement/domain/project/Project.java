@@ -195,6 +195,10 @@ public class Project {
     return projectIntent;
   }
 
+  public ProjectCode getProjectCode() {
+    return projectCode;
+  }
+
   public PersonReference getProjectManager() {
     return projectManager;
   }
