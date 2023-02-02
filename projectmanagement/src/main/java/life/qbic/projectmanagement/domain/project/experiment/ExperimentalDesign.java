@@ -1,15 +1,13 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.SampleGroupExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownConditionException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownExperimentalVariableException;
+
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * <b>Experimental Design</b>
@@ -79,7 +77,7 @@ public class ExperimentalDesign {
 
   private final List<ExperimentalVariable<ExperimentalValue>> experimentalVariables;
   private final List<Condition> conditions;
-  private List<SampleGroup> sampleGroups;
+  private final List<SampleGroup> sampleGroups;
 
   public ExperimentalDesign() {
     experimentalVariables = new ArrayList<>();
@@ -130,11 +128,13 @@ public class ExperimentalDesign {
    * failed.
    * @since 1.0.0
    */
-  public Result<Condition, Exception> createCondition(
-      VariableLevel<ExperimentalValue>... variableLevels) {
-    return addToDesignOrElse(Condition.create(variableLevels), () -> Result.failure(
-        new UnknownExperimentalVariableException(
-            "At least one experiment variable is not defined in the design.")));
+  @SafeVarargs
+  public final Result<Condition, Exception> createCondition(
+          VariableLevel<ExperimentalValue>... variableLevels) {
+    VariableLevel<ExperimentalValue>[] levels = Arrays.copyOf(variableLevels, variableLevels.length);
+    return addToDesignOrElse(Condition.create(levels), () -> Result.failure(
+            new UnknownExperimentalVariableException(
+                    "At least one experiment variable is not defined in the design.")));
   }
 
   /**
