@@ -9,7 +9,7 @@ public interface ExperimentalDesignLookup {
    *
    * @return list of all species
    */
-  List<String> retrieveOrganisms();
+  List<String> retrieveSpecies();
 
   /**
    * Retrieves a list of all specimens from the experimental design repository
