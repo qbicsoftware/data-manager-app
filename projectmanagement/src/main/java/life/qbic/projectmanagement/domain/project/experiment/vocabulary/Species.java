@@ -3,17 +3,17 @@ package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
-public record Organism(String label) {
+public record Species(String label) {
 
-  public Organism {
+  public Species {
     Objects.requireNonNull(label);
     if (label.isEmpty()) {
-      throw new ProjectManagementDomainException("Vocabulary label for Organism is empty.");
+      throw new ProjectManagementDomainException("Vocabulary label for Species is empty.");
     }
   }
 
-  public static Organism create(String label) {
-    return new Organism(label);
+  public static Species create(String label) {
+    return new Species(label);
   }
 
   public String value() {

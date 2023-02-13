@@ -5,9 +5,9 @@ import java.util.List;
 public interface ExperimentalDesignLookup {
 
   /**
-   * Retrieves a list of all organisms from experimental design repository
+   * Retrieves a list of all species from experimental design repository
    *
-   * @return list of all organism
+   * @return list of all species
    */
   List<String> retrieveOrganisms();
 
