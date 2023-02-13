@@ -13,9 +13,9 @@ import java.util.List;
 public class ExperimentalDesignRepository implements ExperimentalDesignLookup {
 
   @Override
-  public List<String> retrieveOrganisms() {
-    return Arrays.asList("Organism1", "Organism2", "Organism3",
-        "Organism4", "Organism5");
+  public List<String> retrieveSpecies() {
+    return Arrays.asList("Species1", "Species2", "Species3",
+        "Species4", "Species5");
   }
 
   @Override

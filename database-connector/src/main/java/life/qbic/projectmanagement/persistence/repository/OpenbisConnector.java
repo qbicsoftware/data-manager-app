@@ -17,7 +17,7 @@ import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,10 +78,10 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   @Override
-  public List<Organism> retrieveOrganisms() {
-    return getVocabularyTermsForCode(VocabularyCode.ORGANISM).stream()
+  public List<Species> retrieveSpecies() {
+    return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
         .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Organism::new).toList();
+        .map(Species::new).toList();
   }
 
   @Override
