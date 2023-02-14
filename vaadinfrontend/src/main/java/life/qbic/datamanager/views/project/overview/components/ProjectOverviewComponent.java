@@ -57,7 +57,7 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -326,10 +326,10 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      projectInformationDialog.organismBox.setItems(
-          experimentalDesignSearchService.retrieveOrganisms().stream()
-              .sorted(Comparator.comparing(Organism::label)).toList());
-      projectInformationDialog.organismBox.setItemLabelGenerator(Organism::value);
+      projectInformationDialog.speciesBox.setItems(
+          experimentalDesignSearchService.retrieveSpecies().stream()
+              .sorted(Comparator.comparing(Species::label)).toList());
+      projectInformationDialog.speciesBox.setItemLabelGenerator(Species::value);
       projectInformationDialog.specimenBox.setItems(
           experimentalDesignSearchService.retrieveSpecimens().stream()
               .sorted(Comparator.comparing(Specimen::label)).toList());

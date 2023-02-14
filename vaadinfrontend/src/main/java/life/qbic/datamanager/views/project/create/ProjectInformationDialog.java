@@ -25,7 +25,7 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
@@ -50,7 +50,7 @@ public class ProjectInformationDialog extends Dialog {
   private final TextArea projectObjective;
   public final ComboBox<PersonReference> principalInvestigator;
   public final HorizontalLayout sampleCountLayout;
-  public final MultiSelectComboBox<Organism> organismBox;
+  public final MultiSelectComboBox<Species> speciesBox;
   public final MultiSelectComboBox<Specimen> specimenBox;
   public final MultiSelectComboBox<Analyte> analyteBox;
   public final ComboBox<PersonReference> responsiblePerson;
@@ -69,7 +69,7 @@ public class ProjectInformationDialog extends Dialog {
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
     sampleCountLayout = new HorizontalLayout();
-    organismBox = new MultiSelectComboBox<>("Organism");
+    speciesBox = new MultiSelectComboBox<>("Species");
     specimenBox = new MultiSelectComboBox<>("Specimen");
     analyteBox = new MultiSelectComboBox<>("Analyte");
 
@@ -99,10 +99,10 @@ public class ProjectInformationDialog extends Dialog {
   private void styleForm() {
     formLayout.setClassName("create-project-form");
     styleSearchBox();
-    organismBox.addClassName("chip-badge");
+    speciesBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
-    organismBox.setMaxWidth(60, Unit.VW);
+    speciesBox.setMaxWidth(60, Unit.VW);
     specimenBox.setMaxWidth(60, Unit.VW);
     analyteBox.setMaxWidth(60, Unit.VW);
     principalInvestigator.setMaxWidth(60, Unit.VW);
@@ -125,7 +125,7 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.add(experimentalDesignField);
     formLayout.add(experimentalDesignIntroduction);
     formLayout.add(sampleCountLayout);
-    formLayout.add(organismBox);
+    formLayout.add(speciesBox);
     formLayout.add(specimenBox);
     formLayout.add(analyteBox);
     formLayout.add(principalInvestigator);

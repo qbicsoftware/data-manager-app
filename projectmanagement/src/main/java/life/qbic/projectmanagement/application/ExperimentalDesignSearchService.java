@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.application;
 import java.util.List;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,8 +23,8 @@ public class ExperimentalDesignSearchService {
     this.experimentalDesignVocabularyRepository = experimentalDesignVocabularyRepository;
   }
 
-  public List<Organism> retrieveOrganisms() {
-    return experimentalDesignVocabularyRepository.retrieveOrganisms();
+  public List<Species> retrieveSpecies() {
+    return experimentalDesignVocabularyRepository.retrieveSpecies();
   }
 
   public List<Specimen> retrieveSpecimens() {
