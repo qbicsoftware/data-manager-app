@@ -75,6 +75,7 @@ public class ProjectInformationDialog extends Dialog {
 
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
+    principalInvestigator.setRequired(true);
 
     responsiblePerson = new ComboBox<>("Project Responsible (optional)");
     responsiblePerson.setPlaceholder("Select Project Responsible");
@@ -82,8 +83,9 @@ public class ProjectInformationDialog extends Dialog {
     //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
     responsiblePerson.setClearButtonVisible(true);
 
-    projectManager = new ComboBox<>("Project Manager (optional)");
+    projectManager = new ComboBox<>("Project Manager");
     projectManager.setPlaceholder("Select a project manager");
+    projectManager.setRequired(true);
 
     createButton = new Button("Create");
     cancelButton = new Button("Cancel");
