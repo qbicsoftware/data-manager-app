@@ -33,7 +33,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,7 +57,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> projectManagerToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> principalInvestigatorToggleComponent;
-  private MultiSelectComboBox<Organism> organismMultiSelectComboBox;
+  private MultiSelectComboBox<Species> speciesMultiSelectComboBox;
   private MultiSelectComboBox<Specimen> specimenMultiSelectComboBox;
   private MultiSelectComboBox<Analyte> analyteMultiSelectComboBox;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> responsiblePersonToggleComponent;
@@ -89,7 +89,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.addFormItem(titleToggleComponent, "Project Title");
     formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
     formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
-    formLayout.addFormItem(organismMultiSelectComboBox, "Organism");
+    formLayout.addFormItem(speciesMultiSelectComboBox, "Species");
     formLayout.addFormItem(specimenMultiSelectComboBox, "Specimen");
     formLayout.addFormItem(analyteMultiSelectComboBox, "Analyte");
     formLayout.addFormItem(principalInvestigatorToggleComponent, "Principal Investigator");
@@ -108,7 +108,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         createPlaceHolderSpan());
     experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan());
-    organismMultiSelectComboBox = new MultiSelectComboBox<>();
+    speciesMultiSelectComboBox = new MultiSelectComboBox<>();
     specimenMultiSelectComboBox = new MultiSelectComboBox<>();
     analyteMultiSelectComboBox = new MultiSelectComboBox<>();
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
@@ -157,11 +157,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
-    organismMultiSelectComboBox.setWidth(50, Unit.VW);
+    speciesMultiSelectComboBox.setWidth(50, Unit.VW);
     specimenMultiSelectComboBox.setWidth(50, Unit.VW);
     analyteMultiSelectComboBox.setWidth(50, Unit.VW);
     formLayout.setClassName("create-project-form");
-    organismMultiSelectComboBox.addClassName("chip-badge");
+    speciesMultiSelectComboBox.addClassName("chip-badge");
     specimenMultiSelectComboBox.addClassName("chip-badge");
     analyteMultiSelectComboBox.addClassName("chip-badge");
   }
@@ -258,7 +258,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
       responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
       /*ToDo Insert values stored in project
-      organismMultiSelectComboBox.setValue();
+      speciesMultiSelectComboBox.setValue();
       specimenMultiSelectComboBox.setValue();
       analyteMultiSelectComboBox.setValue();
        */
@@ -266,10 +266,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      organismMultiSelectComboBox.setItems(
-          experimentalDesignSearchService.retrieveOrganisms().stream()
-              .sorted(Comparator.comparing(Organism::label)).toList());
-      organismMultiSelectComboBox.setItemLabelGenerator(Organism::value);
+      speciesMultiSelectComboBox.setItems(
+          experimentalDesignSearchService.retrieveSpecies().stream()
+              .sorted(Comparator.comparing(Species::label)).toList());
+      speciesMultiSelectComboBox.setItemLabelGenerator(Species::value);
       specimenMultiSelectComboBox.setItems(
           experimentalDesignSearchService.retrieveSpecimens().stream()
               .sorted(Comparator.comparing(Specimen::label)).toList());
@@ -311,7 +311,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       ProjectDetailsComponent.Handler.submitOnValueChange(responsiblePersonToggleComponent,
           value ->
               projectInformationService.setResponsibility(selectedProject.value(), value));
-      //ToDo Store selection changes for organism, specimen and analyte here
+      //ToDo Store selection changes for species, specimen and analyte here
     }
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,

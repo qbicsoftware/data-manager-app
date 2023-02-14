@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.persistence.repository;
 
 public enum VocabularyCode {
-  ORGANISM("Q_NCBI_TAXONOMY"),
+  SPECIES("Q_NCBI_TAXONOMY"),
   SPECIMEN("Q_PRIMARY_TISSUES"),
   ANALYTE("Q_SAMPLE_TYPES");
 
