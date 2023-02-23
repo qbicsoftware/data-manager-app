@@ -1,13 +1,16 @@
 package life.qbic.datamanager.views.project.view;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.Route;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
@@ -27,17 +30,22 @@ public class ProjectViewPage extends Div implements
     HasUrlParameter<String> {
 
   private static final String ROUTE = "projects/view";
-
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
-
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
-
   private final transient ProjectViewHandler handler;
 
+  //ToDo Move this into dedicated ExperimentalDesignPage
+  private final ExperimentCreationDialog experimentCreationDialog = new ExperimentCreationDialog();
+  private final Button createDesignButton = new Button("Create Design");
+  //Todo Generate Dedicated navbar for switching between the pages of a project
+  private final HorizontalLayout navBar = new HorizontalLayout();
+
+
   public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-      ProjectLinksComponent projectLinksComponent) {
+  ProjectLinksComponent projectLinksComponent) {
     handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent);
+    initNavbar();
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
@@ -47,16 +55,26 @@ public class ProjectViewPage extends Div implements
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
   }
 
+  private void initNavbar() {
+    //ToDo Create dedicated navbar component, and experimentaldesignpage
+    navBar.add(createDesignButton);
+    add(navBar);
+    createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open());
+  }
+
   @Override
   public void setParameter(BeforeEvent beforeEvent, String s) {
     handler.routeParameter(s);
 
     log.debug("Route '" + ROUTE + "' called with parameter '" + s + "'");
   }
-  public void setPageStyles(){
+
+  public void setPageStyles() {
     addClassNames("project-view-page");
   }
-  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent){
+
+  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
+      ProjectLinksComponent projectLinksComponent) {
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
   }
