@@ -35,12 +35,12 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String title, String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson) {
     try {
       Project project;
-      project = createProject(title, objective, experimentalDesign,
+      project = createProject(code, title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
@@ -65,7 +65,7 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProject(String title,
+  private Project createProject(String code, String title,
       String objective,
       String experimentalDesign, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson) {
@@ -80,7 +80,17 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator,
+    ProjectCode projectCode;
+    try {
+      projectCode = ProjectCode.parse(code);
+      if(!projectRepository.find(projectCode).isEmpty()) {
+        throw new ProjectManagementException("Project code "+code+" is already in use.");
+      }
+    } catch (IllegalArgumentException exception) {
+      log.info("Project code: "+code+ " cannot be used. Creating random code instead.");
+      projectCode = createRandomCode();
+    }
+    return Project.create(intent, projectCode, projectManager, principalInvestigator,
         responsiblePerson);
   }
 

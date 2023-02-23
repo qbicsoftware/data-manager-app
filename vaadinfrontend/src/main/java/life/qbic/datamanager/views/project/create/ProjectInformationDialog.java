@@ -22,6 +22,7 @@ import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -41,6 +42,8 @@ public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
   public ComboBox<OfferPreview> searchField;
+  private final TextField codeField;
+  private final Button codeRefreshButton;
   private final TextField titleField;
   public final Button createButton;
   public final Button cancelButton;
@@ -59,6 +62,10 @@ public class ProjectInformationDialog extends Dialog {
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
     formLayout = new FormLayout();
+    codeField = new TextField("Code");
+    codeField.setRequired(true);
+    codeField.setHelperText("Five letters or numbers, starting with Q");
+    codeRefreshButton = new Button("Generate Code");
     titleField = new TextField("Title");
     titleField.setRequired(true);
     projectObjective = new TextArea("Objective");
@@ -120,7 +127,14 @@ public class ProjectInformationDialog extends Dialog {
 
   private void initForm() {
     formLayout.add(searchField);
-    formLayout.add(titleField);
+
+    HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout.add(codeField);
+    codeAndTitleLayout.add(codeRefreshButton);
+    codeAndTitleLayout.add(titleField);
+    formLayout.add(codeAndTitleLayout);
+
+  //formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
     formLayout.add(experimentalDesignIntroduction);
@@ -159,6 +173,10 @@ public class ProjectInformationDialog extends Dialog {
     handler.loadOfferContent(offer);
   }
 
+  public String getCode() {
+    return codeField.getValue();
+  }
+
   public String getTitle() {
     return titleField.getValue();
   }
@@ -192,8 +210,17 @@ public class ProjectInformationDialog extends Dialog {
 
     private void handle() {
       restrictInputLength();
+      generateProjectCode();
       resetDialogueUponClosure();
       closeDialogueViaCancelButton();
+    }
+
+    private void generateProjectCode() {
+      codeRefreshButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
+    }
+
+    private void setCodeFieldValue(String code) {
+      codeField.setValue(code);
     }
 
     public void loadOfferContent(Offer offer) {
