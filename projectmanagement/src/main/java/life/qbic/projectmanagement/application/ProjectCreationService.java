@@ -84,11 +84,12 @@ public class ProjectCreationService {
     try {
       projectCode = ProjectCode.parse(code);
       if(!projectRepository.find(projectCode).isEmpty()) {
+        log.info("Project code: "+code+ " is already in use.");
         throw new ProjectManagementException("Project code "+code+" is already in use.");
       }
     } catch (IllegalArgumentException exception) {
-      log.info("Project code: "+code+ " cannot be used. Creating random code instead.");
-      projectCode = createRandomCode();
+      log.info("Project code: "+code+ " is invalid.");
+      throw new ProjectManagementException("Project code "+code+" is invalid.");
     }
     return Project.create(intent, projectCode, projectManager, principalInvestigator,
         responsiblePerson);
