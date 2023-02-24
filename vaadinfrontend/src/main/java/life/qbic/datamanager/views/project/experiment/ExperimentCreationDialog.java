@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -39,7 +38,6 @@ public class ExperimentCreationDialog extends Dialog {
   private final Button nextButton = new Button("Next");
   private final Button cancelButton = new Button("Cancel");
 
-  @Autowired
   public ExperimentCreationDialog() {
     //ToDo Handler should be moved to dedicated ExperimentalDesignPage and Component similar to ProjectOverviewComponent
     configureDialogLayout();
