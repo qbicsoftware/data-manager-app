@@ -1,23 +1,14 @@
 package life.qbic.projectmanagement.domain.project;
 
-import static java.util.Objects.requireNonNull;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
+import javax.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A project planned and run at QBiC.
@@ -47,17 +38,30 @@ public class Project {
   @Column(name = "offerIdentifier")
   private List<OfferIdentifier> linkedOffers;
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "projectManagerRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "projectManagerReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
+  })
   private PersonReference projectManager;
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "principalInvestigatorRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "principalInvestigatorReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
+  })
   private PersonReference principalInvestigator;
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "responsiblePersonRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "responsibePersonReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
+  })
   private PersonReference responsiblePerson;
+
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       PersonReference projectManager, PersonReference principalInvestigator,
