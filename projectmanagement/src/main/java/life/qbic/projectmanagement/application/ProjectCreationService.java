@@ -89,6 +89,7 @@ public class ProjectCreationService {
       }
     } catch (IllegalArgumentException exception) {
       log.info("Project code: "+code+ " is invalid.");
+      log.info(exception.getMessage());
       throw new ProjectManagementException("Project code "+code+" is invalid.");
     }
     return Project.create(intent, projectCode, projectManager, principalInvestigator,

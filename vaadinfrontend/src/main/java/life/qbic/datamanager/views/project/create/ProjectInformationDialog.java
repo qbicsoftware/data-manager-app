@@ -11,6 +11,9 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -43,7 +46,7 @@ public class ProjectInformationDialog extends Dialog {
   private final Handler handler;
   public ComboBox<OfferPreview> searchField;
   private final TextField codeField;
-  private final Button codeRefreshButton;
+  private final Button generateCodeButton;
   private final TextField titleField;
   public final Button createButton;
   public final Button cancelButton;
@@ -64,8 +67,10 @@ public class ProjectInformationDialog extends Dialog {
     formLayout = new FormLayout();
     codeField = new TextField("Code");
     codeField.setRequired(true);
-    codeField.setHelperText("Five letters or numbers, starting with Q");
-    codeRefreshButton = new Button("Generate Code");
+    codeField.setHelperText("Q+4 letters/numbers");
+    generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
+    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
     titleField = new TextField("Title");
     titleField.setRequired(true);
     projectObjective = new TextArea("Objective");
@@ -130,8 +135,9 @@ public class ProjectInformationDialog extends Dialog {
 
     HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
     codeAndTitleLayout.add(codeField);
-    codeAndTitleLayout.add(codeRefreshButton);
+    codeAndTitleLayout.add(generateCodeButton);
     codeAndTitleLayout.add(titleField);
+    codeAndTitleLayout.setAlignItems(Alignment.CENTER);
     formLayout.add(codeAndTitleLayout);
 
   //formLayout.add(titleField);
@@ -216,7 +222,7 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     private void generateProjectCode() {
-      codeRefreshButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
+      generateCodeButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
     }
 
     private void setCodeFieldValue(String code) {

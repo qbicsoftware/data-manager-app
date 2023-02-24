@@ -306,7 +306,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       });
     }
 
-
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(query ->
           personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
