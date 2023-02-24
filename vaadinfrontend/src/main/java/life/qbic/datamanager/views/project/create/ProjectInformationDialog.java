@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
@@ -45,6 +46,7 @@ public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
   public ComboBox<OfferPreview> searchField;
+  private HorizontalLayout codeAndTitleLayout;
   private final TextField codeField;
   private final Button generateCodeButton;
   private final TextField titleField;
@@ -67,7 +69,7 @@ public class ProjectInformationDialog extends Dialog {
     formLayout = new FormLayout();
     codeField = new TextField("Code");
     codeField.setRequired(true);
-    codeField.setHelperText("Q+4 letters/numbers");
+    codeField.setHelperText("Q and 4 letters/numbers");
     generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
@@ -77,6 +79,7 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective.setRequired(true);
     //ToDo Remove Field once experimental design backend is connected
     experimentalDesignField = new TextArea("Experimental Design");
+    experimentalDesignField.setRequired(true);
     experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
@@ -133,7 +136,7 @@ public class ProjectInformationDialog extends Dialog {
   private void initForm() {
     formLayout.add(searchField);
 
-    HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout = new HorizontalLayout();
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
     codeAndTitleLayout.add(titleField);
@@ -204,6 +207,12 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
         .forEach(component -> ((HasValue<?, ?>) component).clear());
     formLayout.getChildren().filter(component -> component instanceof HasValidation)
+        .forEach(component -> ((HasValidation) component).setInvalid(false));
+
+    // reset components in sub-layout
+    codeAndTitleLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
+        .forEach(component -> ((HasValue<?, ?>) component).clear());
+    codeAndTitleLayout.getChildren().filter(component -> component instanceof HasValidation)
         .forEach(component -> ((HasValidation) component).setInvalid(false));
   }
 
