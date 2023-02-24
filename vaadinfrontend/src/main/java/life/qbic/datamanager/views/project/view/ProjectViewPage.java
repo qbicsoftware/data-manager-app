@@ -32,21 +32,23 @@ public class ProjectViewPage extends Div implements
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
+
+  //ToDo Add ClickListeners to Navbar Buttons to enable switch between components
   private final transient ProjectViewHandler handler;
 
-  //Todo Who should orchestrate logic behind navbar buttons
-  private final ProjectNavigationBarComponent projectNavigationBarComponent = new ProjectNavigationBarComponent();
-
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent,
+      @Autowired ProjectDetailsComponent projectDetailsComponent,
+      @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
-    add(projectDetailsComponent);
+    add(projectNavigationBarComponent);
+    //ToDo Add swapping method between components
+    add(experimentalDesignDetailComponent);
     add(projectLinksComponent);
     setPageStyles();
-    setComponentStyles(projectDetailsComponent, projectLinksComponent);
+    setComponentStyles(projectDetailsComponent, projectLinksComponent,
+        projectNavigationBarComponent, experimentalDesignDetailComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -64,8 +66,13 @@ public class ProjectViewPage extends Div implements
   }
 
   public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent) {
+      ProjectLinksComponent projectLinksComponent,
+      ProjectNavigationBarComponent projectNavigationBarComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
+    projectNavigationBarComponent.setStyles("project-navigation-component");
+    //Todo Determine if we want to have seperate styles for each component
+    experimentalDesignDetailComponent.setStyles("experimental-design-component");
   }
 }

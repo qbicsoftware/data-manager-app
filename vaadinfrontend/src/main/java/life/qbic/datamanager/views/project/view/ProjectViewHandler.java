@@ -17,8 +17,11 @@ class ProjectViewHandler {
 
   private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
   private final ProjectLinksComponent projectLinksComponent;
-
   private final ProjectDetailsComponent projectDetailsComponent;
+
+  //ToDo Determine how component swap should function
+  private final ProjectNavigationBarComponent projectNavigationBarComponent;
+  private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
 
   public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
@@ -26,9 +29,12 @@ class ProjectViewHandler {
       ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-
+    Objects.requireNonNull(projectNavigationBarComponent);
+    Objects.requireNonNull(experimentalDesignDetailComponent);
     this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
+    this.projectNavigationBarComponent = projectNavigationBarComponent;
+    this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
   }
 
   /**

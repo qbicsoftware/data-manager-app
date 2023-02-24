@@ -1,17 +1,28 @@
 .project-view-page {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0px, 1fr));
-  grid-template-rows: repeat(2, minmax(0px, 1fr));
-  grid-gap: 50px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  grid-gap: 10px;
   min-height: 100%;
+  padding: 50px;
+}
+
+.project-navigation-component {
+  grid-column: 1 / span 3;
+  grid-row: 1 / span 1;
 }
 
 .project-details-component {
-  grid-row: 1 / span 2 ;
-  grid-column: 1 / span 2;
+  grid-column: 1 / span 3;
+  grid-row: 2 / span 4;
 }
 
 .project-links-component {
-  grid-column: 3 / span 1;
-  grid-row: 2 / span 1;
+  grid-column: 4 / span 2;
+  grid-row: 1 / span 3;
+}
+
+.experimental-design-component {
+  grid-column: 1 / span 3;
+  grid-row: 2 / span 4;
 }
