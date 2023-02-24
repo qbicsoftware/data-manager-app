@@ -58,7 +58,9 @@ public class ProjectCode {
    * @since 1.0.0
    */
   public static ProjectCode parse(String str) throws IllegalArgumentException {
-    if (isInvalid(str)) {
+    // project codes are always upper case
+    str = str.toUpperCase();
+    if (!(str.startsWith(PREFIX) && (str.length() == LENGTH))) {
       throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
     }
     if (containsInvalidCharacters(str)) {
@@ -72,7 +74,7 @@ public class ProjectCode {
   }
 
   private static boolean isValid(String code) {
-    return code.startsWith(PREFIX) && (code.length() == LENGTH);
+    return code.startsWith(PREFIX) && (code.length() == LENGTH) && !containsInvalidCharacters(code);
   }
 
   private static boolean containsInvalidCharacters(String code) {
@@ -122,10 +124,6 @@ public class ProjectCode {
       }
     }
     return false;
-  }
-
-  private static boolean isInvalid(String code) {
-    return !isValid(code);
   }
 
   private static boolean isBlackListed(String word) {
