@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import javax.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Data Manager")
-@Route(value = "data")
 public class MainLayout extends DataManagerLayout {
   public Button logout;
 
