@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.project.create;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
@@ -14,7 +13,7 @@ import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -140,7 +139,7 @@ public class ProjectInformationDialog extends Dialog {
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
     codeAndTitleLayout.add(titleField);
-    codeAndTitleLayout.setAlignItems(Alignment.CENTER);
+    codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
     formLayout.add(codeAndTitleLayout);
 
   //formLayout.add(titleField);

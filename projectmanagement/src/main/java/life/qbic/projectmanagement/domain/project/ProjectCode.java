@@ -162,6 +162,14 @@ public class ProjectCode {
         '}';
   }
 
+  public static int getLENGTH() {
+    return LENGTH;
+  }
+
+  public static String getPREFIX() {
+    return PREFIX;
+  }
+
   private static class RandomCodeGenerator {
 
     final char[] letters;
