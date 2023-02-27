@@ -69,7 +69,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
     }
 
     private void openDialogueListener() {
-      createDesignButton.addClickListener(e -> experimentCreationDialog.open());
+      createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open());
     }
   }
 }

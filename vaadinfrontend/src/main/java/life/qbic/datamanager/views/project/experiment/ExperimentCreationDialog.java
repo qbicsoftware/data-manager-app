@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.project.experiment;
 
+import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -30,6 +32,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 @UIScope
 public class ExperimentCreationDialog extends Dialog {
 
+  private final Handler handler;
   private final VerticalLayout dialogueContentLayout = new VerticalLayout();
   private final HorizontalLayout navHeaderLayout = new HorizontalLayout();
   private final VerticalLayout defineExperimentalVariableLayout = new VerticalLayout();
@@ -39,9 +42,10 @@ public class ExperimentCreationDialog extends Dialog {
   private final Button cancelButton = new Button("Cancel");
 
   public ExperimentCreationDialog() {
-    //ToDo Handler should be moved to dedicated ExperimentalDesignPage and Component similar to ProjectOverviewComponent
     configureDialogLayout();
     initDialogueContent();
+    handler = new Handler();
+    handler.handle();
   }
 
   private void configureDialogLayout() {
@@ -100,16 +104,14 @@ public class ExperimentCreationDialog extends Dialog {
     return experimentalVariableLayout;
   }
 
-  public void setProjectContext(ProjectId projectId) {
-  }
-
   private class Handler {
 
     Optional<ProjectId> projectId;
 
-    Handler() {
+    private void handle() {
       this.projectId = Optional.empty();
-
+      closeDialogListener();
+      resetDialogUponClosure();
     }
 
     void setProjectContext(ProjectId projectId) {
@@ -117,6 +119,30 @@ public class ExperimentCreationDialog extends Dialog {
         warnAboutMissingProjectContext();
       }
       this.projectId = Optional.of(projectId);
+    }
+
+    private void closeDialogListener() {
+      cancelButton.addClickListener(clickEvent -> resetAndClose());
+    }
+
+    private void resetDialogUponClosure() {
+      // Calls the reset method for all possible closure methods of the dialogue window:
+      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    }
+
+
+    public void reset() {
+      experimentalVariablesLayouts.forEach(formLayout -> formLayout.getChildren()
+          .filter(component -> component instanceof HasValue<?, ?>)
+          .forEach(component -> ((HasValue<?, ?>) component).clear()));
+      experimentalVariablesLayouts.forEach(formLayout -> formLayout.getChildren()
+          .filter(component -> component instanceof HasValidation)
+          .forEach(component -> ((HasValidation) component).setInvalid(false)));
+    }
+
+    public void resetAndClose() {
+      reset();
+      close();
     }
 
     private void warnAboutMissingProjectContext() {
@@ -127,8 +153,5 @@ public class ExperimentCreationDialog extends Dialog {
         }
       };
     }
-
   }
-
-
 }
