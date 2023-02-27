@@ -20,7 +20,9 @@ public abstract class ApplicationException extends RuntimeException {
     GENERAL,
     INVALID_EXPERIMENTAL_DESIGN,
     INVALID_PROJECT_OBJECTIVE,
-    INVALID_PROJECT_TITLE
+    INVALID_PROJECT_TITLE,
+    INVALID_PROJECT_CODE,
+    DUPLICATE_PROJECT_CODE
   }
 
   public record ErrorParameters(Object[] value) {
