@@ -60,7 +60,7 @@ public class ProjectCode {
   public static ProjectCode parse(String str) throws IllegalArgumentException {
     // project codes are always upper case
     str = str.toUpperCase();
-    if (!(str.startsWith(PREFIX) && (str.length() == LENGTH))) {
+    if (!isGeneralFormatValid(str)) {
       throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
     }
     if (containsInvalidCharacters(str)) {
@@ -73,15 +73,15 @@ public class ProjectCode {
     return new ProjectCode(str);
   }
 
-  private static boolean isValid(String code) {
-    return code.startsWith(PREFIX) && (code.length() == LENGTH) && !containsInvalidCharacters(code);
+  private static boolean isGeneralFormatValid(String code) {
+    return code.startsWith(PREFIX) && (code.length() == LENGTH);
   }
 
   private static boolean containsInvalidCharacters(String code) {
-    return !containsValidCharacters(code);
+    return !containsOnlyValidCharacters(code);
   }
 
-  private static boolean containsValidCharacters(String code) {
+  private static boolean containsOnlyValidCharacters(String code) {
     char[] codeArray = code.toCharArray();
     for (int character = 0; character < code.length(); character++) {
       char currentCharacter = codeArray[character];
