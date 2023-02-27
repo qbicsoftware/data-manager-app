@@ -1,17 +1,30 @@
 package life.qbic.projectmanagement.application;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.*;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Application service facilitating the creation of projects.
@@ -22,9 +35,12 @@ public class ProjectCreationService {
   private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
+  private final ExperimentRepository experimentRepository;
 
-  public ProjectCreationService(ProjectRepository projectRepository) {
+  public ProjectCreationService(ProjectRepository projectRepository,
+      ExperimentRepository experimentRepository) {
     this.projectRepository = projectRepository;
+    this.experimentRepository = experimentRepository;
   }
 
   /**
@@ -37,7 +53,9 @@ public class ProjectCreationService {
    */
   public Result<Project, ApplicationException> createProject(String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson,
+      List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
+
     try {
       Project project;
       project = createProject(title, objective, experimentalDesign,
@@ -45,7 +63,13 @@ public class ProjectCreationService {
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
+      Experiment experiment = Experiment.create(project, analyteList, specimenList, speciesList);
+      project.linkExperiment(experiment);
       projectRepository.add(project);
+
+      Experiment experiment1 = project.activeExperiment().orElse(null);
+//      experiment1.defineCondition("my condition",) //TODO next morning
+
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);

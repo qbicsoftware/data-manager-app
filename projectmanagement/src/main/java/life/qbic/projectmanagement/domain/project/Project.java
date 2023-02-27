@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project;
 
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
@@ -24,6 +25,13 @@ public class Project {
 
   @Embedded
   private ProjectIntent projectIntent;
+
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true)
+  // "project" being the colum in the experiments table
+  private List<Experiment> experiments;
+
+  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  private Experiment activeExperiment;
 
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
@@ -78,6 +86,7 @@ public class Project {
     setProjectManager(projectManager);
     setResponsiblePerson(responsiblePerson);
     linkedOffers = new ArrayList<>();
+    experiments = new ArrayList<>();
   }
 
   public void setProjectManager(PersonReference projectManager) {
@@ -117,6 +126,12 @@ public class Project {
       return;
     }
     projectIntent.experimentalDesign(experimentalDesignDescription);
+    lastModified = Instant.now();
+  }
+
+  public void linkExperiment(Experiment experiment) {
+    experiments.add(experiment);
+    activeExperiment = experiment;
     lastModified = Instant.now();
   }
 
@@ -213,6 +228,10 @@ public class Project {
 
   public PersonReference getResponsiblePerson() {
     return responsiblePerson;
+  }
+
+  public Optional<Experiment> activeExperiment() {
+    return Optional.ofNullable(activeExperiment);
   }
 
   @Override

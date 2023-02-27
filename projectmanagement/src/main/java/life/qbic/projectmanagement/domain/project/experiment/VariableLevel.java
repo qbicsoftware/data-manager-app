@@ -1,7 +1,16 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Objects;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Embeddable;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable.ExperimentalVariableId;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
+import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
  * <b>Variable Level</b>
@@ -11,12 +20,26 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVa
  *
  * @since 1.0.0
  */
-public class VariableLevel<T extends ExperimentalValue> {
+@Embeddable
+@Access(AccessType.FIELD)
+public class VariableLevel {
 
-  private final ExperimentalVariable<T> experimentalVariable;
-  private final T experimentalValue;
+  @AttributeOverrides({
+      @AttributeOverride(name = "id", column = @Column(name = "variableId")),
+      @AttributeOverride(name = "experimentId", column = @Column(name = "variableExperiment"))
+  })
+  private ExperimentalVariableId variableId;
+  @Convert(converter = VariableNameAttributeConverter.class)
+  @Column(name = "variableName")
+  private VariableName variableName;
+  @AttributeOverrides({
+      @AttributeOverride(name = "value", column = @Column(name = "value")),
+      @AttributeOverride(name = "unit", column = @Column(name = "unit"))
+  })
+  private ExperimentalValue experimentalValue;
 
-  public VariableLevel(ExperimentalVariable<T> experimentalVariable, T experimentalValue) {
+  public VariableLevel(ExperimentalVariable experimentalVariable,
+      ExperimentalValue experimentalValue) {
     Objects.requireNonNull(experimentalVariable);
     Objects.requireNonNull(experimentalValue);
 
@@ -26,21 +49,34 @@ public class VariableLevel<T extends ExperimentalValue> {
               experimentalVariable.name()));
     }
 
-    this.experimentalVariable = experimentalVariable;
+    this.variableId = experimentalVariable.id();
     this.experimentalValue = experimentalValue;
+    this.variableName = experimentalVariable.name();
   }
 
-  boolean isValueMissingInVariableLevels(ExperimentalVariable<T> experimentalVariable,
-      T experimentalValue) {
-    return experimentalVariable.values().stream().noneMatch(experimentalValue::equals);
+  protected VariableLevel() {
+    // used for jpa
   }
 
-  public T experimentalValue() {
-    return experimentalValue;
+  boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
+      ExperimentalValue experimentalValue) {
+    return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
   }
 
-  public ExperimentalVariable<T> experimentalVariable() {
-    return experimentalVariable;
+  public ExperimentalVariableId variableId() {
+    return variableId;
+  }
+
+  public VariableName variableName() {
+    return variableName;
+  }
+
+  public ExperimentalValue experimentalValue() {
+    // make sure the value is still final.
+    // sadly can't use final keyword due to JPA reflections
+    return experimentalValue.unit()
+        .map(unit -> ExperimentalValue.create(experimentalValue.value(), unit))
+        .orElseGet(() -> ExperimentalValue.create(experimentalValue.value()));
   }
 
   @Override
@@ -51,13 +87,13 @@ public class VariableLevel<T extends ExperimentalValue> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    VariableLevel<?> that = (VariableLevel<?>) o;
-    return Objects.equals(experimentalVariable, that.experimentalVariable)
+    VariableLevel that = (VariableLevel) o;
+    return Objects.equals(variableName, that.variableName)
         && Objects.equals(experimentalValue, that.experimentalValue);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(experimentalVariable, experimentalValue);
+    return Objects.hash(variableName, experimentalValue);
   }
 }

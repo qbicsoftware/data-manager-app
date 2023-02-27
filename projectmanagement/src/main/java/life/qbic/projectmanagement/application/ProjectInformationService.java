@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import javax.persistence.PostLoad;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
@@ -14,8 +15,13 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +64,74 @@ public class ProjectInformationService {
     return new ArrayList<>(previewList);
   }
 
+  /**
+   * TODO
+   *
+   * @param projectId
+   * @param species
+   */
+  public void addSpeciesToActiveExperiment(String projectId, Species... species) {
+    // load project
+    ProjectId id = ProjectId.parse(projectId);
+    Optional<Project> optionalProject = projectRepository.find(id);
+    optionalProject.ifPresent(project -> {
+      project.activeExperiment().ifPresentOrElse(
+          experiment -> {
+            experiment.addSpecies(species);
+            projectRepository.update(project);
+          },
+          () -> {
+            throw new RuntimeException(
+                "The project does not have an active experiment."); //TODO specify exception
+          });
+    });
+  }
+
+  /**
+   * TODO
+   *
+   * @param projectId
+   * @param specimens
+   */
+  public void addSpecimenToActiveExperiment(String projectId, Specimen... specimens) {
+    ProjectId id = ProjectId.parse(projectId);
+    Optional<Project> optionalProject = projectRepository.find(id);
+    optionalProject.ifPresent(project -> {
+      project.activeExperiment().ifPresentOrElse(
+          experiment -> {
+            experiment.addSpecimens(specimens);
+            projectRepository.update(project);
+          },
+          () -> {
+            throw new RuntimeException(
+                "The project does not have an active experiment."); //TODO specify exception
+          });
+    });
+  }
+
+  /**
+   * TODO
+   *
+   * @param projectId
+   * @param analytes
+   */
+  public void addAnalyteToActiveExperiment(String projectId, Analyte... analytes) {
+    ProjectId id = ProjectId.parse(projectId);
+    Optional<Project> optionalProject = projectRepository.find(id);
+    optionalProject.ifPresent(project -> {
+      project.activeExperiment().ifPresentOrElse(
+          experiment -> {
+            experiment.addAnalytes(analytes);
+            projectRepository.update(project);
+          },
+          () -> {
+            throw new RuntimeException(
+                "The project does not have an active experiment."); //TODO specify exception
+          });
+    });
+  }
+
+  @PostAuthorize("hasPermission(returnObject.get(),'VIEW_PROJECT')")
   public Optional<Project> find(ProjectId projectId) {
     log.debug("Search for project with id: " + projectId.toString());
     return projectRepository.find(projectId);

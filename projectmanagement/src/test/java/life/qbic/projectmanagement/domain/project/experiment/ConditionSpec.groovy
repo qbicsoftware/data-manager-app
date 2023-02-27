@@ -16,7 +16,7 @@ class ConditionSpec extends Specification {
         ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
         ExperimentalVariable<ExperimentalValue> experimentalVar = new ExperimentalVariable<>("test variable", experimentalValue)
         def level = new VariableLevel<>(experimentalVar, experimentalValue)
-        def condition = Condition.create(level)
+        def condition = Condition.createForExperiment(level)
 
         when:
         Optional<ExperimentalValue> result = condition.valueOf(experimentalVar)
@@ -31,7 +31,7 @@ class ConditionSpec extends Specification {
         ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
         ExperimentalVariable<ExperimentalValue> experimentalVar = new ExperimentalVariable<>("test variable", experimentalValue)
         def level = new VariableLevel<>(experimentalVar, experimentalValue)
-        def condition = Condition.create(level)
+        def condition = Condition.createForExperiment(level)
 
         when:
         Optional<ExperimentalValue> result = condition.valueOf(new ExperimentalVariable<ExperimentalValue>("unknown variable", experimentalValue))
@@ -51,7 +51,7 @@ class ConditionSpec extends Specification {
         def level2 = new VariableLevel<>(experimentalVar2, experimentalValue)
         def level3 = new VariableLevel<>(experimentalVar3, experimentalValue)
 
-        def condition = Condition.create(level, level2, level3)
+        def condition = Condition.createForExperiment(level, level2, level3)
 
         when:
         List<ExperimentalVariable> result = condition.experimentalVariables()
@@ -70,7 +70,7 @@ class ConditionSpec extends Specification {
         def level2 = new VariableLevel<>(experimentalVar2, experimentalValue)
 
         when:
-        Condition.create(level, level2)
+        Condition.createForExperiment(level, level2)
 
         then:
         thrown(IllegalArgumentException)
@@ -78,7 +78,7 @@ class ConditionSpec extends Specification {
 
     def "If the number of provided variable levels is less than one, throw an IllegalArgumentException" () {
         when:
-        Condition.create()
+        Condition.createForExperiment()
 
         then:
         thrown(IllegalArgumentException)

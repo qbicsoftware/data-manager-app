@@ -2,9 +2,10 @@ package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public record Analyte(String label) {
+public record Analyte(String label) implements Serializable {
 
   public Analyte {
     Objects.requireNonNull(label);

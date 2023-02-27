@@ -18,10 +18,10 @@ class ExperimentalDesignSpec extends Specification {
     def "When an experimental variable with a given name already is part of the design, return a failure result"() {
         given:
         def design = new ExperimentalDesign()
-        design.createExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
+        design.addExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
 
         when:
-        def result = design.createExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("5", "mmol/l"), ExperimentalValue.create("20", "mmol/l"))
+        def result = design.addExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("5", "mmol/l"), ExperimentalValue.create("20", "mmol/l"))
 
         then:
         result.isFailure()
@@ -31,10 +31,10 @@ class ExperimentalDesignSpec extends Specification {
     def "When an experimental variable is new to an design, add the new variable and return with a success result"() {
         given:
         def design = new ExperimentalDesign()
-        design.createExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
+        design.addExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
 
         when:
-        def result = design.createExperimentalVariable("CBD Dosage", ExperimentalValue.create("5", "mmol/l"), ExperimentalValue.create("20", "mmol/l"))
+        def result = design.addExperimentalVariable("CBD Dosage", ExperimentalValue.create("5", "mmol/l"), ExperimentalValue.create("20", "mmol/l"))
 
         then:
         result.isSuccess()
@@ -57,7 +57,7 @@ class ExperimentalDesignSpec extends Specification {
     def "If the provided condition is part of the experimental design, create a sample group and return a success response"() {
         given:
         def design = new ExperimentalDesign()
-        def result =  design.createExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
+        def result = design.addExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
 
         when:
         def conditionResult = design.createCondition(new VariableLevel<>(result.value(), ExperimentalValue.create("10", "mmol/l")))
@@ -72,7 +72,7 @@ class ExperimentalDesignSpec extends Specification {
     def "If a sample group with the provided name already exists in the design, return a failure response"() {
         given:
         def design = new ExperimentalDesign()
-        def result =  design.createExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
+        def result = design.addExperimentalVariable("Caffeine Dosage", ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l"))
 
         when:
         def conditionResult = design.createCondition(new VariableLevel<>(result.value(), ExperimentalValue.create("10", "mmol/l")))

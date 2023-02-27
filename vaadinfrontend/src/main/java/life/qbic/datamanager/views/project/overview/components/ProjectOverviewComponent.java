@@ -28,10 +28,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -261,9 +258,16 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectInformationDialog.responsiblePerson.getValue() != null
               ? projectInformationDialog.responsiblePerson.getValue() : null;
 
+      List<Analyte> analytes = projectInformationDialog.analyteBox.getSelectedItems().stream()
+          .toList();
+      List<Species> species = projectInformationDialog.speciesBox.getSelectedItems().stream()
+          .toList();
+      List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
+          .toList();
+
       Result<Project, ApplicationException> project = projectCreationService.createProject(
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
-          projectManager, principalInvestigator, responsiblePerson);
+          projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
 
       project.ifSuccessOrElse(
           result -> {
