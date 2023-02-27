@@ -8,6 +8,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.datamanager.Application;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.logging.api.Logger;
@@ -88,12 +89,10 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void onLoginSucceeded() {
-    logger.info("Login event fired");
     clearNotifications();
     registeredLoginView.getUI().ifPresentOrElse(ui -> {
-      ui.navigate("");
-      logger.info("Routing to projects");
-    }, () -> logger.info("no UI found!"));
+      ui.navigate(AppRoutes.MAIN);
+    }, () -> logger.error("No UI found!"));
   }
 
   @Override
