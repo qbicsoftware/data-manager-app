@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
@@ -203,16 +204,21 @@ public class ProjectInformationDialog extends Dialog {
    * interfaces
    */
   public void reset() {
-    formLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
-        .forEach(component -> ((HasValue<?, ?>) component).clear());
-    formLayout.getChildren().filter(component -> component instanceof HasValidation)
-        .forEach(component -> ((HasValidation) component).setInvalid(false));
+    resetChildValidation(formLayout);
+    resetChildValidation(codeAndTitleLayout);
 
-    // reset components in sub-layout
-    codeAndTitleLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
-        .forEach(component -> ((HasValue<?, ?>) component).clear());
-    codeAndTitleLayout.getChildren().filter(component -> component instanceof HasValidation)
-        .forEach(component -> ((HasValidation) component).setInvalid(false));
+    resetChildValues(formLayout);
+    resetChildValues(codeAndTitleLayout);
+  }
+
+  private void resetChildValues(Component component) {
+    component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
+        .forEach(comp -> ((HasValue<?, ?>) comp).clear());
+  }
+
+  private void resetChildValidation(Component component) {
+    component.getChildren().filter(comp -> comp instanceof HasValidation)
+        .forEach(comp -> ((HasValidation) comp).setInvalid(false));
   }
 
   public void resetAndClose() {
