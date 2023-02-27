@@ -1,10 +1,8 @@
 package life.qbic.datamanager.views.login;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.datamanager.Application;
@@ -91,7 +89,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void onLoginSucceeded() {
     clearNotifications();
     registeredLoginView.getUI().ifPresentOrElse(ui -> {
-      ui.navigate(AppRoutes.MAIN);
+      ui.navigate(AppRoutes.PROJECTS);
     }, () -> logger.error("No UI found!"));
   }
 

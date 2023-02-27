@@ -20,8 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Project Overview")
-@Route(value = AppRoutes.MAIN, layout = MainLayout.class)
-@RouteAlias(value = AppRoutes.MAIN_ALIAS)
+@Route(value = AppRoutes.PROJECTS, layout = MainLayout.class)
+@RouteAlias(value = AppRoutes.PROJECTS_ALIAS)
 @PermitAll
 public class ProjectOverviewPage extends Div {
   @Serial
