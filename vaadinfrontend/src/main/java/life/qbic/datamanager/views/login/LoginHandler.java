@@ -4,10 +4,15 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
+import life.qbic.datamanager.Application;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,6 +24,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
+
+  private static final Logger logger = LoggerFactory.logger(Application.class.getName());
 
   private LoginLayout registeredLoginView;
 
@@ -83,7 +90,9 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   private void onLoginSucceeded() {
     clearNotifications();
-    UI.getCurrent().navigate("/projects");
+    registeredLoginView.getUI().ifPresentOrElse(ui -> {
+      ui.navigate(AppRoutes.MAIN);
+    }, () -> logger.error("No UI found!"));
   }
 
   @Override
