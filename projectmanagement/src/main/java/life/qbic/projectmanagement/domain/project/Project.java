@@ -1,15 +1,28 @@
 package life.qbic.projectmanagement.domain.project;
 
-import java.util.Optional;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
+import static java.util.Objects.requireNonNull;
 
-import javax.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
+import java.util.Optional;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
 /**
  * A project planned and run at QBiC.
@@ -26,7 +39,7 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "project", orphanRemoval = true)
   // "project" being the colum in the experiments table
   private List<Experiment> experiments;
 

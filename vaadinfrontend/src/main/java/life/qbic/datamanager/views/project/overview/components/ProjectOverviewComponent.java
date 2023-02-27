@@ -22,13 +22,15 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -58,6 +60,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.context.annotation.SessionScope;
 
 /**
  * <b>Projects Overview</b>
@@ -67,7 +70,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @SpringComponent
-@UIScope
+@SessionScope
 public class ProjectOverviewComponent extends Composite<CardLayout> {
 
   @Serial
@@ -77,7 +80,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
+  private final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
       .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,

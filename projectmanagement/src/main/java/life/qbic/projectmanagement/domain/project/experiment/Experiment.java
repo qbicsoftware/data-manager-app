@@ -1,14 +1,20 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-
-import javax.persistence.*;
-import java.util.*;
 
 
 @Entity(name = "experiments_datamanager")
@@ -75,6 +81,25 @@ public class Experiment {
     return Result.success(variableName);
   }
 
+  public Result<VariableLevel, Exception> getLevel(String variableName,
+      ExperimentalValue value) {
+    Objects.requireNonNull(variableName);
+    Objects.requireNonNull(value);
+    Optional<ExperimentalVariable> variableOptional = experimentalDesign.variables.stream()
+        .filter(it -> it.name().value().equals(variableName))
+        .findAny();
+    if (variableOptional.isEmpty()) {
+      throw new IllegalArgumentException(
+          "There is no variable " + variableName + "in this experiment");
+    }
+    try {
+      var level = new VariableLevel(variableOptional.get(), value);
+      return Result.success(level);
+    } catch (RuntimeException e) {
+      return Result.failure(e);
+    }
+  }
+
   /**
    * TODO
    *
@@ -102,6 +127,14 @@ public class Experiment {
       return Result.failure(e);
     }
     return Result.success(conditionLabel);
+  }
+
+  public ExperimentalValue getValueForVariableInCondition(String conditionLabel,
+      String variableName) {
+    //TODO make beautiful
+    Condition condition = experimentalDesign.conditions.stream()
+        .filter(it -> it.label().value().equals(conditionLabel)).findAny().orElseThrow();
+    return condition.valueOf(variableName).orElseThrow();
   }
 
   /**

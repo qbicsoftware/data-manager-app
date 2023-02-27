@@ -18,6 +18,7 @@ import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -57,18 +58,30 @@ public class ProjectCreationService {
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
 
     try {
-      Project project;
-      project = createProject(title, objective, experimentalDesign,
+      Project project = createProject(title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       Experiment experiment = Experiment.create(project, analyteList, specimenList, speciesList);
+      //fixme
+      Result<String, Exception> varName = experiment.addVariableToDesign("my var",
+          ExperimentalValue.create("number one"),
+          ExperimentalValue.create("number two"));
+      VariableLevel level = experiment.getLevel(varName.value(),
+          ExperimentalValue.create("number one")).value();
+      experiment.defineCondition("my condition 1", level);
+      //fixme end
+
       project.linkExperiment(experiment);
+      ExperimentalValue myVar = project.activeExperiment()
+          .map(it -> it.getValueForVariableInCondition("my condition 1", "my var")).orElse(null);
+
       projectRepository.add(project);
 
-      Experiment experiment1 = project.activeExperiment().orElse(null);
-//      experiment1.defineCondition("my condition",) //TODO next morning
+      Project project1 = projectRepository.find(project.getId()).orElse(null);
+      ExperimentalValue myVar1 = project1.activeExperiment()
+          .map(it -> it.getValueForVariableInCondition("my condition 1", "my var")).orElse(null);
 
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {

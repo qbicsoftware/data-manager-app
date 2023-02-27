@@ -1,5 +1,15 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.SampleGroupExistsException;
@@ -8,9 +18,6 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownEx
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-
-import javax.persistence.*;
-import java.util.*;
 
 /**
  * <b>Experimental Design</b>
@@ -89,7 +96,7 @@ public class ExperimentalDesign {
   @JoinColumn(name = "experimentId")
   final List<ExperimentalVariable> variables = new ArrayList<>();
 
-  @OneToMany(targetEntity = Condition.class, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(targetEntity = Condition.class, orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   final Collection<Condition> conditions = new ArrayList<>();
 
@@ -114,6 +121,7 @@ public class ExperimentalDesign {
     int specimenCount = specimens.size();
     int speciesCount = species.size();
     int variableCount = variables.size();
+    int conditionCount = conditions.size();
   }
 
   private ExperimentalDesign(List<Analyte> analytes, List<Specimen> specimens,

@@ -1,16 +1,20 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import java.util.*;
-import java.util.stream.Collectors;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
@@ -54,7 +58,7 @@ public class Condition {
   private ConditionLabel label;
 
   @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
-  @JoinColumn
+  @JoinColumn(name = "conditionId")
   private List<VariableLevel> variableLevels;
 
   @ManyToOne
@@ -82,6 +86,9 @@ public class Condition {
 
   private Condition(Experiment experiment, String label, VariableLevel... variableLevels) {
     Arrays.stream(variableLevels).forEach(Objects::requireNonNull);
+    Objects.requireNonNull(experiment, "experiment must not be null");
+    Objects.requireNonNull(label, "condition label must not be null");
+
     boolean allLevelsOfTheSameExperiment = Arrays.stream(variableLevels)
         .map(VariableLevel::variableId)
         .map(ExperimentalVariableId::experimentId)
@@ -104,6 +111,7 @@ public class Condition {
           "Variable levels are not from distinct experimental variables.");
     }
     this.id = ConditionId.create(experiment.experimentId());
+    this.experiment = experiment;
     this.label = ConditionLabel.create(label);
     this.variableLevels = Arrays.stream(variableLevels).toList();
   }

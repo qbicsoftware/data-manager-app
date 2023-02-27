@@ -8,6 +8,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable.ExperimentalVariableId;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
@@ -32,10 +33,8 @@ public class VariableLevel {
   @Convert(converter = VariableNameAttributeConverter.class)
   @Column(name = "variableName")
   private VariableName variableName;
-  @AttributeOverrides({
-      @AttributeOverride(name = "value", column = @Column(name = "value")),
-      @AttributeOverride(name = "unit", column = @Column(name = "unit"))
-  })
+
+  @Embedded
   private ExperimentalValue experimentalValue;
 
   public VariableLevel(ExperimentalVariable experimentalVariable,
@@ -58,7 +57,7 @@ public class VariableLevel {
     // used for jpa
   }
 
-  boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
+  private boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
       ExperimentalValue experimentalValue) {
     return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
   }

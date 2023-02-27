@@ -1,25 +1,23 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.Random;
-import java.util.StringJoiner;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
-
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -53,10 +51,12 @@ public class ExperimentalVariable {
   private final List<ExperimentalValue> levels;
 
   private ExperimentalVariable(Experiment experiment, String name, ExperimentalValue... levels) {
+    Arrays.stream(levels)
+        .forEach(level -> Objects.requireNonNull(level, "only non-null levels expected"));
     Objects.requireNonNull(experiment);
     Objects.requireNonNull(name);
     if (levels.length < 1) {
-      throw new IllegalArgumentException("At least one variable required. Got " + levels.length);
+      throw new IllegalArgumentException("At least one variable level required.");
     }
     this.experiment = experiment;
     this.id = ExperimentalVariableId.create(experiment.experimentId());
