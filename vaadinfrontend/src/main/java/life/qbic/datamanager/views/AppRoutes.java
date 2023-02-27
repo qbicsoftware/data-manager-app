@@ -1,16 +1,24 @@
 package life.qbic.datamanager.views;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Defines the data manager's public application routes, that
+ * shall be visible by all components within the app.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * Local routes of components should be listed here with care!
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class AppRoutes {
 
+  /**
+   * The "Main" page of the data manager app. Location, where you want the user to be
+   * directed to, if no explicit path has been provided.
+   */
   public static final String MAIN = "";
 
+  /**
+   * The alias name for the MAIN route.
+   */
   public static final String MAIN_ALIAS = "projects";
 
 }
