@@ -101,7 +101,7 @@ public class ExperimentalVariable {
   }
 
   private boolean hasDifferentUnitThanDefinedLevels(ExperimentalValue experimentalValue) {
-    return levels.stream().anyMatch(it -> it.unit().equals(experimentalValue.unit()));
+    return levels.stream().anyMatch(it -> !it.unit().equals(experimentalValue.unit()));
   }
 
   public List<ExperimentalValue> levels() {
