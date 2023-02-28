@@ -13,7 +13,7 @@ import javax.persistence.Embeddable;
  * The unique identifier of a project
  */
 @Embeddable
-public final class ProjectId implements Serializable {
+public class ProjectId implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 7904987287799381970L;

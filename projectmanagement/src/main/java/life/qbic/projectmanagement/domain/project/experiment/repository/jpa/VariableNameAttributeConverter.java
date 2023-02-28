@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
-import java.util.Objects;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.experiment.VariableName;

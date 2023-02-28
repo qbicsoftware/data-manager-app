@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
 import java.util.Optional;
+import javax.transaction.Transactional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -18,8 +19,6 @@ import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
@@ -52,6 +51,7 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
+  @Transactional
   public Result<Project, ApplicationException> createProject(String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
@@ -60,29 +60,16 @@ public class ProjectCreationService {
     try {
       Project project = createProject(title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
+      projectRepository.add(project);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-      Experiment experiment = Experiment.create(project, analyteList, specimenList, speciesList);
-      //fixme
-      Result<String, Exception> varName = experiment.addVariableToDesign("my var",
-          ExperimentalValue.create("number one"),
-          ExperimentalValue.create("number two"));
-      VariableLevel level = experiment.getLevel(varName.value(),
-          ExperimentalValue.create("number one")).value();
-      experiment.defineCondition("my condition 1", level);
-      //fixme end
 
-      project.linkExperiment(experiment);
-      ExperimentalValue myVar = project.activeExperiment()
-          .map(it -> it.getValueForVariableInCondition("my condition 1", "my var")).orElse(null);
-
-      projectRepository.add(project);
-
-      Project project1 = projectRepository.find(project.getId()).orElse(null);
-      ExperimentalValue myVar1 = project1.activeExperiment()
-          .map(it -> it.getValueForVariableInCondition("my condition 1", "my var")).orElse(null);
-
+      Experiment experiment = Experiment.createForProject(project, analyteList, specimenList,
+          speciesList);
+      experimentRepository.add(experiment);
+      project.linkExperiment(experiment.experimentId());
+      projectRepository.update(project);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -104,8 +91,10 @@ public class ProjectCreationService {
 
   private Project createProject(String title,
       String objective,
-      String experimentalDesign, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      String experimentalDesign,
+      PersonReference projectManager,
+      PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {

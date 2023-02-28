@@ -1,10 +1,11 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository;
 
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
- * Stores and retrieves Experiment aggregates
+ * Finds creates and updates Experiment Aggregates.
  */
 public interface ExperimentRepository {
 
@@ -12,6 +13,6 @@ public interface ExperimentRepository {
 
   void update(Experiment experiment);
 
-  Experiment find(ExperimentId id);
+  Optional<Experiment> find(ExperimentId id);
 
 }

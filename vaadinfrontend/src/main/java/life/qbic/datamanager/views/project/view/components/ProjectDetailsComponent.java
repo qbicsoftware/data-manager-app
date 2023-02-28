@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
@@ -112,8 +111,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan());
     speciesMultiSelectComboBox = new MultiSelectComboBox<>();
+    speciesMultiSelectComboBox.setClearButtonVisible(false);
     specimenMultiSelectComboBox = new MultiSelectComboBox<>();
+    specimenMultiSelectComboBox.setClearButtonVisible(false);
     analyteMultiSelectComboBox = new MultiSelectComboBox<>();
+    analyteMultiSelectComboBox.setClearButtonVisible(false);
+
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
         initPersonReferenceCombobox("Principal Investigator"),
         createPlaceHolderSpan());
@@ -252,11 +255,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
       responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
-      project.activeExperiment().ifPresent(experiment -> {
-        speciesMultiSelectComboBox.setValue(experiment.getSpecies());
-        specimenMultiSelectComboBox.setValue(experiment.getSpecimens());
-        analyteMultiSelectComboBox.setValue(experiment.getAnalytes());
-      });
+      analyteMultiSelectComboBox.setValue(
+          projectInformationService.getAnalytesOfActiveExperiment(project));
+      speciesMultiSelectComboBox.setValue(
+          projectInformationService.getSpeciesOfActiveExperiment(project));
+      specimenMultiSelectComboBox.setValue(
+          projectInformationService.getSpecimensOfActiveExperiment(project));
     }
 
     private void setupExperimentalDesignSearch() {

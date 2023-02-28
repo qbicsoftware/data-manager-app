@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.experiment.persistence;
 
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Repository;
 public class ExperimentJpaRepository implements ExperimentRepository {
 
 
-  private QbicExperimentRepo qbicExperimentRepo;
+  private final QbicExperimentRepo qbicExperimentRepo;
 
   @Autowired
   public ExperimentJpaRepository(QbicExperimentRepo qbicExperimentRepo) {
@@ -36,7 +37,7 @@ public class ExperimentJpaRepository implements ExperimentRepository {
   }
 
   @Override
-  public Experiment find(ExperimentId id) {
-    return qbicExperimentRepo.findExperimentDaoByExperimentId(id).stream().findFirst().orElse(null);
+  public Optional<Experiment> find(ExperimentId id) {
+    return qbicExperimentRepo.findExperimentDaoByExperimentId(id).stream().findFirst();
   }
 }

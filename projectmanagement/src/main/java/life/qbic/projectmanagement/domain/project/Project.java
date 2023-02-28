@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -18,10 +17,8 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
 /**
@@ -39,12 +36,8 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "project", orphanRemoval = true)
-  // "project" being the colum in the experiments table
-  private List<Experiment> experiments;
-
-  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  private Experiment activeExperiment;
+  @AttributeOverride(name = "uuid", column = @Column(name = "activeExperiment"))
+  private ExperimentId activeExperiment;
 
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
@@ -99,7 +92,7 @@ public class Project {
     setProjectManager(projectManager);
     setResponsiblePerson(responsiblePerson);
     linkedOffers = new ArrayList<>();
-    experiments = new ArrayList<>();
+//    experiments = new ArrayList<>();
   }
 
   public void setProjectManager(PersonReference projectManager) {
@@ -142,9 +135,8 @@ public class Project {
     lastModified = Instant.now();
   }
 
-  public void linkExperiment(Experiment experiment) {
-    experiments.add(experiment);
-    activeExperiment = experiment;
+  public void linkExperiment(ExperimentId experimentId) {
+    activeExperiment = experimentId;
     lastModified = Instant.now();
   }
 
@@ -243,7 +235,7 @@ public class Project {
     return responsiblePerson;
   }
 
-  public Optional<Experiment> activeExperiment() {
+  public Optional<ExperimentId> activeExperiment() {
     return Optional.ofNullable(activeExperiment);
   }
 

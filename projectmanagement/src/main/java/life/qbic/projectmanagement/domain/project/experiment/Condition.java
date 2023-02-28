@@ -18,7 +18,6 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable.ExperimentalVariableId;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ConditionLabelAttributeConverter;
 
 /**
@@ -41,7 +40,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Cond
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions in an experimental design can be defined via {@link Experiment#defineCondition(String, VariableLevel...)}.
+ * Conditions in an experimental design can be defined via {@link Experiment#addConditionToDesign(String, VariableLevel...)}.
  * <p>
  *
  * @since 1.0.0
@@ -58,7 +57,6 @@ public class Condition {
   private ConditionLabel label;
 
   @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
-  @JoinColumn(name = "conditionId")
   private List<VariableLevel> variableLevels;
 
   @ManyToOne
@@ -89,21 +87,12 @@ public class Condition {
     Objects.requireNonNull(experiment, "experiment must not be null");
     Objects.requireNonNull(label, "condition label must not be null");
 
-    boolean allLevelsOfTheSameExperiment = Arrays.stream(variableLevels)
-        .map(VariableLevel::variableId)
-        .map(ExperimentalVariableId::experimentId)
-        .allMatch(experimentId -> experimentId.equals(experiment.experimentId()));
-    if (!allLevelsOfTheSameExperiment) {
-      throw new IllegalArgumentException(
-          "Please provide only variable levels of the experiment.");
-    }
-
     if (variableLevels.length < 1) {
       throw new IllegalArgumentException("Please define at least one variable level.");
     }
 
     int distinctExperimentVariables = Arrays.stream(variableLevels)
-        .map(VariableLevel::variableId)
+        .map(VariableLevel::variableName)
         .collect(Collectors.toSet())
         .size();
     if (distinctExperimentVariables < variableLevels.length) {

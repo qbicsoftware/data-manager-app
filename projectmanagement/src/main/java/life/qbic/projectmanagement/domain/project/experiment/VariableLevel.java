@@ -3,13 +3,9 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.Objects;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable.ExperimentalVariableId;
 import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
@@ -25,13 +21,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Vari
 @Access(AccessType.FIELD)
 public class VariableLevel {
 
-  @AttributeOverrides({
-      @AttributeOverride(name = "id", column = @Column(name = "variableId")),
-      @AttributeOverride(name = "experimentId", column = @Column(name = "variableExperiment"))
-  })
-  private ExperimentalVariableId variableId;
   @Convert(converter = VariableNameAttributeConverter.class)
-  @Column(name = "variableName")
   private VariableName variableName;
 
   @Embedded
@@ -48,7 +38,7 @@ public class VariableLevel {
               experimentalVariable.name()));
     }
 
-    this.variableId = experimentalVariable.id();
+//    this.variableId = experimentalVariable.id();
     this.experimentalValue = experimentalValue;
     this.variableName = experimentalVariable.name();
   }
@@ -60,10 +50,6 @@ public class VariableLevel {
   private boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
       ExperimentalValue experimentalValue) {
     return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
-  }
-
-  public ExperimentalVariableId variableId() {
-    return variableId;
   }
 
   public VariableName variableName() {

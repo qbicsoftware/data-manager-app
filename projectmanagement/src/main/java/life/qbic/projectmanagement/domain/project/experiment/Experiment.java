@@ -1,13 +1,12 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -20,7 +19,8 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 @Entity(name = "experiments_datamanager")
 public class Experiment {
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project", nullable = false)
   private Project project;
 
   @EmbeddedId
@@ -31,17 +31,21 @@ public class Experiment {
 
 
   protected Experiment() {
-    experimentalDesign = new ExperimentalDesign();
+    // please use the create method. This is needed for JPA
   }
 
 
-  public static Experiment create(Project project, List<Analyte> analytes, List<Specimen> specimens,
+  public static Experiment createForProject(Project project, List<Analyte> analytes,
+      List<Specimen> specimens,
       List<Species> species) {
     Experiment experiment = new Experiment();
-    ExperimentalDesign experimentalDesign = ExperimentalDesign.create(analytes, specimens, species);
+    ExperimentalDesign experimentalDesign = ExperimentalDesign.create();
+    experiment.experimentalDesign = experimentalDesign;
     experiment.experimentId = ExperimentId.create();
     experiment.project = project;
-    experiment.experimentalDesign = experimentalDesign;
+    experimentalDesign.addSpecies(species.toArray(Species[]::new), experiment);
+    experimentalDesign.addSpecimens(specimens.toArray(Specimen[]::new), experiment);
+    experimentalDesign.addAnalytes(analytes.toArray(Analyte[]::new), experiment);
     return experiment;
   }
 
@@ -62,42 +66,12 @@ public class Experiment {
    */
   public Result<String, Exception> addVariableToDesign(String variableName,
       ExperimentalValue... levels) {
-    if (levels.length < 1) {
-      return Result.failure(new IllegalArgumentException(
-          "At least one level required. Got " + Arrays.deepToString(levels)));
-    }
-
-    if (experimentalDesign.isVariableDefined(variableName)) {
-      return Result.failure(new ExperimentalVariableExistsException(
-          "A variable with the name " + variableName + " already exists."));
-    }
-    try {
-      ExperimentalVariable variable = ExperimentalVariable.createForExperiment(
-          this, variableName, levels);
-      this.experimentalDesign.variables.add(variable);
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
-    return Result.success(variableName);
+    return experimentalDesign.addVariableToDesign(variableName, levels, this);
   }
 
   public Result<VariableLevel, Exception> getLevel(String variableName,
       ExperimentalValue value) {
-    Objects.requireNonNull(variableName);
-    Objects.requireNonNull(value);
-    Optional<ExperimentalVariable> variableOptional = experimentalDesign.variables.stream()
-        .filter(it -> it.name().value().equals(variableName))
-        .findAny();
-    if (variableOptional.isEmpty()) {
-      throw new IllegalArgumentException(
-          "There is no variable " + variableName + "in this experiment");
-    }
-    try {
-      var level = new VariableLevel(variableOptional.get(), value);
-      return Result.success(level);
-    } catch (RuntimeException e) {
-      return Result.failure(e);
-    }
+    return experimentalDesign.getLevels(variableName, value);
   }
 
   /**
@@ -107,35 +81,11 @@ public class Experiment {
    * @param levels
    * @return
    */
-  public Result<String, Exception> defineCondition(String conditionLabel,
+  public Result<String, Exception> addConditionToDesign(String conditionLabel,
       VariableLevel... levels) {
-    Arrays.stream(levels).forEach(Objects::requireNonNull);
-
-    try {
-      Condition condition = Condition.createForExperiment(this, conditionLabel, levels);
-      if (experimentalDesign.isConditionDefined(conditionLabel)) {
-        //TODO label is not available <- same id
-        return Result.failure(new RuntimeException(
-            "please provide a different condition label. A condition with the label "
-                + conditionLabel + " exists."));
-      }
-      if (experimentalDesign.containsConditionWithSameLevels(condition)) {
-        //TODO another condition with the same levels is already defined <- same content
-      }
-      this.experimentalDesign.conditions.add(condition);
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
-    return Result.success(conditionLabel);
+    return experimentalDesign.addConditionToDesign(conditionLabel, levels, this);
   }
 
-  public ExperimentalValue getValueForVariableInCondition(String conditionLabel,
-      String variableName) {
-    //TODO make beautiful
-    Condition condition = experimentalDesign.conditions.stream()
-        .filter(it -> it.label().value().equals(conditionLabel)).findAny().orElseThrow();
-    return condition.valueOf(variableName).orElseThrow();
-  }
 
   /**
    * Adds
@@ -151,19 +101,11 @@ public class Experiment {
     return experimentalDesign.addLevelToVariable(variableName, level);
   }
 
+  /**
+   * @return the identifier of this experiment
+   */
   public ExperimentId experimentId() {
     return experimentId;
-  }
-
-  /**
-   * @param sampleGroupName
-   * @param conditionName
-   * @param biologicalReplicates
-   * @return sample group name
-   */
-  String addSampleGroupForCondition(String sampleGroupName, String conditionName,
-      int biologicalReplicates) {
-    throw new RuntimeException("not implemented");
   }
 
 
@@ -180,27 +122,7 @@ public class Experiment {
   }
 
   public void addSpecies(Species... species) {
-    final String speciesVariableName = "species";
-
-    if (species.length < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any species to add.");
-    }
-    // only add specimen that are not present already
-    List<Species> newSpecies = Arrays.stream(species)
-        .filter(it -> !experimentalDesign.species.contains(it))
-        .toList();
-    experimentalDesign.species.addAll(newSpecies);
-
-    // check whether we need a variable
-    if (experimentalDesign.species.size() > 1) {
-      // we already have species, thus a new variable is created
-      ExperimentalValue[] levels = experimentalDesign.species.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toArray(ExperimentalValue[]::new);
-
-      addVariableOrLevels(speciesVariableName, levels);
-    }
+    experimentalDesign.addSpecies(species, this);
   }
 
   /**
@@ -209,90 +131,16 @@ public class Experiment {
    * @param specimens
    */
   public void addSpecimens(Specimen... specimens) {
-    final String specimensVariableName = "specimen";
-
-    if (specimens.length < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any specimen to add.");
-    }
-    // only add specimen that are not present already
-    List<Specimen> newSpecimens = Arrays.stream(specimens)
-        .filter(it -> !experimentalDesign.specimens.contains(it))
-        .toList();
-    experimentalDesign.specimens.addAll(newSpecimens);
-
-    if (experimentalDesign.noSpecimenPresent()) {
-      // we do not have any specimens yet
-      experimentalDesign.specimens.addAll(List.of(specimens));
-    } else {
-      // we already have specimen, thus a new variable is created
-      ExperimentalValue[] levels = experimentalDesign.specimens.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toArray(ExperimentalValue[]::new);
-
-      addVariableOrLevels(specimensVariableName, levels);
-    }
-  }
-
-  public void addAnalytes(Analyte... analytes) {
-    final String analytesVariableName = "analyte";
-
-    if (analytes.length < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any analyte to add.");
-    }
-    if (experimentalDesign.analytes.size() > 0) {
-      experimentalDesign.analytes.addAll(List.of(analytes));
-      // we already have species, thus a new variable is created
-      ExperimentalValue[] levels = experimentalDesign.analytes.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toArray(ExperimentalValue[]::new);
-
-      Result<String, Exception> variableAdded = addVariableToDesign(analytesVariableName,
-          levels);
-      if (variableAdded.isSuccess()) {
-        return;
-      }
-      if (variableAdded.isFailure()
-          && variableAdded.exception() instanceof ExperimentalVariableExistsException) {
-        // at this point we know there is a variable with the name `analyte`, so we only need to add the levels
-        for (ExperimentalValue level : levels) {
-          addLevelToVariable(analytesVariableName, level);
-        }
-      }
-    }
+    experimentalDesign.addSpecimens(specimens, this);
   }
 
   /**
-   * add a variable, or if it exists add missing levels to the variable
+   * TODO
    *
-   * @param variableName
-   * @param levels
+   * @param analytes
    */
-  private void addVariableOrLevels(String variableName, ExperimentalValue[] levels) {
-    addVariableToDesign(variableName, levels).ifSuccessOrElse(
-        v -> {
-        },
-        e -> {
-          if (e instanceof ExperimentalVariableExistsException) {
-            // at this point we know there is a variable with the name `specimen`, so we only need to add the levels
-            for (ExperimentalValue level : levels) {
-              addLevelToVariable(variableName, level).ifSuccessOrElse(
-                  v2 -> {
-                  },
-                  e2 -> {
-                    //TODO what exception to throw here?
-                    throw new RuntimeException(
-                        "could not add level " + level + " to variable "
-                            + variableName, e2);
-                  });
-            }
-          } else if (e instanceof IllegalArgumentException) {
-            //TODO what exception to throw here?
-            throw new RuntimeException(e);
-          }
-        }
-    );
+  public void addAnalytes(Analyte... analytes) {
+    experimentalDesign.addAnalytes(analytes, this);
   }
 
 }

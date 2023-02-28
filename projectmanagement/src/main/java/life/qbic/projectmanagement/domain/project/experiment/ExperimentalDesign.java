@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
@@ -11,10 +13,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.project.experiment.exception.SampleGroupExistsException;
-import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownConditionException;
-import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownExperimentalVariableException;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -83,6 +83,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
  *
  * @since 1.0.0
  */
+// TODO JAVADOC
 @Embeddable
 public class ExperimentalDesign {
 
@@ -94,27 +95,32 @@ public class ExperimentalDesign {
   final List<Specimen> specimens = new ArrayList<>();
   @OneToMany(targetEntity = ExperimentalVariable.class, orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
+  // so no extra table is created as experimental_variables contains that column
   final List<ExperimentalVariable> variables = new ArrayList<>();
 
   @OneToMany(targetEntity = Condition.class, orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
+  // so no extra table is created as conditions contains that column
   final Collection<Condition> conditions = new ArrayList<>();
 
   public Collection<Condition> conditions() {
     return conditions;
   }
-//
-//  @OneToMany(targetEntity = Condition.class, orphanRemoval = true, cascade = CascadeType.ALL)
-//  final List<Condition> conditions = new ArrayList<>();
 
-//  final List<Condition> conditions;
-//  private final List<SampleGroup> sampleGroups;
-
-
-  public ExperimentalDesign() {
-
+  protected ExperimentalDesign() {
+    // needed for JPA
   }
 
+  public static ExperimentalDesign create() {
+    return new ExperimentalDesign();
+  }
+
+  /*do we need the lists to be populated? Can we use @Transactional instead?
+    benefits (+) and draw-backs (-)
+      (+) less load on the database when designs are loaded
+      (-) we cannot be sure the collections are loaded and might get LazyInvocationExceptions
+      (-) we have to be careful to use @Transactional in the context where experimental designs are loaded from the database. In application services for example
+   */
   @PostLoad
   private void loadCollections() {
     int analyteCount = analytes.size();
@@ -124,17 +130,6 @@ public class ExperimentalDesign {
     int conditionCount = conditions.size();
   }
 
-  private ExperimentalDesign(List<Analyte> analytes, List<Specimen> specimens,
-      List<Species> species) {
-    this.analytes.addAll(analytes);
-    this.specimens.addAll(specimens);
-    this.species.addAll(species);
-  }
-
-  public static ExperimentalDesign create(List<Analyte> analytes, List<Specimen> specimens,
-      List<Species> species) {
-    return new ExperimentalDesign(analytes, specimens, species);
-  }
 
 
   /**
@@ -167,142 +162,13 @@ public class ExperimentalDesign {
   }
 
   private Optional<ExperimentalVariable> variableWithName(String variableName) {
-    return variables.stream().filter(it -> it.name().equals(variableName)).findAny();
+    return variables.stream().filter(it -> it.name().value().equals(variableName)).findAny();
   }
 
   public boolean isVariableDefined(String variableName) {
-    return variables.stream().anyMatch(it -> it.name().equals(variableName));
-  }
-  /**
-   * Creates and adds a new condition to the experimental design. A successful creation can e
-   * verified via {@link Result#isSuccess()}.
-   * <p>
-   * <b>Note:</b> All experimental variables in the condition need to be already part of the design
-   * and created via
-   * {@link ExperimentalDesign#addExperimentalVariable(String, ExperimentalValue...)}. Otherwise,
-   * the operation will fail and the result object contain an
-   * {@link UnknownExperimentalVariableException}.
-   *
-   * @param variableLevels one more levels of distinct experimental variables
-   * @return a result object with the created condition, or with an exception if the creation
-   * failed.
-   * @since 1.0.0
-   *//*
-  public final Result<Condition, Exception> createCondition(VariableLevel... variableLevels) {
-    if (!new HashSet<>(this.variableLevels).containsAll(List.of(variableLevels))) {
-      return Result.failure(
-              new UnknownExperimentalVariableException(
-                      "At least one experiment variable is not defined in the design."));
-    }
-    VariableLevel[] levels = Arrays.copyOf(variableLevels, variableLevels.length);
-    Condition condition = null;
-    try {
-      condition = Condition.create("condition" + conditions.size(), levels); //assumption: no condition is removed ever
-      conditions.add(condition);
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
-    return Result.success(condition);
+    return variables.stream().anyMatch(it -> it.name().value().equals(variableName));
   }
 
-
-  */
-
-  /**
-   * Creates a new sample group and adds it to the experimental design.
-   * <p>
-   * A sample group represents a certain condition (experimental variable level combination) within
-   * an experiment and the amount of true biological replicates.
-   * <p>
-   * <b>Note:</b> the referenced condition needs to be already defined in the experimental design
-   * using {@link ExperimentalDesign#createCondition(VariableLevel[])}. Also, the label for the
-   * sample group needs to be unique within the design.
-   *
-   * @param label                A unique textual tag representing the group within the design
-   * @param biologicalReplicates the number of true biological replicates of the group
-   * @param conditionId          the condition id that references the condition that is represented
-   *                             in the sample group
-   * @return a {@link Result} object indicates if the operation was successful when it returns the
-   * sample group object that has been created. If the operation failed, the result object will
-   * contain an exception. A {@link UnknownConditionException} is present, if the referenced
-   * condition is not part of the design, {@link SampleGroupExistsException} will be present a
-   * sample group with the same label already exists in the design.
-   * @since 1.0.0
-   *//*
-  public Result<SampleGroup, Exception> createSampleGroup(String label, int biologicalReplicates,
-      Long conditionId) {
-    Optional<Condition> result = findCondition(conditionId);
-    if (result.isEmpty()) {
-      return Result.failure(
-          new UnknownConditionException("Condition with id %d not part of the design"));
-    }
-    if (findByLabel(label).isPresent()) {
-      return Result.failure(
-          new SampleGroupExistsException("Sample Group with label %s already exists"));
-    }
-    var sampleGroup = SampleGroup.with(label, result.get(), biologicalReplicates);
-    this.sampleGroups.add(sampleGroup);
-    return Result.success(sampleGroup);
-  }
-
-  public Iterator<SampleGroup> sampleGroupIterator() {
-    return sampleGroups.listIterator();
-  }
-
-  public List<SampleGroup> sampleGroups() {
-    return sampleGroups.stream().toList();
-  }
-
-  public Optional<SampleGroup> findByLabel(String label) {
-    return sampleGroups().stream().filter(sampleGroup -> sampleGroup.label().equals(label))
-        .findAny();
-  }
-
-  private Optional<Condition> findCondition(Long conditionId) {
-    return conditions.stream().filter(condition -> condition.id().equals(conditionId)).findAny();
-  }
-
-  private Result<Condition, Exception> addToDesignOrElse(Condition condition,
-      Supplier<Result<Condition, Exception>> failureResponse) {
-    if (allVariablesPartOfDesign(condition.experimentalVariables())) {
-      conditions.add(condition);
-      return Result.success(condition);
-    }
-    return failureResponse.get();
-  }
-
-  private boolean allVariablesPartOfDesign(
-      List<ExperimentalVariable<ExperimentalValue>> experimentalVariables) {
-    for (var experimentalVariable : experimentalVariables) {
-      if (isVariablePartOfDesign(experimentalVariable)) {
-        continue;
-      }
-      return false;
-    }
-    return true;
-  }
-
-  private boolean isVariablePartOfDesign(ExperimentalVariable<ExperimentalValue> variableToCheck) {
-    return this.variableLevels.stream()
-        .anyMatch(variableInDesign -> variableInDesign.name().equals(variableToCheck.name()));
-  }
-
-
-  private Result<ExperimentalVariable<ExperimentalValue>, Exception> addExperimentalVariableOrElse(
-      ExperimentalVariable<ExperimentalValue> experimentalVariable,
-      Supplier<Result<ExperimentalVariable<ExperimentalValue>, Exception>> variableExists) {
-    if (doesNotExist(experimentalVariable)) {
-      variableLevels.add(experimentalVariable);
-      return Result.success(experimentalVariable);
-    }
-    return variableExists.get();
-  }
-
-  private boolean doesNotExist(ExperimentalVariable<ExperimentalValue> experimentalVariable) {
-    return variableLevels.stream()
-        .noneMatch(variable -> variable.equals(experimentalVariable));
-  }
-*/
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -335,18 +201,6 @@ public class ExperimentalDesign {
     return result;
   }
 
-  boolean noSpecimenPresent() {
-    return specimens.isEmpty();
-  }
-
-  boolean noSpeciesPresent() {
-    return species.isEmpty();
-  }
-
-  boolean noAnalytePresent() {
-    return analytes.isEmpty();
-  }
-
   public boolean isConditionDefined(String conditionLabel) {
     return conditions.stream()
         .map(Condition::label)
@@ -355,5 +209,185 @@ public class ExperimentalDesign {
 
   public boolean containsConditionWithSameLevels(Condition condition) {
     return conditions.stream().anyMatch(c -> c.hasIdenticalContent(condition));
+  }
+
+  Result<String, Exception> addVariableToDesign(String variableName,
+      ExperimentalValue[] levels, Experiment experiment) {
+    if (levels.length < 1) {
+      return Result.failure(new IllegalArgumentException(
+          "At least one level required. Got " + Arrays.deepToString(levels)));
+    }
+
+    if (isVariableDefined(variableName)) {
+      return Result.failure(new ExperimentalVariableExistsException(
+          "A variable with the name " + variableName + " already exists."));
+    }
+    try {
+      ExperimentalVariable variable = ExperimentalVariable.createForExperiment(experiment,
+          variableName, levels);
+      variables.add(variable);
+    } catch (IllegalArgumentException e) {
+      return Result.failure(e);
+    }
+    return Result.success(variableName);
+  }
+
+  Result<VariableLevel, Exception> getLevels(String variableName, ExperimentalValue value) {
+    Objects.requireNonNull(variableName);
+    Objects.requireNonNull(value);
+    Optional<ExperimentalVariable> variableOptional = variables.stream()
+        .filter(it -> it.name().value().equals(variableName))
+        .findAny();
+    if (variableOptional.isEmpty()) {
+      throw new IllegalArgumentException(
+          "There is no variable " + variableName + "in this experiment");
+    }
+    try {
+      var level = new VariableLevel(variableOptional.get(), value);
+      return Result.success(level);
+    } catch (RuntimeException e) {
+      return Result.failure(e);
+    }
+  }
+
+  Result<String, Exception> addConditionToDesign(String conditionLabel,
+      VariableLevel[] levels, Experiment experiment) {
+    Arrays.stream(levels).forEach(Objects::requireNonNull);
+
+    for (VariableLevel level : levels) {
+      if (!isVariableDefined(level.variableName().value())) {
+        return Result.failure(new IllegalArgumentException(
+            "There is no variable " + level.variableName().value() + " in this experiment."));
+      }
+    }
+    boolean areAllLevelsFromDefinedVariables = Arrays.stream(levels)
+        .allMatch(it -> isVariableDefined(it.variableName().value()));
+    if (!areAllLevelsFromDefinedVariables) {
+      return Result.failure(
+          new IllegalArgumentException(
+              "Not all levels are from variables defined in this experiment"));
+    }
+
+    try {
+      Condition condition = Condition.createForExperiment(experiment, conditionLabel, levels);
+      if (isConditionDefined(conditionLabel)) {
+        //TODO label is not available <- same id
+        return Result.failure(new RuntimeException(
+            "please provide a different condition label. A condition with the label "
+                + conditionLabel + " exists."));
+      }
+      if (containsConditionWithSameLevels(condition)) {
+        //TODO another condition with the same levels is already defined <- same content
+        return Result.failure(new RuntimeException(
+            "A condition containing the provided levels exists."));
+      }
+      conditions.add(condition);
+    } catch (IllegalArgumentException e) {
+      return Result.failure(e);
+    }
+    return Result.success(conditionLabel);
+  }
+
+  /**
+   * add a variable, or if it exists add missing levels to the variable
+   *
+   * @param variableName
+   * @param levels
+   * @param experiment
+   */
+  void addVariableOrLevels(String variableName, ExperimentalValue[] levels, Experiment experiment) {
+    experiment.addVariableToDesign(variableName, levels).ifSuccessOrElse(
+        v -> {
+        },
+        e -> {
+          if (e instanceof ExperimentalVariableExistsException) {
+            // at this point we know there is a variable with the name `specimen`, so we only need to add the levels
+            for (ExperimentalValue level : levels) {
+              addLevelToVariable(variableName, level).ifSuccessOrElse(
+                  v2 -> {
+                  },
+                  e2 -> {
+                    //TODO what exception to throw here?
+                    throw new RuntimeException(
+                        "could not add level " + level + " to variable "
+                            + variableName, e2);
+                  });
+            }
+          } else if (e instanceof IllegalArgumentException) {
+            //TODO what exception to throw here?
+            throw new RuntimeException(e);
+          }
+        }
+    );
+  }
+
+  void addSpecies(Species[] species, Experiment experiment) {
+    final String speciesVariableName = "species";
+
+    if (species.length < 1) {
+      throw new IllegalArgumentException(
+          "Did not get any species to add.");
+    }
+    // only add specimen that are not present already
+    List<Species> newSpecies = Arrays.stream(species)
+        .filter(it -> !this.species.contains(it))
+        .toList();
+    this.species.addAll(newSpecies);
+
+    // check whether we need a variable
+    if (this.species.size() > 1) {
+      // we have smore than 1 species, thus a new variable is created or levels are added
+      ExperimentalValue[] levels = this.species.stream()
+          .map(it -> ExperimentalValue.create(it.label()))
+          .toArray(ExperimentalValue[]::new);
+
+      addVariableOrLevels(speciesVariableName, levels, experiment);
+    }
+  }
+
+  void addSpecimens(Specimen[] specimens, Experiment experiment) {
+    final String specimensVariableName = "specimen";
+
+    if (specimens.length < 1) {
+      throw new IllegalArgumentException(
+          "Did not get any specimen to add.");
+    }
+    // only add specimen that are not present already
+    List<Specimen> newSpecimens = Arrays.stream(specimens)
+        .filter(it -> !this.specimens.contains(it))
+        .toList();
+    this.specimens.addAll(newSpecimens);
+
+    if (this.specimens.size() > 1) {
+      // we have more than 1 specimen, thus a new variable is created or levels are added
+      ExperimentalValue[] levels = this.specimens.stream()
+          .map(it -> ExperimentalValue.create(it.label()))
+          .toArray(ExperimentalValue[]::new);
+      addVariableOrLevels(specimensVariableName, levels, experiment);
+    }
+  }
+
+  void addAnalytes(Analyte[] analytes, Experiment experiment) {
+    final String analytesVariableName = "analyte";
+
+    if (analytes.length < 1) {
+      throw new IllegalArgumentException(
+          "Did not get any analyte to add.");
+    }
+
+    // only add analytes that are not present already
+    List<Analyte> newAnalytes = Arrays.stream(analytes)
+        .filter(it -> !this.analytes.contains(it))
+        .toList();
+    this.analytes.addAll(newAnalytes);
+
+    if (this.analytes.size() > 1) {
+      this.analytes.addAll(List.of(analytes));
+      // we have mone than 1 analyte, thus a new variable is created or levels are added
+      ExperimentalValue[] levels = this.analytes.stream()
+          .map(it -> ExperimentalValue.create(it.label()))
+          .toArray(ExperimentalValue[]::new);
+      addVariableOrLevels(analytesVariableName, levels, experiment);
+    }
   }
 }

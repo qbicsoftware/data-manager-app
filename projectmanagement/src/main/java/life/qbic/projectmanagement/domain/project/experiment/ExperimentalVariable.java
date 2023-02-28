@@ -94,15 +94,6 @@ public class ExperimentalVariable {
     return name;
   }
 
-  public ExperimentId experiment() {
-    return id.experimentId();
-  }
-
-
-  public ExperimentalVariableId id() {
-    return this.id;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
