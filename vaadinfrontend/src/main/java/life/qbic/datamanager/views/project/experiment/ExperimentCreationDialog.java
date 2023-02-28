@@ -1,18 +1,18 @@
 package life.qbic.datamanager.views.project.experiment;
 
-import com.vaadin.flow.component.HasValidation;
-import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
@@ -35,9 +35,9 @@ public class ExperimentCreationDialog extends Dialog {
   private final Handler handler;
   private final VerticalLayout dialogueContentLayout = new VerticalLayout();
   private final HorizontalLayout navHeaderLayout = new HorizontalLayout();
-  private final VerticalLayout defineExperimentalVariableLayout = new VerticalLayout();
-  private final List<FormLayout> experimentalVariablesLayouts = new ArrayList<>();
-  private final FormLayout designVariableTemplate = new FormLayout();
+  private final VerticalLayout experimentalVariableRowsContainerLayout = new VerticalLayout();
+  private final List<HorizontalLayout> experimentalVariablesLayoutRows = new ArrayList<>();
+  private final HorizontalLayout addExperimentalVariableLayoutRow = new HorizontalLayout();
   private final Button nextButton = new Button("Next");
   private final Button cancelButton = new Button("Cancel");
 
@@ -59,8 +59,8 @@ public class ExperimentCreationDialog extends Dialog {
     initDefineExperimentalVariableLayout();
     initDesignVariableTemplate();
     dialogueContentLayout.add(navHeaderLayout);
-    dialogueContentLayout.add(defineExperimentalVariableLayout);
-    dialogueContentLayout.add(designVariableTemplate);
+    dialogueContentLayout.add(experimentalVariableRowsContainerLayout);
+    dialogueContentLayout.add(addExperimentalVariableLayoutRow);
     add(dialogueContentLayout);
   }
 
@@ -71,37 +71,50 @@ public class ExperimentCreationDialog extends Dialog {
   private void initDefineExperimentalVariableLayout() {
     Span experimentalDesignHeader = new Span("Define Experimental Variable");
     experimentalDesignHeader.addClassName("font-bold");
-    defineExperimentalVariableLayout.add(experimentalDesignHeader);
-    experimentalVariablesLayouts.add(createExperimentalVariableLayout());
-    experimentalVariablesLayouts.add(createExperimentalVariableLayout());
-    experimentalVariablesLayouts.forEach(defineExperimentalVariableLayout::add);
+    experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
+    experimentalVariablesLayoutRows.add(createExperimentalVariableLayout());
+    experimentalVariablesLayoutRows.add(createExperimentalVariableLayout());
+    experimentalVariablesLayoutRows.forEach(experimentalVariableRowsContainerLayout::add);
   }
 
   private void initDesignVariableTemplate() {
+    TextField experimentalVariableField = new TextField("Experimental Variable");
+    TextField unitField = new TextField("Unit");
+    TextArea levelField = new TextArea("Levels");
+    experimentalVariableField.setEnabled(false);
+    unitField.setEnabled(false);
+    levelField.setEnabled(false);
     Icon plusIcon = new Icon(VaadinIcon.PLUS);
-    ComboBox<?> experimentalVariableCombobox = new ComboBox<>("Experimental Variable");
-    ComboBox<?> unitCombobox = new ComboBox<>("Unit");
-    ComboBox<?> levelCombobox = new ComboBox<>("Levels");
-    experimentalVariableCombobox.setEnabled(false);
-    unitCombobox.setEnabled(false);
-    levelCombobox.setEnabled(false);
-    designVariableTemplate.setResponsiveSteps(new ResponsiveStep("0", 4));
-    designVariableTemplate.add(plusIcon, experimentalVariableCombobox, unitCombobox, levelCombobox);
+    //ToDo updating the list should automatically update the parentLayout (observable list?)
+    plusIcon.addClickListener(iconClickEvent -> {
+      HorizontalLayout generatedExperimentalVariableLayout = createExperimentalVariableLayout();
+      experimentalVariablesLayoutRows.add(generatedExperimentalVariableLayout);
+      experimentalVariableRowsContainerLayout.add(generatedExperimentalVariableLayout);
+    });
+    FormLayout experimentalVariableFieldsLayout = new FormLayout();
+    experimentalVariableFieldsLayout.add(experimentalVariableField, unitField, levelField);
+    experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
+    addExperimentalVariableLayoutRow.add(plusIcon, experimentalVariableFieldsLayout);
+    addExperimentalVariableLayoutRow.setAlignItems(Alignment.CENTER);
   }
 
-  private FormLayout createExperimentalVariableLayout() {
-    ComboBox<?> experimentalVariableCombobox = new ComboBox<>("Experimental Variable");
-    ComboBox<?> unitCombobox = new ComboBox<>("Unit");
-    ComboBox<?> levelCombobox = new ComboBox<>("Levels");
+  private HorizontalLayout createExperimentalVariableLayout() {
+    TextField experimentalVariableField = new TextField("Experimental Variable");
+    TextField unitField = new TextField("Unit");
+    TextArea levelField = new TextArea("Levels");
+    FormLayout experimentalVariableFieldsLayout = new FormLayout();
+    experimentalVariableFieldsLayout.add(experimentalVariableField, unitField, levelField);
+    experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
     Icon removeIcon = new Icon(VaadinIcon.CLOSE_SMALL);
-    experimentalVariableCombobox.setAllowCustomValue(true);
-    unitCombobox.setAllowCustomValue(true);
-    levelCombobox.setAllowCustomValue(true);
-    FormLayout experimentalVariableLayout = new FormLayout();
-    experimentalVariableLayout.setResponsiveSteps(new ResponsiveStep("0", 4));
-    experimentalVariableLayout.add(experimentalVariableCombobox, unitCombobox, levelCombobox,
-        removeIcon);
-    return experimentalVariableLayout;
+    //ToDo updating the list should automatically update the parentLayout (observable list?)
+    HorizontalLayout rowLayout = new HorizontalLayout();
+    removeIcon.addClickListener(iconClickEvent -> {
+      experimentalVariablesLayoutRows.remove(rowLayout);
+      experimentalVariableRowsContainerLayout.remove(rowLayout);
+    });
+    rowLayout.add(experimentalVariableFieldsLayout, removeIcon);
+    rowLayout.setAlignItems(Alignment.CENTER);
+    return rowLayout;
   }
 
   private class Handler {
@@ -122,28 +135,25 @@ public class ExperimentCreationDialog extends Dialog {
     }
 
     private void closeDialogListener() {
-      cancelButton.addClickListener(clickEvent -> resetAndClose());
+      cancelButton.addClickListener(clickEvent -> closeAndReset());
     }
 
     private void resetDialogUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
-      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+      addDialogCloseActionListener(closeActionEvent -> closeAndReset());
     }
-
 
     public void reset() {
-      experimentalVariablesLayouts.forEach(formLayout -> formLayout.getChildren()
-          .filter(component -> component instanceof HasValue<?, ?>)
-          .forEach(component -> ((HasValue<?, ?>) component).clear()));
-      experimentalVariablesLayouts.forEach(formLayout -> formLayout.getChildren()
-          .filter(component -> component instanceof HasValidation)
-          .forEach(component -> ((HasValidation) component).setInvalid(false)));
+      experimentalVariablesLayoutRows.clear();
+      experimentalVariableRowsContainerLayout.removeAll();
+      initDefineExperimentalVariableLayout();
     }
 
-    public void resetAndClose() {
-      reset();
+    public void closeAndReset() {
       close();
+      reset();
     }
+
 
     private void warnAboutMissingProjectContext() {
       throw new ApplicationException() {
