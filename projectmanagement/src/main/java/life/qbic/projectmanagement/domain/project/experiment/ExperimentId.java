@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.UUID;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * <b>short description</b>

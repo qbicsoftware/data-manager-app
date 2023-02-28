@@ -1,9 +1,8 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 
 /**
  * <b>short description</b>

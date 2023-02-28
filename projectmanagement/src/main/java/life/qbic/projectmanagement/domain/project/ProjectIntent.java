@@ -1,15 +1,14 @@
 package life.qbic.projectmanagement.domain.project;
 
-import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ExperimentalDesignDescriptionConverter;
-import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
-import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
+import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
-import java.util.Objects;
-
-import static java.util.Objects.requireNonNull;
+import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ExperimentalDesignDescriptionConverter;
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
+import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
 
 /**
  * A project intent contains information on the project that is related to the intent of the
