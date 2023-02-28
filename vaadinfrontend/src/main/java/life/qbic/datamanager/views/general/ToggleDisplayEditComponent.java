@@ -19,9 +19,10 @@ import org.slf4j.Logger;
  * ToggleDisplayEditComponent is a custom component enabling the switch between two different Vaadin
  * Components for editing and displaying a given value.
  * <p>
- * This component is able to generate a DisplayComponent from the values provided in the
- * InputComponent through the provided DisplayProvider function. It takes special care to also
- * distinguish empty values for which it will show the provided dedicated EmptyDisplayComponent.
+ * This component is able to generate a {@link S DisplayComponent} from the values provided in the
+ * {@link T InputComponent} through the provided {@link U,S DisplayProvider} function. It takes
+ * special care to also distinguish empty values for which it will show the provided dedicated
+ * {@link S EmptyDisplayComponent}.
  *
  * @param <S> the component to display when in viewing mode
  * @param <T> the component to use for editing
@@ -40,8 +41,8 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
 
   /**
    * This component provides the functionality to host 2 different components with the intention to
-   * allow for switching between an editing component and display component for the contained
-   * value.
+   * allow for switching between an {@link T inputComponent} and {@link S DisplayComponent} for the
+   * contained value.
    *
    * @param displayProvider       A function returning a display component given a value.
    * @param inputComponent        The component used to edit the value of this field.
@@ -70,17 +71,17 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Returns the component used to edit the field value
+   * Returns the {@link T InputComponent} defined in the {@link ToggleDisplayEditComponent}
    *
-   * @return the component used to edit the field value
+   * @return {@link T InputComponent} used to edit the value stored in this component
    */
   public T getInputComponent() {
     return inputComponent;
   }
 
   /**
-   * A click on the ToggleDisplayEditComponent will switch it from showing the DisplayComponent to
-   * showing the EditComponent
+   * A click on the  {@link ToggleDisplayEditComponent} will switch it from showing the
+   * {@link S DisplayComponent} to showing the {@link T InputComponent}
    */
   private void registerClientEnterActions() {
     // client enter is defined as a click on this component
@@ -91,9 +92,9 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Triggering a Blur Event such as clicking outside the ToggleDisplayEditComponent will switch it
-   * from showing the EditComponent to showing the DisplayComponent only if valid input was
-   * provided
+   * Triggering a Blur Event such as clicking outside the {@link ToggleDisplayEditComponent} will
+   * switch it from showing the {@link T InputComponent} to showing the  {@link S DisplayComponent}
+   * only if valid input was provided
    */
   private void registerClientExitActions() {
     // client exit is defined as a blur event on the input element
@@ -116,8 +117,8 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Updates the value stored in the ToggleDisplayEditComponent and the DisplayComponent if it
-   * differs from the already stored value
+   * Updates the value stored in the  {@link ToggleDisplayEditComponent} and the
+   * {@link S DisplayComponent} if it differs from the already stored value
    */
   private void updateValue(boolean fromClient) {
     setModelValue(generateModelValue(), fromClient);
@@ -125,8 +126,8 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Updates the value stored in the ToggleDisplayEditComponent and the EditComponent, to be used
-   * when the value is updated programmatically
+   * Updates the value stored in the {@link ToggleDisplayEditComponent} and the
+   * {@link T InputComponent}, to be used when the value is updated programmatically
    */
   @Override
   public void setValue(U value) {
@@ -135,10 +136,10 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Generates the model value. If there is a valid input, returns the valid input. Otherwise:
-   * returns the last valid value.
+   * If the provided input is valid, Generates the {@link U model value} from the value provided in
+   * the {@link T InputComponent}. Otherwise, returns the previously stored model value
    *
-   * @return the current input value if valid, the last valid value otherwise.
+   * @return The last valid {@link U model value} provided by the {@link T InputComponent}
    */
   private U generateModelValue() {
     if (inputComponent.isInvalid()) {
@@ -151,10 +152,11 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Providing an empty or valid value triggers an update of the DisplayComponent
+   * Providing an empty or valid value triggers an update of the {@link S DisplayComponent}
    * <p>
-   * Updates the current DisplayComponent with a newly generated DisplayComponent which has to be
-   * distinguished between an Empty Display Component and one showing a valid value
+   * Updates the current {@link S DisplayComponent} with a newly generated
+   * {@link S DisplayComponent}, which has to be distinguished between an
+   * {@link S EmptyDisplayComponent} and one showing a valid value
    */
   @Override
   protected void setPresentationValue(U u) {
@@ -163,11 +165,12 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Generates a new display component for the provided value. If the value equals the empty value
-   * or is null, returns the emptyDisplayComponent.
+   * Generates a new {@link S DisplayComponent} for the provided value. If the value equals the
+   * empty value or is null, returns the {@link S EmptyDisplayComponent}
    *
-   * @param newValue the value for which to generate a display component
-   * @return the generated display component, or the emptyDisplayComponent if no value was provided
+   * @param newValue the value for which to generate a {@link S DisplayComponent}
+   * @return the generated {@link S DisplayComponent}, or the {@link S EmptyDisplayComponent} if no
+   * value was provided
    */
   private S generateUpdatedDisplayComponent(U newValue) {
     S updatedDisplayComponent;
@@ -181,10 +184,10 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   }
 
   /**
-   * Replaces the current DisplayComponent with the one provided, ensuring that the component
-   * visibility remains unchanged
+   * Replaces the current {@link S DisplayComponent} with the one provided, ensuring that the
+   * component visibility remains unchanged
    *
-   * @param updatedDisplayComponent DisplayComponent containing the updated DisplayValue
+   * @param updatedDisplayComponent {@link S DisplayComponent} containing the updated DisplayValue
    */
   private void replaceDisplayComponent(S updatedDisplayComponent) {
     if (Objects.isNull(displayComponent)) {
