@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.create;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
@@ -11,6 +12,9 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -22,6 +26,7 @@ import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -41,6 +46,9 @@ public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
   public ComboBox<OfferPreview> searchField;
+  private HorizontalLayout codeAndTitleLayout;
+  private final TextField codeField;
+  private final Button generateCodeButton;
   private final TextField titleField;
   public final Button createButton;
   public final Button cancelButton;
@@ -59,12 +67,19 @@ public class ProjectInformationDialog extends Dialog {
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
     formLayout = new FormLayout();
+    codeField = new TextField("Code");
+    codeField.setRequired(true);
+    codeField.setHelperText("Q and 4 letters/numbers");
+    generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
+    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
     titleField = new TextField("Title");
     titleField.setRequired(true);
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
     //ToDo Remove Field once experimental design backend is connected
     experimentalDesignField = new TextArea("Experimental Design");
+    experimentalDesignField.setRequired(true);
     experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
@@ -120,7 +135,15 @@ public class ProjectInformationDialog extends Dialog {
 
   private void initForm() {
     formLayout.add(searchField);
-    formLayout.add(titleField);
+
+    codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout.add(codeField);
+    codeAndTitleLayout.add(generateCodeButton);
+    codeAndTitleLayout.add(titleField);
+    codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+    formLayout.add(codeAndTitleLayout);
+
+  //formLayout.add(titleField);
     formLayout.add(projectObjective);
     formLayout.add(experimentalDesignField);
     formLayout.add(experimentalDesignIntroduction);
@@ -159,6 +182,10 @@ public class ProjectInformationDialog extends Dialog {
     handler.loadOfferContent(offer);
   }
 
+  public String getCode() {
+    return codeField.getValue();
+  }
+
   public String getTitle() {
     return titleField.getValue();
   }
@@ -177,10 +204,21 @@ public class ProjectInformationDialog extends Dialog {
    * interfaces
    */
   public void reset() {
-    formLayout.getChildren().filter(component -> component instanceof HasValue<?, ?>)
-        .forEach(component -> ((HasValue<?, ?>) component).clear());
-    formLayout.getChildren().filter(component -> component instanceof HasValidation)
-        .forEach(component -> ((HasValidation) component).setInvalid(false));
+    resetChildValidation(formLayout);
+    resetChildValidation(codeAndTitleLayout);
+
+    resetChildValues(formLayout);
+    resetChildValues(codeAndTitleLayout);
+  }
+
+  private void resetChildValues(Component component) {
+    component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
+        .forEach(comp -> ((HasValue<?, ?>) comp).clear());
+  }
+
+  private void resetChildValidation(Component component) {
+    component.getChildren().filter(comp -> comp instanceof HasValidation)
+        .forEach(comp -> ((HasValidation) comp).setInvalid(false));
   }
 
   public void resetAndClose() {
@@ -192,8 +230,17 @@ public class ProjectInformationDialog extends Dialog {
 
     private void handle() {
       restrictInputLength();
+      generateProjectCode();
       resetDialogueUponClosure();
       closeDialogueViaCancelButton();
+    }
+
+    private void generateProjectCode() {
+      generateCodeButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
+    }
+
+    private void setCodeFieldValue(String code) {
+      codeField.setValue(code);
     }
 
     public void loadOfferContent(Offer offer) {

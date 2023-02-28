@@ -246,6 +246,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void createClicked() {
+      String codeFieldValue = projectInformationDialog.getCode();
       String titleFieldValue = projectInformationDialog.getTitle();
       String objectiveFieldValue = projectInformationDialog.getObjective();
       String experimentalDesignDescription = projectInformationDialog.getExperimentalDesign();
@@ -268,7 +269,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
           .toList();
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(
+      Result<Project, ApplicationException> project = projectCreationService.createProject(codeFieldValue,
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
           projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
 
@@ -311,7 +312,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         }
       });
     }
-
 
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(query ->

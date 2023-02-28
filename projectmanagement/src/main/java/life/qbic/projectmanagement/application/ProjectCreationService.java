@@ -5,11 +5,22 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.List;
 import java.util.Optional;
 import javax.transaction.Transactional;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.PersonReference;
@@ -51,14 +62,13 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  @Transactional
-  public Result<Project, ApplicationException> createProject(String title, String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
 
     try {
-      Project project = createProject(title, objective, experimentalDesign,
+      Project project = createProject(code, title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
       projectRepository.add(project);
       Optional.ofNullable(sourceOffer)
@@ -89,7 +99,8 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProject(String title,
+  private Project createProject(String code,
+      String title,
       String objective,
       String experimentalDesign,
       PersonReference projectManager,
@@ -106,7 +117,21 @@ public class ProjectCreationService {
     }
 
     ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
-    return Project.create(intent, createRandomCode(), projectManager, principalInvestigator,
+    ProjectCode projectCode;
+    try {
+      projectCode = ProjectCode.parse(code);
+      if(projectRepository.find(projectCode).isEmpty()) {
+        log.error("Project code: " + code + " is already in use.");
+        throw new ProjectManagementException(ErrorCode.DUPLICATE_PROJECT_CODE,
+            ErrorParameters.of(code));
+      }
+    } catch (IllegalArgumentException exception) {
+      log.error("Project code: " + code + " is invalid.");
+      log.error(exception.getMessage());
+      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_CODE,
+          ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
+    }
+    return Project.create(intent, projectCode, projectManager, principalInvestigator,
         responsiblePerson);
   }
 
