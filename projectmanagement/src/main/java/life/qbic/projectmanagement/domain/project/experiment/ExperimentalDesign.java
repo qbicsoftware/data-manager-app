@@ -15,6 +15,7 @@ import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
+import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -157,8 +158,18 @@ public class ExperimentalDesign {
               "There is no variable with name " + variableName));
     }
     ExperimentalVariable experimentalVariable = experimentalVariableOptional.get();
-    experimentalVariable.addLevel(level);
-    return Result.success(level);
+    Result<ExperimentalValue, RuntimeException> addLevelResult = experimentalVariable.addLevel(
+        level);
+    if (addLevelResult.isSuccess()) {
+      return Result.success(level);
+    } else if (addLevelResult.isFailure()
+        && addLevelResult.exception() instanceof VariableLevelExistsException) {
+      // we don't care that the level is present already as this is what we wanted to achieve.
+      return Result.success(level);
+    } else {
+      // we could not add the level
+      return Result.failure(addLevelResult.exception());
+    }
   }
 
   private Optional<ExperimentalVariable> variableWithName(String variableName) {

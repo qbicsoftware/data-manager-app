@@ -18,6 +18,8 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
+import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -78,12 +80,28 @@ public class ExperimentalVariable {
    * Calling this method ensures that the experimental value is set as a level on the variable.
    *
    * @param experimentalValue the experimental value to be added to possible levels
+   * @return
+   * @throws IllegalArgumentException indicating that the unit of the provide level does not match
+   *                                  with the unit of existing levels
    */
-  void addLevel(ExperimentalValue experimentalValue) {
+  Result<ExperimentalValue, RuntimeException> addLevel(ExperimentalValue experimentalValue) {
+    if (hasDifferentUnitThanDefinedLevels(experimentalValue)) {
+      return Result.failure(new IllegalArgumentException(
+          "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
+    }
     if (!levels.contains(experimentalValue)) {
       // the level is already part of the variable. No action needed
       levels.add(experimentalValue);
+      return Result.success(experimentalValue);
+    } else {
+      return Result.failure(new VariableLevelExistsException(
+          "the variable " + this.name() + " already allows for this level."
+      ));
     }
+  }
+
+  private boolean hasDifferentUnitThanDefinedLevels(ExperimentalValue experimentalValue) {
+    return levels.stream().anyMatch(it -> it.unit().equals(experimentalValue.unit()));
   }
 
   public List<ExperimentalValue> levels() {
