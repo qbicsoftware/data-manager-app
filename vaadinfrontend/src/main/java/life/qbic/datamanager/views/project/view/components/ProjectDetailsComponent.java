@@ -52,7 +52,7 @@ import org.springframework.security.access.AccessDeniedException;
 @UIScope
 public class ProjectDetailsComponent extends Composite<CardLayout> {
 
-  Logger log = logger(ProjectDetailsComponent.class);
+  private static final Logger log = logger(ProjectDetailsComponent.class);
 
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
