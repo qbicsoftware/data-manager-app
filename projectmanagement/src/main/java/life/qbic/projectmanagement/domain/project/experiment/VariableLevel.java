@@ -38,7 +38,6 @@ public class VariableLevel {
               experimentalVariable.name()));
     }
 
-//    this.variableId = experimentalVariable.id();
     this.experimentalValue = experimentalValue;
     this.variableName = experimentalVariable.name();
   }

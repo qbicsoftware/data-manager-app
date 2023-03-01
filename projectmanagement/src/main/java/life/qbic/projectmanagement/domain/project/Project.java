@@ -92,7 +92,6 @@ public class Project {
     setProjectManager(projectManager);
     setResponsiblePerson(responsiblePerson);
     linkedOffers = new ArrayList<>();
-//    experiments = new ArrayList<>();
   }
 
   public void setProjectManager(PersonReference projectManager) {
