@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -79,12 +80,19 @@ public class ProjectInformationService {
   }
 
   /**
-   * TODO
+   * Adds species to the active experiment of a project. If no experiment is active, a new
+   * experiment is created and set as the active experiment.
    *
-   * @param projectId
-   * @param species
+   * @param projectId the project for which to add the species
+   * @param species   the species to add
+   * @see Experiment#addSpecies(Collection)
    */
   public void addSpeciesToActiveExperiment(String projectId, Species... species) {
+    if (species.length < 1) {
+      return;
+    }
+    Arrays.stream(species).forEach(Objects::requireNonNull);
+
     ProjectId id = ProjectId.parse(projectId);
     Optional<Project> optionalProject = projectRepository.find(id);
 
@@ -93,7 +101,7 @@ public class ProjectInformationService {
           loadActiveExperimentForProject(project)
               .ifPresentOrElse(
                   activeExperiment -> {
-                    activeExperiment.addSpecies(species);
+                    activeExperiment.addSpecies(List.of(species));
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
@@ -111,12 +119,21 @@ public class ProjectInformationService {
   }
 
   /**
-   * TODO
+   * Adds specimens to the active experiment of a project. If no experiment is active, a new experiment is created and set as the active experiment.
    *
-   * @param projectId
-   * @param specimens
+   * @see Experiment#addSpecimens(Collection)
+   *
+   * @param projectId the project for which to add the species
+   * @param specimens the specimens to add
    */
   public void addSpecimenToActiveExperiment(String projectId, Specimen... specimens) {
+    if (specimens.length < 1) {
+      return;
+    }
+    for (Specimen specimen : specimens) {
+      Objects.requireNonNull(specimen);
+    }
+
     ProjectId id = ProjectId.parse(projectId);
     Optional<Project> optionalProject = projectRepository.find(id);
 
@@ -125,7 +142,7 @@ public class ProjectInformationService {
           loadActiveExperimentForProject(project)
               .ifPresentOrElse(
                   activeExperiment -> {
-                    activeExperiment.addSpecimens(specimens);
+                    activeExperiment.addSpecimens(List.of(specimens));
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
@@ -143,12 +160,19 @@ public class ProjectInformationService {
   }
 
   /**
-   * TODO
+   * Adds analytes to the active experiment of a project. If no experiment is active, a new experiment is created and set as the active experiment.
    *
-   * @param projectId
-   * @param analytes
+   * @see Experiment#addAnalytes(Collection)
+   *
+   * @param projectId the project for which to add the species
+   * @param analytes the analytes to add
    */
   public void addAnalyteToActiveExperiment(String projectId, Analyte... analytes) {
+    if (analytes.length < 1) {
+      return;
+    }
+    Arrays.stream(analytes).forEach(Objects::requireNonNull);
+
     ProjectId id = ProjectId.parse(projectId);
     Optional<Project> optionalProject = projectRepository.find(id);
 
@@ -157,7 +181,7 @@ public class ProjectInformationService {
           loadActiveExperimentForProject(project)
               .ifPresentOrElse(
                   activeExperiment -> {
-                    activeExperiment.addAnalytes(analytes);
+                    activeExperiment.addAnalytes(List.of(analytes));
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
@@ -240,34 +264,52 @@ public class ProjectInformationService {
 
 
   /**
-   * TODO analytes for active experiment or else empty list
+   * Retrieve all analytes of the active experiment. If no experiment is active, returns an empty
+   * list.
    *
-   * @param project
-   * @return
+   * @param projectId the project the experiment belongs to
+   * @return a collection of analytes in the active experiment. If no experiment is active, returns
+   * an empty list.
    */
-  public Collection<Analyte> getAnalytesOfActiveExperiment(Project project) {
-    return loadActiveExperimentForProject(project).map(Experiment::getAnalytes).orElse(List.of());
+  public Collection<Analyte> getAnalytesOfActiveExperiment(ProjectId projectId) {
+    return projectRepository.find(projectId)
+        .map(project ->
+            loadActiveExperimentForProject(project).map(Experiment::getAnalytes)
+                .orElse(List.of()))
+        .orElseThrow(() -> new IllegalArgumentException("Project could not be retrieved."));
   }
 
   /**
-   * TODO
+   * Retrieve all species of the active experiment. If no experiment is active, returns an empty
+   * list.
    *
-   * @param project
-   * @return
+   * @param projectId the project the experiment belongs to
+   * @return a collection of species in the active experiment. If no experiment is active, returns
+   * an empty list.
    */
-  public Collection<Species> getSpeciesOfActiveExperiment(Project project) {
-    return loadActiveExperimentForProject(project).map(Experiment::getSpecies).orElse(List.of());
+  public Collection<Species> getSpeciesOfActiveExperiment(ProjectId projectId) {
+    return projectRepository.find(projectId)
+        .map(project ->
+            loadActiveExperimentForProject(project).map(Experiment::getSpecies)
+                .orElse(List.of()))
+        .orElseThrow(() -> new IllegalArgumentException("Project could not be retrieved."));
 
   }
 
   /**
-   * TODO
+   * Retrieve all specimen of the active experiment. If no experiment is active, returns an empty
+   * list.
    *
-   * @param project
-   * @return
+   * @param projectId the project the experiment belongs to
+   * @return a collection of specimen in the active experiment. If no experiment is active, returns
+   * an empty list.
    */
-  public Collection<Specimen> getSpecimensOfActiveExperiment(Project project) {
-    return loadActiveExperimentForProject(project).map(Experiment::getSpecimens).orElse(List.of());
+  public Collection<Specimen> getSpecimensOfActiveExperiment(ProjectId projectId) {
+    return projectRepository.find(projectId)
+        .map(project ->
+            loadActiveExperimentForProject(project).map(Experiment::getSpecimens)
+                .orElse(List.of()))
+        .orElseThrow(() -> new IllegalArgumentException("Project could not be retrieved."));
 
   }
 }

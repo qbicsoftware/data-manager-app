@@ -9,11 +9,9 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * The identifier of an experiment. This identifier is global and not restricted to a project. When
+ * considering experiments it is always important to consider their context and to remember that
+ * they can belong to one project max.
  */
 @Embeddable
 @Access(AccessType.FIELD)

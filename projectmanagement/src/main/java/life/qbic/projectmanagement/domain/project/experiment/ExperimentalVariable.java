@@ -30,7 +30,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Vari
  * experiment.
  * <p>
  * Experimental variables can be created via the
- * {@link Experiment#addVariableToDesign(String, ExperimentalValue...)} function.
+ * {@link Experiment#addVariableToDesign(String, List)} function.
  *
  * @since 1.0.0
  */

@@ -4,13 +4,6 @@ import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 
-/**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 @Converter(autoApply = true)
 public class SpeciesAttributeConverter implements AttributeConverter<Species, String> {
 

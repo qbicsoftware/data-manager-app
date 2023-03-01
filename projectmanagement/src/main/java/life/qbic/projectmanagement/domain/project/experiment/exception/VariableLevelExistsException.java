@@ -1,11 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment.exception;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Thrown when a variable level exists, and the level's existence is unexpected.
  */
 public class VariableLevelExistsException extends RuntimeException {
 

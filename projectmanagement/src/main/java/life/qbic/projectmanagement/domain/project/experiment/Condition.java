@@ -72,6 +72,8 @@ public class Condition {
    * Creates a new instance of a condition object with one or more {@link VariableLevel} defining
    * the level of an experimental variable.
    *
+   * @param label            the label of the condition unique in the context of the experiment.
+   * @param experiment       the experiment this condition belongs to
    * @param definedVariables the linear combination of experimental variable levels
    * @return the condition
    * @since 1.0.0
@@ -119,17 +121,37 @@ public class Condition {
         .map(VariableLevel::experimentalValue).findAny();
   }
 
+  /**
+   * @return the label of the condition
+   */
   public ConditionLabel label() {
     return label;
   }
 
+  /**
+   * Compares the defined {@link VariableLevel}s to the {@link VariableLevel}s of the other
+   * condition. Ignores the order of the levels in the condition.
+   *
+   * @param other the other condition to compare the content of
+   * @return true if <code>other</code> has the same levels defined; false otherwise
+   */
   public boolean hasIdenticalContent(Condition other) {
+    if (Objects.isNull(other)) {
+      return false;
+    }
     Comparator<VariableLevel> variableNameComparator = Comparator.comparing(
         l -> l.variableName().value());
     Stream<VariableLevel> sortedLevels = variableLevels.stream().sorted(variableNameComparator);
     return sortedLevels.equals(other.variableLevels.stream().sorted(variableNameComparator));
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * ATTENTION: conditions are compared by their identity. They are neither compared by their label
+   * nor by the levels they define. To compare the levels a condition defines please us
+   * {@link Condition#hasIdenticalContent(Condition)}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -144,6 +166,13 @@ public class Condition {
     return id.equals(condition.id);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * ATTENTION: conditions are compared by their identity. They are neither compared by their label
+   * nor by the levels they define. To compare the levels a condition defines please us
+   * {@link Condition#hasIdenticalContent(Condition)}
+   */
   @Override
   public int hashCode() {
     return id.hashCode();

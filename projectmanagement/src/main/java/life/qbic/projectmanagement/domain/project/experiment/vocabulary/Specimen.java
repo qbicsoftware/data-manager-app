@@ -4,6 +4,11 @@ import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
+/**
+ * A specimen is ... TODO add definition
+ *
+ * @param label a natural string representation of the {@link Specimen}
+ */
 public record Specimen(String label) implements Serializable {
 
   public Specimen {

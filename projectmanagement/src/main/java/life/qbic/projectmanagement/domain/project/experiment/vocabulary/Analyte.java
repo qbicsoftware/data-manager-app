@@ -4,6 +4,11 @@ import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
+/**
+ * An analyte is ... TODO add definition
+ *
+ * @param label a natural string representation of the {@link Analyte}
+ */
 public record Analyte(String label) implements Serializable {
 
   public Analyte {

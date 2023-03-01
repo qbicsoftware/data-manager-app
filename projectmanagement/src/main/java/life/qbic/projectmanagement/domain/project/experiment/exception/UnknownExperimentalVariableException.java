@@ -10,7 +10,7 @@ import java.io.Serial;
  * used.
  * <p>
  * This class shall be only used in the context of
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}.
  *
  * @since <version tag>
  */

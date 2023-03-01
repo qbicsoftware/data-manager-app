@@ -4,13 +4,6 @@ import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 
-/**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 @Converter(autoApply = true)
 public class AnalyteAttributeConverter implements AttributeConverter<Analyte, String> {
 

@@ -256,11 +256,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
       responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
       analyteMultiSelectComboBox.setValue(
-          projectInformationService.getAnalytesOfActiveExperiment(project));
+          projectInformationService.getAnalytesOfActiveExperiment(this.selectedProject));
       speciesMultiSelectComboBox.setValue(
-          projectInformationService.getSpeciesOfActiveExperiment(project));
+          projectInformationService.getSpeciesOfActiveExperiment(this.selectedProject));
       specimenMultiSelectComboBox.setValue(
-          projectInformationService.getSpecimensOfActiveExperiment(project));
+          projectInformationService.getSpecimensOfActiveExperiment(this.selectedProject));
     }
 
     private void setupExperimentalDesignSearch() {
@@ -374,7 +374,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           // only added something
           submitAction.accept(value);
         } else {
-          //TODO what to do? there seem to be elements deleted and added in this event
+          //FIXME what to do? there seem to be elements deleted and added in this event
         }
       });
     }
