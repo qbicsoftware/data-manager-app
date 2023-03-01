@@ -80,7 +80,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
+  private final String projectViewUrl = RouteConfiguration.forSessionScope()
       .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
@@ -119,12 +119,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode())))
+            item -> new Anchor(projectViewUrl + item.projectId().value(), item.projectCode())))
         .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle())))
+            item -> new Anchor(projectViewUrl + item.projectId().value(), item.projectTitle())))
         .setHeader("Title")
         .setKey("projectTitle");
 
