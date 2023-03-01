@@ -108,7 +108,7 @@ public class ProjectCreationService {
     ProjectCode projectCode;
     try {
       projectCode = ProjectCode.parse(code);
-      if(projectRepository.find(projectCode).isEmpty()) {
+      if (!projectRepository.find(projectCode).isEmpty()) {
         log.error("Project code: " + code + " is already in use.");
         throw new ProjectManagementException(ErrorCode.DUPLICATE_PROJECT_CODE,
             ErrorParameters.of(code));
