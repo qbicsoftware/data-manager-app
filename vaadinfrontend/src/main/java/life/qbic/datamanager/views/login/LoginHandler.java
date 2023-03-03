@@ -6,7 +6,7 @@ import java.util.Map;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.datamanager.Application;
-import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.logging.api.Logger;
@@ -89,7 +89,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void onLoginSucceeded() {
     clearNotifications();
     registeredLoginView.getUI().ifPresentOrElse(ui -> {
-      ui.navigate(AppRoutes.PROJECTS);
+      ui.navigate(Projects.PROJECTS);
     }, () -> logger.error("No UI found!"));
   }
 
