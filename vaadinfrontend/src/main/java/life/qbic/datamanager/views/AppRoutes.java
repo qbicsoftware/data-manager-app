@@ -37,11 +37,7 @@ public class AppRoutes {
      * The "Main" page of the data manager app. Location, where you want the user to be directed to,
      * if no explicit path has been provided. Shows all the projects a user has access to.
      */
-    public static final String PROJECTS = "";
-    /**
-     * The alias name for the MAIN route.
-     */
-    public static final String PROJECTS_ALIAS = "projects/list";
+    public static final String PROJECTS = "projects/list";
 
     /**
      * Path to the page that shows a selected project's information
