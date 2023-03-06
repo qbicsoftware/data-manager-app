@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.stream.Stream;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
 
@@ -31,11 +33,14 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final ExperimentCreationDialog experimentCreationDialog = new ExperimentCreationDialog();
   private final transient Handler handler;
   private final VerticalLayout contentLayout = new VerticalLayout();
+  private final VerticalLayout noDesignDefinedLayout = new VerticalLayout();
+  private final VirtualList<Experiment> experiments = new VirtualList<>();
+  private final CardLayout experimentalDesignAddCard;
+  private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
+      ExperimentalDesignCard::new);
 
   public ExperimentalDesignDetailComponent() {
     this.handler = new Handler();
-    getContent().addTitle(TITLE);
-    initNoDesignDefinedLayout();
   }
 
   private void initNoDesignDefinedLayout() {
@@ -44,12 +49,13 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
     experimentalDesignHeader.addClassName("font-bold");
     createDesignButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     createDesignButton.addClassNames("mt-s", "mb-s");
-    contentLayout.add(experimentalDesignHeader, experimentalDesignDescription,
+    noDesignDefinedLayout.add(experimentalDesignHeader, experimentalDesignDescription,
         createDesignButton);
-    contentLayout.setSizeFull();
-    contentLayout.setAlignItems(Alignment.CENTER);
-    contentLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    getContent().addFields(contentLayout);
+    noDesignDefinedLayout.setSizeFull();
+    noDesignDefinedLayout.setAlignItems(Alignment.CENTER);
+    noDesignDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+    //ToDo this should be swapped dependent on if an experimental design was defined or not
+    //contentLayout.add(noDesignDefinedLayout);
   }
 
   public void setStyles(String... componentStyles) {
@@ -66,10 +72,18 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
 
     public Handler() {
       openDialogueListener();
+      experiments.setItems(getExperiments());
+      experiments.setRenderer(experimentCardRenderer);
     }
 
     private void openDialogueListener() {
       createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open());
+      experimentalDesignAddCard.addClickListener(clickEvent -> experimentCreationDialog.open());
+    }
+
+    private Stream<Experiment> getExperiments() {
+      return Stream.of(new Experiment("Title_1", "Description1"),
+          new Experiment("Title_2", "Description2"));
     }
   }
 }
