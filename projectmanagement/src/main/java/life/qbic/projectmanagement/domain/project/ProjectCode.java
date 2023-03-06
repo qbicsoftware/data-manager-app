@@ -58,7 +58,9 @@ public class ProjectCode {
    * @since 1.0.0
    */
   public static ProjectCode parse(String str) throws IllegalArgumentException {
-    if (isInvalid(str)) {
+    // project codes are always upper case
+    str = str.toUpperCase();
+    if (!isGeneralFormatValid(str)) {
       throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
     }
     if (containsInvalidCharacters(str)) {
@@ -71,15 +73,15 @@ public class ProjectCode {
     return new ProjectCode(str);
   }
 
-  private static boolean isValid(String code) {
+  private static boolean isGeneralFormatValid(String code) {
     return code.startsWith(PREFIX) && (code.length() == LENGTH);
   }
 
   private static boolean containsInvalidCharacters(String code) {
-    return !containsValidCharacters(code);
+    return !containsOnlyValidCharacters(code);
   }
 
-  private static boolean containsValidCharacters(String code) {
+  private static boolean containsOnlyValidCharacters(String code) {
     char[] codeArray = code.toCharArray();
     for (int character = 0; character < code.length(); character++) {
       char currentCharacter = codeArray[character];
@@ -124,10 +126,6 @@ public class ProjectCode {
     return false;
   }
 
-  private static boolean isInvalid(String code) {
-    return !isValid(code);
-  }
-
   private static boolean isBlackListed(String word) {
     return Arrays.asList(BLACKLIST).contains(word);
   }
@@ -162,6 +160,14 @@ public class ProjectCode {
     return "ProjectCode{" +
         "value='" + value + '\'' +
         '}';
+  }
+
+  public static int getLENGTH() {
+    return LENGTH;
+  }
+
+  public static String getPREFIX() {
+    return PREFIX;
   }
 
   private static class RandomCodeGenerator {

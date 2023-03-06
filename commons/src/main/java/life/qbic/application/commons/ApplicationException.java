@@ -21,8 +21,8 @@ public abstract class ApplicationException extends RuntimeException {
     INVALID_EXPERIMENTAL_DESIGN,
     INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE,
-
-    MISSING_PROJECT_CONTEXT
+    INVALID_PROJECT_CODE,
+    DUPLICATE_PROJECT_CODE
   }
 
   public record ErrorParameters(Object[] value) {

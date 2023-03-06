@@ -81,7 +81,6 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
    */
   private final class Handler {
 
-
     private final ExperimentInformationService experimentInformationService;
 
     public Handler(ExperimentInformationService experimentInformationService) {

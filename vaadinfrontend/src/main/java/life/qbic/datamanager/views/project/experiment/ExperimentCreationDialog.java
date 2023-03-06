@@ -18,7 +18,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
@@ -127,13 +126,6 @@ public class ExperimentCreationDialog extends Dialog {
       resetDialogUponClosure();
     }
 
-    void setProjectContext(ProjectId projectId) {
-      if (projectId == null) {
-        warnAboutMissingProjectContext();
-      }
-      this.projectId = Optional.of(projectId);
-    }
-
     private void closeDialogListener() {
       cancelButton.addClickListener(clickEvent -> closeAndReset());
     }
@@ -152,16 +144,6 @@ public class ExperimentCreationDialog extends Dialog {
     public void closeAndReset() {
       close();
       reset();
-    }
-
-
-    private void warnAboutMissingProjectContext() {
-      throw new ApplicationException() {
-        @Override
-        public ErrorCode errorCode() {
-          return ErrorCode.MISSING_PROJECT_CONTEXT;
-        }
-      };
     }
   }
 }
