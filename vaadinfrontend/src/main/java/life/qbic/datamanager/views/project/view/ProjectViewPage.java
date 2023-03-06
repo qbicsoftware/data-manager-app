@@ -10,6 +10,7 @@ import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
+import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,13 +36,16 @@ public class ProjectViewPage extends Div implements
 
   private final transient ProjectViewHandler handler;
 
-  public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-      ProjectLinksComponent projectLinksComponent) {
-    handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent);
+  public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
+  ProjectLinksComponent projectLinksComponent) {
+    handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
+        projectLinksComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
-    setComponentStyles(projectDetailsComponent, projectLinksComponent);
+    setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
+        projectLinksComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -53,10 +57,15 @@ public class ProjectViewPage extends Div implements
 
     log.debug("Route '" + ROUTE + "' called with parameter '" + s + "'");
   }
-  public void setPageStyles(){
+
+  public void setPageStyles() {
     addClassNames("project-view-page");
   }
-  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent){
+
+  public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ProjectDetailsComponent projectDetailsComponent,
+      ProjectLinksComponent projectLinksComponent) {
+    projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
   }
