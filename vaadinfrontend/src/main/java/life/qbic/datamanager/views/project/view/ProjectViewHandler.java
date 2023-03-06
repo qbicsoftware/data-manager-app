@@ -4,7 +4,6 @@ import java.util.Objects;
 import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -19,21 +18,16 @@ class ProjectViewHandler {
   private final ProjectLinksComponent projectLinksComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
 
-  //ToDo Determine how component swap should function
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
 
-  public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent,
+  public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
       ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentalDesignDetailComponent);
     this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
   }
 

@@ -30,7 +30,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final Button createDesignButton = new Button("Add");
   private final ExperimentCreationDialog experimentCreationDialog = new ExperimentCreationDialog();
   private final transient Handler handler;
-  private final VerticalLayout noDesignDefinedLayout = new VerticalLayout();
+  private final VerticalLayout contentLayout = new VerticalLayout();
 
   public ExperimentalDesignDetailComponent() {
     this.handler = new Handler();
@@ -44,12 +44,12 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
     experimentalDesignHeader.addClassName("font-bold");
     createDesignButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     createDesignButton.addClassNames("mt-s", "mb-s");
-    noDesignDefinedLayout.add(experimentalDesignHeader, experimentalDesignDescription,
+    contentLayout.add(experimentalDesignHeader, experimentalDesignDescription,
         createDesignButton);
-    noDesignDefinedLayout.setSizeFull();
-    noDesignDefinedLayout.setAlignItems(Alignment.CENTER);
-    noDesignDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    getContent().addFields(noDesignDefinedLayout);
+    contentLayout.setSizeFull();
+    contentLayout.setAlignItems(Alignment.CENTER);
+    contentLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+    getContent().addFields(contentLayout);
   }
 
   public void setStyles(String... componentStyles) {
