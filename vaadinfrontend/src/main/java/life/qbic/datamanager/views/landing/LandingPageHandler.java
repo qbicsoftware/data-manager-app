@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.landing;
 
 import com.vaadin.flow.component.UI;
+import life.qbic.datamanager.views.AppRoutes;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,8 +24,8 @@ public class LandingPageHandler implements LandingPageHandlerInterface {
 
   private void addClickListeners() {
 
-    registeredLandingPage.login.addClickListener(event -> UI.getCurrent().navigate("login"));
+    registeredLandingPage.login.addClickListener(event -> UI.getCurrent().navigate(AppRoutes.LOGIN));
 
-    registeredLandingPage.register.addClickListener(event -> UI.getCurrent().navigate("register"));
+    registeredLandingPage.register.addClickListener(event -> UI.getCurrent().navigate(AppRoutes.REGISTER));
   }
 }

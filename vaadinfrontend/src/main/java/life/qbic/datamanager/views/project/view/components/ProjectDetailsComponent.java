@@ -20,9 +20,12 @@ import java.io.Serial;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -62,6 +65,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private MultiSelectComboBox<Analyte> analyteMultiSelectComboBox;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> responsiblePersonToggleComponent;
   private final transient Handler handler;
+
+  private static final Logger logger = LoggerFactory.logger(ProjectDetailsComponent.class);
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired PersonSearchService personSearchService,
@@ -203,9 +208,36 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     public void projectId(String projectId) {
+      parseProjectId(projectId);
       projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
           this::loadProjectData,
-          () -> titleToggleComponent.setValue("Not found"));
+          () -> {
+            throw new ApplicationException() {
+              @Override
+              public ErrorCode errorCode() {
+                return ErrorCode.INVALID_PROJECT_CODE;
+              }
+            };
+          });
+    }
+
+    private ProjectId parseProjectId(String id) {
+      try {
+        return ProjectId.parse(id);
+      } catch (IllegalArgumentException e) {
+        logger.error(e.getMessage(), e);
+        throw new ApplicationException() {
+          @Override
+          public ErrorCode errorCode() {
+            return ErrorCode.INVALID_PROJECT_CODE;
+          }
+
+          @Override
+          public ErrorParameters errorParameters() {
+            return ErrorParameters.of("ProjectID");
+          }
+        };
+      }
     }
 
     private void restrictInputLength() {
