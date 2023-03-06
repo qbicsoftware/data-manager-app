@@ -25,13 +25,14 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Basic implementation to query project preview information
  *
  * @since 1.0.0
  */
-
+@Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     QbicProjectDataRepo {
 
