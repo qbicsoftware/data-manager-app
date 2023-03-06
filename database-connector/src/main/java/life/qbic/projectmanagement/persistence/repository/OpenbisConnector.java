@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.persistence.repository;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -12,6 +14,8 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCrit
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import java.util.Arrays;
+import java.util.List;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -21,19 +25,13 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Basic implementation to query project preview information
  *
  * @since 1.0.0
  */
-@Component
+
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     QbicProjectDataRepo {
 

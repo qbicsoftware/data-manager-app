@@ -15,7 +15,7 @@ import life.qbic.datamanager.views.layouts.CardLayout;
  */
 public class ExperimentalDesignCard extends CardLayout {
 
-  public record Experiment(String name, String description) {
+  public record Experiment(String id, String name, String description) {
 
   }
 
