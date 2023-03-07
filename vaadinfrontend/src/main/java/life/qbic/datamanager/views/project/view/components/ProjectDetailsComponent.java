@@ -117,14 +117,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     specimenMultiSelectComboBox = new MultiSelectComboBox<>();
     analyteMultiSelectComboBox = new MultiSelectComboBox<>();
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Principal Investigator"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Principal Investigator"), createPlaceHolderSpan());
     responsiblePersonToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Responsible Person"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Responsible Person"), createPlaceHolderSpan());
     projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Project Manager"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Project Manager"), createPlaceHolderSpan());
 
   }
 
@@ -209,9 +206,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     public void projectId(String projectId) {
       parseProjectId(projectId);
-      projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
-          this::loadProjectData,
-          () -> {
+      projectInformationService.find(ProjectId.parse(projectId))
+          .ifPresentOrElse(this::loadProjectData, () -> {
             throw new ApplicationException() {
               @Override
               public ErrorCode errorCode() {
@@ -245,8 +241,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       titleToggleComponent.getInputComponent().setMaxLength((int) ProjectTitle.maxLength());
       projectObjectiveToggleComponent.getInputComponent()
           .setMaxLength((int) ProjectObjective.maxLength());
-      experimentalDesignToggleComponent.getInputComponent().setMaxLength(
-          (int) ExperimentalDesignDescription.maxLength());
+      experimentalDesignToggleComponent.getInputComponent()
+          .setMaxLength((int) ExperimentalDesignDescription.maxLength());
 
       titleToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
       projectObjectiveToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
@@ -260,12 +256,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       addConsumedLengthHelper(experimentalDesignToggleComponent.getInputComponent(),
           experimentalDesignToggleComponent.getValue());
 
-      titleToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      projectObjectiveToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      experimentalDesignToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      titleToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      projectObjectiveToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      experimentalDesignToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
     private void addConsumedLengthHelper(TextArea textArea, String newValue) {
@@ -298,9 +294,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      speciesMultiSelectComboBox.setItems(
-          experimentalDesignSearchService.retrieveSpecies().stream()
-              .sorted(Comparator.comparing(Species::label)).toList());
+      speciesMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
+          .sorted(Comparator.comparing(Species::label)).toList());
       speciesMultiSelectComboBox.setItemLabelGenerator(Species::value);
       specimenMultiSelectComboBox.setItems(
           experimentalDesignSearchService.retrieveSpecimens().stream()
@@ -315,34 +310,27 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(
           query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
-                  query.getLimit())
-              .stream());
+              query.getLimit()).stream());
     }
 
     private void attachSubmissionActionOnValueChange() {
       ProjectDetailsComponent.Handler.submitOnValueChange(titleToggleComponent,
-          value ->
-              projectInformationService.updateTitle(selectedProject.value(), value.trim()));
+          value -> projectInformationService.updateTitle(selectedProject.value(), value.trim()));
 
       ProjectDetailsComponent.Handler.submitOnValueChange(projectObjectiveToggleComponent,
-          value ->
-              projectInformationService.stateObjective(selectedProject.value(), value.trim()));
+          value -> projectInformationService.stateObjective(selectedProject.value(), value.trim()));
 
       ProjectDetailsComponent.Handler.submitOnValueChange(experimentalDesignToggleComponent,
-          value ->
-              projectInformationService.describeExperimentalDesign(selectedProject.value(),
-                  value.trim()));
+          value -> projectInformationService.describeExperimentalDesign(selectedProject.value(),
+              value.trim()));
 
       ProjectDetailsComponent.Handler.submitOnValueChange(projectManagerToggleComponent,
-          value ->
-              projectInformationService.manageProject(selectedProject.value(), value));
+          value -> projectInformationService.manageProject(selectedProject.value(), value));
 
       ProjectDetailsComponent.Handler.submitOnValueChange(principalInvestigatorToggleComponent,
-          value ->
-              projectInformationService.investigateProject(selectedProject.value(), value));
+          value -> projectInformationService.investigateProject(selectedProject.value(), value));
       ProjectDetailsComponent.Handler.submitOnValueChange(responsiblePersonToggleComponent,
-          value ->
-              projectInformationService.setResponsibility(selectedProject.value(), value));
+          value -> projectInformationService.setResponsibility(selectedProject.value(), value));
       //ToDo Store selection changes for species, specimen and analyte here
     }
 
