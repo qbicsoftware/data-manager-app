@@ -63,10 +63,10 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
 
-      Experiment experiment = Experiment.createForProject(project, analyteList, specimenList,
+      Experiment experiment = Experiment.create(project.getId(), analyteList, specimenList,
           speciesList);
       experimentRepository.add(experiment);
-      project.linkExperiment(experiment.experimentId());
+      project.addExperiment(experiment.experimentId());
       projectRepository.update(project);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {

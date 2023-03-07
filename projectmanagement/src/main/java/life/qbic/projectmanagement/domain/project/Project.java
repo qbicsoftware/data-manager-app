@@ -134,7 +134,7 @@ public class Project {
     lastModified = Instant.now();
   }
 
-  public void linkExperiment(ExperimentId experimentId) {
+  public void addExperiment(ExperimentId experimentId) {
     activeExperiment = experimentId;
     lastModified = Instant.now();
   }

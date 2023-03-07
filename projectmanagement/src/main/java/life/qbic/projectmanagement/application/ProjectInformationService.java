@@ -105,10 +105,10 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.createForProject(project, List.of(),
+                    Experiment experiment = Experiment.create(project.getId(), List.of(),
                         List.of(), List.of(species));
                     experimentRepository.add(experiment);
-                    project.linkExperiment(experiment.experimentId());
+                    project.addExperiment(experiment.experimentId());
                     projectRepository.update(project);
                   });
         },
@@ -146,10 +146,10 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.createForProject(project, List.of(),
+                    Experiment experiment = Experiment.create(project.getId(), List.of(),
                         List.of(specimens), List.of());
                     experimentRepository.add(experiment);
-                    project.linkExperiment(experiment.experimentId());
+                    project.addExperiment(experiment.experimentId());
                     projectRepository.update(project);
                   });
         },
@@ -185,10 +185,10 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.createForProject(project, List.of(analytes),
+                    Experiment experiment = Experiment.create(project.getId(), List.of(analytes),
                         List.of(), List.of());
                     experimentRepository.add(experiment);
-                    project.linkExperiment(experiment.experimentId());
+                    project.addExperiment(experiment.experimentId());
                     projectRepository.update(project);
                   });
         },

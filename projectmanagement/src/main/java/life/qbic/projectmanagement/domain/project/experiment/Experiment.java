@@ -6,16 +6,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -37,9 +36,9 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 @Entity(name = "experiments_datamanager")
 public class Experiment {
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "project", nullable = false)
-  private Project project;
+  @AttributeOverride(name = "projectId", column = @Column(name = "projectId", nullable = false))
+  private ProjectId projectId;
+
 
   @EmbeddedId
   private ExperimentId experimentId;
@@ -56,7 +55,7 @@ public class Experiment {
 
 
   /**
-   * Please use {@link Experiment#createForProject(Project, List, List, List)} instead
+   * Please use {@link Experiment#create(ProjectId, List, List, List)} instead
    */
   protected Experiment() {
     // Please use the create method. This is needed for JPA
@@ -70,13 +69,13 @@ public class Experiment {
   }
 
 
-  public static Experiment createForProject(Project project, List<Analyte> analytes,
+  public static Experiment create(ProjectId projectId, List<Analyte> analytes,
       List<Specimen> specimens,
       List<Species> species) {
     Experiment experiment = new Experiment();
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
-    experiment.project = project;
+//    experiment.projectId = projectId;
     experiment.addSpecies(species);
     experiment.addSpecimens(specimens);
     experiment.addAnalytes(analytes);
@@ -156,13 +155,12 @@ public class Experiment {
   public void addSpecimens(Collection<Specimen> specimens) {
     final String specimensVariableName = "specimen";
 
-    if (specimens.size() < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any specimen to add.");
+    if (specimens.isEmpty()) {
+      return;
     }
     // only add specimen that are not present already
     List<Specimen> newSpecimens = specimens.stream()
-        .filter(it -> !specimens.contains(it))
+        .filter(it -> !this.specimens.contains(it))
         .toList();
     this.specimens.addAll(newSpecimens);
 
@@ -185,14 +183,13 @@ public class Experiment {
   public void addAnalytes(Collection<Analyte> analytes) {
     final String analytesVariableName = "analyte";
 
-    if (analytes.size() < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any analyte to add.");
+    if (analytes.isEmpty()) {
+      return;
     }
 
     // only add analytes that are not present already
     List<Analyte> newAnalytes = analytes.stream()
-        .filter(it -> !analytes.contains(it))
+        .filter(it -> !this.analytes.contains(it))
         .toList();
     this.analytes.addAll(newAnalytes);
 
@@ -215,13 +212,12 @@ public class Experiment {
   public void addSpecies(Collection<Species> species) {
     final String speciesVariableName = "species";
 
-    if (species.size() < 1) {
-      throw new IllegalArgumentException(
-          "Did not get any species to add.");
+    if (species.isEmpty()) {
+      return;
     }
     // only add specimen that are not present already
     List<Species> newSpecies = species.stream()
-        .filter(it -> !species.contains(it))
+        .filter(it -> !this.species.contains(it))
         .toList();
     this.species.addAll(newSpecies);
 

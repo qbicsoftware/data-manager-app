@@ -7,6 +7,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ErrorEvent;
 import com.vaadin.flow.server.ErrorHandler;
 import java.util.Locale;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -44,7 +45,9 @@ public class CustomErrorHandler implements ErrorHandler,
       applicationException = (ApplicationException) throwable;
     }
     log.error(throwable.getMessage(), throwable);
-    handle(UI.getCurrent(), applicationException);
+    if (Objects.nonNull(UI.getCurrent())) {
+      handle(UI.getCurrent(), applicationException);
+    }
   }
 
   private UserFriendlyErrorMessage getUserFriendlyMessage(ApplicationException applicationException,
