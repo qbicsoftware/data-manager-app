@@ -1,16 +1,19 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
@@ -44,12 +47,26 @@ public class Experiment {
   @Embedded
   private ExperimentalDesign experimentalDesign;
 
+  @ElementCollection(targetClass = Analyte.class)
+  private List<Analyte> analytes = new ArrayList<>();
+  @ElementCollection(targetClass = Species.class)
+  private List<Species> species = new ArrayList<>();
+  @ElementCollection(targetClass = Specimen.class)
+  private List<Specimen> specimens = new ArrayList<>();
+
 
   /**
    * Please use {@link Experiment#createForProject(Project, List, List, List)} instead
    */
   protected Experiment() {
     // Please use the create method. This is needed for JPA
+  }
+
+  @PostLoad
+  private void loadCollections() {
+    int analyteCount = analytes.size();
+    int specimenCount = specimens.size();
+    int speciesCount = species.size();
   }
 
 
@@ -112,21 +129,21 @@ public class Experiment {
    * @return the collection of species in this experiment
    */
   public Collection<Species> getSpecies() {
-    return experimentalDesign.species.stream().toList();
+    return species.stream().toList();
   }
 
   /**
    * @return the collection of specimens in this experiment
    */
   public Collection<Specimen> getSpecimens() {
-    return experimentalDesign.specimens.stream().toList();
+    return specimens.stream().toList();
   }
 
   /**
    * @return the collection of analytes in this experiment
    */
   public Collection<Analyte> getAnalytes() {
-    return experimentalDesign.analytes.stream().toList();
+    return analytes.stream().toList();
   }
 
   /**
@@ -145,13 +162,13 @@ public class Experiment {
     }
     // only add specimen that are not present already
     List<Specimen> newSpecimens = specimens.stream()
-        .filter(it -> !experimentalDesign.specimens.contains(it))
+        .filter(it -> !specimens.contains(it))
         .toList();
-    experimentalDesign.specimens.addAll(newSpecimens);
+    this.specimens.addAll(newSpecimens);
 
-    if (experimentalDesign.specimens.size() > 1) {
+    if (this.specimens.size() > 1) {
       // we have more than 1 specimen, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = experimentalDesign.specimens.stream()
+      List<ExperimentalValue> levels = specimens.stream()
           .map(it -> ExperimentalValue.create(it.label()))
           .toList();
       addVariableOrLevels(specimensVariableName, levels);
@@ -175,13 +192,13 @@ public class Experiment {
 
     // only add analytes that are not present already
     List<Analyte> newAnalytes = analytes.stream()
-        .filter(it -> !experimentalDesign.analytes.contains(it))
+        .filter(it -> !analytes.contains(it))
         .toList();
-    experimentalDesign.analytes.addAll(newAnalytes);
+    this.analytes.addAll(newAnalytes);
 
-    if (experimentalDesign.analytes.size() > 1) {
+    if (this.analytes.size() > 1) {
       // we have mone than 1 analyte, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = experimentalDesign.analytes.stream()
+      List<ExperimentalValue> levels = analytes.stream()
           .map(it -> ExperimentalValue.create(it.label()))
           .toList();
       addVariableOrLevels(analytesVariableName, levels);
@@ -204,14 +221,14 @@ public class Experiment {
     }
     // only add specimen that are not present already
     List<Species> newSpecies = species.stream()
-        .filter(it -> !experimentalDesign.species.contains(it))
+        .filter(it -> !species.contains(it))
         .toList();
-    experimentalDesign.species.addAll(newSpecies);
+    this.species.addAll(newSpecies);
 
     // check whether we need a variable
-    if (experimentalDesign.species.size() > 1) {
+    if (this.species.size() > 1) {
       // we have smore than 1 species, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = experimentalDesign.species.stream()
+      List<ExperimentalValue> levels = species.stream()
           .map(it -> ExperimentalValue.create(it.label()))
           .toList();
 

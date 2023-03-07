@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
@@ -14,9 +13,6 @@ import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
  * <b>Experimental Design</b>
@@ -78,12 +74,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 @Embeddable
 public class ExperimentalDesign {
 
-  @ElementCollection(targetClass = Analyte.class)
-  final List<Analyte> analytes = new ArrayList<>();
-  @ElementCollection(targetClass = Species.class)
-  final List<Species> species = new ArrayList<>();
-  @ElementCollection(targetClass = Specimen.class)
-  final List<Specimen> specimens = new ArrayList<>();
+
   @OneToMany(targetEntity = ExperimentalVariable.class, orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   // @JoinColumn so no extra table is created as experimental_variables contains that column
@@ -111,9 +102,7 @@ public class ExperimentalDesign {
       (-) we cannot be sure the collections are loaded and might get LazyInvocationExceptions
       (-) we have to be careful and understand @Transactional in the context where experimental designs are loaded from the database.
     */
-    int analyteCount = analytes.size();
-    int specimenCount = specimens.size();
-    int speciesCount = species.size();
+
     int variableCount = variables.size();
     int conditionCount = conditions.size();
   }
@@ -177,25 +166,13 @@ public class ExperimentalDesign {
     }
 
     ExperimentalDesign design = (ExperimentalDesign) o;
-
-    if (!analytes.equals(design.analytes)) {
-      return false;
-    }
-    if (!species.equals(design.species)) {
-      return false;
-    }
-    if (!specimens.equals(design.specimens)) {
-      return false;
-    }
     return variables.equals(design.variables);
   }
 
   @Override
   public int hashCode() {
-    int result = analytes.hashCode();
-    result = 31 * result + species.hashCode();
-    result = 31 * result + specimens.hashCode();
-    result = 31 * result + variables.hashCode();
+    int result = variables.hashCode();
+    result = 31 * result + conditions.hashCode();
     return result;
   }
 
