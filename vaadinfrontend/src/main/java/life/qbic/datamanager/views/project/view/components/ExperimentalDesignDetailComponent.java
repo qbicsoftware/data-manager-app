@@ -3,10 +3,6 @@ package life.qbic.datamanager.views.project.view.components;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -39,7 +35,6 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final ExperimentCreationDialog experimentCreationDialog = new ExperimentCreationDialog();
   private final transient Handler handler;
   private final VerticalLayout contentLayout = new VerticalLayout();
-  private final VerticalLayout noDesignDefinedLayout = new VerticalLayout();
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
