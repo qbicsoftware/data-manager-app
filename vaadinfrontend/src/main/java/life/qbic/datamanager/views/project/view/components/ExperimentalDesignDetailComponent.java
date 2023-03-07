@@ -54,21 +54,6 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
     this.handler = new Handler(experimentInformationService);
   }
 
-  private void initNoDesignDefinedLayout() {
-    Span experimentalDesignHeader = new Span("Experimental Design");
-    Span experimentalDesignDescription = new Span("Add the experimental design now");
-    experimentalDesignHeader.addClassName("font-bold");
-    createDesignButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    createDesignButton.addClassNames("mt-s", "mb-s");
-    noDesignDefinedLayout.add(experimentalDesignHeader, experimentalDesignDescription,
-        createDesignButton);
-    noDesignDefinedLayout.setSizeFull();
-    noDesignDefinedLayout.setAlignItems(Alignment.CENTER);
-    noDesignDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    //ToDo this should be swapped dependent on if an experimental design was defined or not
-    //contentLayout.add(noDesignDefinedLayout);
-  }
-
   public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
   }
