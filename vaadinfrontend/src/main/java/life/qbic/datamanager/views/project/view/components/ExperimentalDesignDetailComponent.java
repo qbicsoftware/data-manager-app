@@ -18,11 +18,11 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * <b>ExperimentalDesignDetailComponent</b>
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * This component shows the {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} information associated with the selected {@link life.qbic.projectmanagement.domain.project.Project}
+ * within the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
  *
- * @since <version tag>
  */
 @SpringComponent
 @UIScope
