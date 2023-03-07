@@ -7,11 +7,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Experimental Design Card</b>
  *
- * @since <version tag>
+ * <p>A CardLayout based Component showing the information stored in the {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}
+ * associated with a project in the {@link ExperimentalDesignDetailComponent} of the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
+ *
  */
 public class ExperimentalDesignCard extends CardLayout {
 
