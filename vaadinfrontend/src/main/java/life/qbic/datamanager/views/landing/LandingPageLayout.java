@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Data Manager")
-@Route(value = "landing")
 public class LandingPageLayout extends DataManagerLayout {
 
   @Serial

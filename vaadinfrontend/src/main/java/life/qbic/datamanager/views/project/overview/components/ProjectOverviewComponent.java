@@ -22,6 +22,7 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -37,6 +38,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -70,7 +73,7 @@ import org.springframework.web.context.annotation.SessionScope;
  * @since 1.0.0
  */
 @SpringComponent
-@SessionScope
+@UIScope
 public class ProjectOverviewComponent extends Composite<CardLayout> {
 
   @Serial
@@ -80,8 +83,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private final String projectViewUrl = RouteConfiguration.forSessionScope()
-      .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,
@@ -119,12 +120,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(projectViewUrl + item.projectId().value(), item.projectCode())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectCode())))
         .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(projectViewUrl + item.projectId().value(), item.projectTitle())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectTitle())))
         .setHeader("Title")
         .setKey("projectTitle");
 

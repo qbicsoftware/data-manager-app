@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -215,15 +216,35 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     public void projectId(String projectId) {
       try {
-        projectInformationService.find(ProjectId.parse(projectId)).ifPresentOrElse(
-            this::loadProjectData,
-            () -> titleToggleComponent.setValue("Not found"));
+        parseProjectId(projectId);
+        projectInformationService.find(ProjectId.parse(projectId))
+            .ifPresentOrElse(
+                this::loadProjectData,
+                () -> titleToggleComponent.setValue("Not found"));
       } catch (AccessDeniedException accessDeniedException) {
         log.error("Access denied when loading project details for project id " + projectId,
             accessDeniedException);
         titleToggleComponent.setValue("Not found");
       }
     }
+
+    private ProjectId parseProjectId(String id) {
+      try {
+        return ProjectId.parse(id);
+      } catch (IllegalArgumentException e) {
+        log.error(e.getMessage(), e);
+        throw new ApplicationException() {
+          @Override
+          public ErrorCode errorCode() {
+            return ErrorCode.INVALID_PROJECT_CODE;
+          }
+
+          @Override
+          public ErrorParameters errorParameters() {
+            return ErrorParameters.of("ProjectID");
+          }
+        };
+      }
 
     private void restrictInputLength() {
 
