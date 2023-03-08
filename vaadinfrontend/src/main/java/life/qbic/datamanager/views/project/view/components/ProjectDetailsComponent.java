@@ -245,6 +245,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           }
         };
       }
+    }
 
     private void restrictInputLength() {
 
