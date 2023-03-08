@@ -38,6 +38,11 @@ public class ExperimentJpaRepository implements ExperimentRepository {
 
   @Override
   public Optional<Experiment> find(ExperimentId id) {
-    return qbicExperimentRepo.findExperimentDaoByExperimentId(id).stream().findFirst();
+    return qbicExperimentRepo.findExperimentByExperimentId(id).stream().findFirst();
+  }
+
+  @Override
+  public void delete(ExperimentId experimentId) {
+    qbicExperimentRepo.deleteById(experimentId);
   }
 }

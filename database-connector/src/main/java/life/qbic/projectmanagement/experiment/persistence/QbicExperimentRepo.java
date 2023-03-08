@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.experiment.persistence;
 
+import java.util.List;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.data.repository.CrudRepository;
-
-import java.util.List;
 
 /**
  * <b>short description</b>
@@ -15,5 +14,6 @@ import java.util.List;
  */
 public interface QbicExperimentRepo extends CrudRepository<Experiment, ExperimentId> {
 
-  List<Experiment> findExperimentDaoByExperimentId(ExperimentId id);
+  List<Experiment> findExperimentByExperimentId(ExperimentId id);
+
 }
