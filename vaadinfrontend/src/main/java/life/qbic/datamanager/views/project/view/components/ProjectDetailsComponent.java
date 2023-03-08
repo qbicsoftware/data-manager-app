@@ -30,6 +30,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -60,6 +61,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private final FormLayout formLayout;
   private ToggleDisplayEditComponent<Span, TextField, String> titleToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> projectObjectiveToggleComponent;
+  private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> projectManagerToggleComponent;
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> principalInvestigatorToggleComponent;
   private MultiSelectComboBox<Species> speciesMultiSelectComboBox;
@@ -93,6 +95,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     initFormFields();
     formLayout.addFormItem(titleToggleComponent, "Project Title");
     formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
+    formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
     formLayout.addFormItem(speciesMultiSelectComboBox, "Species");
     formLayout.addFormItem(specimenMultiSelectComboBox, "Specimen");
     formLayout.addFormItem(analyteMultiSelectComboBox, "Analyte");
@@ -109,6 +112,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     titleToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextField(),
         createPlaceHolderSpan());
     projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
+        createPlaceHolderSpan());
+    experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan());
     speciesMultiSelectComboBox = new MultiSelectComboBox<>();
     speciesMultiSelectComboBox.setClearButtonVisible(false);
@@ -138,8 +143,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private void setComponentStyles() {
     titleToggleComponent.getInputComponent().setSizeFull();
     projectObjectiveToggleComponent.getInputComponent().setWidthFull();
+    experimentalDesignToggleComponent.getInputComponent().setWidthFull();
     titleToggleComponent.setWidthFull();
     projectObjectiveToggleComponent.setWidthFull();
+    experimentalDesignToggleComponent.setWidthFull();
     formLayout.setClassName("create-project-form");
     projectManagerToggleComponent.getInputComponent().getStyle()
         .set("--vaadin-combo-box-overlay-width", "16em");
@@ -153,10 +160,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     responsiblePersonToggleComponent.getInputComponent().setClearButtonVisible(true);
     titleToggleComponent.getInputComponent().setRequired(true);
     projectObjectiveToggleComponent.getInputComponent().setRequired(true);
+    experimentalDesignToggleComponent.getInputComponent().setRequired(true);
     projectManagerToggleComponent.getInputComponent().setRequired(true);
     principalInvestigatorToggleComponent.getInputComponent().setRequired(true);
     titleToggleComponent.setRequiredIndicatorVisible(true);
     projectObjectiveToggleComponent.setRequiredIndicatorVisible(true);
+    experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
     speciesMultiSelectComboBox.setWidth(50, Unit.VW);
@@ -221,18 +230,26 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       titleToggleComponent.getInputComponent().setMaxLength((int) ProjectTitle.maxLength());
       projectObjectiveToggleComponent.getInputComponent()
           .setMaxLength((int) ProjectObjective.maxLength());
+      experimentalDesignToggleComponent.getInputComponent().setMaxLength(
+          (int) ExperimentalDesignDescription.maxLength());
 
       titleToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
       projectObjectiveToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
+      experimentalDesignToggleComponent.getInputComponent()
+          .setValueChangeMode(ValueChangeMode.EAGER);
 
       addConsumedLengthHelper(titleToggleComponent.getInputComponent(),
           titleToggleComponent.getValue());
       addConsumedLengthHelper(projectObjectiveToggleComponent.getInputComponent(),
           projectObjectiveToggleComponent.getValue());
+      addConsumedLengthHelper(experimentalDesignToggleComponent.getInputComponent(),
+          experimentalDesignToggleComponent.getValue());
 
       titleToggleComponent.getInputComponent().addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
       projectObjectiveToggleComponent.getInputComponent().addValueChangeListener(
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      experimentalDesignToggleComponent.getInputComponent().addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
@@ -252,6 +269,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       this.selectedProject = project.getId();
       titleToggleComponent.setValue(project.getProjectIntent().projectTitle().title());
       projectObjectiveToggleComponent.setValue(project.getProjectIntent().objective().value());
+      experimentalDesignToggleComponent.setValue(
+          project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
       responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
@@ -300,6 +319,15 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
               return;
             }
             projectInformationService.stateObjective(selectedProject.value(), value.trim());
+          });
+
+      ProjectDetailsComponent.Handler.submitOnValueChange(experimentalDesignToggleComponent,
+          value -> {
+            if (Objects.isNull(selectedProject)) {
+              return;
+            }
+            projectInformationService.describeExperimentalDesign(selectedProject.value(),
+                value.trim());
           });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(projectManagerToggleComponent,

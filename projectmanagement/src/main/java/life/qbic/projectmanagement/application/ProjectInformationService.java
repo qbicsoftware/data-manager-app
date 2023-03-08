@@ -101,22 +101,18 @@ public class ProjectInformationService {
     Optional<Project> optionalProject = projectRepository.find(id);
 
     optionalProject.ifPresentOrElse(
-        project -> {
-          loadActiveExperimentForProject(project)
-              .ifPresentOrElse(
-                  activeExperiment -> {
-                    activeExperiment.addSpecies(List.of(species));
-                    experimentRepository.update(activeExperiment);
-                  },
-                  () -> {
-                    addExperimentToProjectService
-                        .addExperimentToProject(project.getId(),
-                            "Experiment 0",
-                            List.of(),
-                            List.of(species),
-                            List.of());
-                  });
-        },
+        project -> loadActiveExperimentForProject(project)
+            .ifPresentOrElse(
+                activeExperiment -> {
+                  activeExperiment.addSpecies(List.of(species));
+                  experimentRepository.update(activeExperiment);
+                },
+                () -> addExperimentToProjectService
+                    .addExperimentToProject(project.getId(),
+                        "Experiment 0",
+                        List.of(),
+                        List.of(species),
+                        List.of())),
         () -> {
           throw new RuntimeException("There is no project with id " + id.value());
         }
@@ -143,22 +139,18 @@ public class ProjectInformationService {
     Optional<Project> optionalProject = projectRepository.find(id);
 
     optionalProject.ifPresentOrElse(
-        project -> {
-          loadActiveExperimentForProject(project)
-              .ifPresentOrElse(
-                  activeExperiment -> {
-                    activeExperiment.addSpecimens(List.of(specimens));
-                    experimentRepository.update(activeExperiment);
-                  },
-                  () -> {
-                    addExperimentToProjectService
-                        .addExperimentToProject(project.getId(),
-                            "Experiment 0",
-                            List.of(),
-                            List.of(),
-                            List.of(specimens));
-                  });
-        },
+        project -> loadActiveExperimentForProject(project)
+            .ifPresentOrElse(
+                activeExperiment -> {
+                  activeExperiment.addSpecimens(List.of(specimens));
+                  experimentRepository.update(activeExperiment);
+                },
+                () -> addExperimentToProjectService
+                    .addExperimentToProject(project.getId(),
+                        "Experiment 0",
+                        List.of(),
+                        List.of(),
+                        List.of(specimens))),
         () -> {
           throw new RuntimeException("There is no project with id " + id.value());
         }
@@ -183,22 +175,18 @@ public class ProjectInformationService {
     Optional<Project> optionalProject = projectRepository.find(id);
 
     optionalProject.ifPresentOrElse(
-        project -> {
-          loadActiveExperimentForProject(project)
-              .ifPresentOrElse(
-                  activeExperiment -> {
-                    activeExperiment.addAnalytes(List.of(analytes));
-                    experimentRepository.update(activeExperiment);
-                  },
-                  () -> {
-                    addExperimentToProjectService
-                        .addExperimentToProject(project.getId(),
-                            "Experiment 0",
-                            List.of(analytes),
-                            List.of(),
-                            List.of());
-                  });
-        },
+        project -> loadActiveExperimentForProject(project)
+            .ifPresentOrElse(
+                activeExperiment -> {
+                  activeExperiment.addAnalytes(List.of(analytes));
+                  experimentRepository.update(activeExperiment);
+                },
+                () -> addExperimentToProjectService
+                    .addExperimentToProject(project.getId(),
+                        "Experiment 0",
+                        List.of(analytes),
+                        List.of(),
+                        List.of())),
         () -> {
           throw new RuntimeException("There is no project with id " + id.value());
         }
