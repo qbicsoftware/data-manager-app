@@ -15,4 +15,6 @@ public interface ExperimentRepository {
 
   Optional<Experiment> find(ExperimentId id);
 
+  void delete(ExperimentId experimentId);
+
 }

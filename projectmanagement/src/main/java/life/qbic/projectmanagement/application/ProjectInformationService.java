@@ -40,10 +40,14 @@ public class ProjectInformationService {
   private final ProjectRepository projectRepository;
   private final ExperimentRepository experimentRepository;
 
+  private final AddExperimentToProjectService addExperimentToProjectService;
+
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
       @Autowired ProjectRepository projectRepository,
-      @Autowired ExperimentRepository experimentRepository) {
+      @Autowired ExperimentRepository experimentRepository,
+      @Autowired AddExperimentToProjectService addExperimentToProjectService) {
     this.experimentRepository = experimentRepository;
+    this.addExperimentToProjectService = addExperimentToProjectService;
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
@@ -105,11 +109,12 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.create(project.getId(), List.of(),
-                        List.of(), List.of(species));
-                    experimentRepository.add(experiment);
-                    project.addExperiment(experiment.experimentId());
-                    projectRepository.update(project);
+                    addExperimentToProjectService
+                        .addExperimentToProject(project.getId(),
+                            "Experiment 0",
+                            List.of(),
+                            List.of(species),
+                            List.of());
                   });
         },
         () -> {
@@ -146,11 +151,12 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.create(project.getId(), List.of(),
-                        List.of(specimens), List.of());
-                    experimentRepository.add(experiment);
-                    project.addExperiment(experiment.experimentId());
-                    projectRepository.update(project);
+                    addExperimentToProjectService
+                        .addExperimentToProject(project.getId(),
+                            "Experiment 0",
+                            List.of(),
+                            List.of(),
+                            List.of(specimens));
                   });
         },
         () -> {
@@ -185,11 +191,12 @@ public class ProjectInformationService {
                     experimentRepository.update(activeExperiment);
                   },
                   () -> {
-                    Experiment experiment = Experiment.create(project.getId(), List.of(analytes),
-                        List.of(), List.of());
-                    experimentRepository.add(experiment);
-                    project.addExperiment(experiment.experimentId());
-                    projectRepository.update(project);
+                    addExperimentToProjectService
+                        .addExperimentToProject(project.getId(),
+                            "Experiment 0",
+                            List.of(analytes),
+                            List.of(),
+                            List.of());
                   });
         },
         () -> {

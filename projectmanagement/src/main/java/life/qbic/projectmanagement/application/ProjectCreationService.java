@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
 import java.util.Optional;
+import javax.transaction.Transactional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -17,7 +18,6 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
@@ -36,10 +36,14 @@ public class ProjectCreationService {
   private final ProjectRepository projectRepository;
   private final ExperimentRepository experimentRepository;
 
+  private final AddExperimentToProjectService addExperimentToProjectService;
+
   public ProjectCreationService(ProjectRepository projectRepository,
-      ExperimentRepository experimentRepository) {
+      ExperimentRepository experimentRepository,
+      AddExperimentToProjectService addExperimentToProjectService) {
     this.projectRepository = projectRepository;
     this.experimentRepository = experimentRepository;
+    this.addExperimentToProjectService = addExperimentToProjectService;
   }
 
   /**
@@ -50,6 +54,7 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
+  @Transactional
   public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
@@ -58,16 +63,13 @@ public class ProjectCreationService {
     try {
       Project project = createProject(code, title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
-      projectRepository.add(project);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-
-      Experiment experiment = Experiment.create(project.getId(), analyteList, specimenList,
-          speciesList);
-      experimentRepository.add(experiment);
-      project.addExperiment(experiment.experimentId());
-      projectRepository.update(project);
+      projectRepository.add(project);
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+          analyteList,
+          speciesList, specimenList);
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);

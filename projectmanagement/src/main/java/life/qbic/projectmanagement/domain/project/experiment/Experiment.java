@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
@@ -14,7 +13,6 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -36,16 +34,13 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 @Entity(name = "experiments_datamanager")
 public class Experiment {
 
-  @AttributeOverride(name = "projectId", column = @Column(name = "projectId", nullable = false))
-  private ProjectId projectId;
-
-
   @EmbeddedId
   private ExperimentId experimentId;
+  @Column(name = "experimentName")
+  private String name;
 
   @Embedded
   private ExperimentalDesign experimentalDesign;
-
   @ElementCollection(targetClass = Analyte.class)
   private List<Analyte> analytes = new ArrayList<>();
   @ElementCollection(targetClass = Species.class)
@@ -55,7 +50,7 @@ public class Experiment {
 
 
   /**
-   * Please use {@link Experiment#create(ProjectId, List, List, List)} instead
+   * Please use {@link Experiment#create(String, List, List, List)} instead
    */
   protected Experiment() {
     // Please use the create method. This is needed for JPA
@@ -69,17 +64,26 @@ public class Experiment {
   }
 
 
-  public static Experiment create(ProjectId projectId, List<Analyte> analytes,
+  public static Experiment create(String name, List<Analyte> analytes,
       List<Specimen> specimens,
       List<Species> species) {
     Experiment experiment = new Experiment();
+    experiment.name = name;
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
-//    experiment.projectId = projectId;
     experiment.addSpecies(species);
     experiment.addSpecimens(specimens);
     experiment.addAnalytes(analytes);
     return experiment;
+  }
+
+  /**
+   * Returns the name of the experiment.
+   *
+   * @return the name of the experiment
+   */
+  public String getName() {
+    return name;
   }
 
   /**

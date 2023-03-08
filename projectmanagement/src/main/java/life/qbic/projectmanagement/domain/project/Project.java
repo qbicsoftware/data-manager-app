@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -17,7 +18,9 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
@@ -38,6 +41,10 @@ public class Project {
 
   @AttributeOverride(name = "uuid", column = @Column(name = "activeExperiment"))
   private ExperimentId activeExperiment;
+
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
+  @JoinColumn(name = "project")
+  private List<Experiment> experiments;
 
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
@@ -92,6 +99,7 @@ public class Project {
     setProjectManager(projectManager);
     setResponsiblePerson(responsiblePerson);
     linkedOffers = new ArrayList<>();
+    experiments = new ArrayList<>();
   }
 
   public void setProjectManager(PersonReference projectManager) {
@@ -134,8 +142,9 @@ public class Project {
     lastModified = Instant.now();
   }
 
-  public void addExperiment(ExperimentId experimentId) {
-    activeExperiment = experimentId;
+  public void addExperiment(Experiment experiment) {
+    activeExperiment = experiment.experimentId();
+    experiments.add(experiment);
     lastModified = Instant.now();
   }
 
