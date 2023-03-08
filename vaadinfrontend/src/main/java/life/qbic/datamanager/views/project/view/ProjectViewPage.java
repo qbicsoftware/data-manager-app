@@ -41,6 +41,7 @@ public class ProjectViewPage extends Div implements
   ProjectLinksComponent projectLinksComponent) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent);
+    add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
