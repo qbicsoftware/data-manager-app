@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.domain.project;
 
-import java.util.Objects;
-
 /**
  * The experimental design description of a project
  *
@@ -13,10 +11,6 @@ public record ExperimentalDesignDescription(String value) {
 
 
   public ExperimentalDesignDescription {
-    Objects.requireNonNull(value);
-    if (value.isEmpty()) {
-      throw new ProjectManagementDomainException("Experimental design is empty.");
-    }
     if (value.length() > MAX_LENGTH) {
       throw new IllegalArgumentException(
           "To many characters (" + value.length()
