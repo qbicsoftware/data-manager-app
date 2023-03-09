@@ -16,7 +16,9 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CustomErrorHandler implements ErrorHandler,
     ApplicationExceptionHandler {
 
