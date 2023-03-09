@@ -1,23 +1,18 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ConditionLabelAttributeConverter;
 
 /**
@@ -49,20 +44,15 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Cond
 //IMPORTANT: do not name the table condition; condition is a reserved keyword
 public class Condition {
 
-
-  @EmbeddedId
-  private ConditionId id;
+  @Id
+  @GeneratedValue
+  private long conditionId;
 
   @Convert(converter = ConditionLabelAttributeConverter.class)
   private ConditionLabel label;
 
   @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
   private List<VariableLevel> variableLevels;
-
-  @ManyToOne
-  @MapsId("experimentId")
-  @JoinColumn(name = "experimentId")
-  private Experiment experiment;
 
   protected Condition() {
     //used by jpa
@@ -73,20 +63,18 @@ public class Condition {
    * the level of an experimental variable.
    *
    * @param label            the label of the condition unique in the context of the experiment.
-   * @param experiment       the experiment this condition belongs to
    * @param definedVariables the linear combination of experimental variable levels
    * @return the condition
    * @since 1.0.0
    */
-  public static Condition createForExperiment(Experiment experiment, String label,
+  public static Condition create(String label,
       VariableLevel... definedVariables) {
-    return new Condition(experiment, label, definedVariables);
+    return new Condition(label, definedVariables);
   }
 
 
-  private Condition(Experiment experiment, String label, VariableLevel... variableLevels) {
+  private Condition(String label, VariableLevel... variableLevels) {
     Arrays.stream(variableLevels).forEach(Objects::requireNonNull);
-    Objects.requireNonNull(experiment, "experiment must not be null");
     Objects.requireNonNull(label, "condition label must not be null");
 
     if (variableLevels.length < 1) {
@@ -101,8 +89,6 @@ public class Condition {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
-    this.id = ConditionId.create(experiment.experimentId());
-    this.experiment = experiment;
     this.label = ConditionLabel.create(label);
     this.variableLevels = Arrays.stream(variableLevels).toList();
   }
@@ -163,7 +149,7 @@ public class Condition {
 
     Condition condition = (Condition) o;
 
-    return id.equals(condition.id);
+    return conditionId == condition.conditionId;
   }
 
   /**
@@ -175,47 +161,6 @@ public class Condition {
    */
   @Override
   public int hashCode() {
-    return id.hashCode();
+    return (int) (conditionId ^ (conditionId >>> 32));
   }
-
-  @Embeddable
-  private static class ConditionId implements Serializable {
-
-    private Long id;
-    private ExperimentId experimentId;
-
-    static ConditionId create(ExperimentId experimentId) {
-      Objects.requireNonNull(experimentId);
-      ConditionId conditionId = new ConditionId();
-      conditionId.experimentId = experimentId;
-      conditionId.id = new Random().nextLong();
-      return conditionId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ConditionId that = (ConditionId) o;
-
-      if (!experimentId.equals(that.experimentId)) {
-        return false;
-      }
-      return id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = experimentId.hashCode();
-      result = 31 * result + id.hashCode();
-      return result;
-    }
-  }
-
-
 }
