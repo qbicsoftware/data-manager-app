@@ -75,12 +75,12 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.VariableL
 public class ExperimentalDesign {
 
 
-  @OneToMany(targetEntity = ExperimentalVariable.class, orphanRemoval = true, cascade = CascadeType.ALL)
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   // @JoinColumn so no extra table is created as experimental_variables contains that column
   final List<ExperimentalVariable> variables = new ArrayList<>();
 
-  @OneToMany(targetEntity = Condition.class, orphanRemoval = true, cascade = CascadeType.ALL)
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   // @JoinColumn so no extra table is created as conditions contains that column
   final Collection<Condition> conditions = new ArrayList<>();
