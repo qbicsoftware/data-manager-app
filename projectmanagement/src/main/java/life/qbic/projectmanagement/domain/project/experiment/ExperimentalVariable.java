@@ -1,23 +1,17 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
+import java.util.function.Predicate;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
@@ -37,38 +31,31 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Vari
 @Entity(name = "experimental_variables")
 public class ExperimentalVariable {
 
-  @EmbeddedId
-  private ExperimentalVariableId id;
+  @Id
+  @GeneratedValue
+  private long variableId;
 
   @Convert(converter = VariableNameAttributeConverter.class)
   @Column(name = "name")
   private VariableName name;
 
-  @ManyToOne
-  @MapsId("experimentId")
-  @JoinColumn(name = "experimentId")
-  private Experiment experiment;
-
   @ElementCollection(fetch = FetchType.EAGER)
   private final List<ExperimentalValue> levels;
 
-  private ExperimentalVariable(Experiment experiment, String name, ExperimentalValue... levels) {
+  private ExperimentalVariable(String name, ExperimentalValue... levels) {
     Arrays.stream(levels)
         .forEach(level -> Objects.requireNonNull(level, "only non-null levels expected"));
-    Objects.requireNonNull(experiment);
     Objects.requireNonNull(name);
     if (levels.length < 1) {
       throw new IllegalArgumentException("At least one variable level required.");
     }
-    this.experiment = experiment;
-    this.id = ExperimentalVariableId.create(experiment.experimentId());
     this.name = VariableName.create(name);
     this.levels = List.of(levels);
   }
 
   public static ExperimentalVariable createForExperiment(Experiment experiment, String name,
       ExperimentalValue... levels) {
-    return new ExperimentalVariable(experiment, name, levels);
+    return new ExperimentalVariable(name, levels);
   }
 
   protected ExperimentalVariable() {
@@ -85,7 +72,7 @@ public class ExperimentalVariable {
    *                                  with the unit of existing levels
    */
   Result<ExperimentalValue, RuntimeException> addLevel(ExperimentalValue experimentalValue) {
-    if (hasDifferentUnitThanDefinedLevels(experimentalValue)) {
+    if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
       return Result.failure(new IllegalArgumentException(
           "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
     }
@@ -100,8 +87,10 @@ public class ExperimentalVariable {
     }
   }
 
-  private boolean hasDifferentUnitThanDefinedLevels(ExperimentalValue experimentalValue) {
-    return levels.stream().anyMatch(it -> !it.unit().equals(experimentalValue.unit()));
+  private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
+    Predicate<ExperimentalValue> hasDifferentUnit = input -> !input.unit()
+        .equals(experimentalValue.unit());
+    return levels.stream().anyMatch(hasDifferentUnit);
   }
 
   public List<ExperimentalValue> levels() {
@@ -120,61 +109,14 @@ public class ExperimentalVariable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+
     ExperimentalVariable that = (ExperimentalVariable) o;
-    return Objects.equals(id, that.id);
+
+    return variableId == that.variableId;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
-  }
-
-  @Embeddable
-  @Access(AccessType.FIELD)
-  public static class ExperimentalVariableId implements Serializable {
-
-    private Long id;
-    @Column(name = "experimentId")
-    private ExperimentId experimentId;
-
-    protected ExperimentalVariableId() {
-      // needed for JPA
-    }
-
-    static ExperimentalVariableId create(ExperimentId experimentId) {
-      Objects.requireNonNull(experimentId);
-      ExperimentalVariableId experimentalVariableId = new ExperimentalVariableId();
-      experimentalVariableId.experimentId = experimentId;
-      experimentalVariableId.id = new Random().nextLong();
-      return experimentalVariableId;
-    }
-
-    public ExperimentId experimentId() {
-      return experimentId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ExperimentalVariableId that = (ExperimentalVariableId) o;
-
-      if (!id.equals(that.id)) {
-        return false;
-      }
-      return experimentId.equals(that.experimentId);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = id.hashCode();
-      result = 31 * result + experimentId.hashCode();
-      return result;
-    }
+    return (int) (variableId ^ (variableId >>> 32));
   }
 }
