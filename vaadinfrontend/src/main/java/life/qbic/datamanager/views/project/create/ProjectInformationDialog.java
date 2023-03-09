@@ -79,14 +79,16 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective.setRequired(true);
     //ToDo Remove Field once experimental design backend is connected
     experimentalDesignField = new TextArea("Experimental Design");
-    experimentalDesignField.setRequired(true);
     experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
     sampleCountLayout = new HorizontalLayout();
     speciesBox = new MultiSelectComboBox<>("Species");
+    speciesBox.setRequired(true);
     specimenBox = new MultiSelectComboBox<>("Specimen");
+    specimenBox.setRequired(true);
     analyteBox = new MultiSelectComboBox<>("Analyte");
+    analyteBox.setRequired(true);
 
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
