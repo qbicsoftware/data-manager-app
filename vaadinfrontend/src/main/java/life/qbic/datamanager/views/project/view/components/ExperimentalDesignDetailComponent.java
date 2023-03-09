@@ -5,16 +5,17 @@ import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.virtuallist.VirtualList;
+import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.List;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignCard.Experiment;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -32,25 +33,37 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private static final long serialVersionUID = -2255999216830849632L;
   private static final String TITLE = "Experimental Design";
   private final Button createDesignButton = new Button("Add");
-  private final ExperimentCreationDialog experimentCreationDialog = new ExperimentCreationDialog();
+  private final ExperimentCreationDialog experimentCreationDialog;
   private final transient Handler handler;
-  private final VerticalLayout contentLayout = new VerticalLayout();
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
-      ExperimentalDesignCard::new);
+      experiment -> {
+        ExperimentalDesignCard card = new ExperimentalDesignCard(experiment);
+        card.removeClassName("shadow-l");
+        card.addClassName("shadow-s");
+        return card;
+      });
 
   public ExperimentalDesignDetailComponent(
-      @Autowired ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentCreationDialog experimentCreationDialog,
+      @Autowired ProjectInformationService projectInformationService) {
+
+    this.experimentCreationDialog = experimentCreationDialog;
+    VerticalLayout contentLayout = new VerticalLayout();
     contentLayout.add(experiments);
     contentLayout.add(experimentalDesignAddCard);
     getContent().addTitle(TITLE);
     getContent().addFields(contentLayout);
-    this.handler = new Handler(experimentInformationService);
+    this.handler = new Handler(projectInformationService);
   }
 
   public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
+  }
+
+  public void projectId(String parameter) {
+    this.handler.setProjectId(ProjectId.parse(parameter));
   }
 
 
@@ -61,32 +74,35 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
    */
   private final class Handler {
 
-    private final ExperimentInformationService experimentInformationService;
+    private final ProjectInformationService projectInformationService;
+    private ProjectId projectId;
 
-    public Handler(ExperimentInformationService experimentInformationService) {
-      this.experimentInformationService = experimentInformationService;
+    public Handler(ProjectInformationService projectInformationService) {
+      this.projectInformationService = projectInformationService;
       openDialogueListener();
-      experiments.setItems(
-          experimentInformationService.listExperimentsWithProject(ProjectId.create()));
       experiments.setRenderer(experimentCardRenderer);
     }
 
-    private void openDialogueListener() {
-      createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open());
-      experimentalDesignAddCard.addClickListener(clickEvent -> experimentCreationDialog.open());
+    public void setProjectId(ProjectId projectId) {
+      this.projectId = projectId;
+      CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
+          query -> projectInformationService.getExperimentsForProject(projectId).stream()
+              .skip(query.getOffset()).limit(query.getLimit()),
+          query -> projectInformationService.getExperimentsForProject(projectId).size());
+      experiments.setDataProvider(experimentsDataProvider);
     }
-  }
 
-  //ToDo this should be provided by a separate ApplicationService class.
-  public static interface ExperimentInformationService {
-
-    List<Experiment> listExperimentsWithProject(ProjectId projectId);
-  }
-
-  //ToDo this should be provided by a separate ApplicationService class.
-  private static interface CreateNewExperimentService {
-
-    Result<Experiment, Exception> createExperimentForProject(ProjectId projectId);
+    private void openDialogueListener() {
+      createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open(projectId));
+      experimentalDesignAddCard.addClickListener(
+          clickEvent -> experimentCreationDialog.open(projectId));
+      experimentCreationDialog.addOpenedChangeListener(
+          event -> {
+            if (!event.isOpened()) {
+              experiments.getDataProvider().refreshAll();
+            }
+          });
+    }
   }
 
 }

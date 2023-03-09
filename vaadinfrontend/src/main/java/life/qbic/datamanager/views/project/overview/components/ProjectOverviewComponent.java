@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -20,7 +19,6 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -37,14 +35,11 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
@@ -63,7 +58,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.context.annotation.SessionScope;
 
 /**
  * <b>Projects Overview</b>
@@ -90,16 +84,15 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectCreationService projectCreationService,
       @Autowired PersonSearchService personSearchService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
-      @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
     new Handler(offerLookupService,
         projectRepository,
         projectInformationService,
         projectCreationService,
         personSearchService,
-        experimentalDesignSearchService,
-        exceptionHandler);
+        experimentalDesignSearchService
+    );
     layoutComponents();
   }
 
@@ -158,7 +151,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   private class Handler {
 
     private static final Logger log = logger(Handler.class);
-    private final ApplicationExceptionHandler exceptionHandler;
     private final OfferLookupService offerLookupService;
     private final ExperimentalDesignSearchService experimentalDesignSearchService;
     private final ProjectCreationService projectCreationService;
@@ -173,8 +165,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         ProjectInformationService projectInformationService,
         ProjectCreationService projectCreationService,
         PersonSearchService personSearchService,
-        ExperimentalDesignSearchService experimentalDesignSearchService,
-        ApplicationExceptionHandler exceptionHandler) {
+        ExperimentalDesignSearchService experimentalDesignSearchService) {
 
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
@@ -192,9 +183,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
       Objects.requireNonNull(experimentalDesignSearchService);
       this.experimentalDesignSearchService = experimentalDesignSearchService;
-
-      Objects.requireNonNull(exceptionHandler);
-      this.exceptionHandler = exceptionHandler;
 
       configurePageButtons();
       configureProjectCreationDialog();
@@ -274,13 +262,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
           projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
 
-      project.ifSuccessOrElse(
+      project.ifSuccessOrElseThrow(
           result -> {
             displaySuccessfulProjectCreationNotification();
             projectInformationDialog.resetAndClose();
             projectGrid.getDataProvider().refreshAll();
-          },
-          applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
+          });
     }
 
     private void displaySuccessfulProjectCreationNotification() {

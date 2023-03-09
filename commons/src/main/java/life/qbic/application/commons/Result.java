@@ -124,7 +124,7 @@ public class Result<V, E extends Exception> {
   /**
    * Returns <code>true</code>, if the result object contains an error. Is always the negation of
    * {@link Result#isFailure()} ()}.
-   * <p>So <code>{@link Result#isSuccess()} ()} == !{@link Result#isFailure()} ()}</code></p>
+   * <p>So <code>{@linkplain  Result#isSuccess()} ()} == !{@link Result#isFailure()} ()}</code></p>
    *
    * @return true, if the result object has a value, else false
    */
@@ -211,6 +211,47 @@ public class Result<V, E extends Exception> {
   }
 
   /**
+   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
+   * when the result object represents a success and contains a value and takes a
+   * {@link Supplier &lt;? super X>} and throws {@link Supplier#get()}, if the result contains a
+   * failure.
+   *
+   * @param consumerOfValue   A target consumer object reference that can consume a value of type *
+   *                          <code>V</code>
+   * @param <X>               a subtype of {@link Throwable}
+   * @param throwableSupplier a throwable supplier to get, when the result is a failure
+   * @throws X which is a subtype of {@link Throwable}
+   * @since 1.0.0
+   */
+  public <X extends Throwable> void ifSuccessOrElseThrow(Consumer<? super V> consumerOfValue,
+      Supplier<? extends X> throwableSupplier) throws X {
+    if (type.equals(Type.FAILURE)) {
+      throw throwableSupplier.get();
+    } else {
+      consumerOfValue.accept(value);
+    }
+  }
+
+  /**
+   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
+   * when the result object represents a success and contains a value and takes a
+   * {@link Supplier &lt;? super X>} and throws {@link Supplier#get()}, if the result contains a
+   * failure.
+   *
+   * @param consumerOfValue A target consumer object reference that can consume a value of type *
+   *                        <code>V</code>
+   * @throws E if the result is a failure
+   * @since 1.0.0
+   */
+  public void ifSuccessOrElseThrow(Consumer<? super V> consumerOfValue) throws E {
+    if (type.equals(Type.FAILURE)) {
+      throw exception();
+    } else {
+      consumerOfValue.accept(value);
+    }
+  }
+
+  /**
    * Returns the value of type <code>V</code> if present or takes an {@link Supplier} of type
    * <code>X</code> and throws an object of type {@link Throwable} if the result contains an
    * exception.
@@ -227,6 +268,22 @@ public class Result<V, E extends Exception> {
       return value;
     } else {
       throw throwableSupplier.get();
+    }
+  }
+
+  /**
+   * Returns the value of type <code>V</code> if present or throws the exception contained in this
+   * result.
+   *
+   * @return the value <code>V</code>
+   * @throws E if the result is a failure
+   * @since 1.0.0
+   */
+  public V orElseThrow() throws E {
+    if (type.equals(Type.SUCCESS)) {
+      return value;
+    } else {
+      throw this.exception();
     }
   }
 

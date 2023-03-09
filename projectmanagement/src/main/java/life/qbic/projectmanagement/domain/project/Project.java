@@ -16,9 +16,9 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -44,7 +44,7 @@ public class Project {
 
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "project")
-  private List<Experiment> experiments;
+  private List<Experiment> experiments = new ArrayList<>();
 
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
@@ -53,11 +53,11 @@ public class Project {
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
 
-  @ElementCollection(fetch = FetchType.EAGER, targetClass = String.class)
+  @ElementCollection
   @Convert(converter = OfferIdentifierConverter.class)
   @CollectionTable(name = "projects_offers", joinColumns = @JoinColumn(name = "projectIdentifier"))
   @Column(name = "offerIdentifier")
-  private List<OfferIdentifier> linkedOffers;
+  private List<OfferIdentifier> linkedOffers = new ArrayList<>();
 
   @Embedded
   @AttributeOverrides({
@@ -87,19 +87,23 @@ public class Project {
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       PersonReference projectManager, PersonReference principalInvestigator,
       PersonReference responsiblePerson) {
-    requireNonNull(principalInvestigator);
-    requireNonNull(projectCode);
-    requireNonNull(projectId);
-    requireNonNull(projectIntent);
-    requireNonNull(projectManager);
+    requireNonNull(principalInvestigator, "requires non-null principal investigator");
+    requireNonNull(projectCode, "requires non-null project code");
+    requireNonNull(projectId, "requires non-null project id");
+    requireNonNull(projectIntent, "requires non-null project intent");
+    requireNonNull(projectManager, "requires non-null project manager");
     setPrincipalInvestigator(principalInvestigator);
     setProjectCode(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectManager(projectManager);
     setResponsiblePerson(responsiblePerson);
-    linkedOffers = new ArrayList<>();
-    experiments = new ArrayList<>();
+  }
+
+  @PostLoad
+  private void loadCollections() {
+    int size = experiments.size();
+    int offersSize = linkedOffers.size();
   }
 
   public void setProjectManager(PersonReference projectManager) {
@@ -122,7 +126,6 @@ public class Project {
   }
 
   protected Project() {
-    linkedOffers = new ArrayList<>();
   }
 
   public void updateTitle(ProjectTitle title) {
@@ -245,6 +248,10 @@ public class Project {
 
   public Optional<ExperimentId> activeExperiment() {
     return Optional.ofNullable(activeExperiment);
+  }
+
+  public List<ExperimentId> experiments() {
+    return experiments.stream().map(Experiment::experimentId).toList();
   }
 
   @Override

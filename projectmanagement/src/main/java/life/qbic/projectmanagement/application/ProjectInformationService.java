@@ -291,6 +291,18 @@ public class ProjectInformationService {
 
   }
 
+  public Collection<Experiment> getExperimentsForProject(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
+    Project project = projectRepository.find(projectId).orElseThrow(
+        () -> new ProjectManagementException("Failed to find project " + projectId.value()));
+    return project.experiments().stream()
+        .map(experimentId ->
+            experimentRepository.find(experimentId)
+                .orElseThrow(() -> new ProjectManagementException(
+                    "Failed to find experiment " + experimentId)))
+        .toList();
+  }
+
   /**
    * Retrieve all specimen of the active experiment. If no experiment is active, returns an empty
    * list.

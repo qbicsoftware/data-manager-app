@@ -18,7 +18,6 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -34,15 +33,12 @@ public class ProjectCreationService {
   private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
-  private final ExperimentRepository experimentRepository;
 
   private final AddExperimentToProjectService addExperimentToProjectService;
 
   public ProjectCreationService(ProjectRepository projectRepository,
-      ExperimentRepository experimentRepository,
       AddExperimentToProjectService addExperimentToProjectService) {
     this.projectRepository = projectRepository;
-    this.experimentRepository = experimentRepository;
     this.addExperimentToProjectService = addExperimentToProjectService;
   }
 
@@ -67,9 +63,14 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
-          analyteList,
-          speciesList, specimenList);
+      try {
+        addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+            analyteList,
+            speciesList, specimenList);
+      } catch (Exception e) { //rollback project creation
+        projectRepository.deleteByProjectCode(project.getProjectCode());
+        throw e;
+      }
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);

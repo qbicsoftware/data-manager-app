@@ -5,6 +5,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
  * <b>Experimental Design Card</b>
@@ -15,15 +16,11 @@ import life.qbic.datamanager.views.layouts.CardLayout;
  */
 public class ExperimentalDesignCard extends CardLayout {
 
-  public record Experiment(String id, String name, String description) {
-
-  }
-
   public ExperimentalDesignCard(Experiment experiment) {
     Icon myIcon = VaadinIcon.FLASK.create();
     myIcon.addClassNames("mt-s", "mb-s");
-    Span experimentDescription = new Span(experiment.description());
-    addTitle(experiment.name);
+    Span experimentDescription = new Span("some missing description");
+    addTitle(experiment.getName());
     addFields(experimentDescription);
     HorizontalLayout horizontalLayout = new HorizontalLayout(myIcon, experimentDescription);
     experimentDescription.addClassName("font-bold");

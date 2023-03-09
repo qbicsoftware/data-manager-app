@@ -51,11 +51,9 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
     }
     if (targetDomainObject instanceof ProjectPreview) {
       QbicUserDetails principal = (QbicUserDetails) authentication.getPrincipal();
-      if (qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
+      return qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
           ((ProjectPreview) targetDomainObject).projectId(),
-          new SimpleGrantedAuthority(requiredAuthority))) {
-        return true;
-      }
+          new SimpleGrantedAuthority(requiredAuthority));
     }
     return false;
   }

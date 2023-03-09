@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -31,6 +30,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -228,22 +228,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       }
     }
 
-    private ProjectId parseProjectId(String id) {
+    private void parseProjectId(String id) {
       try {
-        return ProjectId.parse(id);
+        ProjectId.parse(id);
       } catch (IllegalArgumentException e) {
-        log.error(e.getMessage(), e);
-        throw new ApplicationException() {
-          @Override
-          public ErrorCode errorCode() {
-            return ErrorCode.INVALID_PROJECT_CODE;
-          }
-
-          @Override
-          public ErrorParameters errorParameters() {
-            return ErrorParameters.of("ProjectID");
-          }
-        };
+        throw new ProjectManagementException("invalid project id " + id, e);
       }
     }
 

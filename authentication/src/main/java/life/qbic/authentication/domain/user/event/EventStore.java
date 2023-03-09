@@ -7,5 +7,5 @@ public interface EventStore {
 
   void append(DomainEvent event);
 
-  public Set<DomainEvent> findAllByType(Class<DomainEvent> type);
+  Set<DomainEvent> findAllByType(Class<DomainEvent> type);
 }

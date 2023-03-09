@@ -42,4 +42,33 @@ public interface ProjectRepository {
   List<Project> find(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
+
+  void deleteByProjectCode(ProjectCode projectCode);
+
+  /**
+   * Is thrown if a project that should be created already exists, as denoted by the project id
+   */
+  class ProjectExistsException extends RuntimeException {
+
+
+    public ProjectExistsException() {
+    }
+
+    public ProjectExistsException(Throwable cause) {
+      super(cause);
+    }
+  }
+
+  /**
+   * Thrown when a project is expected to exist but cannot be found.
+   */
+  class ProjectNotFoundException extends RuntimeException {
+
+    public ProjectNotFoundException() {
+    }
+
+    public ProjectNotFoundException(Throwable cause) {
+      super(cause);
+    }
+  }
 }
