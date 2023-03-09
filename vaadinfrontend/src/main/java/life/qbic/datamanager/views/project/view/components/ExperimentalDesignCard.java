@@ -9,9 +9,10 @@ import life.qbic.datamanager.views.layouts.CardLayout;
 /**
  * <b>Experimental Design Card</b>
  *
- * <p>A CardLayout based Component showing the information stored in the {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}
- * associated with a project in the {@link ExperimentalDesignDetailComponent} of the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
- *
+ * <p>A CardLayout based Component showing the information stored in the
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
+ * a project in the {@link ExperimentListComponent} of the
+ * {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
  */
 public class ExperimentalDesignCard extends CardLayout {
 

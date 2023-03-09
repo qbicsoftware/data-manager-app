@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
@@ -18,17 +18,14 @@ class ProjectViewHandler {
   private final ProjectLinksComponent projectLinksComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
 
-  private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
-
   public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+      ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    Objects.requireNonNull(experimentalDesignDetailComponent);
+    Objects.requireNonNull(experimentListComponent);
     this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
-    this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
   }
 
   /**

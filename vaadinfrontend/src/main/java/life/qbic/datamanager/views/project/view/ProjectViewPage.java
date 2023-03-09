@@ -3,21 +3,18 @@ package life.qbic.datamanager.views.project.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
-import com.vaadin.flow.router.HasUrlParameter;
-import com.vaadin.flow.router.InternalServerError;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
@@ -33,8 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?", layout = MainLayout.class)
 @PermitAll
 @CssImport("./styles/views/project/project-view.css")
-public class ProjectViewPage extends Div implements
-    BeforeEnterObserver, HasErrorParameter<ApplicationException> {
+public class ProjectViewPage extends Div implements BeforeEnterObserver,
+    HasErrorParameter<ApplicationException> {
 
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
@@ -44,34 +41,56 @@ public class ProjectViewPage extends Div implements
   private final HorizontalLayout navBar = new HorizontalLayout();
   private final transient ProjectViewHandler handler;
 
-  public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
-    handler = new ProjectViewHandler(projectDetailsComponent,
-        projectLinksComponent, experimentalDesignDetailComponent);
+  public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent,
+      @Autowired ExperimentDetailsComponent experimentDetailsComponent,
+      @Autowired ProjectLinksComponent projectLinksComponent,
+      @Autowired ExperimentListComponent experimentListComponent) {
+    handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent,
+        experimentListComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     //ToDo Replace with Dedicated Navbar component and routing
-    initNavbar(projectDetailsComponent, experimentalDesignDetailComponent);
+    initNavbar(projectDetailsComponent, experimentDetailsComponent, projectLinksComponent,
+        experimentListComponent);
     add(navBar);
     setPageStyles();
-    setComponentStyles(projectDetailsComponent, projectLinksComponent, experimentalDesignDetailComponent);
+    setComponentStyles(projectDetailsComponent, experimentDetailsComponent, projectLinksComponent,
+        experimentListComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
   }
 
-  private void initNavbar(ProjectDetailsComponent projectDetailsComponent, ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+  private void initNavbar(ProjectDetailsComponent projectDetailsComponent,
+      ExperimentDetailsComponent experimentDetailsComponent,
+      ProjectLinksComponent projectLinksComponent,
+      ExperimentListComponent experimentListComponent) {
     navBar.add(switchComponentsButton);
-    switchComponentsButton.addClickListener(clickEvent -> switchDetailsComponents(projectDetailsComponent, experimentalDesignDetailComponent));
+    switchComponentsButton.addClickListener(clickEvent -> {
+      switchDetailsComponents(projectDetailsComponent, experimentDetailsComponent);
+      switchListComponents(projectLinksComponent, experimentListComponent);
+    });
   }
 
-  private void switchDetailsComponents(ProjectDetailsComponent projectDetailsComponent, ExperimentalDesignDetailComponent experimentalDesignDetailComponent){
-    if(this.getChildren().toList().contains(projectDetailsComponent)){
-      add(experimentalDesignDetailComponent);
+  private void switchDetailsComponents(ProjectDetailsComponent projectDetailsComponent,
+      ExperimentDetailsComponent experimentDetailsComponent) {
+    if (this.getChildren().toList().contains(projectDetailsComponent)) {
+      add(experimentDetailsComponent);
       remove(projectDetailsComponent);
-    } else if (this.getChildren().toList().contains(experimentalDesignDetailComponent)) {
-      remove(experimentalDesignDetailComponent);
+    } else if (this.getChildren().toList().contains(experimentDetailsComponent)) {
+      remove(experimentDetailsComponent);
       add(projectDetailsComponent);
+    }
+  }
+
+  private void switchListComponents(ProjectLinksComponent projectLinksComponent,
+      ExperimentListComponent experimentListComponent) {
+    if (this.getChildren().toList().contains(projectLinksComponent)) {
+      add(experimentListComponent);
+      remove(projectLinksComponent);
+    } else if (this.getChildren().toList().contains(experimentListComponent)) {
+      remove(experimentListComponent);
+      add(projectLinksComponent);
     }
   }
 
@@ -80,11 +99,14 @@ public class ProjectViewPage extends Div implements
   }
 
   public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent,  ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+      ExperimentDetailsComponent experimentDetailsComponent,
+      ProjectLinksComponent projectLinksComponent,
+      ExperimentListComponent experimentListComponent) {
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
     //Todo Determine if we want to have seperate styles for each component
-    experimentalDesignDetailComponent.setStyles("experimental-design-component");
+    experimentDetailsComponent.setStyles("experiment-details-component");
+    experimentListComponent.setStyles("experiment-list-component");
   }
 
   @Override

@@ -18,15 +18,16 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b>ExperimentalDesignDetailComponent</b>
+ * <b>ExperimentListComponent</b>
  * <p>
- * This component shows the {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} information associated with the selected {@link life.qbic.projectmanagement.domain.project.Project}
- * within the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
- *
+ * This component shows the
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} information
+ * associated with the selected {@link life.qbic.projectmanagement.domain.project.Project} within
+ * the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
  */
 @SpringComponent
 @UIScope
-public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
+public class ExperimentListComponent extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
@@ -40,7 +41,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentalDesignDetailComponent(
+  public ExperimentListComponent(
       @Autowired ExperimentInformationService experimentInformationService) {
     contentLayout.add(experiments);
     contentLayout.add(experimentalDesignAddCard);
@@ -55,7 +56,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
 
 
   /**
-   * Component logic for the {@link ExperimentalDesignDetailComponent}
+   * Component logic for the {@link ExperimentListComponent}
    *
    * @since 1.0.0
    */

@@ -1,8 +1,8 @@
 package life.qbic.datamanager.views.project.view.components;
 
 import java.util.List;
+import life.qbic.datamanager.views.project.view.components.ExperimentListComponent.ExperimentInformationService;
 import life.qbic.datamanager.views.project.view.components.ExperimentalDesignCard.Experiment;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
