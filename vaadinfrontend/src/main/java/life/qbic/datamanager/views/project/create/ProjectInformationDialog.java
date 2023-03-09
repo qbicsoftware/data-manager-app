@@ -133,6 +133,7 @@ public class ProjectInformationDialog extends Dialog {
     add(formLayout);
     getFooter().add(cancelButton, createButton);
     this.setMinWidth(66, Unit.VW);
+    this.setMaxWidth(66, Unit.VW);
   }
 
   private void initForm() {
