@@ -338,7 +338,7 @@ public class Experiment {
     }
 
     try {
-      Condition condition = Condition.createForExperiment(this, conditionLabel, levels);
+      Condition condition = Condition.create(conditionLabel, levels);
       if (experimentalDesign.isConditionDefined(conditionLabel)) {
         return Result.failure(new ConditionExistsException(
             "please provide a different condition label. A condition with the label "
