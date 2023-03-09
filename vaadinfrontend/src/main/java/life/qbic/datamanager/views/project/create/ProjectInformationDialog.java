@@ -206,11 +206,10 @@ public class ProjectInformationDialog extends Dialog {
    * interfaces
    */
   public void reset() {
-    resetChildValidation(formLayout);
-    resetChildValidation(codeAndTitleLayout);
-
     resetChildValues(formLayout);
     resetChildValues(codeAndTitleLayout);
+    resetChildValidation(formLayout);
+    resetChildValidation(codeAndTitleLayout);
   }
 
   private void resetChildValues(Component component) {
@@ -224,8 +223,8 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   public void resetAndClose() {
-    reset();
     close();
+    reset();
   }
 
   private class Handler {
