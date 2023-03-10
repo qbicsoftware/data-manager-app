@@ -5,7 +5,9 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 /**
- * A species is ... TODO add definition
+ * <a href="https://medical-dictionary.thefreedictionary.com/species">species</a>: a taxonomic
+ * category subordinate to a genus (or subgenus) and superior to a subspecies or variety; composed
+ * of individuals similar in certain morphologic and physiologic characteristics.
  *
  * @param label a natural string representation of the {@link Species}
  */

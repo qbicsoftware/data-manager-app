@@ -5,7 +5,8 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 /**
- * An analyte is ... TODO add definition
+ * <a href="https://medical-dictionary.thefreedictionary.com/analyte">analyte</a>: Any material or
+ * chemical substance subjected to analysis.
  *
  * @param label a natural string representation of the {@link Analyte}
  */
