@@ -193,7 +193,7 @@ public class ProjectInformationService {
     );
   }
 
-  @PostAuthorize("hasPermission(returnObject.get(),'VIEW_PROJECT')")
+  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   public Optional<Project> find(ProjectId projectId) {
     log.debug("Search for project with id: " + projectId.toString());
     return projectRepository.find(projectId);
