@@ -38,12 +38,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
-      experiment -> {
-        ExperimentalDesignCard card = new ExperimentalDesignCard(experiment);
-        card.removeClassName("shadow-l");
-        card.addClassName("shadow-s");
-        return card;
-      });
+      ExperimentalDesignCard::new);
 
   public ExperimentalDesignDetailComponent(
       @Autowired ExperimentCreationDialog experimentCreationDialog,
