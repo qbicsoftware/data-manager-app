@@ -150,90 +150,51 @@ public class Experiment {
   }
 
   /**
-   * Adds {@link Specimen}s to the experimental design. If the design contains more than one
-   * specimen, the {@link ExperimentalVariable} <code>specimen</code> is created and all specimens
-   * are added as levels.
+   * Adds {@link Specimen}s to the experiment.
    *
-   * @param specimens The specimens to add to the experimental design
+   * @param specimens The specimens to add to the experiment
    */
   public void addSpecimens(Collection<Specimen> specimens) {
-    final String specimensVariableName = "specimen";
-
     if (specimens.isEmpty()) {
       return;
     }
-    // only add specimen that are not present already
-    List<Specimen> newSpecimens = specimens.stream()
-        .filter(it -> !this.specimens.contains(it))
+    List<Specimen> missingSpecimens = specimens.stream()
+        .filter(specimen -> !this.specimens.contains(specimen))
         .toList();
-    this.specimens.addAll(newSpecimens);
-
-    if (this.specimens.size() > 1) {
-      // we have more than 1 specimen, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = specimens.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toList();
-      addVariableOrLevels(specimensVariableName, levels);
-    }
+    this.specimens.addAll(missingSpecimens);
   }
 
   /**
-   * Adds {@link Analyte}s to the experimental design. If the design contains more than one analyte,
-   * the {@link ExperimentalVariable} <code>analyte</code> is created and all analytes are added as
-   * levels.
+   * Adds {@link Analyte}s to the experiment.
    *
-   * @param analytes          The analytes to add to the experimental design
+   * @param analytes The analytes to add to the experiment
    */
   public void addAnalytes(Collection<Analyte> analytes) {
-    final String analytesVariableName = "analyte";
-
     if (analytes.isEmpty()) {
       return;
     }
 
     // only add analytes that are not present already
-    List<Analyte> newAnalytes = analytes.stream()
-        .filter(it -> !this.analytes.contains(it))
+    List<Analyte> missingAnalytes = analytes.stream()
+        .filter(analyte -> !this.analytes.contains(analyte))
         .toList();
-    this.analytes.addAll(newAnalytes);
-
-    if (this.analytes.size() > 1) {
-      // we have mone than 1 analyte, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = analytes.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toList();
-      addVariableOrLevels(analytesVariableName, levels);
-    }
+    this.analytes.addAll(missingAnalytes);
   }
 
   /**
-   * Adds {@link Species}s to the experimental design. If the design contains more than one species,
-   * the {@link ExperimentalVariable} <code>species</code> is created and all species are added as
-   * levels.
+   * Adds {@link Species}s to the experiment.
    *
-   * @param species The species to add to the experimental design
+   * @param species The species to add to the experiment
    */
   public void addSpecies(Collection<Species> species) {
-    final String speciesVariableName = "species";
-
     if (species.isEmpty()) {
       return;
     }
     // only add specimen that are not present already
-    List<Species> newSpecies = species.stream()
-        .filter(it -> !this.species.contains(it))
+    List<Species> missingSpecies = species.stream()
+        .filter(speci -> !this.species.contains(speci))
         .toList();
-    this.species.addAll(newSpecies);
-
-    // check whether we need a variable
-    if (this.species.size() > 1) {
-      // we have smore than 1 species, thus a new variable is created or levels are added
-      List<ExperimentalValue> levels = species.stream()
-          .map(it -> ExperimentalValue.create(it.label()))
-          .toList();
-
-      addVariableOrLevels(speciesVariableName, levels);
-    }
+    this.species.addAll(missingSpecies);
   }
 
   /**
