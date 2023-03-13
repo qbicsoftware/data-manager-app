@@ -234,36 +234,6 @@ public class Experiment {
   }
 
   /**
-   * Adds a variable to the design with the levels specified. If the variable exists already then
-   * adds the levels to the variable.
-   *
-   * @param variableName the name of the variable
-   * @param levels       the levels of the variable
-   */
-  private void addVariableOrLevels(String variableName, List<ExperimentalValue> levels) {
-    addVariableToDesign(variableName, levels).ifFailure(
-        e -> {
-          if (e instanceof ExperimentalVariableExistsException) {
-            // at this point we know there is a variable with the name `specimen`, so we only need to add the levels
-            for (ExperimentalValue level : levels) {
-              experimentalDesign.addLevelToVariable(variableName, level).ifFailure(
-                  e2 -> {
-                    //FIXME what exception to throw here?
-                    //   we know that the experimental variable must be defined at that point so we do not expect this exception
-                    throw new RuntimeException(
-                        "could not add level " + level + " to variable "
-                            + variableName, e2);
-                  });
-            }
-          } else if (e instanceof IllegalArgumentException) {
-            //FIXME what exception to throw here?
-            throw new RuntimeException(e);
-          }
-        }
-    );
-  }
-
-  /**
    * Creates a new condition and adds it to the experimental design. A successful operation is
    * indicated in the result, which can be verified via {@link Result#isSuccess()}.
    * <p>
