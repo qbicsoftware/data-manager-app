@@ -41,7 +41,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentalDesignDetailComponent(
+  public ExperimentListComponent(
       @Autowired ExperimentCreationDialog experimentCreationDialog,
       @Autowired ProjectInformationService projectInformationService) {
 

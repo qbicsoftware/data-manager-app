@@ -20,6 +20,7 @@ import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
  * Project Details Component
@@ -51,6 +52,10 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     getContent().addTitle(TITLE);
     initTopLayout();
     initTabSheet();
+  }
+
+  public void projectId(String parameter) {
+    this.handler.setProjectId(ProjectId.parse(parameter));
   }
 
   private void initTopLayout() {
@@ -110,8 +115,22 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
    */
   private final class Handler {
 
+    private ProjectId projectId;
+
     public Handler() {
 
+    }
+
+    public void setProjectId(ProjectId projectId) {
+      this.projectId = projectId;
+      /*
+      CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
+          query -> projectInformationService.getExperimentsForProject(projectId).stream()
+              .skip(query.getOffset()).limit(query.getLimit()),
+          query -> projectInformationService.getExperimentsForProject(projectId).size());
+      experiments.setDataProvider(experimentsDataProvider);
+
+       */
     }
 
   }

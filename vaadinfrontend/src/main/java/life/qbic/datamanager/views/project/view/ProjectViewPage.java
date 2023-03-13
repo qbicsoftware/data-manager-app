@@ -42,8 +42,8 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver {
       @Autowired ExperimentDetailsComponent experimentDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired ExperimentListComponent experimentListComponent) {
-    handler = new ProjectViewHandler(projectDetailsComponent,
-        projectLinksComponent, experimentListComponent);{
+    handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent,
+        experimentDetailsComponent, experimentListComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     //ToDo Replace with Dedicated Navbar component and routing
@@ -105,14 +105,12 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver {
     experimentDetailsComponent.setStyles("experiment-details-component");
     experimentListComponent.setStyles("experiment-list-component");
   }
-    @Override
-    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-      beforeEnterEvent.getRouteParameters().get("projectId")
-          .ifPresentOrElse(
-              handler::routeParameter,
-              () -> {
-                throw new ProjectManagementException("no project id provided");
-              });
-    }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    beforeEnterEvent.getRouteParameters().get("projectId")
+        .ifPresentOrElse(handler::routeParameter, () -> {
+          throw new ProjectManagementException("no project id provided");
+        });
   }
 }
