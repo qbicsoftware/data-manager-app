@@ -248,7 +248,7 @@ public class Experiment {
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
    * declarative exceptions.
    */
-  public Result<ConditionLabel, Exception> addConditionToDesign(String conditionLabel,
+  public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
       VariableLevel[] levels) {
     Arrays.stream(levels).forEach(Objects::requireNonNull);
 

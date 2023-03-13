@@ -65,7 +65,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.VariableL
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions can be defined via {@link Experiment#addConditionToDesign(String, VariableLevel...)}.
+ * Conditions can be defined via {@link Experiment#defineCondition(String, VariableLevel...)}.
  * <p>
  * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining a {@link Condition}.
  *
