@@ -47,14 +47,11 @@ public class ProjectViewPage extends Div implements
 
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent) {
+  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
+      experimentalDesignDetailComponent) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent);
-    add(projectNavigationBarComponent);
-  public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
-    handler = new ProjectViewHandler(projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
+    add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     //ToDo Replace with Dedicated Navbar component and routing
@@ -62,20 +59,25 @@ public class ProjectViewPage extends Div implements
     add(navBar);
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent);
-    setComponentStyles(projectDetailsComponent, projectLinksComponent, experimentalDesignDetailComponent);
+        projectLinksComponent, experimentalDesignDetailComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
   }
 
-  private void initNavbar(ProjectDetailsComponent projectDetailsComponent, ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+  private void initNavbar(ProjectDetailsComponent
+      projectDetailsComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     navBar.add(switchComponentsButton);
-    switchComponentsButton.addClickListener(clickEvent -> switchDetailsComponents(projectDetailsComponent, experimentalDesignDetailComponent));
+    switchComponentsButton.addClickListener(
+        clickEvent -> switchDetailsComponents(projectDetailsComponent,
+            experimentalDesignDetailComponent));
   }
 
-  private void switchDetailsComponents(ProjectDetailsComponent projectDetailsComponent, ExperimentalDesignDetailComponent experimentalDesignDetailComponent){
-    if(this.getChildren().toList().contains(projectDetailsComponent)){
+  private void switchDetailsComponents(ProjectDetailsComponent
+      projectDetailsComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+    if (this.getChildren().toList().contains(projectDetailsComponent)) {
       add(experimentalDesignDetailComponent);
       remove(projectDetailsComponent);
     } else if (this.getChildren().toList().contains(experimentalDesignDetailComponent)) {
@@ -90,11 +92,10 @@ public class ProjectViewPage extends Div implements
 
   public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent) {
+      ProjectLinksComponent projectLinksComponent,
+      ExperimentalDesignDetailComponent
+          experimentalDesignDetailComponent) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
-
-  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent,  ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
     //Todo Determine if we want to have seperate styles for each component
