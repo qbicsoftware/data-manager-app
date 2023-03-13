@@ -135,7 +135,7 @@ public class Condition {
    * {@inheritDoc}
    * <p>
    * ATTENTION: conditions are compared by their identity. They are neither compared by their label
-   * nor by the levels they define. To compare the levels a condition defines please us
+   * nor by the levels they define. To compare the levels a condition defines please use
    * {@link Condition#hasIdenticalContent(Condition)}
    */
   @Override
