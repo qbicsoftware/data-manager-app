@@ -214,7 +214,7 @@ public class Experiment {
       List<ExperimentalValue> levels) {
     if (levels.size() < 1) {
       return Result.failure(new IllegalArgumentException(
-          "At least one level required. Got " + levels));
+          "No levels were defined for " + variableName));
     }
 
     if (experimentalDesign.isVariableDefined(variableName)) {
