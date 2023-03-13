@@ -9,7 +9,7 @@ import java.io.Serial;
  * unambiguous within the design.
  * <p>
  * This exception shall only be used in the context of
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}.
  *
  * @since 1.0.0
  */

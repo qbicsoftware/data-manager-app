@@ -6,12 +6,9 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.ErrorParameter;
-import com.vaadin.flow.router.HasErrorParameter;
 import com.vaadin.flow.router.Route;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
@@ -19,6 +16,7 @@ import life.qbic.datamanager.views.project.view.components.ProjectDetailsCompone
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,8 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?", layout = MainLayout.class)
 @PermitAll
 @CssImport("./styles/views/project/project-view.css")
-public class ProjectViewPage extends Div implements BeforeEnterObserver,
-    HasErrorParameter<ApplicationException> {
+public class ProjectViewPage extends Div implements BeforeEnterObserver {
 
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
@@ -45,8 +42,8 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
       @Autowired ExperimentDetailsComponent experimentDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired ExperimentListComponent experimentListComponent) {
-    handler = new ProjectViewHandler(projectDetailsComponent, projectLinksComponent,
-        experimentListComponent);
+    handler = new ProjectViewHandler(projectDetailsComponent,
+        projectLinksComponent, experimentListComponent);{
     add(projectDetailsComponent);
     add(projectLinksComponent);
     //ToDo Replace with Dedicated Navbar component and routing
@@ -108,28 +105,14 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
     experimentDetailsComponent.setStyles("experiment-details-component");
     experimentListComponent.setStyles("experiment-list-component");
   }
-
-  @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    beforeEnterEvent.getRouteParameters().get("projectId")
-        .ifPresentOrElse(handler::routeParameter, () -> {
-          throw new ApplicationException() {
-            @Override
-            public ErrorCode errorCode() {
-              return ErrorCode.INVALID_PROJECT_CODE;
-            }
-
-            @Override
-            public ErrorParameters errorParameters() {
-              return ErrorParameters.create();
-            }
-          };
-        });
-  }
-
-  @Override
-  public int setErrorParameter(BeforeEnterEvent beforeEnterEvent,
-      ErrorParameter<ApplicationException> errorParameter) {
-    return 0;
+    @Override
+    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+      beforeEnterEvent.getRouteParameters().get("projectId")
+          .ifPresentOrElse(
+              handler::routeParameter,
+              () -> {
+                throw new ProjectManagementException("no project id provided");
+              });
+    }
   }
 }

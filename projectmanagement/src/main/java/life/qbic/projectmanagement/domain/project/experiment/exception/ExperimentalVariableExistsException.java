@@ -10,7 +10,7 @@ import java.io.Serial;
  * experimental variable already exists within the experimental design.
  * <p>
  * This exception shall be only used in the context of
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}.
  *
  * @since 1.0.0
  */
