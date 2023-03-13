@@ -18,14 +18,13 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * A dialog for experiment creation.
  */
 @SpringComponent
 @UIScope
@@ -40,10 +39,11 @@ public class ExperimentCreationDialog extends Dialog {
   private final Button nextButton = new Button("Next");
   private final Button cancelButton = new Button("Cancel");
 
-  public ExperimentCreationDialog() {
+  public ExperimentCreationDialog(
+      @Autowired AddExperimentToProjectService addExperimentToProjectService) {
     configureDialogLayout();
     initDialogueContent();
-    handler = new Handler();
+    handler = new Handler(addExperimentToProjectService);
     handler.handle();
   }
 
@@ -116,14 +116,41 @@ public class ExperimentCreationDialog extends Dialog {
     return rowLayout;
   }
 
+  @Override
+  public void open() {
+    throw new UnsupportedOperationException("open without project id not supported");
+  }
+
+  public void open(ProjectId projectId) {
+    handler.setProjectId(projectId);
+    super.open();
+  }
+
+
   private class Handler {
 
-    Optional<ProjectId> projectId;
+    private final AddExperimentToProjectService addExperimentToProjectService;
+    private ProjectId projectId;
+
+    private Handler(AddExperimentToProjectService addExperimentToProjectService) {
+      this.addExperimentToProjectService = addExperimentToProjectService;
+    }
 
     private void handle() {
-      this.projectId = Optional.empty();
       closeDialogListener();
       resetDialogUponClosure();
+      Random random = new Random();
+      nextButton.addClickListener(it -> {
+        Optional.ofNullable(this.projectId)
+            .ifPresent(projectId ->
+            {
+              String randomName = "My newly defined experiment " + random.nextInt(0, 100);
+              addExperimentToProjectService.addExperimentToProject(projectId,
+                  randomName, new ArrayList<>(), new ArrayList<>(),
+                  new ArrayList<>());
+            });
+        closeAndReset();
+      });
     }
 
     private void closeDialogListener() {
@@ -144,6 +171,10 @@ public class ExperimentCreationDialog extends Dialog {
     public void closeAndReset() {
       close();
       reset();
+    }
+
+    public void setProjectId(ProjectId projectId) {
+      this.projectId = projectId;
     }
   }
 }

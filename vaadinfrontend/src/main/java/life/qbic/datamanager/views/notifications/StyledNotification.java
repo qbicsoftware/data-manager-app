@@ -5,14 +5,14 @@ import com.vaadin.flow.component.notification.Notification.Position;
 
 /**
  * <b>short description</b>
- *
+ * TODO
  * <p>detailed description</p>
  *
  * @since <version tag>
  */
 public class StyledNotification {
 
-  public static final int DEFAULT_DURATION_MILLI_SECONDS = 20000;
+  public static final int DEFAULT_DURATION_MILLI_SECONDS = 2000;
   private final DisplayMessage displayMessage;
 
 

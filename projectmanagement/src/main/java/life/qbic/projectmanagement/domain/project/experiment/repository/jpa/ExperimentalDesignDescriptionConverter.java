@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.project.repository.jpa;
+package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
 import java.util.Objects;
 import javax.persistence.AttributeConverter;

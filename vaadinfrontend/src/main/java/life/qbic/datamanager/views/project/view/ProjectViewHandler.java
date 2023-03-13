@@ -15,7 +15,6 @@ import life.qbic.logging.service.LoggerFactory;
  */
 class ProjectViewHandler {
 
-  private static final Logger log = LoggerFactory.logger(ProjectViewHandler.class);
   private final ProjectLinksComponent projectLinksComponent;
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
@@ -45,5 +44,6 @@ class ProjectViewHandler {
   public void routeParameter(String parameter) {
     this.projectDetailsComponent.projectId(parameter);
     this.projectLinksComponent.projectId(parameter);
+    experimentalDesignDetailComponent.projectId(parameter);
   }
 }

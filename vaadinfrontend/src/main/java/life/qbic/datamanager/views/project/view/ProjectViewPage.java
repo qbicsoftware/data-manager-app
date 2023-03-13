@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.project.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -17,7 +18,6 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
@@ -25,6 +25,7 @@ import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -33,10 +34,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@Route(value = "projects/:projectId?")
-@ParentLayout(MainLayout.class)
+@Route(value = "projects/:projectId?", layout = MainLayout.class)
 @PermitAll
 @CssImport("./styles/views/project/project-view.css")
+public class ProjectViewPage extends Div implements BeforeEnterObserver {
 public class ProjectViewPage extends Div implements
     BeforeEnterObserver, HasErrorParameter<ApplicationException>, RouterLayout {
 
@@ -53,6 +54,10 @@ public class ProjectViewPage extends Div implements
   ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
       experimentalDesignDetailComponent) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
+  public ProjectViewPage(@Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
+  ProjectLinksComponent projectLinksComponent,
+      @Autowired ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+    handler = new ProjectViewHandler(projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
@@ -63,11 +68,15 @@ public class ProjectViewPage extends Div implements
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
+    setComponentStyles(projectDetailsComponent, projectLinksComponent,
+        experimentalDesignDetailComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
   }
 
+  private void initNavbar(ProjectDetailsComponent projectDetailsComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
   private void initNavbar(ProjectDetailsComponent
       projectDetailsComponent,
       ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
@@ -79,6 +88,9 @@ public class ProjectViewPage extends Div implements
 
   private void switchDetailsComponents(ProjectDetailsComponent
       projectDetailsComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+    if (this.getChildren().toList().contains(projectDetailsComponent)) {
+  private void switchDetailsComponents(ProjectDetailsComponent projectDetailsComponent,
       ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     if (this.getChildren().toList().contains(projectDetailsComponent)) {
       add(experimentalDesignDetailComponent);
@@ -99,6 +111,9 @@ public class ProjectViewPage extends Div implements
       ExperimentalDesignDetailComponent
           experimentalDesignDetailComponent) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
+  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
+      ProjectLinksComponent projectLinksComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
     //Todo Determine if we want to have seperate styles for each component
@@ -108,19 +123,11 @@ public class ProjectViewPage extends Div implements
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get("projectId")
-        .ifPresentOrElse(handler::routeParameter, () -> {
-          throw new ApplicationException() {
-            @Override
-            public ErrorCode errorCode() {
-              return ErrorCode.INVALID_PROJECT_CODE;
-            }
-
-            @Override
-            public ErrorParameters errorParameters() {
-              return ErrorParameters.create();
-            }
-          };
-        });
+        .ifPresentOrElse(
+            handler::routeParameter,
+            () -> {
+              throw new ProjectManagementException("no project id provided");
+            });
   }
 
   @Override
