@@ -1,10 +1,16 @@
 package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
+import java.io.Serializable;
+import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
-import java.util.Objects;
-
-public record Analyte(String label) {
+/**
+ * <a href="https://medical-dictionary.thefreedictionary.com/analyte">analyte</a>: Any material or
+ * chemical substance subjected to analysis.
+ *
+ * @param label a natural string representation of the {@link Analyte}
+ */
+public record Analyte(String label) implements Serializable {
 
   public Analyte {
     Objects.requireNonNull(label);

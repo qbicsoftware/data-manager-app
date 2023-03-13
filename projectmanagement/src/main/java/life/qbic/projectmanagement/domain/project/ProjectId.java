@@ -13,13 +13,13 @@ import javax.persistence.Embeddable;
  * The unique identifier of a project
  */
 @Embeddable
-public final class ProjectId implements Serializable {
+public class ProjectId implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 7904987287799381970L;
 
-  @Column(name = "uuid")
-  private final String value;
+  @Column(name = "projectId")
+  private final String projectId;
 
   protected ProjectId() {
     this(UUID.randomUUID());
@@ -30,7 +30,7 @@ public final class ProjectId implements Serializable {
       throw new IllegalArgumentException("uuid must be provided");
     }
     Objects.requireNonNull(uuid);
-    this.value = uuid.toString();
+    this.projectId = uuid.toString();
   }
 
   public static ProjectId create() {
@@ -47,13 +47,13 @@ public final class ProjectId implements Serializable {
   }
 
   public String value() {
-    return value;
+    return projectId;
   }
 
   @Override
   public String toString() {
     return new StringJoiner(", ", ProjectId.class.getSimpleName() + "[", "]")
-        .add("uuid=" + value)
+        .add("uuid=" + projectId)
         .toString();
   }
 
@@ -68,11 +68,11 @@ public final class ProjectId implements Serializable {
 
     ProjectId projectId = (ProjectId) o;
 
-    return value.equals(projectId.value);
+    return this.projectId.equals(projectId.projectId);
   }
 
   @Override
   public int hashCode() {
-    return value.hashCode();
+    return projectId.hashCode();
   }
 }

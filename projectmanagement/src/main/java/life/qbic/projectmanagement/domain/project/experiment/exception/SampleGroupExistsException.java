@@ -10,7 +10,7 @@ import java.io.Serial;
  * within the design.
  * <p>
  * This exception class shall only be used in the context of the
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} behaviour.
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} behaviour.
  *
  * @since 1.0.0
  */

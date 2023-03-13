@@ -5,6 +5,10 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -13,10 +17,12 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import javax.persistence.Table;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
 /**
@@ -34,6 +40,13 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
+  @AttributeOverride(name = "uuid", column = @Column(name = "activeExperiment"))
+  private ExperimentId activeExperiment;
+
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
+  @JoinColumn(name = "project")
+  private List<Experiment> experiments = new ArrayList<>();
+
   @Convert(converter = ProjectCode.Converter.class)
   @Column(name = "projectCode", nullable = false)
   private ProjectCode projectCode;
@@ -41,52 +54,85 @@ public class Project {
   @Column(name = "lastModified", nullable = false)
   private Instant lastModified;
 
-  @ElementCollection(fetch = FetchType.EAGER, targetClass = String.class)
+  @ElementCollection
   @Convert(converter = OfferIdentifierConverter.class)
   @CollectionTable(name = "projects_offers", joinColumns = @JoinColumn(name = "projectIdentifier"))
   @Column(name = "offerIdentifier")
-  private List<OfferIdentifier> linkedOffers;
+  private List<OfferIdentifier> linkedOffers = new ArrayList<>();
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "projectManagerRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "projectManagerReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
+  })
   private PersonReference projectManager;
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "principalInvestigatorRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "principalInvestigatorReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
+  })
   private PersonReference principalInvestigator;
 
-  @OneToOne(targetEntity = PersonReference.class, cascade = CascadeType.ALL)
-  @JoinColumn(name = "responsiblePersonRef")
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "referenceId", column = @Column(name = "responsibePersonReferenceId")),
+          @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
+          @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
+  })
   private PersonReference responsiblePerson;
+
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       PersonReference projectManager, PersonReference principalInvestigator,
       PersonReference responsiblePerson) {
-    requireNonNull(principalInvestigator);
-    requireNonNull(projectCode);
-    requireNonNull(projectId);
-    requireNonNull(projectIntent);
-    requireNonNull(projectManager);
+    requireNonNull(principalInvestigator, "requires non-null principal investigator");
+    requireNonNull(projectCode, "requires non-null project code");
+    requireNonNull(projectId, "requires non-null project id");
+    requireNonNull(projectIntent, "requires non-null project intent");
+    requireNonNull(projectManager, "requires non-null project manager");
     setPrincipalInvestigator(principalInvestigator);
     setProjectCode(projectCode);
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectManager(projectManager);
-    setResponsiblePerson(responsiblePerson);
-    linkedOffers = new ArrayList<>();
+    Optional.ofNullable(responsiblePerson).ifPresent(this::setResponsiblePerson);
+  }
+
+  @PostLoad
+  private void loadCollections() {
+    int size = experiments.size();
+    int offersSize = linkedOffers.size();
   }
 
   public void setProjectManager(PersonReference projectManager) {
+    Objects.requireNonNull(projectManager);
+    if (projectManager.equals(this.projectManager)) {
+      return;
+    }
     this.projectManager = projectManager;
     this.lastModified = Instant.now();
   }
 
   public void setPrincipalInvestigator(PersonReference principalInvestigator) {
+    Objects.requireNonNull(principalInvestigator);
+    if (principalInvestigator.equals(this.principalInvestigator)) {
+      return;
+    }
     this.principalInvestigator = principalInvestigator;
     this.lastModified = Instant.now();
   }
 
   public void setResponsiblePerson(PersonReference responsiblePerson) {
+    if (Objects.isNull(this.responsiblePerson) && Objects.isNull(responsiblePerson)) {
+      return;
+    } else if (Objects.nonNull(this.responsiblePerson)) {
+      if (this.responsiblePerson.equals(responsiblePerson)) {
+        return;
+      }
+    }
     this.responsiblePerson = responsiblePerson;
     this.lastModified = Instant.now();
   }
@@ -96,7 +142,6 @@ public class Project {
   }
 
   protected Project() {
-    linkedOffers = new ArrayList<>();
   }
 
   public void updateTitle(ProjectTitle title) {
@@ -116,8 +161,15 @@ public class Project {
     lastModified = Instant.now();
   }
 
+  public void addExperiment(Experiment experiment) {
+    activeExperiment = experiment.experimentId();
+    experiments.add(experiment);
+    lastModified = Instant.now();
+  }
+
   public void stateObjective(ProjectObjective projectObjective) {
-    if (projectIntent.objective().equals(projectObjective)) {
+    Objects.requireNonNull(projectObjective);
+    if (projectObjective.equals(projectIntent.objective())) {
       return;
     }
     this.projectIntent.objective(projectObjective);
@@ -145,11 +197,19 @@ public class Project {
   }
 
   protected void setProjectId(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
+    if (projectId.equals(this.projectId)) {
+      return;
+    }
     this.projectId = projectId;
     this.lastModified = Instant.now();
   }
 
   protected void setProjectIntent(ProjectIntent projectIntent) {
+    Objects.requireNonNull(projectIntent);
+    if (projectIntent.equals(this.projectIntent)) {
+      return;
+    }
     this.projectIntent = projectIntent;
     this.lastModified = Instant.now();
   }
@@ -209,6 +269,14 @@ public class Project {
 
   public PersonReference getResponsiblePerson() {
     return responsiblePerson;
+  }
+
+  public Optional<ExperimentId> activeExperiment() {
+    return Optional.ofNullable(activeExperiment);
+  }
+
+  public List<ExperimentId> experiments() {
+    return experiments.stream().map(Experiment::experimentId).toList();
   }
 
   @Override

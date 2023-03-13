@@ -2,7 +2,9 @@ package life.qbic.projectmanagement.application;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.List;
 import java.util.Optional;
+import javax.transaction.Transactional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -16,6 +18,9 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +34,12 @@ public class ProjectCreationService {
 
   private final ProjectRepository projectRepository;
 
-  public ProjectCreationService(ProjectRepository projectRepository) {
+  private final AddExperimentToProjectService addExperimentToProjectService;
+
+  public ProjectCreationService(ProjectRepository projectRepository,
+      AddExperimentToProjectService addExperimentToProjectService) {
     this.projectRepository = projectRepository;
+    this.addExperimentToProjectService = addExperimentToProjectService;
   }
 
   /**
@@ -41,17 +50,27 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
+  @Transactional
   public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      PersonReference principalInvestigator, PersonReference responsiblePerson,
+      List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
+
     try {
-      Project project;
-      project = createProject(code, title, objective, experimentalDesign,
+      Project project = createProject(code, title, objective, experimentalDesign,
           projectManager, principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
+      try {
+        addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+            analyteList,
+            speciesList, specimenList);
+      } catch (Exception e) { //rollback project creation
+        projectRepository.deleteByProjectCode(project.getProjectCode());
+        throw e;
+      }
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -71,10 +90,13 @@ public class ProjectCreationService {
     return code;
   }
 
-  private Project createProject(String code, String title,
+  private Project createProject(String code,
+      String title,
       String objective,
-      String experimentalDesign, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      String experimentalDesign,
+      PersonReference projectManager,
+      PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -89,7 +111,7 @@ public class ProjectCreationService {
     ProjectCode projectCode;
     try {
       projectCode = ProjectCode.parse(code);
-      if(!projectRepository.find(projectCode).isEmpty()) {
+      if (!projectRepository.find(projectCode).isEmpty()) {
         log.error("Project code: " + code + " is already in use.");
         throw new ProjectManagementException(ErrorCode.DUPLICATE_PROJECT_CODE,
             ErrorParameters.of(code));
