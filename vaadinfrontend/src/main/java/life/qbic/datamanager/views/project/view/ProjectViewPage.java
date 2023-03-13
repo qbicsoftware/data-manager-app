@@ -11,8 +11,10 @@ import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.InternalServerError;
+import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
@@ -35,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 @CssImport("./styles/views/project/project-view.css")
 public class ProjectViewPage extends Div implements
-    BeforeEnterObserver, HasErrorParameter<ApplicationException> {
+    BeforeEnterObserver, HasErrorParameter<ApplicationException>, RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
