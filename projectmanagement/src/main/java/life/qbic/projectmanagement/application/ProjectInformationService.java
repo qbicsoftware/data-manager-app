@@ -79,7 +79,8 @@ public class ProjectInformationService {
         .map(experimentId ->
             experimentRepository.find(experimentId)
                 .orElseThrow(
-                    () -> new RuntimeException("The active experiment does not exist anymore.")
+                    () -> new ProjectManagementException(
+                        "The active experiment does not exist anymore.")
                     // should never happen; indicates dirty removal of experiment from db
                 ));
   }
@@ -111,7 +112,7 @@ public class ProjectInformationService {
                         List.of(species),
                         List.of())),
         () -> {
-          throw new RuntimeException("There is no project with id " + id.value());
+          throw new ProjectManagementException("There is no project with id " + id.value());
         }
     );
   }
@@ -152,7 +153,7 @@ public class ProjectInformationService {
                         List.of(),
                         List.of(specimens))),
         () -> {
-          throw new RuntimeException("There is no project with id " + id.value());
+          throw new ProjectManagementException("There is no project with id " + id.value());
         }
     );
   }
@@ -190,7 +191,7 @@ public class ProjectInformationService {
                     List.of(),
                     List.of())),
         () -> {
-          throw new RuntimeException("There is no project with id " + id.value());
+          throw new ProjectManagementException("There is no project with id " + id.value());
         }
     );
   }
