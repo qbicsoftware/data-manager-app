@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 
@@ -65,7 +67,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.VariableL
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions can be defined via {@link Experiment#defineCondition(String, VariableLevel...)}.
+ * Conditions can be defined via {@link #defineCondition(String, VariableLevel[])}.
  * <p>
  * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining a {@link Condition}.
  *
@@ -194,7 +196,7 @@ public class ExperimentalDesign {
    * @param condition the condition to check for
    * @return true if there is a condition with the same variable levels; false otherwise.
    */
-  boolean containsConditionWithSameLevels(Condition condition) {
+  boolean isConditionWithSameLevelsDefined(Condition condition) {
     return conditions.stream().anyMatch(c -> c.hasIdenticalContent(condition));
   }
 
@@ -222,4 +224,50 @@ public class ExperimentalDesign {
     });
   }
 
+  /**
+   * Creates a new condition and adds it to the experimental design. A successful operation is
+   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * <p>
+   * <b>Note</b>: {@link Result#isFailure()} indicates a failed operation.
+   * {@link Result#exception()} can be used to determine the cause of the failure.
+   * <ul>
+   *   <li>If a condition with the provided label or the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   * </ul>
+   *
+   * @param conditionLabel a declarative and unique name for the condition in scope of this
+   *                       experiment.
+   * @param levels         at least one value for the variable
+   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
+   * declarative exceptions.
+   */
+  public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
+      VariableLevel[] levels) {
+    Arrays.stream(levels).forEach(Objects::requireNonNull);
+
+    for (VariableLevel level : levels) {
+      if (!isVariableDefined(level.variableName().value())) {
+        return Result.failure(new IllegalArgumentException(
+            "There is no variable " + level.variableName().value() + " in this experiment."));
+      }
+    }
+
+    if (isConditionDefined(conditionLabel)) {
+      return Result.failure(new ConditionExistsException(
+          "please provide a different condition label. A condition with the label "
+              + conditionLabel + " exists."));
+    }
+
+    try {
+      Condition condition = Condition.create(conditionLabel, levels);
+      if (isConditionWithSameLevelsDefined(condition)) {
+        return Result.failure(new ConditionExistsException(
+            "A condition containing the provided levels exists."));
+      }
+      conditions.add(condition);
+      return Result.success(condition.label());
+    } catch (IllegalArgumentException e) {
+      return Result.failure(e);
+    }
+  }
 }

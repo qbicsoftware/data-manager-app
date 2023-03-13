@@ -1,10 +1,8 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -245,42 +243,12 @@ public class Experiment {
    * @param conditionLabel a declarative and unique name for the condition in scope of this
    *                       experiment.
    * @param levels         at least one value for the variable
-   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
-   * declarative exceptions.
+   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a declarative
+   * exceptions.
    */
   public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
       VariableLevel[] levels) {
-    Arrays.stream(levels).forEach(Objects::requireNonNull);
-
-    for (VariableLevel level : levels) {
-      if (!experimentalDesign.isVariableDefined(level.variableName().value())) {
-        return Result.failure(new IllegalArgumentException(
-            "There is no variable " + level.variableName().value() + " in this experiment."));
-      }
-    }
-    boolean areAllLevelsFromDefinedVariables = Arrays.stream(levels)
-        .allMatch(it -> experimentalDesign.isVariableDefined(it.variableName().value()));
-    if (!areAllLevelsFromDefinedVariables) {
-      return Result.failure(
-          new IllegalArgumentException(
-              "Not all levels are from variables defined in this experiment"));
-    }
-
-    try {
-      Condition condition = Condition.create(conditionLabel, levels);
-      if (experimentalDesign.isConditionDefined(conditionLabel)) {
-        return Result.failure(new ConditionExistsException(
-            "please provide a different condition label. A condition with the label "
-                + conditionLabel + " exists."));
-      }
-      if (experimentalDesign.containsConditionWithSameLevels(condition)) {
-        return Result.failure(new ConditionExistsException(
-            "A condition containing the provided levels exists."));
-      }
-      experimentalDesign.conditions.add(condition);
-      return Result.success(condition.label());
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
+    return experimentalDesign.defineCondition(conditionLabel, levels);
   }
+
 }
