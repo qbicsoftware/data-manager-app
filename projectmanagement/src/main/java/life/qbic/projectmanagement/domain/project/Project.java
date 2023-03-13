@@ -98,7 +98,7 @@ public class Project {
     setProjectId(projectId);
     setProjectIntent(projectIntent);
     setProjectManager(projectManager);
-    setResponsiblePerson(responsiblePerson);
+    Optional.ofNullable(responsiblePerson).ifPresent(this::setResponsiblePerson);
   }
 
   @PostLoad
@@ -126,9 +126,12 @@ public class Project {
   }
 
   public void setResponsiblePerson(PersonReference responsiblePerson) {
-    Objects.requireNonNull(responsiblePerson);
-    if (responsiblePerson.equals(this.responsiblePerson)) {
+    if (Objects.isNull(this.responsiblePerson) && Objects.isNull(responsiblePerson)) {
       return;
+    } else if (Objects.nonNull(this.responsiblePerson)) {
+      if (this.responsiblePerson.equals(responsiblePerson)) {
+        return;
+      }
     }
     this.responsiblePerson = responsiblePerson;
     this.lastModified = Instant.now();
