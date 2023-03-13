@@ -33,7 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@Route(value = "projects/:projectId?", layout = MainLayout.class)
+@Route(value = "projects/:projectId?")
+@ParentLayout(MainLayout.class)
 @PermitAll
 @CssImport("./styles/views/project/project-view.css")
 public class ProjectViewPage extends Div implements
