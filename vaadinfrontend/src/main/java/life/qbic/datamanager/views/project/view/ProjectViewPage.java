@@ -6,15 +6,9 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
-import com.vaadin.flow.router.HasUrlParameter;
-import com.vaadin.flow.router.InternalServerError;
-import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
@@ -84,15 +78,14 @@ public class ProjectViewPage extends Div implements
       projectDetailsComponent,
       ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     if (this.getChildren().toList().contains(projectDetailsComponent)) {
-      if (this.getChildren().toList().contains(projectDetailsComponent)) {
-        add(experimentalDesignDetailComponent);
-        remove(projectDetailsComponent);
-      } else if (this.getChildren().toList().contains(experimentalDesignDetailComponent)) {
-        remove(experimentalDesignDetailComponent);
-        add(projectDetailsComponent);
-      }
+      add(experimentalDesignDetailComponent);
+      remove(projectDetailsComponent);
+    } else if (this.getChildren().toList().contains(experimentalDesignDetailComponent)) {
+      remove(experimentalDesignDetailComponent);
+      add(projectDetailsComponent);
     }
   }
+
 
   public void setPageStyles() {
     addClassNames("project-view-page");
