@@ -50,7 +50,7 @@ public class Experiment {
 
 
   /**
-   * Please use {@link Experiment#create(String, List, List, List)} instead
+   * Please use {@link Experiment#create(String)} instead
    */
   protected Experiment() {
     // Please use the create method. This is needed for JPA
@@ -64,16 +64,11 @@ public class Experiment {
   }
 
 
-  public static Experiment create(String name, List<Analyte> analytes,
-      List<Specimen> specimens,
-      List<Species> species) {
+  public static Experiment create(String name) {
     Experiment experiment = new Experiment();
     experiment.name = name;
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
-    experiment.addSpecies(species);
-    experiment.addSpecimens(specimens);
-    experiment.addAnalytes(analytes);
     return experiment;
   }
 

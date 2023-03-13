@@ -49,7 +49,10 @@ public class AddExperimentToProjectService {
       requireNonNull(specimens);
       Project project = projectRepository.find(projectId)
           .orElseThrow(ProjectNotFoundException::new);
-      Experiment experiment = Experiment.create(experimentName, analytes, specimens, species);
+      Experiment experiment = Experiment.create(experimentName);
+      experiment.addAnalytes(analytes);
+      experiment.addSpecies(species);
+      experiment.addSpecimens(specimens);
       project.addExperiment(experiment);
       projectRepository.update(project);
     } catch (Exception e) {
