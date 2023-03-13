@@ -19,7 +19,6 @@ import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignCard.Experiment;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
