@@ -20,7 +20,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 
 
 /**
- * <b>Experimental</b>
+ * <b>Experiment</b>
  * <p>
  * An experiment tests a underlying scientific hypothesis.
  * <p>
@@ -212,7 +212,7 @@ public class Experiment {
       List<ExperimentalValue> levels) {
     if (levels.size() < 1) {
       return Result.failure(new IllegalArgumentException(
-          "At least one level required. Got " + levels));
+          "No levels were defined for " + variableName));
     }
 
     if (experimentalDesign.isVariableDefined(variableName)) {
