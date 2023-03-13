@@ -5,11 +5,10 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * An experimental variable. Experimental variables are independent of each other. Their value is
+ * altered to measure their effect on a dependent variable.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentalVariable extends Div {
 

@@ -5,8 +5,8 @@ import java.util.Objects;
 /**
  * <b>Sample Group</b>
  * <p>
- * A {@link SampleGroup} can be defined via {@link ExperimentalDesign#createSampleGroup(String, int, Long)} and represent
- * a logical container of biological replicates of one condition in an experimental design.
+ * A {@link SampleGroup} can be defined via (...) and represent a logical container of biological
+ * replicates of one condition in an experimental design.
  *
  * @since 1.0.0
  */

@@ -22,6 +22,14 @@ public interface QbicProjectDataRepo {
   void add(ProjectCode projectCode);
 
   /**
+   * Deletes a project with the provided code from persistence.
+   *
+   * @param projectCode the {@link ProjectCode} of the project to delete
+   * @since 1.0.0
+   */
+  void delete(ProjectCode projectCode);
+
+  /**
    * Searches for projects that contain the provided project code
    *
    * @param projectCode the {@link ProjectCode} to search for in the data repository
