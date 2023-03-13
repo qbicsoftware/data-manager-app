@@ -22,7 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 
 
 /**
- * <b>Experimental</b>
+ * <b>Experiment</b>
  * <p>
  * An experiment tests a underlying scientific hypothesis.
  * <p>
