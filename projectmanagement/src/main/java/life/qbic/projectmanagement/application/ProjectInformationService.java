@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
@@ -102,11 +103,7 @@ public class ProjectInformationService {
 
     optionalProject.ifPresentOrElse(
         project -> loadActiveExperimentForProject(project)
-            .ifPresentOrElse(
-                activeExperiment -> {
-                  activeExperiment.addSpecies(List.of(species));
-                  experimentRepository.update(activeExperiment);
-                },
+            .ifPresentOrElse(addSpeciesToExperimentAndSave(species),
                 () -> addExperimentToProjectService
                     .addExperimentToProject(project.getId(),
                         "Experiment 0",
@@ -119,13 +116,20 @@ public class ProjectInformationService {
     );
   }
 
+  private Consumer<Experiment> addSpeciesToExperimentAndSave(Species[] species) {
+    return activeExperiment -> {
+      activeExperiment.addSpecies(List.of(species));
+      experimentRepository.update(activeExperiment);
+    };
+  }
+
   /**
-   * Adds specimens to the active experiment of a project. If no experiment is active, a new experiment is created and set as the active experiment.
-   *
-   * @see Experiment#addSpecimens(Collection)
+   * Adds specimens to the active experiment of a project. If no experiment is active, a new
+   * experiment is created and set as the active experiment.
    *
    * @param projectId the project for which to add the species
    * @param specimens the specimens to add
+   * @see Experiment#addSpecimens(Collection)
    */
   public void addSpecimenToActiveExperiment(String projectId, Specimen... specimens) {
     if (specimens.length < 1) {
@@ -140,11 +144,7 @@ public class ProjectInformationService {
 
     optionalProject.ifPresentOrElse(
         project -> loadActiveExperimentForProject(project)
-            .ifPresentOrElse(
-                activeExperiment -> {
-                  activeExperiment.addSpecimens(List.of(specimens));
-                  experimentRepository.update(activeExperiment);
-                },
+            .ifPresentOrElse(addSpecimenToExperimentAndSave(specimens),
                 () -> addExperimentToProjectService
                     .addExperimentToProject(project.getId(),
                         "Experiment 0",
@@ -157,13 +157,20 @@ public class ProjectInformationService {
     );
   }
 
+  private Consumer<Experiment> addSpecimenToExperimentAndSave(Specimen[] specimens) {
+    return activeExperiment -> {
+      activeExperiment.addSpecimens(List.of(specimens));
+      experimentRepository.update(activeExperiment);
+    };
+  }
+
   /**
-   * Adds analytes to the active experiment of a project. If no experiment is active, a new experiment is created and set as the active experiment.
-   *
-   * @see Experiment#addAnalytes(Collection)
+   * Adds analytes to the active experiment of a project. If no experiment is active, a new
+   * experiment is created and set as the active experiment.
    *
    * @param projectId the project for which to add the species
-   * @param analytes the analytes to add
+   * @param analytes  the analytes to add
+   * @see Experiment#addAnalytes(Collection)
    */
   public void addAnalyteToActiveExperiment(String projectId, Analyte... analytes) {
     if (analytes.length < 1) {
@@ -176,21 +183,23 @@ public class ProjectInformationService {
 
     optionalProject.ifPresentOrElse(
         project -> loadActiveExperimentForProject(project)
-            .ifPresentOrElse(
-                activeExperiment -> {
-                  activeExperiment.addAnalytes(List.of(analytes));
-                  experimentRepository.update(activeExperiment);
-                },
-                () -> addExperimentToProjectService
-                    .addExperimentToProject(project.getId(),
-                        "Experiment 0",
-                        List.of(analytes),
-                        List.of(),
-                        List.of())),
+            .ifPresentOrElse(addAnalytesToExperimentAndSave(analytes),
+                () -> addExperimentToProjectService.addExperimentToProject(project.getId(),
+                    "Experiment 0",
+                    List.of(analytes),
+                    List.of(),
+                    List.of())),
         () -> {
           throw new RuntimeException("There is no project with id " + id.value());
         }
     );
+  }
+
+  private Consumer<Experiment> addAnalytesToExperimentAndSave(Analyte[] analytes) {
+    return activeExperiment -> {
+      activeExperiment.addAnalytes(List.of(analytes));
+      experimentRepository.update(activeExperiment);
+    };
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
