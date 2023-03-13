@@ -35,7 +35,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Cond
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions in an experimental design can be defined via {@link #defineCondition(String, VariableLevel[])}.
+ * Conditions in an experimental design can be defined via {@link Experiment#defineCondition(String, VariableLevel[])}.
  * <p>
  *
  * @since 1.0.0
