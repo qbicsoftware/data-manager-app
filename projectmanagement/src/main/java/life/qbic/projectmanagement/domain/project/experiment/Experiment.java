@@ -155,6 +155,7 @@ public class Experiment {
     }
     List<Specimen> missingSpecimens = specimens.stream()
         .filter(specimen -> !this.specimens.contains(specimen))
+        .distinct()
         .toList();
     this.specimens.addAll(missingSpecimens);
   }
@@ -172,6 +173,7 @@ public class Experiment {
     // only add analytes that are not present already
     List<Analyte> missingAnalytes = analytes.stream()
         .filter(analyte -> !this.analytes.contains(analyte))
+        .distinct()
         .toList();
     this.analytes.addAll(missingAnalytes);
   }
@@ -188,6 +190,7 @@ public class Experiment {
     // only add specimen that are not present already
     List<Species> missingSpecies = species.stream()
         .filter(speci -> !this.species.contains(speci))
+        .distinct()
         .toList();
     this.species.addAll(missingSpecies);
   }
