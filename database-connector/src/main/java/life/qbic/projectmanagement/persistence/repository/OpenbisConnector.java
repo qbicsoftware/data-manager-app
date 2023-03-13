@@ -144,7 +144,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void deleteOpenbisProject(ProjectCode projectCode) {
     ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
-    deletionOptions.setReason("unknown reason");
+    deletionOptions.setReason("unknown reason in data-manager");
     ProjectIdentifier projectIdentifier = new ProjectIdentifier(projectCode.value());
     openBisClient.getV3()
         .deleteProjects(openBisClient.getSessionToken(), List.of(projectIdentifier),
