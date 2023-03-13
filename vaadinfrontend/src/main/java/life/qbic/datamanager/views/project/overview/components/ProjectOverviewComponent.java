@@ -38,6 +38,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -80,8 +82,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
-      .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,
@@ -119,12 +119,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectCode())))
         .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectTitle())))
         .setHeader("Title")
         .setKey("projectTitle");
 

@@ -11,6 +11,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.layouts.BoxLayout;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("New Password")
-@Route(value = "new-password", layout = LandingPageLayout.class)
+@Route(value = AppRoutes.NEW_PASSWORD, layout = LandingPageLayout.class)
 @AnonymousAllowed
 public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter<String> {
 
