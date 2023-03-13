@@ -14,7 +14,7 @@
 
 .project-details-component {
   grid-column: 1 / span 3;
-  grid-row: 2 / span 4;
+  grid-row: 2 / span 3;
 }
 
 .project-links-component {
@@ -23,6 +23,6 @@
 }
 
 .experimental-design-component {
-  grid-row: 1 / span 2 ;
-  grid-column: 1 / span 2;
+  grid-column: 1 / span 3;
+  grid-row: 2 / span 3;
 }
