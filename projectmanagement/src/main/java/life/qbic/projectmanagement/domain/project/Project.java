@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
@@ -107,16 +108,28 @@ public class Project {
   }
 
   public void setProjectManager(PersonReference projectManager) {
+    Objects.requireNonNull(projectManager);
+    if (projectManager.equals(this.projectManager)) {
+      return;
+    }
     this.projectManager = projectManager;
     this.lastModified = Instant.now();
   }
 
   public void setPrincipalInvestigator(PersonReference principalInvestigator) {
+    Objects.requireNonNull(principalInvestigator);
+    if (principalInvestigator.equals(this.principalInvestigator)) {
+      return;
+    }
     this.principalInvestigator = principalInvestigator;
     this.lastModified = Instant.now();
   }
 
   public void setResponsiblePerson(PersonReference responsiblePerson) {
+    Objects.requireNonNull(responsiblePerson);
+    if (responsiblePerson.equals(this.responsiblePerson)) {
+      return;
+    }
     this.responsiblePerson = responsiblePerson;
     this.lastModified = Instant.now();
   }
@@ -152,7 +165,8 @@ public class Project {
   }
 
   public void stateObjective(ProjectObjective projectObjective) {
-    if (projectIntent.objective().equals(projectObjective)) {
+    Objects.requireNonNull(projectObjective);
+    if (projectObjective.equals(projectIntent.objective())) {
       return;
     }
     this.projectIntent.objective(projectObjective);
@@ -180,11 +194,19 @@ public class Project {
   }
 
   protected void setProjectId(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
+    if (projectId.equals(this.projectId)) {
+      return;
+    }
     this.projectId = projectId;
     this.lastModified = Instant.now();
   }
 
   protected void setProjectIntent(ProjectIntent projectIntent) {
+    Objects.requireNonNull(projectIntent);
+    if (projectIntent.equals(this.projectIntent)) {
+      return;
+    }
     this.projectIntent = projectIntent;
     this.lastModified = Instant.now();
   }
