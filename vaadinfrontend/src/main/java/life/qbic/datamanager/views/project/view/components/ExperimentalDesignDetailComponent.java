@@ -6,13 +6,17 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.List;
+import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
+import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.datamanager.views.project.view.components.ExperimentalDesignCard.Experiment;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
+@Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
+@PermitAll
 public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
 
   @Serial
