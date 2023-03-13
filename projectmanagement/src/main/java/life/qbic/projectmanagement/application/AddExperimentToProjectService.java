@@ -15,11 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b>short description</b>
+ * An application service that adds an experiment to a project.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Service
 public class AddExperimentToProjectService {
@@ -32,6 +30,15 @@ public class AddExperimentToProjectService {
     this.projectRepository = projectRepository;
   }
 
+  /**
+   * Creates a new experiment with the information provided and adds it to the project.
+   *
+   * @param projectId      the project for which to add the experiment
+   * @param experimentName the name of the experiment
+   * @param analytes       analytes associated with the experiment
+   * @param species        species associated with the experiment
+   * @param specimens      specimens associated with the experiment
+   */
   public void addExperimentToProject(ProjectId projectId, String experimentName,
       List<Analyte> analytes, List<Species> species, List<Specimen> specimens) {
     try {

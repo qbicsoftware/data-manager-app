@@ -24,11 +24,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * A dialog for experiment creation.
  */
 @SpringComponent
 @UIScope
