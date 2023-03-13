@@ -51,7 +51,8 @@ public class ProjectCreationService {
    * @return the created project
    */
   @Transactional
-  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title,
+      String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {

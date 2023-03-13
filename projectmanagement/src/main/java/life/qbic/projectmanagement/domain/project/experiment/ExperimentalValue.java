@@ -63,20 +63,20 @@ public class ExperimentalValue {
     return value;
   }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-          return true;
-        }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      ExperimentalValue that = (ExperimentalValue) o;
-      return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ExperimentalValue that = (ExperimentalValue) o;
+    return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
+  }
 
   @Override
   public int hashCode() {
     return Objects.hash(value, unit);
-    }
+  }
 }

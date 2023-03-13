@@ -62,25 +62,25 @@ public class Project {
 
   @Embedded
   @AttributeOverrides({
-          @AttributeOverride(name = "referenceId", column = @Column(name = "projectManagerReferenceId")),
-          @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
-          @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
+      @AttributeOverride(name = "referenceId", column = @Column(name = "projectManagerReferenceId")),
+      @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
   })
   private PersonReference projectManager;
 
   @Embedded
   @AttributeOverrides({
-          @AttributeOverride(name = "referenceId", column = @Column(name = "principalInvestigatorReferenceId")),
-          @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
-          @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
+      @AttributeOverride(name = "referenceId", column = @Column(name = "principalInvestigatorReferenceId")),
+      @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
   })
   private PersonReference principalInvestigator;
 
   @Embedded
   @AttributeOverrides({
-          @AttributeOverride(name = "referenceId", column = @Column(name = "responsibePersonReferenceId")),
-          @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
-          @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
+      @AttributeOverride(name = "referenceId", column = @Column(name = "responsibePersonReferenceId")),
+      @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
   })
   private PersonReference responsiblePerson;
 

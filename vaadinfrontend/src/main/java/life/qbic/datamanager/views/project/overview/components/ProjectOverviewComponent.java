@@ -258,7 +258,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
           .toList();
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(codeFieldValue,
+      Result<Project, ApplicationException> project = projectCreationService.createProject(
+          codeFieldValue,
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
           projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
 
