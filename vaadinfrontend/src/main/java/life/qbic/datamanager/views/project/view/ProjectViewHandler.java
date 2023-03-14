@@ -5,8 +5,6 @@ import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDet
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -38,12 +36,13 @@ class ProjectViewHandler {
   /**
    * Forwards a route parameter to all page components
    *
-   * @param parameter the route parameter
+   * @param projectId the route parameter
    * @since 1.0.0
    */
-  public void routeParameter(String parameter) {
-    this.projectDetailsComponent.projectId(parameter);
-    this.projectLinksComponent.projectId(parameter);
-    experimentalDesignDetailComponent.projectId(parameter);
+  public void projectId(String projectId) {
+    this.projectDetailsComponent.projectId(projectId);
+    this.projectLinksComponent.projectId(projectId);
+    this.experimentalDesignDetailComponent.projectId(projectId);
+    this.projectNavigationBarComponent.projectId(projectId);
   }
 }

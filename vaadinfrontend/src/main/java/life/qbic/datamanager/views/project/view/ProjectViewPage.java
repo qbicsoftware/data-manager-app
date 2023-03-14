@@ -8,6 +8,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
+import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
@@ -29,8 +30,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@Route(value = "projects/:projectId?", layout = MainLayout.class)
+@Route(value = "projects/:projectId?")
 @PermitAll
+@ParentLayout(MainLayout.class)
 @CssImport("./styles/views/project/project-view.css")
 public class ProjectViewPage extends Div implements
     BeforeEnterObserver, HasErrorParameter<ApplicationException>, RouterLayout {
@@ -107,10 +109,15 @@ public class ProjectViewPage extends Div implements
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get("projectId")
         .ifPresentOrElse(
-            handler::routeParameter,
+            handler::projectId,
             () -> {
               throw new ProjectManagementException("no project id provided");
             });
+  }
+
+  private void setComponentContext(String projectId) {
+    this.handler.projectId(projectId);
+
   }
 
   @Override

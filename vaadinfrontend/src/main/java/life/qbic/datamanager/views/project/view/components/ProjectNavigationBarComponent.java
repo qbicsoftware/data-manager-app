@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.project.view.components;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Label;
@@ -11,6 +13,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 
 /**
@@ -80,6 +84,17 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
     navigationBarLayout.setAlignItems(Alignment.CENTER);
     getContent().addFields(navigationBarLayout);
+
+    experimentalDesignButton.addClickListener(
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
+            .navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject))));
+    projectInformationButton.addClickListener(
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
+            .navigate(String.format(Projects.PROJECT_INFO, handler.selectedProject))));
+  }
+
+  public void projectId(String projectId) {
+    this.handler.setProjectId(projectId);
   }
 
   public void setStyles(String... componentStyles) {
@@ -90,5 +105,14 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
   //Todo Initialize Transition between Different Subpages of ProjectViewPage
   private final class Handler {
 
+    private String selectedProject;
+
+    public void setProjectId(String projectId) {
+      this.selectedProject = projectId;
+    }
+
+    public String selectedProjectId() {
+      return this.selectedProject;
+    }
   }
 }
