@@ -4,6 +4,7 @@ import life.qbic.application.commons.ApplicationException
 import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.domain.project.PersonReference
 import life.qbic.projectmanagement.domain.project.Project
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
@@ -133,7 +134,7 @@ class ProjectCreationServiceSpec extends Specification {
   def "when create is called without a responsible person then the project does not contain a responsible person"() {
     given:
     projectRepositoryStub.add(_) >> {}
-    addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
+    addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
@@ -156,6 +157,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
+    addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
     def analytes = List.of(Analyte.create("my analyte"))
@@ -180,6 +182,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
+    addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
     def species = List.of(Species.create("my analyte"))
@@ -204,6 +207,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
+    addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
     def specimens = List.of(Specimen.create("my analyte"))
@@ -227,7 +231,8 @@ class ProjectCreationServiceSpec extends Specification {
   def "expect project creation returns the created project for a non-empty title"() {
     given:
     projectRepositoryStub.add(_) >> {}
-    addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
+    addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
+
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
 
     when: "a project is created with a non-empty title"

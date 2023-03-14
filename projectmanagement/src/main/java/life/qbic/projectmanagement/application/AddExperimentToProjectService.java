@@ -66,6 +66,10 @@ public class AddExperimentToProjectService {
       return Result.failure(ProjectManagementException.wrapping(
           "could not add experiment to project: " + e.getMessage(),
           e));
+    } catch (Exception e) {
+      return Result.failure(
+          ProjectManagementException.wrapping("checked exception during add experiment to project",
+              e));
     }
   }
 

@@ -61,9 +61,11 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+      addExperimentToProjectService.addExperimentToProject(project.getId(),
+              "Experiment 0",
               analyteList,
-              speciesList, specimenList)
+              speciesList,
+              specimenList)
           .ifFailure(e ->
           {
             projectRepository.deleteByProjectCode(project.getProjectCode());
