@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * An application service that adds an experiment to a project.
@@ -42,11 +43,21 @@ public class AddExperimentToProjectService {
   public void addExperimentToProject(ProjectId projectId, String experimentName,
       List<Analyte> analytes, List<Species> species, List<Specimen> specimens) {
     try {
-      requireNonNull(projectId);
-      requireNonNull(experimentName);
-      requireNonNull(analytes);
-      requireNonNull(species);
-      requireNonNull(specimens);
+      requireNonNull(projectId, "project id must not be null during experiment creation");
+      requireNonNull(experimentName, "experiment name must not be null during experiment creation");
+      //Spring CollectionUtils returns true if collection is empty or null
+      if (CollectionUtils.isEmpty(analytes)) {
+        throw new ProjectManagementException(
+            "No analytes were specified during experiment creation.");
+      }
+      if (CollectionUtils.isEmpty(species)) {
+        throw new ProjectManagementException(
+            "No species were specified during experiment creation.");
+      }
+      if (CollectionUtils.isEmpty(specimens)) {
+        throw new ProjectManagementException(
+            "No specimen were specified during experiment creation.");
+      }
       Project project = projectRepository.find(projectId)
           .orElseThrow(ProjectNotFoundException::new);
       Experiment experiment = Experiment.create(experimentName);

@@ -271,8 +271,8 @@ public class Project {
     return responsiblePerson;
   }
 
-  public Optional<ExperimentId> activeExperiment() {
-    return Optional.ofNullable(activeExperiment);
+  public ExperimentId activeExperiment() {
+    return activeExperiment;
   }
 
   public List<ExperimentId> experiments() {
