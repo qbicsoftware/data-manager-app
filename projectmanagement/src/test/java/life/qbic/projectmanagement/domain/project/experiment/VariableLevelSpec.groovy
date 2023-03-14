@@ -16,10 +16,10 @@ class VariableLevelSpec extends Specification {
         given:
         ExperimentalValue value = ExperimentalValue.create("test", "unit")
         ExperimentalValue unknownValue = ExperimentalValue.create("unknown", "nothing")
-        ExperimentalVariable variable = new ExperimentalVariable<>("testVariable", value)
+        ExperimentalVariable variable = ExperimentalVariable.create("testVariable", value)
 
         when:
-        new VariableLevel<>(variable, unknownValue)
+        new VariableLevel(variable, unknownValue)
 
         then:
         thrown(UnknownVariableLevelException)
@@ -29,10 +29,10 @@ class VariableLevelSpec extends Specification {
         given:
         ExperimentalValue value = ExperimentalValue.create("test", "unit")
         ExperimentalValue anotherValue = ExperimentalValue.create("unknown", "nothing")
-        ExperimentalVariable variable = new ExperimentalVariable<>("testVariable", value, anotherValue)
+        ExperimentalVariable variable = ExperimentalVariable.create("testVariable", value, anotherValue)
 
         when:
-        def level = new VariableLevel<>(variable, anotherValue)
+        def level = new VariableLevel(variable, anotherValue)
 
         then:
         level.experimentalValue().equals(anotherValue)

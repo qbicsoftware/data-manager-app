@@ -110,7 +110,8 @@ public class ProjectInformationService {
                         "Experiment 0",
                         List.of(),
                         List.of(species),
-                        List.of())),
+                        List.of())
+                    .orElseThrow()),
         () -> {
           throw new ProjectManagementException("There is no project with id " + id.value());
         }
@@ -151,7 +152,8 @@ public class ProjectInformationService {
                         "Experiment 0",
                         List.of(),
                         List.of(),
-                        List.of(specimens))),
+                        List.of(specimens))
+                    .orElseThrow()),
         () -> {
           throw new ProjectManagementException("There is no project with id " + id.value());
         }
@@ -186,10 +188,11 @@ public class ProjectInformationService {
         project -> loadActiveExperimentForProject(project)
             .ifPresentOrElse(addAnalytesToExperimentAndSave(analytes),
                 () -> addExperimentToProjectService.addExperimentToProject(project.getId(),
-                    "Experiment 0",
-                    List.of(analytes),
-                    List.of(),
-                    List.of())),
+                        "Experiment 0",
+                        List.of(analytes),
+                        List.of(),
+                        List.of())
+                    .orElseThrow()),
         () -> {
           throw new ProjectManagementException("There is no project with id " + id.value());
         }

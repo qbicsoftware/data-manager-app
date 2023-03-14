@@ -13,6 +13,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
+import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 
@@ -266,6 +267,26 @@ public class ExperimentalDesign {
       }
       conditions.add(condition);
       return Result.success(condition.label());
+    } catch (IllegalArgumentException e) {
+      return Result.failure(e);
+    }
+  }
+
+  Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
+    if (levels.size() < 1) {
+      return Result.failure(new IllegalArgumentException(
+          "No levels were defined for " + variableName));
+    }
+
+    if (isVariableDefined(variableName)) {
+      return Result.failure(new ExperimentalVariableExistsException(
+          "A variable with the name " + variableName + " already exists."));
+    }
+    try {
+      ExperimentalVariable variable = ExperimentalVariable.create(variableName,
+          levels.toArray(ExperimentalValue[]::new));
+      variables.add(variable);
+      return Result.success(variable.name());
     } catch (IllegalArgumentException e) {
       return Result.failure(e);
     }

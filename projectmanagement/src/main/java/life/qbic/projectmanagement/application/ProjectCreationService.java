@@ -4,7 +4,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
 import java.util.Optional;
-import javax.transaction.Transactional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -50,7 +49,6 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  @Transactional
   public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
@@ -63,14 +61,15 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      try {
-        addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
-            analyteList,
-            speciesList, specimenList);
-      } catch (Exception e) { //rollback project creation
-        projectRepository.deleteByProjectCode(project.getProjectCode());
-        throw e;
-      }
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+              analyteList,
+              speciesList, specimenList)
+          .ifFailure(e ->
+          {
+            projectRepository.deleteByProjectCode(project.getProjectCode());
+            throw new ProjectManagementException(
+                "failed to add experiment to project " + project.getId(), e);
+          });
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);

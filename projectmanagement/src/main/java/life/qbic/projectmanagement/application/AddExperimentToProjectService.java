@@ -3,9 +3,11 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -38,9 +40,13 @@ public class AddExperimentToProjectService {
    * @param analytes       analytes associated with the experiment
    * @param species        species associated with the experiment
    * @param specimens      specimens associated with the experiment
+   * @return a result containing the id of the added experiment, a failure result otherwise
    */
-  public void addExperimentToProject(ProjectId projectId, String experimentName,
-      List<Analyte> analytes, List<Species> species, List<Specimen> specimens) {
+  public Result<ExperimentId, RuntimeException> addExperimentToProject(ProjectId projectId,
+      String experimentName,
+      List<Analyte> analytes,
+      List<Species> species,
+      List<Specimen> specimens) {
     try {
       requireNonNull(projectId);
       requireNonNull(experimentName);
@@ -55,8 +61,11 @@ public class AddExperimentToProjectService {
       experiment.addSpecimens(specimens);
       project.addExperiment(experiment);
       projectRepository.update(project);
-    } catch (Exception e) {
-      throw new ProjectManagementException(e.getMessage(), e);
+      return Result.success(experiment.experimentId());
+    } catch (RuntimeException e) {
+      return Result.failure(ProjectManagementException.wrapping(
+          "could not add experiment to project: " + e.getMessage(),
+          e));
     }
   }
 

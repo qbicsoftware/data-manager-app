@@ -53,8 +53,7 @@ public class ExperimentalVariable {
     this.levels = List.of(levels);
   }
 
-  public static ExperimentalVariable createForExperiment(Experiment experiment, String name,
-      ExperimentalValue... levels) {
+  public static ExperimentalVariable create(String name, ExperimentalValue... levels) {
     return new ExperimentalVariable(name, levels);
   }
 
@@ -67,7 +66,7 @@ public class ExperimentalVariable {
    * Calling this method ensures that the experimental value is set as a level on the variable.
    *
    * @param experimentalValue the experimental value to be added to possible levels
-   * @return
+   * @return the value added as level, a failed result otherwise
    * @throws IllegalArgumentException indicating that the unit of the provide level does not match
    *                                  with the unit of existing levels
    */

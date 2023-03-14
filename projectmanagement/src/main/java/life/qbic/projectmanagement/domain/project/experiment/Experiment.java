@@ -210,23 +210,7 @@ public class Experiment {
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    if (levels.size() < 1) {
-      return Result.failure(new IllegalArgumentException(
-          "No levels were defined for " + variableName));
-    }
-
-    if (experimentalDesign.isVariableDefined(variableName)) {
-      return Result.failure(new ExperimentalVariableExistsException(
-          "A variable with the name " + variableName + " already exists."));
-    }
-    try {
-      ExperimentalVariable variable = ExperimentalVariable.createForExperiment(this, variableName,
-          levels.toArray(ExperimentalValue[]::new));
-      experimentalDesign.variables.add(variable);
-      return Result.success(variable.name());
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
+    return experimentalDesign.addVariable(variableName, levels);
   }
 
   /**

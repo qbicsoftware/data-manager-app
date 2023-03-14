@@ -13,7 +13,7 @@ class ExperimentalVariableSpec extends Specification {
 
     def "If no levels are provided, throw an IllegalArgumentException"() {
         when:
-        new ExperimentalVariable<>("Test")
+        new ExperimentalVariable("Test")
 
 
         then:
@@ -26,7 +26,7 @@ class ExperimentalVariableSpec extends Specification {
 
         then:
         noExceptionThrown()
-        variable.name().equals("Test")
+        variable.name().value().equals("Test")
         variable.levels().get(0).equals(ExperimentalValue.create("Simple", "cm"))
     }
 

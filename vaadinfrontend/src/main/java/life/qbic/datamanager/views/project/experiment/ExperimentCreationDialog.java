@@ -146,8 +146,11 @@ public class ExperimentCreationDialog extends Dialog {
             {
               String randomName = "My newly defined experiment " + random.nextInt(0, 100);
               addExperimentToProjectService.addExperimentToProject(projectId,
-                  randomName, new ArrayList<>(), new ArrayList<>(),
-                  new ArrayList<>());
+                      randomName,
+                      new ArrayList<>(),
+                      new ArrayList<>(),
+                      new ArrayList<>())
+                  .orElseThrow();
             });
         closeAndReset();
       });

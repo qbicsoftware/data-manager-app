@@ -284,7 +284,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
-      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
+      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson().orElse(null));
       analyteMultiSelectComboBox.setValue(
           projectInformationService.getAnalytesOfActiveExperiment(this.selectedProject));
       speciesMultiSelectComboBox.setValue(

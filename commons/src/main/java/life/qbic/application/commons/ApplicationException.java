@@ -22,7 +22,12 @@ public abstract class ApplicationException extends RuntimeException {
     INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE,
     INVALID_PROJECT_CODE,
-    DUPLICATE_PROJECT_CODE
+    DUPLICATE_PROJECT_CODE;
+
+    @Override
+    public String toString() {
+      return this.getClass().getSimpleName() + "." + this.name();
+    }
   }
 
   public record ErrorParameters(Object[] value) {
