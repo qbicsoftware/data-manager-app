@@ -3,6 +3,8 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -47,16 +49,16 @@ public class AddExperimentToProjectService {
       requireNonNull(experimentName, "experiment name must not be null during experiment creation");
       //Spring CollectionUtils returns true if collection is empty or null
       if (CollectionUtils.isEmpty(analytes)) {
-        throw new ProjectManagementException(
-            "No analytes were specified during experiment creation.");
+        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+            ErrorParameters.of(analytes));
       }
       if (CollectionUtils.isEmpty(species)) {
-        throw new ProjectManagementException(
-            "No species were specified during experiment creation.");
+        throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
+            ErrorParameters.of(species));
       }
       if (CollectionUtils.isEmpty(specimens)) {
-        throw new ProjectManagementException(
-            "No specimen were specified during experiment creation.");
+        throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
+            ErrorParameters.of(specimens));
       }
       Project project = projectRepository.find(projectId)
           .orElseThrow(ProjectNotFoundException::new);
@@ -66,6 +68,8 @@ public class AddExperimentToProjectService {
       experiment.addSpecimens(specimens);
       project.addExperiment(experiment);
       projectRepository.update(project);
+    } catch (ProjectManagementException projectManagementException) {
+      throw projectManagementException;
     } catch (Exception e) {
       throw new ProjectManagementException(e.getMessage(), e);
     }

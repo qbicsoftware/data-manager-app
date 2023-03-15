@@ -148,8 +148,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
     deletionOptions.setReason("unknown reason in data-manager");
     //OpenBis expects the projectspace and code during deletion
-    ProjectIdentifier projectIdentifier = new ProjectIdentifier(
-        "/" + DEFAULT_SPACE_CODE + "/" + projectCode.value());
+    ProjectIdentifier projectIdentifier = new ProjectIdentifier(DEFAULT_SPACE_CODE,
+        projectCode.value());
     List<ProjectIdentifier> openBisProjectsIds = new ArrayList<>();
     openBisProjectsIds.add(projectIdentifier);
     DeleteProjectsOperation operation = new DeleteProjectsOperation(openBisProjectsIds,
