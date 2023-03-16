@@ -47,7 +47,6 @@ public class AddExperimentToProjectService {
     try {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       requireNonNull(experimentName, "experiment name must not be null during experiment creation");
-      //Spring CollectionUtils returns true if collection is empty or null
       if (CollectionUtils.isEmpty(analytes)) {
         throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
             ErrorParameters.of(analytes));
