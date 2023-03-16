@@ -42,7 +42,7 @@ public class AppRoutes {
     /**
      * Path to the page that shows a selected project's information
      */
-    public static final String PROJECT_INFO = "projects/%s";
+    public static final String PROJECT_INFO = "projects/%s/info";
 
     /**
      * Path to create a new experiment within an existing project
