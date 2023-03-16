@@ -123,4 +123,13 @@ public abstract class ApplicationException extends RuntimeException {
   public ErrorParameters errorParameters() {
     return errorParameters;
   }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", ApplicationException.class.getSimpleName() + "[", "]")
+        .add("message=" + getMessage())
+        .add("errorCode=" + errorCode)
+        .add("errorParameters=" + errorParameters)
+        .toString();
+  }
 }
