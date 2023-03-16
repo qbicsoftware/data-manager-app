@@ -156,6 +156,7 @@ class ProjectCreationServiceSpec extends Specification {
   def "when analytes are provided at creation then an experiment is created with those analytes"() {
     given:
     projectRepositoryStub.add(_) >> {}
+    projectRepositoryStub.update(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)

@@ -180,7 +180,7 @@
         <configuration>
           <useModulePath>false</useModulePath>
           <includes>
-            <include>**/*Spec</include>
+            <include>**/*Spec.class</include>
           </includes>
         </configuration>
       </plugin>
