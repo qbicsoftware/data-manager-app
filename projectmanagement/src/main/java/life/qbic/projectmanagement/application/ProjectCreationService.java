@@ -113,14 +113,13 @@ public class ProjectCreationService {
     try {
       projectCode = ProjectCode.parse(code);
       if (!projectRepository.find(projectCode).isEmpty()) {
-        log.error("Project code: " + code + " is already in use.");
-        throw new ProjectManagementException(ErrorCode.DUPLICATE_PROJECT_CODE,
+        throw new ProjectManagementException("Project code: " + code + " is already in use.",
+            ErrorCode.DUPLICATE_PROJECT_CODE,
             ErrorParameters.of(code));
       }
     } catch (IllegalArgumentException exception) {
-      log.error("Project code: " + code + " is invalid.");
-      log.error(exception.getMessage());
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_CODE,
+      throw new ProjectManagementException("Project code: " + code + " is invalid.", exception,
+          ErrorCode.INVALID_PROJECT_CODE,
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
     return Project.create(intent, projectCode, projectManager, principalInvestigator,
@@ -132,8 +131,9 @@ public class ProjectCreationService {
     try {
       projectTitle = ProjectTitle.of(title);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
+      throw new ProjectManagementException(
+          "could not get project intent from title " + title, e,
+          ErrorCode.INVALID_PROJECT_TITLE,
           ErrorParameters.of(ProjectTitle.maxLength(), title));
     }
 
@@ -141,8 +141,9 @@ public class ProjectCreationService {
     try {
       projectObjective = ProjectObjective.create(objective);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
+      throw new ProjectManagementException(
+          "could not get project intent from objective " + objective, e,
+          ErrorCode.INVALID_PROJECT_OBJECTIVE,
           ErrorParameters.of(objective));
     }
 
