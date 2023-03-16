@@ -158,7 +158,6 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_) >> {}
     projectRepositoryStub.update(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
-    addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.success(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
     def personReference = new PersonReference("some", "some", "some@notavailable.zxü")
     def analytes = List.of(Analyte.create("my analyte"))
@@ -175,8 +174,8 @@ class ProjectCreationServiceSpec extends Specification {
             [], analytes, [])
 
     then: "the analytes can be retrieved"
+    1 * addExperimentToProjectService.addExperimentToProject(_, _, analytes, _, _) >> Result.success(ExperimentId.create());
     result.isSuccess()
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, analytes, _, _)
   }
 
   def "when species are provided at creation then an experiment is created with those species"() {
@@ -200,8 +199,8 @@ class ProjectCreationServiceSpec extends Specification {
             species, [], [])
 
     then: "the analytes can be retrieved"
+    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, species, _) >> Result.success(ExperimentId.create())
     result.isSuccess()
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, species, _)
   }
 
   def "when specimens are provided at creation then an experiment is created with those specimens"() {
@@ -225,8 +224,8 @@ class ProjectCreationServiceSpec extends Specification {
             [], [], specimens)
 
     then: "the analytes can be retrieved"
+    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, _, specimens) >> Result.success(ExperimentId.create())
     result.isSuccess()
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, _, specimens)
   }
 
   def "expect project creation returns the created project for a non-empty title"() {
