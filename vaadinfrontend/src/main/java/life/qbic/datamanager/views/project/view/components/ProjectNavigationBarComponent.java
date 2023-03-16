@@ -13,16 +13,16 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.view.ProjectViewPage;
 
 /**
- * <class short description - One Line!>
+ * ProjectNavigationBarComponent
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Allows the user to switch between the components shown in the {@link ProjectViewPage} by clicking
+ * on the corresponding button within the Navigation Bar which routes the user to the respective
+ * route defined in {@link life.qbic.datamanager.views.AppRoutes} for the component in question
  */
 @SpringComponent
 @UIScope
@@ -101,8 +101,6 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     getContent().addClassNames(componentStyles);
   }
 
-
-  //Todo Initialize Transition between Different Subpages of ProjectViewPage
   private final class Handler {
 
     private String selectedProject;
