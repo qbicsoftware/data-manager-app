@@ -15,6 +15,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
@@ -23,9 +24,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
@@ -52,6 +55,8 @@ import org.springframework.security.access.AccessDeniedException;
  */
 @SpringComponent
 @UIScope
+@Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
+@PermitAll
 public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
