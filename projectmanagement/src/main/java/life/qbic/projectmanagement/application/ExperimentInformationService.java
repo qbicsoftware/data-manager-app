@@ -18,7 +18,7 @@ import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that provides an API to query basic project information
+ * Service that provides an API to query basic experiment information
  *
  * @since 1.0.0
  */
