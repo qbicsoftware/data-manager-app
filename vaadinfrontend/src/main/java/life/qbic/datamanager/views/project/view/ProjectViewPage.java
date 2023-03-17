@@ -13,6 +13,7 @@ import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
@@ -32,8 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 @ParentLayout(MainLayout.class)
 @CssImport("./styles/views/project/project-view.css")
-public class ProjectViewPage extends Div implements
-    BeforeEnterObserver, HasErrorParameter<ApplicationException>, RouterLayout {
+public class ProjectViewPage extends Div implements BeforeEnterObserver,
+    HasErrorParameter<ApplicationException>, RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
@@ -41,20 +42,18 @@ public class ProjectViewPage extends Div implements
   private final transient ProjectViewHandler handler;
 
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentListComponent
-      experimentListComponent) {
-    handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentListComponent);
+      @Autowired ProjectDetailsComponent projectDetailsComponent,
+      @Autowired ProjectLinksComponent projectLinksComponent,
+      @Autowired ExperimentDetailsComponent experimentDetailsComponent,
+      @Autowired ExperimentListComponent experimentListComponent) {
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentListComponent);
-    setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent,
-        experimentListComponent);
+        projectLinksComponent, experimentDetailsComponent, experimentListComponent);
+    handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
+        projectLinksComponent, experimentDetailsComponent, experimentListComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -65,24 +64,22 @@ public class ProjectViewPage extends Div implements
   }
 
   public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent,
-      ExperimentListComponent
-          experimentListComponent) {
+      ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent,
+      ExperimentDetailsComponent experimentDetailsComponent,
+      ExperimentListComponent experimentListComponent) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
+    experimentDetailsComponent.setStyles("experiment-details-component");
     experimentListComponent.setStyles("experiment-list-component");
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get("projectId")
-        .ifPresentOrElse(
-            handler::projectId,
-            () -> {
-              throw new ProjectManagementException("no project id provided");
-            });
+        .ifPresentOrElse(handler::projectId, () -> {
+          throw new ProjectManagementException("no project id provided");
+        });
   }
 
   private void setComponentContext(String projectId) {

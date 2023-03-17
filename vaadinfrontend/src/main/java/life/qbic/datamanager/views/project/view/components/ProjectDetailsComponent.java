@@ -34,7 +34,6 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -228,21 +227,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     public void setProjectId(String projectId) {
-      parseProjectId(projectId);
       projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
           this::emptyAction);
     }
 
     //ToDo what should be done if projectID could not be retrieved
     private void emptyAction() {
-    }
-
-    private void parseProjectId(String id) {
-      try {
-        ProjectId.parse(id);
-      } catch (IllegalArgumentException e) {
-        throw new ProjectManagementException("invalid project id " + id, e);
-      }
     }
 
     private void restrictInputLength() {

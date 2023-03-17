@@ -8,7 +8,6 @@ import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -19,7 +18,6 @@ import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -30,17 +28,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * <b>ExperimentListComponent</b>
  * <p>
- * This component shows the
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} information
+ * This component lists the {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}
  * associated with the selected {@link life.qbic.projectmanagement.domain.project.Project} within
  * the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
  */
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
 @PermitAll
 public class ExperimentListComponent extends Composite<CardLayout> {
-
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
   private static final String TITLE = "Experimental Design";
