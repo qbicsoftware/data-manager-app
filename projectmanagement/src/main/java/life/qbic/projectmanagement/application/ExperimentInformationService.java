@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -13,6 +14,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,7 +32,15 @@ public class ExperimentInformationService {
     this.experimentRepository = experimentRepository;
   }
 
-  public Experiment loadExperimentById(ExperimentId experimentId) {
+  @PostAuthorize("hasPermission(returnObject,'VIEW_EXPERIMENT')")
+  public Optional<Experiment> find(String experimentId) {
+    Objects.requireNonNull(experimentId);
+    log.debug("Search for experiment with id: " + experimentId);
+    return experimentRepository.find(ExperimentId.parse(experimentId));
+  }
+
+  @PostAuthorize("hasPermission(returnObject,'VIEW_EXPERIMENT')")
+  private Experiment loadExperimentById(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     return experimentRepository.find(experimentId).orElseThrow(
         () -> new ProjectManagementException("The active experiment does not exist anymore.")

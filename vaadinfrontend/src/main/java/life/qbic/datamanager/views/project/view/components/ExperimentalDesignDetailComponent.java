@@ -13,6 +13,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
@@ -21,9 +22,9 @@ import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -97,20 +98,28 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
+      projectInformationService.find(projectId.value()).ifPresentOrElse(
+          this::setExperimentDataProviderFromProject, this::emptyAction);
+    }
+
+    private void setExperimentDataProviderFromProject(Project project) {
       CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
-          query -> loadExperimentsFromProjectId(projectId).stream()
-              .skip(query.getOffset()).limit(query.getLimit()),
-          query -> loadExperimentsFromProjectId(projectId).size());
+          query -> getExperimentsForProject(project).stream().skip(query.getOffset()).limit(
+              query.getLimit()),
+          query -> getExperimentsForProject(project).size());
       experiments.setDataProvider(experimentsDataProvider);
     }
 
-    private List<Experiment> loadExperimentsFromProjectId(ProjectId projectId) {
-      List<ExperimentId> projectExperimentIds = projectInformationService.loadProject(projectId)
-          .experiments();
-      List<Experiment> projectExperiments = new ArrayList<>();
-      projectExperimentIds.forEach(experimentId -> projectExperiments.add(
-          experimentInformationService.loadExperimentById(experimentId)));
-      return projectExperiments;
+    private Collection<Experiment> getExperimentsForProject(Project project) {
+      List<Experiment> experimentList = new ArrayList<>();
+      project.experiments()
+          .forEach(experimentId -> experimentInformationService.find(experimentId.value())
+              .ifPresentOrElse(experimentList::add, this::emptyAction));
+      return experimentList;
+    }
+
+    //ToDo what should happen in the UI if neither project nor experiment has been found?
+    private void emptyAction() {
     }
 
     private void openDialogueListener() {

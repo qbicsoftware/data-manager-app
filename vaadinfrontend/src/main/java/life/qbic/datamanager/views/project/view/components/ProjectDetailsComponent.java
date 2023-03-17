@@ -46,7 +46,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Project Details Component
@@ -189,7 +188,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   }
 
   public void projectId(String projectId) {
-    handler.projectId(projectId);
+    handler.setProjectId(projectId);
   }
 
   public void setStyles(String... componentStyles) {
@@ -228,17 +227,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       setupExperimentalDesignSearch();
     }
 
-    public void projectId(String projectId) {
-      try {
-        parseProjectId(projectId);
-        Project project = projectInformationService.loadProject(ProjectId.parse(projectId));
-        loadProjectData(project);
-        //ToDo How should the components react if a project is not found?
-      } catch (AccessDeniedException accessDeniedException) {
-        log.error("Access denied when loading project details for project id " + projectId,
-            accessDeniedException);
-        titleToggleComponent.setValue("Not found");
-      }
+    public void setProjectId(String projectId) {
+      parseProjectId(projectId);
+      projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
+          this::emptyAction);
+    }
+
+    //ToDo what should be done if projectID could not be retrieved
+    private void emptyAction() {
     }
 
     private void parseProjectId(String id) {

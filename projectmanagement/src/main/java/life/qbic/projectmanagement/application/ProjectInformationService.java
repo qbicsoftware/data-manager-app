@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -59,7 +60,15 @@ public class ProjectInformationService {
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
-  public Project loadProject(ProjectId projectId) {
+  public Optional<Project> find(String projectId) {
+    Objects.requireNonNull(projectId);
+    log.debug("Search for project with id: " + projectId);
+    return projectRepository.find(ProjectId.parse(projectId));
+  }
+
+  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
+  private Project loadProject(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
     return projectRepository.find(projectId).orElseThrow(() -> new ProjectManagementException(
             "Project with id" + projectId.toString() + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db
