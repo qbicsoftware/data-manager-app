@@ -22,7 +22,10 @@ public abstract class ApplicationException extends RuntimeException {
     INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE,
     INVALID_PROJECT_CODE,
-    DUPLICATE_PROJECT_CODE
+    DUPLICATE_PROJECT_CODE,
+    NO_SPECIES_DEFINED,
+    NO_SPECIMEN_DEFINED,
+    NO_ANALYTE_DEFINED,
   }
 
   public record ErrorParameters(Object[] value) {

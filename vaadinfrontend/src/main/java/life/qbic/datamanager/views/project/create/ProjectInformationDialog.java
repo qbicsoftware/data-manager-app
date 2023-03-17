@@ -79,14 +79,16 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective.setRequired(true);
     //ToDo Remove Field once experimental design backend is connected
     experimentalDesignField = new TextArea("Experimental Design");
-    experimentalDesignField.setRequired(true);
     experimentalDesignIntroduction = new VerticalLayout();
     initExperimentalDesignIntroduction();
     //Layout with max width to keep the SampleCountField in a seperate row
     sampleCountLayout = new HorizontalLayout();
     speciesBox = new MultiSelectComboBox<>("Species");
+    speciesBox.setRequired(true);
     specimenBox = new MultiSelectComboBox<>("Specimen");
+    specimenBox.setRequired(true);
     analyteBox = new MultiSelectComboBox<>("Analyte");
+    analyteBox.setRequired(true);
 
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
@@ -131,6 +133,7 @@ public class ProjectInformationDialog extends Dialog {
     add(formLayout);
     getFooter().add(cancelButton, createButton);
     this.setMinWidth(66, Unit.VW);
+    this.setMaxWidth(66, Unit.VW);
   }
 
   private void initForm() {
@@ -204,11 +207,10 @@ public class ProjectInformationDialog extends Dialog {
    * interfaces
    */
   public void reset() {
-    resetChildValidation(formLayout);
-    resetChildValidation(codeAndTitleLayout);
-
     resetChildValues(formLayout);
     resetChildValues(codeAndTitleLayout);
+    resetChildValidation(formLayout);
+    resetChildValidation(codeAndTitleLayout);
   }
 
   private void resetChildValues(Component component) {
@@ -222,8 +224,8 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   public void resetAndClose() {
-    reset();
     close();
+    reset();
   }
 
   private class Handler {

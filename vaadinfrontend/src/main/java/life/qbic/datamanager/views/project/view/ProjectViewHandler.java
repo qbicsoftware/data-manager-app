@@ -1,10 +1,10 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
+import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -14,34 +14,35 @@ import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent
 class ProjectViewHandler {
 
   private final ProjectLinksComponent projectLinksComponent;
+  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
-  private final ExperimentDetailsComponent experimentDetailsComponent;
-  private final ExperimentListComponent experimentListComponent;
 
-  public ProjectViewHandler(ProjectDetailsComponent projectDetailsComponent,
+  private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
+
+  public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    Objects.requireNonNull(experimentDetailsComponent);
-    Objects.requireNonNull(experimentListComponent);
-    this.projectDetailsComponent = projectDetailsComponent;
+    Objects.requireNonNull(experimentalDesignDetailComponent);
+    Objects.requireNonNull(projectNavigationBarComponent);
+    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectLinksComponent = projectLinksComponent;
-    this.experimentDetailsComponent = experimentDetailsComponent;
-    this.experimentListComponent = experimentListComponent;
+    this.projectDetailsComponent = projectDetailsComponent;
+    this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
   }
 
   /**
    * Forwards a route parameter to all page components
    *
-   * @param parameter the route parameter
+   * @param projectId the route parameter
    * @since 1.0.0
    */
-  public void routeParameter(String parameter) {
-    this.projectDetailsComponent.projectId(parameter);
-    this.projectLinksComponent.projectId(parameter);
-    this.experimentListComponent.projectId(parameter);
-    this.experimentDetailsComponent.projectId(parameter);
+  public void projectId(String projectId) {
+    this.projectDetailsComponent.projectId(projectId);
+    this.projectLinksComponent.projectId(projectId);
+    this.experimentalDesignDetailComponent.projectId(projectId);
+    this.projectNavigationBarComponent.projectId(projectId);
   }
 }
