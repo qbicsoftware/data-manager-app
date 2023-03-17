@@ -108,7 +108,7 @@ public class Experiment {
    * provided name is defined in this design.
    * @since 1.0.0
    */
-  public Result<ExperimentalValue, Exception> addLevelToVariable(String variableName,
+  public Result<VariableLevel, Exception> addLevelToVariable(String variableName,
       ExperimentalValue level) {
     return experimentalDesign.addLevelToVariable(variableName, level);
   }
@@ -230,7 +230,7 @@ public class Experiment {
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a declarative
    * exceptions.
    */
-  public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
+  public Result<Condition, Exception> defineCondition(String conditionLabel,
       VariableLevel[] levels) {
     return experimentalDesign.defineCondition(conditionLabel, levels);
   }

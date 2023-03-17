@@ -15,7 +15,6 @@ import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
 
 /**
  * <b>Experimental Design</b>
@@ -128,7 +127,7 @@ public class ExperimentalDesign {
    * provided name is defined in this design.
    * @since 1.0.0
    */
-  Result<ExperimentalValue, Exception> addLevelToVariable(String variableName,
+  Result<VariableLevel, Exception> addLevelToVariable(String variableName,
       ExperimentalValue level) {
     Optional<ExperimentalVariable> experimentalVariableOptional = variableWithName(variableName);
     if (experimentalVariableOptional.isEmpty()) {
@@ -137,14 +136,10 @@ public class ExperimentalDesign {
               "There is no variable with name " + variableName));
     }
     ExperimentalVariable experimentalVariable = experimentalVariableOptional.get();
-    Result<ExperimentalValue, RuntimeException> addLevelResult = experimentalVariable.addLevel(
+    Result<VariableLevel, Exception> addLevelResult = experimentalVariable.addLevel(
         level);
     if (addLevelResult.isSuccess()) {
-      return Result.success(level);
-    } else if (addLevelResult.isFailure()
-        && addLevelResult.exception() instanceof VariableLevelExistsException) {
-      // we don't care that the level is present already as this is what we wanted to achieve.
-      return Result.success(level);
+      return addLevelResult;
     } else {
       // we could not add the level
       return Result.failure(addLevelResult.exception());
@@ -198,12 +193,13 @@ public class ExperimentalDesign {
    * @return true if there is a condition with the same variable levels; false otherwise.
    */
   boolean isConditionWithSameLevelsDefined(Condition condition) {
-    return conditions.stream().anyMatch(c -> c.hasIdenticalContent(condition));
+    return conditions.stream().anyMatch(c ->
+        c.hasSameLevelsDefined(condition));
   }
 
   /**
    * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, or level creation failed, an
+   * <code>variableName</code>. If the variable does not exist, an
    * {@link Optional#empty()} is returned.
    *
    * @param value        the value of the variable
@@ -216,13 +212,7 @@ public class ExperimentalDesign {
         .filter(it -> it.name().value().equals(variableName))
         .findAny();
 
-    return variableOptional.map(variable -> {
-      try {
-        return new VariableLevel(variable, value);
-      } catch (RuntimeException e) {
-        return null;
-      }
-    });
+    return variableOptional.map(variable -> variable.getLevel(value));
   }
 
   /**
@@ -242,7 +232,7 @@ public class ExperimentalDesign {
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
    * declarative exceptions.
    */
-  public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
+  public Result<Condition, Exception> defineCondition(String conditionLabel,
       VariableLevel[] levels) {
     Arrays.stream(levels).forEach(Objects::requireNonNull);
 
@@ -266,7 +256,7 @@ public class ExperimentalDesign {
             "A condition containing the provided levels exists."));
       }
       conditions.add(condition);
-      return Result.success(condition.label());
+      return Result.success(condition);
     } catch (IllegalArgumentException e) {
       return Result.failure(e);
     }

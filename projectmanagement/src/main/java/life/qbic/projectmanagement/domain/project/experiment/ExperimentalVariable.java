@@ -12,8 +12,10 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -70,20 +72,16 @@ public class ExperimentalVariable {
    * @throws IllegalArgumentException indicating that the unit of the provide level does not match
    *                                  with the unit of existing levels
    */
-  Result<ExperimentalValue, RuntimeException> addLevel(ExperimentalValue experimentalValue) {
+  Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
       return Result.failure(new IllegalArgumentException(
           "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
-      // the level is already part of the variable. No action needed
       levels.add(experimentalValue);
-      return Result.success(experimentalValue);
-    } else {
-      return Result.failure(new VariableLevelExistsException(
-          "the variable " + this.name() + " already allows for this level."
-      ));
     }
+    VariableLevel variableLevel = new VariableLevel(name(), experimentalValue);
+    return Result.success(variableLevel);
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
@@ -117,5 +115,15 @@ public class ExperimentalVariable {
   @Override
   public int hashCode() {
     return (int) (variableId ^ (variableId >>> 32));
+  }
+
+  public VariableLevel getLevel(ExperimentalValue experimentalValue) {
+    if (!levels.contains(experimentalValue)) {
+      throw new ProjectManagementException(
+          experimentalValue + " is no known level of variable " + name,
+          ErrorCode.UNDEFINED_VARIABLE_LEVEL,
+          ErrorParameters.of(experimentalValue.formatted(), name.value()));
+    }
+    return VariableLevel.create(name, experimentalValue);
   }
 }

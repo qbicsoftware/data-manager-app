@@ -22,7 +22,8 @@ public abstract class ApplicationException extends RuntimeException {
     INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE,
     INVALID_PROJECT_CODE,
-    DUPLICATE_PROJECT_CODE;
+    DUPLICATE_PROJECT_CODE,
+    UNDEFINED_VARIABLE_LEVEL;
 
     @Override
     public String toString() {

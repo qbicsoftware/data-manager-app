@@ -24,7 +24,11 @@ class AddExperimentToProjectServiceSpec extends Specification {
         projectRepository.find((ProjectId) _) >> Optional.empty()
 
         when: "an experiment is added to a project"
-        def result = service.addExperimentToProject(project.id, "bla", [Analyte.create("a1")], [Species.create("species1")], [Specimen.create("specimen1")])
+        def result = service.addExperimentToProject(project.id,
+                "Pilot",
+                [Analyte.create("DNA")],
+                [Species.create("homo sapiens")],
+                [Specimen.create("blood")])
         ExperimentId experimentId = result.value()
 
         then: "the project holds a reference to the created experiment"
@@ -40,9 +44,11 @@ class AddExperimentToProjectServiceSpec extends Specification {
 
     private static Project setupProject() {
         ProjectId projectId = ProjectId.parse("0270ce7f-4092-40e3-9c4c-ce7adb688bf5")
-        ProjectIntent projectIntent = ProjectIntent.of(ProjectTitle.of("title"), ProjectObjective.create("objective"))
+        ProjectIntent projectIntent = ProjectIntent.of(
+                ProjectTitle.of("Oral microbiome study"),
+                ProjectObjective.create("Analysis if tooth paste has an impact oral health and the mouth microbiome"))
         ProjectCode projectCode = ProjectCode.random()
-        PersonReference personReference = new PersonReference("abcd", "john doe", "john@doe.abcdefg")
+        PersonReference personReference = new PersonReference("abcd", "John Doe", "john@doe.abcdefg")
         return Project.of(projectId, projectIntent, projectCode, personReference, personReference, personReference)
     }
 }
