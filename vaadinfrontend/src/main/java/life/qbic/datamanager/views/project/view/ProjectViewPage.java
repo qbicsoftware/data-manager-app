@@ -13,7 +13,7 @@ import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
@@ -42,19 +42,19 @@ public class ProjectViewPage extends Div implements
 
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
-  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
-      experimentalDesignDetailComponent) {
+  ProjectLinksComponent projectLinksComponent, @Autowired ExperimentListComponent
+      experimentListComponent) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentalDesignDetailComponent);
+        projectLinksComponent, experimentListComponent);
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentalDesignDetailComponent);
+        projectLinksComponent, experimentListComponent);
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent,
-        experimentalDesignDetailComponent);
+        experimentListComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -67,13 +67,12 @@ public class ProjectViewPage extends Div implements
   public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent
-          experimentalDesignDetailComponent) {
+      ExperimentListComponent
+          experimentListComponent) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
-    //Todo Determine if we want to have seperate styles for each component
-    experimentalDesignDetailComponent.setStyles("experimental-design-component");
+    experimentListComponent.setStyles("experiment-list-component");
   }
 
   @Override

@@ -39,7 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
 @PermitAll
-public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
+public class ExperimentListComponent extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
@@ -52,8 +52,7 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentListComponent(
-      @Autowired ExperimentCreationDialog experimentCreationDialog,
+  public ExperimentListComponent(@Autowired ExperimentCreationDialog experimentCreationDialog,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
 
@@ -99,22 +98,21 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId.value()).ifPresentOrElse(
-          this::setExperimentDataProviderFromProject, this::emptyAction);
+      projectInformationService.find(projectId.value())
+          .ifPresentOrElse(this::setExperimentDataProviderFromProject, this::emptyAction);
     }
 
     private void setExperimentDataProviderFromProject(Project project) {
       CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
-          query -> getExperimentsForProject(project).stream().skip(query.getOffset()).limit(
-              query.getLimit()),
-          query -> getExperimentsForProject(project).size());
+          query -> getExperimentsForProject(project).stream().skip(query.getOffset())
+              .limit(query.getLimit()), query -> getExperimentsForProject(project).size());
       experiments.setDataProvider(experimentsDataProvider);
     }
 
     private Collection<Experiment> getExperimentsForProject(Project project) {
       List<Experiment> experimentList = new ArrayList<>();
-      project.experiments()
-          .forEach(experimentId -> experimentInformationService.find(experimentId.value())
+      project.experiments().forEach(
+          experimentId -> experimentInformationService.find(experimentId.value())
               .ifPresentOrElse(experimentList::add, this::emptyAction));
       return experimentList;
     }
@@ -127,12 +125,11 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
       createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open(projectId));
       experimentalDesignAddCard.addClickListener(
           clickEvent -> experimentCreationDialog.open(projectId));
-      experimentCreationDialog.addOpenedChangeListener(
-          event -> {
-            if (!event.isOpened()) {
-              experiments.getDataProvider().refreshAll();
-            }
-          });
+      experimentCreationDialog.addOpenedChangeListener(event -> {
+        if (!event.isOpened()) {
+          experiments.getDataProvider().refreshAll();
+        }
+      });
     }
   }
 

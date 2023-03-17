@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
+import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
@@ -16,21 +16,20 @@ class ProjectViewHandler {
   private final ProjectLinksComponent projectLinksComponent;
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
-
-  private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
+  private final ExperimentListComponent experimentListComponent;
 
   public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+      ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    Objects.requireNonNull(experimentalDesignDetailComponent);
+    Objects.requireNonNull(experimentListComponent);
     Objects.requireNonNull(projectNavigationBarComponent);
     this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
-    this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
+    this.experimentListComponent = experimentListComponent;
   }
 
   /**
@@ -42,7 +41,7 @@ class ProjectViewHandler {
   public void projectId(String projectId) {
     this.projectDetailsComponent.projectId(projectId);
     this.projectLinksComponent.projectId(projectId);
-    this.experimentalDesignDetailComponent.projectId(projectId);
+    this.experimentListComponent.projectId(projectId);
     this.projectNavigationBarComponent.projectId(projectId);
   }
 }
