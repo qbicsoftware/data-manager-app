@@ -101,7 +101,7 @@ public class ProjectCreationService {
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
       experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException e) {
       log.error(e.getMessage(), e);
       throw new ProjectManagementException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
           ErrorParameters.of(ExperimentalDesignDescription.maxLength(), experimentalDesign));
