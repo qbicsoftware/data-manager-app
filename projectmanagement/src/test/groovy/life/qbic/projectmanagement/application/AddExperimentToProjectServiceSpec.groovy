@@ -35,7 +35,7 @@ class AddExperimentToProjectServiceSpec extends Specification {
         project.experiments().contains(experimentId)
 
         and: "the active experiment of the project is the added experiment"
-        project.activeExperiment().map { it == experimentId }.orElse(false)
+        project.activeExperiment() == experimentId
 
         and: "the project is updated"
         1 * projectRepository.update(project)
