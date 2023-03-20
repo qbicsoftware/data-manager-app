@@ -46,6 +46,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Project Details Component
@@ -241,7 +242,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     //ToDo what should be done if projectID could not be retrieved
     private void emptyAction() {
-      titleToggleComponent.setValue("Not found")
+      titleToggleComponent.setValue("Not found");
     }
 
     private void parseProjectId(String id) {
