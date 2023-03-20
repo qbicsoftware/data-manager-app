@@ -72,7 +72,7 @@ public class ProjectInformationDialog extends Dialog {
     codeField = new TextField("Code");
     codeField.setRequired(true);
     codeField.setHelperText("Q and 4 letters/numbers");
-    codeField.setValue(ProjectCode.random().value());
+    defaultProjectCodeCreation();
 
     generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
@@ -158,8 +158,6 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void initForm() {
-    //formLayout.add(searchField);
-
     codeAndTitleLayout = new HorizontalLayout();
     codeAndTitleLayout.setWidthFull();
     codeAndTitleLayout.add(codeField);
@@ -248,6 +246,13 @@ public class ProjectInformationDialog extends Dialog {
   private void resetChildValues(Component component) {
     component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
         .forEach(comp -> ((HasValue<?, ?>) comp).clear());
+
+  }
+
+  private void defaultProjectCodeCreation() {
+    this.addOpenedChangeListener(opend -> {
+      codeField.setValue(ProjectCode.random().value());
+    });
   }
 
   private void resetChildValidation(Component component) {
