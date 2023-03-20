@@ -250,9 +250,12 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void defaultProjectCodeCreation() {
-    this.addOpenedChangeListener(opend -> {
-      codeField.setValue(ProjectCode.random().value());
+    this.addOpenedChangeListener(openedChangeEvent -> {
+      if (openedChangeEvent.isOpened()) {
+        codeField.setValue(ProjectCode.random().value());
+      }
     });
+  }
   }
 
   private void resetChildValidation(Component component) {
