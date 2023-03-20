@@ -136,7 +136,6 @@ class ExperimentalDesignSpec extends Specification {
         result.value().equals(expectedCondition)
     }
 
-    //TODO test add level to variable
     def "when a level is added to an existing variable then the level is part of the variable"() {
         given:
         def design = new ExperimentalDesign()
