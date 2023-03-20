@@ -72,6 +72,7 @@ public class ProjectInformationDialog extends Dialog {
     codeField = new TextField("Code");
     codeField.setRequired(true);
     codeField.setHelperText("Q and 4 letters/numbers");
+    codeField.setValue(ProjectCode.random().value());
 
     generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
