@@ -12,19 +12,6 @@ import spock.lang.Specification
  */
 class VariableLevelSpec extends Specification {
 
-//    def "When at least one variable value is not part of a Variable level, throw an exception"() {
-//        given:
-//        ExperimentalValue value = ExperimentalValue.create("test", "unit")
-//        ExperimentalValue unknownValue = ExperimentalValue.create("unknown", "nothing")
-//        ExperimentalVariable variable = ExperimentalVariable.create("testVariable", value)
-//
-//        when:
-//        new VariableLevel(variable, unknownValue)
-//
-//        then:
-//        thrown(UnknownVariableLevelException)
-//    }
-
     def "When all variable values are part of the variable levels, successfully create the level"() {
         given:
         ExperimentalValue value = ExperimentalValue.create("test", "unit")
