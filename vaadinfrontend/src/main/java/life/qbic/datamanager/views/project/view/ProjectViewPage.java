@@ -10,14 +10,12 @@ import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
+import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage;
+import life.qbic.datamanager.views.project.view.pages.projectinformation.ProjectInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
@@ -41,37 +39,23 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectViewHandler handler;
 
-  public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ProjectDetailsComponent projectDetailsComponent,
-      @Autowired ProjectLinksComponent projectLinksComponent,
-      @Autowired ExperimentDetailsComponent experimentDetailsComponent,
-      @Autowired ExperimentListComponent experimentListComponent) {
-    add(projectNavigationBarComponent);
-    add(projectDetailsComponent);
-    add(projectLinksComponent);
-    setPageStyles();
-    setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentDetailsComponent, experimentListComponent);
-    handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentDetailsComponent, experimentListComponent);
+  public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
+      @Autowired ExperimentInformationPage experimentInformationPage) {
+    Objects.requireNonNull(projectInformationPage);
+    Objects.requireNonNull(experimentInformationPage);
+    setPageStyles(projectInformationPage, experimentInformationPage);
+    handler = new ProjectViewHandler(projectInformationPage, experimentInformationPage);
     log.debug(
-        String.format("New instance for project view (#%s) created with detail component (#%s)",
-            System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
+        String.format(
+            "New instance for project view (#%s) created with project information page (#%s) and experiment information page (#%s)",
+            System.identityHashCode(this), System.identityHashCode(projectInformationPage),
+            System.identityHashCode(experimentInformationPage)));
   }
 
-  public void setPageStyles() {
-    addClassNames("project-view-page");
-  }
-
-  public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent,
-      ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
-    projectNavigationBarComponent.setStyles("project-navigation-component");
-    projectDetailsComponent.setStyles("project-details-component");
-    projectLinksComponent.setStyles("project-links-component");
-    experimentDetailsComponent.setStyles("experiment-details-component");
-    experimentListComponent.setStyles("experiment-list-component");
+  public void setPageStyles(ProjectInformationPage projectInformationPage,
+      ExperimentInformationPage experimentInformationPage) {
+    projectInformationPage.addClassName("project-view-page");
+    experimentInformationPage.addClassName("project-view-page");
   }
 
   @Override

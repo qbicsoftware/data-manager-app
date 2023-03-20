@@ -1,11 +1,8 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.components.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.project.view.components.ExperimentListComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
-import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage;
+import life.qbic.datamanager.views.project.view.pages.projectinformation.ProjectInformationPage;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -14,29 +11,16 @@ import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarC
  */
 class ProjectViewHandler {
 
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
+  private final ProjectInformationPage projectInformationPage;
+  private final ExperimentInformationPage experimentInformationPage;
 
-  private final ProjectDetailsComponent projectDetailsComponent;
-  private final ProjectLinksComponent projectLinksComponent;
-  private final ExperimentDetailsComponent experimentDetailsComponent;
-  private final ExperimentListComponent experimentListComponent;
+  public ProjectViewHandler(ProjectInformationPage projectInformationPage,
+      ExperimentInformationPage experimentInformationPage) {
+    Objects.requireNonNull(projectInformationPage);
+    Objects.requireNonNull(experimentInformationPage);
 
-  public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent,
-      ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
-    Objects.requireNonNull(projectNavigationBarComponent);
-    Objects.requireNonNull(projectDetailsComponent);
-    Objects.requireNonNull(projectLinksComponent);
-    Objects.requireNonNull(experimentDetailsComponent);
-    Objects.requireNonNull(experimentListComponent);
-
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
-    this.projectLinksComponent = projectLinksComponent;
-    this.projectDetailsComponent = projectDetailsComponent;
-    this.experimentDetailsComponent = experimentDetailsComponent;
-    this.experimentListComponent = experimentListComponent;
+    this.projectInformationPage = projectInformationPage;
+    this.experimentInformationPage = experimentInformationPage;
   }
 
   /**
@@ -46,10 +30,7 @@ class ProjectViewHandler {
    * @since 1.0.0
    */
   public void projectId(String projectId) {
-    this.projectNavigationBarComponent.projectId(projectId);
-    this.projectDetailsComponent.projectId(projectId);
-    this.projectLinksComponent.projectId(projectId);
-    this.experimentDetailsComponent.projectId(projectId);
-    this.experimentListComponent.projectId(projectId);
+    this.projectInformationPage.projectId(projectId);
+    this.experimentInformationPage.projectId(projectId);
   }
 }
