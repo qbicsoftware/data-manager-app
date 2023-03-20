@@ -11,6 +11,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -97,6 +98,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   }
 
   private void layoutComponents() {
+    getContent().addTitle("Projects");
+
     HorizontalLayout layout = new HorizontalLayout();
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     create.addClassNames("mt-s",
