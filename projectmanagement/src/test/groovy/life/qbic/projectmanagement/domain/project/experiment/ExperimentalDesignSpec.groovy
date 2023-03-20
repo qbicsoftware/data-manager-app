@@ -32,6 +32,7 @@ class ExperimentalDesignSpec extends Specification {
         then:
         result.isSuccess()
         result.value().value().equals("CBD Dosage")
+        design.isVariableDefined("CBD Dosage")
     }
 
     def "when a variable level is requested for a defined variable then return the variable level"() {
@@ -136,5 +137,55 @@ class ExperimentalDesignSpec extends Specification {
     }
 
     //TODO test add level to variable
+    def "when a level is added to an existing variable then the level is part of the variable"() {
+        given:
+        def design = new ExperimentalDesign()
+
+        def variableName = "environment"
+        def normalValue = ExperimentalValue.create("normal",)
+        def alteredValue = ExperimentalValue.create("altered")
+        def otherValue = ExperimentalValue.create("other")
+
+        design.addVariable(variableName, [normalValue, alteredValue])
+
+        when:
+        def result = design.addLevelToVariable(variableName, otherValue)
+
+        then:
+        result.isSuccess()
+        result.value() == new VariableLevel(VariableName.create(variableName), otherValue)
+        design.variables.get(0).levels().contains(otherValue)
+    }
+
+    def "when a level is added to an non-existent variable then the result is a failure"() {
+        given:
+        def design = new ExperimentalDesign()
+
+        def variableName = "environment"
+        def otherValue = ExperimentalValue.create("other")
+        when:
+        def result = design.addLevelToVariable(variableName, otherValue)
+        then:
+        result.isFailure()
+    }
+
+    def "when a level is added to an existing variable with the level already defined then the result is a success"() {
+        given:
+        def design = new ExperimentalDesign()
+
+        def variableName = "environment"
+        def normalValue = ExperimentalValue.create("normal",)
+        def alteredValue = ExperimentalValue.create("altered")
+
+        design.addVariable(variableName, [normalValue, alteredValue])
+
+        when:
+        def result = design.addLevelToVariable(variableName, normalValue)
+        then:
+        result.isSuccess()
+        result.value() == new VariableLevel(VariableName.create(variableName), normalValue)
+        design.variables.get(0).levels().contains(normalValue)
+    }
+
 
 }

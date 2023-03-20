@@ -42,7 +42,7 @@ public class ExperimentalVariable {
   private VariableName name;
 
   @ElementCollection(fetch = FetchType.EAGER)
-  private final List<ExperimentalValue> levels;
+  private final List<ExperimentalValue> levels = new ArrayList<>();
 
   private ExperimentalVariable(String name, ExperimentalValue... levels) {
     Arrays.stream(levels)
@@ -52,7 +52,7 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    this.levels = List.of(levels);
+    this.levels.addAll(List.of(levels));
   }
 
   public static ExperimentalVariable create(String name, ExperimentalValue... levels) {
@@ -61,7 +61,6 @@ public class ExperimentalVariable {
 
   protected ExperimentalVariable() {
     // used by JPA
-    levels = new ArrayList<>();
   }
 
   /**
