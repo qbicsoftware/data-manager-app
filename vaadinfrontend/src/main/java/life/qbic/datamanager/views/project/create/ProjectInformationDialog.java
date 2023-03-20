@@ -256,7 +256,6 @@ public class ProjectInformationDialog extends Dialog {
       }
     });
   }
-  }
 
   private void resetChildValidation(Component component) {
     component.getChildren().filter(comp -> comp instanceof HasValidation)
