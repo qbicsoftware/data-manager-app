@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.project.view.pages.experiment.components;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @PermitAll
 public class ExperimentListComponent extends Composite<CardLayout> {
+
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
   private static final String TITLE = "Experimental Design";

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.project.view.pages.experiment.components;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.board.Board;
@@ -16,7 +16,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
@@ -24,10 +23,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Objects;
-import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -44,10 +41,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
-@PermitAll
+@SpringComponent
 public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
   @Serial

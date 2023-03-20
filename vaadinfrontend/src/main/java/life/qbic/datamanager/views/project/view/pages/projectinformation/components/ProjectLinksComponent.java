@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.project.view.pages.projectinformation.components;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.view.pages.projectinformation.ProjectLink;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.project.view;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -15,7 +15,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 
 /**
  * ProjectNavigationBarComponent
