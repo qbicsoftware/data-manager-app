@@ -85,7 +85,7 @@ public class ProjectInformationDialog extends Dialog {
     projectObjective.setRequired(true);
 
     //ToDo Remove Field once experimental design backend is connected
-    experimentalDesignField = new TextArea("Experimental Design");
+    experimentalDesignField = new TextArea("Experimental Design Description");
     experimentalDesignLayout = new VerticalLayout();
     initExperimentalDesignLayout();
 
@@ -190,15 +190,15 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void initExperimentalDesignLayout() {
-    Span experimentalDesignHeader = new Span("Experimental Design");
-    Span experimentalDesignDescription = new Span(
-        "Please specify the sample information involved in the project! Multiple values are allowed");
-    experimentalDesignHeader.addClassName("font-bold");
+    Span experimentHeader = new Span("Experiment");
+    Span experimentDescription = new Span(
+        "Please specify the sample origin information of the samples. Multiple values are allowed!");
+    experimentHeader.addClassName("font-bold");
     experimentalDesignLayout.setMargin(false);
     experimentalDesignLayout.setPadding(false);
     experimentalDesignLayout.addClassName("pt-m");
-    experimentalDesignLayout.add(experimentalDesignHeader);
-    experimentalDesignLayout.add(experimentalDesignDescription);
+    experimentalDesignLayout.add(experimentHeader);
+    experimentalDesignLayout.add(experimentDescription);
   }
 
   private void initProjectContactsLayout() {
