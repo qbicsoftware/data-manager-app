@@ -23,12 +23,16 @@ public abstract class ApplicationException extends RuntimeException {
     INVALID_PROJECT_TITLE,
     INVALID_PROJECT_CODE,
     DUPLICATE_PROJECT_CODE,
-    UNDEFINED_VARIABLE_LEVEL;
+    UNDEFINED_VARIABLE_LEVEL,
+    NO_SPECIES_DEFINED,
+    NO_SPECIMEN_DEFINED,
+    NO_ANALYTE_DEFINED,;
 
     @Override
     public String toString() {
       return this.getClass().getSimpleName() + "." + this.name();
     }
+
   }
 
   public record ErrorParameters(Object[] value) {

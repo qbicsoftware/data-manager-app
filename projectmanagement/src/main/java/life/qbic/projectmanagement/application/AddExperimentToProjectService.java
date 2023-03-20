@@ -3,6 +3,8 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -15,6 +17,7 @@ import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * An application service that adds an experiment to a project.
@@ -48,11 +51,20 @@ public class AddExperimentToProjectService {
       List<Species> species,
       List<Specimen> specimens) {
     try {
-      requireNonNull(projectId);
-      requireNonNull(experimentName);
-      requireNonNull(analytes);
-      requireNonNull(species);
-      requireNonNull(specimens);
+      requireNonNull(projectId, "project id must not be null during experiment creation");
+      requireNonNull(experimentName, "experiment name must not be null during experiment creation");
+      if (CollectionUtils.isEmpty(analytes)) {
+        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+            ErrorParameters.of(analytes));
+      }
+      if (CollectionUtils.isEmpty(species)) {
+        throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
+            ErrorParameters.of(species));
+      }
+      if (CollectionUtils.isEmpty(specimens)) {
+        throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
+            ErrorParameters.of(specimens));
+      }
       Project project = projectRepository.find(projectId)
           .orElseThrow(ProjectNotFoundException::new);
       Experiment experiment = Experiment.create(experimentName);

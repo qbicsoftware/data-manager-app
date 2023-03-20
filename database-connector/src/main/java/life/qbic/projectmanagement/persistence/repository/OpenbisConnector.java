@@ -9,6 +9,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationEx
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.DeleteProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.ProjectDeletionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.id.ProjectIdentifier;
@@ -16,6 +17,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCrit
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -145,10 +147,14 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private void deleteOpenbisProject(ProjectCode projectCode) {
     ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
     deletionOptions.setReason("unknown reason in data-manager");
-    ProjectIdentifier projectIdentifier = new ProjectIdentifier(projectCode.value());
-    openBisClient.getV3()
-        .deleteProjects(openBisClient.getSessionToken(), List.of(projectIdentifier),
-            deletionOptions);
+    //OpenBis expects the projectspace and code during deletion
+    ProjectIdentifier projectIdentifier = new ProjectIdentifier(DEFAULT_SPACE_CODE,
+        projectCode.value());
+    List<ProjectIdentifier> openBisProjectsIds = new ArrayList<>();
+    openBisProjectsIds.add(projectIdentifier);
+    DeleteProjectsOperation operation = new DeleteProjectsOperation(openBisProjectsIds,
+        deletionOptions);
+    handleOperations(operation);
   }
 
   private void handleOperations(IOperation operation) {
