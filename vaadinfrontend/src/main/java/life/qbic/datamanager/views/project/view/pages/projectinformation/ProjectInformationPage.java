@@ -9,7 +9,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.project.view.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.datamanager.views.project.view.pages.projectinformation.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.pages.projectinformation.components.ProjectLinksComponent;
@@ -37,20 +36,15 @@ public class ProjectInformationPage extends Div implements RouterLayout {
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectInformationPageHandler projectInformationPageHandler;
 
-  public ProjectInformationPage(
-      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ProjectDetailsComponent projectDetailsComponent,
+  public ProjectInformationPage(@Autowired ProjectDetailsComponent projectDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent) {
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
-    setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
+    setComponentStyles(projectDetailsComponent, projectLinksComponent);
+    projectInformationPageHandler = new ProjectInformationPageHandler(projectDetailsComponent,
         projectLinksComponent);
-    projectInformationPageHandler = new ProjectInformationPageHandler(projectNavigationBarComponent,
-        projectDetailsComponent, projectLinksComponent);
     log.debug(String.format(
         "New instance for project Information Page (#%s) created with Project Details Component (#%s) and Project Links Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectDetailsComponent),
@@ -61,31 +55,24 @@ public class ProjectInformationPage extends Div implements RouterLayout {
     projectInformationPageHandler.setProjectId(projectId);
   }
 
-  public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent,
+  public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent) {
-    projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
   }
 
   private final class ProjectInformationPageHandler {
 
-    private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ProjectDetailsComponent projectDetailsComponent;
     private final ProjectLinksComponent projectLinksComponent;
 
-    public ProjectInformationPageHandler(
-        ProjectNavigationBarComponent projectNavigationBarComponent,
-        ProjectDetailsComponent projectDetailsComponent,
+    public ProjectInformationPageHandler(ProjectDetailsComponent projectDetailsComponent,
         ProjectLinksComponent projectLinksComponent) {
-      this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.projectDetailsComponent = projectDetailsComponent;
       this.projectLinksComponent = projectLinksComponent;
     }
 
     public void setProjectId(String projectId) {
-      projectNavigationBarComponent.projectId(projectId);
       projectDetailsComponent.projectId(projectId);
       projectLinksComponent.projectId(projectId);
     }

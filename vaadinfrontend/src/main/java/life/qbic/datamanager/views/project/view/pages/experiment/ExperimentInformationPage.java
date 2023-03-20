@@ -9,7 +9,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.project.view.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.datamanager.views.project.view.pages.experiment.components.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.project.view.pages.experiment.components.ExperimentListComponent;
@@ -38,20 +37,15 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
 
-  public ExperimentInformationPage(
-      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ExperimentDetailsComponent experimentDetailsComponent,
+  public ExperimentInformationPage(@Autowired ExperimentDetailsComponent experimentDetailsComponent,
       @Autowired ExperimentListComponent experimentListComponent) {
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
-    add(projectNavigationBarComponent);
     add(experimentDetailsComponent);
     add(experimentListComponent);
-    setComponentStyles(projectNavigationBarComponent, experimentDetailsComponent,
-        experimentListComponent);
+    setComponentStyles(experimentDetailsComponent, experimentListComponent);
     experimentInformationPageHandler = new ExperimentInformationPageHandler(
-        projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
+        experimentDetailsComponent, experimentListComponent);
     log.debug(String.format(
         "\"New instance for Experiment Information page (#%s) created with Experiment Details Component (#%s) and Experiment List Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(experimentDetailsComponent),
@@ -62,31 +56,24 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
     experimentInformationPageHandler.setProjectId(projectId);
   }
 
-  public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ExperimentDetailsComponent experimentDetailsComponent,
+  public void setComponentStyles(ExperimentDetailsComponent experimentDetailsComponent,
       ExperimentListComponent experimentListComponent) {
-    projectNavigationBarComponent.setStyles("project-navigation-component");
     experimentDetailsComponent.setStyles("experiment-details-component");
     experimentListComponent.setStyles("experiment-list-component");
   }
 
   private final class ExperimentInformationPageHandler {
 
-    private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ExperimentDetailsComponent experimentDetailsComponent;
     private final ExperimentListComponent experimentListComponent;
 
-    public ExperimentInformationPageHandler(
-        ProjectNavigationBarComponent projectNavigationBarComponent,
-        ExperimentDetailsComponent experimentDetailsComponent,
+    public ExperimentInformationPageHandler(ExperimentDetailsComponent experimentDetailsComponent,
         ExperimentListComponent experimentListComponent) {
-      this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.experimentDetailsComponent = experimentDetailsComponent;
       this.experimentListComponent = experimentListComponent;
     }
 
     public void setProjectId(String projectId) {
-      projectNavigationBarComponent.projectId(projectId);
       experimentDetailsComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
     }

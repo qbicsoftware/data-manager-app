@@ -39,21 +39,27 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectViewHandler handler;
 
-  public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
+  public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired ProjectInformationPage projectInformationPage,
       @Autowired ExperimentInformationPage experimentInformationPage) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
-    setPageStyles(projectInformationPage, experimentInformationPage);
-    handler = new ProjectViewHandler(projectInformationPage, experimentInformationPage);
-    log.debug(
-        String.format(
-            "New instance for project view (#%s) created with project information page (#%s) and experiment information page (#%s)",
-            System.identityHashCode(this), System.identityHashCode(projectInformationPage),
-            System.identityHashCode(experimentInformationPage)));
+    add(projectNavigationBarComponent);
+    setPageStyles(projectNavigationBarComponent, projectInformationPage, experimentInformationPage);
+    handler = new ProjectViewHandler(projectNavigationBarComponent, projectInformationPage,
+        experimentInformationPage);
+    log.debug(String.format(
+        "New instance for project view (#%s) created with a project navigation component (#%s), a project information page (#%s) and experiment information page (#%s)",
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        System.identityHashCode(projectInformationPage),
+        System.identityHashCode(experimentInformationPage)));
   }
 
-  public void setPageStyles(ProjectInformationPage projectInformationPage,
+  public void setPageStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ProjectInformationPage projectInformationPage,
       ExperimentInformationPage experimentInformationPage) {
+    projectNavigationBarComponent.setStyles("project-navigation-component");
     projectInformationPage.addClassName("project-view-page");
     experimentInformationPage.addClassName("project-view-page");
   }

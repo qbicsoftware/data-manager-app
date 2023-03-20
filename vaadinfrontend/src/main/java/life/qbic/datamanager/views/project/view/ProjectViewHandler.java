@@ -11,14 +11,18 @@ import life.qbic.datamanager.views.project.view.pages.projectinformation.Project
  */
 class ProjectViewHandler {
 
+  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectInformationPage projectInformationPage;
   private final ExperimentInformationPage experimentInformationPage;
 
-  public ProjectViewHandler(ProjectInformationPage projectInformationPage,
+  public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ProjectInformationPage projectInformationPage,
       ExperimentInformationPage experimentInformationPage) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
 
+    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectInformationPage = projectInformationPage;
     this.experimentInformationPage = experimentInformationPage;
   }
@@ -30,6 +34,7 @@ class ProjectViewHandler {
    * @since 1.0.0
    */
   public void projectId(String projectId) {
+    this.projectNavigationBarComponent.projectId(projectId);
     this.projectInformationPage.projectId(projectId);
     this.experimentInformationPage.projectId(projectId);
   }
