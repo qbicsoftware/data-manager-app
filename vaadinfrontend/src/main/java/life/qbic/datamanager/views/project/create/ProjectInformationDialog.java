@@ -53,9 +53,10 @@ public class ProjectInformationDialog extends Dialog {
   public final Button createButton;
   public final Button cancelButton;
   private final FormLayout formLayout;
-  private final VerticalLayout experimentalDesignIntroduction;
+  private final VerticalLayout experimentalDesignLayout;
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
+  private final VerticalLayout projectContactsLayout;
   public final ComboBox<PersonReference> principalInvestigator;
   public final HorizontalLayout sampleCountLayout;
   public final MultiSelectComboBox<Species> speciesBox;
@@ -67,21 +68,28 @@ public class ProjectInformationDialog extends Dialog {
   public ProjectInformationDialog() {
     searchField = new ComboBox<>("Offer");
     formLayout = new FormLayout();
+
     codeField = new TextField("Code");
     codeField.setRequired(true);
     codeField.setHelperText("Q and 4 letters/numbers");
+    defaultProjectCodeCreation();
+
     generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
+
     titleField = new TextField("Title");
     titleField.setRequired(true);
+
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
+
     //ToDo Remove Field once experimental design backend is connected
-    experimentalDesignField = new TextArea("Experimental Design");
-    experimentalDesignIntroduction = new VerticalLayout();
-    initExperimentalDesignIntroduction();
-    //Layout with max width to keep the SampleCountField in a seperate row
+    experimentalDesignField = new TextArea("Experimental Design Description");
+    experimentalDesignLayout = new VerticalLayout();
+    initExperimentalDesignLayout();
+
+    //Layout with max width to keep the SampleCountField in a separate row
     sampleCountLayout = new HorizontalLayout();
     speciesBox = new MultiSelectComboBox<>("Species");
     speciesBox.setRequired(true);
@@ -89,6 +97,9 @@ public class ProjectInformationDialog extends Dialog {
     specimenBox.setRequired(true);
     analyteBox = new MultiSelectComboBox<>("Analyte");
     analyteBox.setRequired(true);
+
+    projectContactsLayout = new VerticalLayout();
+    initProjectContactsLayout();
 
     principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
@@ -116,12 +127,22 @@ public class ProjectInformationDialog extends Dialog {
   private void styleForm() {
     formLayout.setClassName("create-project-form");
     styleSearchBox();
+
+    codeField.setMaxWidth(20, Unit.VW);
+    searchField.setMaxWidth(30, Unit.VW);
+
+    titleField.setMaxWidth(60, Unit.VW);
+    projectObjective.setMaxWidth(60, Unit.VW);
+
     speciesBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
+    experimentalDesignField.setMaxWidth(60, Unit.VW);
+
     speciesBox.setMaxWidth(60, Unit.VW);
     specimenBox.setMaxWidth(60, Unit.VW);
     analyteBox.setMaxWidth(60, Unit.VW);
+
     principalInvestigator.setMaxWidth(60, Unit.VW);
     responsiblePerson.setMaxWidth(60, Unit.VW);
     projectManager.setMaxWidth(60, Unit.VW);
@@ -137,27 +158,26 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void initForm() {
-    formLayout.add(searchField);
-
     codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout.setWidthFull();
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
-    codeAndTitleLayout.add(titleField);
+    codeAndTitleLayout.add(searchField);
     codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
     formLayout.add(codeAndTitleLayout);
 
-  //formLayout.add(titleField);
+    formLayout.add(titleField);
     formLayout.add(projectObjective);
-    formLayout.add(experimentalDesignField);
-    formLayout.add(experimentalDesignIntroduction);
+    formLayout.add(experimentalDesignLayout);
     formLayout.add(sampleCountLayout);
     formLayout.add(speciesBox);
     formLayout.add(specimenBox);
     formLayout.add(analyteBox);
+    formLayout.add(experimentalDesignField);
+    formLayout.add(projectContactsLayout);
     formLayout.add(principalInvestigator);
     formLayout.add(responsiblePerson);
     formLayout.add(projectManager);
-    // Set FormLayout with one column
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
@@ -165,20 +185,30 @@ public class ProjectInformationDialog extends Dialog {
   private void styleSearchBox() {
     searchField.setPlaceholder("Search");
     searchField.setClassName("searchbox");
-    searchField.setMaxWidth(50, Unit.VW);
-    searchField.setMinWidth(50, Unit.VW);
   }
 
-  private void initExperimentalDesignIntroduction() {
-    Span experimentalDesignHeader = new Span("Experimental Design");
-    Span experimentalDesignDescription = new Span(
-        "Please specify the sample information involved in the project! Multiple values are allowed");
-    experimentalDesignHeader.addClassName("font-bold");
-    experimentalDesignIntroduction.setMargin(false);
-    experimentalDesignIntroduction.setPadding(false);
-    experimentalDesignIntroduction.addClassName("pt-m");
-    experimentalDesignIntroduction.add(experimentalDesignHeader);
-    experimentalDesignIntroduction.add(experimentalDesignDescription);
+  private void initExperimentalDesignLayout() {
+    Span experimentHeader = new Span("Experiment");
+    Span experimentDescription = new Span(
+        "Please specify the sample origin information of the samples. Multiple values are allowed!");
+    experimentHeader.addClassName("font-bold");
+    experimentalDesignLayout.setMargin(false);
+    experimentalDesignLayout.setPadding(false);
+    experimentalDesignLayout.addClassName("pt-m");
+    experimentalDesignLayout.add(experimentHeader);
+    experimentalDesignLayout.add(experimentDescription);
+  }
+
+  private void initProjectContactsLayout() {
+    Span projectContactsTitle = new Span("Project Contacts");
+    Span projectContactsDescription = new Span(
+            "Important contact people of the project");
+    projectContactsTitle.addClassName("font-bold");
+    projectContactsLayout.setMargin(false);
+    projectContactsLayout.setPadding(false);
+    projectContactsLayout.addClassName("pt-m");
+    projectContactsLayout.add(projectContactsTitle);
+    projectContactsLayout.add(projectContactsDescription);
   }
 
   public void setOffer(Offer offer) {
@@ -216,6 +246,15 @@ public class ProjectInformationDialog extends Dialog {
   private void resetChildValues(Component component) {
     component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
         .forEach(comp -> ((HasValue<?, ?>) comp).clear());
+
+  }
+
+  private void defaultProjectCodeCreation() {
+    this.addOpenedChangeListener(openedChangeEvent -> {
+      if (openedChangeEvent.isOpened()) {
+        codeField.setValue(ProjectCode.random().value());
+      }
+    });
   }
 
   private void resetChildValidation(Component component) {
