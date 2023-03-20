@@ -5,11 +5,7 @@ import javax.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Converts offer identifiers to string for storage in persistence.
  */
 @Converter(autoApply = true)
 public class OfferIdentifierConverter implements AttributeConverter<OfferIdentifier, String> {

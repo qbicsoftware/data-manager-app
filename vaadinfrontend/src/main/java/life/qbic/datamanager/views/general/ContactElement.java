@@ -37,7 +37,7 @@ public class ContactElement extends VerticalLayout {
   }
 
   public static ContactElement from(PersonReference personReference) {
-    return new ContactElement(personReference.fullName(), personReference.getEmailAddress());
+    return new ContactElement(personReference.fullName(), personReference.emailAddress());
   }
 
   public void setContent(String fullName, String email) {

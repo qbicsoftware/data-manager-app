@@ -5,13 +5,11 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 
@@ -27,13 +25,12 @@ import org.springframework.stereotype.Component;
  * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as
  * dependency
  * upon creation.
- *
+ * <p>
  * Also handles project storage in openBIS through {@link QbicProjectDataRepo}
  *
  * @since 1.0.0
  */
 @Component
-@Scope("singleton")
 public class ProjectRepositoryImpl implements ProjectRepository {
 
   private static final Logger log = logger(ProjectRepositoryImpl.class);
@@ -81,36 +78,14 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     return projectRepo.findById(projectId);
   }
 
+  @Override
+  public void deleteByProjectCode(ProjectCode projectCode) {
+    projectDataRepo.delete(projectCode);
+    List<Project> projectsByProjectCode = projectRepo.findProjectByProjectCode(projectCode);
+    projectRepo.deleteAll(projectsByProjectCode);
+  }
+
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
   }
-
-  /**
-   * Is thrown if a project that should be created already exists, as denoted by the project id
-   */
-  public static class ProjectExistsException extends RuntimeException {
-
-
-    public ProjectExistsException() {
-    }
-
-    public ProjectExistsException(Throwable cause) {
-      super(cause);
-    }
-  }
-
-  /**
-   * Thrown when a project is expected to exist but cannot be found.
-   */
-  public static class ProjectNotFoundException extends RuntimeException {
-
-    public ProjectNotFoundException() {
-    }
-
-    public ProjectNotFoundException(Throwable cause) {
-      super(cause);
-    }
-  }
-
-
 }

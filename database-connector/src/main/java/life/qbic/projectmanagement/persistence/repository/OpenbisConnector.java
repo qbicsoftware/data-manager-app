@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.persistence.repository;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -7,11 +9,17 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationEx
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.DeleteProjectsOperation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.ProjectDeletionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.id.ProjectIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
@@ -23,11 +31,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Basic implementation to query project preview information
@@ -141,6 +144,19 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     handleOperations(operation);
   }
 
+  private void deleteOpenbisProject(ProjectCode projectCode) {
+    ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
+    deletionOptions.setReason("unknown reason in data-manager");
+    //OpenBis expects the projectspace and code during deletion
+    ProjectIdentifier projectIdentifier = new ProjectIdentifier(DEFAULT_SPACE_CODE,
+        projectCode.value());
+    List<ProjectIdentifier> openBisProjectsIds = new ArrayList<>();
+    openBisProjectsIds.add(projectIdentifier);
+    DeleteProjectsOperation operation = new DeleteProjectsOperation(openBisProjectsIds,
+        deletionOptions);
+    handleOperations(operation);
+  }
+
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
 
@@ -160,12 +176,18 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   @Override
+  public void delete(ProjectCode projectCode) {
+    deleteOpenbisProject(projectCode);
+  }
+
+  @Override
   public boolean projectExists(ProjectCode projectCode) {
     return !searchProjectsByCode(projectCode.toString()).isEmpty();
   }
 
   // Convenience RTE to describe connection issues
   class ConnectionException extends RuntimeException {
+
   }
 
 }
