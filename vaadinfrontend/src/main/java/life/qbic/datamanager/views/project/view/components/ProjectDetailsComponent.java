@@ -46,6 +46,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Project Details Component
@@ -188,7 +189,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   }
 
   public void projectId(String projectId) {
-    handler.setProjectId(projectId);
+    handler.projectId(projectId);
   }
 
   public void setStyles(String... componentStyles) {
@@ -227,14 +228,21 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       setupExperimentalDesignSearch();
     }
 
-    public void setProjectId(String projectId) {
+    public void projectId(String projectId) {
       parseProjectId(projectId);
-      projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
-          this::emptyAction);
+      try {
+        projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
+            this::emptyAction);
+      } catch (AccessDeniedException accessDeniedException) {
+        log.error("Access denied when loading project details for project id " + projectId,
+            accessDeniedException);
+        emptyAction();
+      }
     }
 
     //ToDo what should be done if projectID could not be retrieved
     private void emptyAction() {
+      titleToggleComponent.setValue("Not found");
     }
 
     private void parseProjectId(String id) {
@@ -293,7 +301,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
-      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson());
+      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson().orElse(null));
       activeExperimentId = project.activeExperiment();
       analyteMultiSelectComboBox.setValue(
           experimentInformationService.getAnalytesOfExperiment(activeExperimentId));

@@ -13,7 +13,7 @@ class ExperimentalVariableSpec extends Specification {
 
     def "If no levels are provided, throw an IllegalArgumentException"() {
         when:
-        new ExperimentalVariable<>("Test")
+        new ExperimentalVariable("Test")
 
 
         then:
@@ -22,12 +22,22 @@ class ExperimentalVariableSpec extends Specification {
 
     def "If at least one level is provided, create the experimental variable"() {
         when:
-        def variable = new ExperimentalVariable("Test", ExperimentalValue.create("Simple", "cm"))
+        def variable = ExperimentalVariable.create("Test", ExperimentalValue.create("Simple", "cm"))
 
         then:
         noExceptionThrown()
-        variable.name().equals("Test")
+        variable.name().value().equals("Test")
         variable.levels().get(0).equals(ExperimentalValue.create("Simple", "cm"))
+    }
+
+    def "Created levels are provided with the variable name"() {
+        given:
+        def variable = ExperimentalVariable.create("environment", ExperimentalValue.create("control"), ExperimentalValue.create("altered"))
+        when:
+        def level = variable.getLevel(ExperimentalValue.create("altered"))
+        then:
+        level.variableName() == variable.name()
+        noExceptionThrown()
     }
 
 }
