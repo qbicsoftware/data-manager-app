@@ -6,7 +6,6 @@ import javax.persistence.AccessType;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
-import life.qbic.projectmanagement.domain.project.experiment.exception.UnknownVariableLevelException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -27,19 +26,18 @@ public class VariableLevel {
   @Embedded
   private ExperimentalValue experimentalValue;
 
-  public VariableLevel(ExperimentalVariable experimentalVariable,
+  public VariableLevel(VariableName variableName,
       ExperimentalValue experimentalValue) {
-    Objects.requireNonNull(experimentalVariable);
+    Objects.requireNonNull(variableName);
     Objects.requireNonNull(experimentalValue);
 
-    if (isValueMissingInVariableLevels(experimentalVariable, experimentalValue)) {
-      throw new UnknownVariableLevelException(
-          String.format("%s is not part of the experimental variable %s", experimentalValue.value(),
-              experimentalVariable.name()));
-    }
-
     this.experimentalValue = experimentalValue;
-    this.variableName = experimentalVariable.name();
+    this.variableName = variableName;
+  }
+
+  public static VariableLevel create(VariableName variableName,
+      ExperimentalValue experimentalValue) {
+    return new VariableLevel(variableName, experimentalValue);
   }
 
   protected VariableLevel() {

@@ -12,8 +12,10 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.experiment.exception.VariableLevelExistsException;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -40,7 +42,7 @@ public class ExperimentalVariable {
   private VariableName name;
 
   @ElementCollection(fetch = FetchType.EAGER)
-  private final List<ExperimentalValue> levels;
+  private final List<ExperimentalValue> levels = new ArrayList<>();
 
   private ExperimentalVariable(String name, ExperimentalValue... levels) {
     Arrays.stream(levels)
@@ -50,41 +52,35 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    this.levels = List.of(levels);
+    this.levels.addAll(List.of(levels));
   }
 
-  public static ExperimentalVariable createForExperiment(Experiment experiment, String name,
-      ExperimentalValue... levels) {
+  public static ExperimentalVariable create(String name, ExperimentalValue... levels) {
     return new ExperimentalVariable(name, levels);
   }
 
   protected ExperimentalVariable() {
     // used by JPA
-    levels = new ArrayList<>();
   }
 
   /**
    * Calling this method ensures that the experimental value is set as a level on the variable.
    *
    * @param experimentalValue the experimental value to be added to possible levels
-   * @return
+   * @return the value added as level, a failed result otherwise
    * @throws IllegalArgumentException indicating that the unit of the provide level does not match
    *                                  with the unit of existing levels
    */
-  Result<ExperimentalValue, RuntimeException> addLevel(ExperimentalValue experimentalValue) {
+  Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
       return Result.failure(new IllegalArgumentException(
           "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
-      // the level is already part of the variable. No action needed
       levels.add(experimentalValue);
-      return Result.success(experimentalValue);
-    } else {
-      return Result.failure(new VariableLevelExistsException(
-          "the variable " + this.name() + " already allows for this level."
-      ));
     }
+    VariableLevel variableLevel = new VariableLevel(name(), experimentalValue);
+    return Result.success(variableLevel);
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
@@ -118,5 +114,15 @@ public class ExperimentalVariable {
   @Override
   public int hashCode() {
     return (int) (variableId ^ (variableId >>> 32));
+  }
+
+  public VariableLevel getLevel(ExperimentalValue experimentalValue) {
+    if (!levels.contains(experimentalValue)) {
+      throw new ProjectManagementException(
+          experimentalValue + " is no known level of variable " + name,
+          ErrorCode.UNDEFINED_VARIABLE_LEVEL,
+          ErrorParameters.of(experimentalValue.formatted(), name.value()));
+    }
+    return VariableLevel.create(name, experimentalValue);
   }
 }
