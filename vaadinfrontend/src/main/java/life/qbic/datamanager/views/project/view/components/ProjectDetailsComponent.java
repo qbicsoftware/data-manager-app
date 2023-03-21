@@ -10,6 +10,8 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -67,7 +69,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
   private static final String TITLE = "Project Information";
-  private final FormLayout formLayout;
+  private final VerticalLayout formLayout;
   private ToggleDisplayEditComponent<Span, TextField, String> titleToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> projectObjectiveToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
@@ -90,7 +92,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
     Objects.requireNonNull(experimentInformationService);
-    formLayout = new FormLayout();
+    formLayout = new VerticalLayout();
     initFormLayout();
     setComponentStyles();
     this.handler = new Handler(projectInformationService, personSearchService,
@@ -122,11 +124,20 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     span.addClassNames("text-xl","text-secondary");
     other.add(span,formLayout);
 
-    formLayout.addFormItem(principalInvestigatorToggleComponent, "Principal Investigator");
-    formLayout.addFormItem(responsiblePersonToggleComponent, "Responsible Person");
-    formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
-    // set form layout to only have one column (for any width)
-    formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
+    Label label = new Label("Principal Investigator");
+    label.addClassName("font-semibold");
+
+    Label label2 = new Label("Responsible Person");
+    label2.addClassName("font-semibold");
+
+    Label label3 = new Label("Project Manager");
+    label3.addClassName("font-semibold");
+
+    formLayout.add(new Div(label, principalInvestigatorToggleComponent));
+    formLayout.add(new Div(label2, responsiblePersonToggleComponent));
+    formLayout.add(new Div(label3, projectManagerToggleComponent));
+    formLayout.setPadding(false);
+
     getContent().addFields(verticalLayout, other);
     getContent().addTitle(TITLE);
   }
