@@ -8,8 +8,6 @@ import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
@@ -69,7 +67,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
   private static final String TITLE = "Project Information";
-  private final VerticalLayout formLayout;
+  private final VerticalLayout contactPersonsLayout;
   private ToggleDisplayEditComponent<Span, TextField, String> titleToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> projectObjectiveToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
@@ -81,7 +79,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> responsiblePersonToggleComponent;
   private final transient Handler handler;
 
-  private final VerticalLayout verticalLayout = new VerticalLayout();
+  private final VerticalLayout projectDescriptionLayout;
 
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
@@ -92,7 +90,10 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
     Objects.requireNonNull(experimentInformationService);
-    formLayout = new VerticalLayout();
+
+    contactPersonsLayout = new VerticalLayout();
+    projectDescriptionLayout = new VerticalLayout();
+
     initFormLayout();
     setComponentStyles();
     this.handler = new Handler(projectInformationService, personSearchService,
@@ -114,32 +115,29 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     Span experimentalDesignDescription = new Span("Experimental Design Description");
     experimentalDesignDescription.addClassNames("text-m");
 
-    verticalLayout.add(titleToggleComponent, projectObjectiveToggleComponent,
+    projectDescriptionLayout.add(titleToggleComponent, projectObjectiveToggleComponent,
             experimentalDesignDescription,experimentalDesignToggleComponent);
-    verticalLayout.setSpacing(true);
 
-    VerticalLayout other = new VerticalLayout();
-    other.setSpacing(true);
-    Span span = new Span("Project Contacts");
-    span.addClassNames("text-xl","text-secondary");
-    other.add(span,formLayout);
+    Span contactTitleSpan = new Span("Project Contacts");
+    contactTitleSpan.addClassNames("text-xl","text-secondary");
+    contactPersonsLayout.add(contactTitleSpan);
 
-    Label label = new Label("Principal Investigator");
-    label.addClassName("font-semibold");
+    contactPersonsLayout.add(getDiv("Principal Investigator", principalInvestigatorToggleComponent));
+    contactPersonsLayout.add(getDiv("Responsible Person", responsiblePersonToggleComponent));
+    contactPersonsLayout.add(getDiv("Project Manager", projectManagerToggleComponent));
 
-    Label label2 = new Label("Responsible Person");
-    label2.addClassName("font-semibold");
+    projectDescriptionLayout.setSpacing(true);
+    contactPersonsLayout.setSpacing(true);
 
-    Label label3 = new Label("Project Manager");
-    label3.addClassName("font-semibold");
-
-    formLayout.add(new Div(label, principalInvestigatorToggleComponent));
-    formLayout.add(new Div(label2, responsiblePersonToggleComponent));
-    formLayout.add(new Div(label3, projectManagerToggleComponent));
-    formLayout.setPadding(false);
-
-    getContent().addFields(verticalLayout, other);
+    getContent().addFields(projectDescriptionLayout, contactPersonsLayout);
     getContent().addTitle(TITLE);
+  }
+
+  private Div getDiv(String labelName, Component component) {
+    Label label = new Label(labelName);
+    label.addClassNames("font-semibold", "mb-l","mt-m");
+
+    return new Div(label, component);
   }
 
   private void initFormFields() {
@@ -185,7 +183,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     titleToggleComponent.setWidthFull();
     projectObjectiveToggleComponent.setWidthFull();
     experimentalDesignToggleComponent.setWidthFull();
-    formLayout.setClassName("create-project-form");
+    contactPersonsLayout.setClassName("create-project-form");
     projectManagerToggleComponent.getInputComponent().getStyle()
         .set("--vaadin-combo-box-overlay-width", "16em");
     projectManagerToggleComponent.getInputComponent().getStyle()
@@ -209,7 +207,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     speciesMultiSelectComboBox.setWidth(50, Unit.VW);
     specimenMultiSelectComboBox.setWidth(50, Unit.VW);
     analyteMultiSelectComboBox.setWidth(50, Unit.VW);
-    formLayout.setClassName("create-project-form");
+    contactPersonsLayout.setClassName("create-project-form");
     speciesMultiSelectComboBox.addClassName("chip-badge");
     specimenMultiSelectComboBox.addClassName("chip-badge");
     analyteMultiSelectComboBox.addClassName("chip-badge");
