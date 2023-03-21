@@ -11,6 +11,7 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -78,6 +79,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private ToggleDisplayEditComponent<Component, ComboBox<PersonReference>, PersonReference> responsiblePersonToggleComponent;
   private final transient Handler handler;
 
+  private final VerticalLayout verticalLayout = new VerticalLayout();
+
+
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired PersonSearchService personSearchService,
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService, @Autowired
@@ -104,28 +108,40 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private void initFormLayout() {
     initFormFields();
-    formLayout.addFormItem(titleToggleComponent, "Project Title");
-    formLayout.addFormItem(projectObjectiveToggleComponent, "Project Objective");
-    formLayout.addFormItem(experimentalDesignToggleComponent, "Experimental Design");
-    formLayout.addFormItem(speciesMultiSelectComboBox, "Species");
-    formLayout.addFormItem(specimenMultiSelectComboBox, "Specimen");
-    formLayout.addFormItem(analyteMultiSelectComboBox, "Analyte");
+
+    Span experimentalDesignDescription = new Span("Experimental Design Description");
+    experimentalDesignDescription.addClassNames("text-m");
+
+    verticalLayout.add(titleToggleComponent, projectObjectiveToggleComponent,
+            experimentalDesignDescription,experimentalDesignToggleComponent);
+    verticalLayout.setSpacing(true);
+
+    VerticalLayout other = new VerticalLayout();
+    other.setSpacing(true);
+    Span span = new Span("Project Contacts");
+    span.addClassNames("text-xl","text-secondary");
+    other.add(span,formLayout);
+
     formLayout.addFormItem(principalInvestigatorToggleComponent, "Principal Investigator");
     formLayout.addFormItem(responsiblePersonToggleComponent, "Responsible Person");
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    getContent().addFields(formLayout);
+    getContent().addFields(verticalLayout, other);
     getContent().addTitle(TITLE);
   }
 
   private void initFormFields() {
-    titleToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextField(),
+    titleToggleComponent = new ToggleDisplayEditComponent<>(c -> {
+      Span span = new Span(c);
+      span.addClassNames("text-2xl");
+      return span;}, new TextField(),
         createPlaceHolderSpan());
     projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan());
     experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
         createPlaceHolderSpan());
+
     speciesMultiSelectComboBox = new MultiSelectComboBox<>();
     speciesMultiSelectComboBox.setClearButtonVisible(false);
     specimenMultiSelectComboBox = new MultiSelectComboBox<>();
@@ -295,14 +311,18 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private void loadProjectData(Project project) {
       this.selectedProject = project.getId();
+
       titleToggleComponent.setValue(project.getProjectIntent().projectTitle().title());
       projectObjectiveToggleComponent.setValue(project.getProjectIntent().objective().value());
       experimentalDesignToggleComponent.setValue(
           project.getProjectIntent().experimentalDesign().value());
+
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
       responsiblePersonToggleComponent.setValue(project.getResponsiblePerson().orElse(null));
+
       activeExperimentId = project.activeExperiment();
+
       analyteMultiSelectComboBox.setValue(
           experimentInformationService.getAnalytesOfExperiment(activeExperimentId));
       speciesMultiSelectComboBox.setValue(
