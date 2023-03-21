@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -9,6 +10,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
@@ -46,6 +49,18 @@ public class ExperimentInformationService {
   }
 
   /**
+   * TODO
+   *
+   * @param experimentId
+   * @return
+   */
+  public List<ExperimentalVariable> loadVariablesForExperiment(ExperimentId experimentId) {
+    Objects.requireNonNull(experimentId);
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    return activeExperiment.variables();
+  }
+
+  /**
    * Adds species to an experiment.
    *
    * @param experimentId the Id of the experiment for which to add the species
@@ -53,9 +68,6 @@ public class ExperimentInformationService {
    * @see Experiment#addSpecies(Collection)
    */
   public void addSpeciesToExperiment(ExperimentId experimentId, Species... species) {
-    if (species.length < 1) {
-      return;
-    }
     Arrays.stream(species).forEach(Objects::requireNonNull);
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addSpecies(List.of(species));
@@ -70,9 +82,6 @@ public class ExperimentInformationService {
    * @see Experiment#addSpecimens(Collection)
    */
   public void addSpecimenToExperiment(ExperimentId experimentId, Specimen... specimens) {
-    if (specimens.length < 1) {
-      return;
-    }
     for (Specimen specimen : specimens) {
       Objects.requireNonNull(specimen);
     }
@@ -89,12 +98,25 @@ public class ExperimentInformationService {
    * @see Experiment#addAnalytes(Collection)
    */
   public void addAnalyteToExperiment(ExperimentId experimentId, Analyte... analytes) {
-    if (analytes.length < 1) {
-      return;
-    }
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addAnalytes(List.of(analytes));
+    experimentRepository.update(activeExperiment);
+  }
+
+  public void addVariableToExperiment(ExperimentId experimentId, String variableName,
+      String unit, List<String> levels) {
+    Objects.requireNonNull(variableName);
+    Objects.requireNonNull(levels);
+    if (levels.isEmpty()) {
+      throw new RuntimeException("no values given"); //TODO validate earlier
+    }
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    List<ExperimentalValue> experimentalValues = new ArrayList<>();
+    for (String level : levels) {
+      experimentalValues.add(ExperimentalValue.create(level, unit));
+    }
+    activeExperiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(activeExperiment);
   }
 

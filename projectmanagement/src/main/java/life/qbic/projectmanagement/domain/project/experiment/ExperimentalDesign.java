@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -146,6 +147,10 @@ public class ExperimentalDesign {
       // we could not add the level
       return Result.failure(addLevelResult.exception());
     }
+  }
+
+  List<ExperimentalVariable> variables() {
+    return Collections.unmodifiableList(variables);
   }
 
   private Optional<ExperimentalVariable> variableWithName(String variableName) {

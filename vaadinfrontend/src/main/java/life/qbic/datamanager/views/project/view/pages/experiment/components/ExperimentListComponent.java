@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -41,21 +40,24 @@ public class ExperimentListComponent extends Composite<CardLayout> {
   private static final long serialVersionUID = -2255999216830849632L;
   private static final String TITLE = "Experimental Design";
   private final Button createDesignButton = new Button("Add");
-  private final ExperimentCreationDialog experimentCreationDialog;
+
+  //ToDo Replace with entire dialog chain for adding experiment information and variable information as specified in prototype
+  private final AddVariableToExperimentDialog addVariableToExperimentDialog;
   private final transient Handler handler;
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentListComponent(@Autowired ExperimentCreationDialog experimentCreationDialog,
+  public ExperimentListComponent(
+      @Autowired AddVariableToExperimentDialog addVariableToExperimentDialog,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
 
-    Objects.requireNonNull(experimentCreationDialog);
+    Objects.requireNonNull(addVariableToExperimentDialog);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.experimentCreationDialog = experimentCreationDialog;
+    this.addVariableToExperimentDialog = addVariableToExperimentDialog;
     VerticalLayout contentLayout = new VerticalLayout();
     contentLayout.add(experiments);
     contentLayout.add(experimentalDesignAddCard);
@@ -118,10 +120,10 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     }
 
     private void openDialogueListener() {
-      createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open(projectId));
+      createDesignButton.addClickListener(clickEvent -> addVariableToExperimentDialog.open());
       experimentalDesignAddCard.addClickListener(
-          clickEvent -> experimentCreationDialog.open(projectId));
-      experimentCreationDialog.addOpenedChangeListener(event -> {
+          clickEvent -> addVariableToExperimentDialog.open());
+      addVariableToExperimentDialog.addOpenedChangeListener(event -> {
         if (!event.isOpened()) {
           experiments.getDataProvider().refreshAll();
         }

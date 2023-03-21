@@ -92,6 +92,10 @@ public class Experiment {
     return experimentalDesign.getLevel(variableName, value);
   }
 
+  public List<ExperimentalVariable> variables() {
+    return experimentalDesign.variables();
+  }
+
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is

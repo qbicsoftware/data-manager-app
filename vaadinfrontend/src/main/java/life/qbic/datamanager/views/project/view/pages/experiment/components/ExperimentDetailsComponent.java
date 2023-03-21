@@ -8,12 +8,12 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -22,9 +22,11 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.project.view.pages.experiment.components.AddVariableToExperimentDialog.ExperimentalVariableComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -32,6 +34,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -58,12 +62,15 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private Board summaryCardBoard;
   private Board sampleGroupsCardBoard;
   private CardLayout sampleOriginCard;
-  VerticalLayout speciesForm;
-  VerticalLayout specimenForm;
-  VerticalLayout analyteForm;
-  private CardLayout blockingVariableCard;
-  private CardLayout experimentalVariableCard;
+  private VerticalLayout speciesForm;
+  private VerticalLayout specimenForm;
+  private VerticalLayout analyteForm;
 
+  //Todo Move all cardLayouts into separate components.
+  private CardLayout blockingVariableCard;
+  private final ExperimentVariableCard experimentalVariableCard = new ExperimentVariableCard();
+  private Button addBlockingVariableButton;
+  private ExperimentId experimentId;
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -110,10 +117,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     summaryCardBoard = new Board();
     initSampleOriginCard();
     initBlockingVariableCard();
-    initExperimentalVariableCard();
-    Div div = new Div();
     Row topRow = new Row(sampleOriginCard, blockingVariableCard);
-    Row bottomRow = new Row(experimentalVariableCard, div);
+    Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
   }
@@ -132,29 +137,14 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     sampleOriginCard.addFields(sampleOriginLayout);
   }
 
-  private void initExperimentalVariableCard() {
-    experimentalVariableCard = new CardLayout();
-    experimentalVariableCard.addTitle("Experimental Variables");
-    //ToDo Replace this layout once backend with information is ready
-    VerticalLayout templateLayout = new VerticalLayout();
-    Span templateText = new Span("No Experimental Variables defined");
-    Button addButton = new Button("Add");
-    addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    templateLayout.add(templateText, addButton);
-    templateLayout.setAlignItems(Alignment.CENTER);
-    templateLayout.setSizeFull();
-    experimentalVariableCard.addFields(templateLayout);
-  }
-
   private void initBlockingVariableCard() {
     blockingVariableCard = new CardLayout();
     blockingVariableCard.addTitle("Blocking Variables");
-    //ToDo Replace this layout once backend with information is ready
     VerticalLayout templateLayout = new VerticalLayout();
     Span templateText = new Span("No Blocking Variable defined");
-    Button addButton = new Button("Add");
-    addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    templateLayout.add(templateText, addButton);
+    addBlockingVariableButton = new Button("Add");
+    addBlockingVariableButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    templateLayout.add(templateText, addBlockingVariableButton);
     templateLayout.setAlignItems(Alignment.CENTER);
     templateLayout.setSizeFull();
     blockingVariableCard.addFields(templateLayout);
@@ -171,12 +161,85 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     getContent().addClassNames(componentStyles);
   }
 
+
+  public static class Spinner extends ProgressBar {
+
+    public Spinner() {
+      super();
+      setIndeterminate(true);
+    }
+  }
+
   /**
    * Component logic for the {@link ExperimentDetailsComponent}
    */
+  private static class ExperimentVariableCard extends CardLayout {
+
+    public final AddVariableToExperimentDialog addVariableToExperimentDialog = new AddVariableToExperimentDialog();
+    private final Spinner loadingSpinner = new Spinner();
+    FormLayout experimentalVariablesFormLayout = new FormLayout();
+    VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
+    private final Button addExperimentalVariableButton = new Button("Add");
+
+    public ExperimentVariableCard() {
+      addFields(loadingSpinner);
+      addTitle("Experimental Variables");
+      initEmptyView();
+      initVariableView();
+      setAddExperimentalVariableButtonListener();
+      setSizeFull();
+    }
+
+    private void initVariableView() {
+      experimentalVariablesFormLayout.setSizeFull();
+      addFields(experimentalVariablesFormLayout);
+    }
+
+    private void initEmptyView() {
+      Span templateText = new Span("No Experimental Variables defined");
+      addExperimentalVariableButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      noExperimentalVariableLayout.add(templateText, addExperimentalVariableButton);
+      noExperimentalVariableLayout.setAlignItems(Alignment.CENTER);
+      noExperimentalVariableLayout.setSizeFull();
+      addFields(noExperimentalVariableLayout);
+    }
+
+    public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
+      if (experimentalVariables.isEmpty()) {
+        showEmptyView();
+      } else {
+        experimentalVariablesFormLayout.removeAll();
+        for (ExperimentalVariable experimentalVariable : experimentalVariables) {
+          VerticalLayout experimentalVariableLayout = new VerticalLayout();
+          experimentalVariablesFormLayout.addFormItem(experimentalVariableLayout,
+              experimentalVariable.name().value());
+          experimentalVariable.levels()
+              .forEach(level -> experimentalVariableLayout.add(new Span(level.value())));
+        }
+        showVariablesView();
+      }
+    }
+
+    private void setAddExperimentalVariableButtonListener() {
+      addExperimentalVariableButton.addClickListener(event -> addVariableToExperimentDialog.open());
+    }
+
+    private void showEmptyView() {
+      loadingSpinner.setVisible(false);
+      experimentalVariablesFormLayout.setVisible(false);
+      noExperimentalVariableLayout.setVisible(true);
+    }
+
+    private void showVariablesView() {
+      loadingSpinner.setVisible(false);
+      noExperimentalVariableLayout.setVisible(false);
+      experimentalVariablesFormLayout.setVisible(true);
+    }
+
+  }
+
   private final class Handler {
 
-    private ProjectId projectId;
     private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
 
@@ -184,11 +247,10 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
         ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
-
+      configureDialogButtons();
     }
 
     public void setProjectId(ProjectId projectId) {
-      this.projectId = projectId;
       projectInformationService.find(projectId.value())
           .ifPresentOrElse(this::getActiveExperimentFromProject, this::emptyAction);
     }
@@ -199,6 +261,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void loadExperimentInformation(Experiment experiment) {
+      experimentId = experiment.experimentId();
       getContent().addTitle(experiment.getName());
       loadTagInformation(experiment);
       loadSampleOriginInformation(experiment);
@@ -211,19 +274,18 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       experiment.getSpecies().forEach(species -> tagLayout.add(new Span(species.value())));
       experiment.getSpecimens().forEach(specimen -> tagLayout.add(new Span(specimen.value())));
       experiment.getAnalytes().forEach(analyte -> tagLayout.add(new Span(analyte.value())));
-      initTagButton();
+      initTagPlusButton();
     }
 
     //Todo what should be added here? Additional separate button building and functionality
-    private void initTagButton() {
+    private void initTagPlusButton() {
       Icon plusIcon = LumoIcon.PLUS.create();
       plusIcon.addClassNames(IconSize.SMALL);
       tagLayout.add(plusIcon);
-      tagLayout.getChildren()
-          .forEach(component -> {
-            component.getElement().getThemeList().add("badge small");
-            component.getElement().getThemeList().add(FontSize.SMALL);
-          });
+      tagLayout.getChildren().forEach(component -> {
+        component.getElement().getThemeList().add("badge small");
+        component.getElement().getThemeList().add(FontSize.SMALL);
+      });
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {
@@ -236,13 +298,30 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       experiment.getAnalytes().forEach(analyte -> analyteForm.add(new Span(analyte.value())));
     }
 
-    private void loadBlockingVariableInformation() {
-      //ToDo load information from backend once implemented
+    //ToDo should this be moved to the Card component?
+    private void configureDialogButtons() {
+      experimentalVariableCard.addVariableToExperimentDialog.addVariablesButton.addClickListener(
+          event -> addExperimentalVariableToExperiment());
+    }
+
+    //ToDo should this be moved to the Card component?
+    private void addExperimentalVariableToExperiment() {
+      for (ExperimentalVariableComponent row : experimentalVariableCard.addVariableToExperimentDialog.experimentalVariablesLayoutRows) {
+        experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
+            row.getUnit(), row.getValues());
+      }
+      experimentalVariableCard.addVariableToExperimentDialog.close();
+      loadExperimentalVariableInformation();
     }
 
     private void loadExperimentalVariableInformation() {
-      //Todo load information from backend once implemented
+      List<ExperimentalVariable> experimentalVariables = experimentInformationService.loadVariablesForExperiment(
+          experimentId);
+      experimentalVariableCard.setExperimentalVariables(experimentalVariables);
+    }
 
+    private void loadBlockingVariableInformation() {
+      //ToDo load information from backend once implemented
     }
 
     //ToDo what should happen in the UI if neither project nor experiment has been found?
