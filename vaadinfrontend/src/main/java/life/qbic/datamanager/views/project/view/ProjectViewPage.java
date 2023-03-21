@@ -44,17 +44,21 @@ public class ProjectViewPage extends Div implements
       @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
   ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
       experimentalDesignDetailComponent) {
+
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
+
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
+
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent,
         experimentalDesignDetailComponent);
+
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -69,10 +73,12 @@ public class ProjectViewPage extends Div implements
       ProjectLinksComponent projectLinksComponent,
       ExperimentalDesignDetailComponent
           experimentalDesignDetailComponent) {
+
     projectNavigationBarComponent.setStyles("project-navigation-component");
+
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
-    //Todo Determine if we want to have seperate styles for each component
+    //Todo Determine if we want to have separate styles for each component
     experimentalDesignDetailComponent.setStyles("experimental-design-component");
   }
 

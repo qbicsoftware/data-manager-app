@@ -77,6 +77,7 @@ public class CardLayout extends VerticalLayout {
     leftLayout.setMargin(false);
     leftLayout.setAlignItems(Alignment.START);
     leftLayout.setSizeFull();
+
     rightLayout.setPadding(false);
     rightLayout.setMargin(false);
     rightLayout.setAlignItems(Alignment.END);
