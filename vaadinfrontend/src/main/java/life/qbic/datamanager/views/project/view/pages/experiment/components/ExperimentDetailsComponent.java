@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.pages.experiment.components.AddVariableToExperimentDialog.ExperimentalVariableComponent;
+import life.qbic.datamanager.views.project.view.pages.experiment.components.AddVariableToExperimentDialog.ExperimentalVariableRowLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -69,7 +69,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
   //Todo Move all cardLayouts into separate components.
   private CardLayout blockingVariableCard;
-  private final ExperimentVariableCard experimentalVariableCard = new ExperimentVariableCard();
+  private final ExperimentalVariableCard experimentalVariableCard = new ExperimentalVariableCard();
   private Button addBlockingVariableButton;
   private ExperimentId experimentId;
 
@@ -231,7 +231,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
     //ToDo should this be moved to the Card component?
     private void addExperimentalVariableToExperiment() {
-      for (ExperimentalVariableComponent row : experimentalVariableCard.addVariableToExperimentDialog.experimentalVariablesLayoutRows) {
+      for (ExperimentalVariableRowLayout row : experimentalVariableCard.addVariableToExperimentDialog.experimentalVariablesLayoutRows) {
         experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
             row.getUnit(), row.getValues());
       }

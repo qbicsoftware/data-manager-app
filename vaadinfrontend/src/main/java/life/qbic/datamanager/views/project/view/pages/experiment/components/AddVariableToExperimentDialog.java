@@ -21,9 +21,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+
 /**
- * A dialog for experiment creation.
+ * <b>AddVariableToExperimentDialog</b>
+ *
+ * <p>Dialog Component to define and add
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} to an
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}. It's employed within
+ * the {@link ExperimentalVariableCard} which handles the actual service logic.
  */
+
 @SpringComponent
 @UIScope
 public class AddVariableToExperimentDialog extends Dialog {
@@ -32,56 +39,10 @@ public class AddVariableToExperimentDialog extends Dialog {
   private final VerticalLayout dialogueContentLayout = new VerticalLayout();
   private final HorizontalLayout navHeaderLayout = new HorizontalLayout();
   private final VerticalLayout experimentalVariableRowsContainerLayout = new VerticalLayout();
-  public final List<ExperimentalVariableComponent> experimentalVariablesLayoutRows = new ArrayList<>();
+  public final List<ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
   private final HorizontalLayout addExperimentalVariableLayoutRow = new HorizontalLayout();
   public final Button addVariablesButton = new Button("Add");
   public final Button cancelButton = new Button("Cancel");
-
-  static class ExperimentalVariableComponent extends HorizontalLayout {
-
-    private final TextField nameField = new TextField("Experimental Variable");
-    private final TextField unitField = new TextField("Unit");
-    private final TextArea levelArea = new TextArea("Levels");
-    private final Icon deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
-    private Registration clickListener;
-
-    private ExperimentalVariableComponent() {
-      init();
-    }
-
-    public String getVariableName() {
-      return nameField.getValue();
-    }
-
-    public String getUnit() {
-      return unitField.getValue();
-    }
-
-    public List<String> getValues() {
-      return levelArea.getValue().lines().filter(it -> !it.isBlank()).toList();
-    }
-
-    private record CloseEvent(ExperimentalVariableComponent origin) {
-
-    }
-
-    public void setCloseListener(Consumer<CloseEvent> closeListener) {
-      if (Objects.nonNull(clickListener)) {
-        clickListener.remove();
-      }
-      clickListener = deleteIcon.addClickListener(it -> closeListener.accept(new CloseEvent(this)));
-    }
-
-    private void init() {
-      FormLayout experimentalVariableFieldsLayout = new FormLayout();
-      experimentalVariableFieldsLayout.add(nameField, unitField, levelArea);
-      experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
-      //ToDo updating the list should automatically update the parentLayout (virtualList?)
-      add(experimentalVariableFieldsLayout, deleteIcon);
-      setAlignItems(Alignment.CENTER);
-    }
-
-  }
 
   public AddVariableToExperimentDialog() {
     configureDialogLayout();
@@ -119,16 +80,16 @@ public class AddVariableToExperimentDialog extends Dialog {
   }
 
   private void appendEmptyRow() {
-    appendRow(new ExperimentalVariableComponent());
+    appendRow(new ExperimentalVariableRowLayout());
   }
 
-  private void appendRow(ExperimentalVariableComponent component) {
+  private void appendRow(ExperimentalVariableRowLayout component) {
     component.setCloseListener(it -> removeRow(it.origin()));
     this.experimentalVariablesLayoutRows.add(component);
     experimentalVariableRowsContainerLayout.add(component);
   }
 
-  private void removeRow(ExperimentalVariableComponent component) {
+  private void removeRow(ExperimentalVariableRowLayout component) {
     boolean wasRemoved = this.experimentalVariablesLayoutRows.remove(component);
     if (wasRemoved) {
       experimentalVariableRowsContainerLayout.remove(component);
@@ -180,6 +141,52 @@ public class AddVariableToExperimentDialog extends Dialog {
     public void resetandClose() {
       close();
       reset();
+    }
+
+  }
+
+  static class ExperimentalVariableRowLayout extends HorizontalLayout {
+
+    private final TextField nameField = new TextField("Experimental Variable");
+    private final TextField unitField = new TextField("Unit");
+    private final TextArea levelArea = new TextArea("Levels");
+    private final Icon deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
+    private Registration clickListener;
+
+    private ExperimentalVariableRowLayout() {
+      init();
+    }
+
+    public String getVariableName() {
+      return nameField.getValue();
+    }
+
+    public String getUnit() {
+      return unitField.getValue();
+    }
+
+    public List<String> getValues() {
+      return levelArea.getValue().lines().filter(it -> !it.isBlank()).toList();
+    }
+
+    private record CloseEvent(ExperimentalVariableRowLayout origin) {
+
+    }
+
+    public void setCloseListener(Consumer<CloseEvent> closeListener) {
+      if (Objects.nonNull(clickListener)) {
+        clickListener.remove();
+      }
+      clickListener = deleteIcon.addClickListener(it -> closeListener.accept(new CloseEvent(this)));
+    }
+
+    private void init() {
+      FormLayout experimentalVariableFieldsLayout = new FormLayout();
+      experimentalVariableFieldsLayout.add(nameField, unitField, levelArea);
+      experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
+      //ToDo updating the list should automatically update the parentLayout (virtualList?)
+      add(experimentalVariableFieldsLayout, deleteIcon);
+      setAlignItems(Alignment.CENTER);
     }
 
   }

@@ -21,14 +21,14 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
  */
 
 
-public class ExperimentVariableCard extends CardLayout {
+public class ExperimentalVariableCard extends CardLayout {
 
   public final AddVariableToExperimentDialog addVariableToExperimentDialog = new AddVariableToExperimentDialog();
   FormLayout experimentalVariablesFormLayout = new FormLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
   private final Button addExperimentalVariableButton = new Button("Add");
 
-  public ExperimentVariableCard() {
+  public ExperimentalVariableCard() {
     addTitle("Experimental Variables");
     initEmptyView();
     initVariableView();
