@@ -37,7 +37,6 @@ public class AddVariableToExperimentDialog extends Dialog {
 
   private final Handler handler;
   private final VerticalLayout dialogueContentLayout = new VerticalLayout();
-  private final HorizontalLayout navHeaderLayout = new HorizontalLayout();
   private final VerticalLayout experimentalVariableRowsContainerLayout = new VerticalLayout();
   public final List<ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
   private final HorizontalLayout addExperimentalVariableLayoutRow = new HorizontalLayout();
@@ -58,17 +57,11 @@ public class AddVariableToExperimentDialog extends Dialog {
   }
 
   private void initDialogueContent() {
-    initNavHeader();
     initDefineExperimentalVariableLayout();
     initDesignVariableTemplate();
-    dialogueContentLayout.add(navHeaderLayout);
     dialogueContentLayout.add(experimentalVariableRowsContainerLayout);
     dialogueContentLayout.add(addExperimentalVariableLayoutRow);
     add(dialogueContentLayout);
-  }
-
-  private void initNavHeader() {
-    //ToDo Init Dialogue Navbar content
   }
 
   private void initDefineExperimentalVariableLayout() {
@@ -104,7 +97,6 @@ public class AddVariableToExperimentDialog extends Dialog {
     unitField.setEnabled(false);
     levelField.setEnabled(false);
     Icon plusIcon = new Icon(VaadinIcon.PLUS);
-    //ToDo updating the list should automatically update the parentLayout (observable list?)
     plusIcon.addClickListener(iconClickEvent -> appendEmptyRow());
     FormLayout experimentalVariableFieldsLayout = new FormLayout();
     experimentalVariableFieldsLayout.add(experimentalVariableField, unitField, levelField);
