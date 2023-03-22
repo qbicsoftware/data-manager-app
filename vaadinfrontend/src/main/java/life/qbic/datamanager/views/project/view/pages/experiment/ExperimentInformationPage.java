@@ -17,11 +17,12 @@ import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Experiment Information page
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * This page hosts the components necessary to show and update the
+ * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} information associated
+ * with a {@link life.qbic.projectmanagement.domain.project.Project} via the provided
+ * {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
  */
 
 @SpringComponent

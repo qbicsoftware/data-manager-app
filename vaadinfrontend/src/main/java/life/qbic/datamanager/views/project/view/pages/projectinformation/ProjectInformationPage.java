@@ -17,12 +17,13 @@ import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Project Information page
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * This page hosts the components necessary to show and update the actual
+ * {@link life.qbic.projectmanagement.domain.project.Project} information associated with a provided
+ * {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
  */
+
 @SpringComponent
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
