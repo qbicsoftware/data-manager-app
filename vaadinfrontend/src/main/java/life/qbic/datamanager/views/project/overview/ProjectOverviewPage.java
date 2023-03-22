@@ -6,7 +6,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.project.overview.components.ProjectOverviewComponent;

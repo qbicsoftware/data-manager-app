@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.project.view;
 
 import java.util.Objects;
+
 import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDetailComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;

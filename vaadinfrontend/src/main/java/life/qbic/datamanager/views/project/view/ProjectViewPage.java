@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.project.view;
 
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.ErrorParameter;
@@ -45,12 +46,18 @@ public class ProjectViewPage extends Div implements
   ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
       experimentalDesignDetailComponent) {
 
+
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
 
+    Span projectTitle = new Span("QABCD: "+"Some Title is here");
+    projectTitle.addClassNames("text-3xl","title-component");
+
+    addComponentAsFirst(projectTitle);
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
+
 
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
