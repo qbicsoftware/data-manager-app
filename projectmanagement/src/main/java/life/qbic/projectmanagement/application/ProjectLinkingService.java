@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectLinkingService {
 
-  Logger log = logger(ProjectLinkingService.class);
+  private static final Logger log = logger(ProjectLinkingService.class);
   private final ProjectRepository projectRepository;
   private final OfferSearchService offerSearchService;
 

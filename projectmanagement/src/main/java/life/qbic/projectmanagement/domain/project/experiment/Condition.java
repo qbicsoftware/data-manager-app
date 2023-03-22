@@ -1,11 +1,18 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
+import javax.persistence.Convert;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ConditionLabelAttributeConverter;
 
 /**
  * <b>Condition</b>
@@ -27,87 +34,111 @@ import java.util.stream.Collectors;
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions in an experimental design can be defined via {@link ExperimentalDesign#createCondition(VariableLevel[])}.
+ * Conditions in an experimental design can be defined via {@link Experiment#defineCondition(String, VariableLevel[])}.
  * <p>
  *
  * @since 1.0.0
  */
+@Entity(name = "conditions")
+//IMPORTANT: do not name the table condition; condition is a reserved keyword
 public class Condition {
 
-  private final List<VariableLevel<ExperimentalValue>> definedVariables;
+  @Id
+  @GeneratedValue
+  private long conditionId;
 
-  private final Long id;
+  @Convert(converter = ConditionLabelAttributeConverter.class)
+  private ConditionLabel label;
+
+  @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
+  private List<VariableLevel> variableLevels;
+
+  protected Condition() {
+    //used by jpa
+  }
 
   /**
    * Creates a new instance of a condition object with one or more {@link VariableLevel} defining
    * the level of an experimental variable.
    *
+   * @param label            the label of the condition unique in the context of the experiment.
    * @param definedVariables the linear combination of experimental variable levels
    * @return the condition
    * @since 1.0.0
    */
-  @SafeVarargs
-  public static Condition create(VariableLevel<ExperimentalValue>... definedVariables) {
-    Arrays.stream(definedVariables).forEach(Objects::requireNonNull);
-
-    if (definedVariables.length < 1) {
-      throw new IllegalArgumentException("Please define at least one variable level.");
-    }
-
-    int distinctExperimentVariables = Arrays.stream(definedVariables)
-        .map(VariableLevel::experimentalVariable).collect(
-            Collectors.toSet()).size();
-    if (distinctExperimentVariables < definedVariables.length) {
-      throw new IllegalArgumentException(
-          "Variable levels are not from distinct experimental variables.");
-    }
-
-    return new Condition(new Random().nextLong(), definedVariables);
+  public static Condition create(String label,
+      VariableLevel... definedVariables) {
+    return new Condition(label, definedVariables);
   }
 
 
-  @SafeVarargs
-  private Condition(Long id, VariableLevel<ExperimentalValue>... definedVariables) {
-    this.id = id;
-    this.definedVariables = Arrays.stream(definedVariables).toList();
+  private Condition(String label, VariableLevel... variableLevels) {
+    Arrays.stream(variableLevels).forEach(Objects::requireNonNull);
+    Objects.requireNonNull(label, "condition label must not be null");
+
+    if (variableLevels.length < 1) {
+      throw new IllegalArgumentException("Please define at least one variable level.");
+    }
+
+    int distinctExperimentVariables = Arrays.stream(variableLevels)
+        .map(VariableLevel::variableName)
+        .collect(Collectors.toSet())
+        .size();
+    if (distinctExperimentVariables < variableLevels.length) {
+      throw new IllegalArgumentException(
+          "Variable levels are not from distinct experimental variables.");
+    }
+    this.label = ConditionLabel.create(label);
+    this.variableLevels = Arrays.stream(variableLevels).toList();
   }
 
   /**
    * Queries the {@link ExperimentalValue} of an experimental variable. If the condition does not
    * contain a value for the experimental variable, the result will be empty.
    *
-   * @param experimentalVariable the experimental variable to look for
+   * @param variableName the experimental variable to look for
    * @return the value if present, else empty
    * @since 1.0.0
    */
-  public Optional<ExperimentalValue> valueOf(
-      ExperimentalVariable<ExperimentalValue> experimentalVariable) {
-    return definedVariables.stream().filter(
-            variableValue -> variableValue.experimentalVariable().name()
-                .equals(experimentalVariable.name()))
+  public Optional<ExperimentalValue> valueOf(String variableName) {
+    return variableLevels.stream()
+        .filter(level -> level.variableName().value().equals(variableName))
         .map(VariableLevel::experimentalValue).findAny();
   }
 
   /**
-   * Lists all available experimental variables in the condition.
-   *
-   * @return A list of the experimental variables
-   * @since 1.0.0
+   * @return the label of the condition
    */
-  public List<ExperimentalVariable<ExperimentalValue>> experimentalVariables() {
-    return definedVariables.stream().map(VariableLevel::experimentalVariable).toList();
+  public ConditionLabel label() {
+    return label;
   }
 
   /**
-   * The identifier of the condition.
+   * Compares the defined {@link VariableLevel}s to the {@link VariableLevel}s of the other
+   * condition. Ignores the order of the levels in the condition.
    *
-   * @return
-   * @since 1.0.0
+   * @param other the other condition to compare the content of
+   * @return true if <code>other</code> has the same levels defined; false otherwise
    */
-  public Long id() {
-    return this.id;
+  public boolean hasSameLevelsDefined(Condition other) {
+    if (Objects.isNull(other)) {
+      return false;
+    }
+    Comparator<VariableLevel> variableNameComparator = Comparator.comparing(
+        l -> l.variableName().value());
+    List<VariableLevel> sortedLevels = variableLevels.stream().sorted(variableNameComparator)
+        .toList();
+    return sortedLevels.equals(
+        other.variableLevels.stream().sorted(variableNameComparator).toList());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * ATTENTION: conditions are compared by their identity. They are neither compared by their label
+   * nor by the levels they define. To compare the levels a condition defines please use
+   * {@link Condition#hasSameLevelsDefined(Condition)}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -116,12 +147,21 @@ public class Condition {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+
     Condition condition = (Condition) o;
-    return id.equals(condition.id);
+
+    return conditionId == condition.conditionId;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * ATTENTION: conditions are compared by their identity. They are neither compared by their label
+   * nor by the levels they define. To compare the levels a condition defines please us
+   * {@link Condition#hasSameLevelsDefined(Condition)}
+   */
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return (int) (conditionId ^ (conditionId >>> 32));
   }
 }

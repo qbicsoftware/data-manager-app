@@ -3,6 +3,7 @@ package life.qbic.authorization;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -32,6 +33,17 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
   @Override
   public boolean hasPermission(Authentication authentication, Object targetDomainObject,
       Object permission) {
+    if (Objects.isNull(targetDomainObject)) {
+      return false;
+    }
+    Object domainObject = targetDomainObject;
+    if (targetDomainObject instanceof Optional<?>) {
+      if (((Optional<?>) targetDomainObject).isEmpty()) {
+        return true; // intentionally empty
+      } else {
+        domainObject = ((Optional<?>) targetDomainObject).get();
+      }
+    }
     Objects.requireNonNull(authentication, "Authentication must not be null");
     String requiredAuthority = permission.toString();
     List<String> loadedAuthorities = authentication.getAuthorities().stream()
@@ -42,20 +54,18 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
     if (loadedAuthorities.contains(requiredAuthority)) {
       return true;
     }
-    if (targetDomainObject instanceof Project) {
+    if (domainObject instanceof Project) {
       QbicUserDetails principal = (QbicUserDetails) authentication.getPrincipal();
       if (qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
-          ((Project) targetDomainObject).getId(), new SimpleGrantedAuthority(requiredAuthority))) {
+          ((Project) domainObject).getId(), new SimpleGrantedAuthority(requiredAuthority))) {
         return true;
       }
     }
-    if (targetDomainObject instanceof ProjectPreview) {
+    if (domainObject instanceof ProjectPreview) {
       QbicUserDetails principal = (QbicUserDetails) authentication.getPrincipal();
-      if (qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
-          ((ProjectPreview) targetDomainObject).projectId(),
-          new SimpleGrantedAuthority(requiredAuthority))) {
-        return true;
-      }
+      return qbicProjectPermissionEvaluator.hasPermission(principal.getUserId(),
+          ((ProjectPreview) domainObject).projectId(),
+          new SimpleGrantedAuthority(requiredAuthority));
     }
     return false;
   }

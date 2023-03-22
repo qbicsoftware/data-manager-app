@@ -20,7 +20,19 @@ public abstract class ApplicationException extends RuntimeException {
     GENERAL,
     INVALID_EXPERIMENTAL_DESIGN,
     INVALID_PROJECT_OBJECTIVE,
-    INVALID_PROJECT_TITLE
+    INVALID_PROJECT_TITLE,
+    INVALID_PROJECT_CODE,
+    DUPLICATE_PROJECT_CODE,
+    UNDEFINED_VARIABLE_LEVEL,
+    NO_SPECIES_DEFINED,
+    NO_SPECIMEN_DEFINED,
+    NO_ANALYTE_DEFINED,;
+
+    @Override
+    public String toString() {
+      return this.getClass().getSimpleName() + "." + this.name();
+    }
+
   }
 
   public record ErrorParameters(Object[] value) {
@@ -115,5 +127,14 @@ public abstract class ApplicationException extends RuntimeException {
 
   public ErrorParameters errorParameters() {
     return errorParameters;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", ApplicationException.class.getSimpleName() + "[", "]")
+        .add("message=" + getMessage())
+        .add("errorCode=" + errorCode)
+        .add("errorParameters=" + errorParameters)
+        .toString();
   }
 }

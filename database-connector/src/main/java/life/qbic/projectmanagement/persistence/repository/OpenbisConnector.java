@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.persistence.repository;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -7,26 +9,28 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationEx
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.DeleteProjectsOperation;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.delete.ProjectDeletionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.id.ProjectIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Basic implementation to query project preview information
@@ -45,11 +49,40 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
-                           @Value("${openbis.user.password}") String password,
-                           @Value("${openbis.datasource.url}") String url) {
+      @Value("${openbis.user.password}") String password,
+      @Value("${openbis.datasource.url}") String url) {
     openBisClient = new OpenBisClient(
-            userName, password, url);
-    openBisClient.login();
+        userName, password, url);
+    try {
+      login();
+    } catch (RuntimeException e) {
+      if (!(e instanceof ConnectionException)) {
+        log.error("Unexpected runtime exception", e);
+      }
+      throw new RuntimeException("Could not establish a connection to a data connector.");
+    }
+  }
+
+  private void login() throws RuntimeException {
+    try {
+      openBisClient.login();
+    } catch (Exception e) {
+      // login must not throw any exceptions.
+      // so if we log it and return a more generic exception to not expose
+      // implementation details
+      log.error("Connection to openBIS was not established", e);
+      throw new ConnectionException();
+    }
+    // If the connection is not active, fail early
+    if (isNotConnected()) {
+      log.error("Login to openBIS was not successful, correct credentials?");
+      throw new ConnectionException();
+    }
+  }
+
+  private boolean isNotConnected() {
+    return Objects.isNull(openBisClient.getSessionToken()) || openBisClient.getSessionToken()
+        .isEmpty();
   }
 
   private List<VocabularyTerm> getVocabularyTermsForCode(VocabularyCode vocabularyCode) {
@@ -78,10 +111,10 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   @Override
-  public List<Organism> retrieveOrganisms() {
-    return getVocabularyTermsForCode(VocabularyCode.ORGANISM).stream()
+  public List<Species> retrieveSpecies() {
+    return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
         .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Organism::new).toList();
+        .map(Species::new).toList();
   }
 
   @Override
@@ -111,6 +144,19 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     handleOperations(operation);
   }
 
+  private void deleteOpenbisProject(ProjectCode projectCode) {
+    ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
+    deletionOptions.setReason("unknown reason in data-manager");
+    //OpenBis expects the projectspace and code during deletion
+    ProjectIdentifier projectIdentifier = new ProjectIdentifier(DEFAULT_SPACE_CODE,
+        projectCode.value());
+    List<ProjectIdentifier> openBisProjectsIds = new ArrayList<>();
+    openBisProjectsIds.add(projectIdentifier);
+    DeleteProjectsOperation operation = new DeleteProjectsOperation(openBisProjectsIds,
+        deletionOptions);
+    handleOperations(operation);
+  }
+
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
 
@@ -130,8 +176,18 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   @Override
+  public void delete(ProjectCode projectCode) {
+    deleteOpenbisProject(projectCode);
+  }
+
+  @Override
   public boolean projectExists(ProjectCode projectCode) {
     return !searchProjectsByCode(projectCode.toString()).isEmpty();
+  }
+
+  // Convenience RTE to describe connection issues
+  class ConnectionException extends RuntimeException {
+
   }
 
 }

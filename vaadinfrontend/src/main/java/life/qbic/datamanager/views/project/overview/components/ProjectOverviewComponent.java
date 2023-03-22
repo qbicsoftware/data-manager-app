@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -20,7 +19,6 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -37,12 +35,11 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.exceptionhandlers.ApplicationExceptionHandler;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
@@ -57,7 +54,7 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Organism;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,8 +77,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog();
   private final ClientDetailsProvider clientDetailsProvider;
-  private static final String PROJECT_VIEW_URL = RouteConfiguration.forSessionScope()
-      .getUrl(ProjectViewPage.class, "");
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
       @Autowired OfferLookupService offerLookupService,
@@ -89,16 +84,15 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ProjectCreationService projectCreationService,
       @Autowired PersonSearchService personSearchService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
-      @Autowired ApplicationExceptionHandler exceptionHandler) {
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
     new Handler(offerLookupService,
         projectRepository,
         projectInformationService,
         projectCreationService,
         personSearchService,
-        experimentalDesignSearchService,
-        exceptionHandler);
+        experimentalDesignSearchService
+    );
     layoutComponents();
   }
 
@@ -119,12 +113,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectCode())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectCode())))
         .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(PROJECT_VIEW_URL + item.projectId().value(), item.projectTitle())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectTitle())))
         .setHeader("Title")
         .setKey("projectTitle");
 
@@ -157,7 +151,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   private class Handler {
 
     private static final Logger log = logger(Handler.class);
-    private final ApplicationExceptionHandler exceptionHandler;
     private final OfferLookupService offerLookupService;
     private final ExperimentalDesignSearchService experimentalDesignSearchService;
     private final ProjectCreationService projectCreationService;
@@ -172,8 +165,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         ProjectInformationService projectInformationService,
         ProjectCreationService projectCreationService,
         PersonSearchService personSearchService,
-        ExperimentalDesignSearchService experimentalDesignSearchService,
-        ApplicationExceptionHandler exceptionHandler) {
+        ExperimentalDesignSearchService experimentalDesignSearchService) {
 
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
@@ -191,9 +183,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
       Objects.requireNonNull(experimentalDesignSearchService);
       this.experimentalDesignSearchService = experimentalDesignSearchService;
-
-      Objects.requireNonNull(exceptionHandler);
-      this.exceptionHandler = exceptionHandler;
 
       configurePageButtons();
       configureProjectCreationDialog();
@@ -246,6 +235,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void createClicked() {
+      String codeFieldValue = projectInformationDialog.getCode();
       String titleFieldValue = projectInformationDialog.getTitle();
       String objectiveFieldValue = projectInformationDialog.getObjective();
       String experimentalDesignDescription = projectInformationDialog.getExperimentalDesign();
@@ -261,17 +251,23 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectInformationDialog.responsiblePerson.getValue() != null
               ? projectInformationDialog.responsiblePerson.getValue() : null;
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(
-          titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
-          projectManager, principalInvestigator, responsiblePerson);
+      List<Analyte> analytes = projectInformationDialog.analyteBox.getSelectedItems().stream()
+          .toList();
+      List<Species> species = projectInformationDialog.speciesBox.getSelectedItems().stream()
+          .toList();
+      List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
+          .toList();
 
-      project.ifSuccessOrElse(
+      Result<Project, ApplicationException> project = projectCreationService.createProject(codeFieldValue,
+          titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
+          projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
+
+      project.ifSuccessOrElseThrow(
           result -> {
             displaySuccessfulProjectCreationNotification();
             projectInformationDialog.resetAndClose();
             projectGrid.getDataProvider().refreshAll();
-          },
-          applicationException -> exceptionHandler.handle(UI.getCurrent(), applicationException));
+          });
     }
 
     private void displaySuccessfulProjectCreationNotification() {
@@ -305,7 +301,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       });
     }
 
-
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(query ->
           personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
@@ -326,10 +321,10 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      projectInformationDialog.organismBox.setItems(
-          experimentalDesignSearchService.retrieveOrganisms().stream()
-              .sorted(Comparator.comparing(Organism::label)).toList());
-      projectInformationDialog.organismBox.setItemLabelGenerator(Organism::value);
+      projectInformationDialog.speciesBox.setItems(
+          experimentalDesignSearchService.retrieveSpecies().stream()
+              .sorted(Comparator.comparing(Species::label)).toList());
+      projectInformationDialog.speciesBox.setItemLabelGenerator(Species::value);
       projectInformationDialog.specimenBox.setItems(
           experimentalDesignSearchService.retrieveSpecimens().stream()
               .sorted(Comparator.comparing(Specimen::label)).toList());

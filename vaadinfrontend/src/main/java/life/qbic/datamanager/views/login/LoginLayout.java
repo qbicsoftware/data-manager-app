@@ -16,6 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Login")
-@Route(value = "login", layout = LandingPageLayout.class)
+@Route(value = AppRoutes.LOGIN, layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
