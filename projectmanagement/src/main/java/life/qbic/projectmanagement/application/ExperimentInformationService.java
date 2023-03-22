@@ -49,18 +49,6 @@ public class ExperimentInformationService {
   }
 
   /**
-   * TODO
-   *
-   * @param experimentId
-   * @return
-   */
-  public List<ExperimentalVariable> loadVariablesForExperiment(ExperimentId experimentId) {
-    Objects.requireNonNull(experimentId);
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    return activeExperiment.variables();
-  }
-
-  /**
    * Adds species to an experiment.
    *
    * @param experimentId the Id of the experiment for which to add the species
@@ -152,6 +140,20 @@ public class ExperimentInformationService {
   public Collection<Specimen> getSpecimensOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecimens();
+  }
+
+  /**
+   * Retrieve all {@link ExperimentalVariable} defined for an experiment.
+   *
+   * @param experimentId the {@link ExperimentId} of the {@link Experiment} for which the
+   *                     {@link ExperimentalVariable} should be retrieved
+   * @return a list of {@link ExperimentalVariable} associated with the {@link Experiment} with the
+   * {@link ExperimentId}
+   */
+  public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
+    Objects.requireNonNull(experimentId);
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    return activeExperiment.variables();
   }
 
 }

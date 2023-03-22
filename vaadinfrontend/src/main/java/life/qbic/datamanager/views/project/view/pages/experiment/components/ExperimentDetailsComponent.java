@@ -240,7 +240,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void loadExperimentalVariableInformation() {
-      List<ExperimentalVariable> experimentalVariables = experimentInformationService.loadVariablesForExperiment(
+      List<ExperimentalVariable> experimentalVariables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
       experimentalVariableCard.setExperimentalVariables(experimentalVariables);
     }
