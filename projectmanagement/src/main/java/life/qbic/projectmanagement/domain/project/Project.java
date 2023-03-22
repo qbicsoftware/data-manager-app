@@ -267,8 +267,8 @@ public class Project {
     return principalInvestigator;
   }
 
-  public PersonReference getResponsiblePerson() {
-    return responsiblePerson;
+  public Optional<PersonReference> getResponsiblePerson() {
+    return Optional.ofNullable(responsiblePerson);
   }
 
   public ExperimentId activeExperiment() {

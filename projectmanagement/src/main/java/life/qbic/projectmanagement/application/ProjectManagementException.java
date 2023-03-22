@@ -43,4 +43,13 @@ public class ProjectManagementException extends ApplicationException {
       boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace, errorCode, errorParameters);
   }
+
+  public static ProjectManagementException wrapping(String message, Exception e) {
+    if (e instanceof ApplicationException) {
+      return new ProjectManagementException(message, e, ((ApplicationException) e).errorCode(),
+          ((ApplicationException) e).errorParameters());
+    } else {
+      return new ProjectManagementException(message, e);
+    }
+  }
 }

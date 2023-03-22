@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -121,14 +120,16 @@ public class Condition {
    * @param other the other condition to compare the content of
    * @return true if <code>other</code> has the same levels defined; false otherwise
    */
-  public boolean hasIdenticalContent(Condition other) {
+  public boolean hasSameLevelsDefined(Condition other) {
     if (Objects.isNull(other)) {
       return false;
     }
     Comparator<VariableLevel> variableNameComparator = Comparator.comparing(
         l -> l.variableName().value());
-    Stream<VariableLevel> sortedLevels = variableLevels.stream().sorted(variableNameComparator);
-    return sortedLevels.equals(other.variableLevels.stream().sorted(variableNameComparator));
+    List<VariableLevel> sortedLevels = variableLevels.stream().sorted(variableNameComparator)
+        .toList();
+    return sortedLevels.equals(
+        other.variableLevels.stream().sorted(variableNameComparator).toList());
   }
 
   /**
@@ -136,7 +137,7 @@ public class Condition {
    * <p>
    * ATTENTION: conditions are compared by their identity. They are neither compared by their label
    * nor by the levels they define. To compare the levels a condition defines please use
-   * {@link Condition#hasIdenticalContent(Condition)}
+   * {@link Condition#hasSameLevelsDefined(Condition)}
    */
   @Override
   public boolean equals(Object o) {
@@ -157,7 +158,7 @@ public class Condition {
    * <p>
    * ATTENTION: conditions are compared by their identity. They are neither compared by their label
    * nor by the levels they define. To compare the levels a condition defines please us
-   * {@link Condition#hasIdenticalContent(Condition)}
+   * {@link Condition#hasSameLevelsDefined(Condition)}
    */
   @Override
   public int hashCode() {

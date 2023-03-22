@@ -63,6 +63,10 @@ public class ExperimentalValue {
     return value;
   }
 
+  public String formatted() {
+    return value + " " + unit;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -72,11 +76,11 @@ public class ExperimentalValue {
       return false;
     }
     ExperimentalValue that = (ExperimentalValue) o;
-    return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
-  }
+      return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
+    }
 
   @Override
   public int hashCode() {
     return Objects.hash(value, unit);
-  }
+    }
 }

@@ -4,7 +4,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
 import java.util.Optional;
-import javax.transaction.Transactional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -50,9 +49,7 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  @Transactional
-  public Result<Project, ApplicationException> createProject(String code, String title,
-      String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
@@ -64,14 +61,17 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      try {
-        addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
-            analyteList,
-            speciesList, specimenList);
-      } catch (Exception e) { //rollback project creation
-        projectRepository.deleteByProjectCode(project.getProjectCode());
-        throw e;
-      }
+      addExperimentToProjectService.addExperimentToProject(project.getId(),
+              "Experiment 0",
+              analyteList,
+              speciesList,
+              specimenList)
+          .ifFailure(e ->
+          {
+            projectRepository.deleteByProjectCode(project.getProjectCode());
+            throw new ProjectManagementException(
+                "failed to add experiment to project " + project.getId(), e);
+          });
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -113,14 +113,13 @@ public class ProjectCreationService {
     try {
       projectCode = ProjectCode.parse(code);
       if (!projectRepository.find(projectCode).isEmpty()) {
-        log.error("Project code: " + code + " is already in use.");
-        throw new ProjectManagementException(ErrorCode.DUPLICATE_PROJECT_CODE,
+        throw new ProjectManagementException("Project code: " + code + " is already in use.",
+            ErrorCode.DUPLICATE_PROJECT_CODE,
             ErrorParameters.of(code));
       }
     } catch (IllegalArgumentException exception) {
-      log.error("Project code: " + code + " is invalid.");
-      log.error(exception.getMessage());
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_CODE,
+      throw new ProjectManagementException("Project code: " + code + " is invalid.", exception,
+          ErrorCode.INVALID_PROJECT_CODE,
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
     return Project.create(intent, projectCode, projectManager, principalInvestigator,
@@ -132,8 +131,9 @@ public class ProjectCreationService {
     try {
       projectTitle = ProjectTitle.of(title);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_TITLE,
+      throw new ProjectManagementException(
+          "could not get project intent from title " + title, e,
+          ErrorCode.INVALID_PROJECT_TITLE,
           ErrorParameters.of(ProjectTitle.maxLength(), title));
     }
 
@@ -141,8 +141,9 @@ public class ProjectCreationService {
     try {
       projectObjective = ProjectObjective.create(objective);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      throw new ProjectManagementException(ErrorCode.INVALID_PROJECT_OBJECTIVE,
+      throw new ProjectManagementException(
+          "could not get project intent from objective " + objective, e,
+          ErrorCode.INVALID_PROJECT_OBJECTIVE,
           ErrorParameters.of(objective));
     }
 

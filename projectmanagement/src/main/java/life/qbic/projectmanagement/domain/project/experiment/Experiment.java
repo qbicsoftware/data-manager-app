@@ -112,7 +112,7 @@ public class Experiment {
    * provided name is defined in this design.
    * @since 1.0.0
    */
-  public Result<ExperimentalValue, Exception> addLevelToVariable(String variableName,
+  public Result<VariableLevel, Exception> addLevelToVariable(String variableName,
       ExperimentalValue level) {
     return experimentalDesign.addLevelToVariable(variableName, level);
   }
@@ -214,23 +214,7 @@ public class Experiment {
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    if (levels.size() < 1) {
-      return Result.failure(new IllegalArgumentException(
-          "No levels were defined for " + variableName));
-    }
-
-    if (experimentalDesign.isVariableDefined(variableName)) {
-      return Result.failure(new ExperimentalVariableExistsException(
-          "A variable with the name " + variableName + " already exists."));
-    }
-    try {
-      ExperimentalVariable variable = ExperimentalVariable.createForExperiment(this, variableName,
-          levels.toArray(ExperimentalValue[]::new));
-      experimentalDesign.variables.add(variable);
-      return Result.success(variable.name());
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
+    return experimentalDesign.addVariable(variableName, levels);
   }
 
   /**
@@ -250,7 +234,7 @@ public class Experiment {
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
    * declarative exceptions.
    */
-  public Result<ConditionLabel, Exception> defineCondition(String conditionLabel,
+  public Result<Condition, Exception> defineCondition(String conditionLabel,
       VariableLevel[] levels) {
     return experimentalDesign.defineCondition(conditionLabel, levels);
   }
