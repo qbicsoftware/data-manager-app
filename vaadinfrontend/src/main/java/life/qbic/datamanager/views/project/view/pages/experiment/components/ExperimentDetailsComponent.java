@@ -13,7 +13,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -39,11 +38,12 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Project Details Component
- * <p>
- * Shows project details to the user.
+ * <b>Experimental Details Component</b>
  *
- * @since 1.0.0
+ * <p>A CardLayout based Composite showing the information stored in the
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
+ * a {@link Project} within the
+ * {@link life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage}
  */
 @UIScope
 @SpringComponent
@@ -162,82 +162,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   }
 
 
-  public static class Spinner extends ProgressBar {
-
-    public Spinner() {
-      super();
-      setIndeterminate(true);
-    }
-  }
-
-  /**
-   * Component logic for the {@link ExperimentDetailsComponent}
-   */
-  private static class ExperimentVariableCard extends CardLayout {
-
-    public final AddVariableToExperimentDialog addVariableToExperimentDialog = new AddVariableToExperimentDialog();
-    private final Spinner loadingSpinner = new Spinner();
-    FormLayout experimentalVariablesFormLayout = new FormLayout();
-    VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
-    private final Button addExperimentalVariableButton = new Button("Add");
-
-    public ExperimentVariableCard() {
-      addFields(loadingSpinner);
-      addTitle("Experimental Variables");
-      initEmptyView();
-      initVariableView();
-      setAddExperimentalVariableButtonListener();
-      setSizeFull();
-    }
-
-    private void initVariableView() {
-      experimentalVariablesFormLayout.setSizeFull();
-      addFields(experimentalVariablesFormLayout);
-    }
-
-    private void initEmptyView() {
-      Span templateText = new Span("No Experimental Variables defined");
-      addExperimentalVariableButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      noExperimentalVariableLayout.add(templateText, addExperimentalVariableButton);
-      noExperimentalVariableLayout.setAlignItems(Alignment.CENTER);
-      noExperimentalVariableLayout.setSizeFull();
-      addFields(noExperimentalVariableLayout);
-    }
-
-    public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
-      if (experimentalVariables.isEmpty()) {
-        showEmptyView();
-      } else {
-        experimentalVariablesFormLayout.removeAll();
-        for (ExperimentalVariable experimentalVariable : experimentalVariables) {
-          VerticalLayout experimentalVariableLayout = new VerticalLayout();
-          experimentalVariablesFormLayout.addFormItem(experimentalVariableLayout,
-              experimentalVariable.name().value());
-          experimentalVariable.levels()
-              .forEach(level -> experimentalVariableLayout.add(new Span(level.value())));
-        }
-        showVariablesView();
-      }
-    }
-
-    private void setAddExperimentalVariableButtonListener() {
-      addExperimentalVariableButton.addClickListener(event -> addVariableToExperimentDialog.open());
-    }
-
-    private void showEmptyView() {
-      loadingSpinner.setVisible(false);
-      experimentalVariablesFormLayout.setVisible(false);
-      noExperimentalVariableLayout.setVisible(true);
-    }
-
-    private void showVariablesView() {
-      loadingSpinner.setVisible(false);
-      noExperimentalVariableLayout.setVisible(false);
-      experimentalVariablesFormLayout.setVisible(true);
-    }
-
-  }
-
   private final class Handler {
 
     private final ProjectInformationService projectInformationService;
@@ -289,7 +213,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {
-      //Todo What do we want to show here if multiple values are defined
       speciesForm.removeAll();
       specimenForm.removeAll();
       analyteForm.removeAll();
