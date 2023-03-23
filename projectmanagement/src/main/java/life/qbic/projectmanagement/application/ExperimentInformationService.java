@@ -96,9 +96,6 @@ public class ExperimentInformationService {
       String unit, List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
-    if (levels.isEmpty()) {
-      throw new RuntimeException("no values given"); //TODO validate earlier
-    }
     Experiment activeExperiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {

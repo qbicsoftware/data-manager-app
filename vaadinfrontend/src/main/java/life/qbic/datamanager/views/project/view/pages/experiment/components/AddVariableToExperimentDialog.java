@@ -69,7 +69,6 @@ public class AddVariableToExperimentDialog extends Dialog {
     experimentalDesignHeader.addClassName("font-bold");
     experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
     appendEmptyRow();
-    appendEmptyRow();
   }
 
   private void appendEmptyRow() {
@@ -112,16 +111,35 @@ public class AddVariableToExperimentDialog extends Dialog {
 
     private void handle() {
       closeDialogViaCancelButton();
+      closeDialogViaAddButtonIfValid();
       resetDialogUponClosure();
     }
 
     private void closeDialogViaCancelButton() {
-      cancelButton.addClickListener(clickEvent -> resetandClose());
+      cancelButton.addClickListener(clickEvent -> resetAndClose());
+    }
+
+    private void closeDialogViaAddButtonIfValid() {
+      addVariablesButton.addClickListener(clickEvent -> {
+        dropEmptyRows();
+        closeDialogueIfValid();
+      });
+    }
+
+    private void dropEmptyRows() {
+      experimentalVariablesLayoutRows.removeIf(ExperimentalVariableRowLayout::isEmpty);
+    }
+
+    private void closeDialogueIfValid() {
+      if (experimentalVariablesLayoutRows.stream()
+          .allMatch(ExperimentalVariableRowLayout::isValid)) {
+        resetAndClose();
+      }
     }
 
     private void resetDialogUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
-      addDialogCloseActionListener(closeActionEvent -> resetandClose());
+      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
     }
 
     public void reset() {
@@ -130,7 +148,7 @@ public class AddVariableToExperimentDialog extends Dialog {
       initDefineExperimentalVariableLayout();
     }
 
-    public void resetandClose() {
+    public void resetAndClose() {
       close();
       reset();
     }
@@ -157,7 +175,7 @@ public class AddVariableToExperimentDialog extends Dialog {
       return unitField.getValue();
     }
 
-    public List<String> getValues() {
+    public List<String> getLevels() {
       return levelArea.getValue().lines().filter(it -> !it.isBlank()).toList();
     }
 
@@ -176,10 +194,25 @@ public class AddVariableToExperimentDialog extends Dialog {
       FormLayout experimentalVariableFieldsLayout = new FormLayout();
       experimentalVariableFieldsLayout.add(nameField, unitField, levelArea);
       experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
-      //ToDo updating the list should automatically update the parentLayout (virtualList?)
+      nameField.setRequired(true);
+      levelArea.setRequired(true);
       add(experimentalVariableFieldsLayout, deleteIcon);
       setAlignItems(Alignment.CENTER);
     }
 
+    //We need to make sure that the service is only called if valid input is provided
+
+    public boolean isValid() {
+      boolean isNameFieldValid = !nameField.isInvalid() && !nameField.isEmpty();
+      boolean isLevelFieldValid = !levelArea.isInvalid() && !levelArea.isEmpty();
+      return isNameFieldValid && isLevelFieldValid;
+    }
+
+    public boolean isEmpty() {
+      return nameField.isEmpty() && unitField.isEmpty() && levelArea.isEmpty();
+    }
+
   }
+
+
 }

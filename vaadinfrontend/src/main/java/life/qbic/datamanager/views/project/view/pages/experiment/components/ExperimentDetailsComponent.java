@@ -232,10 +232,11 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     //ToDo should this be moved to the Card component?
     private void addExperimentalVariableToExperiment() {
       for (ExperimentalVariableRowLayout row : experimentalVariableCard.addVariableToExperimentDialog.experimentalVariablesLayoutRows) {
-        experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
-            row.getUnit(), row.getValues());
+        if (!row.isEmpty() && row.isValid()) {
+          experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
+              row.getUnit(), row.getLevels());
+        }
       }
-      experimentalVariableCard.addVariableToExperimentDialog.close();
       loadExperimentalVariableInformation();
     }
 
