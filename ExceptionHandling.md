@@ -193,7 +193,7 @@ public static void soSomeStuffWithMyProjectCode(String code) {
 
 public ProjectCode(String code, Constant constant) {
    if (!validate(code, constant)) {
-      throw new RuntimeException("We encounter something unexpected.");
+      throw new RuntimeException("We encountered something unexpected.");
    }
 }
 ```
