@@ -22,11 +22,9 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.pages.experiment.components.AddVariableToExperimentDialog.ExperimentalVariableRowLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -34,8 +32,6 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -69,16 +65,15 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
   //Todo Move all cardLayouts into separate components.
   private CardLayout blockingVariableCard;
-  private final ExperimentalVariableCard experimentalVariableCard = new ExperimentalVariableCard();
+  private ExperimentalVariableCard experimentalVariableCard;
   private Button addBlockingVariableButton;
-  private ExperimentId experimentId;
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     initTopLayout();
-    initTabSheet();
+    initTabSheet(experimentInformationService);
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 
@@ -104,9 +99,9 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     detailLayout.add(tagLayout, experimentNotes);
   }
 
-  private void initTabSheet() {
+  private void initTabSheet(ExperimentInformationService experimentInformationService) {
     experimentSheet = new TabSheet();
-    initSummaryCardBoard();
+    initSummaryCardBoard(experimentInformationService);
     initSampleGroupsCardBoard();
     experimentSheet.add("Summary", summaryCardBoard);
     experimentSheet.add("Sample Groups", sampleGroupsCardBoard);
@@ -114,10 +109,11 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     experimentSheet.setSizeFull();
   }
 
-  private void initSummaryCardBoard() {
+  private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
     summaryCardBoard = new Board();
     initSampleOriginCard();
     initBlockingVariableCard();
+    initExperimentalVariableCard(experimentInformationService);
     Row topRow = new Row(sampleOriginCard, blockingVariableCard);
     Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
@@ -152,17 +148,20 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     blockingVariableCard.addFields(templateLayout);
   }
 
+  private void initExperimentalVariableCard(
+      ExperimentInformationService experimentInformationService) {
+    experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
+  }
+
   private void initSampleGroupsCardBoard() {
     sampleGroupsCardBoard = new Board();
     sampleGroupsCardBoard.setWidthFull();
     //ToDo Fill with Content
   }
 
-
   public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
   }
-
 
   private final class Handler {
 
@@ -173,7 +172,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
         ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
-      configureDialogButtons();
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -187,12 +185,11 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void loadExperimentInformation(Experiment experiment) {
-      experimentId = experiment.experimentId();
       getContent().addTitle(experiment.getName());
       loadTagInformation(experiment);
       loadSampleOriginInformation(experiment);
       loadBlockingVariableInformation();
-      loadExperimentalVariableInformation();
+      experimentalVariableCard.experimentId(experiment.experimentId());
     }
 
     private void loadTagInformation(Experiment experiment) {
@@ -221,29 +218,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       experiment.getSpecies().forEach(species -> speciesForm.add(new Span(species.value())));
       experiment.getSpecimens().forEach(specimen -> specimenForm.add(new Span(specimen.value())));
       experiment.getAnalytes().forEach(analyte -> analyteForm.add(new Span(analyte.value())));
-    }
-
-    //ToDo should this be moved to the Card component?
-    private void configureDialogButtons() {
-      experimentalVariableCard.addVariableToExperimentDialog.addVariablesButton.addClickListener(
-          event -> addExperimentalVariableToExperiment());
-    }
-
-    //ToDo should this be moved to the Card component?
-    private void addExperimentalVariableToExperiment() {
-      for (ExperimentalVariableRowLayout row : experimentalVariableCard.addVariableToExperimentDialog.experimentalVariablesLayoutRows) {
-        if (!row.isEmpty() && row.isValid()) {
-          experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
-              row.getUnit(), row.getLevels());
-        }
-      }
-      loadExperimentalVariableInformation();
-    }
-
-    private void loadExperimentalVariableInformation() {
-      List<ExperimentalVariable> experimentalVariables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      experimentalVariableCard.setExperimentalVariables(experimentalVariables);
     }
 
     private void loadBlockingVariableInformation() {

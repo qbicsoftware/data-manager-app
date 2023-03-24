@@ -6,8 +6,12 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
@@ -23,17 +27,26 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
 
 public class ExperimentalVariableCard extends CardLayout {
 
-  public final AddVariableToExperimentDialog addVariableToExperimentDialog = new AddVariableToExperimentDialog();
+  private AddVariableToExperimentDialog addVariableToExperimentDialog;
   FormLayout experimentalVariablesFormLayout = new FormLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
   private final Button addExperimentalVariableButton = new Button("Add");
+  private final Handler handler;
 
-  public ExperimentalVariableCard() {
+  public ExperimentalVariableCard(
+      @Autowired ExperimentInformationService experimentInformationService) {
+    Objects.requireNonNull(experimentInformationService);
     addTitle("Experimental Variables");
     initEmptyView();
     initVariableView();
-    setAddExperimentalVariableButtonListener();
+    initAddExperimentDialog(experimentInformationService);
     setSizeFull();
+    this.handler = new Handler(experimentInformationService);
+  }
+
+  public void experimentId(ExperimentId experimentId) {
+    handler.setExperimentId(experimentId);
+    addVariableToExperimentDialog.experimentId(experimentId);
   }
 
   private void initVariableView() {
@@ -50,11 +63,49 @@ public class ExperimentalVariableCard extends CardLayout {
     addFields(noExperimentalVariableLayout);
   }
 
-  //ToDo stop card growth if many variables are defined
-  public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
-    if (experimentalVariables.isEmpty()) {
-      showEmptyView();
-    } else {
+  private void initAddExperimentDialog(ExperimentInformationService experimentInformationService) {
+    addVariableToExperimentDialog = new AddVariableToExperimentDialog(experimentInformationService);
+  }
+
+  private final class Handler {
+
+    private final ExperimentInformationService experimentInformationService;
+    private ExperimentId experimentId;
+
+    public Handler(ExperimentInformationService experimentInformationService) {
+      this.experimentInformationService = experimentInformationService;
+      setAddExperimentalVariableButtonListener();
+      setCloseDialogListener();
+    }
+
+    public void setExperimentId(ExperimentId experimentId) {
+      this.experimentId = experimentId;
+      loadExperimentalVariableInformation();
+    }
+
+    private void setAddExperimentalVariableButtonListener() {
+      addExperimentalVariableButton.addClickListener(event -> addVariableToExperimentDialog.open());
+    }
+
+    private void setCloseDialogListener() {
+      addVariableToExperimentDialog.addOpenedChangeListener(openedChangeEvent -> {
+        if (!openedChangeEvent.isOpened()) {
+          loadExperimentalVariableInformation();
+        }
+      });
+    }
+
+    private void loadExperimentalVariableInformation() {
+      List<ExperimentalVariable> experimentalVariables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      if (experimentalVariables.isEmpty()) {
+        showEmptyView();
+      } else {
+        setExperimentalVariables(experimentalVariables);
+      }
+    }
+
+    public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
       experimentalVariablesFormLayout.removeAll();
       for (ExperimentalVariable experimentalVariable : experimentalVariables) {
         VerticalLayout experimentalVariableLayout = new VerticalLayout();
@@ -67,19 +118,17 @@ public class ExperimentalVariableCard extends CardLayout {
       }
       showVariablesView();
     }
+
+    private void showEmptyView() {
+      experimentalVariablesFormLayout.setVisible(false);
+      noExperimentalVariableLayout.setVisible(true);
+    }
+
+    private void showVariablesView() {
+      noExperimentalVariableLayout.setVisible(false);
+      experimentalVariablesFormLayout.setVisible(true);
+    }
   }
 
-  private void setAddExperimentalVariableButtonListener() {
-    addExperimentalVariableButton.addClickListener(event -> addVariableToExperimentDialog.open());
-  }
 
-  private void showEmptyView() {
-    experimentalVariablesFormLayout.setVisible(false);
-    noExperimentalVariableLayout.setVisible(true);
-  }
-
-  private void showVariablesView() {
-    noExperimentalVariableLayout.setVisible(false);
-    experimentalVariablesFormLayout.setVisible(true);
-  }
 }

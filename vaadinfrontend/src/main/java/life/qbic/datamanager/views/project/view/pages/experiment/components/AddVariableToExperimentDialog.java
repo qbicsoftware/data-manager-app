@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
@@ -43,11 +46,15 @@ public class AddVariableToExperimentDialog extends Dialog {
   public final Button addVariablesButton = new Button("Add");
   public final Button cancelButton = new Button("Cancel");
 
-  public AddVariableToExperimentDialog() {
+  public AddVariableToExperimentDialog(
+      @Autowired ExperimentInformationService experimentInformationService) {
     configureDialogLayout();
     initDialogueContent();
-    handler = new Handler();
-    handler.handle();
+    handler = new Handler(experimentInformationService);
+  }
+
+  public void experimentId(ExperimentId experimentId) {
+    handler.setExperimentId(experimentId);
   }
 
   private void configureDialogLayout() {
@@ -106,22 +113,28 @@ public class AddVariableToExperimentDialog extends Dialog {
 
   private class Handler {
 
-    private Handler() {
+    ExperimentInformationService experimentInformationService;
+    ExperimentId experimentId;
+
+    private Handler(ExperimentInformationService experimentInformationService) {
+      this.experimentInformationService = experimentInformationService;
+      closeDialogViaCancelButton();
+      addExperimentViaAddButton();
+      resetDialogUponClosure();
     }
 
-    private void handle() {
-      closeDialogViaCancelButton();
-      closeDialogViaAddButtonIfValid();
-      resetDialogUponClosure();
+    public void setExperimentId(ExperimentId experimentId) {
+      this.experimentId = experimentId;
     }
 
     private void closeDialogViaCancelButton() {
       cancelButton.addClickListener(clickEvent -> resetAndClose());
     }
 
-    private void closeDialogViaAddButtonIfValid() {
-      addVariablesButton.addClickListener(clickEvent -> {
+    private void addExperimentViaAddButton() {
+      addVariablesButton.addClickListener(event -> {
         dropEmptyRows();
+        addExperimentalVariableToExperiment(experimentId);
         closeDialogueIfValid();
       });
     }
@@ -135,6 +148,7 @@ public class AddVariableToExperimentDialog extends Dialog {
           .allMatch(ExperimentalVariableRowLayout::isValid)) {
         resetAndClose();
       }
+      //ToDo what should happen if invalid information is provided in rows
     }
 
     private void resetDialogUponClosure() {
@@ -148,11 +162,19 @@ public class AddVariableToExperimentDialog extends Dialog {
       initDefineExperimentalVariableLayout();
     }
 
-    public void resetAndClose() {
+    private void resetAndClose() {
       close();
       reset();
     }
 
+    private void addExperimentalVariableToExperiment(ExperimentId experimentId) {
+      for (ExperimentalVariableRowLayout row : experimentalVariablesLayoutRows) {
+        if (!row.isEmpty() && row.isValid()) {
+          experimentInformationService.addVariableToExperiment(experimentId, row.getVariableName(),
+              row.getUnit(), row.getLevels());
+        }
+      }
+    }
   }
 
   static class ExperimentalVariableRowLayout extends HorizontalLayout {
