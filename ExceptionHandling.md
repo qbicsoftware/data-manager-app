@@ -131,8 +131,7 @@ public static void anotherMethod() {
 We caught, logged and threw the same exception over again. Wow, so all the time we only had one
 exception and not several?
 
-If we hadn't caught the exception to only log it, we would not have the confusing log file to
-understand.
+Thanks to the redundant catching and logging of the same exception within the called method and after the method, reading the log file was more confusing than it had to be
 We would have ended up with only one exception in our log file, stating where it occurred and that
 it occured only once.
 We would have saved many hours of digging through the code.
