@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.experiment.components;
+package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.board.Board;
@@ -25,6 +25,7 @@ import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -39,8 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * <p>A CardLayout based Composite showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
- * a {@link Project} within the
- * {@link life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage}
+ * a {@link Project} within the {@link ExperimentInformationPage}
  */
 @UIScope
 @SpringComponent

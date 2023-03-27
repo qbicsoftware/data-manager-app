@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.projectinformation;
+package life.qbic.datamanager.views.projects.project.info;
 
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
@@ -9,9 +9,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
-import life.qbic.datamanager.views.project.view.pages.projectinformation.components.ProjectDetailsComponent;
-import life.qbic.datamanager.views.project.view.pages.projectinformation.components.ProjectLinksComponent;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

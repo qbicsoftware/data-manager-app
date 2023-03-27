@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.experiment.components;
+package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

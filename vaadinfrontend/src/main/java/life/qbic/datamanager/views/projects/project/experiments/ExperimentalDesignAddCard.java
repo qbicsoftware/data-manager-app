@@ -1,10 +1,11 @@
-package life.qbic.datamanager.views.project.view.pages.experiment.components;
+package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariableToExperimentDialog;
 
 /**
  * <b>Experimental Design Add Card</b>

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.projectinformation.components;
+package life.qbic.datamanager.views.projects.project.info;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 

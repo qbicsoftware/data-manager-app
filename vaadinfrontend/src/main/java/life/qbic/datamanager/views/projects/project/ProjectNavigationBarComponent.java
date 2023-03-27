@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view;
+package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;

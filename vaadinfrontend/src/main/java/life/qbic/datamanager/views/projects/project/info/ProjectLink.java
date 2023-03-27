@@ -1,7 +1,6 @@
-package life.qbic.datamanager.views.project.view.pages.projectinformation;
+package life.qbic.datamanager.views.projects.project.info;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.pages.projectinformation.components.ProjectLinksComponent;
 
 /**
  * <p>Represents a project link in the {@link ProjectLinksComponent}</p>

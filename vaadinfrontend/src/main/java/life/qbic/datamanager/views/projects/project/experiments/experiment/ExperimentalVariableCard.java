@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.experiment.components;
+package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,6 +8,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
@@ -20,8 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>A CardLayout based Component showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} associated
  * with an experiment {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} in
- * the {@link ExperimentDetailsComponent} of the
- * {@link life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage}
+ * the {@link ExperimentDetailsComponent} of the {@link ExperimentInformationPage}
  */
 
 

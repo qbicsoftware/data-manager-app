@@ -1,8 +1,8 @@
-package life.qbic.datamanager.views.project.view;
+package life.qbic.datamanager.views.projects.project;
 
 import java.util.Objects;
-import life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage;
-import life.qbic.datamanager.views.project.view.pages.projectinformation.ProjectInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 
 /**
  * Handler for the project view page that routes request parameter to the components.

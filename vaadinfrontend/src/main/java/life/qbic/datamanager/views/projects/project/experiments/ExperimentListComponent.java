@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.pages.experiment.components;
+package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -28,7 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * This component lists the {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}
  * associated with the selected {@link life.qbic.projectmanagement.domain.project.Project} within
- * the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
+ * the {@link ProjectViewPage}
  */
 @SpringComponent
 @UIScope

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view;
+package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
@@ -14,8 +14,8 @@ import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.project.view.pages.experiment.ExperimentInformationPage;
-import life.qbic.datamanager.views.project.view.pages.projectinformation.ProjectInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
