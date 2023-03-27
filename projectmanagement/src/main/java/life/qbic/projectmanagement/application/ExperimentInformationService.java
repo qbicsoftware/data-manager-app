@@ -57,6 +57,9 @@ public class ExperimentInformationService {
    */
   public void addSpeciesToExperiment(ExperimentId experimentId, Species... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
+    if (species.length < 1) {
+      return;
+    }
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addSpecies(List.of(species));
     experimentRepository.update(activeExperiment);
@@ -70,8 +73,9 @@ public class ExperimentInformationService {
    * @see Experiment#addSpecimens(Collection)
    */
   public void addSpecimenToExperiment(ExperimentId experimentId, Specimen... specimens) {
-    for (Specimen specimen : specimens) {
-      Objects.requireNonNull(specimen);
+    Arrays.stream(specimens).forEach(Objects::requireNonNull);
+    if (specimens.length < 1) {
+      return;
     }
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addSpecimens(List.of(specimens));
@@ -87,6 +91,9 @@ public class ExperimentInformationService {
    */
   public void addAnalyteToExperiment(ExperimentId experimentId, Analyte... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
+    if (analytes.length < 1) {
+      return;
+    }
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addAnalytes(List.of(analytes));
     experimentRepository.update(activeExperiment);
@@ -96,6 +103,9 @@ public class ExperimentInformationService {
       String unit, List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
+    if (levels.isEmpty()) {
+      return;
+    }
     Experiment activeExperiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {
@@ -148,7 +158,6 @@ public class ExperimentInformationService {
    * {@link ExperimentId}
    */
   public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
-    Objects.requireNonNull(experimentId);
     Experiment activeExperiment = loadExperimentById(experimentId);
     return activeExperiment.variables();
   }
