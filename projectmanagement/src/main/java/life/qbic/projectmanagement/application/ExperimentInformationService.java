@@ -99,8 +99,19 @@ public class ExperimentInformationService {
     experimentRepository.update(activeExperiment);
   }
 
-  public void addVariableToExperiment(ExperimentId experimentId, String variableName,
-      String unit, List<String> levels) {
+  /**
+   * Adds {@link ExperimentalVariable} to an {@link Experiment}
+   *
+   * @param experimentId the Id of the experiment for which to add the analyte
+   * @param variableName the name of the variable to be added
+   * @param unit         the optionally defined unit for the {@link ExperimentalValue} within the
+   *                     {@link ExperimentalVariable}
+   * @param levels       String based list of levels from each of which the
+   *                     {@link ExperimentalValue} will be derived for the to be defined
+   *                     {@link ExperimentalVariable}
+   */
+  public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
+      List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
     if (levels.isEmpty()) {
@@ -109,7 +120,9 @@ public class ExperimentInformationService {
     Experiment activeExperiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {
-      experimentalValues.add(ExperimentalValue.create(level, unit));
+      ExperimentalValue experimentalValue = (unit.isEmpty()) ? ExperimentalValue.create(level)
+          : ExperimentalValue.create(level, unit);
+      experimentalValues.add(experimentalValue);
     }
     activeExperiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(activeExperiment);
