@@ -1,13 +1,9 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Consumer;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
@@ -17,11 +13,6 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
@@ -70,61 +61,61 @@ public class ProjectInformationService {
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   public Optional<Project> find(String projectId) {
     Objects.requireNonNull(projectId);
-    log.debug("Search for project with id: " + projectId);
-    return projectRepository.find(ProjectId.parse(projectId));
+    return Optional.ofNullable(loadProject(projectId));
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
-  private Project loadProject(ProjectId projectId) {
+  private Project loadProject(String projectId) {
     Objects.requireNonNull(projectId);
-    return projectRepository.find(projectId).orElseThrow(() -> new ProjectManagementException(
-            "Project with id" + projectId.toString() + "does not exit anymore")
+    ProjectId parsedProjectId;
+    try {
+      parsedProjectId = ProjectId.parse(projectId);
+    } catch (IllegalArgumentException e) {
+      throw new ProjectManagementException("invalid project id " + projectId, e);
+    }
+    log.debug("Search for project with id: " + projectId);
+    return projectRepository.find(parsedProjectId).orElseThrow(() -> new ProjectManagementException(
+            "Project with id" + projectId + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
 
   public void updateTitle(String projectId, String newTitle) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.updateTitle(projectTitle);
     projectRepository.update(project);
   }
 
   public void manageProject(String projectId, PersonReference personReference) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.setProjectManager(personReference);
     projectRepository.update(project);
   }
 
   public void investigateProject(String projectId, PersonReference personReference) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.setPrincipalInvestigator(personReference);
     projectRepository.update(project);
   }
 
   public void setResponsibility(String projectId, PersonReference personReference) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.setResponsiblePerson(personReference);
     projectRepository.update(project);
   }
 
   public void describeExperimentalDesign(String projectId, String experimentalDesign) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
     ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
         experimentalDesign);
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.describeExperimentalDesign(experimentalDesignDescription);
     projectRepository.update(project);
   }
 
   public void stateObjective(String projectId, String objective) {
-    ProjectId projectIdentifier = ProjectId.of(UUID.fromString(projectId));
     ProjectObjective projectObjective = ProjectObjective.create(objective);
-    Project project = loadProject(projectIdentifier);
+    Project project = loadProject(projectId);
     project.stateObjective(projectObjective);
     projectRepository.update(project);
   }
