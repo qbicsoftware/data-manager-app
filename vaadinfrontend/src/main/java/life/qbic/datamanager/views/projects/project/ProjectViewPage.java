@@ -4,15 +4,12 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.ErrorParameter;
-import com.vaadin.flow.router.HasErrorParameter;
 import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
@@ -31,8 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 @ParentLayout(MainLayout.class)
 @CssImport("./styles/views/project/project-view.css")
-public class ProjectViewPage extends Div implements BeforeEnterObserver,
-    HasErrorParameter<ApplicationException>, RouterLayout {
+public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
@@ -59,6 +55,8 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
   public void setPageStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectInformationPage projectInformationPage,
       ExperimentInformationPage experimentInformationPage) {
+    /*Defines via css class names on how components within each page should be allocated
+    in the css grid defined by the project view page*/
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectInformationPage.addClassName("project-view-page");
     experimentInformationPage.addClassName("project-view-page");
@@ -76,9 +74,4 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver,
     this.handler.projectId(projectId);
   }
 
-  @Override
-  public int setErrorParameter(BeforeEnterEvent beforeEnterEvent,
-      ErrorParameter<ApplicationException> errorParameter) {
-    return 0;
-  }
 }
