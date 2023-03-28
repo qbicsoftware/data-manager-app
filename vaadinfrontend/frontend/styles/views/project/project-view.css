@@ -1,3 +1,4 @@
+/* Subdivides the project-view-page into 4 columns and rows with equal spacing on which the components can be allocated*/
 .project-view-page {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -7,6 +8,8 @@
   padding: 50px;
 }
 
+/* These components css snippets determine the position of each component within the css grid of the project view page
+They are set within as classes within their own individual subpages */
 .project-navigation-component {
   grid-column: 1 / span 3;
   grid-row: 1 / span 1;
