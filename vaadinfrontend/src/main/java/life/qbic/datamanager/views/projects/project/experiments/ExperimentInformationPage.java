@@ -58,8 +58,8 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
 
   public void setComponentStyles(ExperimentDetailsComponent experimentDetailsComponent,
       ExperimentListComponent experimentListComponent) {
-    experimentDetailsComponent.setStyles("experiment-details-component");
-    experimentListComponent.setStyles("experiment-list-component");
+    experimentDetailsComponent.setId("experiment-details-component");
+    experimentListComponent.setId("experiment-list-component");
   }
 
   private final class ExperimentInformationPageHandler {

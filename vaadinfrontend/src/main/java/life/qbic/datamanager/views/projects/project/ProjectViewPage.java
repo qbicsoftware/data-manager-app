@@ -58,8 +58,9 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
     /*Defines via css class names on how components within each page should be allocated
     in the css grid defined by the project view page*/
     projectNavigationBarComponent.setStyles("project-navigation-component");
-    projectInformationPage.addClassName("project-view-page");
-    experimentInformationPage.addClassName("project-view-page");
+    projectInformationPage.setId("project-page-css-grid-structure");
+    projectInformationPage.setId("project-page-css-grid-structure");
+    experimentInformationPage.setId("project-page-css-grid-structure");
   }
 
   @Override

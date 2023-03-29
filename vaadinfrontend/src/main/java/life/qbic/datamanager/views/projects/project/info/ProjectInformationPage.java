@@ -56,8 +56,8 @@ public class ProjectInformationPage extends Div implements RouterLayout {
 
   public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent) {
-    projectDetailsComponent.setStyles("project-details-component");
-    projectLinksComponent.setStyles("project-links-component");
+    projectDetailsComponent.setId("project-details-component");
+    projectLinksComponent.setId("project-links-component");
   }
 
   private final class ProjectInformationPageHandler {
