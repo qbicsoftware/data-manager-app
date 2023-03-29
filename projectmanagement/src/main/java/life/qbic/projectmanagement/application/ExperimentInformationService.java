@@ -120,7 +120,7 @@ public class ExperimentInformationService {
     Experiment activeExperiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {
-      ExperimentalValue experimentalValue = (unit.isEmpty()) ? ExperimentalValue.create(level)
+      ExperimentalValue experimentalValue = (unit.isBlank()) ? ExperimentalValue.create(level)
           : ExperimentalValue.create(level, unit);
       experimentalValues.add(experimentalValue);
     }
