@@ -26,3 +26,8 @@
   grid-column: 1 / span 3;
   grid-row: 2 / span 3;
 }
+
+.sample-overview-component {
+  grid-column: 1 / span 4;
+  grid-row: 2 / span 3;
+}

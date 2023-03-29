@@ -17,6 +17,7 @@ import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDet
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.project.view.sample.SampleInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
@@ -43,18 +44,15 @@ public class ProjectViewPage extends Div implements
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectDetailsComponent projectDetailsComponent, @Autowired
   ProjectLinksComponent projectLinksComponent, @Autowired ExperimentalDesignDetailComponent
-      experimentalDesignDetailComponent) {
+      experimentalDesignDetailComponent, @Autowired SampleInformationPage sampleInformationPage) {
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentalDesignDetailComponent);
+        projectLinksComponent, experimentalDesignDetailComponent, sampleInformationPage);
     add(projectNavigationBarComponent);
     add(projectDetailsComponent);
     add(projectLinksComponent);
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent, experimentalDesignDetailComponent);
-    setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent,
-        experimentalDesignDetailComponent);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -67,8 +65,7 @@ public class ProjectViewPage extends Div implements
   public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent
-          experimentalDesignDetailComponent) {
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");

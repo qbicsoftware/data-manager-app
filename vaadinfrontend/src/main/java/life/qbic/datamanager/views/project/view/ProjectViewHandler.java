@@ -5,6 +5,7 @@ import life.qbic.datamanager.views.project.view.components.ExperimentalDesignDet
 import life.qbic.datamanager.views.project.view.components.ProjectDetailsComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectLinksComponent;
 import life.qbic.datamanager.views.project.view.components.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.project.view.sample.SampleInformationPage;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -16,21 +17,23 @@ class ProjectViewHandler {
   private final ProjectLinksComponent projectLinksComponent;
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectDetailsComponent projectDetailsComponent;
-
   private final ExperimentalDesignDetailComponent experimentalDesignDetailComponent;
+  private final SampleInformationPage sampleInformationPage;
 
   public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+      ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent,
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent,
+      SampleInformationPage sampleInformationPage) {
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
     Objects.requireNonNull(experimentalDesignDetailComponent);
     Objects.requireNonNull(projectNavigationBarComponent);
+    Objects.requireNonNull(sampleInformationPage);
     this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectLinksComponent = projectLinksComponent;
     this.projectDetailsComponent = projectDetailsComponent;
     this.experimentalDesignDetailComponent = experimentalDesignDetailComponent;
+    this.sampleInformationPage = sampleInformationPage;
   }
 
   /**
@@ -44,5 +47,6 @@ class ProjectViewHandler {
     this.projectLinksComponent.projectId(projectId);
     this.experimentalDesignDetailComponent.projectId(projectId);
     this.projectNavigationBarComponent.projectId(projectId);
+    this.sampleInformationPage.projectId(projectId);
   }
 }

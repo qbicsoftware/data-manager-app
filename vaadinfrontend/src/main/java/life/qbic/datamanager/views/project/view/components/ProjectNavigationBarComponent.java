@@ -91,7 +91,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     projectInformationButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
             .navigate(String.format(Projects.PROJECT_INFO, handler.selectedProject))));
-    projectInformationButton.addClickListener(
+    samplesButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
             .navigate(String.format(Projects.SAMPLES, handler.selectedProject))));
   }

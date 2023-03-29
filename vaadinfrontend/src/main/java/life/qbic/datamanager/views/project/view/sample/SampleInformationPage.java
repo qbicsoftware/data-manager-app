@@ -7,6 +7,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
+import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -24,11 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @CssImport("./styles/views/project/project-view.css")
+@PermitAll
 public class SampleInformationPage extends Div {
 
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
-
   private static final Logger log = LoggerFactory.logger(SampleInformationPage.class);
   private final transient SampleInformationPageHandler sampleInformationPageHandler;
 
