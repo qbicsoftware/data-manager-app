@@ -38,11 +38,12 @@ class ConditionSpec extends Specification {
     def "If variable levels origin from the same experimental variables, return an exception"() {
         given:
         ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
+        ExperimentalValue experimentalValue2 = ExperimentalValue.create("11", "cm")
         ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
-        ExperimentalVariable experimentalVar2 = ExperimentalVariable.create("test variable", experimentalValue)
+        ExperimentalVariable experimentalVar2 = ExperimentalVariable.create("test variable", experimentalValue2)
 
         def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
-        def level2 = VariableLevel.create(experimentalVar2.name(), experimentalValue)
+        def level2 = VariableLevel.create(experimentalVar2.name(), experimentalValue2)
 
         when:
         Condition.create(new HashSet<>(Arrays.asList(level, level2)))

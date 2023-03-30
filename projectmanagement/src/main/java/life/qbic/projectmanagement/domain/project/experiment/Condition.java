@@ -66,6 +66,9 @@ public class Condition {
         .map(VariableLevel::variableName)
         .collect(Collectors.toSet())
         .size();
+
+    // fixme ? only distinct levels of the same variable are caught. since we are using a set, using the same level
+    // is already made unique before...
     if (distinctExperimentVariables < variableLevels.size()) {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
