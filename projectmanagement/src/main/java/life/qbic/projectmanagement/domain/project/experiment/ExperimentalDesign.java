@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
@@ -15,6 +16,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 
 /**
  * <b>Experimental Design</b>
@@ -177,13 +179,10 @@ public class ExperimentalDesign {
   /**
    * Whether a {@link Condition} is defined in this experimental design named with the same label.
    *
-   * @param conditionLabel the label of the condition
    * @return true if there is a condition with label <code>conditionLabel</code>; false otherwise
    */
-  boolean isConditionDefined(String conditionLabel) {
-    return conditions.stream()
-        .map(Condition::label)
-        .anyMatch(label -> label.value().equals(conditionLabel));
+  boolean isConditionDefined(Condition condition) {
+    return conditions.contains(condition);
   }
 
   /**
@@ -243,14 +242,8 @@ public class ExperimentalDesign {
       }
     }
 
-    if (isConditionDefined(conditionLabel)) {
-      return Result.failure(new ConditionExistsException(
-          "please provide a different condition label. A condition with the label "
-              + conditionLabel + " exists."));
-    }
-
     try {
-      Condition condition = Condition.create(conditionLabel, levels);
+      Condition condition = Condition.create(levels);
       if (isConditionWithSameLevelsDefined(condition)) {
         return Result.failure(new ConditionExistsException(
             "A condition containing the provided levels exists."));
