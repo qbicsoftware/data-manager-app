@@ -176,12 +176,12 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
     public void setProjectId(ProjectId projectId) {
       projectInformationService.find(projectId.value())
-          .ifPresentOrElse(this::getActiveExperimentFromProject, this::emptyAction);
+          .ifPresent(this::getActiveExperimentFromProject);
     }
 
     private void getActiveExperimentFromProject(Project project) {
       experimentInformationService.find(project.activeExperiment().value())
-          .ifPresentOrElse(this::loadExperimentInformation, this::emptyAction);
+          .ifPresent(this::loadExperimentInformation);
     }
 
     private void loadExperimentInformation(Experiment experiment) {
@@ -222,11 +222,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
     private void loadBlockingVariableInformation() {
       //ToDo load information from backend once implemented
-    }
-
-    //ToDo what should happen in the UI if neither project nor experiment has been found?
-    private void emptyAction() {
-
     }
 
   }

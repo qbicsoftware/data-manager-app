@@ -220,11 +220,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     public void setProjectId(String projectId) {
       projectInformationService.find(projectId)
-          .ifPresentOrElse(this::loadProjectData, this::emptyAction);
-    }
-
-    //ToDo what should be done if projectID could not be retrieved
-    private void emptyAction() {
+          .ifPresent(this::loadProjectData);
     }
 
     private void restrictInputLength() {

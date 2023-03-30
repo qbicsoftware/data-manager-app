@@ -88,7 +88,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
       projectInformationService.find(projectId.value())
-          .ifPresentOrElse(this::setExperimentDataProviderFromProject, this::emptyAction);
+          .ifPresent(this::setExperimentDataProviderFromProject);
     }
 
     private void setExperimentDataProviderFromProject(Project project) {
@@ -102,14 +102,9 @@ public class ExperimentListComponent extends Composite<CardLayout> {
       List<Experiment> experimentList = new ArrayList<>();
       project.experiments().forEach(
           experimentId -> experimentInformationService.find(experimentId.value())
-              .ifPresentOrElse(experimentList::add, this::emptyAction));
+              .ifPresent(experimentList::add));
       return experimentList;
     }
-
-    //ToDo what should happen in the UI if neither project nor experiment has been found?
-    private void emptyAction() {
-    }
-
   }
 
 }
