@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -50,27 +50,27 @@ public class Condition {
    * @return the condition
    * @since 1.0.0
    */
-  public static Condition create(VariableLevel... definedVariables) {
+  public static Condition create(Set<VariableLevel> definedVariables) {
     return new Condition(definedVariables);
   }
 
 
-  private Condition(VariableLevel... variableLevels) {
-    Arrays.stream(variableLevels).forEach(Objects::requireNonNull);
+  private Condition(Set<VariableLevel> variableLevels) {
+    variableLevels.forEach(Objects::requireNonNull);
 
-    if (variableLevels.length < 1) {
+    if (variableLevels.isEmpty()) {
       throw new IllegalArgumentException("Please define at least one variable level.");
     }
 
-    int distinctExperimentVariables = Arrays.stream(variableLevels)
+    int distinctExperimentVariables = variableLevels.stream()
         .map(VariableLevel::variableName)
         .collect(Collectors.toSet())
         .size();
-    if (distinctExperimentVariables < variableLevels.length) {
+    if (distinctExperimentVariables < variableLevels.size()) {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
-    this.variableLevels = Arrays.stream(variableLevels).collect(Collectors.toUnmodifiableSet());
+    this.variableLevels = Collections.unmodifiableSet(variableLevels);
   }
 
   /**

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
@@ -232,4 +233,8 @@ public class Experiment {
     return experimentalDesign.defineCondition(levels);
   }
 
+  //TODO JavaDoc
+  public void addExperimentalGroup(Set<VariableLevel> variableLevels, int sampleSize) {
+    experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
+  }
 }

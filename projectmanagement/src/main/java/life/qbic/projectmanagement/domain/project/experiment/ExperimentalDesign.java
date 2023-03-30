@@ -8,7 +8,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
@@ -84,8 +83,10 @@ public class ExperimentalDesign {
   // @JoinColumn so no extra table is created as experimental_variables contains that column
   final List<ExperimentalVariable> variables = new ArrayList<>();
 
-  @ElementCollection
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
+  @JoinColumn(name = "experimentId")
   final Set<ExperimentalGroup> experimentalGroups = new HashSet<>();
+
   /*@OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   // @JoinColumn so no extra table is created as conditions contains that column
@@ -110,7 +111,7 @@ public class ExperimentalDesign {
     */
 
     int variableCount = variables.size();
-    //int conditionCount = conditions.size();
+    int groupCount = experimentalGroups.size();
   }
 
 
@@ -231,7 +232,7 @@ public class ExperimentalDesign {
     }
 
     try {
-      Condition condition = Condition.create(levels);
+      Condition condition = Condition.create(Set.of(levels));
       if (isConditionDefined(condition)) {
         return Result.failure(new ConditionExistsException(
             "A condition containing the provided levels exists."));
@@ -261,5 +262,24 @@ public class ExperimentalDesign {
     } catch (IllegalArgumentException e) {
       return Result.failure(e);
     }
+  }
+
+  //TODO signature?
+  public void addExperimentalGroup(Set<VariableLevel> variableLevels, int sampleSize) {
+    variableLevels.forEach(Objects::requireNonNull);
+
+    for (VariableLevel level : variableLevels) {
+      if (!isVariableDefined(level.variableName().value())) {
+        throw new IllegalArgumentException(
+            "There is no variable " + level.variableName().value() + " in this experiment.");
+      }
+    }
+
+    Condition condition = Condition.create(variableLevels);
+    if (isConditionDefined(condition)) {
+      throw new ConditionExistsException(
+          "A condition containing the provided levels exists.");
+    }
+    experimentalGroups.add(ExperimentalGroup.with(condition, sampleSize));
   }
 }
