@@ -101,7 +101,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     private Collection<Experiment> getExperimentsForProject(Project project) {
       List<Experiment> experimentList = new ArrayList<>();
       project.experiments().forEach(
-          experimentId -> experimentInformationService.find(experimentId.value())
+          experimentId -> experimentInformationService.find(experimentId)
               .ifPresent(experimentList::add));
       return experimentList;
     }

@@ -180,7 +180,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void getActiveExperimentFromProject(Project project) {
-      experimentInformationService.find(project.activeExperiment().value())
+      experimentInformationService.find(project.activeExperiment())
           .ifPresent(this::loadExperimentInformation);
     }
 

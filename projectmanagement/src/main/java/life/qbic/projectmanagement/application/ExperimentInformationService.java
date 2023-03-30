@@ -34,10 +34,10 @@ public class ExperimentInformationService {
     this.experimentRepository = experimentRepository;
   }
 
-  public Optional<Experiment> find(String experimentId) {
+  public Optional<Experiment> find(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     log.debug("Search for experiment with id: " + experimentId);
-    return experimentRepository.find(ExperimentId.parse(experimentId));
+    return experimentRepository.find(experimentId);
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
