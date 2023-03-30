@@ -102,7 +102,7 @@ public class ExperimentInformationService {
   /**
    * Adds {@link ExperimentalVariable} to an {@link Experiment}
    *
-   * @param experimentId the Id of the experiment for which to add the analyte
+   * @param experimentId the Id of the experiment
    * @param variableName the name of the variable to be added
    * @param unit         the optionally defined unit for the {@link ExperimentalValue} within the
    *                     {@link ExperimentalVariable}
