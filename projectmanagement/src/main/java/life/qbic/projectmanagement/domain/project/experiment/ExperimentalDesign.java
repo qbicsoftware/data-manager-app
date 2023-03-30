@@ -184,7 +184,7 @@ public class ExperimentalDesign {
    * @return true if there is a condition with the same levels; false otherwise
    */
   boolean isConditionDefined(Condition condition) {
-    return experimentalGroups.stream().anyMatch(it -> it.getCondition().equals(condition));
+    return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
   /**

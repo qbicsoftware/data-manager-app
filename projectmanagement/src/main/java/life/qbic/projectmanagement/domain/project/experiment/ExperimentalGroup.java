@@ -52,20 +52,12 @@ public class ExperimentalGroup {
     return new ExperimentalGroup(condition, sampleSize);
   }
 
-  public Condition getCondition() {
+  public Condition condition() {
     return this.condition;
   }
 
-  protected void setCondition(Condition condition) {
-    this.condition = condition;
-  }
-
-  public int getSampleSize() {
+  public int sampleSize() {
     return this.sampleSize;
-  }
-
-  protected void setSampleSize(int sampleSize) {
-    this.sampleSize = sampleSize;
   }
 
   @Override
