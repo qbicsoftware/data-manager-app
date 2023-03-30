@@ -224,15 +224,12 @@ public class Experiment {
    *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param conditionLabel a declarative and unique name for the condition in scope of this
-   *                       experiment.
    * @param levels         at least one value for the variable
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a declarative
    * exceptions.
    */
-  public Result<Condition, Exception> defineCondition(String conditionLabel,
-      VariableLevel[] levels) {
-    return experimentalDesign.defineCondition(conditionLabel, levels);
+  public Result<Condition, Exception> defineCondition(VariableLevel[] levels) {
+    return experimentalDesign.defineCondition(levels);
   }
 
 }

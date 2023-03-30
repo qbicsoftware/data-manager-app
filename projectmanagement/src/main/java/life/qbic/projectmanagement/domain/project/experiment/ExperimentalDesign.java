@@ -2,10 +2,11 @@ package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
@@ -16,7 +17,6 @@ import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 
 /**
  * <b>Experimental Design</b>
@@ -69,7 +69,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions can be defined via {@link #defineCondition(String, VariableLevel[])}.
+ * Conditions can be defined via {@link #defineCondition(VariableLevel[])}.
  * <p>
  * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining a {@link Condition}.
  *
@@ -84,11 +84,13 @@ public class ExperimentalDesign {
   // @JoinColumn so no extra table is created as experimental_variables contains that column
   final List<ExperimentalVariable> variables = new ArrayList<>();
 
-  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
+  @ElementCollection
+  final Set<ExperimentalGroup> experimentalGroups = new HashSet<>();
+  /*@OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
   // @JoinColumn so no extra table is created as conditions contains that column
   final Collection<Condition> conditions = new ArrayList<>();
-
+*/
   protected ExperimentalDesign() {
     // needed for JPA
   }
@@ -108,7 +110,7 @@ public class ExperimentalDesign {
     */
 
     int variableCount = variables.size();
-    int conditionCount = conditions.size();
+    //int conditionCount = conditions.size();
   }
 
 
@@ -172,28 +174,17 @@ public class ExperimentalDesign {
   @Override
   public int hashCode() {
     int result = variables.hashCode();
-    result = 31 * result + conditions.hashCode();
+    result = 31 * result + experimentalGroups.hashCode();
     return result;
   }
 
   /**
-   * Whether a {@link Condition} is defined in this experimental design named with the same label.
+   * Whether a {@link Condition} is defined in this design
    *
-   * @return true if there is a condition with label <code>conditionLabel</code>; false otherwise
+   * @return true if there is a condition with the same levels; false otherwise
    */
   boolean isConditionDefined(Condition condition) {
-    return conditions.contains(condition);
-  }
-
-  /**
-   * Whether this design contains a condition with the same {@link VariableLevel}s
-   *
-   * @param condition the condition to check for
-   * @return true if there is a condition with the same variable levels; false otherwise.
-   */
-  boolean isConditionWithSameLevelsDefined(Condition condition) {
-    return conditions.stream().anyMatch(c ->
-        c.hasSameLevelsDefined(condition));
+    return experimentalGroups.stream().anyMatch(it -> it.getCondition().equals(condition));
   }
 
   /**
@@ -225,14 +216,11 @@ public class ExperimentalDesign {
    *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param conditionLabel a declarative and unique name for the condition in scope of this
-   *                       experiment.
    * @param levels         at least one value for the variable
    * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
    * declarative exceptions.
    */
-  public Result<Condition, Exception> defineCondition(String conditionLabel,
-      VariableLevel[] levels) {
+  public Result<Condition, Exception> defineCondition(VariableLevel[] levels) {
     Arrays.stream(levels).forEach(Objects::requireNonNull);
 
     for (VariableLevel level : levels) {
@@ -244,11 +232,11 @@ public class ExperimentalDesign {
 
     try {
       Condition condition = Condition.create(levels);
-      if (isConditionWithSameLevelsDefined(condition)) {
+      if (isConditionDefined(condition)) {
         return Result.failure(new ConditionExistsException(
             "A condition containing the provided levels exists."));
       }
-      conditions.add(condition);
+      experimentalGroups.add(ExperimentalGroup.with(condition, 0)); //TODO fix me
       return Result.success(condition);
     } catch (IllegalArgumentException e) {
       return Result.failure(e);

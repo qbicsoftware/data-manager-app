@@ -102,7 +102,7 @@ class ExperimentalDesignSpec extends Specification {
         def controlCondition = Condition.create("my condition", VariableLevel.create(variableName, ExperimentalValue.create("normal")))
         design.conditions.add(controlCondition)
         when: "a condition is defined with identical variable levels"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
+        def result = design.defineCondition(design.getLevel("environment", ExperimentalValue.create("normal")).get())
         then: "an exception is thrown"
         result.isFailure()
     }
@@ -115,7 +115,7 @@ class ExperimentalDesignSpec extends Specification {
         def controlCondition = Condition.create("control", VariableLevel.create(variableName, ExperimentalValue.create("altered")))
         design.conditions.add(controlCondition)
         when: "a condition is defined with identical variable levels"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
+        def result = design.defineCondition(design.getLevel("environment", ExperimentalValue.create("normal")).get())
         then: "an exception is thrown"
         result.isFailure()
     }
@@ -128,7 +128,7 @@ class ExperimentalDesignSpec extends Specification {
         def expectedCondition = Condition.create("control", VariableLevel.create(variableName, ExperimentalValue.create("normal")))
 
         when: "a condition is defined"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
+        def result = design.defineCondition(design.getLevel("environment", ExperimentalValue.create("normal")).get())
 
         then: "the condition is returned"
         result.isSuccess()

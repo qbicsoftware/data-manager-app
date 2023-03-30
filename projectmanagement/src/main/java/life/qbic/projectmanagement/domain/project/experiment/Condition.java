@@ -1,20 +1,13 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ConditionLabelAttributeConverter;
 
 /**
  * <b>Condition</b>
@@ -35,19 +28,12 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Cond
  *   <li>(3) mutant + 0 mmol/L</li>
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
- * <p>
- * Conditions in an experimental design can be defined via {@link Experiment#defineCondition(String, VariableLevel[])}.
- * <p>
  *
  * @since 1.0.0
  */
-@Entity(name = "conditions")
+@Embeddable
 //IMPORTANT: do not name the table condition; condition is a reserved keyword
 public class Condition {
-
-  @Id
-  @GeneratedValue
-  private long conditionId;
 
   @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
   private Set<VariableLevel> variableLevels;
