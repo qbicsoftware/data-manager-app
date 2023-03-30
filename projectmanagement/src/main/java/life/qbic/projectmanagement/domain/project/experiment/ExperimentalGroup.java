@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Objects;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
