@@ -15,6 +15,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.projectmanagement.application.ProjectManagementException;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
  * ProjectNavigationBarComponent
@@ -83,13 +85,19 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
     navigationBarLayout.setAlignItems(Alignment.CENTER);
     getContent().addFields(navigationBarLayout);
-
+    String projectIdRouteParam = handler.selectedProject.value();
     experimentalDesignButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
-            .navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject))));
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
+            it -> it.navigate(String.format(Projects.EXPERIMENTS, projectIdRouteParam)), () -> {
+              throw new ProjectManagementException(
+                  "Could not navigate to Experiment Information Page for " + projectIdRouteParam);
+            })));
     projectInformationButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
-            .navigate(String.format(Projects.PROJECT_INFO, handler.selectedProject))));
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
+            it -> it.navigate(String.format(Projects.PROJECT_INFO, projectIdRouteParam)), () -> {
+              throw new ProjectManagementException(
+                  "Could not navigate to Project Information Page for " + projectIdRouteParam);
+            })));
   }
 
   public void projectId(ProjectId projectId) {
