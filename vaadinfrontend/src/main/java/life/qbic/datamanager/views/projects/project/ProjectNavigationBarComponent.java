@@ -85,18 +85,21 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
     navigationBarLayout.setAlignItems(Alignment.CENTER);
     getContent().addFields(navigationBarLayout);
-    String projectIdRouteParam = handler.selectedProject.value();
     experimentalDesignButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(String.format(Projects.EXPERIMENTS, projectIdRouteParam)), () -> {
+            it -> it.navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject.value())),
+            () -> {
               throw new ProjectManagementException(
-                  "Could not navigate to Experiment Information Page for " + projectIdRouteParam);
+                  "Could not navigate to Experiment Information Page for "
+                      + handler.selectedProject.value());
             })));
     projectInformationButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(String.format(Projects.PROJECT_INFO, projectIdRouteParam)), () -> {
+            it -> it.navigate(
+                String.format(Projects.PROJECT_INFO, handler.selectedProject.value())), () -> {
               throw new ProjectManagementException(
-                  "Could not navigate to Project Information Page for " + projectIdRouteParam);
+                  "Could not navigate to Project Information Page for "
+                      + handler.selectedProject.value());
             })));
   }
 
