@@ -77,8 +77,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 
-  public void projectId(String parameter) {
-    this.handler.setProjectId(ProjectId.parse(parameter));
+  public void projectId(ProjectId projectId) {
+    this.handler.setProjectId(projectId);
   }
 
   private void initTopLayout() {
@@ -175,7 +175,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     public void setProjectId(ProjectId projectId) {
-      projectInformationService.find(projectId.value())
+      projectInformationService.find(projectId)
           .ifPresent(this::getActiveExperimentFromProject);
     }
 

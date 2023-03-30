@@ -16,6 +16,7 @@ import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -65,14 +66,16 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    beforeEnterEvent.getRouteParameters().get("projectId")
-        .ifPresentOrElse(handler::projectId, () -> {
-          throw new ProjectManagementException("no project id provided");
-        });
+    beforeEnterEvent.getRouteParameters().get("projectId").ifPresentOrElse(projectIdParam -> {
+      ProjectId projectId;
+      try {
+        projectId = ProjectId.parse(projectIdParam);
+      } catch (IllegalArgumentException e) {
+        throw new ProjectManagementException("Provided projectId " + projectIdParam + "is invalid");
+      }
+      handler.setProjectId(projectId);
+    }, () -> {
+      throw new ProjectManagementException("no project id provided");
+    });
   }
-
-  private void setComponentContext(String projectId) {
-    this.handler.projectId(projectId);
-  }
-
 }

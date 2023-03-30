@@ -118,8 +118,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         .toList();
   }
 
-  public void projectId(String projectId) {
-    this.projectId = ProjectId.parse(projectId);
+  public void projectId(ProjectId projectId) {
+    this.projectId = projectId;
     loadContentForProject(this.projectId);
   }
 

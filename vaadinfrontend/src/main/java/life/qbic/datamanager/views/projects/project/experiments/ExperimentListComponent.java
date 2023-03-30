@@ -62,8 +62,8 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     getContent().addClassNames(componentStyles);
   }
 
-  public void projectId(String parameter) {
-    this.handler.setProjectId(ProjectId.parse(parameter));
+  public void projectId(ProjectId projectId) {
+    this.handler.setProjectId(projectId);
   }
 
 
@@ -87,7 +87,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId.value())
+      projectInformationService.find(projectId)
           .ifPresent(this::setExperimentDataProviderFromProject);
     }
 

@@ -59,53 +59,47 @@ public class ProjectInformationService {
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
-  public Optional<Project> find(String projectId) {
+  public Optional<Project> find(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     return Optional.ofNullable(loadProject(projectId));
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
-  private Project loadProject(String projectId) {
+  private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
-    ProjectId parsedProjectId;
-    try {
-      parsedProjectId = ProjectId.parse(projectId);
-    } catch (IllegalArgumentException e) {
-      throw new ProjectManagementException("invalid project id " + projectId, e);
-    }
     log.debug("Search for project with id: " + projectId);
-    return projectRepository.find(parsedProjectId).orElseThrow(() -> new ProjectManagementException(
+    return projectRepository.find(projectId).orElseThrow(() -> new ProjectManagementException(
             "Project with id" + projectId + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
 
-  public void updateTitle(String projectId, String newTitle) {
+  public void updateTitle(ProjectId projectId, String newTitle) {
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
     Project project = loadProject(projectId);
     project.updateTitle(projectTitle);
     projectRepository.update(project);
   }
 
-  public void manageProject(String projectId, PersonReference personReference) {
+  public void manageProject(ProjectId projectId, PersonReference personReference) {
     Project project = loadProject(projectId);
     project.setProjectManager(personReference);
     projectRepository.update(project);
   }
 
-  public void investigateProject(String projectId, PersonReference personReference) {
+  public void investigateProject(ProjectId projectId, PersonReference personReference) {
     Project project = loadProject(projectId);
     project.setPrincipalInvestigator(personReference);
     projectRepository.update(project);
   }
 
-  public void setResponsibility(String projectId, PersonReference personReference) {
+  public void setResponsibility(ProjectId projectId, PersonReference personReference) {
     Project project = loadProject(projectId);
     project.setResponsiblePerson(personReference);
     projectRepository.update(project);
   }
 
-  public void describeExperimentalDesign(String projectId, String experimentalDesign) {
+  public void describeExperimentalDesign(ProjectId projectId, String experimentalDesign) {
     ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
         experimentalDesign);
     Project project = loadProject(projectId);
@@ -113,7 +107,7 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
-  public void stateObjective(String projectId, String objective) {
+  public void stateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);

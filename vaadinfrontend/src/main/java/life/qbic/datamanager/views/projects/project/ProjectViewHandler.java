@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project;
 import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -33,7 +34,7 @@ class ProjectViewHandler {
    * @param projectId the route parameter
    * @since 1.0.0
    */
-  public void projectId(String projectId) {
+  public void setProjectId(ProjectId projectId) {
     this.projectNavigationBarComponent.projectId(projectId);
     this.projectInformationPage.projectId(projectId);
     this.experimentInformationPage.projectId(projectId);

@@ -12,6 +12,7 @@ import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -50,7 +51,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
         System.identityHashCode(projectLinksComponent)));
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     projectInformationPageHandler.setProjectId(projectId);
   }
 
@@ -71,7 +72,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
       this.projectLinksComponent = projectLinksComponent;
     }
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       projectDetailsComponent.projectId(projectId);
       projectLinksComponent.projectId(projectId);
     }

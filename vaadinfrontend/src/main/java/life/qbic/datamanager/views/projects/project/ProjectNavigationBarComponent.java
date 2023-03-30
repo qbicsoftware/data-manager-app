@@ -92,7 +92,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
             .navigate(String.format(Projects.PROJECT_INFO, handler.selectedProject))));
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     this.handler.setProjectId(projectId);
   }
 
@@ -102,14 +102,10 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
 
   private final class Handler {
 
-    private String selectedProject;
+    private ProjectId selectedProject;
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       this.selectedProject = projectId;
-    }
-
-    public String selectedProjectId() {
-      return this.selectedProject;
     }
   }
 }

@@ -178,7 +178,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     analyteMultiSelectComboBox.addClassName("chip-badge");
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     handler.setProjectId(projectId);
   }
 
@@ -218,7 +218,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       setupExperimentalDesignSearch();
     }
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       projectInformationService.find(projectId)
           .ifPresent(this::loadProjectData);
     }
@@ -307,7 +307,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         if (Objects.isNull(selectedProject)) {
           return;
         }
-        projectInformationService.updateTitle(selectedProject.value(), value.trim());
+        projectInformationService.updateTitle(selectedProject, value.trim());
       });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(projectObjectiveToggleComponent,
@@ -315,7 +315,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.stateObjective(selectedProject.value(), value.trim());
+            projectInformationService.stateObjective(selectedProject, value.trim());
           });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(experimentalDesignToggleComponent,
@@ -323,7 +323,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.describeExperimentalDesign(selectedProject.value(),
+            projectInformationService.describeExperimentalDesign(selectedProject,
                 value.trim());
           });
 
@@ -331,7 +331,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
         if (Objects.isNull(selectedProject)) {
           return;
         }
-        projectInformationService.manageProject(selectedProject.value(), value);
+        projectInformationService.manageProject(selectedProject, value);
       });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(principalInvestigatorToggleComponent,
@@ -339,14 +339,14 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.investigateProject(selectedProject.value(), value);
+            projectInformationService.investigateProject(selectedProject, value);
           });
       ProjectDetailsComponent.Handler.submitOnValueChange(responsiblePersonToggleComponent,
           value -> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.setResponsibility(selectedProject.value(), value);
+            projectInformationService.setResponsibility(selectedProject, value);
           });
 
       ProjectDetailsComponent.Handler.submitOnValueAdded(speciesMultiSelectComboBox, value -> {

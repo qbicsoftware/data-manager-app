@@ -13,6 +13,7 @@ import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -52,7 +53,7 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
         System.identityHashCode(experimentListComponent)));
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     experimentInformationPageHandler.setProjectId(projectId);
   }
 
@@ -73,7 +74,7 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
       this.experimentListComponent = experimentListComponent;
     }
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       experimentDetailsComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
     }
