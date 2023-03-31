@@ -25,7 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Project Overview")
 @Route(value = Projects.PROJECTS, layout = MainLayout.class)
 @PermitAll
-public class ProjectOverviewPage extends Div implements BeforeEnterObserver {
+public class ProjectOverviewPage extends Div {
+
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
 
@@ -33,15 +34,6 @@ public class ProjectOverviewPage extends Div implements BeforeEnterObserver {
 
   public ProjectOverviewPage(@Autowired ProjectOverviewComponent projectOverviewComponent) {
     add(projectOverviewComponent);
-  }
-
-  @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    System.out.println("Path is: " + beforeEnterEvent.getLocation().getPath());
-    if (beforeEnterEvent.getLocation().getPath().isBlank()) {
-      System.out.println("Rerouting to: Projects.PROJECTS");
-      beforeEnterEvent.forwardTo(Projects.ANALYSIS);
-    }
   }
 
 }
