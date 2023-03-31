@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.projects.project.info;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -15,7 +15,6 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
@@ -24,17 +23,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
-import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -46,7 +42,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Project Details Component
@@ -55,10 +50,8 @@ import org.springframework.security.access.AccessDeniedException;
  *
  * @since 1.0.0
  */
-@SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
-@PermitAll
+@SpringComponent
 public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
@@ -80,8 +73,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired PersonSearchService personSearchService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService, @Autowired
-  ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
@@ -134,14 +127,11 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     analyteMultiSelectComboBox.setClearButtonVisible(false);
 
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Principal Investigator"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Principal Investigator"), createPlaceHolderSpan());
     responsiblePersonToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Responsible Person"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Responsible Person"), createPlaceHolderSpan());
     projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Project Manager"),
-        createPlaceHolderSpan());
+        initPersonReferenceCombobox("Project Manager"), createPlaceHolderSpan());
 
   }
 
@@ -188,8 +178,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     analyteMultiSelectComboBox.addClassName("chip-badge");
   }
 
-  public void projectId(String projectId) {
-    handler.projectId(projectId);
+  public void projectId(ProjectId projectId) {
+    handler.setProjectId(projectId);
   }
 
   public void setStyles(String... componentStyles) {
@@ -228,29 +218,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       setupExperimentalDesignSearch();
     }
 
-    public void projectId(String projectId) {
-      parseProjectId(projectId);
-      try {
-        projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
-            this::emptyAction);
-      } catch (AccessDeniedException accessDeniedException) {
-        log.error("Access denied when loading project details for project id " + projectId,
-            accessDeniedException);
-        emptyAction();
-      }
-    }
-
-    //ToDo what should be done if projectID could not be retrieved
-    private void emptyAction() {
-      titleToggleComponent.setValue("Not found");
-    }
-
-    private void parseProjectId(String id) {
-      try {
-        ProjectId.parse(id);
-      } catch (IllegalArgumentException e) {
-        throw new ProjectManagementException("invalid project id " + id, e);
-      }
+    public void setProjectId(ProjectId projectId) {
+      projectInformationService.find(projectId)
+          .ifPresent(this::loadProjectData);
     }
 
     private void restrictInputLength() {
@@ -258,8 +228,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       titleToggleComponent.getInputComponent().setMaxLength((int) ProjectTitle.maxLength());
       projectObjectiveToggleComponent.getInputComponent()
           .setMaxLength((int) ProjectObjective.maxLength());
-      experimentalDesignToggleComponent.getInputComponent().setMaxLength(
-          (int) ExperimentalDesignDescription.maxLength());
+      experimentalDesignToggleComponent.getInputComponent()
+          .setMaxLength((int) ExperimentalDesignDescription.maxLength());
 
       titleToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
       projectObjectiveToggleComponent.getInputComponent().setValueChangeMode(ValueChangeMode.EAGER);
@@ -273,12 +243,12 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       addConsumedLengthHelper(experimentalDesignToggleComponent.getInputComponent(),
           experimentalDesignToggleComponent.getValue());
 
-      titleToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      projectObjectiveToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      experimentalDesignToggleComponent.getInputComponent().addValueChangeListener(
-          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      titleToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      projectObjectiveToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      experimentalDesignToggleComponent.getInputComponent()
+          .addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
     private void addConsumedLengthHelper(TextArea textArea, String newValue) {
@@ -301,7 +271,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
           project.getProjectIntent().experimentalDesign().value());
       projectManagerToggleComponent.setValue(project.getProjectManager());
       principalInvestigatorToggleComponent.setValue(project.getPrincipalInvestigator());
-      responsiblePersonToggleComponent.setValue(project.getResponsiblePerson().orElse(null));
+      project.getResponsiblePerson().ifPresent(
+          responsiblePerson -> responsiblePersonToggleComponent.setValue(responsiblePerson));
       activeExperimentId = project.activeExperiment();
       analyteMultiSelectComboBox.setValue(
           experimentInformationService.getAnalytesOfExperiment(activeExperimentId));
@@ -312,9 +283,8 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private void setupExperimentalDesignSearch() {
-      speciesMultiSelectComboBox.setItems(
-          experimentalDesignSearchService.retrieveSpecies().stream()
-              .sorted(Comparator.comparing(Species::label)).toList());
+      speciesMultiSelectComboBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
+          .sorted(Comparator.comparing(Species::label)).toList());
       speciesMultiSelectComboBox.setItemLabelGenerator(Species::value);
       specimenMultiSelectComboBox.setItems(
           experimentalDesignSearchService.retrieveSpecimens().stream()
@@ -329,25 +299,23 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
       comboBox.setItems(
           query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
-                  query.getLimit())
-              .stream());
+              query.getLimit()).stream());
     }
 
     private void attachSubmissionActionOnValueChange() {
-      ProjectDetailsComponent.Handler.submitOnValueChange(titleToggleComponent,
-          value -> {
-            if (Objects.isNull(selectedProject)) {
-              return;
-            }
-            projectInformationService.updateTitle(selectedProject.value(), value.trim());
-          });
+      ProjectDetailsComponent.Handler.submitOnValueChange(titleToggleComponent, value -> {
+        if (Objects.isNull(selectedProject)) {
+          return;
+        }
+        projectInformationService.updateTitle(selectedProject, value.trim());
+      });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(projectObjectiveToggleComponent,
           value -> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.stateObjective(selectedProject.value(), value.trim());
+            projectInformationService.stateObjective(selectedProject, value.trim());
           });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(experimentalDesignToggleComponent,
@@ -355,64 +323,54 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.describeExperimentalDesign(selectedProject.value(),
+            projectInformationService.describeExperimentalDesign(selectedProject,
                 value.trim());
           });
 
-      ProjectDetailsComponent.Handler.submitOnValueChange(projectManagerToggleComponent,
-          value ->
-          {
-            if (Objects.isNull(selectedProject)) {
-              return;
-            }
-            projectInformationService.manageProject(selectedProject.value(), value);
-          });
+      ProjectDetailsComponent.Handler.submitOnValueChange(projectManagerToggleComponent, value -> {
+        if (Objects.isNull(selectedProject)) {
+          return;
+        }
+        projectInformationService.manageProject(selectedProject, value);
+      });
 
       ProjectDetailsComponent.Handler.submitOnValueChange(principalInvestigatorToggleComponent,
-          value ->
-          {
+          value -> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.investigateProject(selectedProject.value(), value);
+            projectInformationService.investigateProject(selectedProject, value);
           });
       ProjectDetailsComponent.Handler.submitOnValueChange(responsiblePersonToggleComponent,
-          value ->
-          {
+          value -> {
             if (Objects.isNull(selectedProject)) {
               return;
             }
-            projectInformationService.setResponsibility(selectedProject.value(), value);
+            projectInformationService.setResponsibility(selectedProject, value);
           });
 
-      ProjectDetailsComponent.Handler.submitOnValueAdded(speciesMultiSelectComboBox,
-          value ->
-          {
-            if (Objects.isNull((activeExperimentId))) {
-              return;
-            }
-            experimentInformationService.addSpeciesToExperiment(activeExperimentId,
-                value.toArray(Species[]::new));
-          });
-      ProjectDetailsComponent.Handler.submitOnValueAdded(specimenMultiSelectComboBox,
-          value ->
-          {
-            if (Objects.isNull(activeExperimentId)) {
-              return;
-            }
-            experimentInformationService.addSpecimenToExperiment(activeExperimentId,
-                value.toArray(Specimen[]::new));
-          });
+      ProjectDetailsComponent.Handler.submitOnValueAdded(speciesMultiSelectComboBox, value -> {
+        if (Objects.isNull((activeExperimentId))) {
+          return;
+        }
+        experimentInformationService.addSpeciesToExperiment(activeExperimentId,
+            value.toArray(Species[]::new));
+      });
+      ProjectDetailsComponent.Handler.submitOnValueAdded(specimenMultiSelectComboBox, value -> {
+        if (Objects.isNull(activeExperimentId)) {
+          return;
+        }
+        experimentInformationService.addSpecimenToExperiment(activeExperimentId,
+            value.toArray(Specimen[]::new));
+      });
 
-      ProjectDetailsComponent.Handler.submitOnValueAdded(analyteMultiSelectComboBox,
-          value ->
-          {
-            if (Objects.isNull(activeExperimentId)) {
-              return;
-            }
-            experimentInformationService.addAnalyteToExperiment(activeExperimentId,
-                value.toArray(Analyte[]::new));
-          });
+      ProjectDetailsComponent.Handler.submitOnValueAdded(analyteMultiSelectComboBox, value -> {
+        if (Objects.isNull(activeExperimentId)) {
+          return;
+        }
+        experimentInformationService.addAnalyteToExperiment(activeExperimentId,
+            value.toArray(Analyte[]::new));
+      });
     }
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
@@ -421,8 +379,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private static <V extends Collection<?>, T extends HasValue<?, V>> void submitOnValueAdded(
-        T element,
-        Consumer<V> submitAction) {
+        T element, Consumer<V> submitAction) {
       element.addValueChangeListener(it -> {
         V oldValue = it.getOldValue();
         V value = it.getValue();

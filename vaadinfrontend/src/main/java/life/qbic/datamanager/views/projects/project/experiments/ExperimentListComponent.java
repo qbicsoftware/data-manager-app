@@ -1,14 +1,12 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -18,8 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -28,38 +25,31 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b>ExperimentalDesignDetailComponent</b>
+ * <b>ExperimentListComponent</b>
  * <p>
- * This component shows the {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} information associated with the selected {@link life.qbic.projectmanagement.domain.project.Project}
- * within the {@link life.qbic.datamanager.views.project.view.ProjectViewPage}
- *
+ * This component lists the {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}
+ * associated with the selected {@link life.qbic.projectmanagement.domain.project.Project} within
+ * the {@link ProjectViewPage}
  */
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
 @PermitAll
-public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
+public class ExperimentListComponent extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
   private static final String TITLE = "Experimental Design";
-  private final Button createDesignButton = new Button("Add");
-  private final ExperimentCreationDialog experimentCreationDialog;
   private final transient Handler handler;
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentalDesignDetailComponent(
-      @Autowired ExperimentCreationDialog experimentCreationDialog,
+  public ExperimentListComponent(
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
-
-    Objects.requireNonNull(experimentCreationDialog);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.experimentCreationDialog = experimentCreationDialog;
     VerticalLayout contentLayout = new VerticalLayout();
     contentLayout.add(experiments);
     contentLayout.add(experimentalDesignAddCard);
@@ -72,13 +62,13 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
     getContent().addClassNames(componentStyles);
   }
 
-  public void projectId(String parameter) {
-    this.handler.setProjectId(ProjectId.parse(parameter));
+  public void projectId(ProjectId projectId) {
+    this.handler.setProjectId(projectId);
   }
 
 
   /**
-   * Component logic for the {@link ExperimentalDesignDetailComponent}
+   * Component logic for the {@link ExperimentListComponent}
    *
    * @since 1.0.0
    */
@@ -92,46 +82,28 @@ public class ExperimentalDesignDetailComponent extends Composite<CardLayout> {
         ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
-      openDialogueListener();
       experiments.setRenderer(experimentCardRenderer);
     }
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId.value()).ifPresentOrElse(
-          this::setExperimentDataProviderFromProject, this::emptyAction);
+      projectInformationService.find(projectId)
+          .ifPresent(this::setExperimentDataProviderFromProject);
     }
 
     private void setExperimentDataProviderFromProject(Project project) {
       CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
-          query -> getExperimentsForProject(project).stream().skip(query.getOffset()).limit(
-              query.getLimit()),
-          query -> getExperimentsForProject(project).size());
+          query -> getExperimentsForProject(project).stream().skip(query.getOffset())
+              .limit(query.getLimit()), query -> getExperimentsForProject(project).size());
       experiments.setDataProvider(experimentsDataProvider);
     }
 
     private Collection<Experiment> getExperimentsForProject(Project project) {
       List<Experiment> experimentList = new ArrayList<>();
-      project.experiments()
-          .forEach(experimentId -> experimentInformationService.find(experimentId.value())
-              .ifPresentOrElse(experimentList::add, this::emptyAction));
+      project.experiments().forEach(
+          experimentId -> experimentInformationService.find(experimentId)
+              .ifPresent(experimentList::add));
       return experimentList;
-    }
-
-    //ToDo what should happen in the UI if neither project nor experiment has been found?
-    private void emptyAction() {
-    }
-
-    private void openDialogueListener() {
-      createDesignButton.addClickListener(clickEvent -> experimentCreationDialog.open(projectId));
-      experimentalDesignAddCard.addClickListener(
-          clickEvent -> experimentCreationDialog.open(projectId));
-      experimentCreationDialog.addOpenedChangeListener(
-          event -> {
-            if (!event.isOpened()) {
-              experiments.getDataProvider().refreshAll();
-            }
-          });
     }
   }
 

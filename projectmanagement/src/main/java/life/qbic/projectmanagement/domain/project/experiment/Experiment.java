@@ -93,6 +93,17 @@ public class Experiment {
     return experimentalDesign.getLevel(variableName, value);
   }
 
+  /**
+   * Retrieves the list of experimental variables stored within the Experiment.
+   *
+   * @return Provides the list of {@link ExperimentalVariable} defined within the
+   * {@link ExperimentalDesign} of the {@link Experiment}
+   */
+
+  public List<ExperimentalVariable> variables() {
+    return experimentalDesign.variables();
+  }
+
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
