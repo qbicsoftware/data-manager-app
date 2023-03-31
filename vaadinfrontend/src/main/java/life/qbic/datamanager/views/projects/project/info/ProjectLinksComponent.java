@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.projects.project.info;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -118,8 +118,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         .toList();
   }
 
-  public void projectId(String projectId) {
-    this.projectId = ProjectId.parse(projectId);
+  public void projectId(ProjectId projectId) {
+    this.projectId = projectId;
     loadContentForProject(this.projectId);
   }
 

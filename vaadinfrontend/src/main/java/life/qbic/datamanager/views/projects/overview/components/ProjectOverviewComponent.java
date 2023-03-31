@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.overview.components;
+package life.qbic.datamanager.views.projects.overview.components;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -39,7 +39,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.project.create.ProjectInformationDialog;
+import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
@@ -258,7 +258,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
           .toList();
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(codeFieldValue,
+      Result<Project, ApplicationException> project = projectCreationService.createProject(
+          codeFieldValue,
           titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
           projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
 
