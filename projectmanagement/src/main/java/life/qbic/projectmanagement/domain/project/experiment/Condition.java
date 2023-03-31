@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -50,12 +52,12 @@ public class Condition {
    * @return the condition
    * @since 1.0.0
    */
-  public static Condition create(Set<VariableLevel> definedVariables) {
+  public static Condition create(List<VariableLevel> definedVariables) {
     return new Condition(definedVariables);
   }
 
 
-  private Condition(Set<VariableLevel> variableLevels) {
+  private Condition(List<VariableLevel> variableLevels) {
     variableLevels.forEach(Objects::requireNonNull);
 
     if (variableLevels.isEmpty()) {
@@ -67,13 +69,11 @@ public class Condition {
         .collect(Collectors.toSet())
         .size();
 
-    // fixme ? only distinct levels of the same variable are caught. since we are using a set, using the same level
-    // is already made unique before...
     if (distinctExperimentVariables < variableLevels.size()) {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
-    this.variableLevels = Collections.unmodifiableSet(variableLevels);
+    this.variableLevels = Set.copyOf(variableLevels);
   }
 
   /**

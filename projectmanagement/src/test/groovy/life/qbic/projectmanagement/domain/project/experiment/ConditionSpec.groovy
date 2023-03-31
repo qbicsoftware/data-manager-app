@@ -10,7 +10,7 @@ class ConditionSpec extends Specification {
         ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
         ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
         def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
-        def condition = Condition.create(new HashSet<>(Arrays.asList(level)))
+        def condition = Condition.create(Arrays.asList(level))
 
         when:
         Optional<ExperimentalValue> result = condition.valueOf(experimentalVar.name().value())
@@ -25,7 +25,7 @@ class ConditionSpec extends Specification {
         ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
         ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
         def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
-        def condition = Condition.create(new HashSet<>(Arrays.asList(level)))
+        def condition = Condition.create(Arrays.asList(level))
 
         when:
         Optional<ExperimentalValue> result = condition.valueOf("unknown variable")
@@ -33,7 +33,6 @@ class ConditionSpec extends Specification {
         then:
         result.isEmpty()
     }
-
 
     def "If variable levels origin from the same experimental variables, return an exception"() {
         given:
@@ -46,7 +45,22 @@ class ConditionSpec extends Specification {
         def level2 = VariableLevel.create(experimentalVar2.name(), experimentalValue2)
 
         when:
-        Condition.create(new HashSet<>(Arrays.asList(level, level2)))
+        Condition.create(Arrays.asList(level, level2))
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
+    def "If experimental variable levels are identical (name and value), return an exception"() {
+        given:
+        ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
+        ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
+
+        def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
+        def level2 = VariableLevel.create(experimentalVar.name(), experimentalValue)
+
+        when:
+        Condition.create(Arrays.asList(level, level2))
 
         then:
         thrown(IllegalArgumentException)
@@ -54,7 +68,7 @@ class ConditionSpec extends Specification {
 
     def "If the number of provided variable levels is less than one, throw an IllegalArgumentException" () {
         when:
-        Condition.create(new HashSet<>(Arrays.asList()))
+        Condition.create(Arrays.asList())
 
         then:
         thrown(IllegalArgumentException)

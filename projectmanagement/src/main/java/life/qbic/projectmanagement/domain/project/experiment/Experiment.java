@@ -227,7 +227,7 @@ public class Experiment {
    * @param variableLevels at least one value for a variable defined in this experiment
    * @param sampleSize the number of samples that are expected for this experimental group
    */
-  public void addExperimentalGroup(Set<VariableLevel> variableLevels, int sampleSize) {
+  public void addExperimentalGroup(List<VariableLevel> variableLevels, int sampleSize) {
     experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 }
