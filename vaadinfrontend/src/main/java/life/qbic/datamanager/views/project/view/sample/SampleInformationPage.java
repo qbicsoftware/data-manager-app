@@ -36,7 +36,6 @@ public class SampleInformationPage extends Div {
   public SampleInformationPage(@Autowired SampleOverviewComponent sampleOverviewComponent) {
     Objects.requireNonNull(sampleOverviewComponent);
     add(sampleOverviewComponent);
-    setComponentStyles(sampleOverviewComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(sampleOverviewComponent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Sample Overview Component (#%s)",
@@ -45,10 +44,6 @@ public class SampleInformationPage extends Div {
 
   public void projectId(String projectId) {
     sampleInformationPageHandler.setProjectId(projectId);
-  }
-
-  public void setComponentStyles(SampleOverviewComponent sampleOverviewComponent) {
-    sampleOverviewComponent.setStyles("sample-overview-component");
   }
 
   private final class SampleInformationPageHandler {

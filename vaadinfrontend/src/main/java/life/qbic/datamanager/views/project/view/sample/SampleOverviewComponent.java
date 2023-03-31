@@ -1,12 +1,11 @@
 package life.qbic.datamanager.views.project.view.sample;
 
-import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -37,7 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class SampleOverviewComponent extends Composite<CardLayout> implements Serializable {
+public class SampleOverviewComponent extends CardLayout implements Serializable {
 
   private final String TITLE = "Samples";
   @Serial
@@ -64,10 +63,10 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(sampleInformationService);
-    getContent().addTitle(TITLE);
+    addTitle(TITLE);
     initEmptyView();
     initSampleView();
-    getContent().setSizeFull();
+    setSizeFull();
     this.sampleOverviewComponentHandler = new SampleOverviewComponentHandler(
         projectInformationService, experimentInformationService, sampleInformationService);
   }
@@ -77,12 +76,16 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
   }
 
   private void initEmptyView() {
-    Span templateText = new Span("No Samples Registered");
+    Span templateHeader = new Span("No Samples Registered");
+    templateHeader.addClassName("font-bold");
+    Span templateText = new Span("Start your project by registering the first sample batch");
     registerBatchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    noBatchDefinedLayout.add(templateText, registerBatchButton);
+    noBatchDefinedLayout.add(templateHeader, templateText, registerBatchButton);
     noBatchDefinedLayout.setAlignItems(Alignment.CENTER);
+    noBatchDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
     noBatchDefinedLayout.setSizeFull();
-    getContent().addFields(noBatchDefinedLayout);
+    noBatchDefinedLayout.setMinWidth(100, Unit.PERCENTAGE);
+    addFields(noBatchDefinedLayout);
   }
 
   private void initSampleView() {
@@ -91,7 +94,8 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
     initButtonAndFieldBar();
     sampleContentLayout.add(buttonAndFieldBar);
     sampleContentLayout.add(sampleExperimentTabSheet);
-    getContent().addFields(sampleContentLayout);
+    addFields(sampleContentLayout);
+    sampleContentLayout.setSizeFull();
     sampleContentLayout.setVisible(false);
   }
 
@@ -101,23 +105,32 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
     tabFilterSelect.setLabel("Search in");
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     fieldBar.add(searchField, tabFilterSelect);
-    fieldBar.setAlignItems(Alignment.END);
+    //Items in layout should be aligned at the end due to searchFieldLabel taking up space
     buttonBar.add(showEmptyViewButton, registerButton, metadataDownloadButton);
+    fieldBar.setAlignSelf(Alignment.START, buttonAndFieldBar);
+    buttonBar.setAlignSelf(Alignment.END, buttonAndFieldBar);
+    fieldBar.setAlignItems(Alignment.END);
+    buttonBar.setAlignItems(Alignment.END);
     buttonAndFieldBar.add(fieldBar, buttonBar);
-    buttonAndFieldBar.setVerticalComponentAlignment(Alignment.END, buttonBar);
-    buttonAndFieldBar.setVerticalComponentAlignment(Alignment.START, fieldBar);
+
     buttonAndFieldBar.setWidthFull();
   }
 
   private void createSampleTab(String experimentName, Collection<Sample> experimentSamples) {
     Tab experimentSampleTab = new Tab(new Span(experimentName),
         createBadge(experimentSamples.size()));
-    //Todo Load Sample Information
+    //Todo How to provide information from different services in the vaadin grid?
     Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
-    sampleGrid.addColumn(Sample::id, "id").setHeader("id");
-    sampleGrid.addColumn(Sample::label, "label").setHeader("label");
-    sampleGrid.addColumn(Sample::batch, "batch").setHeader("batch");
-    sampleGrid.addColumn(Sample::status, "status").setHeader("status");
+    sampleGrid.addColumn(Sample::id, "id").setHeader("Sample Id");
+    sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
+    sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
+    sampleGrid.addColumn(Sample::status, "status").setHeader("Status");
+    sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
+    sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
+    sampleGrid.addColumn(Sample::condition1, "condition1").setHeader("Brushing Time");
+    sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
+    sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
+    sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
     //ToDo make this virtual list with data Providers and implement lazy loading?
     sampleGrid.setItems(experimentSamples);
     sampleExperimentTabSheet.add(experimentSampleTab, sampleGrid);
@@ -134,7 +147,7 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
   }
 
   public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
+    addClassNames(componentStyles);
   }
 
   private final class SampleOverviewComponentHandler {
@@ -156,7 +169,7 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
       projectInformationService.find(projectId.value())
-          .ifPresentOrElse(this::getSampleDataForProject, this::emptyAction);
+          .ifPresent(this::getSampleDataForProject);
     }
 
     private void getSampleDataForProject(Project project) {
@@ -188,10 +201,6 @@ public class SampleOverviewComponent extends Composite<CardLayout> implements Se
     private void showSamplesView() {
       noBatchDefinedLayout.setVisible(false);
       sampleContentLayout.setVisible(true);
-    }
-
-    //ToDo what should happen in the UI if neither projects or samples have been found?
-    private void emptyAction() {
     }
   }
 

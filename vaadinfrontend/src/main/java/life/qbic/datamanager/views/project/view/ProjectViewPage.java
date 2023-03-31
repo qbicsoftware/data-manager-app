@@ -52,7 +52,7 @@ public class ProjectViewPage extends Div implements
     add(projectLinksComponent);
     setPageStyles();
     setComponentStyles(projectNavigationBarComponent, projectDetailsComponent,
-        projectLinksComponent, experimentalDesignDetailComponent);
+        projectLinksComponent, experimentalDesignDetailComponent, sampleInformationPage);
     log.debug(
         String.format("New instance for project view (#%s) created with detail component (#%s)",
             System.identityHashCode(this), System.identityHashCode(projectDetailsComponent)));
@@ -65,12 +65,15 @@ public class ProjectViewPage extends Div implements
   public void setComponentStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectDetailsComponent projectDetailsComponent,
       ProjectLinksComponent projectLinksComponent,
-      ExperimentalDesignDetailComponent experimentalDesignDetailComponent) {
+      ExperimentalDesignDetailComponent experimentalDesignDetailComponent,
+      SampleInformationPage sampleInformationPage) {
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectDetailsComponent.setStyles("project-details-component");
     projectLinksComponent.setStyles("project-links-component");
     //Todo Determine if we want to have seperate styles for each component
     experimentalDesignDetailComponent.setStyles("experimental-design-component");
+    sampleInformationPage.setClassName("sample-overview-component");
+
   }
 
   @Override
