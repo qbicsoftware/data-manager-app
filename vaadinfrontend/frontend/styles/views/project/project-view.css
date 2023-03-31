@@ -35,7 +35,7 @@ They are set within as classes within their own individual subpages */
   grid-row: 1 / span 4;
 }
 
-.sample-overview-component {
+#sample-overview-component {
   grid-column: 1 / span 4;
-  grid-row: 2 / span 3;
+  grid-row: 1 / span 4;
 }

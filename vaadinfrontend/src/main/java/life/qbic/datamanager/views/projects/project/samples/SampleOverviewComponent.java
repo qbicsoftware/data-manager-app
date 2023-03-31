@@ -1,22 +1,26 @@
-package life.qbic.datamanager.views.project.view.sample;
+package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Objects;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -41,7 +45,6 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final String TITLE = "Samples";
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
-  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
   private final VerticalLayout noBatchDefinedLayout = new VerticalLayout();
   private final Button registerBatchButton = new Button("Register Batch");
   private final VerticalLayout sampleContentLayout = new VerticalLayout();
@@ -56,6 +59,8 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   //ToDo Remove showEmptyViewButton once sample information can be loaded
   private final Button showEmptyViewButton = new Button("Empty View");
   private TabSheet sampleExperimentTabSheet;
+  private static ProjectId projectId;
+  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
@@ -71,8 +76,9 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
         projectInformationService, experimentInformationService, sampleInformationService);
   }
 
-  public void projectId(String parameter) {
-    this.sampleOverviewComponentHandler.setProjectId(ProjectId.parse(parameter));
+  public void projectId(ProjectId projectId) {
+    SampleOverviewComponent.projectId = projectId;
+    this.sampleOverviewComponentHandler.setProjectId(projectId);
   }
 
   private void initEmptyView() {
@@ -85,6 +91,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     noBatchDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
     noBatchDefinedLayout.setSizeFull();
     noBatchDefinedLayout.setMinWidth(100, Unit.PERCENTAGE);
+    noBatchDefinedLayout.setMinHeight(100, Unit.PERCENTAGE);
     addFields(noBatchDefinedLayout);
   }
 
@@ -121,10 +128,12 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
         createBadge(experimentSamples.size()));
     //Todo How to provide information from different services in the vaadin grid?
     Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
-    sampleGrid.addColumn(Sample::id, "id").setHeader("Sample Id");
+    sampleGrid.addColumn(createSampleIdComponentRenderer()).setSortProperty("id")
+        .setHeader("Sample Id");
     sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
     sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
-    sampleGrid.addColumn(Sample::status, "status").setHeader("Status");
+    sampleGrid.addColumn(createSampleStatusComponentRenderer()).setSortProperty("status")
+        .setHeader("Status");
     sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
     sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
     sampleGrid.addColumn(Sample::condition1, "condition1").setHeader("Brushing Time");
@@ -145,6 +154,38 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
     return badge;
   }
+
+  private static ComponentRenderer<Span, Sample> createSampleStatusComponentRenderer() {
+    return new ComponentRenderer<>(Span::new, styleSampleStatusSpan);
+  }
+
+  private static final SerializableBiConsumer<Span, Sample> styleSampleStatusSpan = (span, sample) -> {
+    String theme = setBadgeThemeBasedOnSampleStatus(sample);
+    span.getElement().setAttribute("theme", theme);
+    span.setText(sample.status());
+  };
+
+  private static String setBadgeThemeBasedOnSampleStatus(Sample sample) {
+    if (sample.status().equals("Data Available")) {
+      return "badge success";
+    }
+    if (sample.status().equals("QC Failed")) {
+      return "badge error";
+    } else {
+      return "badge ";
+    }
+  }
+
+  private static ComponentRenderer<Anchor, Sample> createSampleIdComponentRenderer() {
+    return new ComponentRenderer<>(Anchor::new, styleSampleIdAnchor);
+  }
+
+  private static final SerializableBiConsumer<Anchor, Sample> styleSampleIdAnchor = (anchor, sample) -> {
+    //ToDo maybe the projectId could be read from the UI URL?
+    String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(), sample.id());
+    anchor.setHref(anchorURL);
+    anchor.setText(sample.id());
+  };
 
   public void setStyles(String... componentStyles) {
     addClassNames(componentStyles);
@@ -168,8 +209,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId.value())
-          .ifPresent(this::getSampleDataForProject);
+      projectInformationService.find(projectId).ifPresent(this::getSampleDataForProject);
     }
 
     private void getSampleDataForProject(Project project) {
@@ -183,14 +223,19 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     }
 
     private void generateExperimentTabs(Project project) {
-      //ToDo Currently we set the ProjectId multiple times leading to an addition of tabs within the tabSheet
+      resetTabSheet();
       project.experiments().forEach(experimentId -> {
         //ToDo retrieve sample information as soon as it's clear how they are linked
         Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(
             experimentId);
-        experimentInformationService.find(experimentId.value())
+        experimentInformationService.find(experimentId)
             .ifPresent(experiment -> createSampleTab(experiment.getName(), samples));
       });
+    }
+
+    private void resetTabSheet() {
+      sampleExperimentTabSheet.getChildren().toList()
+          .forEach(component -> sampleExperimentTabSheet.remove(component));
     }
 
     private void showEmptyView() {

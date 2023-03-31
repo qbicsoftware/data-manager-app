@@ -47,6 +47,8 @@ public class SampleInformationService {
             "Patient5", "60 sec", "Colgate", "Homo Sapiens", "Mucous Membrane"));
     samples.add(Sample.create("QABCDD45L6", "TÜ_2019_0165_1", "Pilot 1", "Data Available",
         "Pilot Experiment", "Patient5", "30 sec", "Colgate", "Homo Sapiens", "Mucous Membrane"));
+    samples.add(Sample.create("QABCDDABL3", "TÜ_2019_0165_2", "Pilot 1", "QC Failed",
+        "Pilot Experiment", "Patient6", "30 sec", "Colgate", "Homo Sapiens", "Mucous Membrane"));
     return samples;
   }
 

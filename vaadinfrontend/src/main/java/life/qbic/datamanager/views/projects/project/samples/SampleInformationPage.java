@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.sample;
+package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
@@ -8,9 +8,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -37,13 +38,18 @@ public class SampleInformationPage extends Div {
     Objects.requireNonNull(sampleOverviewComponent);
     add(sampleOverviewComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(sampleOverviewComponent);
+    setComponentStyles(sampleOverviewComponent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Sample Overview Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(sampleOverviewComponent)));
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     sampleInformationPageHandler.setProjectId(projectId);
+  }
+
+  public void setComponentStyles(SampleOverviewComponent sampleOverviewComponent) {
+    sampleOverviewComponent.setId("sample-overview-component");
   }
 
   private final class SampleInformationPageHandler {
@@ -54,7 +60,7 @@ public class SampleInformationPage extends Div {
       this.sampleOverviewComponent = sampleOverviewComponent;
     }
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       sampleOverviewComponent.projectId(projectId);
     }
   }
