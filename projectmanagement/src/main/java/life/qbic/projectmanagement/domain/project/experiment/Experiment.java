@@ -215,25 +215,18 @@ public class Experiment {
   }
 
   /**
-   * Creates a new condition and adds it to the experimental design. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
+   * and adds it to the experimental design.
    * <p>
-   * <b>Note</b>: {@link Result#isFailure()} indicates a failed operation.
-   * {@link Result#exception()} can be used to determine the cause of the failure.
    * <ul>
-   *   <li>If a condition with the provided label or the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
    *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param levels         at least one value for the variable
-   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a declarative
-   * exceptions.
+   * @param variableLevels at least one value for a variable defined in this experiment
+   * @param sampleSize the number of samples that are expected for this experimental group
    */
-  public Result<Condition, Exception> defineCondition(VariableLevel[] levels) {
-    return experimentalDesign.defineCondition(levels);
-  }
-
-  //TODO JavaDoc
   public void addExperimentalGroup(Set<VariableLevel> variableLevels, int sampleSize) {
     experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }

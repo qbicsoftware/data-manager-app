@@ -33,7 +33,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  * In total you can define:
  * <ul>
  *   <li>{@link ExperimentalVariable}</li>
- *   <li>{@link Condition}</li>
+ *   <li>{@link ExperimentalGroup}</li>
  * </ul>
  * <p>
  * The order of creation is important to create a meaningful experimental design.
@@ -46,20 +46,19 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  * <p>
  * Experimental variables can be created via the {@link Experiment#addVariableToDesign(String, List)}  function.
  * <p>
- * <b>Note:</b> variables need to be unique, and its name will be checked against already defined variables in the design! If a variable with the same
- * name is already part of the design, the method will return a {@link Result#failure(Exception)}.
+ * <b>Note:</b> variables need to be unique, and its name will be checked against already defined variables in the design!
  *
  * <p>
- * <b>2. Define a Condition</b>
+ * <b>2. Add an ExperimentGroup</b>
  * <p>
- * {@link Condition}s represent different linear combinations of experimental variable level(s). For example you want to compare different genotypes of a specimen,
+ * {@link ExperimentalGroup}s represent conditions - different linear combinations of experimental variable level(s), as well as the sample size. For example you want to compare different genotypes of a specimen,
  * or different treatments. Let's assume you have a experimental design with two variables:
  * <ul>
  * <li>(1) the genotype (wildtype vs. mutant) </li>
  * <li>(2) a treatment a solvent with different concentrations (0 mmol/L and 150 mmol/L)</li>
  * </ul>
  * <p>
- * So in total there will be four conditions:
+ * So in total there will be four conditions for four experimental groups:
  *
  * <ul>
  *   <li>(1) wildtype + 0 mmol/L</li>
@@ -68,9 +67,8 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions can be defined via {@link #defineCondition(VariableLevel[])}.
  * <p>
- * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining a {@link Condition}.
+ * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining an {@link ExperimentalGroup}.
  *
  * @since 1.0.0
  */
@@ -100,7 +98,6 @@ public class ExperimentalDesign {
     return new ExperimentalDesign();
   }
 
-
   @PostLoad
   private void loadCollections() {
     /*do we need the lists to be populated? Can we use @Transactional instead?
@@ -113,8 +110,6 @@ public class ExperimentalDesign {
     int variableCount = variables.size();
     int groupCount = experimentalGroups.size();
   }
-
-
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
@@ -206,44 +201,6 @@ public class ExperimentalDesign {
     return variableOptional.map(variable -> variable.getLevel(value));
   }
 
-  /**
-   * Creates a new condition and adds it to the experimental design. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
-   * <p>
-   * <b>Note</b>: {@link Result#isFailure()} indicates a failed operation.
-   * {@link Result#exception()} can be used to determine the cause of the failure.
-   * <ul>
-   *   <li>If a condition with the provided label or the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
-   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
-   * </ul>
-   *
-   * @param levels         at least one value for the variable
-   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
-   * declarative exceptions.
-   */
-  public Result<Condition, Exception> defineCondition(VariableLevel[] levels) {
-    Arrays.stream(levels).forEach(Objects::requireNonNull);
-
-    for (VariableLevel level : levels) {
-      if (!isVariableDefined(level.variableName().value())) {
-        return Result.failure(new IllegalArgumentException(
-            "There is no variable " + level.variableName().value() + " in this experiment."));
-      }
-    }
-
-    try {
-      Condition condition = Condition.create(Set.of(levels));
-      if (isConditionDefined(condition)) {
-        return Result.failure(new ConditionExistsException(
-            "A condition containing the provided levels exists."));
-      }
-      experimentalGroups.add(ExperimentalGroup.with(condition, 0)); //TODO fix me
-      return Result.success(condition);
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
-  }
-
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
     if (levels.size() < 1) {
       return Result.failure(new IllegalArgumentException(
@@ -264,7 +221,19 @@ public class ExperimentalDesign {
     }
   }
 
-  //TODO signature?
+  /**
+   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
+   * and adds it to the experimental design.
+   * <p>
+   * <ul>
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
+   * </ul>
+   *
+   * @param variableLevels at least one value for a variable defined in this experiment
+   * @param sampleSize the number of samples that are expected for this experimental group
+   */
   public void addExperimentalGroup(Set<VariableLevel> variableLevels, int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
 
