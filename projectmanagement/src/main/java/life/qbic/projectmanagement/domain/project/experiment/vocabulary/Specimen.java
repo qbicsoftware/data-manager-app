@@ -5,8 +5,8 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 /**
- * <a href="https://medical-dictionary.thefreedictionary.com/specimen">specimen</a>: A sample, as of
- * tissue, blood or urine, used for analysis and diagnosis.
+ * <a href="https://medical-dictionary.thefreedictionary.com/specimen">specimen</a>: A sample, as
+ * of tissue, blood or urine, used for analysis and diagnosis.
  *
  * @param label a natural string representation of the {@link Specimen}
  */

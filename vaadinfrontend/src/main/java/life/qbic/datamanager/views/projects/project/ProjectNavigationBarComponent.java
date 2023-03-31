@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -15,7 +15,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.project.view.ProjectViewPage;
+import life.qbic.projectmanagement.application.ProjectManagementException;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
  * ProjectNavigationBarComponent
@@ -84,11 +85,22 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
     navigationBarLayout.setAlignItems(Alignment.CENTER);
     getContent().addFields(navigationBarLayout);
-
     experimentalDesignButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
-            .navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject))));
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
+            it -> it.navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject.value())),
+            () -> {
+              throw new ProjectManagementException(
+                  "Could not navigate to Experiment Information Page for "
+                      + handler.selectedProject.value());
+            })));
     projectInformationButton.addClickListener(
+        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
+            it -> it.navigate(
+                String.format(Projects.PROJECT_INFO, handler.selectedProject.value())), () -> {
+              throw new ProjectManagementException(
+                  "Could not navigate to Project Information Page for "
+                      + handler.selectedProject.value());
+            })));
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().get()
             .navigate(String.format(Projects.PROJECT_INFO, handler.selectedProject))));
     samplesButton.addClickListener(
@@ -96,7 +108,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
             .navigate(String.format(Projects.SAMPLES, handler.selectedProject))));
   }
 
-  public void projectId(String projectId) {
+  public void projectId(ProjectId projectId) {
     this.handler.setProjectId(projectId);
   }
 
@@ -106,14 +118,10 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
 
   private final class Handler {
 
-    private String selectedProject;
+    private ProjectId selectedProject;
 
-    public void setProjectId(String projectId) {
+    public void setProjectId(ProjectId projectId) {
       this.selectedProject = projectId;
-    }
-
-    public String selectedProjectId() {
-      return this.selectedProject;
     }
   }
 }

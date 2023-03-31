@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.overview;
+package life.qbic.datamanager.views.projects.overview;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.PageTitle;
@@ -6,10 +6,9 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.project.overview.components.ProjectOverviewComponent;
+import life.qbic.datamanager.views.projects.overview.components.ProjectOverviewComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

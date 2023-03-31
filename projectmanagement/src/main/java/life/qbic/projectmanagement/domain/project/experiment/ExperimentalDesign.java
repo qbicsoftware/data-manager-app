@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -110,14 +111,12 @@ public class ExperimentalDesign {
   }
 
 
-
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
    * indicated in the result, which can be verified via {@link Result#isSuccess()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
-   * will fail with
-   * an {@link ExperimentalVariableNotDefinedException}. You can check via
+   * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
    * {@link Result#isFailure()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
@@ -144,6 +143,10 @@ public class ExperimentalDesign {
       // we could not add the level
       return Result.failure(addLevelResult.exception());
     }
+  }
+
+  List<ExperimentalVariable> variables() {
+    return Collections.unmodifiableList(variables);
   }
 
   private Optional<ExperimentalVariable> variableWithName(String variableName) {
