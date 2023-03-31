@@ -1,9 +1,12 @@
 package life.qbic.datamanager.views.projects.overview;
 
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.router.RoutePrefix;
 import java.io.Serial;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -20,10 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Project Overview")
-@Route(value = "", layout = MainLayout.class)
-@RouteAlias(value = Projects.PROJECTS)
+@Route(value = Projects.PROJECTS, layout = MainLayout.class)
 @PermitAll
 public class ProjectOverviewPage extends Div {
+
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
 
