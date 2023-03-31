@@ -73,6 +73,7 @@ public class Condition {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
+    // after performing checks on the list, we handle variable levels as a set, making comparisons cleaner and easier
     this.variableLevels = Set.copyOf(variableLevels);
   }
 
