@@ -12,7 +12,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Vari
  * <b>Variable Level</b>
  * <p>
  * A container object that presents a certain level ({@link ExperimentalValue}) of an
- * {@link ExperimentalVariable} and is used in a{@link Condition} of a {@link SampleGroup}.
+ * {@link ExperimentalVariable} and is used in a{@link Condition} of a {@link ExperimentalGroup}.
  *
  * @since 1.0.0
  */
