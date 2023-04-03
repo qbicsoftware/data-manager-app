@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -52,12 +53,15 @@ public class Condition {
    * @return the condition
    * @since 1.0.0
    */
-  public static Condition create(List<VariableLevel> definedVariables) {
+  public static Condition create(Collection<VariableLevel> definedVariables) {
     return new Condition(definedVariables);
   }
 
+  public Collection<VariableLevel> getVariableLevels() {
+    return Collections.unmodifiableCollection(variableLevels);
+  }
 
-  private Condition(List<VariableLevel> variableLevels) {
+  private Condition(Collection<VariableLevel> variableLevels) {
     variableLevels.forEach(Objects::requireNonNull);
 
     if (variableLevels.isEmpty()) {

@@ -239,7 +239,7 @@ public class ExperimentalDesign {
    * @param variableLevels a list containing at least one value for a variable defined in this experiment
    * @param sampleSize the number of samples that are expected for this experimental group
    */
-  public void addExperimentalGroup(List<VariableLevel> variableLevels, int sampleSize) {
+  public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
 
     for (VariableLevel level : variableLevels) {
@@ -255,5 +255,9 @@ public class ExperimentalDesign {
           "A condition containing the provided levels exists.");
     }
     experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
+  }
+
+  public Set<ExperimentalGroup> getExperimentalGroups() {
+    return Collections.unmodifiableSet(experimentalGroups);
   }
 }
