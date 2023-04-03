@@ -1,10 +1,11 @@
 package life.qbic.projectmanagement.application
 
-
+import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO
 import life.qbic.projectmanagement.domain.project.experiment.Experiment
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
@@ -91,6 +92,36 @@ class ExperimentInformationServiceSpec extends Specification {
     1 * experimentRepository.update(experiment)
   }
 
+  def "Adding experimental groups via the ExperimentInformationService adds the groups to the experiment"() {
+    given:
+    experimentRepository.find(experiment.experimentId()) >> Optional.of(experiment)
+    experimentRepository.find((ExperimentId) _) >> Optional.empty()
+
+    when: "experimental groups are added to an experiment"
+
+    String variableName = "My awesome variable"
+    String unit = "This unit exists"
+    def levels = ["level 1", "level 2"]
+    ExperimentalValue experimentalValueOne = ExperimentalValue.create(levels[0], unit)
+    ExperimentalValue experimentalValueTwo = ExperimentalValue.create(levels[1], unit)
+    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName, experimentalValueOne, experimentalValueTwo)
+
+    def group1 = new ExperimentInformationService.ExperimentalGroupDTO(new HashSet<VariableLevel>(Arrays.asList(experimentalVariable.getLevel(experimentalValueOne))),5)
+    def group2 = new ExperimentInformationService.ExperimentalGroupDTO(new HashSet<VariableLevel>(Arrays.asList(experimentalVariable.getLevel(experimentalValueTwo))),6)
+
+    Set<ExperimentInformationService.ExperimentalGroupDTO> groups = [group1, group2]
+
+    experimentInformationService.addVariableToExperiment(experiment.experimentId(), variableName, unit, levels)
+    experimentInformationService.addExperimentalGroupsToExperiment(experiment.experimentId(), groups)
+
+    def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentInformationService.ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList()
+
+    then: "the experiment contains the added experimental groups"
+    dtoGroups.contains(group1) && dtoGroups.contains(group2)
+
+    and: "the experiment is updated once for adding the variable and once for adding the experimental groups"
+    2 * experimentRepository.update(experiment)
+  }
 
   private static Experiment setupExperiment() {
     Experiment experiment = Experiment.create("Dummy_Experiment")

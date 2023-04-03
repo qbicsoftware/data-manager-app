@@ -57,8 +57,8 @@ public class Condition {
     return new Condition(definedVariables);
   }
 
-  public Collection<VariableLevel> getVariableLevels() {
-    return Collections.unmodifiableCollection(variableLevels);
+  public Set<VariableLevel> getVariableLevels() {
+    return Collections.unmodifiableSet(variableLevels);
   }
 
   private Condition(Collection<VariableLevel> variableLevels) {

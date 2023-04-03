@@ -80,7 +80,7 @@ public class ExperimentInformationService {
     return experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList();
   }
 
-  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int sampleSize) {}
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {}
 
   /**
    * Adds species to an experiment.
