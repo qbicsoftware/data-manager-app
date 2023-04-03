@@ -207,6 +207,10 @@
       <version>0.13.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.vaadin</groupId>
+      <artifactId>vaadin-spreadsheet-flow</artifactId>
+    </dependency>
 
 
   </dependencies>

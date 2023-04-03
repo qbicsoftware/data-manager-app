@@ -67,6 +67,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
+  private final RegisterBatchDialog registerBatchDialog = new RegisterBatchDialog();
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
@@ -238,7 +239,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> showSamplesView());
+      registerBatchButton.addClickListener(event -> registerBatchDialog.open());
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 
