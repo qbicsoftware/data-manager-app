@@ -80,9 +80,9 @@ class ExperimentInformationServiceSpec extends Specification {
     String variableName = "My awesome variable"
     String unit = "This unit exists"
     def levels = ["level 1", "level 2"]
-    ExperimentalValue experimentalValueWithUnit = ExperimentalValue.create(levels[0], unit)
-    ExperimentalValue experimentalValueWithoutUnit = ExperimentalValue.create(levels[1])
-    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName, experimentalValueWithUnit, experimentalValueWithoutUnit)
+    ExperimentalValue experimentalValue1 = ExperimentalValue.create(levels[0], unit)
+    ExperimentalValue experimentalValue2 = ExperimentalValue.create(levels[1], unit)
+    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName, experimentalValue1, experimentalValue2)
     experimentInformationService.addVariableToExperiment(experiment.experimentId(), variableName, unit, levels)
 
     then: "the experiment contains the added variables"
