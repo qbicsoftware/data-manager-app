@@ -4,7 +4,8 @@
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
   grid-gap: 10px;
-  min-height: 100%;
+  /*Temporary solution until css grid is solved*/
+  min-height: 60vh;
   padding: 50px;
 }
 

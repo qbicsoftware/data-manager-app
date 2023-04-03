@@ -118,6 +118,8 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     buttonBar.setAlignSelf(Alignment.END, buttonAndFieldBar);
     fieldBar.setAlignItems(Alignment.END);
     buttonBar.setAlignItems(Alignment.END);
+    //Moves buttonbar to right side of sample grid
+    fieldBar.setWidthFull();
     buttonAndFieldBar.add(fieldBar, buttonBar);
 
     buttonAndFieldBar.setWidthFull();
