@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -12,13 +12,19 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -28,6 +34,7 @@ import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -51,14 +58,14 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final HorizontalLayout buttonAndFieldBar = new HorizontalLayout();
   private final HorizontalLayout fieldBar = new HorizontalLayout();
   private final HorizontalLayout buttonBar = new HorizontalLayout();
-  private final ComboBox<Sample> searchField = new ComboBox<>();
-  private final Select<TabSheet> tabFilterSelect = new Select<>();
+  private final TextField searchField = new TextField();
+  private final Select<String> tabFilterSelect = new Select<>();
   private final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
 
   //ToDo Remove showEmptyViewButton once sample information can be loaded
   private final Button showEmptyViewButton = new Button("Empty View");
-  private TabSheet sampleExperimentTabSheet;
+  private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
@@ -96,7 +103,6 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   }
 
   private void initSampleView() {
-    sampleExperimentTabSheet = new TabSheet();
     sampleExperimentTabSheet.setSizeFull();
     initButtonAndFieldBar();
     sampleContentLayout.add(buttonAndFieldBar);
@@ -109,7 +115,10 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private void initButtonAndFieldBar() {
     searchField.setPlaceholder("Search");
     searchField.setClassName("searchbox");
+    searchField.setValueChangeMode(ValueChangeMode.EAGER);
     tabFilterSelect.setLabel("Search in");
+    tabFilterSelect.setEmptySelectionAllowed(true);
+    tabFilterSelect.setEmptySelectionCaption("All tabs");
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     fieldBar.add(searchField, tabFilterSelect);
     //Items in layout should be aligned at the end due to searchFieldLabel taking up space
@@ -121,30 +130,39 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     //Moves buttonbar to right side of sample grid
     fieldBar.setWidthFull();
     buttonAndFieldBar.add(fieldBar, buttonBar);
-
     buttonAndFieldBar.setWidthFull();
   }
 
-  private void createSampleTab(String experimentName, Collection<Sample> experimentSamples) {
-    Tab experimentSampleTab = new Tab(new Span(experimentName),
-        createBadge(experimentSamples.size()));
-    //Todo How to provide information from different services in the vaadin grid?
-    Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
-    sampleGrid.addColumn(createSampleIdComponentRenderer()).setSortProperty("id")
-        .setHeader("Sample Id");
-    sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
-    sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
-    sampleGrid.addColumn(createSampleStatusComponentRenderer()).setSortProperty("status")
-        .setHeader("Status");
-    sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
-    sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
-    sampleGrid.addColumn(Sample::condition1, "condition1").setHeader("Brushing Time");
-    sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
-    sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
-    sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
-    //ToDo make this virtual list with data Providers and implement lazy loading?
-    sampleGrid.setItems(experimentSamples);
-    sampleExperimentTabSheet.add(experimentSampleTab, sampleGrid);
+  private void createSampleTabs(Map<Experiment, Collection<Sample>> experimentSamples) {
+    experimentSamples.forEach((experiment, samples) -> {
+      Span experimentName = new Span(experiment.getName());
+      Tab experimentSampleTab = new Tab(experimentName);
+      //Todo How to provide information from different services in the vaadin grid?
+      Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
+      sampleGrid.addColumn(createSampleIdComponentRenderer()).setSortProperty("id")
+          .setHeader("Sample Id");
+      sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
+      sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
+      sampleGrid.addColumn(createSampleStatusComponentRenderer()).setSortProperty("status")
+          .setHeader("Status");
+      sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
+      sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
+      sampleGrid.addColumn(Sample::condition1, "condition1").setHeader("Brushing Time");
+      sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
+      sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
+      sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
+      //ToDo make this virtual list with data Providers and implement lazy loading?
+      GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
+      sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
+          sampleGridDataView);
+      //Update Number count in tab if user searches for value
+      sampleGridDataView.addItemCountChangeListener(event -> {
+        Span sampleCount = new Span(createBadge(sampleGridDataView.getItemCount()));
+        experimentSampleTab.removeAll();
+        experimentSampleTab.add(experimentName, sampleCount);
+      });
+      sampleExperimentTabSheet.add(experimentSampleTab, sampleGrid);
+    });
   }
 
   /**
@@ -226,18 +244,26 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     private void generateExperimentTabs(Project project) {
       resetTabSheet();
-      project.experiments().forEach(experimentId -> {
-        //ToDo retrieve sample information as soon as it's clear how they are linked
-        Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(
-            experimentId);
-        experimentInformationService.find(experimentId)
-            .ifPresent(experiment -> createSampleTab(experiment.getName(), samples));
-      });
+      resetTabSelect();
+      List<Experiment> foundExperiments = new LinkedList<>();
+      project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
+          .ifPresent(foundExperiments::add));
+      Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
+      //ToDo retrieve sample information as soon as it's clear how they are linked
+      for (Experiment experiment : foundExperiments) {
+        experimentToSampleDict.put(experiment,
+            sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId()));
+      }
+      addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
+      createSampleTabs(experimentToSampleDict);
     }
 
     private void resetTabSheet() {
-      sampleExperimentTabSheet.getChildren().toList()
-          .forEach(component -> sampleExperimentTabSheet.remove(component));
+      sampleExperimentTabSheet.getChildren().toList().forEach(sampleExperimentTabSheet::remove);
+    }
+
+    private void resetTabSelect() {
+      tabFilterSelect.removeAll();
     }
 
     private void showEmptyView() {
@@ -249,7 +275,38 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
       noBatchDefinedLayout.setVisible(false);
       sampleContentLayout.setVisible(true);
     }
+
+    private void addExperimentsToTabSelect(List<Experiment> experimentList) {
+      tabFilterSelect.setItems(experimentList.stream().map(Experiment::getName).toList());
+    }
+
+    private void setupSearchFieldForExperimentTabs(String experimentName,
+        GridListDataView<Sample> sampleGridDataView) {
+      searchField.addValueChangeListener(e -> sampleGridDataView.refreshAll());
+      sampleGridDataView.addFilter(sample -> {
+        String searchTerm = searchField.getValue().trim();
+        //Only filter grid if selected in filterSelect or if no filter was selected
+        if (tabFilterSelect.getValue() == null || tabFilterSelect.getValue()
+            .equals(experimentName)) {
+          return isInSample(sample, searchTerm);
+        } else {
+          return true;
+        }
+      });
+    }
   }
 
+  //ToDo is there a java reflection solution to check all fields or should the record implement a solution
+  private boolean isInSample(Sample sample, String searchTerm) {
+    return matchesTerm(sample.id(), searchTerm) || matchesTerm(sample.label(), searchTerm)
+        || matchesTerm(sample.batch(), searchTerm) || matchesTerm(sample.status(), searchTerm)
+        || matchesTerm(sample.experiment(), searchTerm) || matchesTerm(sample.source(), searchTerm)
+        || matchesTerm(sample.condition1(), searchTerm) || matchesTerm(sample.condition2(),
+        searchTerm) || matchesTerm(sample.specimen(), searchTerm) || matchesTerm(sample.species(),
+        searchTerm);
+  }
 
+  private boolean matchesTerm(String fieldValue, String searchTerm) {
+    return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
+  }
 }
