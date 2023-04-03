@@ -41,7 +41,7 @@ public class ExperimentalGroup {
    * @return the experimental group
    * @since 1.0.0
    */
-  public static ExperimentalGroup with(Condition condition, int sampleSize) {
+  public static ExperimentalGroup create(Condition condition, int sampleSize) {
     Objects.requireNonNull(condition);
     if (sampleSize < 1) {
       // Admitting not very meaningful to allow for sample size of 1 and 2

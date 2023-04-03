@@ -91,17 +91,6 @@ public class Condition {
         .map(VariableLevel::experimentalValue).findAny();
   }
 
-  /**
-   * Compares the defined {@link VariableLevel}s to the {@link VariableLevel}s of the other
-   * condition. Ignores the order of the levels in the condition.
-   *
-   * @param other the other condition to compare the content of
-   * @return true if <code>other</code> has the same levels defined; false otherwise
-   */
-  public boolean hasSameLevelsDefined(Condition other) {
-    return this.equals(other);
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {

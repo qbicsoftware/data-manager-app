@@ -254,6 +254,6 @@ public class ExperimentalDesign {
       throw new ConditionExistsException(
           "A condition containing the provided levels exists.");
     }
-    experimentalGroups.add(ExperimentalGroup.with(condition, sampleSize));
+    experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
   }
 }
