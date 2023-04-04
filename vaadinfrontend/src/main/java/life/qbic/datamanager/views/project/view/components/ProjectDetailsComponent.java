@@ -230,16 +230,18 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     public void projectId(String projectId) {
       parseProjectId(projectId);
-      try {
-        projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
-            this::emptyAction);
-      } catch (AccessDeniedException accessDeniedException) {
-        log.error("Access denied when loading project details for project id " + projectId,
-            accessDeniedException);
-        emptyAction();
-      }
+//      try {
+      projectInformationService.find(projectId).ifPresentOrElse(this::loadProjectData,
+//            this::emptyAction);
+          () -> {
+            throw new AccessDeniedException(projectId);
+          });
+//      } catch (AccessDeniedException accessDeniedException) {
+//        log.error("Access denied when loading project details for project id " + projectId,
+//            accessDeniedException);
+//        emptyAction();
+//      }
     }
-
     //ToDo what should be done if projectID could not be retrieved
     private void emptyAction() {
       titleToggleComponent.setValue("Not found");

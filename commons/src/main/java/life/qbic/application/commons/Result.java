@@ -72,6 +72,23 @@ public class Result<V, E extends Exception> {
     return new Result<>(exception);
   }
 
+  public static <V2> Result<V2, ? extends Exception> of(Supplier<V2> supplier) {
+    try {
+      return Result.success(supplier.get());
+    } catch (Exception e) {
+      return Result.failure(e);
+    }
+  }
+
+  public Result<V, ? extends Exception> run(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception e) {
+      return Result.failure(e);
+    }
+    return this;
+  }
+
   private Result(V value) {
     this.value = value;
     this.exception = null;
