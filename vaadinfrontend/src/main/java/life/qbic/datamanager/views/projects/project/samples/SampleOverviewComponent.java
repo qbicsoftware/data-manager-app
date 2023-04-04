@@ -18,8 +18,10 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,6 +30,8 @@ import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
@@ -35,6 +39,7 @@ import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -52,6 +57,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final String TITLE = "Samples";
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
+  private static final Logger log = LoggerFactory.logger(SampleOverviewComponent.class);
   private final VerticalLayout noBatchDefinedLayout = new VerticalLayout();
   private final Button registerBatchButton = new Button("Register Batch");
   private final VerticalLayout sampleContentLayout = new VerticalLayout();
@@ -300,10 +306,10 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private boolean isInSample(Sample sample, String searchTerm) {
     boolean result = false;
     for(PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
-      if(!descriptor.getName().equals("class") {
+      if(!descriptor.getName().equals("class")) {
         // toString() might need to be implemented for useful results
         try {
-          String value = descriptor.getReadMethod().invoke(sample);
+          String value = descriptor.getReadMethod().invoke(sample).toString();
           result |= matchesTerm(value, searchTerm);
         } catch (IllegalAccessException | InvocationTargetException e) {
           log.info("Could not invoke "+descriptor.getName()+ " getter when filtering samples. Ignoring property.");
