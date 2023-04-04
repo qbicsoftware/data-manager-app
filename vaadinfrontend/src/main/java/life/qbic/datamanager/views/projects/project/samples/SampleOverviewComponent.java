@@ -298,12 +298,19 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
   //ToDo is there a java reflection solution to check all fields or should the record implement a solution
   private boolean isInSample(Sample sample, String searchTerm) {
-    return matchesTerm(sample.id(), searchTerm) || matchesTerm(sample.label(), searchTerm)
-        || matchesTerm(sample.batch(), searchTerm) || matchesTerm(sample.status(), searchTerm)
-        || matchesTerm(sample.experiment(), searchTerm) || matchesTerm(sample.source(), searchTerm)
-        || matchesTerm(sample.condition1(), searchTerm) || matchesTerm(sample.condition2(),
-        searchTerm) || matchesTerm(sample.specimen(), searchTerm) || matchesTerm(sample.species(),
-        searchTerm);
+    boolean result = false;
+    for(PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
+      if(!descriptor.getName().equals("class") {
+        // toString() might need to be implemented for useful results
+        try {
+          String value = descriptor.getReadMethod().invoke(sample);
+          result |= matchesTerm(value, searchTerm);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          log.info("Could not invoke "+descriptor.getName()+ " getter when filtering samples. Ignoring property.");
+          }
+        }
+    }
+    return result;
   }
 
   private boolean matchesTerm(String fieldValue, String searchTerm) {
