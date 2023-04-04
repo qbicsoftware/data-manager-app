@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.domain.project.experiment
 
 import life.qbic.application.commons.ApplicationException
 import life.qbic.projectmanagement.application.ProjectManagementException
+import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException
 import spock.lang.Specification
 
@@ -94,46 +95,39 @@ class ExperimentalDesignSpec extends Specification {
         result.isEmpty()
     }
 
-    def "when a condition is defined with identical variable levels then fail"() {
+    def "when an experimental group is defined with identical variable levels then fail"() {
         given:
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
         design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
-        def controlCondition = Condition.create("my condition", VariableLevel.create(variableName, ExperimentalValue.create("normal")))
-        design.conditions.add(controlCondition)
-        when: "a condition is defined with identical variable levels"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))),5)
+        when: "an experimental group is defined with identical variable levels"
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("normal"))),4)
         then: "an exception is thrown"
-        result.isFailure()
+        thrown(ConditionExistsException)
     }
 
-    def "when a condition is defined with the same label then fail"() {
+    def "when an experimental group is not defined in the design, a new one is added"() {
         given:
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
         design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
-        def controlCondition = Condition.create("control", VariableLevel.create(variableName, ExperimentalValue.create("altered")))
-        design.conditions.add(controlCondition)
-        when: "a condition is defined with identical variable levels"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
-        then: "an exception is thrown"
-        result.isFailure()
-    }
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))),5)
 
-    def "when a condition is not defined in the design, create a new condition"() {
-        given:
-        def design = new ExperimentalDesign()
-        def variableName = VariableName.create("environment")
-        design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
-        def expectedCondition = Condition.create("control", VariableLevel.create(variableName, ExperimentalValue.create("normal")))
+        when: "a new experimental group is defined"
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("altered"))),4)
 
-        when: "a condition is defined"
-        def result = design.defineCondition("control", design.getLevel("environment", ExperimentalValue.create("normal")).get())
-
-        then: "the condition is returned"
-        result.isSuccess()
-        result.value().hasSameLevelsDefined(expectedCondition)
-        result.value().equals(expectedCondition)
+        then: "both experimental groups are created and no exception is thrown"
+        def groups = design.experimentalGroups
+        groups.size() == 2
+        def cond1 = Condition.create(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))))
+        def cond2 = Condition.create(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("altered"))))
+        def expectedConditions = new HashSet<Condition>(Arrays.asList(cond1,cond2))
+        def returnedConditions = new HashSet<Condition>()
+        for (ExperimentalGroup group : groups) {
+            returnedConditions.add(group.condition())
+        }
+        returnedConditions.equals(expectedConditions)
     }
 
     def "when a level is added to an existing variable then the level is part of the variable"() {

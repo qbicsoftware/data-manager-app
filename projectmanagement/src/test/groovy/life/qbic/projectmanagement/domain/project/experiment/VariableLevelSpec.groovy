@@ -14,8 +14,8 @@ class VariableLevelSpec extends Specification {
 
     def "When all variable values are part of the variable levels, successfully create the level"() {
         given:
-        ExperimentalValue value = ExperimentalValue.create("test", "unit")
-        ExperimentalValue anotherValue = ExperimentalValue.create("unknown", "nothing")
+        ExperimentalValue value = ExperimentalValue.create("test", "sameunit")
+        ExperimentalValue anotherValue = ExperimentalValue.create("unknown", "sameunit")
         ExperimentalVariable variable = ExperimentalVariable.create("testVariable", value, anotherValue)
 
         when:

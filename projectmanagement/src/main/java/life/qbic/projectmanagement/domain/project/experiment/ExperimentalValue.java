@@ -63,10 +63,6 @@ public class ExperimentalValue {
     return value;
   }
 
-  public String formatted() {
-    return value + " " + unit;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {

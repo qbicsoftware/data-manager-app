@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.project.create;
+package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;

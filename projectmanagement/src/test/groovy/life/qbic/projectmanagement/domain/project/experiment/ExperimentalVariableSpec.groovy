@@ -40,4 +40,20 @@ class ExperimentalVariableSpec extends Specification {
         noExceptionThrown()
     }
 
+    def "Adding a variable containing levels with different units via the ExperimentInformationService fails"() {
+        given:
+        String variableName = "My awesome variable"
+        String unit = "This unit exists"
+        def levels = ["level 1", "level 2"]
+        ExperimentalValue experimentalValue1 = ExperimentalValue.create(levels[0], unit)
+        ExperimentalValue experimentalValueNoUnit = ExperimentalValue.create(levels[1])
+
+        when: "variables with disjunctive units are added to an experiment"
+
+        ExperimentalVariable.create(variableName, experimentalValue1, experimentalValueNoUnit)
+
+        then: "illegal argument exception is thrown"
+        thrown(IllegalArgumentException)
+    }
+
 }
