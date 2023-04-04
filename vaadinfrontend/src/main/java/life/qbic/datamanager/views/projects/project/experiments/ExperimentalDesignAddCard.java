@@ -1,18 +1,20 @@
-package life.qbic.datamanager.views.project.view.components;
+package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariableToExperimentDialog;
 
 /**
  * <b>Experimental Design Add Card</b>
  *
- * <p>A CardLayout based Component which is simliarly structured as the {@link ExperimentalDesignCard}.
- * However it's content is fixed and it's purpose is to allow for a user to click on the card to create a new {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}
- * via the {@link life.qbic.datamanager.views.project.experiment.ExperimentCreationDialog}
- *
+ * <p>A CardLayout based Component which is simliarly structured as the
+ * {@link ExperimentalDesignCard}. However it's content is fixed and it's purpose is to allow for a
+ * user to click on the card to create a new
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} via the
+ * {@link AddVariableToExperimentDialog}
  */
 public class ExperimentalDesignAddCard extends CardLayout {
 

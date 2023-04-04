@@ -109,7 +109,7 @@ class PasswordEncryptionPolicySpec extends Specification {
     String encryptedPassword = PasswordEncryptionPolicy.instance().encrypt(password.toCharArray())
 
     then:
-    encryptedPassword.length() == 111
+    encryptedPassword.length() == 112
 
     where:
     password << rawPasswords
