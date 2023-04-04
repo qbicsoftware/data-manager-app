@@ -54,12 +54,12 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    // necessary to test unit cohesion
     for(ExperimentalValue level : levels) {
-      Result<VariableLevel, Exception> addLevelResult = addLevel(level);//TODO this does not seem like the correct way to use this
-      if (addLevelResult.isFailure()) {
-          throw new IllegalArgumentException(addLevelResult.exception().getMessage());
+      if (hasDifferentUnitAsExistingLevels(level)) {
+        throw new IllegalArgumentException(
+            "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
       }
+      addLevel(level);
     }
   }
 
