@@ -5,7 +5,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariableToExperimentDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariablesAndExperimentalGroupsDialog;
 
 /**
  * <b>Experimental Design Add Card</b>
@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVa
  * {@link ExperimentalDesignCard}. However it's content is fixed and it's purpose is to allow for a
  * user to click on the card to create a new
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} via the
- * {@link AddVariableToExperimentDialog}
+ * {@link AddVariablesAndExperimentalGroupsDialog}
  */
 public class ExperimentalDesignAddCard extends CardLayout {
 

@@ -50,6 +50,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient Handler handler;
   private static final Logger logger = LoggerFactory.logger(ExperimentDetailsComponent.class);
+  private final ExperimentInformationService experimentInformationService;
   private ToggleDisplayEditComponent<Span, TextField, String> experimentNotes;
   private Chart registeredSamples;
   private HorizontalLayout topLayout;
@@ -68,12 +69,17 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private ExperimentalVariableCard experimentalVariableCard;
   private Button addBlockingVariableButton;
 
+  private AddVariablesAndExperimentalGroupsDialog addVariablesAndExperimentalGroupsDialog;
+
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    this.experimentInformationService = experimentInformationService;
     initTopLayout();
     initTabSheet(experimentInformationService);
+    this.addVariablesAndExperimentalGroupsDialog = new AddVariablesAndExperimentalGroupsDialog(
+        experimentInformationService);
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 
@@ -118,6 +124,21 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
+    getDialog().open();
+  }
+
+  private AddExperimentalGroupsDialog getDialog() {
+    Button create = new Button("Create");
+    Button cancel = new Button("Cancel");
+    create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog(
+        experimentInformationService);
+    dialog.getFooter().add(cancel, create);
+    cancel.addClickListener(it -> dialog.close());
+    create.addClickListener(it -> {
+      System.out.println("dialog.getContent() = " + dialog.getContent());
+    });
+    return dialog;
   }
 
   private void initSampleOriginCard() {
@@ -151,6 +172,9 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
     experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
+    experimentalVariableCard.setAddButtonAction(() -> {
+      addVariablesAndExperimentalGroupsDialog.open();
+    });
   }
 
   private void initSampleGroupsCardBoard() {
@@ -172,11 +196,21 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
         ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
+      addCloseListenerForAddVariableDialog();
     }
 
     public void setProjectId(ProjectId projectId) {
       projectInformationService.find(projectId)
           .ifPresent(this::getActiveExperimentFromProject);
+    }
+
+    private void addCloseListenerForAddVariableDialog() {
+      addVariablesAndExperimentalGroupsDialog.addOpenedChangeListener(it -> {
+        if (!it.isOpened()) {
+          experimentalVariableCard.refresh();
+        }
+      });
+      //TODO how to determine whether exp groups were added? navigate to exp groups?
     }
 
     private void getActiveExperimentFromProject(Project project) {
@@ -190,6 +224,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       loadSampleOriginInformation(experiment);
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
+      addVariablesAndExperimentalGroupsDialog.experimentId(experiment.experimentId());
     }
 
     private void loadTagInformation(Experiment experiment) {
