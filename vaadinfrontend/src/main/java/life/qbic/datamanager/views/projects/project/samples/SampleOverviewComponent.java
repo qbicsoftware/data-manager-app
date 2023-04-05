@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -7,6 +9,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -18,8 +21,10 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,6 +40,8 @@ import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import org.slf4j.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -67,6 +74,8 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
+  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
+  private static final Logger log = getLogger(SampleOverviewComponent.class);
   private final RegisterBatchDialog registerBatchDialog = new RegisterBatchDialog();
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
@@ -115,7 +124,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
   private void initButtonAndFieldBar() {
     searchField.setPlaceholder("Search");
-    searchField.setClassName("searchbox");
+    searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.EAGER);
     tabFilterSelect.setLabel("Search in");
     tabFilterSelect.setEmptySelectionAllowed(true);
@@ -140,11 +149,11 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
       Tab experimentSampleTab = new Tab(experimentName);
       //Todo How to provide information from different services in the vaadin grid?
       Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
-      sampleGrid.addColumn(createSampleIdComponentRenderer()).setSortProperty("id")
+      sampleGrid.addColumn(createSampleIdComponentRenderer()).setComparator(Sample::id)
           .setHeader("Sample Id");
       sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
       sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
-      sampleGrid.addColumn(createSampleStatusComponentRenderer()).setSortProperty("status")
+      sampleGrid.addColumn(createSampleStatusComponentRenderer()).setComparator(Sample::status)
           .setHeader("Status");
       sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
       sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
@@ -239,6 +248,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
+      registerBatchButton.addClickListener(event -> showSamplesView());
       registerBatchButton.addClickListener(event -> registerBatchDialog.open());
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
@@ -297,14 +307,20 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     }
   }
 
-  //ToDo is there a java reflection solution to check all fields or should the record implement a solution
   private boolean isInSample(Sample sample, String searchTerm) {
-    return matchesTerm(sample.id(), searchTerm) || matchesTerm(sample.label(), searchTerm)
-        || matchesTerm(sample.batch(), searchTerm) || matchesTerm(sample.status(), searchTerm)
-        || matchesTerm(sample.experiment(), searchTerm) || matchesTerm(sample.source(), searchTerm)
-        || matchesTerm(sample.condition1(), searchTerm) || matchesTerm(sample.condition2(),
-        searchTerm) || matchesTerm(sample.specimen(), searchTerm) || matchesTerm(sample.species(),
-        searchTerm);
+    boolean result = false;
+    for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
+      if (!descriptor.getName().equals("class")) {
+        try {
+          String value = descriptor.getReadMethod().invoke(sample).toString();
+          result |= matchesTerm(value, searchTerm);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          log.info("Could not invoke " + descriptor.getName()
+              + " getter when filtering samples. Ignoring property.");
+        }
+      }
+    }
+    return result;
   }
 
   private boolean matchesTerm(String fieldValue, String searchTerm) {

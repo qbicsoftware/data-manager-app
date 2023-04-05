@@ -26,7 +26,7 @@ public class PasswordEncryptionPolicy {
   private static final int HASH_INDEX =
       2; // the index of the hash content in the encoded password String
   private static final int ITERATIONS =
-      10_000; // the iteration count used for the encryption algorithm
+      100_000; // the iteration count used for the encryption algorithm
 
   private static final String CIPHER = "AES";
 

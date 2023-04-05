@@ -9,7 +9,7 @@ import spock.lang.Specification
  *
  * @since <version tag>
  */
-class SampleGroupSpec extends Specification {
+class ExperimentalGroupSpec extends Specification {
 
     def "If the provided condition is not part of the experimental design"() {
 
