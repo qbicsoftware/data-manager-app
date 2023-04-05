@@ -85,8 +85,8 @@ public class RegisterBatchDialog extends Dialog {
   }
 
   private void initDataTypeSelection() {
-    dataTypeSelection.setItems(metaDataTypes.LIGANDOMICS, metaDataTypes.METABOLOMICS,
-        metaDataTypes.PROTEOMICS, metaDataTypes.TRANSCRIPTOMIC_GENOMICS);
+    dataTypeSelection.setItems(metaDataTypes.values());
+    dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     dataTypeSelection.setRenderer(new ComponentRenderer<>(metaDataTypes -> {
       Span metaDataType = new Span(metaDataTypes.metaDataType);
@@ -155,10 +155,13 @@ public class RegisterBatchDialog extends Dialog {
       if (!resourcePath.isBlank()) {
         InputStream resourceAsStream = getClass().getResourceAsStream(resourcePath);
         if (resourceAsStream != null) {
+          metadataSpreadsheet = new Spreadsheet(resourceAsStream);
+        } else {
           metadataSpreadsheet = new Spreadsheet();
-          sampleMetadataLayout.add(metadataSpreadsheet);
-          metadataSpreadsheet.setWidth(400, Unit.PIXELS);
         }
+        sampleMetadataLayout.add(metadataSpreadsheet);
+        metadataSpreadsheet.setWidth(400, Unit.PIXELS);
+        metadataSpreadsheet.setHeight(400, Unit.PIXELS);
       }
     }
 
