@@ -4,15 +4,15 @@
 
 ### Diaper (swallowing exceptions)
 
+* Makes the needle disappear from the haystack.
+* Debugging is impossible (or very hard at least)
+
 ```groovy
 try {
-   doSomeWork();
+    doSomeWork();
 } catch (Exception e) {
 }
 ```
-
-What happened here? The catch block is empty. This should never happen as it makes debugging
-impossible. An empty catch block is a massive red flag.
 
 ```groovy
 try {
@@ -22,42 +22,47 @@ try {
 }
 ```
 
-This should be fine, right? No. The `printStackTrace()` method prints to `System.err`. This will not
-suffice as we cannot be confident that `System.err` is captured in the log files. The exception
-might not be detected or available for debugging purposes.
+The `printStackTrace()` method prints to `System.err`. Often, **`System.err` is not captured by the
+logs.**
 
 ### Decapitation
 
-If we are not encouraged to print the stack trace to `System.err`, then we can throw
-a `RuntimeException`.
-The following code should solve our problem, right?
+Decapitated exceptions provide less information about the systems state producing the exception.
+Never do it.
 
 ```groovy
 try {
    doSomeWork();
 } catch (Exception e) {
-   throw new RuntimeException("I assume an exception due to XYZ")
+    throw new RuntimeException("my crazy method threw an exception")
 }
 ```
 
-Sadly no. By not setting the cause of the new exception to the caught exception, we loose all
-information about why the exception occurred.
-We cannot understand what happened from the rethrown exception's stack trace. Thus, always set the
-cause of thrown exceptions.
+#### Instead do:
+
+```groovy
+try {
+    doSomeWork();
+} catch (Exception e) {
+    throw new RuntimeException("my crazy method threw an exception", e)
+}
+```
 
 ### Checked Exceptions
 
-Checked exceptions in Java have to be handled by the calling code. This presents an abstraction
-leak.
+* Forces caller to catch the exception.
+* Caller might have no way to handle it
+* Presents an abstraction leak as the caller needs to deal with internals of the implementation.
+
 Why should the calling code know details about the implementation?
 
 <!-- we use groogy as languate so the formatting works ;D -->
 
 ```groovy
 public static int countUserPosts() throws IOException {
-   Properties userProps = new Properties();
-   try (FileReader reader = new FileReader("my-users.properties")) {
-      userProps.load(reader);
+    Properties userProps = new Properties();
+    try (FileReader reader = new FileReader("my-users.properties")) {
+        userProps.load(reader);
    }
    return userProps.getProperty("user.posts.count");
 }
@@ -71,6 +76,7 @@ Instead consider an approach like the following:
 
 <!-- we use groogy as languate so the formatting works ;D -->
 
+#### Instead do:
 ```groovy
 public static int countUserPosts() {
    try {
@@ -87,8 +93,9 @@ public static int countUserPosts() {
 
 ### Log-Rethrow Anti-Pattern
 
-When we catch an exception surely we want to be totally sure we have logged it, don't we? So let's
-just catch any exception and make sure
+* Do not only log an exception and rethrow
+* Pollutes the log
+* Does not add anything but confusion
 
 ```groovy
 public static void someMethod() {
@@ -103,11 +110,10 @@ public static void someMethod() {
 }
 ```
 
+When we catch an exception surely we want to be totally sure we have logged it, don't we? So let's
+just catch any exception and make sure.
+
 Perfect. Now we have the exception in the log 💪😃!
-
-...
-
-But wait ...
 
 When we inspected the log we observed "Oh no! Another exception." several times. Why, when did it
 occur?
@@ -131,19 +137,32 @@ public static void anotherMethod() {
 We caught, logged and threw the same exception over again. Wow, so all the time we only had one
 exception and not several?
 
-Thanks to the redundant catching and logging of the same exception within the called method and after the method, reading the log file was more confusing than it had to be
+Thanks to the redundant catching and logging of the same exception within the called method and
+after the method, reading the log file was more confusing than it had to be
 We would have ended up with only one exception in our log file, stating where it occurred and that
 it occured only once.
 We would have saved many hours of digging through the code.
 **Never** only catch an exception to **log and rethrow** it.
-Only [catch exception when necessary](#catch-rethrow).
+
+#### Instead do: [catch exception when necessary](#catch-rethrow).
 
 ### Exceptions as control flow
+
+**Exceptions as control-flow smell like a _GOTO_ instruction!**<br>
+They do not have any scope and can run wild in your code!
+
+![](https://imgs.xkcd.com/comics/goto.png)
+
+* Exceptions are expensive
+* Exceptions indicate **exceptional** system state
+* catch blocks -> possibilities for _diaper_, _decapitation_, _GOTOs_
 
 Exceptions are slow. It is cheaper to validate first and then proceed than to throw an exception and
 handle it.
 When using exceptions for control flow, programmers are forced to write catch blocks and the chance
-for swallowing an exception or decapitating an exception increases.
+for swallowing an exception or decapitating an exception increases. Developers might forget to catch
+an exception or if the exception was added later, legacy code might not be aware of the possibility
+and miss some previous type of exception.
 
 Thus, avoid exceptions for expected or likely outcomes. For expected outcomes consider returning a
 meaningful result instead. (_Hint: Java Records present an easy way to implement result objects_)
@@ -151,84 +170,81 @@ meaningful result instead. (_Hint: Java Records present an easy way to implement
 <!-- we use groogy as languate so the formatting works ;D -->
 
 ```groovy
-public static boolean isValidProjectCode(String code) {
-   try {
-      new ProjectCode(code, "some value");
-   } catch (NullPointerException | IllegalArgumentException e) {
-      return false;
-   }
-   return true;
+public static void isShorterThan(String input, int maxLength) {
+    if (input.length() >= maxLength) {
+        throw new LengthException("The string is to long");
+    }
+}
+
+public static void isLongerThan(String input, int minLength) {
+    if (input.length() <= minLength) {
+        throw new LengthException("The string is to short");
+    }
+}
+
+public static boolean isZipCode(String code) {
+    try {
+        isLongerThan(code, 4);
+        isShorterThan(code, 6);
+        return true;
+    } catch (LengthException e) {
+        return false;
+    }
 }
 ```
 
-becomes
-
-<!-- we use groogy as languate so the formatting works ;D -->
+Replacing exceptions as control flow:
 
 ```groovy
-public static boolean isValidProjectCode(String code) {
-   return ProjectCode.validate(code, "some value");
+public static boolean isShorterThan(String input, int maxLength) {
+    return input.length() >= maxLength;
+}
+
+public static boolean isLongerThan(String input, int minLength) {
+    return input.length() <= minLength;
+}
+
+public static boolean isZipCode(String code) {
+    return isLongerThan(code, 4) && isShorterThan(code, 6);
 }
 ```
 
-When using custom exceptions as flow control, make them extend `Exception` and
-not `RuntimeException`
-because you intend the calling code to use them to determine the application flow.
-As previously discussed, all problems with checked exceptions [discussed here](#checked-exceptions)
-apply.
-I think this illustrates easily why exceptions for control flow can be a bad idea.
-
-If, on the other hand you reasonably expect a value to be present when no value is present, an
-exceptional state would follow.
-Thus throwing exceptions is fine in that case. For example:
-
-<!-- we use groogy as languate so the formatting works ;D -->
+If you **reasonably expect** a value to be present when no value is present, or a variable to have a
+specific value, throwing exceptions is fine. For example:
 
 ```groovy
-public static void soSomeStuffWithMyProjectCode(String code) {
-   // code is always expected to be valid
-   var myProjectCode = new ProjectCode(code, "some value");
-   // ... (some complex logic involving myProjectCode)
+public static void doSomeObjectStuff(Object object) {
+    if (object == null) {
+        throw new NullPointerException("object is null");
+    }
+    // ... some code working with object
 }
 
-public ProjectCode(String code, Constant constant) {
-   if (!validate(code, constant)) {
-      throw new RuntimeException("We encountered something unexpected.");
-   }
+public static void doStuff() {
+    Object myObject = createObject();
+    doSomeObjectStuff(myObject);
 }
 ```
 
-In those cases we would not `catch` the exception and try
+Here we assume that we are given an object in the `doSomeObjectStuff` method. If this is not the
+case, something is off and we panic.
+
+**Note:** In those cases we do not `catch` the exception and try
 to [handle it as late as possible](#throw-early-handle-late).
-
-**Exceptions as control-flow smell like a _GOTO_ instruction!**
-![](https://imgs.xkcd.com/comics/goto.png)
 
 ## Good practices
 
 ### Throw early, handle late
 
-When encountering exceptional circumstances, additional work should be avoided. Imagine an
-application calculating salaries for people working at a firm.
-One employee, Alice, left the company recently. Let's assume that the computation of a salary is
-complex.
+When encountering exceptional circumstances, additional work should be avoided.
+We want the application to fail as early as possible.
 
-If the application would first calculate the salary for Alice and then try to retrieve her bank
-account from a list of employees,
-an exceptional situation would occur. _(Yes, one could argue that people leaving a company is not
-that uncommon but let's assume it is)_.
-
-Our application would fail after doing all the heavy lifting computing the salary. This is bad. A
-lot of resources wasted.
-
-Instead we would want the application to fail as early as possible. Thus we check for Alice's bank
-account first and throw there if the expected information is not present.
-
-_**Try to throw before mutating an object state. Leave the objects’ state unaltered.**_
+_**Throw before mutating state. Leave the state unaltered.**_
 
 ### When to catch exceptions
 
-Generally, you should avoid catching exceptions where you cannot act on them.
+Avoid catching exceptions where you cannot act on them.
+
 The diaper and the log-rethrow anti-pattern indicate a caught exception in the wrong place.
 There are some cases in which you want to catch exceptions.
 
@@ -243,30 +259,32 @@ whether to split your method with SRP instead of throwing an exception.
 
 #### Catch-Rethrow
 
-In some cases it can be useful to catch an exception, do something with it and rethrow that
-exception.
+It can be useful to catch an exception, do something with it and rethrow that
+exception. Only catch-rethrow if you
 
-1. **user-friendly message**: In case you want to wrap your exception in another exception with
-   information necessary to provide the user with a friendly and understandable message.
-2. **unit test a thrown exception**: In case you write a unit test that checks for an exception
-   being thrown. Use with care.
-3. **report debug information in new message**: Wrapping the exception in another exception with
-   useful debug information in the message can make debugging easier as the information will end up
-   in the logs.
-4. **get rid of checked exception**: As [discussed earlier](#checked-exceptions), we don't want the
-   abstraction leak of checked exceptions.
+- **user-friendly message**:
+    - wrap your exception to provide the user with a friendly and understandable message.
+- **unit test a thrown exception**:
+    - write a unit test that checks for a thrown exception.
+- **report debug information in new message**:
+    - wrap the exception in another exception with useful debug information in the message.
+- **get rid of checked exception**:
+    - [discussed earlier](#checked-exceptions)
 
 #### Global exception handling
 
 So we never want to catch unwanted exceptions. How do we save our users from bombardment with stack
 traces?
+
 We learned that we should **never expose stack traces to users** as this is a security issue.
 So should I rather swallow exceptions and ignore
 the [diaper anti-pattern](#diaper-swallowing-exceptions)?
 
-As a developer, you want to feel safe and rest assured that all exceptions are handled somewhere.
+As a developer, you want to **feel safe and rest assured that we can throw exceptions any time and
+anywhere**.
 
-The solution is to create a safety net, catching all exceptions that occur. A global exception
+The solution is to create a **application global safety net**, catching all exceptions that occur. A
+global exception
 handler!
 Developers can throw exceptions whenever they want without needing to ensure that they are handled
 and without being afraid to expose details to users of your software.
@@ -278,107 +296,26 @@ global exception handlers;
 See [Routing Exception Handler in Vaadin](https://vaadin.com/docs/v23/routing/exceptions)
 and [Custom Exception Handler in Vaadin](https://vaadin.com/docs/v23/routing/exceptions#custom-exception-handlers).
 
+## Scenarios
 
-[//]: # (## FAQ)
+##### I want to display an error message at the point where the user entered information.
 
-[//]: # ()
+There are a couple of problems you need to address:
 
-[//]: # (**DO NOT USE our Result type as return value.... the caller can ignore it and the exceptions are lost**)
+1. How can I identify the input location at the place where the error is detected?
+2. How expected is the invalid input? How frequently does it occur?
+    - If it is expected: Why did I decide against an explicit response object?
+    - If it is unexpected, how can I show a specific error message?
+3. What is the closest point where I can show the error message?
+4. Catch or do a `Result.of` call?
 
-[//]: # (https://blog.softwaremill.com/exceptions-no-just-try-them-off-497984eb470d)
+##### I want to re-direct to a specific error page for certain errors.
 
-[//]: # ()
+When does re-direction make sense? Is it only when navigating, that redirecting to a certain error
+page makes sense, or are the other cases?
+A different handler can take care of exceptions during navigation. (Does it make sense to subclass
+the main exception?)
 
-[//]: # ()
+##### I want to display an error message at a specific location no matter where the exception occurred.
 
-[//]: # (https://blog.awesomesoftwareengineer.com/p/throwing-exceptions-vs-control-flow)
-
-[//]: # ()
-
-[//]: # (Throw before mutating an object state: leave the objects’ state unaltered)
-
-[//]: # (Don’t use exceptions for normal flow control: they are expensive, and they can smell like a GOTO)
-
-[//]: # (instruction)
-
-[//]: # (Your developers should feel safe that exceptions are never lost.)
-
-[//]: # (## Do I use `life.qbic.application.commons.Result` or throw an exception?)
-
-[//]: # ()
-
-[//]: # (## Vaadin, which exceptions to use for routing?)
-
-[//]: # ()
-
-[//]: # (## When to rethrow an exception?)
-
-[//]: # ()
-
-[//]: # (* don't do checked exceptions)
-
-[//]: # (* never catch an exception and do nothing // diaper anti-pattern)
-
-[//]: # (* don't catch Exception)
-
-[//]: # (* throw runtime exceptions wrapping checked exceptions)
-
-[//]: # ()
-
-[//]: # (- log and rethrow wrapped -> logged multiple times? What actually happened? // log-rethrow)
-
-[//]: # (  anti-pattern)
-
-[//]: # (- global exception handler)
-
-[//]: # (- what to show the user?)
-
-[//]: # (    - NEVER the stacktrace!)
-
-[//]: # (    - don't show the exception message -> mixing presentation with detecting the business condition)
-
-[//]: # (      for the exception to occur.)
-
-[//]: # (    - int -> error code manual :&#40;)
-
-[//]: # (    - enum -> with message to the user)
-
-[//]: # (- only catch recoverable exceptions)
-
-[//]: # (- for recoverable exceptions -> subtype application exception)
-
-[//]: # (- distinguish between exceptions by enum reason)
-
-[//]: # (- include interesting values for debugging to the exception message)
-
-[//]: # (- DO NOT DECAPITATE exception!)
-
-[//]: # ()
-
-[//]: # (how we do it in vaadin:)
-
-[//]: # (exceptions thrown end up in the view as notifications.)
-
-[//]: # (exceptions thrown during navigation end up in own view)
-
-[//]: # ()
-
-[//]: # (What does `fail` mean?)
-
-[//]: # (Do we need custom exceptions? If so, how to handle?)
-
-[//]: # (Force the consumer of the result to handle different paths?)
-
-[//]: # (Force the supplier of the result to supply different paths?)
-
-[//]: # ()
-
-[//]: # (scenarios:)
-
-[//]: # ()
-
-[//]: # (1. I want to query for some information from the backend: did it work? &#40;maybe result object&#41;)
-
-[//]: # (2. I am calling other backend logic)
-
-[//]: # (3. I am calling some method I expect to fail)
+At the owner of that location catch and modify ui.
