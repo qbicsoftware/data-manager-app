@@ -32,10 +32,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -226,16 +224,12 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
       AddExperimentalGroupsDialog experimentalGroupsDialog = getDialog();
-      experimentalGroupsDialog.setLevels(List.of(
-          VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
-          VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
-          VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
-          VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
-          VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
-          VariableLevel.create(VariableName.create("height"),
-              ExperimentalValue.create("500", "cm"))));
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experiment.experimentId());
+      List<VariableLevel> levels = variables.stream()
+          .flatMap(variable -> variable.levels().stream())
+          .toList();
+      experimentalGroupsDialog.setLevels(levels);
       experimentalGroupsDialog.open();
     }
 
