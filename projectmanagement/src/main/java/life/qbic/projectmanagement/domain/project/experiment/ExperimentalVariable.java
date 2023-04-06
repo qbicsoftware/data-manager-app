@@ -95,7 +95,7 @@ public class ExperimentalVariable {
       return false;
     }
 
-    return !levels.stream().map(it -> it.unit()).collect(Collectors.toSet())
+    return !levels.stream().map(ExperimentalValue::unit).collect(Collectors.toSet())
         .contains(experimentalValue.unit());
   }
 

@@ -172,7 +172,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
     experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
-    experimentalVariableCard.setAddButtonAction(() -> addVariablesDialog.open());
+    experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
   }
 
   private void initSampleGroupsCardBoard() {
