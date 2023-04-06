@@ -137,6 +137,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     cancel.addClickListener(it -> dialog.close());
     create.addClickListener(it -> {
       System.out.println("dialog.getContent() = " + dialog.getContent());
+      dialog.close();
+      dialog.open();
     });
     return dialog;
   }

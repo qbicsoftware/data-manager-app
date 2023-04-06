@@ -12,8 +12,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.ValueContext;
-import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.provider.ListDataProvider;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,13 +41,13 @@ public class AddExperimentalGroupsDialog extends Dialog {
     NumberField sampleSize = new NumberField("Number of Samples");
     Button removeRowButton = new Button(VaadinIcon.CLOSE_SMALL.create());
 
-    public ExperimentalGroupLayout(ListDataProvider<VariableLevel> dataProvider) {
-      this(true, dataProvider);
+    public ExperimentalGroupLayout(Collection<VariableLevel> levels) {
+      this(true, levels);
     }
 
     public ExperimentalGroupLayout(boolean removeButtonVisible,
-        ListDataProvider<VariableLevel> dataProvider) {
-      requireNonNull(dataProvider, "dataProvider must not be null");
+        Collection<VariableLevel> levels) {
+      requireNonNull(levels, "levels must not be null");
       setAlignItems(Alignment.BASELINE);
       sampleSize.setRequiredIndicatorVisible(true);
       sampleSize.setStepButtonsVisible(true);
@@ -71,7 +70,7 @@ public class AddExperimentalGroupsDialog extends Dialog {
       sampleSize.setHelperComponent(sampleSizeErrorLabel);
       variableLevels.addClassName("chip-badge");
       variableLevels.setRequiredIndicatorVisible(true);
-      variableLevels.setItems(dataProvider);
+      variableLevels.setItems(levels);
       removeRowButton.setIconAfterText(true);
       removeRowButton.addClickListener(it -> this.getElement().removeFromParent());
       removeRowButton.setVisible(removeButtonVisible);
@@ -90,54 +89,47 @@ public class AddExperimentalGroupsDialog extends Dialog {
   public AddExperimentalGroupsDialog(ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = experimentInformationService;
     setHeaderTitle("Experimental Groups");
-
-    templateRow = new HorizontalLayout();
     rows = new VerticalLayout();
     rows.setPadding(false);
     rows.setSpacing(false);
-
+    templateRow = new HorizontalLayout();
     templateRow.setAlignItems(Alignment.BASELINE);
-    Button addRow = new Button(VaadinIcon.PLUS.create());
-    // FIXME
-
-    ListDataProvider<VariableLevel> dataProvider = DataProvider.ofItems(
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("green")),
-        VariableLevel.create(VariableName.create("color"),
-            ExperimentalValue.create("yellow")),
-        VariableLevel.create(VariableName.create("width"),
-            ExperimentalValue.create("5", "cm")),
-        VariableLevel.create(VariableName.create("width"),
-            ExperimentalValue.create("10", "cm")),
-        VariableLevel.create(VariableName.create("height"),
-            ExperimentalValue.create("20", "cm")),
-        VariableLevel.create(VariableName.create("height"),
-            ExperimentalValue.create("500", "cm")));
-
-    // end FIXME
-    ExperimentalGroupLayout templateElement = new ExperimentalGroupLayout(false, dataProvider);
-    templateElement.setEnabled(false);
-    templateRow.add(addRow, templateElement);
-    addRow.addClickListener(it -> rows.add(new ExperimentalGroupLayout(dataProvider)));
-
     add(rows);
     add(templateRow);
+    setCloseOnEsc(false);
+    setCloseOnOutsideClick(false);
+  }
 
-    rows.add(new ExperimentalGroupLayout(dataProvider));
+  @Override
+  public void close() {
+    super.close();
+    reset();
   }
 
   private void reset() {
     rows.removeAll();
     templateRow.removeAll();
-    //TODO reset on close
-
   }
 
   @Override
   public void open() {
-    // load updated information from the backend
-    //TODO fetch data on open
+    //TODO fetch data from service
+    Collection<VariableLevel> levels = List.of(
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("green")),
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("yellow")),
+        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
+        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
+        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
+        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("500", "cm")));
+
+    Button addRow = new Button(VaadinIcon.PLUS.create());
+    ExperimentalGroupLayout templateElement = new ExperimentalGroupLayout(false, levels);
+    templateElement.setEnabled(false);
+    templateRow.add(addRow, templateElement);
+    addRow.addClickListener(it -> rows.add(new ExperimentalGroupLayout(levels)));
+    rows.add(new ExperimentalGroupLayout(levels));
     super.open();
   }
 
