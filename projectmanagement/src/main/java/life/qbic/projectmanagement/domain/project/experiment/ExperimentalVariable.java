@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -53,7 +54,13 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    this.levels.addAll(List.of(levels));
+    for(ExperimentalValue level : levels) {
+      if (hasDifferentUnitAsExistingLevels(level)) {
+        throw new IllegalArgumentException(
+            "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
+      }
+      addLevel(level);
+    }
   }
 
   public static ExperimentalVariable create(String name, ExperimentalValue... levels) {
@@ -75,7 +82,7 @@ public class ExperimentalVariable {
   Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
       return Result.failure(new IllegalArgumentException(
-          "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
+          "experimental value not applicable. This variable has other levels without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
       levels.add(experimentalValue);
@@ -85,9 +92,10 @@ public class ExperimentalVariable {
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
-    Predicate<ExperimentalValue> hasDifferentUnit = input -> !input.unit()
-        .equals(experimentalValue.unit());
-    return levels.stream().anyMatch(hasDifferentUnit);
+    if(levels.isEmpty())
+      return false;
+
+    return !levels.stream().map(it -> it.unit()).collect(Collectors.toSet()).contains(experimentalValue.unit());
   }
 
   public List<ExperimentalValue> levels() {

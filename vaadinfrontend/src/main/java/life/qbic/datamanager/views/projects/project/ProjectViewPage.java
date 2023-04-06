@@ -13,6 +13,7 @@ import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
+import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
@@ -38,30 +39,35 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
 
   public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectInformationPage projectInformationPage,
-      @Autowired ExperimentInformationPage experimentInformationPage) {
+      @Autowired ExperimentInformationPage experimentInformationPage,
+      @Autowired SampleInformationPage sampleInformationPage) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
     add(projectNavigationBarComponent);
-    setPageStyles(projectNavigationBarComponent, projectInformationPage, experimentInformationPage);
+    setPageStyles(projectNavigationBarComponent, projectInformationPage, experimentInformationPage,
+        sampleInformationPage);
     handler = new ProjectViewHandler(projectNavigationBarComponent, projectInformationPage,
-        experimentInformationPage);
+        experimentInformationPage, sampleInformationPage);
     log.debug(String.format(
-        "New instance for project view (#%s) created with a project navigation component (#%s), a project information page (#%s) and experiment information page (#%s)",
+        "New instance for project view (#%s) created with a project navigation component (#%s), a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
         System.identityHashCode(projectInformationPage),
-        System.identityHashCode(experimentInformationPage)));
+        System.identityHashCode(experimentInformationPage),
+        System.identityHashCode(sampleInformationPage)));
   }
 
   public void setPageStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
       ProjectInformationPage projectInformationPage,
-      ExperimentInformationPage experimentInformationPage) {
+      ExperimentInformationPage experimentInformationPage,
+      SampleInformationPage sampleInformationPage) {
     /*Defines via css class names on how components within each page should be allocated
     in the css grid defined by the project view page*/
     projectNavigationBarComponent.setStyles("project-navigation-component");
     projectInformationPage.setId("project-page-css-grid-structure");
     projectInformationPage.setId("project-page-css-grid-structure");
     experimentInformationPage.setId("project-page-css-grid-structure");
+    sampleInformationPage.setId("project-page-css-grid-structure");
   }
 
   @Override
