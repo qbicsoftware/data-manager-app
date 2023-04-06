@@ -13,13 +13,11 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.ValueContext;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 
 /**
  * TODO!
@@ -31,15 +29,15 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableName;
  */
 public class AddExperimentalGroupsDialog extends Dialog {
 
-  final ExperimentInformationService experimentInformationService;
   private final VerticalLayout rows;
   private final HorizontalLayout templateRow;
+  private Collection<VariableLevel> levels;
 
   private static class ExperimentalGroupLayout extends HorizontalLayout {
 
-    ConditionComboBox variableLevels = new ConditionComboBox("Condition");
-    NumberField sampleSize = new NumberField("Number of Samples");
-    Button removeRowButton = new Button(VaadinIcon.CLOSE_SMALL.create());
+    private final ConditionComboBox variableLevelsInput = new ConditionComboBox("Condition");
+    private final NumberField sampleSize = new NumberField("Number of Samples");
+
 
     public ExperimentalGroupLayout(Collection<VariableLevel> levels) {
       this(true, levels);
@@ -68,14 +66,15 @@ public class AddExperimentalGroupsDialog extends Dialog {
         }
       });
       sampleSize.setHelperComponent(sampleSizeErrorLabel);
-      variableLevels.addClassName("chip-badge");
-      variableLevels.setRequiredIndicatorVisible(true);
-      variableLevels.setItems(levels);
+      variableLevelsInput.addClassName("chip-badge");
+      variableLevelsInput.setRequiredIndicatorVisible(true);
+      variableLevelsInput.setItems(levels);
+      Button removeRowButton = new Button(VaadinIcon.CLOSE_SMALL.create());
       removeRowButton.setIconAfterText(true);
       removeRowButton.addClickListener(it -> this.getElement().removeFromParent());
       removeRowButton.setVisible(removeButtonVisible);
       removeRowButton.setWidthFull();
-      add(variableLevels, sampleSize, removeRowButton);
+      add(variableLevelsInput, sampleSize, removeRowButton);
       setWidthFull();
     }
 
@@ -86,8 +85,7 @@ public class AddExperimentalGroupsDialog extends Dialog {
   }
 
 
-  public AddExperimentalGroupsDialog(ExperimentInformationService experimentInformationService) {
-    this.experimentInformationService = experimentInformationService;
+  public AddExperimentalGroupsDialog() {
     setHeaderTitle("Experimental Groups");
     rows = new VerticalLayout();
     rows.setPadding(false);
@@ -98,12 +96,15 @@ public class AddExperimentalGroupsDialog extends Dialog {
     add(templateRow);
     setCloseOnEsc(false);
     setCloseOnOutsideClick(false);
+    levels = Collections.emptySet();
   }
 
-  @Override
-  public void close() {
-    super.close();
-    reset();
+  public boolean setLevels(Collection<VariableLevel> levels) {
+    if (isOpened()) {
+      return false;
+    }
+    this.levels = levels;
+    return true;
   }
 
   private void reset() {
@@ -113,17 +114,7 @@ public class AddExperimentalGroupsDialog extends Dialog {
 
   @Override
   public void open() {
-    //TODO fetch data from service
-    Collection<VariableLevel> levels = List.of(
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("green")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("yellow")),
-        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
-        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
-        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
-        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("500", "cm")));
-
+    reset();
     Button addRow = new Button(VaadinIcon.PLUS.create());
     ExperimentalGroupLayout templateElement = new ExperimentalGroupLayout(false, levels);
     templateElement.setEnabled(false);
@@ -137,7 +128,7 @@ public class AddExperimentalGroupsDialog extends Dialog {
     return rows.getChildren()
         .filter(it -> it instanceof ExperimentalGroupLayout).map(it -> (ExperimentalGroupLayout) it)
         .map(it ->
-            new ExperimentalGroupInformation(it.variableLevels.getSelectedItems(),
+            new ExperimentalGroupInformation(it.variableLevelsInput.getSelectedItems(),
                 Optional.ofNullable(it.sampleSize.getValue())
                     .orElse(0.0).intValue()))
         .toList();

@@ -22,6 +22,7 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -33,6 +34,9 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -124,15 +128,23 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
-    getDialog().open();
+    AddExperimentalGroupsDialog experimentalGroupsDialog = getDialog();
+    experimentalGroupsDialog.setLevels(List.of(
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
+        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
+        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
+        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
+        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
+        VariableLevel.create(VariableName.create("height"),
+            ExperimentalValue.create("500", "cm"))));
+    experimentalGroupsDialog.open();
   }
 
   private AddExperimentalGroupsDialog getDialog() {
     Button create = new Button("Create");
     Button cancel = new Button("Cancel");
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog(
-        experimentInformationService);
+    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
     dialog.getFooter().add(cancel, create);
     cancel.addClickListener(it -> dialog.close());
     create.addClickListener(it -> {
