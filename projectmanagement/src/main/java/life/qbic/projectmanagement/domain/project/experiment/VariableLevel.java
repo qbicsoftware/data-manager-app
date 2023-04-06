@@ -45,11 +45,6 @@ public class VariableLevel {
     // used for jpa
   }
 
-  private boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
-      ExperimentalValue experimentalValue) {
-    return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
-  }
-
   public VariableName variableName() {
     return variableName;
   }

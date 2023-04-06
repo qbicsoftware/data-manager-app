@@ -147,7 +147,7 @@ class ExperimentalDesignSpec extends Specification {
         then:
         result.isSuccess()
         result.value() == new VariableLevel(VariableName.create(variableName), otherValue)
-        design.variables.get(0).levels().contains(otherValue)
+        design.variables.get(0).levels().any { it.experimentalValue() == otherValue }
     }
 
     def "when a level is added to an non-existent variable then the result is a failure"() {
@@ -177,7 +177,7 @@ class ExperimentalDesignSpec extends Specification {
         then:
         result.isSuccess()
         result.value() == new VariableLevel(VariableName.create(variableName), normalValue)
-        design.variables.get(0).levels().contains(normalValue)
+        design.variables.get(0).levels().any { it.experimentalValue() == normalValue }
     }
 
 

@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -110,8 +111,12 @@ public class ExperimentalVariableCard extends CardLayout {
         VerticalLayout experimentalVariableLayout = new VerticalLayout();
         experimentalVariablesFormLayout.addFormItem(experimentalVariableLayout,
             experimentalVariable.name().value());
-        experimentalVariable.levels().forEach(level -> experimentalVariableLayout.add(
-            new Span(ExperimentValueFormatter.format(level))));
+        experimentalVariable
+            .levels().stream()
+            .map(VariableLevel::experimentalValue)
+            .map(ExperimentValueFormatter::format)
+            .forEach(text ->
+                experimentalVariableLayout.add(new Span(text)));
       }
       showVariablesView();
     }

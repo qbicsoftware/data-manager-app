@@ -27,14 +27,13 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +52,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient Handler handler;
-  private static final Logger logger = LoggerFactory.logger(ExperimentDetailsComponent.class);
   private final ExperimentInformationService experimentInformationService;
   private ToggleDisplayEditComponent<Span, TextField, String> experimentNotes;
   private Chart registeredSamples;
@@ -73,7 +71,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private ExperimentalVariableCard experimentalVariableCard;
   private Button addBlockingVariableButton;
 
-  private AddVariablesDialog addVariablesDialog;
+  private final AddVariablesDialog addVariablesDialog;
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -128,16 +126,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
-    AddExperimentalGroupsDialog experimentalGroupsDialog = getDialog();
-    experimentalGroupsDialog.setLevels(List.of(
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
-        VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
-        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
-        VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
-        VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
-        VariableLevel.create(VariableName.create("height"),
-            ExperimentalValue.create("500", "cm"))));
-    experimentalGroupsDialog.open();
   }
 
   private AddExperimentalGroupsDialog getDialog() {
@@ -186,9 +174,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
     experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
-    experimentalVariableCard.setAddButtonAction(() -> {
-      addVariablesDialog.open();
-    });
+    experimentalVariableCard.setAddButtonAction(() -> addVariablesDialog.open());
   }
 
   private void initSampleGroupsCardBoard() {
@@ -239,6 +225,18 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
+      AddExperimentalGroupsDialog experimentalGroupsDialog = getDialog();
+      experimentalGroupsDialog.setLevels(List.of(
+          VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("red")),
+          VariableLevel.create(VariableName.create("color"), ExperimentalValue.create("blue")),
+          VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("5", "cm")),
+          VariableLevel.create(VariableName.create("width"), ExperimentalValue.create("10", "cm")),
+          VariableLevel.create(VariableName.create("height"), ExperimentalValue.create("20", "cm")),
+          VariableLevel.create(VariableName.create("height"),
+              ExperimentalValue.create("500", "cm"))));
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experiment.experimentId());
+      experimentalGroupsDialog.open();
     }
 
     private void loadTagInformation(Experiment experiment) {

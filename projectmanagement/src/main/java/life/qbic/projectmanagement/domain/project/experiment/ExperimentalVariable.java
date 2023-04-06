@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -92,14 +91,18 @@ public class ExperimentalVariable {
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
-    if(levels.isEmpty())
+    if (levels.isEmpty()) {
       return false;
+    }
 
-    return !levels.stream().map(it -> it.unit()).collect(Collectors.toSet()).contains(experimentalValue.unit());
+    return !levels.stream().map(it -> it.unit()).collect(Collectors.toSet())
+        .contains(experimentalValue.unit());
   }
 
-  public List<ExperimentalValue> levels() {
-    return levels.stream().toList();
+  public List<VariableLevel> levels() {
+    return levels.stream()
+        .map(experimentalValue -> VariableLevel.create(this.name, experimentalValue))
+        .toList();
   }
 
   public VariableName name() {

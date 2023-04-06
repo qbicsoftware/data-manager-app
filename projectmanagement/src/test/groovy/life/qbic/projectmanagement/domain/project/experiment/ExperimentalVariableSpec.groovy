@@ -27,7 +27,7 @@ class ExperimentalVariableSpec extends Specification {
         then:
         noExceptionThrown()
         variable.name().value().equals("Test")
-        variable.levels().get(0).equals(ExperimentalValue.create("Simple", "cm"))
+        variable.levels().get(0).experimentalValue.equals(ExperimentalValue.create("Simple", "cm"))
     }
 
     def "Created levels are provided with the variable name"() {
