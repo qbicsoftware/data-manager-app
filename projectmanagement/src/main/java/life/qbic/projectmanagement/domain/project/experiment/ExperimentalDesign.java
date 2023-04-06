@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -186,24 +185,6 @@ public class ExperimentalDesign {
    */
   boolean isConditionDefined(Condition condition) {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
-  }
-
-  /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  Optional<VariableLevel> getLevel(String variableName, ExperimentalValue value) {
-    Objects.requireNonNull(variableName);
-    Objects.requireNonNull(value);
-    Optional<ExperimentalVariable> variableOptional = variables.stream()
-        .filter(it -> it.name().value().equals(variableName))
-        .findAny();
-
-    return variableOptional.map(variable -> variable.getLevel(value));
   }
 
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {

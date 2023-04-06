@@ -12,11 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -126,15 +122,5 @@ public class ExperimentalVariable {
   @Override
   public int hashCode() {
     return (int) (variableId ^ (variableId >>> 32));
-  }
-
-  public VariableLevel getLevel(ExperimentalValue experimentalValue) {
-    if (!levels.contains(experimentalValue)) {
-      throw new ProjectManagementException(
-          experimentalValue + " is no known level of variable " + name,
-          ErrorCode.UNDEFINED_VARIABLE_LEVEL,
-          ErrorParameters.of(ExperimentValueFormatter.format(experimentalValue), name.value()));
-    }
-    return VariableLevel.create(name, experimentalValue);
   }
 }

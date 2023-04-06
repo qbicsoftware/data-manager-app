@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -78,19 +77,6 @@ public class Experiment {
    */
   public String getName() {
     return name;
-  }
-
-  /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, or level creation failed, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  public Optional<VariableLevel> getLevel(String variableName,
-      ExperimentalValue value) {
-    return experimentalDesign.getLevel(variableName, value);
   }
 
   /**

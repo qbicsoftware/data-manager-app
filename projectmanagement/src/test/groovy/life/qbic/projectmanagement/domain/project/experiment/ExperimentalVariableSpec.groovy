@@ -31,12 +31,10 @@ class ExperimentalVariableSpec extends Specification {
     }
 
     def "Created levels are provided with the variable name"() {
-        given:
-        def variable = ExperimentalVariable.create("environment", ExperimentalValue.create("control"), ExperimentalValue.create("altered"))
         when:
-        def level = variable.getLevel(ExperimentalValue.create("altered"))
+        def variable = ExperimentalVariable.create("environment", ExperimentalValue.create("control"), ExperimentalValue.create("altered"))
         then:
-        level.variableName() == variable.name()
+        variable.levels().every { it.variableName() == variable.name() }
         noExceptionThrown()
     }
 
