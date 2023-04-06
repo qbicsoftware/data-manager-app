@@ -73,7 +73,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private ExperimentalVariableCard experimentalVariableCard;
   private Button addBlockingVariableButton;
 
-  private AddVariablesAndExperimentalGroupsDialog addVariablesAndExperimentalGroupsDialog;
+  private AddVariablesDialog addVariablesDialog;
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -82,7 +82,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     this.experimentInformationService = experimentInformationService;
     initTopLayout();
     initTabSheet(experimentInformationService);
-    this.addVariablesAndExperimentalGroupsDialog = new AddVariablesAndExperimentalGroupsDialog(
+    this.addVariablesDialog = new AddVariablesDialog(
         experimentInformationService);
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
@@ -187,7 +187,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       ExperimentInformationService experimentInformationService) {
     experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
     experimentalVariableCard.setAddButtonAction(() -> {
-      addVariablesAndExperimentalGroupsDialog.open();
+      addVariablesDialog.open();
     });
   }
 
@@ -219,7 +219,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void addCloseListenerForAddVariableDialog() {
-      addVariablesAndExperimentalGroupsDialog.addOpenedChangeListener(it -> {
+      addVariablesDialog.addOpenedChangeListener(it -> {
         if (!it.isOpened()) {
           experimentalVariableCard.refresh();
         }
@@ -238,7 +238,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       loadSampleOriginInformation(experiment);
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
-      addVariablesAndExperimentalGroupsDialog.experimentId(experiment.experimentId());
+      addVariablesDialog.experimentId(experiment.experimentId());
     }
 
     private void loadTagInformation(Experiment experiment) {
