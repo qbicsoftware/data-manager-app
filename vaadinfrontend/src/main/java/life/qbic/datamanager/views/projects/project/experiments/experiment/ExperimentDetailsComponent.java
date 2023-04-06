@@ -76,10 +76,9 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.experimentInformationService = experimentInformationService;
+    this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
     initTopLayout();
     initTabSheet(experimentInformationService);
-    this.addVariablesDialog = new AddVariablesDialog(
-        experimentInformationService);
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 

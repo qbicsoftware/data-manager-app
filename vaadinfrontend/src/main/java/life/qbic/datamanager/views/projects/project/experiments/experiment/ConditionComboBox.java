@@ -13,7 +13,6 @@ import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,7 +47,6 @@ public class ConditionComboBox extends MultiSelectComboBox<VariableLevel> implem
     addClassName("chip-badge");
     setAllowCustomValue(false);
     setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
-//    sortChipsAlphabetically();
     overwritePreviousLevelOfVariable();
     addValidator(getDefaultValidator());
     addValidator((value, context) -> {
@@ -63,18 +61,7 @@ public class ConditionComboBox extends MultiSelectComboBox<VariableLevel> implem
           == distinctVariableCount()) {
         return ValidationResult.ok();
       } else {
-        return ValidationResult.error("Please select a level for each variable");
-      }
-    });
-    addSelectionListener(event -> applyValidators());
-  }
-
-  private void sortChipsAlphabetically() {
-    addValueChangeListener(event -> {
-      if (event.isFromClient()) {
-        setValue(event.getValue().stream()
-            .sorted(Comparator.comparing(level -> level.variableName().value()))
-            .toList());
+        return ValidationResult.error("A condition must contain a level for every variable.");
       }
     });
   }

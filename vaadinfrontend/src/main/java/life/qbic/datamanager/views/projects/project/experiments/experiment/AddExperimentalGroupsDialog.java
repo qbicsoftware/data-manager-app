@@ -4,14 +4,11 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
-import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.ValueContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -52,20 +49,6 @@ public class AddExperimentalGroupsDialog extends Dialog {
       sampleSize.setStep(1);
       sampleSize.setMin(1);
       sampleSize.setWidthFull();
-      Label sampleSizeErrorLabel = new Label();
-      sampleSizeErrorLabel.getStyle().set("color", "var(--lumo-error-text-color)");
-      sampleSizeErrorLabel.setVisible(false);
-      sampleSize.addValueChangeListener(event -> {
-        ValidationResult validationResult = event.getSource().getDefaultValidator()
-            .apply(event.getValue(), new ValueContext());
-        if (validationResult.isError()) {
-          sampleSizeErrorLabel.setText(validationResult.getErrorMessage());
-          sampleSizeErrorLabel.setVisible(true);
-        } else {
-          sampleSizeErrorLabel.setVisible(false);
-        }
-      });
-      sampleSize.setHelperComponent(sampleSizeErrorLabel);
       variableLevelsInput.addClassName("chip-badge");
       variableLevelsInput.setRequiredIndicatorVisible(true);
       variableLevelsInput.setItems(levels);
