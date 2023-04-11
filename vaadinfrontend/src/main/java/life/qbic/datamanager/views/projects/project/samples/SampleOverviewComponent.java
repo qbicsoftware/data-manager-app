@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.projects.project.samples.batchRegistration.RegisterBatchDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
