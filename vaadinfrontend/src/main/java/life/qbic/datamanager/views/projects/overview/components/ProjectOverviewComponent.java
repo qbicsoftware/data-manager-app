@@ -231,7 +231,10 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void configureProjectCreationDialog() {
       projectInformationDialog.createButton.addClickListener(
-          e -> createClicked());
+          e -> projectInformationDialog.validateInput()
+      );
+      // projectInformationDialog.createButton.addClickListener(
+       //   e -> createClicked());
     }
 
     private void createClicked() {

@@ -19,9 +19,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.ArrayList;
+import java.util.List;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -202,7 +205,7 @@ public class ProjectInformationDialog extends Dialog {
   private void initProjectContactsLayout() {
     Span projectContactsTitle = new Span("Project Contacts");
     Span projectContactsDescription = new Span(
-            "Important contact people of the project");
+        "Important contact people of the project");
     projectContactsTitle.addClassName("font-bold");
     projectContactsLayout.setMargin(false);
     projectContactsLayout.setPadding(false);
@@ -267,17 +270,41 @@ public class ProjectInformationDialog extends Dialog {
     reset();
   }
 
+  public void validateInput() {
+    handler.validateInput();
+  }
+
+  public boolean isInputValid() {
+    validateInput();
+    return this.handler.isInputValid();
+  }
+
   private class Handler {
+
+    private boolean inputValid = false;
+
+    List<Binder> binders = new ArrayList<>();
 
     private void handle() {
       restrictInputLength();
       generateProjectCode();
       resetDialogueUponClosure();
       closeDialogueViaCancelButton();
+      configureValidators();
+    }
+
+    private void configureValidators() {
+      StringBinder stringBinder = new StringBinder();
+      Binder<StringBinder> binder = new Binder<>();
+      binder.forField(titleField).
+          withValidator(value -> !value.isBlank(), "Must not be empty!")
+          .bind(StringBinder::value, StringBinder::setValue);
+      binders.add(binder);
     }
 
     private void generateProjectCode() {
-      generateCodeButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
+      generateCodeButton.addClickListener(
+          buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
     }
 
     private void setCodeFieldValue(String code) {
@@ -333,5 +360,28 @@ public class ProjectInformationDialog extends Dialog {
       // Calls the reset method for all possible closure methods of the dialogue window:
       addDialogCloseActionListener(closeActionEvent -> resetAndClose());
     }
+
+    protected void validateInput() {
+      binders.stream().forEach(Binder::validate);
+    }
+
+    public boolean isInputValid() {
+      validateInput();
+      return this.inputValid;
+    }
+  }
+
+  class StringBinder {
+
+    String value;
+
+    String value() {
+      return this.value;
+    }
+
+    void setValue(String newValue) {
+      this.value = newValue;
+    }
+
   }
 }
