@@ -294,11 +294,10 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     private void configureValidators() {
-      StringBinder stringBinder = new StringBinder();
-      Binder<StringBinder> binder = new Binder<>();
+      Binder<StringContainer> binder = new Binder<>();
       binder.forField(titleField).
           withValidator(value -> !value.isBlank(), "Must not be empty!")
-          .bind(StringBinder::value, StringBinder::setValue);
+          .bind(StringContainer::value, StringContainer::setValue);
       binders.add(binder);
     }
 
@@ -371,7 +370,7 @@ public class ProjectInformationDialog extends Dialog {
     }
   }
 
-  class StringBinder {
+  class StringContainer {
 
     String value;
 
