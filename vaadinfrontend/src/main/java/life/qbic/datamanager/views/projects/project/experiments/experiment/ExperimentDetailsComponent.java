@@ -58,7 +58,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private VerticalLayout detailLayout;
   private TabSheet experimentSheet;
   private Board summaryCardBoard;
-  private Board sampleGroupsCardBoard;
+  private SampleGroupsCard sampleGroupsCardBoard;
   private CardLayout sampleOriginCard;
   private VerticalLayout speciesForm;
   private VerticalLayout specimenForm;
@@ -175,7 +175,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   }
 
   private void initSampleGroupsCardBoard() {
-    sampleGroupsCardBoard = new Board();
+    sampleGroupsCardBoard = new SampleGroupsCard();
     sampleGroupsCardBoard.setWidthFull();
     //ToDo Fill with Content
   }
