@@ -6,7 +6,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.List;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
 
 /**
  * <class short description - One Line!>
@@ -17,7 +21,7 @@ import java.io.InputStream;
  */
 class SampleMetadataLayout extends VerticalLayout {
 
-  public Spreadsheet metadataSpreadsheet = new Spreadsheet();
+  public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
 
@@ -27,8 +31,8 @@ class SampleMetadataLayout extends VerticalLayout {
   }
 
   private void initContent() {
-    add(metadataSpreadsheet);
-    styleMetaDataSheet();
+    add(sampleRegistrationSpreadsheet);
+    styleSampleRegistrationSpreadSheet();
     initButtonLayout();
   }
 
@@ -40,27 +44,49 @@ class SampleMetadataLayout extends VerticalLayout {
     add(sampleMetadataButtons);
   }
 
-  private void styleMetaDataSheet() {
-    metadataSpreadsheet.setSizeFull();
+  private void styleSampleRegistrationSpreadSheet() {
+    sampleRegistrationSpreadsheet.setSizeFull();
+    sampleRegistrationSpreadsheet.setSheetSelectionBarVisible(false);
+    sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
 
   public void generateMetadataSpreadsheet(MetaDataTypes metaDataTypes) throws IOException {
+    /*
     //Todo Make spreadsheet factory
     String resourcePath = "";
     switch (metaDataTypes) {
-      case PROTEOMICS -> resourcePath = "MetadataSheets/Suggested PXP Metadata.xlsx";
+      case PROTEOMICS -> resourcePath = "MetadataSheets/Suggested_PXP_Metadata.xlsx";
       case LIGANDOMICS -> resourcePath = "MetadataSheets/Suggested_Ligandomics.xlsx";
-      case TRANSCRIPTOMIC_GENOMICS ->
-          resourcePath = "vaadinfrontend/src/main/resources/MetadataSheets/Suggested NGS Metadata.xlsx";
-      case METABOLOMICS -> resourcePath = "MetadataSheets/Suggestion Metabolomics_LCMS.xlsx";
+      case TRANSCRIPTOMIC_GENOMICS -> resourcePath = "MetadataSheets/Suggested_NGS_Metadata.xlsx";
+      case METABOLOMICS -> resourcePath = "MetadataSheets/Suggested_Metabolomics_LCMS.xlsx";
     }
     if (!resourcePath.isBlank()) {
-      InputStream resourceAsStream = getClass().getResourceAsStream(resourcePath);
+      InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
       if (resourceAsStream != null) {
-        metadataSpreadsheet = new Spreadsheet(resourceAsStream);
-        styleMetaDataSheet();
+        sampleRegistrationSpreadsheet.read(resourceAsStream);
       }
     }
+    */
+    List<String> tableHeaders = getTableHeaders();
+    sampleRegistrationSpreadsheet.setMaxColumns(tableHeaders.size());
+    CellStyle lockedCells = sampleRegistrationSpreadsheet.getWorkbook().createCellStyle();
+    lockedCells.setLocked(true);
+    Font font = sampleRegistrationSpreadsheet.getWorkbook().createFont();
+    font.setBold(true);
+    lockedCells.setBottomBorderColor(IndexedColors.BLUE.getIndex());
+    int iterate = 0;
+    for (String headerValue : tableHeaders) {
+      Cell cell = sampleRegistrationSpreadsheet.createCell(0, iterate, headerValue);
+      cell.setCellStyle(lockedCells);
+      iterate++;
+      sampleRegistrationSpreadsheet.refreshCells(cell);
+    }
+  }
+
+  private List<String> getTableHeaders() {
+    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
+        "Specimen", "Analyte", "Comment");
+
   }
 
   public void reset() {
@@ -68,8 +94,8 @@ class SampleMetadataLayout extends VerticalLayout {
   }
 
   private void resetChildValues() {
-    metadataSpreadsheet.reset();
-    styleMetaDataSheet();
+    sampleRegistrationSpreadsheet.reset();
+    styleSampleRegistrationSpreadSheet();
   }
 
 }
