@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+import static life.qbic.datamanager.views.projects.project.samples.batchRegistration.MetaDataTypes.PROTEOMICS;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -10,7 +12,10 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellUtil;
 
 /**
  * <class short description - One Line!>
@@ -67,19 +72,31 @@ class SampleMetadataLayout extends VerticalLayout {
       }
     }
     */
+    Workbook workbook = sampleRegistrationSpreadsheet.getWorkbook();
+    resetWorkBook(workbook);
+    Sheet sampleRegistrationSheet = workbook.createSheet(PROTEOMICS.metaDataType);
+    Row headerRow = sampleRegistrationSheet.createRow(0);
+
     List<String> tableHeaders = getTableHeaders();
     sampleRegistrationSpreadsheet.setMaxColumns(tableHeaders.size());
+
     CellStyle lockedCells = sampleRegistrationSpreadsheet.getWorkbook().createCellStyle();
-    lockedCells.setLocked(true);
     Font font = sampleRegistrationSpreadsheet.getWorkbook().createFont();
     font.setBold(true);
-    lockedCells.setBottomBorderColor(IndexedColors.BLUE.getIndex());
+    font.setColor(Font.COLOR_RED);
+    lockedCells.setLocked(true);
+    lockedCells.setFont(font);
     int iterate = 0;
     for (String headerValue : tableHeaders) {
-      Cell cell = sampleRegistrationSpreadsheet.createCell(0, iterate, headerValue);
-      cell.setCellStyle(lockedCells);
-      iterate++;
+      Cell cell = CellUtil.createCell(headerRow, iterate, headerValue, lockedCells);
       sampleRegistrationSpreadsheet.refreshCells(cell);
+      iterate++;
+    }
+  }
+
+  private void resetWorkBook(Workbook workbook) {
+    for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+      workbook.removeSheetAt(sheetIndex);
     }
   }
 
