@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.overview.components;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
@@ -39,6 +40,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.create.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -148,7 +150,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
    * @since 1.0.0
    */
 
-  private class Handler {
+  private class Handler implements ComponentEventListener<ProjectCreationEvent>{
 
     private static final Logger log = logger(Handler.class);
     private final OfferLookupService offerLookupService;
@@ -230,9 +232,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void configureProjectCreationDialog() {
-      projectInformationDialog.createButton.addClickListener(
-          e -> projectInformationDialog.validateInput()
-      );
+      projectInformationDialog.addProjectCreationEventListener(this);
       // projectInformationDialog.createButton.addClickListener(
        //   e -> createClicked());
     }
@@ -362,5 +362,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
     }
 
+    @Override
+    public void onComponentEvent(ProjectCreationEvent event) {
+      log.info("Project creation event fired: Project Code is " + event.getSource().getCode());
+    }
   }
 }

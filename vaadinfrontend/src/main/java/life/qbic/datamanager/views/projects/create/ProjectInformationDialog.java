@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Unit;
@@ -32,6 +34,7 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -53,15 +56,15 @@ public class ProjectInformationDialog extends Dialog {
   private final TextField codeField;
   private final Button generateCodeButton;
   private final TextField titleField;
-  public final Button createButton;
-  public final Button cancelButton;
+  private final Button createButton;
+  private final Button cancelButton;
   private final FormLayout formLayout;
   private final VerticalLayout experimentalDesignLayout;
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
   private final VerticalLayout projectContactsLayout;
   public final ComboBox<PersonReference> principalInvestigator;
-  public final HorizontalLayout sampleCountLayout;
+  private final HorizontalLayout sampleCountLayout;
   public final MultiSelectComboBox<Species> speciesBox;
   public final MultiSelectComboBox<Specimen> specimenBox;
   public final MultiSelectComboBox<Analyte> analyteBox;
@@ -123,9 +126,14 @@ public class ProjectInformationDialog extends Dialog {
     configureDialogLayout();
     initForm();
     styleForm();
-    handler = new Handler();
+    handler = new Handler(this);
     handler.handle();
   }
+
+  public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+    handler.addProjectCreationEventListener(listener);
+  }
+
 
   private void styleForm() {
     formLayout.setClassName("create-project-form");
@@ -283,7 +291,14 @@ public class ProjectInformationDialog extends Dialog {
 
     private boolean inputValid = false;
 
+    private final ProjectInformationDialog projectInformationDialog;
+
     List<Binder> binders = new ArrayList<>();
+    private List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
+
+    Handler(ProjectInformationDialog projectInformationDialog) {
+      this.projectInformationDialog = projectInformationDialog;
+    }
 
     private void handle() {
       restrictInputLength();
@@ -291,6 +306,12 @@ public class ProjectInformationDialog extends Dialog {
       resetDialogueUponClosure();
       closeDialogueViaCancelButton();
       configureValidators();
+      configureFormSubmission();
+    }
+
+    private void configureFormSubmission() {
+      createButton.addClickListener(e -> listeners.forEach(
+          a -> a.onComponentEvent(new ProjectCreationEvent(this.projectInformationDialog, true))));
     }
 
     private void configureValidators() {
@@ -367,6 +388,10 @@ public class ProjectInformationDialog extends Dialog {
     public boolean isInputValid() {
       validateInput();
       return this.inputValid;
+    }
+
+    public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+      this.listeners.add(listener);
     }
   }
 
