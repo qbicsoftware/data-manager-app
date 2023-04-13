@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
@@ -34,7 +33,6 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -51,7 +49,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 public class ProjectInformationDialog extends Dialog {
 
   private final Handler handler;
-  public ComboBox<OfferPreview> searchField;
+  private ComboBox<OfferPreview> offerSearchField;
   private HorizontalLayout codeAndTitleLayout;
   private final TextField codeField;
   private final Button generateCodeButton;
@@ -63,16 +61,16 @@ public class ProjectInformationDialog extends Dialog {
   private final TextArea experimentalDesignField;
   private final TextArea projectObjective;
   private final VerticalLayout projectContactsLayout;
-  public final ComboBox<PersonReference> principalInvestigator;
+  private final ComboBox<PersonReference> principalInvestigator;
   private final HorizontalLayout sampleCountLayout;
-  public final MultiSelectComboBox<Species> speciesBox;
-  public final MultiSelectComboBox<Specimen> specimenBox;
-  public final MultiSelectComboBox<Analyte> analyteBox;
-  public final ComboBox<PersonReference> responsiblePerson;
-  public final ComboBox<PersonReference> projectManager;
+  private final MultiSelectComboBox<Species> speciesBox;
+  private final MultiSelectComboBox<Specimen> specimenBox;
+  private final MultiSelectComboBox<Analyte> analyteBox;
+  private final ComboBox<PersonReference> responsiblePerson;
+  private final ComboBox<PersonReference> projectManager;
 
   public ProjectInformationDialog() {
-    searchField = new ComboBox<>("Offer");
+    offerSearchField = new ComboBox<>("Offer");
     formLayout = new FormLayout();
 
     codeField = new TextField("Code");
@@ -130,8 +128,18 @@ public class ProjectInformationDialog extends Dialog {
     handler.handle();
   }
 
-  public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+  public void addProjectCreationEventListener(
+      ComponentEventListener<ProjectCreationEvent> listener) {
     handler.addProjectCreationEventListener(listener);
+  }
+
+  public ProjectCreationContent content() {
+    return new ProjectCreationContent(
+        codeField.getValue(), offerSearchField.getPattern(), titleField.getValue(),
+        projectObjective.getValue(), speciesBox.getValue().stream().toList(),
+        specimenBox.getValue().stream().toList(), analyteBox.getValue().stream().toList(),
+        experimentalDesignField.getValue(), principalInvestigator.getValue(),
+        responsiblePerson.getValue(), projectManager.getValue());
   }
 
 
@@ -140,7 +148,7 @@ public class ProjectInformationDialog extends Dialog {
     styleSearchBox();
 
     codeField.setMaxWidth(20, Unit.VW);
-    searchField.setMaxWidth(30, Unit.VW);
+    offerSearchField.setMaxWidth(30, Unit.VW);
 
     titleField.setMaxWidth(60, Unit.VW);
     projectObjective.setMaxWidth(60, Unit.VW);
@@ -173,7 +181,7 @@ public class ProjectInformationDialog extends Dialog {
     codeAndTitleLayout.setWidthFull();
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
-    codeAndTitleLayout.add(searchField);
+    codeAndTitleLayout.add(offerSearchField);
     codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
     formLayout.add(codeAndTitleLayout);
 
@@ -194,8 +202,8 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void styleSearchBox() {
-    searchField.setPlaceholder("Search");
-    searchField.setClassName("searchbox");
+    offerSearchField.setPlaceholder("Search");
+    offerSearchField.setClassName("searchbox");
   }
 
   private void initExperimentalDesignLayout() {
@@ -390,7 +398,8 @@ public class ProjectInformationDialog extends Dialog {
       return this.inputValid;
     }
 
-    public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+    public void addProjectCreationEventListener(
+        ComponentEventListener<ProjectCreationEvent> listener) {
       this.listeners.add(listener);
     }
   }

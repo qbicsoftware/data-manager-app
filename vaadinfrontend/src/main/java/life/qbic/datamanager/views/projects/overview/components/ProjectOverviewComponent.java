@@ -40,6 +40,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
 import life.qbic.datamanager.views.projects.create.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
 import life.qbic.logging.api.Logger;
@@ -115,12 +116,14 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectCode())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
+                item.projectCode())))
         .setHeader("Code").setWidth("7em")
         .setFlexGrow(0);
 
     projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()), item.projectTitle())))
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
+                item.projectTitle())))
         .setHeader("Title")
         .setKey("projectTitle");
 
@@ -150,7 +153,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
    * @since 1.0.0
    */
 
-  private class Handler implements ComponentEventListener<ProjectCreationEvent>{
+  private class Handler implements ComponentEventListener<ProjectCreationEvent> {
 
     private static final Logger log = logger(Handler.class);
     private final OfferLookupService offerLookupService;
@@ -234,37 +237,18 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private void configureProjectCreationDialog() {
       projectInformationDialog.addProjectCreationEventListener(this);
       // projectInformationDialog.createButton.addClickListener(
-       //   e -> createClicked());
+      //   e -> createClicked());
     }
 
-    private void createClicked() {
-      String codeFieldValue = projectInformationDialog.getCode();
-      String titleFieldValue = projectInformationDialog.getTitle();
-      String objectiveFieldValue = projectInformationDialog.getObjective();
-      String experimentalDesignDescription = projectInformationDialog.getExperimentalDesign();
-      PersonReference projectManager = projectInformationDialog.projectManager.getValue();
-      PersonReference principalInvestigator = projectInformationDialog.principalInvestigator.getValue();
-
-      String loadedOfferId =
-          projectInformationDialog.searchField.getValue() != null
-              ? projectInformationDialog.searchField.getValue().offerId()
-              .id() : null;
-
-      PersonReference responsiblePerson =
-          projectInformationDialog.responsiblePerson.getValue() != null
-              ? projectInformationDialog.responsiblePerson.getValue() : null;
-
-      List<Analyte> analytes = projectInformationDialog.analyteBox.getSelectedItems().stream()
-          .toList();
-      List<Species> species = projectInformationDialog.speciesBox.getSelectedItems().stream()
-          .toList();
-      List<Specimen> specimens = projectInformationDialog.specimenBox.getSelectedItems().stream()
-          .toList();
+    private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 
       Result<Project, ApplicationException> project = projectCreationService.createProject(
-          codeFieldValue,
-          titleFieldValue, objectiveFieldValue, experimentalDesignDescription, loadedOfferId,
-          projectManager, principalInvestigator, responsiblePerson, species, analytes, specimens);
+          projectCreationContent.projectCode(),
+          projectCreationContent.title(), projectCreationContent.objective(),
+          projectCreationContent.experimentalDesignDescription(), projectCreationContent.offerId(),
+          projectCreationContent.projectManager(), projectCreationContent.principalInvestigator(),
+          projectCreationContent.projectResponsible(), projectCreationContent.species(),
+          projectCreationContent.analyte(), projectCreationContent.specimen());
 
       project.ifSuccessOrElseThrow(
           result -> {
@@ -282,24 +266,24 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void loadOfferPreview() {
       // Configure the filter and pagination for the lazy loaded OfferPreview items
-      projectInformationDialog.searchField.setItems(
+      projectInformationDialog.offerSearchField.setItems(
           query -> offerLookupService.findOfferContainingProjectTitleOrId(
               query.getFilter().orElse(""),
               query.getFilter().orElse(""), query.getOffset(), query.getLimit()).stream());
 
       // Render the preview
-      projectInformationDialog.searchField.setRenderer(
+      projectInformationDialog.offerSearchField.setRenderer(
           new ComponentRenderer<>(preview ->
               new Text(previewToString(preview))));
 
       // Generate labels like the rendering
-      projectInformationDialog.searchField.setItemLabelGenerator(
+      projectInformationDialog.offerSearchField.setItemLabelGenerator(
           (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
 
-      projectInformationDialog.searchField.addValueChangeListener(e -> {
-        if (projectInformationDialog.searchField.getValue() != null) {
+      projectInformationDialog.offerSearchField.addValueChangeListener(e -> {
+        if (projectInformationDialog.offerSearchField.getValue() != null) {
           preloadContentFromOffer(
-              projectInformationDialog.searchField.getValue().offerId()
+              projectInformationDialog.offerSearchField.getValue().offerId()
                   .id());
         }
       });
@@ -365,6 +349,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     @Override
     public void onComponentEvent(ProjectCreationEvent event) {
       log.info("Project creation event fired: Project Code is " + event.getSource().getCode());
+      processProjectCreation(event.getSource().content());
     }
   }
 }
