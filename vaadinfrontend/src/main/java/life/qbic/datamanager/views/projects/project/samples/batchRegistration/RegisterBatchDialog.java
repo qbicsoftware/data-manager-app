@@ -8,7 +8,8 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
-import java.io.IOException;
+import life.qbic.projectmanagement.application.SampleRegistrationService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <class short description - One Line!>
@@ -24,12 +25,13 @@ public class RegisterBatchDialog extends Dialog {
   private final Tab generalInformationTab = createTabStep("1", "General Information");
   private final Tab sampleMetadataTab = createTabStep("2", "Sample Metadata");
   private final GeneralInformationLayout generalInformationLayout = new GeneralInformationLayout();
-  private final SampleMetadataLayout sampleMetadataLayout = new SampleMetadataLayout();
+  private SampleMetadataLayout sampleMetadataLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
-  public RegisterBatchDialog() {
+  public RegisterBatchDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
     add(title);
     title.addClassNames("text-2xl", "font-bold", "text-secondary");
+    initSampleMetadataLayout(sampleRegistrationService);
     initTabStepper();
     styleStepper();
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
@@ -58,6 +60,10 @@ public class RegisterBatchDialog extends Dialog {
     tabStepper.setClassName("minimal");
   }
 
+  private void initSampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
+    sampleMetadataLayout = new SampleMetadataLayout(sampleRegistrationService);
+  }
+
   private class RegisterBatchDialogHandler {
 
     public RegisterBatchDialogHandler() {
@@ -82,12 +88,8 @@ public class RegisterBatchDialog extends Dialog {
     private void setTabSelectionListener() {
       tabStepper.addSelectedChangeListener(event -> {
         if (event.getSelectedTab() == sampleMetadataTab) {
-          try {
-            sampleMetadataLayout.generateMetadataSpreadsheet(
-                generalInformationLayout.dataTypeSelection.getValue());
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
+          sampleMetadataLayout.generateSampleRegistrationSheet(
+              generalInformationLayout.dataTypeSelection.getValue());
         }
       });
     }

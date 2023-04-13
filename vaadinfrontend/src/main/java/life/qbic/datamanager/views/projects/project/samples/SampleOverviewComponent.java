@@ -38,6 +38,7 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
+import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -76,16 +77,19 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
   private static final Logger log = getLogger(SampleOverviewComponent.class);
-  private final RegisterBatchDialog registerBatchDialog = new RegisterBatchDialog();
+  private RegisterBatchDialog registerBatchDialog;
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleInformationService sampleInformationService) {
+      @Autowired SampleInformationService sampleInformationService,
+      @Autowired SampleRegistrationService sampleRegistrationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(sampleInformationService);
+    Objects.requireNonNull(sampleRegistrationService);
     addTitle(TITLE);
+    initRegistrationDialog(sampleRegistrationService);
     initEmptyView();
     initSampleView();
     setSizeFull();
@@ -120,6 +124,10 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     addFields(sampleContentLayout);
     sampleContentLayout.setSizeFull();
     sampleContentLayout.setVisible(false);
+  }
+
+  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
+    registerBatchDialog = new RegisterBatchDialog(sampleRegistrationService);
   }
 
   private void initButtonAndFieldBar() {

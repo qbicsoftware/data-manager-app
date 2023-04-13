@@ -1,21 +1,15 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
-import static life.qbic.datamanager.views.projects.project.samples.batchRegistration.MetaDataTypes.PROTEOMICS;
-
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
-import java.io.IOException;
 import java.util.List;
+import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellUtil;
 
 /**
  * <class short description - One Line!>
@@ -29,10 +23,12 @@ class SampleMetadataLayout extends VerticalLayout {
   public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
+  private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
 
-  SampleMetadataLayout() {
+  SampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
+    sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
   }
 
   private void initContent() {
@@ -55,64 +51,60 @@ class SampleMetadataLayout extends VerticalLayout {
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
 
-  public void generateMetadataSpreadsheet(MetaDataTypes metaDataTypes) throws IOException {
-    /*
-    //Todo Make spreadsheet factory
-    String resourcePath = "";
-    switch (metaDataTypes) {
-      case PROTEOMICS -> resourcePath = "MetadataSheets/Suggested_PXP_Metadata.xlsx";
-      case LIGANDOMICS -> resourcePath = "MetadataSheets/Suggested_Ligandomics.xlsx";
-      case TRANSCRIPTOMIC_GENOMICS -> resourcePath = "MetadataSheets/Suggested_NGS_Metadata.xlsx";
-      case METABOLOMICS -> resourcePath = "MetadataSheets/Suggested_Metabolomics_LCMS.xlsx";
+  public void generateSampleRegistrationSheet(MetaDataTypes metaDataTypes) {
+    sampleRegistrationSpreadsheet.reset();
+    sampleRegistrationSheetBuilder.addSheetToSpreadsheet(metaDataTypes,
+        sampleRegistrationSpreadsheet);
+    sampleRegistrationSpreadsheet.reload();
+  }
+
+  private static class SampleRegistrationSheetBuilder {
+
+    private final SampleRegistrationService sampleRegistrationService;
+
+    public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
+      this.sampleRegistrationService = sampleRegistrationService;
     }
-    if (!resourcePath.isBlank()) {
-      InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-      if (resourceAsStream != null) {
-        sampleRegistrationSpreadsheet.read(resourceAsStream);
+
+    public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
+      switch (metaDataTypes) {
+        case PROTEOMICS -> addProteomicsSheet(spreadsheet);
+        case LIGANDOMICS -> addLigandomicsSheet(spreadsheet);
+        case TRANSCRIPTOMIC_GENOMICS -> addGenomicsSheet(spreadsheet);
+        case METABOLOMICS -> addMetabolomicsSheet(spreadsheet);
       }
     }
-    */
-    Workbook workbook = sampleRegistrationSpreadsheet.getWorkbook();
-    resetWorkBook(workbook);
-    Sheet sampleRegistrationSheet = workbook.createSheet(PROTEOMICS.metaDataType);
-    Row headerRow = sampleRegistrationSheet.createRow(0);
 
-    List<String> tableHeaders = getTableHeaders();
-    sampleRegistrationSpreadsheet.setMaxColumns(tableHeaders.size());
-
-    CellStyle lockedCells = sampleRegistrationSpreadsheet.getWorkbook().createCellStyle();
-    Font font = sampleRegistrationSpreadsheet.getWorkbook().createFont();
-    font.setBold(true);
-    font.setColor(Font.COLOR_RED);
-    lockedCells.setLocked(true);
-    lockedCells.setFont(font);
-    int iterate = 0;
-    for (String headerValue : tableHeaders) {
-      Cell cell = CellUtil.createCell(headerRow, iterate, headerValue, lockedCells);
-      sampleRegistrationSpreadsheet.refreshCells(cell);
-      iterate++;
+    private void addProteomicsSheet(Spreadsheet spreadsheet) {
+      List<String> proteomicsHeader = sampleRegistrationService.retrieveProteomics();
+      CellStyle lockedCells = spreadsheet.getWorkbook().createCellStyle();
+      Font font = spreadsheet.getWorkbook().createFont();
+      font.setBold(true);
+      font.setColor(Font.COLOR_RED);
+      //toDo Locking cells currently does not work
+      lockedCells.setLocked(true);
+      lockedCells.setFont(font);
+      int columnIndex = 0;
+      //toDo This currently only adds the header
+      for (String columnHeader : proteomicsHeader) {
+        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
+        cell.setCellStyle(lockedCells);
+        spreadsheet.refreshCells(cell);
+        columnIndex++;
+      }
     }
-  }
 
-  private void resetWorkBook(Workbook workbook) {
-    for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
-      workbook.removeSheetAt(sheetIndex);
+    private void addMetabolomicsSheet(Spreadsheet spreadsheet) {
+
     }
-  }
 
-  private List<String> getTableHeaders() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+    private void addLigandomicsSheet(Spreadsheet spreadsheet) {
+    }
 
-  }
+    private void addGenomicsSheet(Spreadsheet spreadsheet) {
 
-  public void reset() {
-    resetChildValues();
-  }
+    }
 
-  private void resetChildValues() {
-    sampleRegistrationSpreadsheet.reset();
-    styleSampleRegistrationSpreadSheet();
   }
 
 }
