@@ -1,14 +1,10 @@
 package life.qbic.datamanager.views.projects.overview;
 
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
-import com.vaadin.flow.router.RoutePrefix;
+import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.overview.components.ProjectOverviewComponent;
