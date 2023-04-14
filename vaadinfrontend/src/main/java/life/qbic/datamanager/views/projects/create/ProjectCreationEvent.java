@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.ComponentEvent;
 
+import java.io.Serial;
+
 /**
  * <b><class short description - 1 Line!></b>
  *
@@ -10,6 +12,9 @@ import com.vaadin.flow.component.ComponentEvent;
  * @since <version tag>
  */
 public class ProjectCreationEvent extends ComponentEvent<ProjectInformationDialog> {
+
+  @Serial
+  private static final long serialVersionUID = 1072173555312630829L;
 
   /**
    * Creates a new event using the given source and indicator whether the event originated from the

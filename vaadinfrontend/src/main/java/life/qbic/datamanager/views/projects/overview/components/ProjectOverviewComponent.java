@@ -43,6 +43,7 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
 import life.qbic.datamanager.views.projects.create.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
+import life.qbic.datamanager.views.projects.create.UserCancelEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
@@ -153,7 +154,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
    * @since 1.0.0
    */
 
-  private class Handler implements ComponentEventListener<ProjectCreationEvent> {
+  private class Handler {
 
     private static final Logger log = logger(Handler.class);
     private final OfferLookupService offerLookupService;
@@ -235,10 +236,11 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void configureProjectCreationDialog() {
-      projectInformationDialog.addProjectCreationEventListener(this);
-      // projectInformationDialog.createButton.addClickListener(
-      //   e -> createClicked());
-    }
+      projectInformationDialog.addProjectCreationEventListener(event -> processProjectCreation(event.getSource().content()));
+      projectInformationDialog.addCancelEventListener(event -> {
+        projectInformationDialog.resetAndClose();
+      });
+     }
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 
@@ -344,12 +346,6 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
      */
     private static String previewToString(OfferPreview offerPreview) {
       return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
-    }
-
-    @Override
-    public void onComponentEvent(ProjectCreationEvent event) {
-      log.info("Project creation event fired: Project Code is " + event.getSource().getCode());
-      processProjectCreation(event.getSource().content());
     }
   }
 }
