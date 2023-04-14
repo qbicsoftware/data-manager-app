@@ -37,33 +37,28 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectViewHandler handler;
 
-  public ProjectViewPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ProjectInformationPage projectInformationPage,
+  public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
       @Autowired ExperimentInformationPage experimentInformationPage,
       @Autowired SampleInformationPage sampleInformationPage) {
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
-    add(projectNavigationBarComponent);
-    setPageStyles(projectNavigationBarComponent, projectInformationPage, experimentInformationPage,
+    setPageStyles(projectInformationPage, experimentInformationPage,
         sampleInformationPage);
-    handler = new ProjectViewHandler(projectNavigationBarComponent, projectInformationPage,
+    handler = new ProjectViewHandler(projectInformationPage,
         experimentInformationPage, sampleInformationPage);
     log.debug(String.format(
-        "New instance for project view (#%s) created with a project navigation component (#%s), a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        "New instance for project view (#%s) created with a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
+        System.identityHashCode(this),
         System.identityHashCode(projectInformationPage),
         System.identityHashCode(experimentInformationPage),
         System.identityHashCode(sampleInformationPage)));
   }
 
-  public void setPageStyles(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectInformationPage projectInformationPage,
+  public void setPageStyles(ProjectInformationPage projectInformationPage,
       ExperimentInformationPage experimentInformationPage,
       SampleInformationPage sampleInformationPage) {
     /*Defines via css class names on how components within each page should be allocated
     in the css grid defined by the project view page*/
-    projectNavigationBarComponent.setStyles("project-navigation-component");
     projectInformationPage.setId("project-page-css-grid-structure");
     projectInformationPage.setId("project-page-css-grid-structure");
     experimentInformationPage.setId("project-page-css-grid-structure");

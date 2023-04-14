@@ -13,21 +13,17 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
  */
 class ProjectViewHandler {
 
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectInformationPage projectInformationPage;
   private final ExperimentInformationPage experimentInformationPage;
   private final SampleInformationPage sampleInformationPage;
 
-  public ProjectViewHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ProjectInformationPage projectInformationPage,
+  public ProjectViewHandler(ProjectInformationPage projectInformationPage,
       ExperimentInformationPage experimentInformationPage,
       SampleInformationPage sampleInformationPage) {
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
     Objects.requireNonNull(sampleInformationPage);
 
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectInformationPage = projectInformationPage;
     this.experimentInformationPage = experimentInformationPage;
     this.sampleInformationPage = sampleInformationPage;
@@ -40,7 +36,6 @@ class ProjectViewHandler {
    * @since 1.0.0
    */
   public void setProjectId(ProjectId projectId) {
-    this.projectNavigationBarComponent.projectId(projectId);
     this.projectInformationPage.projectId(projectId);
     this.experimentInformationPage.projectId(projectId);
     this.sampleInformationPage.projectId(projectId);
