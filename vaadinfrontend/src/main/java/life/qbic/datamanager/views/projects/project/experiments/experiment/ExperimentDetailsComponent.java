@@ -19,19 +19,22 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupInformation;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +61,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private VerticalLayout detailLayout;
   private TabSheet experimentSheet;
   private Board summaryCardBoard;
-  private SampleGroupsCard sampleGroupsCardBoard;
+  private ExperimentalGroupsCard experimentalGroupsCardBoard;
   private CardLayout sampleOriginCard;
   private VerticalLayout speciesForm;
   private VerticalLayout specimenForm;
@@ -70,6 +73,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private Button addBlockingVariableButton;
 
   private final AddVariablesDialog addVariablesDialog;
+
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -109,7 +113,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     initSummaryCardBoard(experimentInformationService);
     initSampleGroupsCardBoard();
     experimentSheet.add("Summary", summaryCardBoard);
-    experimentSheet.add("Sample Groups", sampleGroupsCardBoard);
+    experimentSheet.add("Sample Groups", experimentalGroupsCardBoard);
     getContent().addFields(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -133,12 +137,13 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     dialog.getFooter().add(cancel, create);
     cancel.addClickListener(it -> dialog.close());
     create.addClickListener(it -> {
-      System.out.println("dialog.getContent() = " + dialog.getContent());
+      //TODO add validation
+      handler.addExperimentalGroups(dialog.getContent());
       dialog.close();
-      dialog.open();
     });
     return dialog;
   }
+
 
   private void initSampleOriginCard() {
     sampleOriginCard = new CardLayout();
@@ -175,8 +180,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   }
 
   private void initSampleGroupsCardBoard() {
-    sampleGroupsCardBoard = new SampleGroupsCard();
-    sampleGroupsCardBoard.setWidthFull();
+    experimentalGroupsCardBoard = new ExperimentalGroupsCard();
+    experimentalGroupsCardBoard.setWidthFull();
     //ToDo Fill with Content
   }
 
@@ -186,6 +191,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
   private final class Handler {
 
+    private ExperimentId experimentId;
     private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
 
@@ -194,6 +200,14 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
+    }
+
+    private void addExperimentalGroups(
+        List<ExperimentalGroupInformation> experimentalGroupInformation) {
+      List<ExperimentalGroupDTO> experimentalGroupDTOs = experimentalGroupInformation.stream()
+          .map(it -> new ExperimentalGroupDTO(it.levels(), it.sampleSize())).toList();
+      experimentInformationService.addExperimentalGroupsToExperiment(experimentId,
+          new HashSet<>(experimentalGroupDTOs));
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -216,6 +230,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     }
 
     private void loadExperimentInformation(Experiment experiment) {
+      this.experimentId = experiment.experimentId();
       getContent().addTitle(experiment.getName());
       loadTagInformation(experiment);
       loadSampleOriginInformation(experiment);
@@ -234,9 +249,9 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
     private void loadTagInformation(Experiment experiment) {
       tagLayout.removeAll();
-      experiment.getSpecies().forEach(species -> tagLayout.add(new Span(species.value())));
-      experiment.getSpecimens().forEach(specimen -> tagLayout.add(new Span(specimen.value())));
-      experiment.getAnalytes().forEach(analyte -> tagLayout.add(new Span(analyte.value())));
+      experiment.getSpecies().forEach(species -> tagLayout.add(new Tag(species.value())));
+      experiment.getSpecimens().forEach(specimen -> tagLayout.add(new Tag(specimen.value())));
+      experiment.getAnalytes().forEach(analyte -> tagLayout.add(new Tag(analyte.value())));
       initTagPlusButton();
     }
 
@@ -245,10 +260,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       Icon plusIcon = LumoIcon.PLUS.create();
       plusIcon.addClassNames(IconSize.SMALL);
       tagLayout.add(plusIcon);
-      tagLayout.getChildren().forEach(component -> {
-        component.getElement().getThemeList().add("badge small");
-        component.getElement().getThemeList().add(FontSize.SMALL);
-      });
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {

@@ -222,6 +222,9 @@ public class ExperimentalDesign {
    */
   public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
+    if (variableLevels.isEmpty()) {
+      throw new IllegalArgumentException("at least one variable level is required");
+    }
 
     for (VariableLevel level : variableLevels) {
       if (!isVariableDefined(level.variableName().value())) {

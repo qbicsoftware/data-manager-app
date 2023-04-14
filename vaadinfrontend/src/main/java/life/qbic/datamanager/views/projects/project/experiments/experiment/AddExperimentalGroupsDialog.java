@@ -35,7 +35,6 @@ public class AddExperimentalGroupsDialog extends Dialog {
     private final ConditionComboBox variableLevelsInput = new ConditionComboBox("Condition");
     private final NumberField sampleSize = new NumberField("Number of Samples");
 
-
     public ExperimentalGroupLayout(Collection<VariableLevel> levels) {
       this(true, levels);
     }
@@ -60,11 +59,9 @@ public class AddExperimentalGroupsDialog extends Dialog {
       add(variableLevelsInput, sampleSize, removeRowButton);
       setWidthFull();
     }
-
   }
 
   record ExperimentalGroupInformation(Set<VariableLevel> levels, int sampleSize) {
-
   }
 
 
@@ -82,12 +79,11 @@ public class AddExperimentalGroupsDialog extends Dialog {
     levels = Collections.emptySet();
   }
 
-  public boolean setLevels(Collection<VariableLevel> levels) {
+  public void setLevels(Collection<VariableLevel> levels) {
     if (isOpened()) {
-      return false;
+      return;
     }
     this.levels = levels;
-    return true;
   }
 
   private void reset() {
@@ -102,7 +98,11 @@ public class AddExperimentalGroupsDialog extends Dialog {
     ExperimentalGroupLayout templateElement = new ExperimentalGroupLayout(false, levels);
     templateElement.setEnabled(false);
     templateRow.add(addRow, templateElement);
-    addRow.addClickListener(it -> rows.add(new ExperimentalGroupLayout(levels)));
+    addRow.addClickListener(it -> {
+      ExperimentalGroupLayout experimentalGroupLayout = new ExperimentalGroupLayout(levels);
+      experimentalGroupLayout.sampleSize.setValue(1.0);
+      rows.add(experimentalGroupLayout);
+    });
     rows.add(new ExperimentalGroupLayout(levels));
     super.open();
   }
