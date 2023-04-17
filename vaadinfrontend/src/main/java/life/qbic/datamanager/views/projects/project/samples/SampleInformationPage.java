@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -12,8 +11,6 @@ import java.util.Objects;
 import javax.annotation.security.PermitAll;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
-import life.qbic.datamanager.views.projects.project.info.ProjectDetailsComponent;
-import life.qbic.datamanager.views.projects.project.info.ProjectLinksComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;

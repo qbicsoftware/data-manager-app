@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project;
 
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -29,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?")
 @PermitAll
 @ParentLayout(MainLayout.class)
-@CssImport("./styles/views/project/project-view.css")
 public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterLayout {
 
   @Serial
@@ -42,8 +40,6 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
       @Autowired SampleInformationPage sampleInformationPage) {
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
-    setPageStyles(projectInformationPage, experimentInformationPage,
-        sampleInformationPage);
     handler = new ProjectViewHandler(projectInformationPage,
         experimentInformationPage, sampleInformationPage);
     log.debug(String.format(
@@ -52,17 +48,6 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
         System.identityHashCode(projectInformationPage),
         System.identityHashCode(experimentInformationPage),
         System.identityHashCode(sampleInformationPage)));
-  }
-
-  public void setPageStyles(ProjectInformationPage projectInformationPage,
-      ExperimentInformationPage experimentInformationPage,
-      SampleInformationPage sampleInformationPage) {
-    /*Defines via css class names on how components within each page should be allocated
-    in the css grid defined by the project view page*/
-    projectInformationPage.setId("project-page-css-grid-structure");
-    projectInformationPage.setId("project-page-css-grid-structure");
-    experimentInformationPage.setId("project-page-css-grid-structure");
-    sampleInformationPage.setId("project-page-css-grid-structure");
   }
 
   @Override
