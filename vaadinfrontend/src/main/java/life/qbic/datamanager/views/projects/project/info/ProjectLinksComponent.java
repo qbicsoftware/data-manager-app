@@ -82,7 +82,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     });
     getContent().addTitle("Links");
     getContent().addFields(offerSearch, projectLinks);
-    projectLinks.setSizeFull();
   }
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
