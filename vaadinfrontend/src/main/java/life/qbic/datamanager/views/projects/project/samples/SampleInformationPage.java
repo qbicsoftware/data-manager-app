@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?/samples", layout = ProjectViewPage.class)
 @SpringComponent
 @UIScope
-//@CssImport("./styles/views/project/project-view.css")
 @PermitAll
 public class SampleInformationPage extends Div {
 
