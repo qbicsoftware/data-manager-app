@@ -30,29 +30,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
 @PermitAll
-//ToDo Move CSS into own class
-//@CssImport("./styles/views/project/project-view.css")
 public class ProjectInformationPage extends Div implements RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectInformationPageHandler projectInformationPageHandler;
-
-  /*public ProjectInformationPage(@Autowired ProjectDetailsComponent projectDetailsComponent,
-      @Autowired ProjectLinksComponent projectLinksComponent) {
-    Objects.requireNonNull(projectDetailsComponent);
-    Objects.requireNonNull(projectLinksComponent);
-    add(projectDetailsComponent);
-    add(projectLinksComponent);
-    setComponentStyles(projectDetailsComponent, projectLinksComponent);
-    projectInformationPageHandler = new ProjectInformationPageHandler(projectDetailsComponent,
-        projectLinksComponent);
-    log.debug(String.format(
-        "New instance for project Information Page (#%s) created with Project Details Component (#%s) and Project Links Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectDetailsComponent),
-        System.identityHashCode(projectLinksComponent)));
-  }*/
 
   public ProjectInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ProjectDetailsComponent projectDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent) {

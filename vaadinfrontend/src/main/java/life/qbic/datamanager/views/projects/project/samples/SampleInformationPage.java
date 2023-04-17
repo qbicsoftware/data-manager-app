@@ -38,16 +38,6 @@ public class SampleInformationPage extends Div {
   private static final Logger log = LoggerFactory.logger(SampleInformationPage.class);
   private final transient SampleInformationPageHandler sampleInformationPageHandler;
 
-  /*public SampleInformationPage(@Autowired SampleOverviewComponent sampleOverviewComponent) {
-    Objects.requireNonNull(sampleOverviewComponent);
-    add(sampleOverviewComponent);
-    sampleInformationPageHandler = new SampleInformationPageHandler(sampleOverviewComponent);
-    setComponentStyles(sampleOverviewComponent);
-    log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with Sample Overview Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(sampleOverviewComponent)));
-  }*/
-
   public SampleInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired SampleOverviewComponent sampleOverviewComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleOverviewComponent);

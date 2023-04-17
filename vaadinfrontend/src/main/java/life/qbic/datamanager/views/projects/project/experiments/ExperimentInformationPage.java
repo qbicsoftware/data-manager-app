@@ -35,8 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
 @PermitAll
-//ToDo Move CSS into own class
-//@CssImport("./styles/views/project/project-view.css")
 public class ExperimentInformationPage extends Div implements RouterLayout {
 
   @Serial
