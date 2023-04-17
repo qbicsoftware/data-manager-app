@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.info;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -60,7 +61,11 @@ public class ProjectInformationPage extends Div implements RouterLayout {
 
     Row secondRow = new Row();
     secondRow.add(projectDetailsComponent, 3);
-    secondRow.add(projectLinksComponent);
+
+    // for some reason needed so Grid takes up the same amount of space as the Details Component
+    Div projectLinksDiv = new Div();
+    projectLinksDiv.add(projectLinksComponent);
+    secondRow.add(projectLinksDiv);
 
     board.add(topRow, secondRow);
 
