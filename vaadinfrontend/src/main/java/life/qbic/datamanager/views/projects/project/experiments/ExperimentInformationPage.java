@@ -50,7 +50,6 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
     setupBoard(projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
-    //setComponentStyles(experimentDetailsComponent, experimentListComponent);
     experimentInformationPageHandler = new ExperimentInformationPageHandler(projectNavigationBarComponent,
         experimentDetailsComponent, experimentListComponent);
     log.debug(String.format(
