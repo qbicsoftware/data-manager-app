@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
 
 /**
  * The identifier of an experiment. This identifier is global and not restricted to a project. When

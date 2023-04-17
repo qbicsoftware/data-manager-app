@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Embeddable;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Embeddable;
 
 /**
  * <b>Experimental Value</b>

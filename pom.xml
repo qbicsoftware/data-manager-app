@@ -124,15 +124,8 @@
       <dependency>
         <groupId>org.spockframework</groupId>
         <artifactId>spock-core</artifactId>
-        <version>2.2-M3-groovy-4.0</version>
+        <version>2.4-M1-groovy-4.0</version>
         <scope>test</scope>
-      </dependency>
-      <!--If not specified, the 2.7.6 spring-boot-starter-parent dependency will introduce transitively the 1.30 version of snakeyaml, for which a multitude of security concerns are reported
-      See https://mvnrepository.com/artifact/org.yaml/snakeyaml/1.30 for details. -->
-      <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>2.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
