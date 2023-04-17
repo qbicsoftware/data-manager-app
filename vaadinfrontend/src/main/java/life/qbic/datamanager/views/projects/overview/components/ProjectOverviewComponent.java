@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.overview.components;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
@@ -41,9 +40,7 @@ import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
-import life.qbic.datamanager.views.projects.create.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
-import life.qbic.datamanager.views.projects.create.UserCancelEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
