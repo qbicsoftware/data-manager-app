@@ -54,7 +54,6 @@ public class SampleInformationPage extends Div {
     Objects.requireNonNull(sampleOverviewComponent);
     setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent, sampleOverviewComponent);
-    setComponentStyles(sampleOverviewComponent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(sampleOverviewComponent)));
