@@ -10,7 +10,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
@@ -39,7 +38,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
   private static final String TITLE = "Attachments";
-  private final VerticalLayout contentLayout = new VerticalLayout();
   private OfferSearch offerSearch;
   private final Grid<ProjectLink> projectLinks = new Grid<>(ProjectLink.class);
   private static final String OFFER_TYPE_NAME = "Offer";
@@ -52,9 +50,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     Objects.requireNonNull(projectLinkingService);
     initOfferSearch(offerLookupService);
     initProjectLinksGrid();
-    initContentLayout();
     getContent().addTitle(TITLE);
-    getContent().addFields(contentLayout);
+    getContent().addFields(offerSearch, projectLinks);
     projectLinksComponentHandler = new ProjectLinksComponentHandler(projectLinkingService);
   }
 
@@ -64,13 +61,6 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
-  }
-
-  private void initContentLayout() {
-    contentLayout.add(offerSearch, projectLinks);
-    contentLayout.setSizeFull();
-    contentLayout.setMargin(false);
-    contentLayout.setPadding(false);
   }
 
   private void initOfferSearch(OfferLookupService offerLookupService) {
