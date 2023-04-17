@@ -5,11 +5,11 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Creation Event</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Indicates that a user submitted a project creation request</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectCreationEvent extends ComponentEvent<ProjectInformationDialog> {
 

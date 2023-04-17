@@ -143,7 +143,11 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     public ProjectCreationContent content() {
-        return new ProjectCreationContent(codeField.getValue(), offerSearchField.getPattern(), titleField.getValue(), projectObjective.getValue(), speciesBox.getValue().stream().toList(), specimenBox.getValue().stream().toList(), analyteBox.getValue().stream().toList(), experimentalDesignField.getValue(), principalInvestigator.getValue(), responsiblePerson.getValue(), projectManager.getValue());
+        return new ProjectCreationContent(codeField.getValue(), offerSearchField.getPattern(), titleField.getValue(),
+                projectObjective.getValue(), speciesBox.getValue().stream().toList(),
+                specimenBox.getValue().stream().toList(), analyteBox.getValue().stream().toList(),
+                experimentalDesignField.getValue(), principalInvestigator.getValue(), responsiblePerson.getValue(),
+                projectManager.getValue());
     }
 
 
@@ -212,7 +216,8 @@ public class ProjectInformationDialog extends Dialog {
 
     private void initExperimentalDesignLayout() {
         Span experimentHeader = new Span("Experiment");
-        Span experimentDescription = new Span("Please specify the sample origin information of the samples. Multiple values are allowed!");
+        Span experimentDescription = new Span("Please specify the sample origin information of the samples. Multiple "
+                + "values are allowed!");
         experimentHeader.addClassName("font-bold");
         experimentalDesignLayout.setMargin(false);
         experimentalDesignLayout.setPadding(false);
@@ -286,24 +291,15 @@ public class ProjectInformationDialog extends Dialog {
         reset();
     }
 
-    public void validateInput() {
-        handler.validateInput();
-    }
-
-    public boolean isInputValid() {
-        validateInput();
-        return this.handler.isInputValid();
-    }
-
     private class Handler {
-
-        private boolean inputValid = false;
 
         List<Binder<?>> binders = new ArrayList<>();
         private final List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
-        private final List<ComponentEventListener<UserCancelEvent<ProjectInformationDialog>>> cancelListeners = new ArrayList<>();
+        private final List<ComponentEventListener<UserCancelEvent<ProjectInformationDialog>>> cancelListeners =
+                new ArrayList<>();
 
-        Handler() {}
+        Handler() {
+        }
 
         private void handle() {
             restrictInputLength();
@@ -318,33 +314,35 @@ public class ProjectInformationDialog extends Dialog {
             createButton.addClickListener(event -> {
                 validateInput();
                 if (isInputValid()) {
-                    listeners.forEach(listener ->
-                            listener.onComponentEvent(new ProjectCreationEvent(ProjectInformationDialog.this, true)));
+                    listeners.forEach(listener -> listener.onComponentEvent(new ProjectCreationEvent(ProjectInformationDialog.this, true)));
                 }
             });
-            cancelButton.addClickListener(event ->
-                    cancelListeners.forEach(listener ->
-                            listener.onComponentEvent(new UserCancelEvent<>(ProjectInformationDialog.this, true))));
+            cancelButton.addClickListener(event -> cancelListeners.forEach(listener -> listener.onComponentEvent(new UserCancelEvent<>(ProjectInformationDialog.this, true))));
 
         }
 
 
         private void configureValidators() {
-            Binder<Container<String>> binder = new Binder<>();
-            binder.forField(titleField).withValidator(value -> !value.isBlank(), "Please provide a title").bind(Container::value, Container::setValue);
-            Binder<Container<String>> binder2 = new Binder<>();
-            binder2.forField(projectObjective).withValidator(value -> !value.isBlank(), "Please provide an objective").bind(Container::value, Container::setValue);
-            Binder<Container<Set<Species>>> binder3 = new Binder<>();
-            binder3.forField(speciesBox).asRequired("Please select at least one species").bind(Container::value, Container::setValue);
-            Binder<Container<Set<Analyte>>> binder4 = new Binder<>();
-            binder4.forField(analyteBox).asRequired("Please select at least one analyte").bind(Container::value, Container::setValue);
-            Binder<Container<Set<Specimen>>> binder5 = new Binder<>();
-            binder5.forField(specimenBox).asRequired("Please select at least one specimen").bind(Container::value, Container::setValue);
-            Binder<Container<PersonReference>> binder6 = new Binder<>();
-            binder6.forField(principalInvestigator).asRequired("Please select at least one PI").bind(Container::value, Container::setValue);
-            Binder<Container<PersonReference>> binder7 = new Binder<>();
-            binder7.forField(projectManager).asRequired("Please select at least one PM").bind(Container::value, Container::setValue);
-            binders.addAll(List.of(binder, binder2, binder3, binder4, binder5, binder6, binder7));
+            Binder<Container<String>> binderTitle = new Binder<>();
+            binderTitle.forField(titleField).withValidator(value -> !value.isBlank(), "Please provide a title").bind(Container::value, Container::setValue);
+            Binder<Container<String>> binderObjective = new Binder<>();
+            binderObjective.forField(projectObjective).withValidator(value -> !value.isBlank(),
+                    "Please provide an " + "objective").bind(Container::value, Container::setValue);
+            Binder<Container<Set<Species>>> binderSpecies = new Binder<>();
+            binderSpecies.forField(speciesBox).asRequired("Please select at least one species").bind(Container::value
+                    , Container::setValue);
+            Binder<Container<Set<Analyte>>> binderAnalyte = new Binder<>();
+            binderAnalyte.forField(analyteBox).asRequired("Please select at least one analyte").bind(Container::value
+                    , Container::setValue);
+            Binder<Container<Set<Specimen>>> binderSpecimen = new Binder<>();
+            binderSpecimen.forField(specimenBox).asRequired("Please select at least one specimen").bind(Container::value, Container::setValue);
+            Binder<Container<PersonReference>> binderPI = new Binder<>();
+            binderPI.forField(principalInvestigator).asRequired("Please select at least one PI").bind(Container::value, Container::setValue);
+            Binder<Container<PersonReference>> binderPM = new Binder<>();
+            binderPM.forField(projectManager).asRequired("Please select at least one PM").bind(Container::value,
+                    Container::setValue);
+            binders.addAll(List.of(binderTitle, binderObjective, binderSpecies, binderAnalyte, binderSpecimen,
+                    binderPI, binderPM));
         }
 
         private void generateProjectCode() {
@@ -401,13 +399,13 @@ public class ProjectInformationDialog extends Dialog {
             addDialogCloseActionListener(closeActionEvent -> resetAndClose());
         }
 
-        protected void validateInput() {
+        protected boolean validateInput() {
             binders.forEach(Binder::validate);
+            return binders.stream().allMatch(Binder::isValid);
         }
 
         public boolean isInputValid() {
-            validateInput();
-            return this.inputValid;
+            return validateInput();
         }
 
         public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
