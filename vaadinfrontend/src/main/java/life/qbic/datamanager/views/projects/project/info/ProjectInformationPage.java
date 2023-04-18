@@ -1,7 +1,9 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.board.Board;
+import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -9,6 +11,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import javax.annotation.security.PermitAll;
+import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -27,8 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
 @PermitAll
-//ToDo Move CSS into own class
-@CssImport("./styles/views/project/project-view.css")
 public class ProjectInformationPage extends Div implements RouterLayout {
 
   @Serial
@@ -36,19 +37,41 @@ public class ProjectInformationPage extends Div implements RouterLayout {
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectInformationPageHandler projectInformationPageHandler;
 
-  public ProjectInformationPage(@Autowired ProjectDetailsComponent projectDetailsComponent,
+  public ProjectInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ProjectDetailsComponent projectDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
-    add(projectDetailsComponent);
-    add(projectLinksComponent);
+    setupBoard(projectNavigationBarComponent, projectDetailsComponent, projectLinksComponent);
     setComponentStyles(projectDetailsComponent, projectLinksComponent);
-    projectInformationPageHandler = new ProjectInformationPageHandler(projectDetailsComponent,
+    projectInformationPageHandler = new ProjectInformationPageHandler(projectNavigationBarComponent, projectDetailsComponent,
         projectLinksComponent);
     log.debug(String.format(
-        "New instance for project Information Page (#%s) created with Project Details Component (#%s) and Project Links Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectDetailsComponent),
+        "New instance for project Information Page (#%s) created with Project Navigation Bar Component (#%s) and Project Details Component (#%s) and Project Links Component (#%s)",
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(projectDetailsComponent),
         System.identityHashCode(projectLinksComponent)));
+  }
+
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent, ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent) {
+    Board board = new Board();
+
+    Row topRow = new Row();
+    topRow.add(projectNavigationBarComponent, 3);
+    topRow.add(new Div());
+
+    Row secondRow = new Row();
+    secondRow.add(projectDetailsComponent, 3);
+
+    // for some reason needed so Grid takes up the same amount of space as the Details Component
+    Div projectLinksDiv = new Div();
+    projectLinksDiv.add(projectLinksComponent);
+    secondRow.add(projectLinksDiv);
+
+    board.add(topRow, secondRow);
+
+    board.setSizeFull();
+
+    add(board);
   }
 
   public void projectId(ProjectId projectId) {
@@ -63,16 +86,19 @@ public class ProjectInformationPage extends Div implements RouterLayout {
 
   private final class ProjectInformationPageHandler {
 
+    private final ProjectNavigationBarComponent projectNavigationComponent;
     private final ProjectDetailsComponent projectDetailsComponent;
     private final ProjectLinksComponent projectLinksComponent;
 
-    public ProjectInformationPageHandler(ProjectDetailsComponent projectDetailsComponent,
+    public ProjectInformationPageHandler(ProjectNavigationBarComponent projectNavigationComponent, ProjectDetailsComponent projectDetailsComponent,
         ProjectLinksComponent projectLinksComponent) {
+      this.projectNavigationComponent = projectNavigationComponent;
       this.projectDetailsComponent = projectDetailsComponent;
       this.projectLinksComponent = projectLinksComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
+      projectNavigationComponent.projectId(projectId);
       projectDetailsComponent.projectId(projectId);
       projectLinksComponent.projectId(projectId);
     }
