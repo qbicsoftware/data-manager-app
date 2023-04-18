@@ -109,12 +109,12 @@ class ExperimentInformationServiceSpec extends Specification {
     def group1 = new ExperimentalGroupDTO(Set.of(experimentalVariable.levels().get(0)), 5)
     def group2 = new ExperimentalGroupDTO(Set.of(experimentalVariable.levels().get(1)), 6)
 
-    experimentInformationService.addExperimentalGroupsToExperiment(experiment.experimentId(), Set.of(group1, group2))
+    experimentInformationService.addExperimentalGroupToExperiment(experiment.experimentId(), group1)
 
 
     then: "the experiment contains the added experimental groups"
     def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList()
-    dtoGroups.contains(group1) && dtoGroups.contains(group2)
+    dtoGroups.contains(group1)
 
     and: "the experiment is updated once for adding the variable and once for adding the experimental groups"
     1 * experimentRepository.update(experiment)

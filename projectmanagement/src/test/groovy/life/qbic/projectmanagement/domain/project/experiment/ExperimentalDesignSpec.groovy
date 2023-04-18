@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment
 
 
-import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException
 import spock.lang.Specification
 
@@ -41,9 +40,9 @@ class ExperimentalDesignSpec extends Specification {
         design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
         design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))),5)
         when: "an experimental group is defined with identical variable levels"
-        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("normal"))),4)
+        var response = design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("normal"))), 4)
         then: "an exception is thrown"
-        thrown(ConditionExistsException)
+        response.responseCode() == ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode.CONDITION_EXISTS
     }
 
     def "when an experimental group is not defined in the design, a new one is added"() {
