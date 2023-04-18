@@ -14,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -86,11 +87,6 @@ public class ExperimentalDesign {
   @JoinColumn(name = "experimentId")
   final Set<ExperimentalGroup> experimentalGroups = new HashSet<>();
 
-  /*@OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
-  @JoinColumn(name = "experimentId")
-  // @JoinColumn so no extra table is created as conditions contains that column
-  final Collection<Condition> conditions = new ArrayList<>();
-*/
   protected ExperimentalDesign() {
     // needed for JPA
   }
@@ -207,9 +203,17 @@ public class ExperimentalDesign {
     }
   }
 
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+
+    public enum ResponseCode {
+      SUCCESS,
+      CONDITION_EXISTS
+    }
+  }
+
   /**
-   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
-   * and adds it to the experimental design.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
    * <p>
    * <ul>
    *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
@@ -217,10 +221,12 @@ public class ExperimentalDesign {
    *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param variableLevels a list containing at least one value for a variable defined in this experiment
-   * @param sampleSize the number of samples that are expected for this experimental group
+   * @param variableLevels a list containing at least one value for a variable defined in this
+   *                       experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
+  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
       throw new IllegalArgumentException("at least one variable level is required");
@@ -235,10 +241,10 @@ public class ExperimentalDesign {
 
     Condition condition = Condition.create(variableLevels);
     if (isConditionDefined(condition)) {
-      throw new ConditionExistsException(
-          "A condition containing the provided levels exists.");
+      return new AddExperimentalGroupResponse(ResponseCode.CONDITION_EXISTS);
     }
     experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
+    return new AddExperimentalGroupResponse(ResponseCode.SUCCESS);
   }
 
   public Set<ExperimentalGroup> getExperimentalGroups() {

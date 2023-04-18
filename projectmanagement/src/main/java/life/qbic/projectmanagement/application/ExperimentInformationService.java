@@ -11,7 +11,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -54,19 +55,27 @@ public class ExperimentInformationService {
   /**
    * Add sample groups to the experiment
    *
-   * @param experimentId the Id of the experiment for which to add the species
-   * @param experimentalGroups      the experimental groups to add
+   * @param experimentId       the Id of the experiment for which to add the species
+   * @param experimentalGroups the experimental groups to add
    */
-  public void addExperimentalGroupsToExperiment(ExperimentId experimentId, Set<ExperimentalGroupDTO> experimentalGroups) {
+  public List<AddExperimentalGroupResponse> addExperimentalGroupsToExperiment(
+      ExperimentId experimentId, Set<ExperimentalGroupDTO> experimentalGroups) {
     experimentalGroups.forEach(Objects::requireNonNull);
     if (experimentalGroups.size() < 1) {
-      return;
+      return List.of();
     }
     Experiment activeExperiment = loadExperimentById(experimentId);
-    for(ExperimentalGroupDTO experimentalGroup : experimentalGroups) {
-      activeExperiment.addExperimentalGroup(experimentalGroup.levels(), experimentalGroup.sampleSize());
+    List<AddExperimentalGroupResponse> responses = new ArrayList<>();
+    for (ExperimentalGroupDTO experimentalGroup : experimentalGroups) {
+      AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
+          experimentalGroup.levels(), experimentalGroup.sampleSize());
+      responses.add(response);
     }
-    experimentRepository.update(activeExperiment);
+    // if anything went wrong: do not commit to persistence
+    if (responses.stream().allMatch(it -> it.responseCode() == ResponseCode.SUCCESS)) {
+      experimentRepository.update(activeExperiment);
+    }
+    return responses;
   }
 
   /**

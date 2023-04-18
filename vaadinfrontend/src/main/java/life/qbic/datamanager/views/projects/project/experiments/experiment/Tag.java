@@ -15,7 +15,7 @@ public class Tag extends Span {
 
   public Tag(String text) {
     super(text);
-    getElement().getThemeList().add("badge small");
+    getElement().getThemeList().add("badge");
     getElement().getThemeList().add(FontSize.SMALL);
     getStyle().set("white-space", "nowrap");
     getStyle().set("margin", "3px 5px");

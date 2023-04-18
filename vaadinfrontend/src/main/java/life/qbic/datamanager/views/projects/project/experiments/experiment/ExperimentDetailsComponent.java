@@ -9,6 +9,7 @@ import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -21,6 +22,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +37,8 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +57,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient Handler handler;
-  private final ExperimentInformationService experimentInformationService;
   private ToggleDisplayEditComponent<Span, TextField, String> experimentNotes;
   private Chart registeredSamples;
   private HorizontalLayout topLayout;
@@ -73,16 +76,17 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private Button addBlockingVariableButton;
 
   private final AddVariablesDialog addVariablesDialog;
+  private AddExperimentalGroupsDialog experimentalGroupsDialog;
 
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.experimentInformationService = experimentInformationService;
     this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
     initTopLayout();
     initTabSheet(experimentInformationService);
+    experimentalGroupsDialog = createExperimentalGroupDialog();
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 
@@ -113,7 +117,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     initSummaryCardBoard(experimentInformationService);
     initSampleGroupsCardBoard();
     experimentSheet.add("Summary", summaryCardBoard);
-    experimentSheet.add("Sample Groups", experimentalGroupsCardBoard);
+    experimentSheet.add("Experimental Groups", experimentalGroupsCardBoard);
     getContent().addFields(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -129,17 +133,34 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     summaryCardBoard.setSizeFull();
   }
 
-  private AddExperimentalGroupsDialog getDialog() {
+  private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
     Button create = new Button("Create");
     Button cancel = new Button("Cancel");
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-    dialog.getFooter().add(cancel, create);
-    cancel.addClickListener(it -> dialog.close());
-    create.addClickListener(it -> {
+    Label errorLabel = new Label();
+    errorLabel.getStyle().set("color", "red");
+    dialog.getFooter().add(errorLabel, cancel, create);
+    cancel.addClickListener(event -> dialog.close());
+    create.addClickListener(event -> {
       //TODO add validation
-      handler.addExperimentalGroups(dialog.getContent());
-      dialog.close();
+      ExperimentalGroupInput[] inputFields = dialog.getInputFields();
+      System.out.println("dialog input valid = " + dialog.isInputValid());
+      List<AddExperimentalGroupResponse> responses = handler.addExperimentalGroups(
+          Arrays.stream(inputFields)
+              .peek(it -> System.out.println("it.isInvalid() = " + it.isInvalid()))
+              .map(
+                  it -> new ExperimentalGroupInformation(new HashSet<>(it.getValue().getLevels()),
+                      it.getValue().getSampleSize())
+              ).toList());
+      if (responses.stream().allMatch(it -> it.responseCode() == ResponseCode.SUCCESS)) {
+        errorLabel.setText("");
+        handler.loadExperimentalGroups();
+        dialog.close();
+      } else if (responses.stream()
+          .anyMatch(it -> it.responseCode() == ResponseCode.CONDITION_EXISTS)) {
+        errorLabel.setText("condition already defined");
+      }
     });
     return dialog;
   }
@@ -200,13 +221,25 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
+      experimentalGroupsCardBoard.setExperimentalGroupCommandListener(it -> {
+        fillExperimentalGroupDialog();
+        experimentalGroupsDialog.open();
+      });
     }
 
-    private void addExperimentalGroups(
+    private void loadExperimentalGroups() {
+      Objects.requireNonNull(experimentId, "experiment id not set");
+      List<ExperimentalGroupDTO> experimentalGroups = experimentInformationService.getExperimentalGroups(
+          experimentId);
+      experimentalGroupsCardBoard.setExperimentalGroups(experimentalGroups);
+
+    }
+
+    private List<AddExperimentalGroupResponse> addExperimentalGroups(
         List<ExperimentalGroupInformation> experimentalGroupInformation) {
       List<ExperimentalGroupDTO> experimentalGroupDTOs = experimentalGroupInformation.stream()
           .map(it -> new ExperimentalGroupDTO(it.levels(), it.sampleSize())).toList();
-      experimentInformationService.addExperimentalGroupsToExperiment(experimentId,
+      return experimentInformationService.addExperimentalGroupsToExperiment(experimentId,
           new HashSet<>(experimentalGroupDTOs));
     }
 
@@ -221,12 +254,21 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
           experimentalVariableCard.refresh();
         }
       });
-      //TODO how to determine whether exp groups were added? navigate to exp groups?
     }
 
     private void getActiveExperimentFromProject(Project project) {
       experimentInformationService.find(project.activeExperiment())
           .ifPresent(this::loadExperimentInformation);
+    }
+
+    private void fillExperimentalGroupDialog() {
+      Objects.requireNonNull(experimentId, "experiment id not set");
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      List<VariableLevel> levels = variables.stream()
+          .flatMap(variable -> variable.levels().stream())
+          .toList();
+      experimentalGroupsDialog.setLevels(levels);
     }
 
     private void loadExperimentInformation(Experiment experiment) {
@@ -237,14 +279,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
-      AddExperimentalGroupsDialog experimentalGroupsDialog = getDialog();
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experiment.experimentId());
-      List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream())
-          .toList();
-      experimentalGroupsDialog.setLevels(levels);
-      experimentalGroupsDialog.open();
+      fillExperimentalGroupDialog();
+      loadExperimentalGroups();
     }
 
     private void loadTagInformation(Experiment experiment) {

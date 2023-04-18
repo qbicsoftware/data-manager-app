@@ -34,9 +34,9 @@ public class ConditionComboBox extends MultiSelectComboBox<VariableLevel> implem
 
 
   private static final ItemFilter<VariableLevel> VARIABLE_LEVEL_ITEM_FILTER = (level, filterString) ->
-      level.variableName().value().toLowerCase().startsWith(filterString.toLowerCase())
+      level.variableName().value().toLowerCase().contains(filterString.toLowerCase())
           || ExperimentValueFormatter.format(level.experimentalValue()).toLowerCase()
-          .startsWith(filterString.toLowerCase());
+          .contains(filterString.toLowerCase());
   private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
       "%s: %s", it.variableName().value(),
       ExperimentValueFormatter.format(it.experimentalValue()));

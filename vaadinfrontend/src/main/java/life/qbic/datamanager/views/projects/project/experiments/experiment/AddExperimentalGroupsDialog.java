@@ -1,18 +1,19 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.NumberField;
+import com.vaadin.flow.data.binder.Binder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
@@ -26,40 +27,15 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
  */
 public class AddExperimentalGroupsDialog extends Dialog {
 
-  private final VerticalLayout rows;
+  private final FormLayout rows;
   private final HorizontalLayout templateRow;
   private Collection<VariableLevel> levels;
 
-  private static class ExperimentalGroupLayout extends HorizontalLayout {
+  private final Span errorTextDisplay;
 
-    private final ConditionComboBox variableLevelsInput = new ConditionComboBox("Condition");
-    private final NumberField sampleSize = new NumberField("Number of Samples");
+  private final List<Binder<?>> binders = new ArrayList<>();
 
-    public ExperimentalGroupLayout(Collection<VariableLevel> levels) {
-      this(true, levels);
-    }
-
-    public ExperimentalGroupLayout(boolean removeButtonVisible,
-        Collection<VariableLevel> levels) {
-      requireNonNull(levels, "levels must not be null");
-      setAlignItems(Alignment.BASELINE);
-      sampleSize.setRequiredIndicatorVisible(true);
-      sampleSize.setStepButtonsVisible(true);
-      sampleSize.setStep(1);
-      sampleSize.setMin(1);
-      sampleSize.setWidthFull();
-      variableLevelsInput.addClassName("chip-badge");
-      variableLevelsInput.setRequiredIndicatorVisible(true);
-      variableLevelsInput.setItems(levels);
-      Button removeRowButton = new Button(VaadinIcon.CLOSE_SMALL.create());
-      removeRowButton.setIconAfterText(true);
-      removeRowButton.addClickListener(it -> this.getElement().removeFromParent());
-      removeRowButton.setVisible(removeButtonVisible);
-      removeRowButton.setWidthFull();
-      add(variableLevelsInput, sampleSize, removeRowButton);
-      setWidthFull();
-    }
-  }
+  private final List<ExperimentalGroupInput> experimentalGroupInputs = new ArrayList<>();
 
   record ExperimentalGroupInformation(Set<VariableLevel> levels, int sampleSize) {
   }
@@ -67,9 +43,12 @@ public class AddExperimentalGroupsDialog extends Dialog {
 
   public AddExperimentalGroupsDialog() {
     setHeaderTitle("Experimental Groups");
-    rows = new VerticalLayout();
-    rows.setPadding(false);
-    rows.setSpacing(false);
+    errorTextDisplay = new Span("");
+    errorTextDisplay.getStyle().set("color", "red");
+    add(errorTextDisplay);
+    rows = new FormLayout();
+    rows.setWidthFull();
+    rows.setResponsiveSteps(new ResponsiveStep("0", 1));
     templateRow = new HorizontalLayout();
     templateRow.setAlignItems(Alignment.BASELINE);
     add(rows);
@@ -95,25 +74,41 @@ public class AddExperimentalGroupsDialog extends Dialog {
   public void open() {
     reset();
     Button addRow = new Button(VaadinIcon.PLUS.create());
-    ExperimentalGroupLayout templateElement = new ExperimentalGroupLayout(false, levels);
+    ExperimentalGroupInput templateElement = new ExperimentalGroupInput(levels);
     templateElement.setEnabled(false);
     templateRow.add(addRow, templateElement);
-    addRow.addClickListener(it -> {
-      ExperimentalGroupLayout experimentalGroupLayout = new ExperimentalGroupLayout(levels);
-      experimentalGroupLayout.sampleSize.setValue(1.0);
-      rows.add(experimentalGroupLayout);
-    });
-    rows.add(new ExperimentalGroupLayout(levels));
+    addRow.addClickListener(it -> addExperimentalGroupRow());
+    addExperimentalGroupRow();
+    templateElement.setWidthFull();
+    setWidthFull();
     super.open();
   }
 
-  public List<ExperimentalGroupInformation> getContent() {
-    return rows.getChildren()
-        .filter(it -> it instanceof ExperimentalGroupLayout).map(it -> (ExperimentalGroupLayout) it)
-        .map(it ->
-            new ExperimentalGroupInformation(it.variableLevelsInput.getSelectedItems(),
-                Optional.ofNullable(it.sampleSize.getValue())
-                    .orElse(0.0).intValue()))
-        .toList();
+  private void addExperimentalGroupRow() {
+    ExperimentalGroupInput inputComponent = new ExperimentalGroupInput(levels);
+    Button removeRowButton = new Button(VaadinIcon.CLOSE_SMALL.create());
+    inputComponent.setWidthFull();
+    HorizontalLayout row = new HorizontalLayout();
+    row.add(inputComponent, removeRowButton);
+    row.setPadding(false);
+    row.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+    row.setWidthFull();
+    removeRowButton.addClickListener(it -> row.getElement().removeFromParent());
+    row.addDetachListener(it -> experimentalGroupInputs.remove(inputComponent));
+    row.addAttachListener(it -> experimentalGroupInputs.add(inputComponent));
+    rows.add(row);
   }
+
+  public ExperimentalGroupInput[] getInputFields() {
+    return experimentalGroupInputs.toArray(ExperimentalGroupInput[]::new);
+  }
+
+  public boolean isInputValid() {
+    boolean experimentalGroupInputValid = experimentalGroupInputs.stream()
+        .noneMatch(CustomField::isInvalid);
+    //TODO fail validation for duplicate conditions
+    //TODO fail validation
+    return experimentalGroupInputValid;
+  }
+
 }
