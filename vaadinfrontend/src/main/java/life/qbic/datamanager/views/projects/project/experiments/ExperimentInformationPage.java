@@ -63,6 +63,8 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
 
     VerticalLayout mainComponents = new VerticalLayout();
     mainComponents.setPadding(false);
+    mainComponents.setMargin(false);
+    mainComponents.setSpacing(false);
     mainComponents.add(projectNavigationBarComponent, experimentDetailsComponent);
 
     rootRow.add(mainComponents, 3);
