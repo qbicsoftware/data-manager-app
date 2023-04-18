@@ -9,7 +9,6 @@ import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -22,7 +21,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +36,6 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,30 +135,11 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Button cancel = new Button("Cancel");
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-    Label errorLabel = new Label();
-    errorLabel.getStyle().set("color", "red");
-    dialog.getFooter().add(errorLabel, cancel, create);
-    cancel.addClickListener(event -> dialog.close());
-    create.addClickListener(event -> {
-      //TODO add validation
-      ExperimentalGroupInput[] inputFields = dialog.getInputFields();
-      System.out.println("dialog input valid = " + dialog.isInputValid());
-      List<AddExperimentalGroupResponse> responses = handler.addExperimentalGroups(
-          Arrays.stream(inputFields)
-              .peek(it -> System.out.println("it.isInvalid() = " + it.isInvalid()))
-              .map(
-                  it -> new ExperimentalGroupInformation(new HashSet<>(it.getValue().getLevels()),
-                      it.getValue().getSampleSize())
-              ).toList());
-      if (responses.stream().allMatch(it -> it.responseCode() == ResponseCode.SUCCESS)) {
-        errorLabel.setText("");
-        handler.loadExperimentalGroups();
-        dialog.close();
-      } else if (responses.stream()
-          .anyMatch(it -> it.responseCode() == ResponseCode.CONDITION_EXISTS)) {
-        errorLabel.setText("condition already defined");
-      }
-    });
+//    Label errorLabel = new Label();
+//    errorLabel.getStyle().set("color", "red");
+//    dialog.getFooter().add(errorLabel, cancel, create);
+//    cancel.addClickListener(event -> dialog.close());
+//    create.addClickListener(event -> {});
     return dialog;
   }
 
