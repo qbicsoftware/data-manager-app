@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -15,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -87,11 +87,6 @@ public class ExperimentalDesign {
   @JoinColumn(name = "experimentId")
   final Set<ExperimentalGroup> experimentalGroups = new HashSet<>();
 
-  /*@OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
-  @JoinColumn(name = "experimentId")
-  // @JoinColumn so no extra table is created as conditions contains that column
-  final Collection<Condition> conditions = new ArrayList<>();
-*/
   protected ExperimentalDesign() {
     // needed for JPA
   }
@@ -188,24 +183,6 @@ public class ExperimentalDesign {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
-  /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  Optional<VariableLevel> getLevel(String variableName, ExperimentalValue value) {
-    Objects.requireNonNull(variableName);
-    Objects.requireNonNull(value);
-    Optional<ExperimentalVariable> variableOptional = variables.stream()
-        .filter(it -> it.name().value().equals(variableName))
-        .findAny();
-
-    return variableOptional.map(variable -> variable.getLevel(value));
-  }
-
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
     if (levels.size() < 1) {
       return Result.failure(new IllegalArgumentException(
@@ -226,9 +203,17 @@ public class ExperimentalDesign {
     }
   }
 
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+
+    public enum ResponseCode {
+      SUCCESS,
+      CONDITION_EXISTS
+    }
+  }
+
   /**
-   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
-   * and adds it to the experimental design.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
    * <p>
    * <ul>
    *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
@@ -236,11 +221,16 @@ public class ExperimentalDesign {
    *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param variableLevels a list containing at least one value for a variable defined in this experiment
-   * @param sampleSize the number of samples that are expected for this experimental group
+   * @param variableLevels a list containing at least one value for a variable defined in this
+   *                       experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
+  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
+    if (variableLevels.isEmpty()) {
+      throw new IllegalArgumentException("at least one variable level is required");
+    }
 
     for (VariableLevel level : variableLevels) {
       if (!isVariableDefined(level.variableName().value())) {
@@ -251,10 +241,10 @@ public class ExperimentalDesign {
 
     Condition condition = Condition.create(variableLevels);
     if (isConditionDefined(condition)) {
-      throw new ConditionExistsException(
-          "A condition containing the provided levels exists.");
+      return new AddExperimentalGroupResponse(ResponseCode.CONDITION_EXISTS);
     }
     experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
+    return new AddExperimentalGroupResponse(ResponseCode.SUCCESS);
   }
 
   public Set<ExperimentalGroup> getExperimentalGroups() {

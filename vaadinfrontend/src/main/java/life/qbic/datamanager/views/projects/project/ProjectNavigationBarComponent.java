@@ -17,6 +17,8 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 
 /**
  * ProjectNavigationBarComponent
@@ -27,6 +29,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
  */
 @SpringComponent
 @UIScope
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ProjectNavigationBarComponent extends Composite<CardLayout> {
 
   @Serial
