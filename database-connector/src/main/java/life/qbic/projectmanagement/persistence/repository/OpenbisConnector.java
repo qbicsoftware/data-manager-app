@@ -112,27 +112,16 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   @Override
   public List<Species> retrieveSpecies() {
-    List<Species> speciesList = new ArrayList<>();
-    speciesList.add(new Species("wat"));
-    return speciesList;
-    /*
     return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
         .map(it -> it.label().isBlank() ? it.code() : it.label())
         .map(Species::new).toList();
-
-     */
   }
 
   @Override
   public List<Specimen> retrieveSpecimens() {
-    List<Specimen> speciesList = new ArrayList<>();
-    speciesList.add(new Specimen("wat"));
-    return speciesList;
-    /*
     return getVocabularyTermsForCode(VocabularyCode.SPECIMEN).stream()
         .map(it -> it.label().isBlank() ? it.code() : it.label())
         .map(Specimen::new).toList();
-     */
   }
 
   @Override
@@ -140,11 +129,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     List<Analyte> speciesList = new ArrayList<>();
     speciesList.add(new Analyte("wat"));
     return speciesList;
-    /*
-    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Analyte::new).toList();
-     */
   }
 
   record VocabularyTerm(String code, String label, String description) {
