@@ -37,37 +37,34 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
 
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
-
-  final Grid<ProjectLink> projectLinks;
-
-  private final transient ProjectLinkingService projectLinkingService;
+  private static final String TITLE = "Attachments";
+  private OfferSearch offerSearch;
+  private final Grid<ProjectLink> projectLinks = new Grid<>(ProjectLink.class);
   private static final String OFFER_TYPE_NAME = "Offer";
-  private ProjectId projectId;
 
+  private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
       @Autowired OfferLookupService offerLookupService) {
-
     Objects.requireNonNull(offerLookupService);
     Objects.requireNonNull(projectLinkingService);
+    initOfferSearch(offerLookupService);
+    initProjectLinksGrid();
+    getContent().addTitle(TITLE);
+    getContent().addFields(offerSearch, projectLinks);
+    projectLinksComponentHandler = new ProjectLinksComponentHandler(projectLinkingService);
+  }
 
-    OfferSearch offerSearch = new OfferSearch(offerLookupService);
+  public void projectId(ProjectId projectId) {
+    projectLinksComponentHandler.setProjectId(projectId);
+  }
 
-    this.projectLinkingService = projectLinkingService;
+  private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+  }
 
-    projectLinks = new Grid<>(ProjectLink.class);
-    projectLinks.addColumn(ProjectLink::type).setHeader("Type");
-    projectLinks.addColumn(ProjectLink::reference).setHeader("Reference");
-    projectLinks.addColumn(
-        new ComponentRenderer<>(Button::new, (button, projectLink) -> {
-          button.addThemeVariants(ButtonVariant.LUMO_ICON,
-              ButtonVariant.LUMO_ERROR,
-              ButtonVariant.LUMO_TERTIARY);
-          button.setIcon(new Icon("lumo", "cross"));
-          button.addClickListener(e -> removeLink(projectLink));
-        })
-    );
-    projectLinks.setItems(new ArrayList<>());
+  private void initOfferSearch(OfferLookupService offerLookupService) {
+    offerSearch = new OfferSearch(offerLookupService);
     offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
@@ -76,63 +73,75 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
         return;
       }
       if (it.getValue() != it.getOldValue()) {
-        addLink(offerLink(it.getValue().offerId()));
+        projectLinksComponentHandler.addLink(offerLink(it.getValue().offerId()));
         it.getSource().clearSelection();
       }
     });
-    getContent().addTitle("Links");
-    getContent().addFields(offerSearch, projectLinks);
-    projectLinks.setSizeFull();
   }
 
-  private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
-    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
+  private void initProjectLinksGrid() {
+    projectLinks.addColumn(ProjectLink::type).setHeader("Type");
+    projectLinks.addColumn(ProjectLink::reference).setHeader("Reference");
+    projectLinks.addColumn(new ComponentRenderer<>(Button::new, (button, projectLink) -> {
+      button.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_ERROR,
+          ButtonVariant.LUMO_TERTIARY);
+      button.setIcon(new Icon("lumo", "cross"));
+      button.addClickListener(e -> projectLinksComponentHandler.removeLink(projectLink));
+    }));
+    projectLinks.setItems(new ArrayList<>());
   }
+
 
   private static ProjectLink offerLink(OfferId offerIdentifier) {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.id());
   }
 
-  private void addLink(ProjectLink projectLink) {
-    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
-      projectLinkingService.linkOfferToProject(projectLink.reference(),
-          this.projectId.value());
-    }
-    loadContentForProject(projectId);
-    getContent().addFields(projectLinks);
-    getContent().setSizeFull();
-  }
-
-  private void removeLink(ProjectLink projectLink) {
-    if (projectLink.type().equals(OFFER_TYPE_NAME)) {
-      projectLinkingService.unlinkOfferFromProject(projectLink.reference(),
-          this.projectId.value());
-    }
-    loadContentForProject(projectId);
-  }
-
   public List<String> linkedOffers() {
-    return projectLinks.getDataProvider()
-        .fetch(new Query<>()).filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME))
-        .map(ProjectLink::reference)
+    return projectLinks.getDataProvider().fetch(new Query<>())
+        .filter(it -> Objects.equals(it.type(), OFFER_TYPE_NAME)).map(ProjectLink::reference)
         .toList();
-  }
-
-  public void projectId(ProjectId projectId) {
-    this.projectId = projectId;
-    loadContentForProject(this.projectId);
-  }
-
-  private void loadContentForProject(ProjectId projectId) {
-    var linkedOffers = projectLinkingService.queryLinkedOffers(projectId);
-    List<ProjectLink> offerLinks = linkedOffers.stream()
-        .map(ProjectLinksComponent::offerLink)
-        .toList();
-    projectLinks.setItems(offerLinks);
   }
 
   public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
+  }
+
+  private final class ProjectLinksComponentHandler {
+
+    ProjectId projectId;
+    private final ProjectLinkingService projectLinkingService;
+
+    public ProjectLinksComponentHandler(ProjectLinkingService projectLinkingService) {
+      this.projectLinkingService = projectLinkingService;
+    }
+
+    private void loadContentForProject(ProjectId projectId) {
+      var linkedOffers = projectLinkingService.queryLinkedOffers(projectId);
+      List<ProjectLink> offerLinks = linkedOffers.stream().map(ProjectLinksComponent::offerLink)
+          .toList();
+      projectLinks.setItems(offerLinks);
+    }
+
+    private void addLink(ProjectLink projectLink) {
+      if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+        projectLinkingService.linkOfferToProject(projectLink.reference(), this.projectId.value());
+      }
+      projectLinksComponentHandler.loadContentForProject(projectId);
+    }
+
+    private void removeLink(ProjectLink projectLink) {
+      if (projectLink.type().equals(OFFER_TYPE_NAME)) {
+        projectLinkingService.unlinkOfferFromProject(projectLink.reference(),
+            this.projectId.value());
+      }
+      loadContentForProject(projectId);
+    }
+
+    public void setProjectId(ProjectId projectId) {
+      this.projectId = projectId;
+      loadContentForProject(projectId);
+    }
+
   }
 
   private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
@@ -150,16 +159,14 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
        * @param oldValue   the old value
        * @param fromClient whether the value change originated from the client
        */
-      public SelectedOfferChangeEvent(OfferSearch source,
-          HasValue<?, OfferPreview> hasValue, OfferPreview oldValue,
-          boolean fromClient) {
+      public SelectedOfferChangeEvent(OfferSearch source, HasValue<?, OfferPreview> hasValue,
+          OfferPreview oldValue, boolean fromClient) {
         super(source, hasValue, oldValue, fromClient);
       }
     }
 
 
-    public OfferSearch(
-        @Autowired OfferLookupService offerLookupService) {
+    public OfferSearch(@Autowired OfferLookupService offerLookupService) {
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
       setItems();
@@ -169,8 +176,8 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     }
 
     private void forwardValueChangeEvents() {
-      getContent().addValueChangeListener(
-          it -> fireEvent(new SelectedOfferChangeEvent(this, it.getHasValue(), it.getOldValue(),
+      getContent().addValueChangeListener(it -> fireEvent(
+          new SelectedOfferChangeEvent(this, it.getHasValue(), it.getOldValue(),
               it.isFromClient())));
     }
 
@@ -196,14 +203,9 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     }
 
     private void setItems() {
-      getContent().setItems(
-          query -> offerLookupService
-              .findOfferContainingProjectTitleOrId(
-                  query.getFilter().orElse(""),
-                  query.getFilter().orElse(""),
-                  query.getOffset(),
-                  query.getLimit())
-              .stream());
+      getContent().setItems(query -> offerLookupService.findOfferContainingProjectTitleOrId(
+          query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
+          query.getLimit()).stream());
     }
 
   }
