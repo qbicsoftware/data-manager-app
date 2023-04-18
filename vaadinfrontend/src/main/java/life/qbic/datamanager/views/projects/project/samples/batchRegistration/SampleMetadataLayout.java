@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
+import com.vaadin.flow.data.binder.Binder;
+import java.util.ArrayList;
 import java.util.List;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
@@ -24,11 +26,13 @@ class SampleMetadataLayout extends VerticalLayout {
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
+  private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
 
   SampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
     sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
+    sampleMetadataLayoutHandler = new SampleMetadataLayoutHandler();
   }
 
   private void initContent() {
@@ -59,7 +63,43 @@ class SampleMetadataLayout extends VerticalLayout {
   }
 
   public void reset() {
-    sampleRegistrationSpreadsheet.reset();
+    sampleMetadataLayoutHandler.reset();
+  }
+
+  public boolean isInputValid() {
+    return sampleMetadataLayoutHandler.isInputValid();
+  }
+
+  private class SampleMetadataLayoutHandler {
+
+    private final List<Binder<?>> binders = new ArrayList<>();
+
+    public SampleMetadataLayoutHandler() {
+      configureValidators();
+    }
+
+    //ToDo add Binders for Cell Values in Spreadsheet
+    private void configureValidators() {
+    }
+
+    private void reset() {
+      resetChildValues();
+      resetChildValidation();
+    }
+
+    private void resetChildValues() {
+      sampleRegistrationSpreadsheet.reset();
+      sampleRegistrationSpreadsheet.reload();
+    }
+
+    //ToDo reset Binder Validation State for each Cell
+    private void resetChildValidation() {
+    }
+
+    private boolean isInputValid() {
+      binders.forEach(Binder::validate);
+      return binders.stream().allMatch(Binder::isValid);
+    }
   }
 
   private static class SampleRegistrationSheetBuilder {

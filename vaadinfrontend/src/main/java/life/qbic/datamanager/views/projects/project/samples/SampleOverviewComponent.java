@@ -243,6 +243,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
       this.experimentInformationService = experimentInformationService;
       this.sampleInformationService = sampleInformationService;
       registerSamplesListener();
+      configureBatchRegistrationDialog();
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -258,6 +259,19 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     private void registerSamplesListener() {
       registerBatchButton.addClickListener(event -> registerBatchDialog.open());
       showEmptyViewButton.addClickListener(event -> showEmptyView());
+    }
+
+    private void configureBatchRegistrationDialog() {
+      registerBatchDialog.addSampleRegistrationEventListener(event -> {
+        processSampleRegistration(event.getSource().content());
+        registerBatchDialog.resetAndClose();
+        showSamplesView();
+      });
+      registerBatchDialog.addCancelEventListener(event -> registerBatchDialog.resetAndClose());
+    }
+
+    //Todo Add ApplicationService for Sample Registration here
+    private void processSampleRegistration(List<String> exampleBatchInformation) {
     }
 
     private void generateExperimentTabs(Project project) {

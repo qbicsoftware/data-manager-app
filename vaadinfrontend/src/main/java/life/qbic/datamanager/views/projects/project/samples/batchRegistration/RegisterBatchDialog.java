@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
@@ -8,6 +9,9 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
+import java.util.ArrayList;
+import java.util.List;
+import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -64,37 +68,84 @@ public class RegisterBatchDialog extends Dialog {
     sampleMetadataLayout = new SampleMetadataLayout(sampleRegistrationService);
   }
 
+  public void addSampleRegistrationEventListener(
+      ComponentEventListener<SampleRegistrationEvent> listener) {
+    registerBatchDialogHandler.addSampleRegistrationEventListener(listener);
+  }
+
+  public void addCancelEventListener(
+      ComponentEventListener<UserCancelEvent<RegisterBatchDialog>> listener) {
+    registerBatchDialogHandler.addUserCancelEventListener(listener);
+  }
+
+  public void resetAndClose() {
+    registerBatchDialogHandler.resetAndClose();
+  }
+
+  //ToDo Replace with values in Spreadsheet
+  public List<String> content() {
+    List<String> exampleBatch = new ArrayList<String>();
+    exampleBatch.addAll(List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
+    return exampleBatch;
+  }
+
   private class RegisterBatchDialogHandler {
+
+    private final List<ComponentEventListener<SampleRegistrationEvent>> listeners = new ArrayList<>();
+    private final List<ComponentEventListener<UserCancelEvent<RegisterBatchDialog>>> cancelListeners = new ArrayList<>();
 
     public RegisterBatchDialogHandler() {
       resetDialogueUponClosure();
       setGeneralInformationButtonsListeners();
-      setSampleMetadataButtonsListeners();
+      setSampleRegistrationSubmission();
       setTabSelectionListener();
     }
 
     private void setGeneralInformationButtonsListeners() {
-      generalInformationLayout.cancelButton.addClickListener(buttonClickEvent -> closeAndReset());
       generalInformationLayout.nextButton.addClickListener(
           event -> tabStepper.setSelectedTab(sampleMetadataTab));
+      generalInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
+          listener -> listener.onComponentEvent(new UserCancelEvent<>(RegisterBatchDialog.this))));
     }
 
-    private void setSampleMetadataButtonsListeners() {
-      sampleMetadataLayout.cancelButton.addClickListener(buttonClickEvent -> closeAndReset());
-      //ToDo Register metadata
-      sampleMetadataLayout.nextButton.addClickListener(buttonClickEvent -> closeAndReset());
+    private void setSampleRegistrationSubmission() {
+      sampleMetadataLayout.nextButton.addClickListener(event -> {
+        if (isInputValid()) {
+          listeners.forEach(listener -> listener.onComponentEvent(
+              new SampleRegistrationEvent(RegisterBatchDialog.this, true)));
+        }
+      });
+      sampleMetadataLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
+          listener -> listener.onComponentEvent(new UserCancelEvent<>(RegisterBatchDialog.this))));
+    }
+
+    protected boolean isInputValid() {
+      return generalInformationLayout.isInputValid() && sampleMetadataLayout.isInputValid();
     }
 
     private void setTabSelectionListener() {
       tabStepper.addSelectedChangeListener(event -> {
-        if (event.getSelectedTab() == sampleMetadataTab) {
+        if (event.getSelectedTab() == sampleMetadataTab
+            && generalInformationLayout.isInputValid()) {
           sampleMetadataLayout.generateSampleRegistrationSheet(
               generalInformationLayout.dataTypeSelection.getValue());
+        } else {
+          tabStepper.setSelectedTab(generalInformationTab);
         }
       });
     }
 
-    public void closeAndReset() {
+    public void addSampleRegistrationEventListener(
+        ComponentEventListener<SampleRegistrationEvent> listener) {
+      this.listeners.add(listener);
+    }
+
+    public void addUserCancelEventListener(
+        ComponentEventListener<UserCancelEvent<RegisterBatchDialog>> listener) {
+      this.cancelListeners.add(listener);
+    }
+
+    public void resetAndClose() {
       close();
       reset();
     }
@@ -107,7 +158,8 @@ public class RegisterBatchDialog extends Dialog {
 
     private void resetDialogueUponClosure() {
       // Calls the reset method for all possible closure methods of the dialogue window:
-      addDialogCloseActionListener(closeActionEvent -> closeAndReset());
+      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
     }
+
   }
 }

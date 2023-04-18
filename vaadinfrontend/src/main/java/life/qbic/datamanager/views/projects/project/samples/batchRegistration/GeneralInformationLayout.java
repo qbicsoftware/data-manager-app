@@ -10,9 +10,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -28,10 +31,12 @@ class GeneralInformationLayout extends VerticalLayout {
   public final RadioButtonGroup<MetaDataTypes> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
+  private final GeneralInformationLayoutHandler generalInformationLayoutHandler;
 
   public GeneralInformationLayout() {
     initContent();
     this.setSizeFull();
+    generalInformationLayoutHandler = new GeneralInformationLayoutHandler();
   }
 
   private void initContent() {
@@ -88,17 +93,61 @@ class GeneralInformationLayout extends VerticalLayout {
     add(generalInformationButtons);
   }
 
+  public boolean isInputValid() {
+    return generalInformationLayoutHandler.isInputValid();
+  }
+
   public void reset() {
-    resetChildValues();
-    resetChildValidation();
+    generalInformationLayoutHandler.reset();
   }
 
-  private void resetChildValues() {
-    dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
-    batchNameField.clear();
+  private class GeneralInformationLayoutHandler {
+
+    private final List<Binder<?>> binders = new ArrayList<>();
+
+    public GeneralInformationLayoutHandler() {
+      configureValidators();
+    }
+
+    private void configureValidators() {
+      Binder<Container<String>> binderBatchName = new Binder<>();
+      binderBatchName.forField(batchNameField)
+          .withValidator(value -> !value.isBlank(), "Please provide a valid batch name")
+          .bind(Container::value, Container::setValue);
+      binders.add(binderBatchName);
+    }
+
+    private boolean isInputValid() {
+      binders.forEach(Binder::validate);
+      return binders.stream().allMatch(Binder::isValid);
+    }
+
+    private void reset() {
+      resetChildValues();
+      resetChildValidation();
+    }
+
+    private void resetChildValues() {
+      dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+      batchNameField.clear();
+    }
+
+    private void resetChildValidation() {
+      batchNameField.setInvalid(false);
+    }
   }
 
-  private void resetChildValidation() {
-    batchNameField.setInvalid(false);
+  static class Container<T> {
+
+    private T value;
+
+    T value() {
+      return this.value;
+    }
+
+    void setValue(T newValue) {
+      this.value = newValue;
+    }
+
   }
 }
