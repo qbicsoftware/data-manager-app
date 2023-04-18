@@ -26,13 +26,13 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
  *
  * @since <version tag>
  */
-public class ExperimentalGroupsCard extends VerticalLayout {
+public class ExperimentalGroupsLayout extends VerticalLayout {
 
   private final FlexLayout experimentalGroupContainer;
 
   private final List<ExperimentalGroupCommandListener> experimentalGroupCommandListeners = new ArrayList<>();
 
-  public ExperimentalGroupsCard() {
+  public ExperimentalGroupsLayout() {
     experimentalGroupContainer = new FlexLayout();
     experimentalGroupContainer.setFlexDirection(FlexDirection.ROW);
     experimentalGroupContainer.setFlexWrap(FlexWrap.WRAP);
@@ -86,8 +86,8 @@ public class ExperimentalGroupsCard extends VerticalLayout {
 
   private static class ExperimentalGroupCard extends VerticalLayout {
 
-    private final String CARD_WIDTH = "300px";
-    private final String CARD_HEIGHT = "400px";
+    private final static String CARD_WIDTH = "200px";
+    private final static String CARD_HEIGHT = "200px";
 
 
     public ExperimentalGroupCard(VariableLevel... variableLevels) {
@@ -121,15 +121,15 @@ public class ExperimentalGroupsCard extends VerticalLayout {
   private static class AddExperimentalGroupCard extends VerticalLayout implements
       ClickNotifier<VerticalLayout> {
 
-    private final String CARD_WIDTH = "300px";
-    private final String CARD_HEIGHT = "400px";
+    private static final String CARD_WIDTH = "200px";
+    private static final String CARD_HEIGHT = "200px";
 
     public AddExperimentalGroupCard() {
       Button addButton = new Button("Add Group");
       addButton.addClickListener(it -> fireEvent(new ClickEvent<VerticalLayout>(this)));
+      setDefaultHorizontalComponentAlignment(Alignment.CENTER);
       setAlignItems(Alignment.CENTER);
       add(addButton);
-      setHorizontalComponentAlignment(Alignment.CENTER, addButton);
       setWidth(CARD_WIDTH);
       setHeight(CARD_HEIGHT);
       getStyle().set("border", "1px solid gray");

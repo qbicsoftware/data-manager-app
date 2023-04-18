@@ -45,12 +45,12 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private int variableCount = 0;
 
+  private final List<Binder<?>> binders = new ArrayList<>();
+
 
   public ExperimentalGroupInput(Collection<VariableLevel> availableLevels) {
     variableLevelSelect = generateVariableLevelSelect();
     sampleSizeField = generateSampleSizeField();
-    variableLevelSelect.addValidationStatusChangeListener(event -> validate());
-    sampleSizeField.addValidationStatusChangeListener(event -> validate());
 
     HorizontalLayout horizontalLayout = new HorizontalLayout(variableLevelSelect, sampleSizeField);
     add(horizontalLayout);
@@ -58,10 +58,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     horizontalLayout.setWidth(null);
     setWidth(null);
     addValidationForVariableCount();
-  }
-
-  private void validate() {
-    this.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
+    variableLevelSelect.addValueChangeListener(
+        event -> setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid()));
+    sampleSizeField.addValueChangeListener(
+        event -> setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid()));
   }
 
   private void addValidationForVariableCount() {
@@ -70,8 +70,13 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
         .withValidator(levels -> levels.size() == variableCount,
             "Please select one level for each variable.")
         .bind(Container::get, Container::set);
-    variableLevelSelect.addValueChangeListener(it -> System.out.println(
-        "variableLevelSelect.isInvalid = " + variableLevelSelect.isInvalid()));
+    binders.add(binder);
+  }
+
+  private void validateInput() {
+    for (Binder<?> binder : binders) {
+      binder.validate();
+    }
   }
 
 
@@ -106,6 +111,12 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     sampleSizeField.setRequiredIndicatorVisible(requiredIndicatorVisible);
   }
 
+  @Override
+  public boolean isInvalid() {
+    validateInput();
+    super.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
+    return super.isInvalid();
+  }
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");

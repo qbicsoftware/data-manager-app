@@ -55,27 +55,21 @@ public class ExperimentInformationService {
   /**
    * Add sample groups to the experiment
    *
-   * @param experimentId       the Id of the experiment for which to add the species
-   * @param experimentalGroups the experimental groups to add
+   * @param experimentId      the Id of the experiment for which to add the species
+   * @param experimentalGroup the experimental groups to add
    */
-  public List<AddExperimentalGroupResponse> addExperimentalGroupsToExperiment(
-      ExperimentId experimentId, Set<ExperimentalGroupDTO> experimentalGroups) {
-    experimentalGroups.forEach(Objects::requireNonNull);
-    if (experimentalGroups.size() < 1) {
-      return List.of();
-    }
+  public AddExperimentalGroupResponse addExperimentalGroupToExperiment(
+      ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
+    Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
+    Objects.requireNonNull(experimentId, "experiment id must not be null");
+
     Experiment activeExperiment = loadExperimentById(experimentId);
-    List<AddExperimentalGroupResponse> responses = new ArrayList<>();
-    for (ExperimentalGroupDTO experimentalGroup : experimentalGroups) {
-      AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
-          experimentalGroup.levels(), experimentalGroup.sampleSize());
-      responses.add(response);
-    }
-    // if anything went wrong: do not commit to persistence
-    if (responses.stream().allMatch(it -> it.responseCode() == ResponseCode.SUCCESS)) {
+    AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
+        experimentalGroup.levels(), experimentalGroup.sampleSize());
+    if (response.responseCode() == ResponseCode.SUCCESS) {
       experimentRepository.update(activeExperiment);
     }
-    return responses;
+    return response;
   }
 
   /**

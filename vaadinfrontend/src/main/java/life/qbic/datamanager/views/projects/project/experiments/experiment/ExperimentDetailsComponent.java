@@ -10,7 +10,6 @@ import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -18,16 +17,13 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoIcon;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupInformation;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -36,6 +32,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +58,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private VerticalLayout detailLayout;
   private TabSheet experimentSheet;
   private Board summaryCardBoard;
-  private ExperimentalGroupsCard experimentalGroupsCardBoard;
+  private ExperimentalGroupsLayout experimentalGroupsLayoutBoard;
   private CardLayout sampleOriginCard;
   private VerticalLayout speciesForm;
   private VerticalLayout specimenForm;
@@ -73,7 +70,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private Button addBlockingVariableButton;
 
   private final AddVariablesDialog addVariablesDialog;
-  private AddExperimentalGroupsDialog experimentalGroupsDialog;
+  private final AddExperimentalGroupsDialog experimentalGroupsDialog;
 
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
@@ -114,7 +111,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     initSummaryCardBoard(experimentInformationService);
     initSampleGroupsCardBoard();
     experimentSheet.add("Summary", summaryCardBoard);
-    experimentSheet.add("Experimental Groups", experimentalGroupsCardBoard);
+    experimentSheet.add("Experimental Groups", experimentalGroupsLayoutBoard);
     getContent().addFields(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -131,15 +128,9 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   }
 
   private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
-    Button create = new Button("Create");
-    Button cancel = new Button("Cancel");
-    create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-//    Label errorLabel = new Label();
-//    errorLabel.getStyle().set("color", "red");
-//    dialog.getFooter().add(errorLabel, cancel, create);
-//    cancel.addClickListener(event -> dialog.close());
-//    create.addClickListener(event -> {});
+    dialog.addExperimentalGroupSubmitListener(
+        groupSubmitted -> handler.onGroupSubmitted(groupSubmitted));
     return dialog;
   }
 
@@ -179,8 +170,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   }
 
   private void initSampleGroupsCardBoard() {
-    experimentalGroupsCardBoard = new ExperimentalGroupsCard();
-    experimentalGroupsCardBoard.setWidthFull();
+    experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
+    experimentalGroupsLayoutBoard.setWidthFull();
     //ToDo Fill with Content
   }
 
@@ -199,7 +190,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
-      experimentalGroupsCardBoard.setExperimentalGroupCommandListener(it -> {
+      experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
         fillExperimentalGroupDialog();
         experimentalGroupsDialog.open();
       });
@@ -209,16 +200,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       Objects.requireNonNull(experimentId, "experiment id not set");
       List<ExperimentalGroupDTO> experimentalGroups = experimentInformationService.getExperimentalGroups(
           experimentId);
-      experimentalGroupsCardBoard.setExperimentalGroups(experimentalGroups);
+      experimentalGroupsLayoutBoard.setExperimentalGroups(experimentalGroups);
 
-    }
-
-    private List<AddExperimentalGroupResponse> addExperimentalGroups(
-        List<ExperimentalGroupInformation> experimentalGroupInformation) {
-      List<ExperimentalGroupDTO> experimentalGroupDTOs = experimentalGroupInformation.stream()
-          .map(it -> new ExperimentalGroupDTO(it.levels(), it.sampleSize())).toList();
-      return experimentInformationService.addExperimentalGroupsToExperiment(experimentId,
-          new HashSet<>(experimentalGroupDTOs));
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -266,14 +249,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       experiment.getSpecies().forEach(species -> tagLayout.add(new Tag(species.value())));
       experiment.getSpecimens().forEach(specimen -> tagLayout.add(new Tag(specimen.value())));
       experiment.getAnalytes().forEach(analyte -> tagLayout.add(new Tag(analyte.value())));
-      initTagPlusButton();
-    }
-
-    //Todo what should be added here? Additional separate button building and functionality
-    private void initTagPlusButton() {
-      Icon plusIcon = LumoIcon.PLUS.create();
-      plusIcon.addClassNames(IconSize.SMALL);
-      tagLayout.add(plusIcon);
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {
@@ -289,5 +264,14 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       //ToDo load information from backend once implemented
     }
 
+    public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
+      AddExperimentalGroupResponse response = experimentInformationService.addExperimentalGroupToExperiment(
+          experimentId,
+          new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
+      if (response.responseCode() == ResponseCode.SUCCESS) {
+        loadExperimentalGroups();
+        groupSubmitted.source().close();
+      }
+    }
   }
 }
