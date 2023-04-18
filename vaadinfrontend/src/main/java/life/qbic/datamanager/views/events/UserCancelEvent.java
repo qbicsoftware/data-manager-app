@@ -19,13 +19,12 @@ public class UserCancelEvent<T extends Component> extends ComponentEvent<T> {
 
     /**
      * Creates a new event using the given source and indicator whether the
-     * event originated from the client side or the server side.
+     * event originated from the client side.
      *
      * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
      */
-    public UserCancelEvent(T source, boolean fromClient) {
-        super(source, fromClient);
+    public UserCancelEvent(T source) {
+        super(source, true);
     }
+
 }

@@ -293,7 +293,6 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     private class Handler {
-
         List<Binder<?>> binders = new ArrayList<>();
         private final List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
         private final List<ComponentEventListener<UserCancelEvent<ProjectInformationDialog>>> cancelListeners =
@@ -318,7 +317,7 @@ public class ProjectInformationDialog extends Dialog {
                     listeners.forEach(listener -> listener.onComponentEvent(new ProjectCreationEvent(ProjectInformationDialog.this, true)));
                 }
             });
-            cancelButton.addClickListener(event -> cancelListeners.forEach(listener -> listener.onComponentEvent(new UserCancelEvent<>(ProjectInformationDialog.this, true))));
+            cancelButton.addClickListener(event -> cancelListeners.forEach(listener -> listener.onComponentEvent(new UserCancelEvent<>(ProjectInformationDialog.this))));
 
         }
 
@@ -420,7 +419,7 @@ public class ProjectInformationDialog extends Dialog {
 
     static class Container<T> {
 
-        T value;
+        private T value;
 
         T value() {
             return this.value;
