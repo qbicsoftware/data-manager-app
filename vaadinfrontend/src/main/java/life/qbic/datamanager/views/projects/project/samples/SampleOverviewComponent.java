@@ -33,7 +33,8 @@ import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.datamanager.views.projects.project.samples.batchRegistration.RegisterBatchDialog;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
@@ -47,11 +48,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Sample Overview Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Component embedded within the {@link SampleInformationPage} in the {@link ProjectViewPage}. It
+ * allows the user to see the information associated for all {@link Sample} for each
+ * {@link Experiment within a {@link Project}
  */
 
 @SpringComponent
@@ -77,7 +78,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
   private static final Logger log = getLogger(SampleOverviewComponent.class);
-  private RegisterBatchDialog registerBatchDialog;
+  private SampleRegistrationDialog sampleRegistrationDialog;
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
@@ -127,7 +128,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   }
 
   private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
-    registerBatchDialog = new RegisterBatchDialog(sampleRegistrationService);
+    sampleRegistrationDialog = new SampleRegistrationDialog(sampleRegistrationService);
   }
 
   private void initButtonAndFieldBar() {
@@ -257,17 +258,18 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> registerBatchDialog.open());
+      registerBatchButton.addClickListener(event -> sampleRegistrationDialog.open());
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 
     private void configureBatchRegistrationDialog() {
-      registerBatchDialog.addSampleRegistrationEventListener(event -> {
+      sampleRegistrationDialog.addSampleRegistrationEventListener(event -> {
         processSampleRegistration(event.getSource().content());
-        registerBatchDialog.resetAndClose();
+        sampleRegistrationDialog.resetAndClose();
         showSamplesView();
       });
-      registerBatchDialog.addCancelEventListener(event -> registerBatchDialog.resetAndClose());
+      sampleRegistrationDialog.addCancelEventListener(
+          event -> sampleRegistrationDialog.resetAndClose());
     }
 
     //Todo Add ApplicationService for Sample Registration here

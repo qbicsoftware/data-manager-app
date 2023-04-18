@@ -6,11 +6,11 @@ import java.io.Serial;
 /**
  * <b>Sample Registration Event</b>
  *
- * <p>Indicates that a user submitted a sample batch registration request</p>
+ * <p>Indicates that a user submitted a sample registration request</p>
  *
  * @since 1.0.0
  */
-public class SampleRegistrationEvent extends ComponentEvent<RegisterBatchDialog> {
+public class SampleRegistrationEvent extends ComponentEvent<SampleRegistrationDialog> {
 
   @Serial
   private static final long serialVersionUID = 9182977233447104965L;
@@ -23,7 +23,7 @@ public class SampleRegistrationEvent extends ComponentEvent<RegisterBatchDialog>
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public SampleRegistrationEvent(RegisterBatchDialog source, boolean fromClient) {
+  public SampleRegistrationEvent(SampleRegistrationDialog source, boolean fromClient) {
     super(source, fromClient);
   }
 

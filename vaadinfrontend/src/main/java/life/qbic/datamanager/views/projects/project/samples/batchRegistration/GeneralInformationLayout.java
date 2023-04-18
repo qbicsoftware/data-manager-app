@@ -19,11 +19,11 @@ import java.util.List;
 
 
 /**
- * <class short description - One Line!>
+ * <b>General Information Layout </b>
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Layout in which the user will provide the general information necessary during sample
+ * registration
+ * </p>
  */
 class GeneralInformationLayout extends VerticalLayout {
 

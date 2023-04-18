@@ -14,13 +14,13 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 
 /**
- * <class short description - One Line!>
+ * <b>Sample Spreadsheet Layout</b>
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Layout which is responsible for hosting the spreadsheet in which the metadata information
+ * associated for each sample will be provided>
+ * </p>
  */
-class SampleMetadataLayout extends VerticalLayout {
+class SampleSpreadsheetLayout extends VerticalLayout {
 
   public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
@@ -28,7 +28,7 @@ class SampleMetadataLayout extends VerticalLayout {
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
   private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
 
-  SampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
+  SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
     sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);

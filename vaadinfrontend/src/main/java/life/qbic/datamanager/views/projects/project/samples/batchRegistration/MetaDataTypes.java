@@ -1,11 +1,12 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * MetaDataType enums are used in {@link GeneralInformationLayout}, to indicate which type of Sample
+ * Metadata will be provided during Sample Registration. Additionally, they host a detailed
+ * description for the relative metadatatype
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 enum MetaDataTypes {
   LIGANDOMICS("Ligandomics", "Detailed Explanation for Ligandomics"), METABOLOMICS("Metabolomics",

@@ -12,27 +12,26 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Sample Registration Dialog</b>
  *
- * @since <version tag>
+ * <p>Component to register {@link Sample} with their associated metadata information</p>
  */
-public class RegisterBatchDialog extends Dialog {
+public class SampleRegistrationDialog extends Dialog {
 
   private final Span title = new Span("Upload Laboratory Metadata");
   private final TabSheet tabStepper = new TabSheet();
   private final Tab generalInformationTab = createTabStep("1", "General Information");
   private final Tab sampleMetadataTab = createTabStep("2", "Sample Metadata");
   private final GeneralInformationLayout generalInformationLayout = new GeneralInformationLayout();
-  private SampleMetadataLayout sampleMetadataLayout;
+  private SampleSpreadsheetLayout sampleSpreadsheetLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
-  public RegisterBatchDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
+  public SampleRegistrationDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
     add(title);
     title.addClassNames("text-2xl", "font-bold", "text-secondary");
     initSampleMetadataLayout(sampleRegistrationService);
@@ -44,7 +43,7 @@ public class RegisterBatchDialog extends Dialog {
 
   private void initTabStepper() {
     tabStepper.add(generalInformationTab, generalInformationLayout);
-    tabStepper.add(sampleMetadataTab, sampleMetadataLayout);
+    tabStepper.add(sampleMetadataTab, sampleSpreadsheetLayout);
     add(tabStepper);
   }
 
@@ -65,7 +64,7 @@ public class RegisterBatchDialog extends Dialog {
   }
 
   private void initSampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
-    sampleMetadataLayout = new SampleMetadataLayout(sampleRegistrationService);
+    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService);
   }
 
   public void addSampleRegistrationEventListener(
@@ -74,7 +73,7 @@ public class RegisterBatchDialog extends Dialog {
   }
 
   public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<RegisterBatchDialog>> listener) {
+      ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
@@ -84,15 +83,15 @@ public class RegisterBatchDialog extends Dialog {
 
   //ToDo Replace with values in Spreadsheet
   public List<String> content() {
-    List<String> exampleBatch = new ArrayList<String>();
-    exampleBatch.addAll(List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
+    List<String> exampleBatch = new ArrayList<>(
+        List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
     return exampleBatch;
   }
 
   private class RegisterBatchDialogHandler {
 
     private final List<ComponentEventListener<SampleRegistrationEvent>> listeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<RegisterBatchDialog>>> cancelListeners = new ArrayList<>();
+    private final List<ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
     public RegisterBatchDialogHandler() {
       resetDialogueUponClosure();
@@ -105,29 +104,31 @@ public class RegisterBatchDialog extends Dialog {
       generalInformationLayout.nextButton.addClickListener(
           event -> tabStepper.setSelectedTab(sampleMetadataTab));
       generalInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(new UserCancelEvent<>(RegisterBatchDialog.this))));
+          listener -> listener.onComponentEvent(
+              new UserCancelEvent<>(SampleRegistrationDialog.this))));
     }
 
     private void setSampleRegistrationSubmission() {
-      sampleMetadataLayout.nextButton.addClickListener(event -> {
+      sampleSpreadsheetLayout.nextButton.addClickListener(event -> {
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
-              new SampleRegistrationEvent(RegisterBatchDialog.this, true)));
+              new SampleRegistrationEvent(SampleRegistrationDialog.this, true)));
         }
       });
-      sampleMetadataLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(new UserCancelEvent<>(RegisterBatchDialog.this))));
+      sampleSpreadsheetLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
+          listener -> listener.onComponentEvent(
+              new UserCancelEvent<>(SampleRegistrationDialog.this))));
     }
 
     protected boolean isInputValid() {
-      return generalInformationLayout.isInputValid() && sampleMetadataLayout.isInputValid();
+      return generalInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
     }
 
     private void setTabSelectionListener() {
       tabStepper.addSelectedChangeListener(event -> {
         if (event.getSelectedTab() == sampleMetadataTab
             && generalInformationLayout.isInputValid()) {
-          sampleMetadataLayout.generateSampleRegistrationSheet(
+          sampleSpreadsheetLayout.generateSampleRegistrationSheet(
               generalInformationLayout.dataTypeSelection.getValue());
         } else {
           tabStepper.setSelectedTab(generalInformationTab);
@@ -141,7 +142,7 @@ public class RegisterBatchDialog extends Dialog {
     }
 
     public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<RegisterBatchDialog>> listener) {
+        ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>> listener) {
       this.cancelListeners.add(listener);
     }
 
@@ -152,7 +153,7 @@ public class RegisterBatchDialog extends Dialog {
 
     private void reset() {
       generalInformationLayout.reset();
-      sampleMetadataLayout.reset();
+      sampleSpreadsheetLayout.reset();
       tabStepper.setSelectedTab(generalInformationTab);
     }
 
