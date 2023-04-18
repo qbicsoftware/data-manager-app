@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
- * <b>AddVariableToExperimentDialog</b>
+ * <b>AddVariablesDialog</b>
  *
  * <p>Dialog Component to define and add
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} to an
@@ -36,9 +36,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class AddVariableToExperimentDialog extends Dialog {
+public class AddVariablesDialog extends Dialog {
 
   private final Handler handler;
+
   private final VerticalLayout dialogueContentLayout = new VerticalLayout();
   private final VerticalLayout experimentalVariableRowsContainerLayout = new VerticalLayout();
   public final List<ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
@@ -46,7 +47,7 @@ public class AddVariableToExperimentDialog extends Dialog {
   public final Button addVariablesButton = new Button("Add");
   public final Button cancelButton = new Button("Cancel");
 
-  public AddVariableToExperimentDialog(
+  public AddVariablesDialog(
       @Autowired ExperimentInformationService experimentInformationService) {
     configureDialogLayout();
     initDialogueContent();
