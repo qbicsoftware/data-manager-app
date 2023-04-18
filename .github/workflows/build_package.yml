@@ -26,4 +26,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Run mvn package
-        run: mvn -B package --file pom.xml
+        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package --file pom.xml
