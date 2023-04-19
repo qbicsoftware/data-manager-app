@@ -43,7 +43,17 @@
           <groupId>org.codehaus.groovy</groupId>
           <artifactId>groovy-json</artifactId>
         </exclusion>
+        <!--Spring Boot 3.0 removes SpringUtils method used in the 18.XX.XX openbis-api -->
+        <exclusion>
+          <groupId>life.qbic</groupId>
+          <artifactId>openbis-api</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-api</artifactId>
+      <version>19.06.5</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

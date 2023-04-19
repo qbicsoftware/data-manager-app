@@ -126,9 +126,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   @Override
   public List<Analyte> retrieveAnalytes() {
-    List<Analyte> speciesList = new ArrayList<>();
-    speciesList.add(new Analyte("wat"));
-    return speciesList;
+    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
+        .map(it -> it.label().isBlank() ? it.code() : it.label())
+        .map(Analyte::new).toList();
   }
 
   record VocabularyTerm(String code, String label, String description) {
