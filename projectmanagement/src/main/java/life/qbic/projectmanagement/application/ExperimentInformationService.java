@@ -1,14 +1,21 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
@@ -31,10 +38,10 @@ public class ExperimentInformationService {
     this.experimentRepository = experimentRepository;
   }
 
-  public Optional<Experiment> find(String experimentId) {
+  public Optional<Experiment> find(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     log.debug("Search for experiment with id: " + experimentId);
-    return experimentRepository.find(ExperimentId.parse(experimentId));
+    return experimentRepository.find(experimentId);
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
@@ -46,6 +53,39 @@ public class ExperimentInformationService {
   }
 
   /**
+   * Add sample groups to the experiment
+   *
+   * @param experimentId      the Id of the experiment for which to add the species
+   * @param experimentalGroup the experimental groups to add
+   */
+  public AddExperimentalGroupResponse addExperimentalGroupToExperiment(
+      ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
+    Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
+    Objects.requireNonNull(experimentId, "experiment id must not be null");
+
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
+        experimentalGroup.levels(), experimentalGroup.sampleSize());
+    if (response.responseCode() == ResponseCode.SUCCESS) {
+      experimentRepository.update(activeExperiment);
+    }
+    return response;
+  }
+
+  /**
+   * Retrieve all analytes of an experiment.
+   *
+   * @param experimentId the Id of the experiment for which the experimental groups should be retrieved
+   * @return the list of experimental groups in the active experiment.
+   */
+  public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList();
+  }
+
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {}
+
+  /**
    * Adds species to an experiment.
    *
    * @param experimentId the Id of the experiment for which to add the species
@@ -53,10 +93,10 @@ public class ExperimentInformationService {
    * @see Experiment#addSpecies(Collection)
    */
   public void addSpeciesToExperiment(ExperimentId experimentId, Species... species) {
+    Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
     }
-    Arrays.stream(species).forEach(Objects::requireNonNull);
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addSpecies(List.of(species));
     experimentRepository.update(activeExperiment);
@@ -70,11 +110,9 @@ public class ExperimentInformationService {
    * @see Experiment#addSpecimens(Collection)
    */
   public void addSpecimenToExperiment(ExperimentId experimentId, Specimen... specimens) {
+    Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
-    }
-    for (Specimen specimen : specimens) {
-      Objects.requireNonNull(specimen);
     }
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addSpecimens(List.of(specimens));
@@ -89,12 +127,41 @@ public class ExperimentInformationService {
    * @see Experiment#addAnalytes(Collection)
    */
   public void addAnalyteToExperiment(ExperimentId experimentId, Analyte... analytes) {
+    Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
     }
-    Arrays.stream(analytes).forEach(Objects::requireNonNull);
     Experiment activeExperiment = loadExperimentById(experimentId);
     activeExperiment.addAnalytes(List.of(analytes));
+    experimentRepository.update(activeExperiment);
+  }
+
+  /**
+   * Adds {@link ExperimentalVariable} to an {@link Experiment}
+   *
+   * @param experimentId the Id of the experiment
+   * @param variableName the name of the variable to be added
+   * @param unit         the optionally defined unit for the {@link ExperimentalValue} within the
+   *                     {@link ExperimentalVariable}
+   * @param levels       String based list of levels from each of which the
+   *                     {@link ExperimentalValue} will be derived for the to be defined
+   *                     {@link ExperimentalVariable}
+   */
+  public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
+      List<String> levels) {
+    Objects.requireNonNull(variableName);
+    Objects.requireNonNull(levels);
+    if (levels.isEmpty()) {
+      return;
+    }
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    List<ExperimentalValue> experimentalValues = new ArrayList<>();
+    for (String level : levels) {
+      ExperimentalValue experimentalValue = (unit.isBlank()) ? ExperimentalValue.create(level)
+          : ExperimentalValue.create(level, unit);
+      experimentalValues.add(experimentalValue);
+    }
+    activeExperiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(activeExperiment);
   }
 
@@ -130,6 +197,19 @@ public class ExperimentInformationService {
   public Collection<Specimen> getSpecimensOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecimens();
+  }
+
+  /**
+   * Retrieve all {@link ExperimentalVariable} defined for an experiment.
+   *
+   * @param experimentId the {@link ExperimentId} of the {@link Experiment} for which the
+   *                     {@link ExperimentalVariable} should be retrieved
+   * @return a list of {@link ExperimentalVariable} associated with the {@link Experiment} with the
+   * {@link ExperimentId}
+   */
+  public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
+    Experiment activeExperiment = loadExperimentById(experimentId);
+    return activeExperiment.variables();
   }
 
 }

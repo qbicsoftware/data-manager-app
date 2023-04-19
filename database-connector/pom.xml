@@ -5,7 +5,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>0.13.0</version>
+    <version>0.14.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -23,13 +23,18 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>authentication</artifactId>
-      <version>0.13.0</version>
+      <version>0.14.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>openbis-client-lib</artifactId>
       <version>1.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -50,13 +55,13 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>finances</artifactId>
-      <version>0.13.0</version>
+      <version>0.14.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>projectmanagement</artifactId>
-      <version>0.13.0</version>
+      <version>0.14.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

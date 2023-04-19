@@ -6,6 +6,7 @@ import java.util.Map;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.datamanager.Application;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
@@ -83,7 +84,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   private void addListener() {
     registeredLoginView.addLoginListener(it -> onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(
-        it -> it.getSource().getUI().ifPresent(ui -> ui.navigate("reset-password")));
+        it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(AppRoutes.RESET_PASSWORD)));
   }
 
   private void onLoginSucceeded() {

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -12,10 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -52,7 +49,13 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    this.levels.addAll(List.of(levels));
+    for(ExperimentalValue level : levels) {
+      if (hasDifferentUnitAsExistingLevels(level)) {
+        throw new IllegalArgumentException(
+            "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
+      }
+      addLevel(level);
+    }
   }
 
   public static ExperimentalVariable create(String name, ExperimentalValue... levels) {
@@ -74,7 +77,7 @@ public class ExperimentalVariable {
   Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
       return Result.failure(new IllegalArgumentException(
-          "experimental value not applicable. This variable has other levles without a unit or with a different unit."));
+          "experimental value not applicable. This variable has other levels without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
       levels.add(experimentalValue);
@@ -84,13 +87,18 @@ public class ExperimentalVariable {
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
-    Predicate<ExperimentalValue> hasDifferentUnit = input -> !input.unit()
-        .equals(experimentalValue.unit());
-    return levels.stream().anyMatch(hasDifferentUnit);
+    if (levels.isEmpty()) {
+      return false;
+    }
+
+    return !levels.stream().map(ExperimentalValue::unit).collect(Collectors.toSet())
+        .contains(experimentalValue.unit());
   }
 
-  public List<ExperimentalValue> levels() {
-    return levels.stream().toList();
+  public List<VariableLevel> levels() {
+    return levels.stream()
+        .map(experimentalValue -> VariableLevel.create(this.name, experimentalValue))
+        .toList();
   }
 
   public VariableName name() {
@@ -114,15 +122,5 @@ public class ExperimentalVariable {
   @Override
   public int hashCode() {
     return (int) (variableId ^ (variableId >>> 32));
-  }
-
-  public VariableLevel getLevel(ExperimentalValue experimentalValue) {
-    if (!levels.contains(experimentalValue)) {
-      throw new ProjectManagementException(
-          experimentalValue + " is no known level of variable " + name,
-          ErrorCode.UNDEFINED_VARIABLE_LEVEL,
-          ErrorParameters.of(experimentalValue.formatted(), name.value()));
-    }
-    return VariableLevel.create(name, experimentalValue);
   }
 }

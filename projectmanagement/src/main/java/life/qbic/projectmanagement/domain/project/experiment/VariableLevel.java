@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Convert;
@@ -12,7 +13,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.Vari
  * <b>Variable Level</b>
  * <p>
  * A container object that presents a certain level ({@link ExperimentalValue}) of an
- * {@link ExperimentalVariable} and is used in a{@link Condition} of a {@link SampleGroup}.
+ * {@link ExperimentalVariable} and is used in a{@link Condition} of a {@link ExperimentalGroup}.
  *
  * @since 1.0.0
  */
@@ -44,11 +45,6 @@ public class VariableLevel {
     // used for jpa
   }
 
-  private boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
-      ExperimentalValue experimentalValue) {
-    return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
-  }
-
   public VariableName variableName() {
     return variableName;
   }
@@ -77,5 +73,13 @@ public class VariableLevel {
   @Override
   public int hashCode() {
     return Objects.hash(variableName, experimentalValue);
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", VariableLevel.class.getSimpleName() + "[", "]")
+        .add("variableName=" + variableName)
+        .add("experimentalValue=" + experimentalValue)
+        .toString();
   }
 }

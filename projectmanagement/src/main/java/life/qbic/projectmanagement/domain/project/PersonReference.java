@@ -49,7 +49,7 @@ public class PersonReference {
     }
     PersonReference that = (PersonReference) o;
     return Objects.equals(referenceId, that.referenceId) && Objects.equals(
-            fullName, that.fullName) && Objects.equals(emailAddress, that.emailAddress);
+        fullName, that.fullName) && Objects.equals(emailAddress, that.emailAddress);
   }
 
   @Override

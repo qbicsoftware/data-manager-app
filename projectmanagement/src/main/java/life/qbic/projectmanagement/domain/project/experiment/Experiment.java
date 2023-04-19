@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
@@ -11,6 +11,7 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -80,16 +81,14 @@ public class Experiment {
   }
 
   /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, or level creation failed, an
-   * {@link Optional#empty()} is returned.
+   * Retrieves the list of experimental variables stored within the Experiment.
    *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
+   * @return Provides the list of {@link ExperimentalVariable} defined within the
+   * {@link ExperimentalDesign} of the {@link Experiment}
    */
-  public Optional<VariableLevel> getLevel(String variableName,
-      ExperimentalValue value) {
-    return experimentalDesign.getLevel(variableName, value);
+
+  public List<ExperimentalVariable> variables() {
+    return experimentalDesign.variables();
   }
 
 
@@ -214,25 +213,25 @@ public class Experiment {
   }
 
   /**
-   * Creates a new condition and adds it to the experimental design. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
    * <p>
-   * <b>Note</b>: {@link Result#isFailure()} indicates a failed operation.
-   * {@link Result#exception()} can be used to determine the cause of the failure.
    * <ul>
-   *   <li>If a condition with the provided label or the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
    *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
-   * @param conditionLabel a declarative and unique name for the condition in scope of this
-   *                       experiment.
-   * @param levels         at least one value for the variable
-   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a declarative
-   * exceptions.
+   * @param variableLevels at least one value for a variable defined in this experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   * @return
    */
-  public Result<Condition, Exception> defineCondition(String conditionLabel,
-      VariableLevel[] levels) {
-    return experimentalDesign.defineCondition(conditionLabel, levels);
+  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
+    return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 
+  public Set<ExperimentalGroup> getExperimentalGroups() {
+    return experimentalDesign.getExperimentalGroups();
+  }
 }

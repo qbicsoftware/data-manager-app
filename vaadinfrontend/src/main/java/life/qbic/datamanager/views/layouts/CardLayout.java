@@ -60,7 +60,6 @@ public class CardLayout extends VerticalLayout {
     this.setSizeFull();
     contentLayout.setSizeFull();
     contentLayout.addClassNames(
-        "min-size-to-content",
         "bg-base",
         "border",
         "rounded-m",

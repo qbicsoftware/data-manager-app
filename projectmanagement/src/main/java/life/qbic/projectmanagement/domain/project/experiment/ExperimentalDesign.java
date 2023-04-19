@@ -1,17 +1,20 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -32,7 +35,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  * In total you can define:
  * <ul>
  *   <li>{@link ExperimentalVariable}</li>
- *   <li>{@link Condition}</li>
+ *   <li>{@link ExperimentalGroup}</li>
  * </ul>
  * <p>
  * The order of creation is important to create a meaningful experimental design.
@@ -45,20 +48,19 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  * <p>
  * Experimental variables can be created via the {@link Experiment#addVariableToDesign(String, List)}  function.
  * <p>
- * <b>Note:</b> variables need to be unique, and its name will be checked against already defined variables in the design! If a variable with the same
- * name is already part of the design, the method will return a {@link Result#failure(Exception)}.
+ * <b>Note:</b> variables need to be unique, and its name will be checked against already defined variables in the design!
  *
  * <p>
- * <b>2. Define a Condition</b>
+ * <b>2. Add an ExperimentGroup</b>
  * <p>
- * {@link Condition}s represent different linear combinations of experimental variable level(s). For example you want to compare different genotypes of a specimen,
+ * {@link ExperimentalGroup}s represent conditions - different linear combinations of experimental variable level(s), as well as the sample size. For example you want to compare different genotypes of a specimen,
  * or different treatments. Let's assume you have a experimental design with two variables:
  * <ul>
  * <li>(1) the genotype (wildtype vs. mutant) </li>
  * <li>(2) a treatment a solvent with different concentrations (0 mmol/L and 150 mmol/L)</li>
  * </ul>
  * <p>
- * So in total there will be four conditions:
+ * So in total there will be four conditions for four experimental groups:
  *
  * <ul>
  *   <li>(1) wildtype + 0 mmol/L</li>
@@ -67,9 +69,8 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
  *   <li>(4) mutant + 150 mmol/L</li>
  * </ul>
  * <p>
- * Conditions can be defined via {@link #defineCondition(String, VariableLevel[])}.
  * <p>
- * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining a {@link Condition}.
+ * <b>Note:</b> The {@link ExperimentalVariable} referenced in the {@link VariableLevel} is required for defining an {@link ExperimentalGroup}.
  *
  * @since 1.0.0
  */
@@ -84,8 +85,7 @@ public class ExperimentalDesign {
 
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentId")
-  // @JoinColumn so no extra table is created as conditions contains that column
-  final Collection<Condition> conditions = new ArrayList<>();
+  final Set<ExperimentalGroup> experimentalGroups = new HashSet<>();
 
   protected ExperimentalDesign() {
     // needed for JPA
@@ -94,7 +94,6 @@ public class ExperimentalDesign {
   public static ExperimentalDesign create() {
     return new ExperimentalDesign();
   }
-
 
   @PostLoad
   private void loadCollections() {
@@ -106,18 +105,15 @@ public class ExperimentalDesign {
     */
 
     int variableCount = variables.size();
-    int conditionCount = conditions.size();
+    int groupCount = experimentalGroups.size();
   }
-
-
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
    * indicated in the result, which can be verified via {@link Result#isSuccess()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
-   * will fail with
-   * an {@link ExperimentalVariableNotDefinedException}. You can check via
+   * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
    * {@link Result#isFailure()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
@@ -146,6 +142,10 @@ public class ExperimentalDesign {
     }
   }
 
+  List<ExperimentalVariable> variables() {
+    return Collections.unmodifiableList(variables);
+  }
+
   private Optional<ExperimentalVariable> variableWithName(String variableName) {
     return variables.stream().filter(it -> it.name().value().equals(variableName)).findAny();
   }
@@ -170,96 +170,17 @@ public class ExperimentalDesign {
   @Override
   public int hashCode() {
     int result = variables.hashCode();
-    result = 31 * result + conditions.hashCode();
+    result = 31 * result + experimentalGroups.hashCode();
     return result;
   }
 
   /**
-   * Whether a {@link Condition} is defined in this experimental design named with the same label.
+   * Whether a {@link Condition} is defined in this design
    *
-   * @param conditionLabel the label of the condition
-   * @return true if there is a condition with label <code>conditionLabel</code>; false otherwise
+   * @return true if there is a condition with the same levels; false otherwise
    */
-  boolean isConditionDefined(String conditionLabel) {
-    return conditions.stream()
-        .map(Condition::label)
-        .anyMatch(label -> label.value().equals(conditionLabel));
-  }
-
-  /**
-   * Whether this design contains a condition with the same {@link VariableLevel}s
-   *
-   * @param condition the condition to check for
-   * @return true if there is a condition with the same variable levels; false otherwise.
-   */
-  boolean isConditionWithSameLevelsDefined(Condition condition) {
-    return conditions.stream().anyMatch(c ->
-        c.hasSameLevelsDefined(condition));
-  }
-
-  /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  Optional<VariableLevel> getLevel(String variableName, ExperimentalValue value) {
-    Objects.requireNonNull(variableName);
-    Objects.requireNonNull(value);
-    Optional<ExperimentalVariable> variableOptional = variables.stream()
-        .filter(it -> it.name().value().equals(variableName))
-        .findAny();
-
-    return variableOptional.map(variable -> variable.getLevel(value));
-  }
-
-  /**
-   * Creates a new condition and adds it to the experimental design. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
-   * <p>
-   * <b>Note</b>: {@link Result#isFailure()} indicates a failed operation.
-   * {@link Result#exception()} can be used to determine the cause of the failure.
-   * <ul>
-   *   <li>If a condition with the provided label or the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
-   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
-   * </ul>
-   *
-   * @param conditionLabel a declarative and unique name for the condition in scope of this
-   *                       experiment.
-   * @param levels         at least one value for the variable
-   * @return a {@link Result} object containing the {@link ConditionLabel} or containing a
-   * declarative exceptions.
-   */
-  public Result<Condition, Exception> defineCondition(String conditionLabel,
-      VariableLevel[] levels) {
-    Arrays.stream(levels).forEach(Objects::requireNonNull);
-
-    for (VariableLevel level : levels) {
-      if (!isVariableDefined(level.variableName().value())) {
-        return Result.failure(new IllegalArgumentException(
-            "There is no variable " + level.variableName().value() + " in this experiment."));
-      }
-    }
-
-    if (isConditionDefined(conditionLabel)) {
-      return Result.failure(new ConditionExistsException(
-          "please provide a different condition label. A condition with the label "
-              + conditionLabel + " exists."));
-    }
-
-    try {
-      Condition condition = Condition.create(conditionLabel, levels);
-      if (isConditionWithSameLevelsDefined(condition)) {
-        return Result.failure(new ConditionExistsException(
-            "A condition containing the provided levels exists."));
-      }
-      conditions.add(condition);
-      return Result.success(condition);
-    } catch (IllegalArgumentException e) {
-      return Result.failure(e);
-    }
+  boolean isConditionDefined(Condition condition) {
+    return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
@@ -280,5 +201,53 @@ public class ExperimentalDesign {
     } catch (IllegalArgumentException e) {
       return Result.failure(e);
     }
+  }
+
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+
+    public enum ResponseCode {
+      SUCCESS,
+      CONDITION_EXISTS
+    }
+  }
+
+  /**
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
+   * <p>
+   * <ul>
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
+   * </ul>
+   *
+   * @param variableLevels a list containing at least one value for a variable defined in this
+   *                       experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   */
+  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
+    variableLevels.forEach(Objects::requireNonNull);
+    if (variableLevels.isEmpty()) {
+      throw new IllegalArgumentException("at least one variable level is required");
+    }
+
+    for (VariableLevel level : variableLevels) {
+      if (!isVariableDefined(level.variableName().value())) {
+        throw new IllegalArgumentException(
+            "There is no variable " + level.variableName().value() + " in this experiment.");
+      }
+    }
+
+    Condition condition = Condition.create(variableLevels);
+    if (isConditionDefined(condition)) {
+      return new AddExperimentalGroupResponse(ResponseCode.CONDITION_EXISTS);
+    }
+    experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
+    return new AddExperimentalGroupResponse(ResponseCode.SUCCESS);
+  }
+
+  public Set<ExperimentalGroup> getExperimentalGroups() {
+    return Collections.unmodifiableSet(experimentalGroups);
   }
 }
