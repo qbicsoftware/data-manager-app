@@ -16,6 +16,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Bottom;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationLayout;
@@ -45,7 +47,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
-
     initLayout();
     styleLayout();
     viewHandler = loginHandlerInterface;
@@ -58,6 +59,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     createLoginForm();
     this.registrationSection = initRegistrationSection();
     title = new H2("Log in");
+    //Marginsof H2 Element has changed from Vaadin 23 to Vaadin 24
+    title.addClassName(Bottom.MEDIUM);
+    title.addClassName(Top.XLARGE);
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     add(contentLayout);
   }
