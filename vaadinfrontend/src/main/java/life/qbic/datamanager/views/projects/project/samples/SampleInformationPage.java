@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.board.Board;
+import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -8,6 +9,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -25,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?/samples", layout = ProjectViewPage.class)
 @SpringComponent
 @UIScope
-@CssImport("./styles/views/project/project-view.css")
 @PermitAll
 public class SampleInformationPage extends Div {
 
@@ -34,14 +35,31 @@ public class SampleInformationPage extends Div {
   private static final Logger log = LoggerFactory.logger(SampleInformationPage.class);
   private final transient SampleInformationPageHandler sampleInformationPageHandler;
 
-  public SampleInformationPage(@Autowired SampleOverviewComponent sampleOverviewComponent) {
+  public SampleInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired SampleOverviewComponent sampleOverviewComponent) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleOverviewComponent);
-    add(sampleOverviewComponent);
-    sampleInformationPageHandler = new SampleInformationPageHandler(sampleOverviewComponent);
-    setComponentStyles(sampleOverviewComponent);
+    setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
+    sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent, sampleOverviewComponent);
     log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with Sample Overview Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(sampleOverviewComponent)));
+        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(sampleOverviewComponent)));
+  }
+
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent, SampleOverviewComponent sampleOverviewComponent) {
+    Board board = new Board();
+
+    Row topRow = new Row();
+    topRow.add(projectNavigationBarComponent, 3);
+    topRow.add(new Div());
+
+    Row secondRow = new Row();
+    secondRow.add(sampleOverviewComponent, 4);
+
+    board.add(topRow, secondRow);
+
+    board.setSizeFull();
+
+    add(board);
   }
 
   public void projectId(ProjectId projectId) {
@@ -54,13 +72,16 @@ public class SampleInformationPage extends Div {
 
   private final class SampleInformationPageHandler {
 
+    ProjectNavigationBarComponent projectNavigationBarComponent;
     SampleOverviewComponent sampleOverviewComponent;
 
-    public SampleInformationPageHandler(SampleOverviewComponent sampleOverviewComponent) {
+    public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent, SampleOverviewComponent sampleOverviewComponent) {
       this.sampleOverviewComponent = sampleOverviewComponent;
+      this.projectNavigationBarComponent = projectNavigationBarComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
+      projectNavigationBarComponent.projectId(projectId);
       sampleOverviewComponent.projectId(projectId);
     }
   }

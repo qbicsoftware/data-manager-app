@@ -9,9 +9,9 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -78,19 +78,6 @@ public class Experiment {
    */
   public String getName() {
     return name;
-  }
-
-  /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, or level creation failed, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  public Optional<VariableLevel> getLevel(String variableName,
-      ExperimentalValue value) {
-    return experimentalDesign.getLevel(variableName, value);
   }
 
   /**
@@ -226,8 +213,8 @@ public class Experiment {
   }
 
   /**
-   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
-   * and adds it to the experimental design.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
    * <p>
    * <ul>
    *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
@@ -236,10 +223,12 @@ public class Experiment {
    * </ul>
    *
    * @param variableLevels at least one value for a variable defined in this experiment
-   * @param sampleSize the number of samples that are expected for this experimental group
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   * @return
    */
-  public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
-    experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
+  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
+    return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 
   public Set<ExperimentalGroup> getExperimentalGroups() {

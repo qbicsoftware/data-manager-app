@@ -5,6 +5,7 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
  * <b>Experimental Value</b>
@@ -72,11 +73,19 @@ public class ExperimentalValue {
       return false;
     }
     ExperimentalValue that = (ExperimentalValue) o;
-      return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
-    }
+    return Objects.equals(value, that.value) && Objects.equals(unit, that.unit);
+  }
 
   @Override
   public int hashCode() {
     return Objects.hash(value, unit);
-    }
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", ExperimentalValue.class.getSimpleName() + "[", "]")
+        .add("value='" + value + "'")
+        .add("unit='" + unit + "'")
+        .toString();
+  }
 }

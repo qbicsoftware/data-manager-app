@@ -1,7 +1,10 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
+import com.vaadin.flow.component.board.Board;
+import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -11,6 +14,9 @@ import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
+import life.qbic.datamanager.views.projects.project.info.ProjectDetailsComponent;
+import life.qbic.datamanager.views.projects.project.info.ProjectLinksComponent;
+import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -29,8 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
 @PermitAll
-//ToDo Move CSS into own class
-@CssImport("./styles/views/project/project-view.css")
 public class ExperimentInformationPage extends Div implements RouterLayout {
 
   @Serial
@@ -38,19 +42,37 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
 
-  public ExperimentInformationPage(@Autowired ExperimentDetailsComponent experimentDetailsComponent,
+  public ExperimentInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ExperimentDetailsComponent experimentDetailsComponent,
       @Autowired ExperimentListComponent experimentListComponent) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
-    add(experimentDetailsComponent);
-    add(experimentListComponent);
-    setComponentStyles(experimentDetailsComponent, experimentListComponent);
-    experimentInformationPageHandler = new ExperimentInformationPageHandler(
+    setupBoard(projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
+    experimentInformationPageHandler = new ExperimentInformationPageHandler(projectNavigationBarComponent,
         experimentDetailsComponent, experimentListComponent);
     log.debug(String.format(
-        "\"New instance for Experiment Information page (#%s) created with Experiment Details Component (#%s) and Experiment List Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(experimentDetailsComponent),
+        "\"New instance for Experiment Information page (#%s) created with Project Navigation Bar Component (#%s) and Experiment Details Component (#%s) and Experiment List Component (#%s)",
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(experimentDetailsComponent),
         System.identityHashCode(experimentListComponent)));
+  }
+
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent, ExperimentDetailsComponent experimentDetailsComponent, ExperimentListComponent experimentListComponent) {
+    Board board = new Board();
+
+    Row rootRow = new Row();
+
+    VerticalLayout mainComponents = new VerticalLayout();
+    mainComponents.setPadding(false);
+    mainComponents.add(projectNavigationBarComponent, experimentDetailsComponent);
+
+    rootRow.add(mainComponents, 3);
+    rootRow.add(experimentListComponent, 1);
+
+    board.add(rootRow);
+
+    board.setSizeFull();
+
+    add(board);
   }
 
   public void projectId(ProjectId projectId) {
@@ -65,16 +87,19 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
 
   private final class ExperimentInformationPageHandler {
 
+    private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ExperimentDetailsComponent experimentDetailsComponent;
     private final ExperimentListComponent experimentListComponent;
 
-    public ExperimentInformationPageHandler(ExperimentDetailsComponent experimentDetailsComponent,
+    public ExperimentInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent, ExperimentDetailsComponent experimentDetailsComponent,
         ExperimentListComponent experimentListComponent) {
+      this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.experimentDetailsComponent = experimentDetailsComponent;
       this.experimentListComponent = experimentListComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
+      projectNavigationBarComponent.projectId(projectId);
       experimentDetailsComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
     }
