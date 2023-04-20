@@ -28,7 +28,6 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
@@ -68,7 +67,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
   private CardLayout blockingVariableCard;
   private ExperimentalVariableCard experimentalVariableCard;
   private Button addBlockingVariableButton;
-
   private final AddVariablesDialog addVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
 
@@ -84,8 +82,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     this.handler = new Handler(projectInformationService, experimentInformationService);
   }
 
-  public void projectId(ProjectId projectId) {
-    this.handler.setProjectId(projectId);
+  public void experimentId(ExperimentId experimentId) {
+    this.handler.setExperimentId(experimentId);
   }
 
   private void initTopLayout() {
@@ -204,11 +202,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
     }
 
-    public void setProjectId(ProjectId projectId) {
-      projectInformationService.find(projectId)
-          .ifPresent(this::getActiveExperimentFromProject);
-    }
-
     private void addCloseListenerForAddVariableDialog() {
       addVariablesDialog.addOpenedChangeListener(it -> {
         if (!it.isOpened()) {
@@ -217,9 +210,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       });
     }
 
-    private void getActiveExperimentFromProject(Project project) {
-      experimentInformationService.find(project.activeExperiment())
-          .ifPresent(this::loadExperimentInformation);
+    private void setExperimentId(ExperimentId experimentId) {
+      experimentInformationService.find(experimentId).ifPresent(this::loadExperimentInformation);
     }
 
     private void fillExperimentalGroupDialog() {
@@ -227,8 +219,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
       List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream())
-          .toList();
+          .flatMap(variable -> variable.levels().stream()).toList();
       experimentalGroupsDialog.setLevels(levels);
     }
 
