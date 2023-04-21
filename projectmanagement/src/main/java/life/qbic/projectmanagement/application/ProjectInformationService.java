@@ -67,7 +67,7 @@ public class ProjectInformationService {
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
-    log.debug("Search for project with id: " + projectId);
+    log.debug("Search for project with id: " + projectId.value());
     return projectRepository.find(projectId).orElseThrow(() -> new ProjectManagementException(
             "Project with id" + projectId + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db

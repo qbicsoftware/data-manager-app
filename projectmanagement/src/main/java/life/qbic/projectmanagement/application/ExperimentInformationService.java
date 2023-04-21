@@ -40,14 +40,15 @@ public class ExperimentInformationService {
 
   public Optional<Experiment> find(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
-    log.debug("Search for experiment with id: " + experimentId);
+    log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     return experimentRepository.find(experimentId).orElseThrow(
-        () -> new ProjectManagementException("The active experiment does not exist anymore.")
+        () -> new ProjectManagementException(
+            "Experiment with id" + experimentId.value() + "does not exit anymore")
         // should never happen; indicates dirty removal of experiment from db
     );
   }

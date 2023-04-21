@@ -7,6 +7,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -140,10 +142,12 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
 
     public void rerouteToActiveExperiment(BeforeEnterEvent beforeEnterEvent) {
       ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject();
-      log.debug(String.format(
-          "Rerouting to active experiment %s of project %s",
-          activeExperimentId.value(), projectId));
-      //ToDo determine on how to reroute to active experiment Id.
+      log.debug(String.format("Rerouting to active experiment %s of project %s",
+          activeExperimentId.value(), projectId.value()));
+      RouteParam experimentIdParam = new RouteParam("experimentId", activeExperimentId.value());
+      RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
+      RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
+      beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
     }
   }
 
