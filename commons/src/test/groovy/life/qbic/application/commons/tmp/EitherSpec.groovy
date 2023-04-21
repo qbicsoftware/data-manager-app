@@ -10,7 +10,7 @@ import spock.lang.Specification
  *
  * @since <version tag>
  */
-class EitherTest extends Specification {
+class EitherSpec extends Specification {
     def "construct from value"() {
         when:
         var result = Either.fromValue(5)

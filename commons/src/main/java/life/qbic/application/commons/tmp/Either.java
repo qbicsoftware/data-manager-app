@@ -70,6 +70,10 @@ public abstract class Either<V, E> {
       this.value = value;
     }
 
+    private V get() {
+      return value;
+    }
+
     @Override
     Either<V, E> onValue(Consumer<V> consumer) {
       consumer.accept(value);
@@ -93,7 +97,7 @@ public abstract class Either<V, E> {
 
     @Override
     <U> Either<U, E> transformValue(Function<V, U> transform) {
-      return null;
+      return Either.<U, E>fromValue(transform.apply(value));
     }
 
     @Override
@@ -108,6 +112,10 @@ public abstract class Either<V, E> {
 
     private Error(E error) {
       this.error = error;
+    }
+
+    private E get() {
+      return error;
     }
 
     @Override
@@ -133,7 +141,7 @@ public abstract class Either<V, E> {
 
     @Override
     <U> Either<U, E> transformValue(Function<V, U> transform) {
-      return null;
+      return Either.<U, E>fromError(error);
     }
 
     @Override

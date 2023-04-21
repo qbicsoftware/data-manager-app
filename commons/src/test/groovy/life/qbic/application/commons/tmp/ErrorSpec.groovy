@@ -3,6 +3,7 @@ package life.qbic.application.commons.tmp
 import spock.lang.Specification
 
 import java.util.function.Consumer
+import java.util.function.Function
 
 /**
  * TODO!
@@ -12,41 +13,46 @@ import java.util.function.Consumer
  *
  * @since <version tag>
  */
-class ErrorTest extends Specification {
-    static Either<Integer, String> error = Either.fromError("Oh no, an error!")
+class ErrorSpec extends Specification {
+    static Either<Integer, String> errorObject = Either.fromError("Oh no, an error!")
 
     def "on value returns this"() {
         given:
         Consumer<Integer> consumer = Mock()
         when:
-        def result = error.onValue(consumer)
+        def result = errorObject.onValue(consumer)
         then:
         0 * consumer.accept(_)
-        result.is(error)
+        result.is(errorObject)
     }
 
     def "on error calls the consumer"() {
         given:
         Consumer<String> consumer = Mock()
         when:
-        def result = error.onError(consumer)
+        def result = errorObject.onError(consumer)
         then:
         1 * consumer.accept(_)
-        result.is(error)
+        result.is(errorObject)
     }
 
     def "is value returns false"() {
         expect:
-        !error.isValue()
+        !errorObject.isValue()
     }
 
     def "is error returns true"() {
         expect:
-        error.isError()
+        errorObject.isError()
     }
 
     def "transform value returns an either with unchanged value"() {
-
+        given:
+        Function<Integer, Long> function = (Integer it) -> (long) it;
+        when:
+        var result = errorObject.transformValue(function)
+        then:
+        result.get() == errorObject.get()
     }
 
     def "transform error returns an either with transformed error"() {
