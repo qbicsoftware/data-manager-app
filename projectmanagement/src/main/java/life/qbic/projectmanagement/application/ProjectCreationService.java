@@ -49,29 +49,25 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
-      String experimentalDesign, String sourceOffer, PersonReference projectManager,
+  public Result<Project, ApplicationException> createProject(String sourceOffer, String code,
+      String title, String objective, String experimentName, String experimentalDesign,
+      List<Species> speciesList, List<Specimen> specimenList, List<Analyte> analyteList,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
-      List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
+      PersonReference projectManager) {
 
     try {
-      Project project = createProject(code, title, objective, experimentalDesign,
-          projectManager, principalInvestigator, responsiblePerson);
+      Project project = createProject(code, title, objective, experimentalDesign, projectManager,
+          principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      addExperimentToProjectService.addExperimentToProject(project.getId(),
-              "Experiment 0",
-              analyteList,
-              speciesList,
-              specimenList)
-          .ifFailure(e ->
-          {
-            projectRepository.deleteByProjectCode(project.getProjectCode());
-            throw new ProjectManagementException(
-                "failed to add experiment to project " + project.getId(), e);
-          });
+      addExperimentToProjectService.addExperimentToProject(project.getId(), experimentName,
+          analyteList, speciesList, specimenList).ifFailure(e -> {
+        projectRepository.deleteByProjectCode(project.getProjectCode());
+        throw new ProjectManagementException(
+            "failed to add experiment to project " + project.getId(), e);
+      });
       return Result.success(project);
     } catch (ProjectManagementException projectManagementException) {
       return Result.failure(projectManagementException);
@@ -81,23 +77,9 @@ public class ProjectCreationService {
     }
   }
 
-  private ProjectCode createRandomCode() {
-    ProjectCode code = ProjectCode.random();
-    while (!projectRepository.find(code).isEmpty()) {
-      log.warn(String.format("Random generated code exists: %s", code.value()));
-      code = ProjectCode.random();
-    }
-    log.info(String.format("Created new random project code '%s'", code.value()));
-    return code;
-  }
-
-  private Project createProject(String code,
-      String title,
-      String objective,
-      String experimentalDesign,
-      PersonReference projectManager,
-      PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+  private Project createProject(String code, String title, String objective,
+      String experimentalDesign, PersonReference projectManager,
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {
@@ -114,8 +96,7 @@ public class ProjectCreationService {
       projectCode = ProjectCode.parse(code);
       if (!projectRepository.find(projectCode).isEmpty()) {
         throw new ProjectManagementException("Project code: " + code + " is already in use.",
-            ErrorCode.DUPLICATE_PROJECT_CODE,
-            ErrorParameters.of(code));
+            ErrorCode.DUPLICATE_PROJECT_CODE, ErrorParameters.of(code));
       }
     } catch (IllegalArgumentException exception) {
       throw new ProjectManagementException("Project code: " + code + " is invalid.", exception,
@@ -131,10 +112,8 @@ public class ProjectCreationService {
     try {
       projectTitle = ProjectTitle.of(title);
     } catch (RuntimeException e) {
-      throw new ProjectManagementException(
-          "could not get project intent from title " + title, e,
-          ErrorCode.INVALID_PROJECT_TITLE,
-          ErrorParameters.of(ProjectTitle.maxLength(), title));
+      throw new ProjectManagementException("could not get project intent from title " + title, e,
+          ErrorCode.INVALID_PROJECT_TITLE, ErrorParameters.of(ProjectTitle.maxLength(), title));
     }
 
     ProjectObjective projectObjective;
@@ -143,8 +122,7 @@ public class ProjectCreationService {
     } catch (RuntimeException e) {
       throw new ProjectManagementException(
           "could not get project intent from objective " + objective, e,
-          ErrorCode.INVALID_PROJECT_OBJECTIVE,
-          ErrorParameters.of(objective));
+          ErrorCode.INVALID_PROJECT_OBJECTIVE, ErrorParameters.of(objective));
     }
 
     return ProjectIntent.of(projectTitle, projectObjective);

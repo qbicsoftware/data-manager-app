@@ -6,8 +6,8 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
-public record ProjectCreationContent(String projectCode, String offerId, String title,
-                                     String objective, List<Species> species,
+public record ProjectCreationContent(String offerId, String projectCode, String title,
+                                     String objective, String experimentName, List<Species> species,
                                      List<Specimen> specimen, List<Analyte> analyte,
                                      String experimentalDesignDescription,
                                      PersonReference principalInvestigator,

@@ -52,7 +52,10 @@ public class AddExperimentToProjectService {
       List<Specimen> specimens) {
     try {
       requireNonNull(projectId, "project id must not be null during experiment creation");
-      requireNonNull(experimentName, "experiment name must not be null during experiment creation");
+      if (experimentName.isBlank()) {
+        //ToDo Add Iterator for multiple experiments?
+        experimentName = "Unnamed Experiment";
+      }
       if (CollectionUtils.isEmpty(analytes)) {
         throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
             ErrorParameters.of(analytes));
