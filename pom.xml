@@ -127,6 +127,12 @@
         <version>2.4-M1-groovy-4.0</version>
         <scope>test</scope>
       </dependency>
+      <!--If not specified, the 2.7.6 spring-boot-starter-parent dependency will introduce transitively the 1.30 version of snakeyaml, for which a multitude of security concerns are reported -->
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>2.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>
