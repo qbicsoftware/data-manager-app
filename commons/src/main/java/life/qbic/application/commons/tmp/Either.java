@@ -41,9 +41,7 @@ public abstract class Either<V, E> {
 
   abstract <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper);
 
-  <U> Either<U, E> recover(Function<E, U> recovery) {
-    return null;
-  }
+  abstract Either<V, E> recover(Function<E, V> recovery);
 
   public V valueOrElse(V other) {
     return null;
@@ -113,6 +111,11 @@ public abstract class Either<V, E> {
     @Override
     <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
       return valueMapper.apply(value);
+    }
+
+    @Override
+    Either<V, E> recover(Function<E, V> recovery) {
+      return this;
     }
 
     @Override
@@ -192,6 +195,12 @@ public abstract class Either<V, E> {
     @Override
     <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
       return errorMapper.apply(error);
+    }
+
+    @Override
+    Either<V, E> recover(Function<E, V> recovery) {
+      V recoveredValue = recovery.apply(error);
+      return Either.<V, E>fromValue(recoveredValue);
     }
 
     @Override

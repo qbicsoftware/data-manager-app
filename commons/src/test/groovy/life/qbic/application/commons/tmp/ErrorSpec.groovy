@@ -107,4 +107,14 @@ class ErrorSpec extends Specification {
                 error -> 0
         )
     }
+
+    def "recover returns an either with mapped value object"() {
+        given:
+        Function<String, Integer> function = it -> it.length()
+        when:
+        var result = errorObject.recover(function)
+        then:
+        result.isValue()
+        result.get() == function.apply(errorObject.get())
+    }
 }

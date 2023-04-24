@@ -109,4 +109,9 @@ class ValueSpec extends Specification {
                 error -> 0
         )
     }
+
+    def "recover returns this"() {
+        expect:
+        valueObject == valueObject.recover(it -> "test")
+    }
 }
