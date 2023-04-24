@@ -5,6 +5,7 @@ import com.vaadin.flow.component.ClickNotifier;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H5;
+import com.vaadin.flow.component.html.H6;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
@@ -69,7 +70,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   private static ExperimentalGroupCard getExperimentalGroup(
       ExperimentalGroupDTO experimentalGroup) {
     Set<VariableLevel> variableLevels = experimentalGroup.levels();
-    return new ExperimentalGroupCard(variableLevels.toArray(VariableLevel[]::new));
+    return new ExperimentalGroupCard(experimentalGroup.sampleSize(), variableLevels.toArray(VariableLevel[]::new));
   }
 
   public record AddExperimentalGroupCommand() {
@@ -90,7 +91,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     private final static String CARD_HEIGHT = "200px";
 
 
-    public ExperimentalGroupCard(VariableLevel... variableLevels) {
+    public ExperimentalGroupCard(int sampleSize, VariableLevel... variableLevels) {
       H5 cardTitle = new H5();
       cardTitle.setText("Experimental Group");
       FlexLayout tagsContainer = new FlexLayout();
@@ -103,6 +104,9 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       getStyle().set("border", "1px solid gray");
       getStyle().set("margin", "5px 10px");
       fillWithVariableLevels(tagsContainer, variableLevels);
+      H6 sampleSizeText = new H6();
+      sampleSizeText.setText("Group size: "+sampleSize);
+      add(sampleSizeText);
     }
 
     private void fillWithVariableLevels(FlexLayout tagsContainer, VariableLevel[] variableLevels) {
