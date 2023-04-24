@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.domain.project;
 
+import jakarta.persistence.AttributeConverter;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Supplier;
-import javax.persistence.AttributeConverter;
 
 /**
  * QBiC Project Code
