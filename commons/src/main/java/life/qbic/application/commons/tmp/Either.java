@@ -34,13 +34,9 @@ public abstract class Either<V, E> {
 
   abstract <T> Either<V, T> transformError(Function<E, T> transform);
 
-  <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
-    return null;
-  }
+  abstract <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper);
 
-  <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-    return null;
-  }
+  abstract <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper);
 
   <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
     return null;
@@ -104,6 +100,16 @@ public abstract class Either<V, E> {
     <T> Either<V, T> transformError(Function<E, T> transform) {
       return Either.<V, T>fromValue(value);
     }
+
+    @Override
+    <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+      return null;
+    }
+
+    @Override
+    <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
+      return null;
+    }
   }
 
   private static class Error<V, E> extends Either<V, E> {
@@ -148,6 +154,16 @@ public abstract class Either<V, E> {
     <T> Either<V, T> transformError(Function<E, T> transform) {
       T transformed = transform.apply(error);
       return Either.<V, T>fromError(transformed);
+    }
+
+    @Override
+    <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+      return null;
+    }
+
+    @Override
+    <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
+      return null;
     }
   }
 }

@@ -63,4 +63,14 @@ class ErrorSpec extends Specification {
         then:
         result.get() == function.apply(errorObject.get())
     }
+
+    def "bind value returns an either with the same value"() {
+        expect:
+        false
+    }
+
+    def "bind error returns an either with the mapped error"() {
+        expect:
+        false
+    }
 }

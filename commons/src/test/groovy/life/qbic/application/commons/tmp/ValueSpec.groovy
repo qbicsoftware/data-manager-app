@@ -65,4 +65,14 @@ class ValueSpec extends Specification {
         then:
         result.get() == valueObject.get()
     }
+
+    def "bind value returns an either with the mapped value"() {
+        expect:
+        false
+    }
+
+    def "bind error returns an either with unchanged error"() {
+        expect:
+        false
+    }
 }
