@@ -1,6 +1,6 @@
 package life.qbic.authentication.domain.user.repository.jpa;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword;
 
 /**

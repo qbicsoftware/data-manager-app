@@ -45,7 +45,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
     this.addClassName("grid");
-
     initLayout();
     styleLayout();
     viewHandler = loginHandlerInterface;

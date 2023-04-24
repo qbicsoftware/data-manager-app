@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
+import jakarta.persistence.AttributeConverter;
 import java.util.Objects;
-import javax.persistence.AttributeConverter;
 
 /**
  * <b>Offer Id</b>

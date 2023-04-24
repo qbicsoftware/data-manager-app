@@ -8,14 +8,13 @@
     <version>0.14.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-
   <artifactId>database-connector</artifactId>
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>javax.persistence</groupId>
-        <artifactId>javax.persistence-api</artifactId>
-        <version>2.2</version>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <version>${jakarta.persistence.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -30,6 +29,30 @@
       <groupId>life.qbic</groupId>
       <artifactId>openbis-client-lib</artifactId>
       <version>1.5.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-all</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-sql</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-json</artifactId>
+        </exclusion>
+        <!--Spring Boot 3.0 removes SpringUtils method used in the 18.XX.XX openbis-api -->
+        <exclusion>
+          <groupId>life.qbic</groupId>
+          <artifactId>openbis-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-api</artifactId>
+      <version>19.06.5</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -49,8 +72,8 @@
       <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.persistence</groupId>
-      <artifactId>javax.persistence-api</artifactId>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
@@ -65,10 +88,4 @@
       <scope>compile</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-  </properties>
-
 </project>
