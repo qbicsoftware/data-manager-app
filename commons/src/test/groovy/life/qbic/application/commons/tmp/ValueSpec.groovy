@@ -53,7 +53,7 @@ class ValueSpec extends Specification {
         given:
         Function<String, Character[]> function = (String it) -> it.toCharArray()
         when:
-        var result = valueObject.transformValue(function)
+        var result = valueObject.map(function)
         then:
         result.get() == function.apply(valueObject.get())
     }
@@ -62,7 +62,7 @@ class ValueSpec extends Specification {
         given:
         Function<Integer, Short> function = (Integer it) -> it.shortValue()
         when:
-        var result = valueObject.transformError(function)
+        var result = valueObject.mapError(function)
         then:
         result.get() == valueObject.get()
     }
@@ -87,7 +87,7 @@ class ValueSpec extends Specification {
         given:
         Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromValue(it.length())
         when:
-        var result = valueObject.bindValue(mapper)
+        var result = valueObject.flatMap(mapper)
         then:
         result == mapper.apply(valueObject.get())
     }
@@ -96,7 +96,7 @@ class ValueSpec extends Specification {
         given:
         Function<Integer, Either<Integer, Integer>> mapper = (Integer it) -> Either.fromValue(5)
         when:
-        var result = valueObject.bindError(mapper)
+        var result = valueObject.flatMapError(mapper)
 
         then:
         result.get() == valueObject.get()

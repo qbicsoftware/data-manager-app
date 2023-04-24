@@ -51,7 +51,7 @@ class ErrorSpec extends Specification {
         given:
         Function<Integer, Long> function = (Integer it) -> (long) it
         when:
-        var result = errorObject.transformValue(function)
+        var result = errorObject.map(function)
         then:
         result.get() == errorObject.get()
     }
@@ -60,7 +60,7 @@ class ErrorSpec extends Specification {
         given:
         Function<String, Long> function = (String it) -> it.length()
         when:
-        var result = errorObject.transformError(function)
+        var result = errorObject.mapError(function)
         then:
         result.get() == function.apply(errorObject.get())
     }
@@ -85,7 +85,7 @@ class ErrorSpec extends Specification {
         given:
         Function<Integer, Either<String, Integer>> mapper = (Integer it) -> Either.fromValue("bla")
         when:
-        var result = errorObject.bindValue(mapper)
+        var result = errorObject.flatMap(mapper)
 
         then:
         result.get() == errorObject.get()
@@ -95,7 +95,7 @@ class ErrorSpec extends Specification {
         given:
         Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromError(it.length())
         when:
-        var result = errorObject.bindError(mapper)
+        var result = errorObject.flatMapError(mapper)
         then:
         result == mapper.apply(errorObject.get())
     }

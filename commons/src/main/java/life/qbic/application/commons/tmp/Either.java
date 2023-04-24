@@ -31,13 +31,13 @@ public abstract class Either<V, E> {
 
   public abstract boolean isError();
 
-  public abstract <U> Either<U, E> transformValue(Function<V, U> transform);
+  public abstract <U> Either<U, E> map(Function<V, U> transform);
 
-  public abstract <T> Either<V, T> transformError(Function<E, T> transform);
+  public abstract <T> Either<V, T> mapError(Function<E, T> transform);
 
-  public abstract <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper);
+  public abstract <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper);
 
-  public abstract <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper);
+  public abstract <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper);
 
   public abstract <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper);
 
@@ -83,22 +83,22 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public <U> Either<U, E> transformValue(Function<V, U> transform) {
+    public <U> Either<U, E> map(Function<V, U> transform) {
       return Either.fromValue(transform.apply(value));
     }
 
     @Override
-    public <T> Either<V, T> transformError(Function<E, T> transform) {
+    public <T> Either<V, T> mapError(Function<E, T> transform) {
       return Either.fromValue(value);
     }
 
     @Override
-    public <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+    public <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper) {
       return mapper.apply(value);
     }
 
     @Override
-    public <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
+    public <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper) {
       return Either.fromValue(value);
     }
 
@@ -181,23 +181,23 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public <U> Either<U, E> transformValue(Function<V, U> transform) {
+    public <U> Either<U, E> map(Function<V, U> transform) {
       return Either.fromError(error);
     }
 
     @Override
-    public <T> Either<V, T> transformError(Function<E, T> transform) {
+    public <T> Either<V, T> mapError(Function<E, T> transform) {
       T transformed = transform.apply(error);
       return Either.fromError(transformed);
     }
 
     @Override
-    public <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+    public <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper) {
       return Either.fromError(error);
     }
 
     @Override
-    public <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
+    public <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper) {
       return mapper.apply(error);
     }
 
