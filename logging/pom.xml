@@ -8,15 +8,7 @@
     <version>0.14.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-
   <artifactId>logging</artifactId>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <dependencyManagement>
     <dependencies>
       <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
@@ -33,7 +25,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>org.spockframework</groupId>

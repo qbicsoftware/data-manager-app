@@ -8,14 +8,13 @@
     <version>0.14.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-
   <artifactId>database-connector</artifactId>
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>jakarta.persistence</groupId>
         <artifactId>jakarta.persistence-api</artifactId>
-        <version>3.1.0</version>
+        <version>${jakarta.persistence.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -65,13 +64,6 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.groovy</groupId>
-      <artifactId>groovy-all</artifactId>
-      <version>4.0.11</version>
-      <type>pom</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-commons</artifactId>
     </dependency>
@@ -96,10 +88,4 @@
       <scope>compile</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-  </properties>
-
 </project>
