@@ -99,4 +99,12 @@ class ErrorSpec extends Specification {
         then:
         result == mapper.apply(errorObject.get())
     }
+
+    def "fold returns the mapped error"() {
+        expect:
+        0 == errorObject.fold(
+                value -> 42,
+                error -> 0
+        )
+    }
 }

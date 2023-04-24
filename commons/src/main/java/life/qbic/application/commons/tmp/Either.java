@@ -39,9 +39,7 @@ public abstract class Either<V, E> {
 
   abstract <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper);
 
-  <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
-    return null;
-  }
+  abstract <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper);
 
   <U> Either<U, E> recover(Function<E, U> recovery) {
     return null;
@@ -110,6 +108,11 @@ public abstract class Either<V, E> {
     @Override
     <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
       return Either.<V, T>fromValue(value);
+    }
+
+    @Override
+    <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
+      return valueMapper.apply(value);
     }
 
     @Override
@@ -184,6 +187,11 @@ public abstract class Either<V, E> {
     @Override
     <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
       return mapper.apply(error);
+    }
+
+    @Override
+    <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
+      return errorMapper.apply(error);
     }
 
     @Override

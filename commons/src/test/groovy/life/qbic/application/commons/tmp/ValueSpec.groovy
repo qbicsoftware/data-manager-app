@@ -101,4 +101,12 @@ class ValueSpec extends Specification {
         then:
         result.get() == valueObject.get()
     }
+
+    def "fold returns the mapped value"() {
+        expect:
+        42 == valueObject.fold(
+                value -> 42,
+                error -> 0
+        )
+    }
 }
