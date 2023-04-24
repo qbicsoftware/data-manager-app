@@ -1,6 +1,6 @@
 package life.qbic.application.commons.tmp
 
-import spock.lang.Ignore
+
 import spock.lang.Specification
 
 import java.util.function.Consumer
@@ -92,9 +92,13 @@ class ValueSpec extends Specification {
         result == mapper.apply(valueObject.get())
     }
 
-    @Ignore
     def "bind error returns an either with unchanged error"() {
-        expect:
-        false
+        given:
+        Function<Integer, Either<Integer, Integer>> mapper = (Integer it) -> Either.fromValue(5)
+        when:
+        var result = valueObject.bindError(mapper)
+
+        then:
+        result.get() == valueObject.get()
     }
 }

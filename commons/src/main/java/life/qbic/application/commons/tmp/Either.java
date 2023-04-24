@@ -109,7 +109,7 @@ public abstract class Either<V, E> {
 
     @Override
     <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-      return null;
+      return Either.<V, T>fromValue(value);
     }
 
     @Override
@@ -183,7 +183,7 @@ public abstract class Either<V, E> {
 
     @Override
     <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-      return null;
+      return mapper.apply(error);
     }
 
     @Override

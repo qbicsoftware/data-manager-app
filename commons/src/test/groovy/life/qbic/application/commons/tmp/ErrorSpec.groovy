@@ -1,6 +1,6 @@
 package life.qbic.application.commons.tmp
 
-import spock.lang.Ignore
+
 import spock.lang.Specification
 
 import java.util.function.Consumer
@@ -91,9 +91,12 @@ class ErrorSpec extends Specification {
         result.get() == errorObject.get()
     }
 
-    @Ignore
     def "bind error returns an either with the mapped error"() {
-        expect:
-        false
+        given:
+        Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromError(it.length())
+        when:
+        var result = errorObject.bindError(mapper)
+        then:
+        result == mapper.apply(errorObject.get())
     }
 }
