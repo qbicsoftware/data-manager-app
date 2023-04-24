@@ -12,6 +12,9 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,7 +126,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       add(cardTitle, tagsContainer);
       fillWithVariableLevels(tagsContainer, variableLevels);
       Span sampleSizeText = new Span("Group size: "+sampleSize);
-      sampleSizeText.addClassName("font-bold");
+      sampleSizeText.addClassNames(FontWeight.BOLD, FontSize.SMALL);
       add(sampleSizeText);
     }
 
