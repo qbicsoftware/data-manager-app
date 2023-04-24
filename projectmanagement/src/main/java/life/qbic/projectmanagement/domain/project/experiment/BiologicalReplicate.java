@@ -8,11 +8,9 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Represents a biological replicate as part of an {@link ExperimentalGroup}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity(name = "bio_replicate")
 public class BiologicalReplicate implements Serializable {
@@ -26,6 +24,7 @@ public class BiologicalReplicate implements Serializable {
 
     private BiologicalReplicate(String label) {
         this.label = label;
+        this.id = BiologicalReplicateId.create();
     }
 
     protected BiologicalReplicate() {
@@ -33,7 +32,7 @@ public class BiologicalReplicate implements Serializable {
     }
 
     public static BiologicalReplicate create(){
-        String randomLabel = "biol-rep-" + new Random().nextInt();
+        String randomLabel = "biol-rep-" + new Random().nextInt(Integer.MAX_VALUE);
         return new BiologicalReplicate(randomLabel);
     }
 

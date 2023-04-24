@@ -7,17 +7,14 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * A local identifier for a {@link BiologicalReplicate}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Embeddable
 public class BiologicalReplicateId implements Serializable {
     @Serial
     private static final long serialVersionUID = 3380429168282318636L;
-
     private Long id;
 
     protected BiologicalReplicateId() {
@@ -29,7 +26,7 @@ public class BiologicalReplicateId implements Serializable {
     }
 
     public static BiologicalReplicateId create() {
-        Long id = new Random().nextLong();
+        Long id = new Random().nextLong(Long.MAX_VALUE);
         return new BiologicalReplicateId(id);
     }
 
