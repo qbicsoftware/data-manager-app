@@ -122,4 +122,9 @@ class ErrorSpec extends Specification {
         expect:
         42 == errorObject.valueOrElse(42)
     }
+
+    def "valueOrElseGet returns the supplier's value"() {
+        expect:
+        42 == errorObject.valueOrElseGet(() -> 42)
+    }
 }

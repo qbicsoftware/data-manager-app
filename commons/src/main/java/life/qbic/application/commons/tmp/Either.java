@@ -45,9 +45,7 @@ public abstract class Either<V, E> {
 
   abstract public V valueOrElse(V other);
 
-  public V valueOrElseGet(Supplier<V> supplier) {
-    return null;
-  }
+  abstract public V valueOrElseGet(Supplier<V> supplier);
 
   public V valueOrElseThrow(Supplier<V> supplier) {
     return null;
@@ -118,6 +116,11 @@ public abstract class Either<V, E> {
 
     @Override
     public V valueOrElse(V other) {
+      return value;
+    }
+
+    @Override
+    public V valueOrElseGet(Supplier<V> supplier) {
       return value;
     }
 
@@ -209,6 +212,11 @@ public abstract class Either<V, E> {
     @Override
     public V valueOrElse(V other) {
       return other;
+    }
+
+    @Override
+    public V valueOrElseGet(Supplier<V> supplier) {
+      return supplier.get();
     }
 
     @Override

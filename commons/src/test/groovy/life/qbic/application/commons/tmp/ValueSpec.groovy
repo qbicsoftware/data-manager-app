@@ -115,8 +115,13 @@ class ValueSpec extends Specification {
         valueObject == valueObject.recover(it -> "test")
     }
 
-    def "valueOrElse retuns the value"() {
+    def "valueOrElse returns the value"() {
         expect:
         valueObject.get() == valueObject.valueOrElse("my other Value")
+    }
+
+    def "valueOrElseGet returns the value"() {
+        expect:
+        valueObject.get() == valueObject.valueOrElseGet(() -> "my other value")
     }
 }
