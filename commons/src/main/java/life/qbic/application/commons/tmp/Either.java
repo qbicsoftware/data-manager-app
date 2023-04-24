@@ -16,11 +16,11 @@ import java.util.function.Supplier;
 public abstract class Either<V, E> {
 
   static <V, E> Either<V, E> fromValue(V value) {
-    return new Value<V, E>(value);
+    return new Value<>(value);
   }
 
   static <V, E> Either<V, E> fromError(E error) {
-    return new Error<V, E>(error);
+    return new Error<>(error);
   }
 
   abstract Either<V, E> onValue(Consumer<V> consumer);
@@ -47,13 +47,11 @@ public abstract class Either<V, E> {
 
   abstract public V valueOrElseGet(Supplier<V> supplier);
 
-  public V valueOrElseThrow(Supplier<V> supplier) {
-    return null;
-  }
+  abstract public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier);
 
   private static class Value<V, E> extends Either<V, E> {
 
-    private V value;
+    private final V value;
 
     private Value(V value) {
       this.value = value;
@@ -86,12 +84,12 @@ public abstract class Either<V, E> {
 
     @Override
     <U> Either<U, E> transformValue(Function<V, U> transform) {
-      return Either.<U, E>fromValue(transform.apply(value));
+      return Either.fromValue(transform.apply(value));
     }
 
     @Override
     <T> Either<V, T> transformError(Function<E, T> transform) {
-      return Either.<V, T>fromValue(value);
+      return Either.fromValue(value);
     }
 
     @Override
@@ -101,7 +99,7 @@ public abstract class Either<V, E> {
 
     @Override
     <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-      return Either.<V, T>fromValue(value);
+      return Either.fromValue(value);
     }
 
     @Override
@@ -121,6 +119,11 @@ public abstract class Either<V, E> {
 
     @Override
     public V valueOrElseGet(Supplier<V> supplier) {
+      return value;
+    }
+
+    @Override
+    public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier) {
       return value;
     }
 
@@ -146,7 +149,7 @@ public abstract class Either<V, E> {
 
   private static class Error<V, E> extends Either<V, E> {
 
-    private E error;
+    private final E error;
 
     private Error(E error) {
       this.error = error;
@@ -179,18 +182,18 @@ public abstract class Either<V, E> {
 
     @Override
     <U> Either<U, E> transformValue(Function<V, U> transform) {
-      return Either.<U, E>fromError(error);
+      return Either.fromError(error);
     }
 
     @Override
     <T> Either<V, T> transformError(Function<E, T> transform) {
       T transformed = transform.apply(error);
-      return Either.<V, T>fromError(transformed);
+      return Either.fromError(transformed);
     }
 
     @Override
     <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
-      return Either.<U, E>fromError(error);
+      return Either.fromError(error);
     }
 
     @Override
@@ -206,7 +209,7 @@ public abstract class Either<V, E> {
     @Override
     Either<V, E> recover(Function<E, V> recovery) {
       V recoveredValue = recovery.apply(error);
-      return Either.<V, E>fromValue(recoveredValue);
+      return Either.fromValue(recoveredValue);
     }
 
     @Override
@@ -217,6 +220,11 @@ public abstract class Either<V, E> {
     @Override
     public V valueOrElseGet(Supplier<V> supplier) {
       return supplier.get();
+    }
+
+    @Override
+    public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier) {
+      throw supplier.get();
     }
 
     @Override

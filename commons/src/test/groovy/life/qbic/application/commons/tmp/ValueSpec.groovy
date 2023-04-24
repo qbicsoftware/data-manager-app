@@ -51,7 +51,7 @@ class ValueSpec extends Specification {
 
     def "transform value returns an either with transformed value"() {
         given:
-        Function<String, Character[]> function = (String it) -> it.toCharArray();
+        Function<String, Character[]> function = (String it) -> it.toCharArray()
         when:
         var result = valueObject.transformValue(function)
         then:
@@ -60,7 +60,7 @@ class ValueSpec extends Specification {
 
     def "transform error returns an either with unchanged error"() {
         given:
-        Function<Integer, Short> function = (Integer it) -> it.shortValue();
+        Function<Integer, Short> function = (Integer it) -> it.shortValue()
         when:
         var result = valueObject.transformError(function)
         then:
@@ -123,5 +123,10 @@ class ValueSpec extends Specification {
     def "valueOrElseGet returns the value"() {
         expect:
         valueObject.get() == valueObject.valueOrElseGet(() -> "my other value")
+    }
+
+    def "valueOrElseThrow returns the value"() {
+        expect:
+        valueObject.get() == valueObject.valueOrElseThrow(() -> new RuntimeException("Oha! No value!"))
     }
 }

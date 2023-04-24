@@ -49,7 +49,7 @@ class ErrorSpec extends Specification {
 
     def "transform value returns an either with unchanged value"() {
         given:
-        Function<Integer, Long> function = (Integer it) -> (long) it;
+        Function<Integer, Long> function = (Integer it) -> (long) it
         when:
         var result = errorObject.transformValue(function)
         then:
@@ -58,7 +58,7 @@ class ErrorSpec extends Specification {
 
     def "transform error returns an either with transformed error"() {
         given:
-        Function<String, Long> function = (String it) -> it.length();
+        Function<String, Long> function = (String it) -> it.length()
         when:
         var result = errorObject.transformError(function)
         then:
@@ -126,5 +126,15 @@ class ErrorSpec extends Specification {
     def "valueOrElseGet returns the supplier's value"() {
         expect:
         42 == errorObject.valueOrElseGet(() -> 42)
+    }
+
+    def "valueOrElseThrow throws the supplied throwable"() {
+        given:
+        RuntimeException expectedException = new RuntimeException("Oha! No value!")
+        when:
+        errorObject.valueOrElseThrow(() -> expectedException)
+        then:
+        def e = thrown(RuntimeException)
+        e == expectedException
     }
 }
