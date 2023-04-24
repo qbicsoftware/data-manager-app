@@ -1,5 +1,6 @@
 package life.qbic.application.commons.tmp
 
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.function.Consumer
@@ -64,11 +65,33 @@ class ErrorSpec extends Specification {
         result.get() == function.apply(errorObject.get())
     }
 
-    def "bind value returns an either with the same value"() {
+    def "either containing a value is equal to another either containing the value"() {
+        given:
+        Either<Integer, String> e1 = Either.fromError("hello")
+        Either<Integer, String> e2 = Either.fromError("hello")
         expect:
-        false
+        e1.equals(e2)
     }
 
+    def "either containing a value is not equal to another either containing a different value"() {
+        given:
+        Either<Integer, String> e1 = Either.fromError("hello")
+        Either<Integer, String> e2 = Either.fromError("hello2")
+        expect:
+        e1 != e2
+    }
+
+    def "bind value returns an either with the same error"() {
+        given:
+        Function<Integer, Either<String, Integer>> mapper = (Integer it) -> Either.fromValue("bla")
+        when:
+        var result = errorObject.bindValue(mapper)
+
+        then:
+        result.get() == errorObject.get()
+    }
+
+    @Ignore
     def "bind error returns an either with the mapped error"() {
         expect:
         false

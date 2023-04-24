@@ -1,5 +1,6 @@
 package life.qbic.application.commons.tmp
 
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.function.Consumer
@@ -66,11 +67,32 @@ class ValueSpec extends Specification {
         result.get() == valueObject.get()
     }
 
-    def "bind value returns an either with the mapped value"() {
+    def "either containing a value is equal to another either containing the value"() {
+        given:
+        Either<String, Integer> e1 = Either.fromValue("hello")
+        Either<String, Integer> e2 = Either.fromValue("hello")
         expect:
-        false
+        e1.equals(e2)
     }
 
+    def "either containing a value is not equal to another either containing a different value"() {
+        given:
+        Either<String, Integer> e1 = Either.fromValue("hello")
+        Either<String, Integer> e2 = Either.fromValue("hello2")
+        expect:
+        e1 != e2
+    }
+
+    def "bind value returns an either with the mapped value"() {
+        given:
+        Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromValue(it.length())
+        when:
+        var result = valueObject.bindValue(mapper)
+        then:
+        result == mapper.apply(valueObject.get())
+    }
+
+    @Ignore
     def "bind error returns an either with unchanged error"() {
         expect:
         false

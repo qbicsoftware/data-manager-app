@@ -1,5 +1,6 @@
 package life.qbic.application.commons.tmp;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -34,9 +35,9 @@ public abstract class Either<V, E> {
 
   abstract <T> Either<V, T> transformError(Function<E, T> transform);
 
-  abstract <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper);
+  abstract <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper);
 
-  abstract <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper);
+  abstract <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper);
 
   <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
     return null;
@@ -102,13 +103,32 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+    <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+      return mapper.apply(value);
+    }
+
+    @Override
+    <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
       return null;
     }
 
     @Override
-    <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-      return null;
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      Value<?, ?> value1 = (Value<?, ?>) o;
+
+      return Objects.equals(value, value1.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return value != null ? value.hashCode() : 0;
     }
   }
 
@@ -157,13 +177,32 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    <U extends V> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+    <U> Either<U, E> bindValue(Function<V, Either<U, E>> mapper) {
+      return Either.<U, E>fromError(error);
+    }
+
+    @Override
+    <T> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
       return null;
     }
 
     @Override
-    <T extends E> Either<V, T> bindError(Function<E, Either<V, T>> mapper) {
-      return null;
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      Error<?, ?> error1 = (Error<?, ?>) o;
+
+      return Objects.equals(error, error1.error);
+    }
+
+    @Override
+    public int hashCode() {
+      return error != null ? error.hashCode() : 0;
     }
   }
 }
