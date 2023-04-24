@@ -53,12 +53,12 @@ public class AddExperimentToProjectService {
       List<Species> species,
       List<Specimen> specimens) {
 
-      requireNonNull(projectId, "project id must not be null during experiment creation");
-      requireNonNull(experimentName, "experiment name must not be null during experiment creation");
-      if (CollectionUtils.isEmpty(analytes)) {
-        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
-            ErrorParameters.of(analytes));
-      }
+    requireNonNull(projectId, "project id must not be null during experiment creation");
+    requireNonNull(experimentName, "experiment name must not be null during experiment creation");
+    if (CollectionUtils.isEmpty(analytes)) {
+      throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+          ErrorParameters.of(analytes));
+    }
     if (CollectionUtils.isEmpty(species)) {
       throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
