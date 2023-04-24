@@ -117,4 +117,9 @@ class ErrorSpec extends Specification {
         result.isValue()
         result.get() == function.apply(errorObject.get())
     }
+
+    def "valueOrElse returns else"() {
+        expect:
+        42 == errorObject.valueOrElse(42)
+    }
 }

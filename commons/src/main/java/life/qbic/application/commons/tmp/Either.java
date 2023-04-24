@@ -43,9 +43,7 @@ public abstract class Either<V, E> {
 
   abstract Either<V, E> recover(Function<E, V> recovery);
 
-  public V valueOrElse(V other) {
-    return null;
-  }
+  abstract public V valueOrElse(V other);
 
   public V valueOrElseGet(Supplier<V> supplier) {
     return null;
@@ -116,6 +114,11 @@ public abstract class Either<V, E> {
     @Override
     Either<V, E> recover(Function<E, V> recovery) {
       return this;
+    }
+
+    @Override
+    public V valueOrElse(V other) {
+      return value;
     }
 
     @Override
@@ -201,6 +204,11 @@ public abstract class Either<V, E> {
     Either<V, E> recover(Function<E, V> recovery) {
       V recoveredValue = recovery.apply(error);
       return Either.<V, E>fromValue(recoveredValue);
+    }
+
+    @Override
+    public V valueOrElse(V other) {
+      return other;
     }
 
     @Override
