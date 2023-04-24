@@ -102,7 +102,7 @@ public abstract class Either<V, E> {
 
     @Override
     <T> Either<V, T> transformError(Function<E, T> transform) {
-      return null;
+      return Either.<V, T>fromValue(value);
     }
   }
 
@@ -146,7 +146,8 @@ public abstract class Either<V, E> {
 
     @Override
     <T> Either<V, T> transformError(Function<E, T> transform) {
-      return null;
+      T transformed = transform.apply(error);
+      return Either.<V, T>fromError(transformed);
     }
   }
 }

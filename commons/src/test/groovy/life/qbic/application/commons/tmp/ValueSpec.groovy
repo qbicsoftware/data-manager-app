@@ -58,6 +58,11 @@ class ValueSpec extends Specification {
     }
 
     def "transform error returns an either with unchanged error"() {
-
+        given:
+        Function<Integer, Short> function = (Integer it) -> it.shortValue();
+        when:
+        var result = valueObject.transformError(function)
+        then:
+        result.get() == valueObject.get()
     }
 }

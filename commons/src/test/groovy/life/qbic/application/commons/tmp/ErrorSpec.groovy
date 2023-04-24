@@ -56,6 +56,11 @@ class ErrorSpec extends Specification {
     }
 
     def "transform error returns an either with transformed error"() {
-
+        given:
+        Function<String, Long> function = (String it) -> it.length();
+        when:
+        var result = errorObject.transformError(function)
+        then:
+        result.get() == function.apply(errorObject.get())
     }
 }
