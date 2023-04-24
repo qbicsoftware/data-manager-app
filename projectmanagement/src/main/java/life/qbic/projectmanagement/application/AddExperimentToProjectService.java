@@ -3,9 +3,11 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.application.commons.tmp.Either;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -50,39 +52,40 @@ public class AddExperimentToProjectService {
       List<Analyte> analytes,
       List<Species> species,
       List<Specimen> specimens) {
-    try {
+
       requireNonNull(projectId, "project id must not be null during experiment creation");
       requireNonNull(experimentName, "experiment name must not be null during experiment creation");
       if (CollectionUtils.isEmpty(analytes)) {
         throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
             ErrorParameters.of(analytes));
       }
-      if (CollectionUtils.isEmpty(species)) {
-        throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
-            ErrorParameters.of(species));
-      }
-      if (CollectionUtils.isEmpty(specimens)) {
-        throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
-            ErrorParameters.of(specimens));
-      }
-      Project project = projectRepository.find(projectId)
-          .orElseThrow(ProjectNotFoundException::new);
-      Experiment experiment = Experiment.create(experimentName);
-      experiment.addAnalytes(analytes);
-      experiment.addSpecies(species);
-      experiment.addSpecimens(specimens);
-      project.addExperiment(experiment);
-      projectRepository.update(project);
-      return Result.success(experiment.experimentId());
-    } catch (RuntimeException e) {
-      return Result.failure(ProjectManagementException.wrapping(
-          "could not add experiment to project: " + e.getMessage(),
-          e));
-    } catch (Exception e) {
-      return Result.failure(
-          ProjectManagementException.wrapping("checked exception during add experiment to project",
-              e));
+    if (CollectionUtils.isEmpty(species)) {
+      throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
+          ErrorParameters.of(species));
     }
+    if (CollectionUtils.isEmpty(specimens)) {
+      throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
+          ErrorParameters.of(specimens));
+    }
+
+    Optional<Project> optionalProject = projectRepository.find(projectId);
+    if (optionalProject.isEmpty()) {
+      return Result.failure(new ProjectNotFoundException());
+    }
+    Project project = optionalProject.get();
+
+    Either<ExperimentId, RuntimeException> either = Either.<Experiment, RuntimeException>fromValue(
+            Experiment.create(experimentName))
+        .onValue(exp -> exp.addAnalytes(analytes))
+        .onValue(exp -> exp.addSpecies(species))
+        .onValue(exp -> exp.addSpecimens(specimens))
+        .onValue(experiment -> {
+          project.addExperiment(experiment);
+          projectRepository.update(project);
+        })
+        .map(Experiment::experimentId);
+
+    return either.fold(Result::success, Result::failure);
   }
 
 }
