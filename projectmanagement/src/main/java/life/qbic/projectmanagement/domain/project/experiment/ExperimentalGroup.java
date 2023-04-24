@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * <b>Experimental Group</b>
@@ -24,9 +24,22 @@ public class ExperimentalGroup {
   @GeneratedValue
   private Long experimentalGroupId;
 
+  @OneToMany
+  @JoinColumn(name = "experimentalGroupId")
+  private List<BiologicalReplicate> biologicalReplicates;
+
   private ExperimentalGroup(Condition condition, int sampleSize) {
     this.condition = condition;
     this.sampleSize = sampleSize;
+    this.biologicalReplicates = new ArrayList<>(sampleSize);
+    generateBiologicalReplicates(sampleSize);
+  }
+
+  private void generateBiologicalReplicates(int amount) {
+    for (int counter=1; counter <= amount; counter++) {
+      final BiologicalReplicate replicate = BiologicalReplicate.create();
+      biologicalReplicates.add(replicate);
+    }
   }
 
   protected ExperimentalGroup() {
