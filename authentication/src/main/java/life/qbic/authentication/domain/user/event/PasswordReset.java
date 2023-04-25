@@ -2,10 +2,10 @@ package life.qbic.authentication.domain.user.event;
 
 import java.io.Serial;
 import java.time.Instant;
-import life.qbic.authentication.domain.event.DomainEvent;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.UserId;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>Password Reset Domain Event</b>

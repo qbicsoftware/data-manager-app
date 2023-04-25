@@ -21,6 +21,7 @@
     <module>subscription-api</module>
     <module>finances</module>
     <module>projectmanagement</module>
+    <module>domain-concept</module>
   </modules>
   <packaging>pom</packaging>
 
