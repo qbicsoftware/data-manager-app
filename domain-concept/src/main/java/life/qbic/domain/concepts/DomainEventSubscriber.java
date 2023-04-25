@@ -1,4 +1,4 @@
-package life.qbic.authentication.domain.event;
+package life.qbic.domain.concepts;
 
 /**
  * <b>Domain Event Subscriber</b>

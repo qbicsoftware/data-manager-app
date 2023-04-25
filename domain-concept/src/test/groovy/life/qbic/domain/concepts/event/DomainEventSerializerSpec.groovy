@@ -1,11 +1,12 @@
-package life.qbic.authentication.domain.event
+package life.qbic.domain.concepts.event
 
-import life.qbic.authentication.domain.user.event.UserRegistered
+
+import life.qbic.domain.concepts.DomainEventSerializer
 import spock.lang.Specification
 
 class DomainEventSerializerSpec extends Specification {
     final DomainEventSerializer domainEventSerializer = new DomainEventSerializer()
-    final def userRegistered = UserRegistered.create("test", "test", "test")
+    final def userRegistered = new TestEvent()
 
     def "expect the serialized UserRegistered events are non empty Strings"() {
         expect:
@@ -18,5 +19,5 @@ class DomainEventSerializerSpec extends Specification {
 
     }
 
-
 }
+

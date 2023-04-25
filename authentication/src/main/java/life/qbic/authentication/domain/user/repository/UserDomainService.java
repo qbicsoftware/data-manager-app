@@ -1,12 +1,12 @@
 package life.qbic.authentication.domain.user.repository;
 
-import life.qbic.authentication.domain.event.DomainEvent;
-import life.qbic.authentication.domain.event.DomainEventPublisher;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword;
 import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.event.UserRegistered;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventPublisher;
 
 /**
  * <b>User Domain Service</b>
