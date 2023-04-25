@@ -16,11 +16,11 @@ import java.util.function.Function
  */
 class ValueSpec extends Specification {
 
-    static Either<String, Integer> valueObject = Either.fromValue("test")
+    static Result<String, Integer> valueObject = Result.fromValue("test")
 
     def "on value calls the consumer"() {
         given:
-        var value = Either.fromValue("test")
+        var value = Result.fromValue("test")
         Consumer<String> consumer = Mock()
         when:
         def result = value.onValue(consumer)
@@ -69,23 +69,23 @@ class ValueSpec extends Specification {
 
     def "either containing a value is equal to another either containing the value"() {
         given:
-        Either<String, Integer> e1 = Either.fromValue("hello")
-        Either<String, Integer> e2 = Either.fromValue("hello")
+        Result<String, Integer> e1 = Result.fromValue("hello")
+        Result<String, Integer> e2 = Result.fromValue("hello")
         expect:
         e1.equals(e2)
     }
 
     def "either containing a value is not equal to another either containing a different value"() {
         given:
-        Either<String, Integer> e1 = Either.fromValue("hello")
-        Either<String, Integer> e2 = Either.fromValue("hello2")
+        Result<String, Integer> e1 = Result.fromValue("hello")
+        Result<String, Integer> e2 = Result.fromValue("hello2")
         expect:
         e1 != e2
     }
 
     def "bind value returns an either with the mapped value"() {
         given:
-        Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromValue(it.length())
+        Function<String, Result<Integer, Integer>> mapper = (String it) -> Result.<Integer, Integer> fromValue(it.length())
         when:
         var result = valueObject.flatMap(mapper)
         then:
@@ -94,7 +94,7 @@ class ValueSpec extends Specification {
 
     def "bind error returns an either with unchanged error"() {
         given:
-        Function<Integer, Either<Integer, Integer>> mapper = (Integer it) -> Either.fromValue(5)
+        Function<Integer, Result<Integer, Integer>> mapper = (Integer it) -> Result.fromValue(5)
         when:
         var result = valueObject.flatMapError(mapper)
 

@@ -13,35 +13,35 @@ import java.util.function.Supplier;
  *
  * @since <version tag>
  */
-public abstract class Either<V, E> {
+public abstract class Result<V, E> {
 
-  public static <V, E> Either<V, E> fromValue(V value) {
+  public static <V, E> Result<V, E> fromValue(V value) {
     return new Value<>(value);
   }
 
-  public static <V, E> Either<V, E> fromError(E error) {
+  public static <V, E> Result<V, E> fromError(E error) {
     return new Error<>(error);
   }
 
-  public abstract Either<V, E> onValue(Consumer<V> consumer);
+  public abstract Result<V, E> onValue(Consumer<V> consumer);
 
-  public abstract Either<V, E> onError(Consumer<E> consumer);
+  public abstract Result<V, E> onError(Consumer<E> consumer);
 
   public abstract boolean isValue();
 
   public abstract boolean isError();
 
-  public abstract <U> Either<U, E> map(Function<V, U> transform);
+  public abstract <U> Result<U, E> map(Function<V, U> transform);
 
-  public abstract <T> Either<V, T> mapError(Function<E, T> transform);
+  public abstract <T> Result<V, T> mapError(Function<E, T> transform);
 
-  public abstract <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper);
+  public abstract <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper);
 
-  public abstract <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper);
+  public abstract <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper);
 
   public abstract <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper);
 
-  public abstract Either<V, E> recover(Function<E, V> recovery);
+  public abstract Result<V, E> recover(Function<E, V> recovery);
 
   public abstract V valueOrElse(V other);
 
@@ -49,7 +49,7 @@ public abstract class Either<V, E> {
 
   public abstract V valueOrElseThrow(Supplier<? extends RuntimeException> supplier);
 
-  private static class Value<V, E> extends Either<V, E> {
+  private static class Value<V, E> extends Result<V, E> {
 
     private final V value;
 
@@ -62,13 +62,13 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public Either<V, E> onValue(Consumer<V> consumer) {
+    public Result<V, E> onValue(Consumer<V> consumer) {
       consumer.accept(value);
       return this;
     }
 
     @Override
-    public Either<V, E> onError(Consumer<E> consumer) {
+    public Result<V, E> onError(Consumer<E> consumer) {
       return this;
     }
 
@@ -83,23 +83,23 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public <U> Either<U, E> map(Function<V, U> transform) {
-      return Either.fromValue(transform.apply(value));
+    public <U> Result<U, E> map(Function<V, U> transform) {
+      return Result.fromValue(transform.apply(value));
     }
 
     @Override
-    public <T> Either<V, T> mapError(Function<E, T> transform) {
-      return Either.fromValue(value);
+    public <T> Result<V, T> mapError(Function<E, T> transform) {
+      return Result.fromValue(value);
     }
 
     @Override
-    public <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper) {
+    public <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper) {
       return mapper.apply(value);
     }
 
     @Override
-    public <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper) {
-      return Either.fromValue(value);
+    public <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper) {
+      return Result.fromValue(value);
     }
 
     @Override
@@ -108,7 +108,7 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public Either<V, E> recover(Function<E, V> recovery) {
+    public Result<V, E> recover(Function<E, V> recovery) {
       return this;
     }
 
@@ -147,7 +147,7 @@ public abstract class Either<V, E> {
     }
   }
 
-  private static class Error<V, E> extends Either<V, E> {
+  private static class Error<V, E> extends Result<V, E> {
 
     private final E error;
 
@@ -160,12 +160,12 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public Either<V, E> onValue(Consumer<V> consumer) {
+    public Result<V, E> onValue(Consumer<V> consumer) {
       return this;
     }
 
     @Override
-    public Either<V, E> onError(Consumer<E> consumer) {
+    public Result<V, E> onError(Consumer<E> consumer) {
       consumer.accept(error);
       return this;
     }
@@ -181,23 +181,23 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public <U> Either<U, E> map(Function<V, U> transform) {
-      return Either.fromError(error);
+    public <U> Result<U, E> map(Function<V, U> transform) {
+      return Result.fromError(error);
     }
 
     @Override
-    public <T> Either<V, T> mapError(Function<E, T> transform) {
+    public <T> Result<V, T> mapError(Function<E, T> transform) {
       T transformed = transform.apply(error);
-      return Either.fromError(transformed);
+      return Result.fromError(transformed);
     }
 
     @Override
-    public <U> Either<U, E> flatMap(Function<V, Either<U, E>> mapper) {
-      return Either.fromError(error);
+    public <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper) {
+      return Result.fromError(error);
     }
 
     @Override
-    public <T> Either<V, T> flatMapError(Function<E, Either<V, T>> mapper) {
+    public <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper) {
       return mapper.apply(error);
     }
 
@@ -207,9 +207,9 @@ public abstract class Either<V, E> {
     }
 
     @Override
-    public Either<V, E> recover(Function<E, V> recovery) {
+    public Result<V, E> recover(Function<E, V> recovery) {
       V recoveredValue = recovery.apply(error);
-      return Either.fromValue(recoveredValue);
+      return Result.fromValue(recoveredValue);
     }
 
     @Override

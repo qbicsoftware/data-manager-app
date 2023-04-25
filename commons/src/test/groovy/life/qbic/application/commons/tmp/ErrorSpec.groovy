@@ -15,7 +15,7 @@ import java.util.function.Function
  * @since <version tag>
  */
 class ErrorSpec extends Specification {
-    static Either<Integer, String> errorObject = Either.fromError("Oh no, an error!")
+    static Result<Integer, String> errorObject = Result.fromError("Oh no, an error!")
 
     def "on value returns this"() {
         given:
@@ -67,23 +67,23 @@ class ErrorSpec extends Specification {
 
     def "either containing a value is equal to another either containing the value"() {
         given:
-        Either<Integer, String> e1 = Either.fromError("hello")
-        Either<Integer, String> e2 = Either.fromError("hello")
+        Result<Integer, String> e1 = Result.fromError("hello")
+        Result<Integer, String> e2 = Result.fromError("hello")
         expect:
         e1.equals(e2)
     }
 
     def "either containing a value is not equal to another either containing a different value"() {
         given:
-        Either<Integer, String> e1 = Either.fromError("hello")
-        Either<Integer, String> e2 = Either.fromError("hello2")
+        Result<Integer, String> e1 = Result.fromError("hello")
+        Result<Integer, String> e2 = Result.fromError("hello2")
         expect:
         e1 != e2
     }
 
     def "bind value returns an either with the same error"() {
         given:
-        Function<Integer, Either<String, Integer>> mapper = (Integer it) -> Either.fromValue("bla")
+        Function<Integer, Result<String, Integer>> mapper = (Integer it) -> Result.fromValue("bla")
         when:
         var result = errorObject.flatMap(mapper)
 
@@ -93,7 +93,7 @@ class ErrorSpec extends Specification {
 
     def "bind error returns an either with the mapped error"() {
         given:
-        Function<String, Either<Integer, Integer>> mapper = (String it) -> Either.<Integer, Integer> fromError(it.length())
+        Function<String, Result<Integer, Integer>> mapper = (String it) -> Result.<Integer, Integer> fromError(it.length())
         when:
         var result = errorObject.flatMapError(mapper)
         then:
