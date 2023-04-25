@@ -212,6 +212,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>domain-concept</artifactId>
+      <version>0.14.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.vaadin</groupId>
       <artifactId>vaadin-spreadsheet-flow</artifactId>
     </dependency>

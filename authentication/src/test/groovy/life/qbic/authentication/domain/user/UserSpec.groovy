@@ -1,12 +1,12 @@
 package life.qbic.authentication.domain.user
 
-import life.qbic.authentication.domain.event.DomainEventPublisher
-import life.qbic.authentication.domain.event.DomainEventSubscriber
 import life.qbic.authentication.domain.user.concept.EmailAddress
 import life.qbic.authentication.domain.user.concept.EncryptedPassword
 import life.qbic.authentication.domain.user.concept.FullName
 import life.qbic.authentication.domain.user.concept.User
 import life.qbic.authentication.domain.user.event.PasswordReset
+import life.qbic.domain.concepts.DomainEventPublisher
+import life.qbic.domain.concepts.DomainEventSubscriber
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll

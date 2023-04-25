@@ -1,7 +1,8 @@
-package life.qbic.authentication.domain.user.event;
+package life.qbic.domain.concepts.event;
+
+import life.qbic.domain.concepts.DomainEvent;
 
 import java.util.Set;
-import life.qbic.authentication.domain.event.DomainEvent;
 
 public interface EventStore {
 
