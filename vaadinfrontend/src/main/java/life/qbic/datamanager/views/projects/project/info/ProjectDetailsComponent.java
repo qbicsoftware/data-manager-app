@@ -388,13 +388,13 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
       element.addValueChangeListener(it -> {
         //Only fire events on user input(e.g. avoid firing event when the page was reloaded)
         if (it.isFromClient()) {
-          V oldValue = it.getOldValue();
-          V value = it.getValue();
-          if (oldValue.containsAll(value)) {
+          V oldValueList = it.getOldValue();
+          V newValueList = it.getValue();
+          if (oldValueList.containsAll(newValueList)) {
             // nothing was added -> so we do not need to do anything
-          } else if (value.containsAll(oldValue)) {
+          } else if (newValueList.containsAll(oldValueList)) {
             // only added something
-            submitAction.accept(value);
+            submitAction.accept(newValueList);
           } else {
             //FIXME what to do? there seem to be elements deleted and added in this event
           }
