@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.sample;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 import java.util.Objects;
@@ -35,18 +36,18 @@ public class Sample {
     private SampleOrigin sampleOrigin;
 
     @Embedded
-    private BiologicalReplicateLabel biologicalReplicateLabel;
+    private BiologicalReplicateId biologicalReplicateId;
 
     private Sample(
             SampleId id, String label, ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin
-            , BiologicalReplicateLabel biologicalReplicateLabel
+            , BiologicalReplicateId replicateReference
     ) {
         this.id = id;
         this.label = label;
         this.experimentId = experimentId;
         this.experimentalGroupId = experimentalGroupId;
         this.sampleOrigin = sampleOrigin;
-        this.biologicalReplicateLabel = biologicalReplicateLabel;
+        this.biologicalReplicateId = replicateReference;
     }
 
     protected Sample() {
@@ -55,10 +56,10 @@ public class Sample {
 
     public static Sample create(
             String label, ExperimentId experimentId, Long experimentalGroupId,
-            BiologicalReplicateLabel biologicalReplicateLabel, SampleOrigin sampleOrigin
+            BiologicalReplicateId replicateReference, SampleOrigin sampleOrigin
     ) {
         SampleId sampleId = SampleId.create();
-        return new Sample(sampleId, label, experimentId, experimentalGroupId, sampleOrigin, biologicalReplicateLabel);
+        return new Sample(sampleId, label, experimentId, experimentalGroupId, sampleOrigin, replicateReference);
     }
 
     public SampleAddResponse assignToBatch(Batch batch) {

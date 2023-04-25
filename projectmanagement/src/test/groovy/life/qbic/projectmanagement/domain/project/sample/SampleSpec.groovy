@@ -46,7 +46,6 @@ class SampleSpec extends Specification {
         response.code().equals(Sample.SampleAddResponse.ResponseCode.ALREADY_IN_BATCH)
         unAssignedSample.assignedBatch().get().equals(batch.batchId())
 
-
     }
 
 }
