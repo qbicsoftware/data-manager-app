@@ -10,15 +10,6 @@
   <artifactId>projectmanagement</artifactId>
   <name>projectmanagement</name>
   <url>http://maven.apache.org</url>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>javax.persistence</groupId>
-        <artifactId>javax.persistence-api</artifactId>
-        <version>2.2</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -36,8 +27,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>javax.persistence</groupId>
-      <artifactId>javax.persistence-api</artifactId>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
@@ -54,7 +45,7 @@
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-core</artifactId>
-      <version>5.7.5</version>
+      <version>6.0.2</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

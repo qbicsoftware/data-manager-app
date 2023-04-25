@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 
 @Converter(autoApply = true)
