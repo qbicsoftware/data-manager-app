@@ -375,21 +375,29 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
         Consumer<V> submitAction) {
-      element.addValueChangeListener(it -> submitAction.accept(element.getValue()));
+      element.addValueChangeListener(it -> {
+        //Only fire events on user input(e.g. avoid firing event when the page was reloaded)
+        if (it.isFromClient()) {
+          submitAction.accept(element.getValue());
+        }
+      });
     }
 
     private static <V extends Collection<?>, T extends HasValue<?, V>> void submitOnValueAdded(
         T element, Consumer<V> submitAction) {
       element.addValueChangeListener(it -> {
-        V oldValue = it.getOldValue();
-        V value = it.getValue();
-        if (oldValue.containsAll(value)) {
-          // nothing was added -> so we do not need to do anything
-        } else if (value.containsAll(oldValue)) {
-          // only added something
-          submitAction.accept(value);
-        } else {
-          //FIXME what to do? there seem to be elements deleted and added in this event
+        //Only fire events on user input(e.g. avoid firing event when the page was reloaded)
+        if (it.isFromClient()) {
+          V oldValue = it.getOldValue();
+          V value = it.getValue();
+          if (oldValue.containsAll(value)) {
+            // nothing was added -> so we do not need to do anything
+          } else if (value.containsAll(oldValue)) {
+            // only added something
+            submitAction.accept(value);
+          } else {
+            //FIXME what to do? there seem to be elements deleted and added in this event
+          }
         }
       });
     }
