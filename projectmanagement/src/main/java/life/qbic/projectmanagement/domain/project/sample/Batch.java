@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+
 import java.util.*;
 
 /**

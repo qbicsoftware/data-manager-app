@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
 import java.util.Objects;
 import java.util.Optional;
 
