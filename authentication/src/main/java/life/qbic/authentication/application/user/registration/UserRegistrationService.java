@@ -1,6 +1,7 @@
 package life.qbic.authentication.application.user.registration;
 
 import java.io.Serial;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +22,7 @@ import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationE
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventPublisher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.event.EventStore;
@@ -30,6 +32,7 @@ import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.authentication.domain.user.repository.UserNotFoundException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import org.jobrunr.scheduling.JobScheduler;
 
 /**
  * <b>User Registration Service</b>
@@ -47,12 +50,15 @@ public final class UserRegistrationService {
 
   private final EventStore eventStore;
 
+  private final JobScheduler jobScheduler;
+
   public UserRegistrationService(NotificationService notificationService,
-      UserRepository userRepository, EventStore eventStore) {
+      UserRepository userRepository, EventStore eventStore, JobScheduler jobScheduler) {
     super();
     this.notificationService = notificationService;
     this.userRepository = userRepository;
     this.eventStore = eventStore;
+    this.jobScheduler = jobScheduler;
   }
 
   /**
@@ -82,15 +88,9 @@ public final class UserRegistrationService {
       throw new RuntimeException("User registration failed.");
     }
 
-    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
-    while (!domainEventPublisher.clear()) {
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
+    DomainEventDispatcher dispatcher = DomainEventDispatcher.instance();
+
+    dispatcher.subscribe(new DomainEventSubscriber<UserRegistered>() {
       @Override
       public Class<? extends DomainEvent> subscribedToEventType() {
         return UserRegistered.class;
@@ -110,7 +110,7 @@ public final class UserRegistrationService {
                 event.occurredOn(),
                 notificationId,
                 event);
-        notificationService.send(notification);
+        jobScheduler.<NotificationService>enqueue(myservice -> myservice.send(notification));
       }
     });
 
@@ -127,6 +127,7 @@ public final class UserRegistrationService {
 
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
+
     return ApplicationResponse.successResponse();
   }
 

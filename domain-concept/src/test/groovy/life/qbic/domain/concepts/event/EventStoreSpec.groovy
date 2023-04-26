@@ -1,13 +1,12 @@
 package life.qbic.domain.concepts.event
 
 
-import life.qbic.authentication.domain.user.event.UserRegistered
 import life.qbic.domain.concepts.SimpleEventStore
 import life.qbic.domain.concepts.TemporaryEventRepository
 import spock.lang.Specification
 
 class EventStoreSpec extends Specification {
-    UserRegistered userRegisteredEvent = UserRegistered.create("my.awesome@user.id", "", "")
+    def userRegisteredEvent = new TestEvent()
 
     def "when a domain event is appended to the event store, then no exception is thrown"() {
         when: "a domain event is appended to the event store"
@@ -24,7 +23,7 @@ class EventStoreSpec extends Specification {
         eventStore.append(userRegisteredEvent)
 
         then:
-        eventStore.findAllByType(UserRegistered).contains(userRegisteredEvent)
+        eventStore.findAllByType(TestEvent).contains(userRegisteredEvent)
     }
 
     def "when the same event is appended multiple times, then it is found only once"() {
@@ -36,7 +35,7 @@ class EventStoreSpec extends Specification {
         eventStore.append(userRegisteredEvent)
 
         then: "it is found only once"
-        1 == eventStore.findAllByType(UserRegistered).count { it == userRegisteredEvent }
+        1 == eventStore.findAllByType(TestEvent).count { it == userRegisteredEvent }
     }
 
 }

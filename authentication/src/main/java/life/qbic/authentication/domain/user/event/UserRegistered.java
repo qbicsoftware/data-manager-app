@@ -1,6 +1,7 @@
 package life.qbic.authentication.domain.user.event;
 
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import life.qbic.domain.concepts.DomainEvent;
 
 import java.io.Serial;
@@ -16,13 +17,17 @@ public class UserRegistered extends DomainEvent {
     @Serial
     private static final long serialVersionUID = 2581827831168895067L;
 
-    private final Instant occurredOn;
+    private Instant occurredOn;
 
-    private final String fullName;
+    private String fullName;
 
-    private final String email;
+    private String email;
 
-    private final String userId;
+    private String userId;
+
+    private UserRegistered() {
+
+    }
 
     public static UserRegistered create(final String userId, final String fullName,
                                         final String email) {
@@ -40,19 +45,23 @@ public class UserRegistered extends DomainEvent {
         this.occurredOn = Instant.now();
     }
 
+    @JsonGetter("occurredOn")
     @Override
     public Instant occurredOn() {
         return occurredOn;
     }
 
+    @JsonGetter("userId")
     public String userId() {
         return userId;
     }
 
+    @JsonGetter("fullName")
     public String userFullName() {
         return fullName;
     }
 
+    @JsonGetter("email")
     public String userEmail() {
         return email;
     }

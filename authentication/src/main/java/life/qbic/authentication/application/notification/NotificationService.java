@@ -4,11 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 import life.qbic.authentication.application.ServiceException;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.broadcasting.MessageParameters;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>Notification Service</b>
@@ -40,16 +42,22 @@ public class NotificationService {
   public void send(Notification notification) throws ServiceException {
     var messageParams =
         MessageParameters.durableTextParameters(
-            notification.eventType, notification.notificationId, notification.occurredOn);
+            notification.eventType(), notification.notificationId(), notification.occurredOn());
 
     String message;
     try {
-      message = ObjectSerializer.instance().serialise(notification.event);
+      message = ObjectSerializer.instance().serialise(notification.event());
     } catch (IOException e) {
       throw new ServiceException("Notification was not send", e.getCause());
     }
 
     messageBus.submit(message, messageParams);
+  }
+
+  public void send(DomainEvent domainEvent) {
+    System.out.println("Receiving domain event: " + domainEvent.getClass().getSimpleName());
+    System.out.println(domainEvent);
+    System.out.println("Event occurred on " + domainEvent.occurredOn());
   }
 
   /**

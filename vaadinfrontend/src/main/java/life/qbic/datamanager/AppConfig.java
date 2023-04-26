@@ -18,6 +18,7 @@ import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -66,9 +67,10 @@ public class AppConfig {
 
   @Bean
   public UserRegistrationService userRegistrationService(
-      NotificationService notificationService, UserRepository userRepository,
-      EventStore eventStore) {
-    return new UserRegistrationService(notificationService, userRepository, eventStore);
+          NotificationService notificationService, UserRepository userRepository,
+          EventStore eventStore, JobScheduler jobScheduler
+          ) {
+    return new UserRegistrationService(notificationService, userRepository, eventStore, jobScheduler);
   }
 
   @Bean
