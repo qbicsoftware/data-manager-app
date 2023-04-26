@@ -20,6 +20,7 @@ public class ExperimentalGroup {
   private Condition condition;
 
   private int sampleSize;
+
   @Id
   @GeneratedValue
   private Long experimentalGroupId;

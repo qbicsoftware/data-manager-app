@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 //IMPORTANT: do not name the table condition; condition is a reserved keyword
 public class Condition {
 
-  @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
+  @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.LAZY)
   private Set<VariableLevel> variableLevels;
 
   protected Condition() {
