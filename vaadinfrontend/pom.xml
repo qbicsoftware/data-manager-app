@@ -188,7 +188,6 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.11</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
@@ -209,6 +208,12 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>database-connector</artifactId>
+      <version>0.14.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>domain-concept</artifactId>
       <version>0.14.0</version>
       <scope>compile</scope>
     </dependency>

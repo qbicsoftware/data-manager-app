@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 
 /**
@@ -19,6 +19,10 @@ public class VariableNameAttributeConverter implements AttributeConverter<Variab
 
   @Override
   public VariableName convertToEntityAttribute(String dbData) {
+    //Necessary since we expect VariableName to be non-null, but have no variableNames after project creation.
+    if (dbData == null) {
+      return null;
+    }
     return VariableName.create(dbData);
   }
 }

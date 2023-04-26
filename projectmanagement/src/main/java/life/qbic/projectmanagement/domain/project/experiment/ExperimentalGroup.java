@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import java.util.Objects;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 
 /**
  * <b>Experimental Group</b>

@@ -1,7 +1,9 @@
-package life.qbic.authentication.domain.event
+package life.qbic.domain.concepts.event
 
 
 import life.qbic.authentication.domain.user.event.UserRegistered
+import life.qbic.domain.concepts.SimpleEventStore
+import life.qbic.domain.concepts.TemporaryEventRepository
 import spock.lang.Specification
 
 class EventStoreSpec extends Specification {
