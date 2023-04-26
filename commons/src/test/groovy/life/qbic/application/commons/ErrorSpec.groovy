@@ -8,14 +8,7 @@ import java.util.function.Function
 
 import static life.qbic.application.commons.Result.*
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
+
 class ErrorSpec extends Specification {
     static Result<Integer, String> errorObject = fromError("Oh no, an error!")
 

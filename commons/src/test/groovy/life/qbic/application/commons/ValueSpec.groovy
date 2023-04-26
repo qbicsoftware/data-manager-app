@@ -8,14 +8,6 @@ import java.util.function.Function
 import static life.qbic.application.commons.Result.InvalidResultAccessException
 import static life.qbic.application.commons.Result.fromValue
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 class ValueSpec extends Specification {
 
     static Result<String, Integer> valueObject = fromValue("test")

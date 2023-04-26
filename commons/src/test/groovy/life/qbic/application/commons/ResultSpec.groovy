@@ -3,14 +3,6 @@ package life.qbic.application.commons
 
 import spock.lang.Specification
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 class ResultSpec extends Specification {
     def "construct from value"() {
         when:
