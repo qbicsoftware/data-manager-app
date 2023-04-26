@@ -1,8 +1,9 @@
-package life.qbic.authentication.domain.event;
+package life.qbic.domain.concepts;
+
+import life.qbic.domain.concepts.event.EventStore;
 
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.authentication.domain.user.event.EventStore;
 
 /**
  * Implementation of a basic event store. It handles events and provides accessor methods to retain

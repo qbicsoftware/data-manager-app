@@ -48,6 +48,10 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     initNavigationBar();
   }
 
+  private void styleNavLabelLayout(VerticalLayout layout) {
+    layout.setAlignItems(Alignment.CENTER);
+    layout.setPadding(false);
+  }
   private void initNavigationBar() {
 
     navigationBarLayout = new HorizontalLayout();
@@ -56,31 +60,31 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     projectInformationButton = new Button(VaadinIcon.CLIPBOARD_CHECK.create());
     Label projectInformationLabel = new Label("Project Information");
     projectInformationLayout.add(projectInformationButton, projectInformationLabel);
-    projectInformationLayout.setAlignItems(Alignment.CENTER);
+    styleNavLabelLayout(projectInformationLayout);
 
     VerticalLayout experimentalDesignLayout = new VerticalLayout();
     Label experimentalDesignLabel = new Label("Experimental Design");
     experimentalDesignButton = new Button(VaadinIcon.SITEMAP.create());
     experimentalDesignLayout.add(experimentalDesignButton, experimentalDesignLabel);
-    experimentalDesignLayout.setAlignItems(Alignment.CENTER);
+    styleNavLabelLayout(experimentalDesignLayout);
 
     VerticalLayout samplesLayout = new VerticalLayout();
     samplesButton = new Button(VaadinIcon.FILE_TABLE.create());
     Label samplesLabel = new Label("Samples");
     samplesLayout.add(samplesButton, samplesLabel);
-    samplesLayout.setAlignItems(Alignment.CENTER);
+    styleNavLabelLayout(samplesLayout);
 
     VerticalLayout rawDataLayout = new VerticalLayout();
     rawDataButton = new Button(VaadinIcon.CLOUD_DOWNLOAD.create());
     Label rawDataLabel = new Label("Raw Data");
     rawDataLayout.add(rawDataButton, rawDataLabel);
-    rawDataLayout.setAlignItems(Alignment.CENTER);
+    styleNavLabelLayout(rawDataLayout);
 
     VerticalLayout resultsLayout = new VerticalLayout();
     resultsButton = new Button(VaadinIcon.SEARCH.create());
     Label resultsLabel = new Label("Results");
     resultsLayout.add(resultsButton, resultsLabel);
-    resultsLayout.setAlignItems(Alignment.CENTER);
+    styleNavLabelLayout(resultsLayout);
 
     navigationBarLayout.add(projectInformationLayout, experimentalDesignLayout, samplesLayout,
         rawDataLayout, resultsLayout);

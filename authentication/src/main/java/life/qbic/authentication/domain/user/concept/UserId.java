@@ -1,10 +1,10 @@
 package life.qbic.authentication.domain.user.concept;
 
+import jakarta.persistence.Column;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
-import javax.persistence.Column;
 
 /**
  * <b>User Id</b>

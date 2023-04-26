@@ -1,19 +1,19 @@
 package life.qbic.authentication.domain.user.concept;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import life.qbic.authentication.domain.event.DomainEventPublisher;
 import life.qbic.authentication.domain.user.event.PasswordReset;
 import life.qbic.authentication.domain.user.event.UserActivated;
 import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
 import life.qbic.authentication.domain.user.repository.jpa.EmailConverter;
 import life.qbic.authentication.domain.user.repository.jpa.FullNameConverter;
 import life.qbic.authentication.domain.user.repository.jpa.PasswordConverter;
+import life.qbic.domain.concepts.DomainEventPublisher;
 
 /**
  * <b>User class</b>

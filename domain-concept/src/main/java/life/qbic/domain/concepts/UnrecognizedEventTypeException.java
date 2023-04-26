@@ -1,4 +1,4 @@
-package life.qbic.authentication.domain.event;
+package life.qbic.domain.concepts;
 
 /**
  * Thrown when an event type is not recognized. This should never happen.
