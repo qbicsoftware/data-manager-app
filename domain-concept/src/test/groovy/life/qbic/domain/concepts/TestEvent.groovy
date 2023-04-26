@@ -1,6 +1,5 @@
-package life.qbic.domain.concepts.event
+package life.qbic.domain.concepts
 
-import life.qbic.domain.concepts.DomainEvent
 
 import java.time.Instant
 
