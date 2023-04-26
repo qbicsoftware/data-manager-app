@@ -6,6 +6,8 @@ import spock.lang.Specification
 import java.util.function.Consumer
 import java.util.function.Function
 
+import static life.qbic.application.commons.Result.*
+
 /**
  * TODO!
  * <b>short description</b>
@@ -15,7 +17,7 @@ import java.util.function.Function
  * @since <version tag>
  */
 class ErrorSpec extends Specification {
-    static Result<Integer, String> errorObject = Result.fromError("Oh no, an error!")
+    static Result<Integer, String> errorObject = fromError("Oh no, an error!")
 
     def "on value returns this"() {
         given:
@@ -27,6 +29,18 @@ class ErrorSpec extends Specification {
         result.is(errorObject)
     }
 
+    def "on value matching (#predicateEvaluated) does not call the consumer"() {
+        given:
+        Consumer<Integer> consumer = Mock()
+        when:
+        def result = errorObject.onValueMatching({ predicateEvaluated }, consumer)
+        then:
+        0 * consumer.accept(_)
+        result.is(errorObject)
+        where:
+        predicateEvaluated << [true, false]
+    }
+
     def "on error calls the consumer"() {
         given:
         Consumer<String> consumer = Mock()
@@ -34,6 +48,26 @@ class ErrorSpec extends Specification {
         def result = errorObject.onError(consumer)
         then:
         1 * consumer.accept(_)
+        result.is(errorObject)
+    }
+
+    def "on error matching calls the consumer if the predicate matches"() {
+        given:
+        Consumer<String> consumer = Mock()
+        when:
+        def result = errorObject.onErrorMatching({ true }, consumer)
+        then:
+        1 * consumer.accept(_)
+        result.is(errorObject)
+    }
+
+    def "on error matching does not call the consumer if the predicate does not match"() {
+        given:
+        Consumer<String> consumer = Mock()
+        when:
+        def result = errorObject.onErrorMatching({ false }, consumer)
+        then:
+        0 * consumer.accept(_)
         result.is(errorObject)
     }
 
@@ -67,23 +101,23 @@ class ErrorSpec extends Specification {
 
     def "either containing a value is equal to another either containing the value"() {
         given:
-        Result<Integer, String> e1 = Result.fromError("hello")
-        Result<Integer, String> e2 = Result.fromError("hello")
+        Result<Integer, String> e1 = fromError("hello")
+        Result<Integer, String> e2 = fromError("hello")
         expect:
         e1.equals(e2)
     }
 
     def "either containing a value is not equal to another either containing a different value"() {
         given:
-        Result<Integer, String> e1 = Result.fromError("hello")
-        Result<Integer, String> e2 = Result.fromError("hello2")
+        Result<Integer, String> e1 = fromError("hello")
+        Result<Integer, String> e2 = fromError("hello2")
         expect:
         e1 != e2
     }
 
     def "bind value returns an either with the same error"() {
         given:
-        Function<Integer, Result<String, Integer>> mapper = (Integer it) -> Result.fromValue("bla")
+        Function<Integer, Result<String, Integer>> mapper = (Integer it) -> fromValue("bla")
         when:
         var result = errorObject.flatMap(mapper)
 
@@ -118,6 +152,13 @@ class ErrorSpec extends Specification {
         result.get() == function.apply(errorObject.get())
     }
 
+    def "getValue throws an exception"() {
+        when:
+        errorObject.getValue()
+        then:
+        thrown(InvalidResultAccessException)
+    }
+
     def "valueOrElse returns else"() {
         expect:
         42 == errorObject.valueOrElse(42)
@@ -136,5 +177,10 @@ class ErrorSpec extends Specification {
         then:
         def e = thrown(RuntimeException)
         e == expectedException
+    }
+
+    def "getError returns the error"() {
+        expect:
+        errorObject.get() == errorObject.getError()
     }
 }

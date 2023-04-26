@@ -1,10 +1,12 @@
 package life.qbic.application.commons
 
-
 import spock.lang.Specification
 
 import java.util.function.Consumer
 import java.util.function.Function
+
+import static life.qbic.application.commons.Result.InvalidResultAccessException
+import static life.qbic.application.commons.Result.fromValue
 
 /**
  * TODO!
@@ -16,16 +18,38 @@ import java.util.function.Function
  */
 class ValueSpec extends Specification {
 
-    static Result<String, Integer> valueObject = Result.fromValue("test")
+    static Result<String, Integer> valueObject = fromValue("test")
 
     def "on value calls the consumer"() {
         given:
-        var value = Result.fromValue("test")
+        var value = fromValue("test")
         Consumer<String> consumer = Mock()
         when:
         def result = value.onValue(consumer)
         then:
         1 * consumer.accept(_)
+        result.is(value)
+    }
+
+    def "on value matching calls the consumer if predicate matches"() {
+        given:
+        var value = fromValue("test")
+        Consumer<String> consumer = Mock()
+        when:
+        def result = value.onValueMatching({ true }, consumer)
+        then:
+        1 * consumer.accept(_)
+        result.is(value)
+    }
+
+    def "on value matching does not call the consumer if predicate does not match"() {
+        given:
+        var value = fromValue("test")
+        Consumer<String> consumer = Mock()
+        when:
+        def result = value.onValueMatching({ false }, consumer)
+        then:
+        0 * consumer.accept(_)
         result.is(value)
     }
 
@@ -37,6 +61,18 @@ class ValueSpec extends Specification {
         then:
         0 * consumer.accept(_)
         result.is(valueObject)
+    }
+
+    def "on error matching (#predicateResult) does not call the consumer"() {
+        given:
+        Consumer<Integer> consumer = Mock()
+        when:
+        def result = valueObject.onErrorMatching({ predicateResult }, consumer)
+        then:
+        0 * consumer.accept(_)
+        result.is(valueObject)
+        where:
+        predicateResult << [true, false]
     }
 
     def "is value returns true"() {
@@ -69,16 +105,16 @@ class ValueSpec extends Specification {
 
     def "either containing a value is equal to another either containing the value"() {
         given:
-        Result<String, Integer> e1 = Result.fromValue("hello")
-        Result<String, Integer> e2 = Result.fromValue("hello")
+        Result<String, Integer> e1 = fromValue("hello")
+        Result<String, Integer> e2 = fromValue("hello")
         expect:
         e1.equals(e2)
     }
 
     def "either containing a value is not equal to another either containing a different value"() {
         given:
-        Result<String, Integer> e1 = Result.fromValue("hello")
-        Result<String, Integer> e2 = Result.fromValue("hello2")
+        Result<String, Integer> e1 = fromValue("hello")
+        Result<String, Integer> e2 = fromValue("hello2")
         expect:
         e1 != e2
     }
@@ -94,7 +130,7 @@ class ValueSpec extends Specification {
 
     def "bind error returns an either with unchanged error"() {
         given:
-        Function<Integer, Result<Integer, Integer>> mapper = (Integer it) -> Result.fromValue(5)
+        Function<Integer, Result<Integer, Integer>> mapper = (Integer it) -> fromValue(5)
         when:
         var result = valueObject.flatMapError(mapper)
 
@@ -115,6 +151,11 @@ class ValueSpec extends Specification {
         valueObject == valueObject.recover(it -> "test")
     }
 
+    def "getValue returns the value"() {
+        expect:
+        valueObject.get() == valueObject.getValue()
+    }
+
     def "valueOrElse returns the value"() {
         expect:
         valueObject.get() == valueObject.valueOrElse("my other Value")
@@ -128,5 +169,12 @@ class ValueSpec extends Specification {
     def "valueOrElseThrow returns the value"() {
         expect:
         valueObject.get() == valueObject.valueOrElseThrow(() -> new RuntimeException("Oha! No value!"))
+    }
+
+    def "getError throws an exception"() {
+        when:
+        valueObject.getError()
+        then:
+        thrown(InvalidResultAccessException)
     }
 }

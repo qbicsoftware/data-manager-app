@@ -1,8 +1,10 @@
 package life.qbic.application.commons;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -116,12 +118,30 @@ public abstract class Result<V, E> {
   public abstract Result<V, E> onValue(Consumer<V> consumer);
 
   /**
+   * Executes some action on the value of the result if a value matching the predicate is present.
+   *
+   * @param predicate the predicate that has to hold true
+   * @param consumer  the consumer to be applied
+   * @return an unaltered result
+   */
+  public abstract Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer);
+
+  /**
    * Executes some action on the error of the result if an error is present.
    *
    * @param consumer the action to run on the error
    * @return an unaltered result
    */
   public abstract Result<V, E> onError(Consumer<E> consumer);
+
+  /**
+   * Executes some action on the error if it matches the predicate and is present.
+   *
+   * @param predicate the predicate to test
+   * @param consumer  the action to run on the error
+   * @return an unaltered result
+   */
+  public abstract Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer);
 
   /**
    * @return true if the result is a value, false otherwise
@@ -215,6 +235,13 @@ public abstract class Result<V, E> {
   public abstract Result<V, E> recover(Function<E, V> recovery);
 
   /**
+   * Returns the value if present. Otherwise throws {@link InvalidResultAccessException}
+   *
+   * @return the value
+   */
+  public abstract V getValue();
+
+  /**
    * Retuns the value or `other` value if no value is present
    *
    * @param other the alternative value to return
@@ -265,7 +292,20 @@ public abstract class Result<V, E> {
     }
 
     @Override
+    public Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer) {
+      if (predicate.test(value)) {
+        consumer.accept(value);
+      }
+      return this;
+    }
+
+    @Override
     public Result<V, E> onError(Consumer<E> consumer) {
+      return this;
+    }
+
+    @Override
+    public Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer) {
       return this;
     }
 
@@ -281,7 +321,7 @@ public abstract class Result<V, E> {
 
     @Override
     public <U> Result<U, E> map(Function<V, U> transform) {
-      return Result.fromValue(transform.apply(value));
+      return Result.<U, E>fromValue(transform.apply(value));
     }
 
     @Override
@@ -307,6 +347,11 @@ public abstract class Result<V, E> {
     @Override
     public Result<V, E> recover(Function<E, V> recovery) {
       return this;
+    }
+
+    @Override
+    public V getValue() {
+      return value;
     }
 
     @Override
@@ -367,8 +412,21 @@ public abstract class Result<V, E> {
     }
 
     @Override
+    public Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer) {
+      return this;
+    }
+
+    @Override
     public Result<V, E> onError(Consumer<E> consumer) {
       consumer.accept(error);
+      return this;
+    }
+
+    @Override
+    public Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer) {
+      if (predicate.test(error)) {
+        consumer.accept(error);
+      }
       return this;
     }
 
@@ -384,7 +442,7 @@ public abstract class Result<V, E> {
 
     @Override
     public <U> Result<U, E> map(Function<V, U> transform) {
-      return Result.fromError(error);
+      return Result.<U, E>fromError(error);
     }
 
     @Override
@@ -412,6 +470,11 @@ public abstract class Result<V, E> {
     public Result<V, E> recover(Function<E, V> recovery) {
       V recoveredValue = recovery.apply(error);
       return Result.fromValue(recoveredValue);
+    }
+
+    @Override
+    public V getValue() {
+      throw new InvalidResultAccessException("No value present.");
     }
 
     @Override
@@ -454,7 +517,7 @@ public abstract class Result<V, E> {
     }
   }
 
-  public static class InvalidResultAccessException extends RuntimeException {
+  public static class InvalidResultAccessException extends NoSuchElementException {
 
     public InvalidResultAccessException(String message) {
       super(message);
