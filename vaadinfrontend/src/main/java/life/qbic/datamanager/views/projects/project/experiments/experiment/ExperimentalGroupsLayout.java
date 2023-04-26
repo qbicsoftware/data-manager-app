@@ -15,6 +15,10 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
+import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,8 +95,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
 
   private static class BaseExperimentalGroupCard extends VerticalLayout {
 
-    private final static String CARD_WIDTH = "200px";
-    private final static String CARD_HEIGHT = "200px";
+    public final static String CARD_WIDTH = "200px";
+    public final static String CARD_HEIGHT = "200px";
 
     public BaseExperimentalGroupCard() {
       setWidth(CARD_WIDTH);
@@ -106,8 +110,6 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
           "rounded-m",
           "box-border",
           "rounded-m",
-          //"flex",
-          //"text-s",
           "shadow-xs",
           "p-m"
       );
@@ -123,6 +125,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       tagsContainer.setFlexWrap(FlexWrap.WRAP);
       tagsContainer.setFlexDirection(FlexDirection.ROW);
       tagsContainer.setAlignContent(ContentAlignment.START);
+      tagsContainer.addClassNames(Overflow.HIDDEN);
+      tagsContainer.setWidth("165px");//TODO better way to hide overflow?
       add(cardTitle, tagsContainer);
       fillWithVariableLevels(tagsContainer, variableLevels);
       Span sampleSizeText = new Span("Group size: "+sampleSize);
@@ -135,9 +139,12 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
           .sorted((VariableLevel l1, VariableLevel l2) -> l1.variableName().value()
               .compareToIgnoreCase(l2.variableName().value())).toArray(VariableLevel[]::new);
       for (VariableLevel variableLevel : variableLevels) {
+        String formattedValue = ExperimentValueFormatter.format(
+            variableLevel.experimentalValue());
         Tag tag = new Tag(
-            variableLevel.variableName().value() + ":" + ExperimentValueFormatter.format(
-                variableLevel.experimentalValue()));
+            variableLevel.variableName().value() + ":" + formattedValue);
+        tag.addClassNames(TextOverflow.ELLIPSIS);//this does not seem to work, any ideas?
+        tag.getElement().setProperty("title", formattedValue);
         tagsContainer.add(tag);
       }
     }

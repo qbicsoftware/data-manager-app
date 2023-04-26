@@ -10,6 +10,7 @@ public class Tag extends Span {
     getElement().getThemeList().add("badge");
     getElement().getThemeList().add(FontSize.SMALL);
     getStyle().set("white-space", "nowrap");
-    getStyle().set("margin", "3px 5px");
+    getStyle().set("margin", "3px 1px");
+    getStyle().set("padding", "2px 2px");
   }
 }
