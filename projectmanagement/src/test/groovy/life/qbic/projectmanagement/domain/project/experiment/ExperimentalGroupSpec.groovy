@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment
 
+import org.spockframework.util.Nullable
 import spock.lang.Specification
 
 /**
@@ -11,37 +12,52 @@ import spock.lang.Specification
  */
 class ExperimentalGroupSpec extends Specification {
 
-    def "Two groups with distinct variable levels are not equal independent on sample size"() {
-        given:
-        ExperimentalValue ageValue1 = ExperimentalValue.create("25", "years")
-        ExperimentalVariable ageVar1 = ExperimentalVariable.create("age", ageValue1)
-        def ageLevel1 = VariableLevel.create(ageVar1.name(), ageValue1)
-        ExperimentalValue seriesValue1 = ExperimentalValue.create("friends")
-        ExperimentalVariable seriesVar1 = ExperimentalVariable.create("favorite series", seriesValue1)
-        def seriesLevel1 = VariableLevel.create(seriesVar1.name(), seriesValue1)
-        ExperimentalValue colorValue1 = ExperimentalValue.create("blue")
-        ExperimentalVariable colorVar1 = ExperimentalVariable.create("favorite color", colorValue1)
-        def colorLevel1 = VariableLevel.create(colorVar1.name(), colorValue1)
+  def condition = createCondition("Color", "red", null)
+  def conditionWithUnit = createCondition("Time", "10", "Seconds")
 
-        ExperimentalValue ageValue2 = ExperimentalValue.create("20", "years")
-        ExperimentalVariable ageVar2 = ExperimentalVariable.create("age", ageValue2)
-        def ageLevel2 = VariableLevel.create(ageVar2.name(), ageValue2)
-        ExperimentalValue seriesValue2 = ExperimentalValue.create("the expanse")
-        ExperimentalVariable seriesVar2 = ExperimentalVariable.create("favorite series", seriesValue2)
-        def seriesLevel2 = VariableLevel.create(seriesVar2.name(), seriesValue2)
-        ExperimentalValue colorValue2 = ExperimentalValue.create("orange")
-        ExperimentalVariable colorVar2 = ExperimentalVariable.create("favorite color", colorValue2)
-        def colorLevel2 = VariableLevel.create(colorVar2.name(), colorValue2)
+  def "Experimental groups with the same id are equal"() {
+    given:
+    def experimentalGroup = ExperimentalGroup.create(condition, 1)
+    experimentalGroup.experimentalGroupId = 201
+    expect:
+    experimentalGroup.equals(experimentalGroup)
+  }
 
-        when:
-        def condition1 = Condition.create(Arrays.asList(ageLevel1, seriesLevel1, colorLevel1))
-        ExperimentalGroup one = ExperimentalGroup.create(condition1, 1);
-        def condition2 = Condition.create(Arrays.asList(ageLevel2, seriesLevel2, colorLevel2))
-        ExperimentalGroup two = ExperimentalGroup.create(condition2, 1);
+  def "Experimental groups with the different ids are not equal"() {
+    given:
+    def experimentalGroup = ExperimentalGroup.create(condition, 1)
+    def experimentalGroup2 = ExperimentalGroup.create(condition, 1)
+    experimentalGroup.experimentalGroupId = 201
+    experimentalGroup2.experimentalGroupId = 202
+    expect:
+    !experimentalGroup.equals(experimentalGroup2)
+  }
 
-        then:
-        !one.equals(two)
-        !(one==two)
+  def "Experimental groups with the same id have the same hashcode"() {
+    given:
+    def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+    experimentalGroup.experimentalGroupId = 201
+    expect:
+    experimentalGroup.hashCode() == experimentalGroup.hashCode()
+  }
+
+  def "Experimental groups with the different ids have a different hashcode"() {
+    given:
+    def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+    def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
+    experimentalGroup.experimentalGroupId = 201
+    experimentalGroup2.experimentalGroupId = 202
+    expect:
+    !experimentalGroup.hashCode().equals(experimentalGroup2.hashCode())
+  }
+
+  Condition createCondition(String variableName, String valueName, @Nullable String valueUnit) {
+    Condition condition
+    if (valueUnit != null) {
+      condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName, valueUnit))))
+    } else {
+      condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName))))
     }
-
+    return condition
+  }
 }
