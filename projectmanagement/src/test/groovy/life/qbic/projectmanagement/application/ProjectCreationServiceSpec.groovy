@@ -37,8 +37,8 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             [], [], [])
     then: "an exception is thrown"
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
+    resultWithExperimentalDesign.isError()
+    resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
   }
 
   def "invalid objective leads to INVALID_PROJECT_OBJECTIVE code"() {
@@ -58,8 +58,8 @@ class ProjectCreationServiceSpec extends Specification {
             [], [], [])
 
     then: "an exception is thrown"
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
+    resultWithExperimentalDesign.isError()
+    resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
   }
 
   def "invalid experimental design description leads to INVALID_EXPERIMENTAL_DESIGN code"() {
@@ -83,8 +83,8 @@ class ProjectCreationServiceSpec extends Specification {
             [], [], [])
 
     then: "an exception is thrown"
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
+    resultWithExperimentalDesign.isError()
+    resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
   }
 
   def "when create is called without a project manager then an exception is thrown"() {
@@ -105,7 +105,7 @@ class ProjectCreationServiceSpec extends Specification {
             [], [], [])
 
     then: "an exception is thrown"
-    result.isFailure()
+    result.isError()
     result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 
@@ -127,7 +127,7 @@ class ProjectCreationServiceSpec extends Specification {
             [], [], [])
 
     then: "an exception is thrown"
-    result.isFailure()
+    result.isError()
     result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 
@@ -270,7 +270,7 @@ class ProjectCreationServiceSpec extends Specification {
 
 
     then:
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
+    resultWithExperimentalDesign.isError()
+    resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.GENERAL
   }
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
-import life.qbic.application.commons.tmp.Result;
+import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -46,7 +46,7 @@ public class AddExperimentToProjectService {
    * @param specimens      specimens associated with the experiment
    * @return a result containing the id of the added experiment, a failure result otherwise
    */
-  public life.qbic.application.commons.Result<ExperimentId, RuntimeException> addExperimentToProject(
+  public Result<ExperimentId, RuntimeException> addExperimentToProject(
       ProjectId projectId,
       String experimentName,
       List<Analyte> analytes,
@@ -70,7 +70,7 @@ public class AddExperimentToProjectService {
 
     Optional<Project> optionalProject = projectRepository.find(projectId);
     if (optionalProject.isEmpty()) {
-      return life.qbic.application.commons.Result.failure(new ProjectNotFoundException());
+      return Result.fromError(new ProjectNotFoundException());
     }
     Project project = optionalProject.get();
 
@@ -85,9 +85,7 @@ public class AddExperimentToProjectService {
         })
         .map(Experiment::experimentId);
 
-    return result.fold(
-        life.qbic.application.commons.Result::success,
-        life.qbic.application.commons.Result::failure);
+    return result;
   }
 
 }

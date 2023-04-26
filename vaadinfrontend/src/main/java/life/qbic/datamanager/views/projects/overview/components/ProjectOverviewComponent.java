@@ -249,7 +249,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectCreationContent.projectResponsible(), projectCreationContent.species(),
           projectCreationContent.analyte(), projectCreationContent.specimen());
 
-      project.ifSuccessOrElseThrow(
+      project.onValue(
           result -> {
             displaySuccessfulProjectCreationNotification();
             projectInformationDialog.resetAndClose();

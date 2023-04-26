@@ -110,11 +110,11 @@ public class ExperimentalDesign {
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
    * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isFailure()} if this is the case.
+   * {@link Result#isError()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
    * @param level        the value to be added to the levels of that variable
@@ -127,19 +127,12 @@ public class ExperimentalDesign {
       ExperimentalValue level) {
     Optional<ExperimentalVariable> experimentalVariableOptional = variableWithName(variableName);
     if (experimentalVariableOptional.isEmpty()) {
-      return Result.failure(
+      return Result.fromError(
           new ExperimentalVariableNotDefinedException(
               "There is no variable with name " + variableName));
     }
     ExperimentalVariable experimentalVariable = experimentalVariableOptional.get();
-    Result<VariableLevel, Exception> addLevelResult = experimentalVariable.addLevel(
-        level);
-    if (addLevelResult.isSuccess()) {
-      return addLevelResult;
-    } else {
-      // we could not add the level
-      return Result.failure(addLevelResult.exception());
-    }
+    return experimentalVariable.addLevel(level);
   }
 
   List<ExperimentalVariable> variables() {
@@ -185,21 +178,21 @@ public class ExperimentalDesign {
 
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
     if (levels.size() < 1) {
-      return Result.failure(new IllegalArgumentException(
+      return Result.fromError(new IllegalArgumentException(
           "No levels were defined for " + variableName));
     }
 
     if (isVariableDefined(variableName)) {
-      return Result.failure(new ExperimentalVariableExistsException(
+      return Result.fromError(new ExperimentalVariableExistsException(
           "A variable with the name " + variableName + " already exists."));
     }
     try {
       ExperimentalVariable variable = ExperimentalVariable.create(variableName,
           levels.toArray(ExperimentalValue[]::new));
       variables.add(variable);
-      return Result.success(variable.name());
+      return Result.fromValue(variable.name());
     } catch (IllegalArgumentException e) {
-      return Result.failure(e);
+      return Result.fromError(e);
     }
   }
 

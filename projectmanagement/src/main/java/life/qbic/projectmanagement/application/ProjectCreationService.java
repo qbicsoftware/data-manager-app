@@ -66,18 +66,18 @@ public class ProjectCreationService {
               analyteList,
               speciesList,
               specimenList)
-          .ifFailure(e ->
+          .onError(e ->
           {
             projectRepository.deleteByProjectCode(project.getProjectCode());
             throw new ProjectManagementException(
                 "failed to add experiment to project " + project.getId(), e);
           });
-      return Result.success(project);
+      return Result.fromValue(project);
     } catch (ProjectManagementException projectManagementException) {
-      return Result.failure(projectManagementException);
+      return Result.fromError(projectManagementException);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
-      return Result.failure(new ProjectManagementException());
+      return Result.fromError(new ProjectManagementException());
     }
   }
 

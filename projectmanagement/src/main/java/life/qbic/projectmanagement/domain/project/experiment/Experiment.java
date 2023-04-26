@@ -94,11 +94,11 @@ public class Experiment {
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
    * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isFailure()} if this is the case.
+   * {@link Result#isError()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
    * @param level        the value to be added to the levels of that variable
