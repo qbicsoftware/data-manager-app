@@ -68,6 +68,10 @@ public class ExperimentalGroup {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+    //It's not possible to compare an experimentalGroup entity if it has no id
+    if (this.experimentalGroupId == null) {
+      return false;
+    }
     return this.experimentalGroupId.equals(((ExperimentalGroup) o).experimentalGroupId);
   }
 
