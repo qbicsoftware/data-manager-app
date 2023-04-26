@@ -121,7 +121,7 @@ class ValueSpec extends Specification {
 
     def "bind value returns an either with the mapped value"() {
         given:
-        Function<String, Result<Integer, Integer>> mapper = (String it) -> Result.<Integer, Integer> fromValue(it.length())
+        Function<String, Result<Integer, Integer>> mapper = (String it) -> fromValue(it.length())
         when:
         var result = valueObject.flatMap(mapper)
         then:

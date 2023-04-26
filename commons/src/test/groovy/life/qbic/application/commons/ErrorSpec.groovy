@@ -127,7 +127,7 @@ class ErrorSpec extends Specification {
 
     def "bind error returns an either with the mapped error"() {
         given:
-        Function<String, Result<Integer, Integer>> mapper = (String it) -> Result.<Integer, Integer> fromError(it.length())
+        Function<String, Result<Integer, Integer>> mapper = (String it) -> fromError(it.length())
         when:
         var result = errorObject.flatMapError(mapper)
         then:

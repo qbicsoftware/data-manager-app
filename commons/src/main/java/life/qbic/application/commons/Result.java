@@ -321,7 +321,7 @@ public abstract class Result<V, E> {
 
     @Override
     public <U> Result<U, E> map(Function<V, U> transform) {
-      return Result.<U, E>fromValue(transform.apply(value));
+      return Result.fromValue(transform.apply(value));
     }
 
     @Override
@@ -442,7 +442,7 @@ public abstract class Result<V, E> {
 
     @Override
     public <U> Result<U, E> map(Function<V, U> transform) {
-      return Result.<U, E>fromError(error);
+      return Result.fromError(error);
     }
 
     @Override

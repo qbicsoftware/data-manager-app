@@ -84,7 +84,7 @@ public class Experiment {
    * Retrieves the list of experimental variables stored within the Experiment.
    *
    * @return Provides the list of {@link ExperimentalVariable} defined within the
-   * {@link ExperimentalDesign} of the {@link Experiment}
+   * {@link ExperimentalDesign} of the Experiment
    */
 
   public List<ExperimentalVariable> variables() {

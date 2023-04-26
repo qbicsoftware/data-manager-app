@@ -74,7 +74,7 @@ public class AddExperimentToProjectService {
     }
     Project project = optionalProject.get();
 
-    Result<ExperimentId, RuntimeException> result = Result.<Experiment, RuntimeException>fromValue(
+    return Result.<Experiment, RuntimeException>fromValue(
             Experiment.create(experimentName))
         .onValue(exp -> exp.addAnalytes(analytes))
         .onValue(exp -> exp.addSpecies(species))
@@ -84,8 +84,6 @@ public class AddExperimentToProjectService {
           projectRepository.update(project);
         })
         .map(Experiment::experimentId);
-
-    return result;
   }
 
 }
