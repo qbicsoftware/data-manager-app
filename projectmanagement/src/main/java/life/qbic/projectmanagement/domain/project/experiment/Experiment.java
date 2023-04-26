@@ -194,11 +194,11 @@ public class Experiment {
 
   /**
    * Creates a new experimental variable and adds it to the experimental design. A successful
-   * operation is indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name already exists, the creation will fail with
    * an {@link ExperimentalVariableExistsException} and no variable is added to the design. You can
-   * check via {@link Result#isFailure()} if this is the case.
+   * check via {@link Result#isError()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
    * @param levels       a list containing at least one value for the variable
