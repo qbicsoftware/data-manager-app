@@ -15,8 +15,8 @@ class ExperimentalDesignSpec extends Specification {
         def result = design.addVariable("Caffeine Dosage", List.of(ExperimentalValue.create("10", "mmol/l"), ExperimentalValue.create("100", "mmol/l")))
 
         then:
-        result.isFailure()
-        result.exception() instanceof ExperimentalVariableExistsException
+        result.isError()
+        result.getError() instanceof ExperimentalVariableExistsException
     }
 
     def "When an experimental variable is new to an design, add the new variable and return with a success result"() {
@@ -28,8 +28,8 @@ class ExperimentalDesignSpec extends Specification {
         def result = design.addVariable("CBD Dosage", List.of(ExperimentalValue.create("5", "mmol/l"), ExperimentalValue.create("20", "mmol/l")))
 
         then:
-        result.isSuccess()
-        result.value().value().equals("CBD Dosage")
+        result.isValue()
+        result.getValue().value().equals("CBD Dosage")
         design.isVariableDefined("CBD Dosage")
     }
 
@@ -83,8 +83,8 @@ class ExperimentalDesignSpec extends Specification {
         def result = design.addLevelToVariable(variableName, otherValue)
 
         then:
-        result.isSuccess()
-        result.value() == new VariableLevel(VariableName.create(variableName), otherValue)
+        result.isValue()
+        result.getValue() == new VariableLevel(VariableName.create(variableName), otherValue)
         design.variables.get(0).levels().any { it.experimentalValue() == otherValue }
     }
 
@@ -97,7 +97,7 @@ class ExperimentalDesignSpec extends Specification {
         when:
         def result = design.addLevelToVariable(variableName, otherValue)
         then:
-        result.isFailure()
+        result.isError()
     }
 
     def "when a level is added to an existing variable with the level already defined then the result is a success"() {
@@ -113,8 +113,8 @@ class ExperimentalDesignSpec extends Specification {
         when:
         def result = design.addLevelToVariable(variableName, normalValue)
         then:
-        result.isSuccess()
-        result.value() == new VariableLevel(VariableName.create(variableName), normalValue)
+        result.isValue()
+        result.getValue() == new VariableLevel(VariableName.create(variableName), normalValue)
         design.variables.get(0).levels().any { it.experimentalValue() == normalValue }
     }
 
