@@ -1,7 +1,6 @@
-package life.qbic.domain.concepts.event
+package life.qbic.domain.concepts
 
 
-import life.qbic.domain.concepts.DomainEventSerializer
 import spock.lang.Specification
 
 class DomainEventSerializerSpec extends Specification {
@@ -20,4 +19,3 @@ class DomainEventSerializerSpec extends Specification {
     }
 
 }
-
