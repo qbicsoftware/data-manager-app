@@ -1,17 +1,17 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
@@ -76,14 +76,14 @@ public class ExperimentalVariable {
    */
   Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
-      return Result.failure(new IllegalArgumentException(
+      return Result.fromError(new IllegalArgumentException(
           "experimental value not applicable. This variable has other levels without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
       levels.add(experimentalValue);
     }
     VariableLevel variableLevel = new VariableLevel(name(), experimentalValue);
-    return Result.success(variableLevel);
+    return Result.fromValue(variableLevel);
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {

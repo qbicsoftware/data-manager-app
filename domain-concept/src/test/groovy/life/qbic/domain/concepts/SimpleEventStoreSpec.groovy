@@ -1,15 +1,16 @@
-package life.qbic.authentication.domain.event
+package life.qbic.domain.concepts
 
 
-import life.qbic.authentication.domain.user.event.UserRegistered
 import spock.lang.Specification
 
-class EventStoreSpec extends Specification {
-    UserRegistered userRegisteredEvent = UserRegistered.create("my.awesome@user.id", "", "")
+class SimpleEventStoreSpec extends Specification {
+    TestEvent testEvent = new TestEvent()
 
     def "when a domain event is appended to the event store, then no exception is thrown"() {
         when: "a domain event is appended to the event store"
-        SimpleEventStore.instance(new TemporaryEventRepository()).append(userRegisteredEvent)
+
+        def eventStore = SimpleEventStore.instance(new TemporaryEventRepository())
+        eventStore.append(testEvent)
         then: "no exception is thrown"
         noExceptionThrown()
     }
@@ -19,10 +20,10 @@ class EventStoreSpec extends Specification {
         def eventStore = SimpleEventStore.instance(new TemporaryEventRepository())
 
         when:
-        eventStore.append(userRegisteredEvent)
+        eventStore.append(testEvent)
 
         then:
-        eventStore.findAllByType(UserRegistered).contains(userRegisteredEvent)
+        eventStore.findAllByType(TestEvent).contains(testEvent)
     }
 
     def "when the same event is appended multiple times, then it is found only once"() {
@@ -30,11 +31,11 @@ class EventStoreSpec extends Specification {
         SimpleEventStore eventStore = SimpleEventStore.instance(new TemporaryEventRepository())
 
         when: "the same event is appended multiple times"
-        eventStore.append(userRegisteredEvent)
-        eventStore.append(userRegisteredEvent)
+        eventStore.append(testEvent)
+        eventStore.append(testEvent)
 
         then: "it is found only once"
-        1 == eventStore.findAllByType(UserRegistered).count { it == userRegisteredEvent }
+        1 == eventStore.findAllByType(TestEvent).count { it == testEvent }
     }
 
 }

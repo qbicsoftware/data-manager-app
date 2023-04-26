@@ -1,7 +1,9 @@
 package life.qbic.authentication.application.user.password;
 
-import life.qbic.application.commons.ApplicationResponse;
+import java.util.function.Predicate;
+import life.qbic.application.commons.Result;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
+import life.qbic.authentication.domain.user.concept.EncryptedPassword;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -35,21 +37,21 @@ public class NewPassword implements NewPasswordInput {
       return;
     }
 
-    ApplicationResponse response = userRegistrationService.newUserPassword(userId, newRawPassword);
-
-    response.ifSuccessOrElse(ignored -> {
+    Result<EncryptedPassword, RuntimeException> response = userRegistrationService.newUserPassword(
+        userId, newRawPassword);
+    Predicate<RuntimeException> isPasswordValidationException = e -> e instanceof PasswordValidationException;
+    response
+        .onValue(ignored -> {
           log.info(String.format("Successful password reset for user %s", userId));
           useCaseOutput.onSuccessfulNewPassword();
-        },
-        it -> it.failures().stream().filter(e -> e instanceof PasswordValidationException).findAny()
-            .ifPresentOrElse(ignored -> {
-                  log.error(String.format("Could not set new password for user: %s", userId));
-                  useCaseOutput.onPasswordValidationFailure();
-                },
-                () -> {
-                  log.error(String.format("Unexpected failure on password reset for user: %s", userId));
-                  useCaseOutput.onUnexpectedFailure();
-                }));
-
+        })
+        .onErrorMatching(isPasswordValidationException, ignored -> {
+          log.error(String.format("Could not set new password for user: %s", userId));
+          useCaseOutput.onPasswordValidationFailure();
+        })
+        .onErrorMatching(isPasswordValidationException.negate(), ignored -> {
+          log.error(String.format("Unexpected failure on password reset for user: %s", userId));
+          useCaseOutput.onUnexpectedFailure();
+        });
   }
 }

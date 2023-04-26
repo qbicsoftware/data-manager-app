@@ -1,7 +1,8 @@
 package life.qbic.authentication.application.notification;
 
+import life.qbic.domain.concepts.DomainEvent;
+
 import java.time.Instant;
-import life.qbic.authentication.domain.event.DomainEvent;
 
 /**
  * <b>Notification</b>

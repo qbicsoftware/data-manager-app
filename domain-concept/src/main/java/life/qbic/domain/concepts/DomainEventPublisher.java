@@ -1,4 +1,4 @@
-package life.qbic.authentication.domain.event;
+package life.qbic.domain.concepts;
 
 import java.util.ArrayList;
 import java.util.List;

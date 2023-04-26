@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 
 /**
  * Experimental design description in an offer

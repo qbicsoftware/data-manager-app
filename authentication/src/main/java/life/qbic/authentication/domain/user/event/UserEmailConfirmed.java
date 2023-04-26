@@ -1,8 +1,9 @@
 package life.qbic.authentication.domain.user.event;
 
+import life.qbic.domain.concepts.DomainEvent;
+
 import java.io.Serial;
 import java.time.Instant;
-import life.qbic.authentication.domain.event.DomainEvent;
 
 /**
  * <b>A user email was confirmed</b>

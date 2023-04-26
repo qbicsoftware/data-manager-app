@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.project.repository.jpa;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**

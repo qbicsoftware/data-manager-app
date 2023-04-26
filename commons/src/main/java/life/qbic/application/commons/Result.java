@@ -4,313 +4,524 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * <b>Class Result</b>
- *
- * <p>This class introduces the Rust idiom to use Result objects to enforce the client code
- * to apply some best practises to safe value access and proper exception handling.</p>
- *
- * <p>Results can be used to wrap an actual value of type <code>V</code>, which indicates a
- * success, or an exception of type
- * <code>E</code>. An object of type Result can only contain either a value or an exception, not
- * both in the same instance.</p>
+ * The result of an operation containing a value or an error.
+ * <p/>
  * <p>
- * To properly deal with Result objects, a good idiom using Java's enhanced switch statements looks
- * like this:
+ * Whenever an operation can stray from the golden path and can return alternative values, consider
+ * using this Result object. The expected value for an operation is contained in the result object.
+ * The expected return value is the value an operation returns. Whenever there are alternative
+ * return values, they are represented by the error contained in a result.
+ * </p>
+ * <h3>Creating a Result</h3>
+ * <p>
+ * The factory method {@linkplain Result#fromValue(Object)} constructs a result containing the
+ * expected return value.
+ * <pre>{@code
+ *   Result<Integer, String> result = Result.<Integer, String>fromValue(5);
+ * }</pre>
+ * It is advisable for this method to provide the concrete type information. This is necessary for
+ * type inference if the error is of a specific type. Otherwise, only {@linkplain Object} is
+ * inferred by the compiler for the error type.
+ * <p>
+ * The factory method {@linkplain Result#fromError(Object)} constructs a result containing some
+ * error information.
+ * <pre>{@code
+ * Result<Integer, String> result = Result.<String, Integer>fromError("Some non-exceptional condition was true.");
+ * }</pre>
+ * It is advisable for this method to provide the concrete type information. This is necessary for
+ * type inference if the value is of a specific type. Otherwise, only {@linkplain Object} is
+ * inferred by the compiler for the value type.
+ * <p>
+ * <h3>Working with the contents</h3>
+ * The result object provides some basic transformations to process the result further. These can be
+ * applied on the value of a result or on possible errors respectively.
+ * <p>
+ * <ul>
+ *   <li>The {@link Result#map(Function)} transformation applies the provided function to the value of the result if the result is a value.</li>
+ *   <li>The {@link Result#mapError(Function)} transformation applies the provided function to the error of a result if the result is an error.</li>
+ *   <li>The {@link Result#flatMap(Function)} transformation applies the function to the value of this result and unwraps the returned result into the itself.</li>
+ *   <li>The {@link Result#flatMapError(Function)} transformation applies the function to the error of this result and unwraps the returned result into the itself.</li>
+ *   <li>The {@link Result#recover(Function)} transformation applies the function to the error and sets the result as the value.</li>
+ * </ul>
+ * <p>
+ * Depending on the result type different actions can be taken. For that two consumer methods are provided.
+ * <ul>
+ *   <li>The {@link Result#onValue(Consumer)} method passes the value to the consumer if any value exists. The result itself is not altered.</li>
+ *   <li>The {@link Result#onError(Consumer)} method passes the error to the consumer if the result is an error. The result itself is not altered.</li>
+ * </ul>
+ * <p>
+ * <h3>Extracting the content of a result</h3>
+ * <ul>
+ *   <li>The {@link Result#valueOrElse(Object)} method returns the value if it exists, or the provided object if the result is an error.</li>
+ *   <li>The {@link Result#valueOrElseGet(Supplier)} method returns the value if it exists. Otherwise the supplier supplies the value.</li>
+ *   <li>The {@link Result#valueOrElseThrow(Supplier)} method returns the value if it exists. Otherwise the supplied exception is thrown.</li>
+ *   <li> The {@link Result#fold(Function, Function)} method applies the appropriate function to the content and returns the resulting value.
+ * </ul>
  *
- * <pre>
- *
- * final Result&lt;String, Exception&gt; result =
- *          new Result("Contains actual information")
- * // Using the  {@link Function} interface
- * Function function = switch (result) {*    case result.isOk(): yield Function&lt;V, ?&gt;{...}*    case result.isError(): yield Function&lt;E, ?&gt;{...}*}* function.apply(result)
- *
- * // or using the {@link Consumer} interface
- * Consumer consumer = switch (result) {*   case result.isOk() : yield Consumer&lt;V&gt;{...}*   case result.isError() : yield Consumer&lt;E&gt;{...}*}* consumer.accept(result)
- *
- * // or using lambda expressions
- * switch (result) {*   case result.isOk() : () -> {}*   case result.isError() : () -> {}*}* </pre>
- *
- * @param <V> the value of this result in case it is OK
- * @param <E> the type of error this result can hold
- * @since 1.0.0
+ * @param <V> the value type
+ * @param <E> the error type
  */
-public class Result<V, E extends Exception> {
-
-  private final V value;
-  private final E exception;
-
-  private final Type type;
-
-  private enum Type {
-    FAILURE, SUCCESS
-  }
+public abstract class Result<V, E> {
 
   /**
-   * Static constructor method for creating a result object instance of type <code>V,E</code>
-   * wrapping an actual value <code>V</code>.
-   *
-   * @param value the notorious value to get wrapped in a result object
-   * @return a new result object instance
-   */
-  public static <V, E extends Exception> Result<V, E> success(V value) {
-    Objects.requireNonNull(value);
-    return new Result<>(value);
-  }
-
-  /**
-   * Static constructor method for creating a result object instance of type <code>V,E</code>
-   * wrapping an exception <code>E</code>.
-   *
-   * @param exception the exception to get wrapped in a result object
-   * @return a new result object instance
-   */
-  public static <V, E extends Exception> Result<V, E> failure(E exception) {
-    Objects.requireNonNull(exception);
-    return new Result<>(exception);
-  }
-
-  public static <V2> Result<V2, ? extends Exception> of(Supplier<V2> supplier) {
-    try {
-      return Result.success(supplier.get());
-    } catch (Exception e) {
-      return Result.failure(e);
-    }
-  }
-
-  public Result<V, ? extends Exception> run(Runnable runnable) {
-    try {
-      runnable.run();
-    } catch (Exception e) {
-      return Result.failure(e);
-    }
-    return this;
-  }
-
-  private Result(V value) {
-    this.value = value;
-    this.exception = null;
-    this.type = Type.SUCCESS;
-  }
-
-  private Result(E exception) {
-    this.value = null;
-    this.exception = exception;
-    this.type = Type.FAILURE;
-  }
-
-  /**
-   * Access the wrapped value if present
-   *
-   * @return the wrapped value
-   * @throws NoSuchElementException if no value exists in the result object
-   */
-  public V value() throws NoSuchElementException {
-    if (Objects.isNull(value)) {
-      throw new NoSuchElementException("Result with exception has no value.");
-    }
-    return value;
-  }
-
-  /**
-   * Access the wrapped exception if present
-   *
-   * @return the wrapped exception
-   * @throws NoSuchElementException if no error exists in the result object
-   */
-  public E exception() throws NoSuchElementException {
-    if (Objects.isNull(exception)) {
-      throw new NoSuchElementException("Result with value has no exception.");
-    }
-    return exception;
-  }
-
-  /**
-   * Returns <code>true</code>, if the result object contains an error. Is always the negation of
-   * {@link Result#isSuccess()} ()}.
-   * <p>So <code>{@link Result#isFailure()} ()} == !{@link Result#isSuccess()}</code></p>
-   *
-   * @return true, if the result object has an error, else false
-   */
-  public Boolean isFailure() {
-    return type.equals(Type.FAILURE);
-  }
-
-  /**
-   * Returns <code>true</code>, if the result object contains an error. Is always the negation of
-   * {@link Result#isFailure()} ()}.
-   * <p>So <code>{@linkplain  Result#isSuccess()} ()} == !{@link Result#isFailure()} ()}</code></p>
-   *
-   * @return true, if the result object has a value, else false
-   */
-  public Boolean isSuccess() {
-    return type.equals(Type.SUCCESS);
-  }
-
-  /**
-   * <p>Maps the current result object to a consumer function, that expects the same input
-   * type <code>V</code> as the result's value type and produces a result object of type
-   * <code>U,E</code>.</p>
-   *
-   * <p>If the current result contains an error (and therefore has no value), the created result
-   * object will contain the error of type <code>E</code> of the input result object.
-   * </p>
-   *
-   * @param function a function transforming data of type <code>V</code> to <code>U</code>
-   * @return a new result object instance of type <code>U,E</code>
-   */
-  public <U> Result<U, ? extends Exception> map(Function<V, U> function) {
-    Objects.requireNonNull(function);
-    Result<U, ? extends Exception> result = null;
-    switch (this.type) {
-      case FAILURE -> result = Result.failure(this.exception);
-      case SUCCESS -> result = apply(function, this.value());
-    }
-    return result;
-  }
-
-  /**
-   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
-   * when the result object contains a value of type V.
+   * Constructs a new result from a value.
    * <p>
-   * If the result object does not contain a value but an exception, the method does nothing.
+   * If a specific error type is expected, this method needs to be called with type information.
+   * <pre>{@code
+   * Result.fromValue("Hello World!");}</pre> Will create a result of type {@code Result<String, Object>}.
+   * <p>
+   * To create a result of type {@code Result<String, MyErrorCodeEnum>} instead use
+   * <pre> {@code
+   * Result.<String, MyErrorCodeEnum>fromValue("Hello World!");}
+   * </pre>
    *
-   * @param consumer A target consumer object reference that can consume the value of type
-   *                 <code>V</code>
-   * @since 1.0.0
+   * @param value the value wrapped in the result.
+   * @param <V>   the value type
+   * @param <E>   the error type
+   * @return a result wrapping the value
    */
-  public void ifSuccess(Consumer<? super V> consumer) {
-    Objects.requireNonNull(consumer);
-    if (type.equals(Type.SUCCESS) && Objects.nonNull(value)) {
+  public static <V, E> Result<V, E> fromValue(V value) {
+    return new Value<>(value);
+  }
+
+  /**
+   * Constructs a new result from an error.
+   * <p>
+   * If a specific value type is expected, this method needs to be called with type information.
+   * <pre>{@code
+   * Result.fromError("Hello World!");}</pre> Will create a result of type {@code Result<Object, String>}.
+   * <p>
+   * To create a result of type {@code Result<Integer, String>} instead use
+   * <pre> {@code
+   * Result.<Integer, String>fromError("Hello World!");}
+   * </pre>
+   *
+   * @param error the error wrapped in the result
+   * @param <V>   the value type
+   * @param <E>   the error type
+   * @return a result wrapping an error
+   */
+  public static <V, E> Result<V, E> fromError(E error) {
+    return new Error<>(error);
+  }
+
+  /**
+   * Executes some action on the value of the result if a value is present.
+   *
+   * @param consumer the action to run on the value.
+   * @return an unaltered result.
+   */
+  public abstract Result<V, E> onValue(Consumer<V> consumer);
+
+  /**
+   * Executes some action on the value of the result if a value matching the predicate is present.
+   *
+   * @param predicate the predicate that has to hold true
+   * @param consumer  the consumer to be applied
+   * @return an unaltered result
+   */
+  public abstract Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer);
+
+  /**
+   * Executes some action on the error of the result if an error is present.
+   *
+   * @param consumer the action to run on the error
+   * @return an unaltered result
+   */
+  public abstract Result<V, E> onError(Consumer<E> consumer);
+
+  /**
+   * Executes some action on the error if it matches the predicate and is present.
+   *
+   * @param predicate the predicate to test
+   * @param consumer  the action to run on the error
+   * @return an unaltered result
+   */
+  public abstract Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer);
+
+  /**
+   * @return true if the result is a value, false otherwise
+   */
+  public abstract boolean isValue();
+
+  /**
+   * @return true if the result is an error, false otherwise
+   */
+  public abstract boolean isError();
+
+  /**
+   * Applies a function to the value if a value is present and returns a result wrapping the
+   * transformed value.
+   * <pre> {@code
+   * Result<String, MyErrorCode> result = Result.<String, MyErrorCode>fromValue("Hello World!"); // value = "Hello World!"
+   * Result<Integer, MyErrorCode> transformed = result.map(string -> string.length()) // value = 12}
+   * </pre>
+   *
+   * @param transform the transformation to apply on the value
+   * @param <U>       the transformed value type
+   * @return a result object with the transformed value
+   */
+  public abstract <U> Result<U, E> map(Function<V, U> transform);
+
+  /**
+   * Applies a function to the error if an error is present and returns a result wrapping the
+   * transformed error.
+   * <blockquote><pre>
+   * Result&lt;String, MyErrorCode&gt; result = Result.&lt;String, MyErrorCode&gt;fromError(MyErrorCode.NO_CATS_HERE); // value = NO_CATS_HERE
+   * Result&lt;String, Boolean&gt; happyDeveloper = result.mapError(errorCode -&gt; switch (errorCode) {
+   * case NO_CATS_HERE -&gt; false;
+   * case SOME_OTHER_ERROR -&gt; true;
+   * }); // value = false
+   * </pre></blockquote>
+   *
+   * @param transform the transformation to apply to the error
+   * @param <T>       the error type
+   * @return a result object with the transformed error
+   */
+  public abstract <T> Result<V, T> mapError(Function<E, T> transform);
+
+  /**
+   * If the result is a value; Applies the function to the value and flat maps it into a new Result
+   * object.
+   *
+   * @param mapper the mapping function
+   * @param <U>    the transformed value type
+   * @return a result object containing the transformed value
+   */
+  public abstract <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper);
+
+  /**
+   * If the result is an error; Applies the function to the error and flat maps it into a new Result
+   * object.
+   *
+   * @param mapper the mapping function
+   * @param <T>    the transformed error type
+   * @return a result object containing the transformed error
+   */
+  public abstract <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper);
+
+  /**
+   * Folds the result back to the value. Example:
+   * <pre>
+   * {@code
+   * int offset = 3;
+   * Result<String, Integer> someResult = ...;
+   * int offsetLength = someResult.fold(value -> value.length() + offset, error -> error + offset);
+   * }
+   * </pre>
+   *
+   * @param valueMapper the mapping function for the value
+   * @param errorMapper the mapping function for the error
+   * @param <U>         the type of the returned value
+   * @return the mapping result
+   */
+  public abstract <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper);
+
+  /**
+   * Recover the error to a value
+   * <pre>
+   * {@code
+   * Result<String, ErrorCode> result = Result.<String, ErrorCode>fromError(VALUE_MISSING);
+   * String message = result.recover(errorCode -> errorCode == VALUE_MISSING ? "some value is missing" : "some other error occurred");
+   * assert(message == "some value missing");
+   * }</pre
+   * @param recovery the function that maps the error to the value
+   * @return a result containing the recovered value
+   */
+  public abstract Result<V, E> recover(Function<E, V> recovery);
+
+  /**
+   * Returns the value if present. Otherwise throws {@link InvalidResultAccessException}
+   *
+   * @return the value
+   */
+  public abstract V getValue();
+
+  /**
+   * Retuns the value or `other` value if no value is present
+   *
+   * @param other the alternative value to return
+   * @return the value or other
+   */
+  public abstract V valueOrElse(V other);
+
+  /**
+   * Returns the value or the supplied value if the result is not a value
+   *
+   * @param supplier the supplier of the alternative value
+   * @return the result's value or the supplied value
+   */
+  public abstract V valueOrElseGet(Supplier<V> supplier);
+
+  /**
+   * Returns the value if the result is a value; trhows the supplied exception otherwise.
+   *
+   * @param supplier the exception supplier
+   * @return the stored value
+   */
+  public abstract V valueOrElseThrow(Supplier<? extends RuntimeException> supplier);
+
+  /**
+   * Returns the error or throws a {@link InvalidResultAccessException} if no error is present
+   *
+   * @return the error
+   * @throws InvalidResultAccessException if no error is present
+   */
+  public abstract E getError();
+
+  private static class Value<V, E> extends Result<V, E> {
+
+    private final V value;
+
+    private Value(V value) {
+      this.value = value;
+    }
+
+    private V get() {
+      return value;
+    }
+
+    @Override
+    public Result<V, E> onValue(Consumer<V> consumer) {
       consumer.accept(value);
+      return this;
     }
-  }
 
-  /**
-   * Takes a {@link Consumer &lt;? super E>} and calls its {@link Consumer#accept(Object)} method, *
-   * when the result object contains an exception.
-   * <p>
-   * If the result object contains a value, the method does nothing.
-   *
-   * @param consumer A target consumer object reference that can consume an exception of type *
-   *                 <code>E</code>
-   * @since 1.0.0
-   */
-  public void ifFailure(Consumer<? super E> consumer) {
-    Objects.requireNonNull(consumer);
-    if (type.equals(Type.FAILURE)) {
-      consumer.accept(exception);
+    @Override
+    public Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer) {
+      if (predicate.test(value)) {
+        consumer.accept(value);
+      }
+      return this;
     }
-  }
 
-  /**
-   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
-   * when the result object represents a success and contains a value and takes a
-   * {@link Consumer &lt;? super E>} and calls its {@link Consumer#accept(Object)}, if the result
-   * contains a failure.
-   *
-   * @param consumerOfValue A target consumer object reference that can consume a value of type *
-   *                        <code>V</code>
-   * @param consumerOfError A target consumer object reference that can consume an exception of
-   *                        type
-   *                        <code>E</code>
-   * @since 1.0.0
-   */
-  public void ifSuccessOrElse(Consumer<? super V> consumerOfValue,
-      Consumer<? super E> consumerOfError) {
-    if (type.equals(Type.FAILURE)) {
-      consumerOfError.accept(exception);
-    } else {
-      consumerOfValue.accept(value);
+    @Override
+    public Result<V, E> onError(Consumer<E> consumer) {
+      return this;
     }
-  }
 
-  /**
-   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
-   * when the result object represents a success and contains a value and takes a
-   * {@link Supplier &lt;? super X>} and throws {@link Supplier#get()}, if the result contains a
-   * failure.
-   *
-   * @param consumerOfValue   A target consumer object reference that can consume a value of type *
-   *                          <code>V</code>
-   * @param <X>               a subtype of {@link Throwable}
-   * @param throwableSupplier a throwable supplier to get, when the result is a failure
-   * @throws X which is a subtype of {@link Throwable}
-   * @since 1.0.0
-   */
-  public <X extends Throwable> void ifSuccessOrElseThrow(Consumer<? super V> consumerOfValue,
-      Supplier<? extends X> throwableSupplier) throws X {
-    if (type.equals(Type.FAILURE)) {
-      throw throwableSupplier.get();
-    } else {
-      consumerOfValue.accept(value);
+    @Override
+    public Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer) {
+      return this;
     }
-  }
 
-  /**
-   * Takes a {@link Consumer &lt;? super V>} and calls its {@link Consumer#accept(Object)} method,
-   * when the result object represents a success and contains a value and takes a
-   * {@link Supplier &lt;? super X>} and throws {@link Supplier#get()}, if the result contains a
-   * failure.
-   *
-   * @param consumerOfValue A target consumer object reference that can consume a value of type *
-   *                        <code>V</code>
-   * @throws E if the result is a failure
-   * @since 1.0.0
-   */
-  public void ifSuccessOrElseThrow(Consumer<? super V> consumerOfValue) throws E {
-    if (type.equals(Type.FAILURE)) {
-      throw exception();
-    } else {
-      consumerOfValue.accept(value);
+    @Override
+    public boolean isValue() {
+      return true;
     }
-  }
 
-  /**
-   * Returns the value of type <code>V</code> if present or takes an {@link Supplier} of type
-   * <code>X</code> and throws an object of type {@link Throwable} if the result contains an
-   * exception.
-   *
-   * @param <X>               a subtype of {@link Throwable}
-   * @param throwableSupplier a throwable supplier to get, when the result object contains an
-   *                          exception
-   * @return the value <code>V</code>
-   * @throws X which is a subtype of {@link Throwable}
-   * @since 1.0.0
-   */
-  public <X extends Throwable> V orElseThrow(Supplier<? extends X> throwableSupplier) throws X {
-    if (type.equals(Type.SUCCESS)) {
+    @Override
+    public boolean isError() {
+      return false;
+    }
+
+    @Override
+    public <U> Result<U, E> map(Function<V, U> transform) {
+      return Result.fromValue(transform.apply(value));
+    }
+
+    @Override
+    public <T> Result<V, T> mapError(Function<E, T> transform) {
+      return Result.fromValue(value);
+    }
+
+    @Override
+    public <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper) {
+      return mapper.apply(value);
+    }
+
+    @Override
+    public <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper) {
+      return Result.fromValue(value);
+    }
+
+    @Override
+    public <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
+      return valueMapper.apply(value);
+    }
+
+    @Override
+    public Result<V, E> recover(Function<E, V> recovery) {
+      return this;
+    }
+
+    @Override
+    public V getValue() {
       return value;
-    } else {
-      throw throwableSupplier.get();
     }
-  }
 
-  /**
-   * Returns the value of type <code>V</code> if present or throws the exception contained in this
-   * result.
-   *
-   * @return the value <code>V</code>
-   * @throws E if the result is a failure
-   * @since 1.0.0
-   */
-  public V orElseThrow() throws E {
-    if (type.equals(Type.SUCCESS)) {
+    @Override
+    public V valueOrElse(V other) {
       return value;
-    } else {
-      throw this.exception();
+    }
+
+    @Override
+    public V valueOrElseGet(Supplier<V> supplier) {
+      return value;
+    }
+
+    @Override
+    public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier) {
+      return value;
+    }
+
+    @Override
+    public E getError() {
+      throw new InvalidResultAccessException("No error present.");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      Value<?, ?> value1 = (Value<?, ?>) o;
+
+      return Objects.equals(value, value1.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return value != null ? value.hashCode() : 0;
     }
   }
 
-  private <U> Result<U, ? extends Exception> apply(Function<V, U> function, V value) {
-    Result<U, ? extends Exception> result;
-    try {
-      result = Result.success(function.apply(value));
-    } catch (Exception e) {
-      result = Result.failure(e);
+  private static class Error<V, E> extends Result<V, E> {
+
+    private final E error;
+
+    private Error(E error) {
+      this.error = error;
     }
-    return result;
+
+    private E get() {
+      return error;
+    }
+
+    @Override
+    public Result<V, E> onValue(Consumer<V> consumer) {
+      return this;
+    }
+
+    @Override
+    public Result<V, E> onValueMatching(Predicate<V> predicate, Consumer<V> consumer) {
+      return this;
+    }
+
+    @Override
+    public Result<V, E> onError(Consumer<E> consumer) {
+      consumer.accept(error);
+      return this;
+    }
+
+    @Override
+    public Result<V, E> onErrorMatching(Predicate<E> predicate, Consumer<E> consumer) {
+      if (predicate.test(error)) {
+        consumer.accept(error);
+      }
+      return this;
+    }
+
+    @Override
+    public boolean isValue() {
+      return false;
+    }
+
+    @Override
+    public boolean isError() {
+      return true;
+    }
+
+    @Override
+    public <U> Result<U, E> map(Function<V, U> transform) {
+      return Result.fromError(error);
+    }
+
+    @Override
+    public <T> Result<V, T> mapError(Function<E, T> transform) {
+      T transformed = transform.apply(error);
+      return Result.fromError(transformed);
+    }
+
+    @Override
+    public <U> Result<U, E> flatMap(Function<V, Result<U, E>> mapper) {
+      return Result.fromError(error);
+    }
+
+    @Override
+    public <T> Result<V, T> flatMapError(Function<E, Result<V, T>> mapper) {
+      return mapper.apply(error);
+    }
+
+    @Override
+    public <U> U fold(Function<V, U> valueMapper, Function<E, U> errorMapper) {
+      return errorMapper.apply(error);
+    }
+
+    @Override
+    public Result<V, E> recover(Function<E, V> recovery) {
+      V recoveredValue = recovery.apply(error);
+      return Result.fromValue(recoveredValue);
+    }
+
+    @Override
+    public V getValue() {
+      throw new InvalidResultAccessException("No value present.");
+    }
+
+    @Override
+    public V valueOrElse(V other) {
+      return other;
+    }
+
+    @Override
+    public V valueOrElseGet(Supplier<V> supplier) {
+      return supplier.get();
+    }
+
+    @Override
+    public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier) {
+      throw supplier.get();
+    }
+
+    @Override
+    public E getError() {
+      return error;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      Error<?, ?> error1 = (Error<?, ?>) o;
+
+      return Objects.equals(error, error1.error);
+    }
+
+    @Override
+    public int hashCode() {
+      return error != null ? error.hashCode() : 0;
+    }
   }
+
+  public static class InvalidResultAccessException extends NoSuchElementException {
+
+    public InvalidResultAccessException(String message) {
+      super(message);
+    }
+  }
+
 }
