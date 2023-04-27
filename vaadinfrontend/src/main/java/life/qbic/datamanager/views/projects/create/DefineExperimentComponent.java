@@ -22,14 +22,13 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b>Create Experiment Component</b>
+ * <b>Define Experiment Component</b>
  *
- * <p>Component to create an experiment within a project containing the minimum required
- * information</p>
+ * <p>Component to define the minimum required experiment information within a project</p>
  *
  * @since 1.0.0
  */
-public class CreateExperimentComponent extends Composite<VerticalLayout> {
+public class DefineExperimentComponent extends Composite<VerticalLayout> {
 
   private final VerticalLayout contentLayout = getContent();
   public final TextField experimentNameField = new TextField("Experiment Name");
@@ -38,18 +37,18 @@ public class CreateExperimentComponent extends Composite<VerticalLayout> {
   public final MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
   public final MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
   public final MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
-  private final ExperimentCreationLayoutHandler experimentCreationLayoutHandler;
+  private final ExperimentDefinitionLayoutHandler experimentDefinitionLayoutHandler;
 
-  public CreateExperimentComponent(
+  public DefineExperimentComponent(
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     Objects.requireNonNull(experimentalDesignSearchService);
-    initExperimentCreationLayout();
+    initExperimentDefinitionLayout();
     styleExperimentCreationLayout();
-    experimentCreationLayoutHandler = new ExperimentCreationLayoutHandler(
+    experimentDefinitionLayoutHandler = new ExperimentDefinitionLayoutHandler(
         experimentalDesignSearchService);
   }
 
-  private void initExperimentCreationLayout() {
+  private void initExperimentDefinitionLayout() {
     initHeaderAndDescription();
     styleMultiSelectComboBoxes();
     contentLayout.add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
@@ -86,21 +85,28 @@ public class CreateExperimentComponent extends Composite<VerticalLayout> {
     contentLayout.setSizeFull();
   }
 
+  public void hideNameField() {
+    experimentNameField.setVisible(false);
+  }
+
+  public void showNameField() {
+    experimentNameField.setVisible(true);
+  }
+
   public boolean isValid() {
-    return experimentCreationLayoutHandler.validateInput();
+    return experimentDefinitionLayoutHandler.validateInput();
   }
 
   public void reset() {
-    experimentCreationLayoutHandler.reset();
+    experimentDefinitionLayoutHandler.reset();
   }
 
-
-  private final class ExperimentCreationLayoutHandler {
+  private final class ExperimentDefinitionLayoutHandler {
 
     private final List<Binder<?>> binders = new ArrayList<>();
     private final ExperimentalDesignSearchService experimentalDesignSearchService;
 
-    public ExperimentCreationLayoutHandler(
+    public ExperimentDefinitionLayoutHandler(
         ExperimentalDesignSearchService experimentalDesignSearchService) {
       this.experimentalDesignSearchService = experimentalDesignSearchService;
       configureValidators();

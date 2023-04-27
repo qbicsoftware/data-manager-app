@@ -50,7 +50,7 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String sourceOffer, String code,
-      String title, String objective, String experimentName, String experimentalDesign,
+      String title, String objective, String experimentalDesign,
       List<Species> speciesList, List<Specimen> specimenList, List<Analyte> analyteList,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       PersonReference projectManager) {
@@ -62,8 +62,8 @@ public class ProjectCreationService {
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      addExperimentToProjectService.addExperimentToProject(project.getId(), experimentName,
-          analyteList, speciesList, specimenList).ifFailure(e -> {
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+          speciesList, specimenList, analyteList).ifFailure(e -> {
         projectRepository.deleteByProjectCode(project.getProjectCode());
         throw new ProjectManagementException(
             "failed to add experiment to project " + project.getId(), e);

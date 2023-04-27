@@ -47,18 +47,14 @@ public class AddExperimentToProjectService {
    */
   public Result<ExperimentId, RuntimeException> addExperimentToProject(ProjectId projectId,
       String experimentName,
-      List<Analyte> analytes,
       List<Species> species,
-      List<Specimen> specimens) {
+      List<Specimen> specimens,
+      List<Analyte> analytes) {
     try {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       if (experimentName.isBlank()) {
         //ToDo Add Iterator for multiple experiments?
         experimentName = "Unnamed Experiment";
-      }
-      if (CollectionUtils.isEmpty(analytes)) {
-        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
-            ErrorParameters.of(analytes));
       }
       if (CollectionUtils.isEmpty(species)) {
         throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
@@ -67,6 +63,10 @@ public class AddExperimentToProjectService {
       if (CollectionUtils.isEmpty(specimens)) {
         throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
             ErrorParameters.of(specimens));
+      }
+      if (CollectionUtils.isEmpty(analytes)) {
+        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+            ErrorParameters.of(analytes));
       }
       Project project = projectRepository.find(projectId)
           .orElseThrow(ProjectNotFoundException::new);

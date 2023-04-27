@@ -17,7 +17,11 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -42,12 +46,14 @@ public class ExperimentListComponent extends Composite<CardLayout> {
   private final transient Handler handler;
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
+  private final ExperimentCreationDialog experimentCreationDialog;
   private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
       ExperimentalDesignCard::new);
 
-  public ExperimentListComponent(
-      @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+  public ExperimentListComponent(@Autowired ProjectInformationService projectInformationService,
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+      @Autowired AddExperimentToProjectService addExperimentToProjectService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     VerticalLayout contentLayout = new VerticalLayout();
@@ -55,7 +61,9 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     contentLayout.add(experimentalDesignAddCard);
     getContent().addTitle(TITLE);
     getContent().addFields(contentLayout);
-    this.handler = new Handler(projectInformationService, experimentInformationService);
+    experimentCreationDialog = new ExperimentCreationDialog(experimentalDesignSearchService);
+    this.handler = new Handler(projectInformationService, experimentInformationService,
+        addExperimentToProjectService);
   }
 
   public void setStyles(String... componentStyles) {
@@ -76,13 +84,18 @@ public class ExperimentListComponent extends Composite<CardLayout> {
 
     private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
+    private final AddExperimentToProjectService addExperimentToProjectService;
     private ProjectId projectId;
 
     public Handler(ProjectInformationService projectInformationService,
-        ExperimentInformationService experimentInformationService) {
+        ExperimentInformationService experimentInformationService,
+        AddExperimentToProjectService addExperimentToProjectService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
+      this.addExperimentToProjectService = addExperimentToProjectService;
       experiments.setRenderer(experimentCardRenderer);
+      openDialogUponClickingAddCard();
+      configureExperimentCreationDialog();
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -100,10 +113,30 @@ public class ExperimentListComponent extends Composite<CardLayout> {
 
     private Collection<Experiment> getExperimentsForProject(Project project) {
       List<Experiment> experimentList = new ArrayList<>();
-      project.experiments().forEach(
-          experimentId -> experimentInformationService.find(experimentId)
-              .ifPresent(experimentList::add));
+      project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
+          .ifPresent(experimentList::add));
       return experimentList;
+    }
+
+    private void openDialogUponClickingAddCard() {
+      experimentalDesignAddCard.addClickListener(event -> experimentCreationDialog.open());
+    }
+
+    private void configureExperimentCreationDialog() {
+      experimentCreationDialog.addExperimentCreationEventListener(
+          event -> processExperimentCreation(event.getSource().content()));
+      experimentCreationDialog.addCancelEventListener(
+          event -> experimentCreationDialog.resetAndClose());
+    }
+
+    private void processExperimentCreation(ExperimentCreationContent experimentCreationContent) {
+      //Todo Exchange with Result object
+      addExperimentToProjectService.addExperimentToProject(projectId,
+          experimentCreationContent.experimentName(), experimentCreationContent.species(),
+          experimentCreationContent.specimen(), experimentCreationContent.analytes());
+      experimentCreationDialog.resetAndClose();
+      experiments.getDataProvider().refreshAll();
+      //Todo Route to Experiment via ID
     }
   }
 

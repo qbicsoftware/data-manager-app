@@ -56,7 +56,7 @@ public class ProjectCreationDialog extends Dialog {
   private final FormLayout formLayout = new FormLayout();
   private final TextField titleField = new TextField("Title");
   private final TextArea projectObjective = new TextArea("Objective");
-  private final CreateExperimentComponent createExperimentComponent;
+  private final DefineExperimentComponent defineExperimentComponent;
   private final VerticalLayout projectContactsLayout = new VerticalLayout();
   public final ComboBox<PersonReference> principalInvestigator = new ComboBox<>(
       "Principal Investigator");
@@ -72,7 +72,8 @@ public class ProjectCreationDialog extends Dialog {
     initCodeAndTitleLayout();
     projectObjective.setRequired(true);
 
-    createExperimentComponent = new CreateExperimentComponent(experimentalDesignSearchService);
+    defineExperimentComponent = new DefineExperimentComponent(experimentalDesignSearchService);
+    defineExperimentComponent.hideNameField();
 
     initProjectContactsLayout();
 
@@ -107,11 +108,11 @@ public class ProjectCreationDialog extends Dialog {
   public ProjectCreationContent content() {
     return new ProjectCreationContent(offerSearchField.getPattern(),
         codeField.getValue(), titleField.getValue(), projectObjective.getValue(),
-        createExperimentComponent.experimentNameField.getValue(),
-        createExperimentComponent.speciesBox.getValue().stream().toList(),
-        createExperimentComponent.specimenBox.getValue().stream().toList(),
-        createExperimentComponent.analyteBox.getValue().stream().toList(),
-        createExperimentComponent.experimentalDesignDescription.getValue(),
+        defineExperimentComponent.experimentNameField.getValue(),
+        defineExperimentComponent.speciesBox.getValue().stream().toList(),
+        defineExperimentComponent.specimenBox.getValue().stream().toList(),
+        defineExperimentComponent.analyteBox.getValue().stream().toList(),
+        defineExperimentComponent.experimentalDesignDescription.getValue(),
         principalInvestigator.getValue(), responsiblePerson.getValue(), projectManager.getValue());
   }
 
@@ -148,7 +149,7 @@ public class ProjectCreationDialog extends Dialog {
     formLayout.add(offerSearchField);
     formLayout.add(codeAndTitleLayout);
     formLayout.add(projectObjective);
-    formLayout.add(createExperimentComponent);
+    formLayout.add(defineExperimentComponent);
     formLayout.add(projectContactsLayout);
     formLayout.add(principalInvestigator);
     formLayout.add(responsiblePerson);
@@ -202,7 +203,7 @@ public class ProjectCreationDialog extends Dialog {
     resetChildValues(formLayout);
     resetChildValidation(formLayout);
     resetChildValidation(codeAndTitleLayout);
-    createExperimentComponent.reset();
+    defineExperimentComponent.reset();
   }
 
   private void resetChildValues(Component component) {
@@ -290,30 +291,30 @@ public class ProjectCreationDialog extends Dialog {
     public void loadOfferContent(Offer offer) {
       titleField.setValue(offer.projectTitle().title());
       projectObjective.setValue(offer.projectObjective().objective());
-      createExperimentComponent.experimentalDesignDescription.setValue(
+      defineExperimentComponent.experimentalDesignDescription.setValue(
           offer.experimentalDesignDescription().description());
     }
 
     private void restrictInputLength() {
       titleField.setMaxLength((int) ProjectTitle.maxLength());
       projectObjective.setMaxLength((int) ProjectObjective.maxLength());
-      createExperimentComponent.experimentalDesignDescription.setMaxLength(
+      defineExperimentComponent.experimentalDesignDescription.setMaxLength(
           (int) ExperimentalDesignDescription.maxLength());
 
       titleField.setValueChangeMode(ValueChangeMode.EAGER);
       projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-      createExperimentComponent.experimentalDesignDescription.setValueChangeMode(
+      defineExperimentComponent.experimentalDesignDescription.setValueChangeMode(
           ValueChangeMode.EAGER);
 
       addConsumedLengthHelper(titleField, titleField.getValue());
       addConsumedLengthHelper(projectObjective, projectObjective.getValue());
-      addConsumedLengthHelper(createExperimentComponent.experimentalDesignDescription,
-          createExperimentComponent.experimentalDesignDescription.getValue());
+      addConsumedLengthHelper(defineExperimentComponent.experimentalDesignDescription,
+          defineExperimentComponent.experimentalDesignDescription.getValue());
 
       titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
       projectObjective.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      createExperimentComponent.experimentalDesignDescription.addValueChangeListener(
+      defineExperimentComponent.experimentalDesignDescription.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
@@ -340,7 +341,7 @@ public class ProjectCreationDialog extends Dialog {
 
     protected boolean validateInput() {
       binders.forEach(Binder::validate);
-      return binders.stream().allMatch(Binder::isValid) && createExperimentComponent.isValid();
+      return binders.stream().allMatch(Binder::isValid) && defineExperimentComponent.isValid();
     }
 
     public boolean isInputValid() {
