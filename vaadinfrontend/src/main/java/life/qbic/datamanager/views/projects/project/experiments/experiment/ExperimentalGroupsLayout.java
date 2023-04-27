@@ -122,7 +122,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       tagsContainer.setFlexDirection(FlexDirection.ROW);
       tagsContainer.setAlignContent(ContentAlignment.START);
       tagsContainer.addClassNames(Overflow.HIDDEN);
-      tagsContainer.setWidth("165px");//TODO better way to hide overflow?
+      tagsContainer.setWidthFull();
       add(cardTitle, tagsContainer);
       fillWithVariableLevels(tagsContainer, variableLevels);
       Span sampleSizeText = new Span("Group size: "+sampleSize);
@@ -137,10 +137,10 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       for (VariableLevel variableLevel : variableLevels) {
         String formattedValue = ExperimentValueFormatter.format(
             variableLevel.experimentalValue());
-        Tag tag = new Tag(
-            variableLevel.variableName().value() + ":" + formattedValue);
+        String experimentalValueText = variableLevel.variableName().value() + ":" + formattedValue;
+        Tag tag = new Tag(experimentalValueText);
         tag.addClassNames(TextOverflow.ELLIPSIS);//this does not seem to work, any ideas?
-        tag.getElement().setProperty("title", formattedValue);
+        tag.getElement().setProperty("title", experimentalValueText);
         tagsContainer.add(tag);
       }
     }
