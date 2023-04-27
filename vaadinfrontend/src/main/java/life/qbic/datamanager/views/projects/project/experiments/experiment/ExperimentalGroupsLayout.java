@@ -6,14 +6,23 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.theme.lumo.LumoUtility.AlignSelf;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.JustifyContent;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding.Right;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding.Top;
+import com.vaadin.flow.theme.lumo.LumoUtility.Position;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +106,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     public BaseExperimentalGroupCard() {
       setWidth(CARD_WIDTH);
       setHeight(CARD_HEIGHT);
+      setSpacing(false);
       getStyle().set("margin", "5px 5px");
       setCardLayoutStyle();
     }
@@ -122,12 +132,23 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       tagsContainer.setFlexDirection(FlexDirection.ROW);
       tagsContainer.setAlignContent(ContentAlignment.START);
       tagsContainer.addClassNames(Overflow.HIDDEN);
-      tagsContainer.setWidthFull();
+      tagsContainer.setSizeFull();
+      tagsContainer.setMaxWidth(tagsContainer.getWidth());
       add(cardTitle, tagsContainer);
       fillWithVariableLevels(tagsContainer, variableLevels);
       Span sampleSizeText = new Span("Group size: "+sampleSize);
-      sampleSizeText.addClassNames(FontWeight.BOLD, FontSize.SMALL);
+      sampleSizeText.addClassNames(FontWeight.BOLD, FontSize.XSMALL, AlignSelf.END, Margin.Right.SMALL);
       add(sampleSizeText);
+    }
+
+    private void overWriteSpacingStyles(Tag tag) {
+      tag.removeClassName(Margin.Top.SMALL);
+      tag.removeClassName(Padding.Top.SMALL);
+      tag.removeClassName(Padding.Right.SMALL);
+
+      tag.addClassName(Margin.Top.XSMALL);
+      tag.addClassName(Right.XSMALL);
+      tag.addClassName(Top.XSMALL);
     }
 
     private void fillWithVariableLevels(FlexLayout tagsContainer, VariableLevel[] variableLevels) {
@@ -139,7 +160,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
             variableLevel.experimentalValue());
         String experimentalValueText = variableLevel.variableName().value() + ":" + formattedValue;
         Tag tag = new Tag(experimentalValueText);
-        tag.addClassNames(TextOverflow.ELLIPSIS);//this does not seem to work, any ideas?
+        overWriteSpacingStyles(tag);
         tag.getElement().setProperty("title", experimentalValueText);
         tagsContainer.add(tag);
       }
