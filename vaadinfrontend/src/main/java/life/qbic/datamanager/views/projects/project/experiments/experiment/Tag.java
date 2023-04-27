@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Right;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
