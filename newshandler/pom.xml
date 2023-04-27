@@ -43,6 +43,12 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
     </dependency>
+      <dependency>
+          <groupId>life.qbic</groupId>
+          <artifactId>domain-concept</artifactId>
+          <version>0.14.0</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
 </project>

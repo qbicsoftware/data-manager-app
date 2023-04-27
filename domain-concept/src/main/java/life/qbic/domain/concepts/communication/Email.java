@@ -1,4 +1,4 @@
-package life.qbic.newshandler.usermanagement.email;
+package life.qbic.domain.concepts.communication;
 
 /**
  * A simple representation of an Email

@@ -54,12 +54,6 @@ public class NotificationService {
     messageBus.submit(message, messageParams);
   }
 
-  public void send(DomainEvent domainEvent) {
-    System.out.println("Receiving domain event: " + domainEvent.getClass().getSimpleName());
-    System.out.println(domainEvent);
-    System.out.println("Event occurred on " + domainEvent.occurredOn());
-  }
-
   /**
    * Generates a unique notification id.
    *

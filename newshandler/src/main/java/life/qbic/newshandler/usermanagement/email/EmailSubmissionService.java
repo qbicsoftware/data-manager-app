@@ -13,15 +13,19 @@ import java.io.Serial;
 import java.util.Properties;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.domain.concepts.communication.Email;
+import life.qbic.domain.concepts.communication.EmailService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * Sends emails informing a user that she was registered in the system
  *
  * @since 1.0.0
  */
+@Service
 public class EmailSubmissionService implements EmailService {
 
   private static final Logger log = LoggerFactory.logger(

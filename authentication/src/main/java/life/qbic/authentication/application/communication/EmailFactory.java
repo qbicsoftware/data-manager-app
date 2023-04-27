@@ -1,4 +1,7 @@
-package life.qbic.newshandler.usermanagement.email;
+package life.qbic.authentication.application.communication;
+
+import life.qbic.domain.concepts.communication.Email;
+import life.qbic.domain.concepts.communication.Recipient;
 
 /**
  * Creates registration messages.

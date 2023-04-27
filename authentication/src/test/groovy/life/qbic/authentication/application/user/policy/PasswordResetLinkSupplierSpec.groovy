@@ -1,4 +1,4 @@
-package life.qbic.newshandler.usermanagement.passwordreset
+package life.qbic.authentication.application.user.policy
 
 
 import spock.lang.Specification

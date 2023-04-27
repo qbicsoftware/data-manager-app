@@ -13,6 +13,7 @@ import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
 import life.qbic.authentication.domain.user.repository.jpa.EmailConverter;
 import life.qbic.authentication.domain.user.repository.jpa.FullNameConverter;
 import life.qbic.authentication.domain.user.repository.jpa.PasswordConverter;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventPublisher;
 
 /**
@@ -136,7 +137,7 @@ public class User implements Serializable {
    */
   public void confirmEmail() {
     UserEmailConfirmed event = UserEmailConfirmed.create(id.get(), emailAddress.get());
-    DomainEventPublisher.instance().publish(event);
+    DomainEventDispatcher.instance().dispatch(event);
     activate();
   }
 
@@ -149,7 +150,7 @@ public class User implements Serializable {
    */
   public void resetPassword() {
     PasswordReset event = PasswordReset.create(id, fullName, emailAddress);
-    DomainEventPublisher.instance().publish(event);
+    DomainEventDispatcher.instance().dispatch(event);
   }
 
   /**

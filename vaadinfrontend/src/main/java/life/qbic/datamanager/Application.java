@@ -4,11 +4,6 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serial;
-import java.util.Base64;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordOutput;
 import life.qbic.authentication.application.user.password.PasswordResetOutput;
@@ -27,12 +22,6 @@ import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.newshandler.usermanagement.email.Email;
-import life.qbic.newshandler.usermanagement.email.EmailFactory;
-import life.qbic.newshandler.usermanagement.email.EmailService;
-import life.qbic.newshandler.usermanagement.email.Recipient;
-import life.qbic.newshandler.usermanagement.passwordreset.PasswordResetLinkSupplier;
-import life.qbic.newshandler.usermanagement.registration.EmailConfirmationLinkSupplier;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -42,6 +31,12 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.util.Base64;
 
 /**
  * The entry point of the Spring Boot application.
@@ -78,9 +73,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
     var messageBus = appContext.getBean(MessageSubscription.class);
-    messageBus.subscribe(whenUserRegisteredSendEmail(appContext), USER_REGISTERED);
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
-    messageBus.subscribe(whenPasswordResetRequestSendEmail(appContext), PASSWORD_RESET);
 
     setupUseCases(appContext);
 
@@ -100,51 +93,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPassword = context.getBean(NewPassword.class);
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
-  }
-
-  private static MessageSubscriber whenUserRegisteredSendEmail(
-      ConfigurableApplicationContext appContext) {
-    return (message, messageParams) -> {
-      if (!messageParams.messageType.equals(USER_REGISTERED)) {
-        return;
-      }
-      try {
-        UserRegistered userRegistered = deserializeUserRegistered(message);
-        String emailConfirmationUrl = appContext.getBean(EmailConfirmationLinkSupplier.class)
-            .emailConfirmationUrl(userRegistered.userId());
-        EmailService registrationEmailSender = appContext.getBean(
-            EmailService.class);
-        Email registrationMail = EmailFactory.registrationEmail(NO_REPLY_QBIC_LIFE,
-            new Recipient(userRegistered.userEmail(), userRegistered.userFullName())
-            , emailConfirmationUrl);
-        registrationEmailSender.send(registrationMail);
-      } catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-    };
-  }
-
-  private static MessageSubscriber whenPasswordResetRequestSendEmail(
-      ConfigurableApplicationContext appContext) {
-    return (message, messageParams) -> {
-      if (!messageParams.messageType.equals(PASSWORD_RESET)) {
-        return;
-      }
-      try {
-        var passwordResetRequest = deserializePasswordReset(message);
-        var passwordResetLink = appContext.getBean(PasswordResetLinkSupplier.class)
-            .passwordResetUrl(passwordResetRequest.userId().get());
-        var registrationEmailSender = appContext.getBean(
-            EmailService.class);
-        var passwordResetEmail = EmailFactory.passwordResetEmail(NO_REPLY_QBIC_LIFE,
-            new Recipient(passwordResetRequest.userEmailAddress().get(),
-                passwordResetRequest.userFullName().get())
-            , passwordResetLink);
-        registrationEmailSender.send(passwordResetEmail);
-      } catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-    };
   }
 
   private static MessageSubscriber whenUserRegisteredLogUserInfo() {
