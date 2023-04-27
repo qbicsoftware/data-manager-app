@@ -95,8 +95,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
 
   private static class BaseExperimentalGroupCard extends VerticalLayout {
 
-    public final static String CARD_WIDTH = "200px";
-    public final static String CARD_HEIGHT = "200px";
+    public static final String CARD_WIDTH = "200px";
+    public static final String CARD_HEIGHT = "200px";
 
     public BaseExperimentalGroupCard() {
       setWidth(CARD_WIDTH);
