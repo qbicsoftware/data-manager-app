@@ -128,6 +128,9 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       tagsContainer.setAlignContent(ContentAlignment.START);
       tagsContainer.addClassNames(Overflow.HIDDEN);
       tagsContainer.setSizeFull();
+      // inheriting width leads to tags bigger than the text they contain
+      // tags have to inherit container width as MAX-width, so they overflow correctly
+      // we only know what that width is after setting it to full here
       tagsContainer.setMaxWidth(tagsContainer.getWidth());
       add(cardTitle, tagsContainer);
       fillWithVariableLevels(tagsContainer, variableLevels);
@@ -137,6 +140,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     }
 
     private void overWriteSpacingStyles(Tag tag) {
+      // classes have to be removed by name, or all classes are overwritten/multiple classes of the same type exist
       tag.removeClassName(Margin.Top.SMALL);
       tag.removeClassName(Padding.Top.SMALL);
       tag.removeClassName(Padding.Right.SMALL);
