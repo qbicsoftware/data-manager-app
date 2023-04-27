@@ -4,37 +4,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Domain Event Dispatcher</b>
+ * <p>
+ * Dispatches domain events to registered {@link DomainEventSubscriber}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * <p>
+ * <strong>Disclaimer</strong>
+ * <p>The implementation runs in the main application thread and is blocking. Depending on the number of registered subscriber
+ * and their implementation, expect the dispatching of events to block your main app.</p>
+ * @since 1.0.0
  */
 public class DomainEventDispatcher {
 
-  private static DomainEventDispatcher INSTANCE;
-  private final List<DomainEventSubscriber<? extends DomainEvent>> subscribers;
+    private static DomainEventDispatcher INSTANCE;
+    private final List<DomainEventSubscriber<? extends DomainEvent>> subscribers;
 
-  private DomainEventDispatcher() {
-    subscribers = new ArrayList<>();
-  }
-
-  public static DomainEventDispatcher instance() {
-    if (INSTANCE == null) {
-      INSTANCE = new DomainEventDispatcher();
+    private DomainEventDispatcher() {
+        subscribers = new ArrayList<>();
     }
-    return INSTANCE;
-  }
 
-  public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
-    this.subscribers.add(subscriber);
-  }
+    public static DomainEventDispatcher instance() {
+        if (INSTANCE == null) {
+            INSTANCE = new DomainEventDispatcher();
+        }
+        return INSTANCE;
+    }
 
-  public <T extends DomainEvent> void dispatch(T domainEvent) {
-    subscribers.stream()
-        .filter(subscriber -> subscriber.subscribedToEventType() == domainEvent.getClass())
-        .map(subscriber -> (DomainEventSubscriber<T>) subscriber)
-        .forEach(subscriber -> subscriber.handleEvent(domainEvent));
-  }
+    public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
+        this.subscribers.add(subscriber);
+    }
+
+    public <T extends DomainEvent> void dispatch(T domainEvent) {
+        subscribers.stream()
+                .filter(subscriber -> subscriber.subscribedToEventType() == domainEvent.getClass())
+                .map(subscriber -> (DomainEventSubscriber<T>) subscriber)
+                .forEach(subscriber -> subscriber.handleEvent(domainEvent));
+    }
 
 }
