@@ -2,6 +2,7 @@ package life.qbic.authentication.domain.user.event;
 
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import life.qbic.domain.concepts.DomainEvent;
 
 import java.io.Serial;
@@ -19,8 +20,9 @@ public class UserRegistered extends DomainEvent {
 
     private Instant occurredOn;
 
+    @JsonProperty("fullName")
     private String fullName;
-
+    @JsonProperty("email")
     private String email;
 
     private String userId;
@@ -56,12 +58,12 @@ public class UserRegistered extends DomainEvent {
         return userId;
     }
 
-    @JsonGetter("fullName")
+    @JsonProperty("fullName")
     public String userFullName() {
         return fullName;
     }
 
-    @JsonGetter("email")
+    @JsonProperty("email")
     public String userEmail() {
         return email;
     }
