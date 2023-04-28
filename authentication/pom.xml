@@ -66,5 +66,18 @@
       <version>0.14.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jobrunr</groupId>
+      <artifactId>jobrunr-spring-boot-3-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
   </dependencies>
 </project>

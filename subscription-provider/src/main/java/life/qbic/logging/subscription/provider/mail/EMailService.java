@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * <b>E-mail Service</b>
- *
+ * <p>
  * Implementation of the {@link MailService} that submits e-mail notifications.
  *
  * @since 1.0.0

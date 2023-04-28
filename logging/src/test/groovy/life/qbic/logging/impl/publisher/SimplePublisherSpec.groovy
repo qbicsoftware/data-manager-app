@@ -45,5 +45,4 @@ class SimplePublisherSpec extends Specification {
     }
 
 
-
 }

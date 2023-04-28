@@ -24,8 +24,10 @@ public class LandingPageHandler implements LandingPageHandlerInterface {
 
   private void addClickListeners() {
 
-    registeredLandingPage.login.addClickListener(event -> UI.getCurrent().navigate(AppRoutes.LOGIN));
+    registeredLandingPage.login.addClickListener(
+        event -> UI.getCurrent().navigate(AppRoutes.LOGIN));
 
-    registeredLandingPage.register.addClickListener(event -> UI.getCurrent().navigate(AppRoutes.REGISTER));
+    registeredLandingPage.register.addClickListener(
+        event -> UI.getCurrent().navigate(AppRoutes.REGISTER));
   }
 }

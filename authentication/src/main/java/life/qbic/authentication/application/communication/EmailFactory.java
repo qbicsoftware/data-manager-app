@@ -1,4 +1,7 @@
-package life.qbic.newshandler.usermanagement.email;
+package life.qbic.authentication.application.communication;
+
+import life.qbic.domain.concepts.communication.Email;
+import life.qbic.domain.concepts.communication.Recipient;
 
 /**
  * Creates registration messages.
@@ -13,9 +16,9 @@ public class EmailFactory {
         Dear %s,
                 
         Thank you for registering to QBiCs Data Management Portal.
-        
+                
         Please click the link below to confirm your registration:
-        
+                
         %s
                 
         Need help? Contact us for further questions at support@qbic.zendesk.com
@@ -30,9 +33,9 @@ public class EmailFactory {
                 
         we have received a password reset request. If you did not issue the reset, 
         please contact us asap at support@qbic.zendesk.com.
-        
+                
         Please click the link below to set your new password:
-        
+                
         %s
                 
         Need help? Contact us for further questions at support@qbic.zendesk.com

@@ -18,8 +18,8 @@ public interface LoginHandlerInterface {
   void handle(LoginLayout loginView);
 
   /**
-   * Passes a before event to the handler, so that the handler can decide how to react and orchestrate
-   * the layout properly.
+   * Passes a before event to the handler, so that the handler can decide how to react and
+   * orchestrate the layout properly.
    *
    * @param beforeEvent an event triggered before the router navigates to the view
    * @since 1.0.0

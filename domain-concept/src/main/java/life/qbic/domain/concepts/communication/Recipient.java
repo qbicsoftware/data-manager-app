@@ -1,4 +1,4 @@
-package life.qbic.newshandler.usermanagement.email;
+package life.qbic.domain.concepts.communication;
 
 /**
  * A recipient of an mail. Provides an mail address and a full name.
@@ -6,4 +6,5 @@ package life.qbic.newshandler.usermanagement.email;
 public record Recipient(
     String address,
     String fullName) {
+
 }

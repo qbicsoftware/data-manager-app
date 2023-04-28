@@ -15,8 +15,8 @@ public class PublisherFactory {
   private static final Slf4jWrapper log = Slf4jWrapper.create(PublisherFactory.class);
 
   /**
-   * Creates a simple publisher that includes implementations of the {@link Subscriber} interface that
-   * are available in the class path during run-time.
+   * Creates a simple publisher that includes implementations of the {@link Subscriber} interface
+   * that are available in the class path during run-time.
    *
    * @return an instance of type {@link Publisher}
    * @since 1.0.0

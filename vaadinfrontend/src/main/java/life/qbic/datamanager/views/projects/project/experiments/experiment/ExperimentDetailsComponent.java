@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -32,7 +34,6 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -190,10 +191,29 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
+
       experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
         fillExperimentalGroupDialog();
-        experimentalGroupsDialog.open();
+        handleAddExperimentalGroups();
       });
+    }
+
+    private void handleAddExperimentalGroups() {
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      if(!variables.isEmpty()) {
+        experimentalGroupsDialog.open();
+      } else {
+        selectSummaryTab();
+        InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
+            "Please define all of your experimental variables before adding groups.");
+        StyledNotification notification = new StyledNotification(successMessage);
+        notification.open();
+      }
+    }
+
+    private void selectSummaryTab() {
+      experimentSheet.setSelectedIndex(0);
     }
 
     private void loadExperimentalGroups() {
@@ -268,10 +288,21 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       AddExperimentalGroupResponse response = experimentInformationService.addExperimentalGroupToExperiment(
           experimentId,
           new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
-      if (response.responseCode() == ResponseCode.SUCCESS) {
-        loadExperimentalGroups();
-        groupSubmitted.source().close();
+      switch (response.responseCode()) {
+        case SUCCESS -> handleGroupSubmittedSuccess(groupSubmitted);
+        case CONDITION_EXISTS -> handleDuplicateConditionInput();
       }
+    }
+
+    private void handleGroupSubmittedSuccess(ExperimentalGroupSubmitEvent groupSubmitted) {
+      loadExperimentalGroups();
+      groupSubmitted.eventSourceDialog().close();
+    }
+
+    private void handleDuplicateConditionInput() {
+      InformationMessage infoMessage = new InformationMessage("A group with the same condition exists already.", "");
+      StyledNotification notification = new StyledNotification(infoMessage);
+      notification.open();
     }
   }
 }

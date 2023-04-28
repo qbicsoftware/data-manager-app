@@ -14,7 +14,7 @@ import life.qbic.domain.concepts.DomainEvent;
  *
  * @since 1.0.0
  */
-public class PasswordReset extends DomainEvent {
+public class PasswordResetRequested extends DomainEvent {
 
   @Serial
   private static final long serialVersionUID = 7086981262356789842L;
@@ -28,7 +28,7 @@ public class PasswordReset extends DomainEvent {
   private final EmailAddress emailAddress;
 
   /**
-   * Creates a new {@link PasswordReset} domain event.
+   * Creates a new {@link PasswordResetRequested} domain event.
    * <p>
    * The instant of the event will be the time-point of the event instance creation.
    *
@@ -36,11 +36,12 @@ public class PasswordReset extends DomainEvent {
    * @return a new instance of a password reset domain event
    * @since 1.0.0
    */
-  public static PasswordReset create(UserId userId, FullName name, EmailAddress emailAddress) {
-    return new PasswordReset(userId, Instant.now(), name, emailAddress);
+  public static PasswordResetRequested create(UserId userId, FullName name,
+      EmailAddress emailAddress) {
+    return new PasswordResetRequested(userId, Instant.now(), name, emailAddress);
   }
 
-  private PasswordReset(UserId userId, Instant occurredOn, FullName name,
+  private PasswordResetRequested(UserId userId, Instant occurredOn, FullName name,
       EmailAddress emailAddress) {
     super();
     this.userId = userId;
