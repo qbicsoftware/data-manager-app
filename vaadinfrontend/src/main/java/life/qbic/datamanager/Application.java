@@ -60,8 +60,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
   public static final String USER_REGISTERED = "UserRegistered";
-  public static final String PASSWORD_RESET = "PasswordResetRequested";
-  public static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
 
   public static void main(String[] args) {
     logger.info("Starting data manager app...");

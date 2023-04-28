@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
@@ -42,7 +43,7 @@ public final class UserRegistrationService {
   }
 
   private static void sendNotification(DomainEvent event, NotificationService notificationService) {
-  Objects.requireNonNull(notificationService)
+  Objects.requireNonNull(notificationService);
     var notificationId = notificationService.newNotificationId();
     var notification =
         Notification.create(
