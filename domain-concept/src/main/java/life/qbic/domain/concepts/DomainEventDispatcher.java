@@ -19,7 +19,7 @@ import java.util.List;
 public class DomainEventDispatcher {
 
   private static DomainEventDispatcher INSTANCE;
-  private final List<DomainEventSubscriber<? extends DomainEvent>> subscribers;
+  private final List<DomainEventSubscriber<?>> subscribers;
 
   private DomainEventDispatcher() {
     subscribers = new ArrayList<>();

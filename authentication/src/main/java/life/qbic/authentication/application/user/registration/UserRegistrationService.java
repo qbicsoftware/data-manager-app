@@ -42,6 +42,7 @@ public final class UserRegistrationService {
   }
 
   private static void sendNotification(DomainEvent event, NotificationService notificationService) {
+  Objects.requireNonNull(notificationService)
     var notificationId = notificationService.newNotificationId();
     var notification =
         Notification.create(

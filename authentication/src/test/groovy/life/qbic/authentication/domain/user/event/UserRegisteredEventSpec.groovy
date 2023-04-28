@@ -5,13 +5,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import spock.lang.Specification
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
- */
 class UserRegisteredEventSpec extends Specification {
 
     def "Ensure serialisation and deserialisation"() {
