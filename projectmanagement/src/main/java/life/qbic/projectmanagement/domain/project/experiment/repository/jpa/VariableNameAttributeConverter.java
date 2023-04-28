@@ -19,6 +19,10 @@ public class VariableNameAttributeConverter implements AttributeConverter<Variab
 
   @Override
   public VariableName convertToEntityAttribute(String dbData) {
+    //Necessary since we expect VariableName to be non-null, but have no variableNames after project creation.
+    if (dbData == null) {
+      return null;
+    }
     return VariableName.create(dbData);
   }
 }
