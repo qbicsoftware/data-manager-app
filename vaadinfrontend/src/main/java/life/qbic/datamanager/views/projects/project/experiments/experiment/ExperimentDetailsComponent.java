@@ -205,12 +205,16 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       if(!variables.isEmpty()) {
         experimentalGroupsDialog.open();
       } else {
-        experimentSheet.setSelectedIndex(0);
+        selectSummaryTab();
         InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
             "Please define all of your experimental variables before adding groups.");
         StyledNotification notification = new StyledNotification(successMessage);
         notification.open();
       }
+    }
+
+    private void selectSummaryTab() {
+      experimentSheet.setSelectedIndex(0);
     }
 
     private void loadExperimentalGroups() {
