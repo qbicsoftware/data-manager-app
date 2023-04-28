@@ -13,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
  * @since 1.0.0
  */
 public abstract class DataManagerLayout extends AppLayout {
+
   private HorizontalLayout headerLayout;
 
   protected DataManagerLayout() {

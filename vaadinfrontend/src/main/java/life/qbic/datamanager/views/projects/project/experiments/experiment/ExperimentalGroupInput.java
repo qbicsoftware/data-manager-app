@@ -117,6 +117,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     super.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
     return super.isInvalid();
   }
+
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");

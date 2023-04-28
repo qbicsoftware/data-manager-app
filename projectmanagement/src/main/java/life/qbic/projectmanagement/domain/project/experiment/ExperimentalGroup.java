@@ -37,7 +37,7 @@ public class ExperimentalGroup {
   /**
    * Creates a new instance of an experimental group object.
    *
-   * @param condition the condition the experimental group represents
+   * @param condition  the condition the experimental group represents
    * @param sampleSize the number of samples in this experimental group
    * @return the experimental group
    * @since 1.0.0
@@ -47,7 +47,8 @@ public class ExperimentalGroup {
     if (sampleSize < 1) {
       // Admitting not very meaningful to allow for sample size of 1 and 2
       // However we leave it up to the project manager to make that decision
-      throw new IllegalArgumentException("The number of biological replicates must be at least one");
+      throw new IllegalArgumentException(
+          "The number of biological replicates must be at least one");
     }
     return new ExperimentalGroup(condition, sampleSize);
   }

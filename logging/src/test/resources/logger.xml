@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-  <property name="LOGS" value="${LOG_PATH:-./logs}" />
+  <property name="LOGS" value="${LOG_PATH:-./logs}"/>
 
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
@@ -14,7 +14,7 @@
 
   <!-- LOG everything at INFO level -->
   <root level="info">
-    <appender-ref ref="Console" />
+    <appender-ref ref="Console"/>
   </root>
 
 

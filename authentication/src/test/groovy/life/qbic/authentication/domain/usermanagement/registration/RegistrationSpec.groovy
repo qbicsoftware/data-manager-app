@@ -7,11 +7,11 @@ import life.qbic.authentication.application.user.registration.UserRegistrationEx
 import life.qbic.authentication.application.user.registration.UserRegistrationService
 import life.qbic.authentication.domain.registry.DomainRegistry
 import life.qbic.authentication.domain.user.concept.*
-import life.qbic.domain.concepts.event.EventStore
 import life.qbic.authentication.domain.user.repository.UserDataStorage
 import life.qbic.authentication.domain.user.repository.UserDomainService
 import life.qbic.authentication.domain.user.repository.UserRepository
 import life.qbic.broadcasting.MessageBusSubmission
+import life.qbic.domain.concepts.event.EventStore
 import spock.lang.Shared
 import spock.lang.Specification
 

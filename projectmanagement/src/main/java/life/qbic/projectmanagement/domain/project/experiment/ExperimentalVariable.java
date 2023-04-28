@@ -49,7 +49,7 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    for(ExperimentalValue level : levels) {
+    for (ExperimentalValue level : levels) {
       if (hasDifferentUnitAsExistingLevels(level)) {
         throw new IllegalArgumentException(
             "experimental value not applicable. This variable has other levels without a unit or with a different unit.");

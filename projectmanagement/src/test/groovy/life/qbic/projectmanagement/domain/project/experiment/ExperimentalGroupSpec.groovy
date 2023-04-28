@@ -12,52 +12,52 @@ import spock.lang.Specification
  */
 class ExperimentalGroupSpec extends Specification {
 
-  def condition = createCondition("Color", "red", null)
-  def conditionWithUnit = createCondition("Time", "10", "Seconds")
+    def condition = createCondition("Color", "red", null)
+    def conditionWithUnit = createCondition("Time", "10", "Seconds")
 
-  def "Experimental groups with the same id are equal"() {
-    given:
-    def experimentalGroup = ExperimentalGroup.create(condition, 1)
-    experimentalGroup.experimentalGroupId = 201
-    expect:
-    experimentalGroup.equals(experimentalGroup)
-  }
-
-  def "Experimental groups with the different ids are not equal"() {
-    given:
-    def experimentalGroup = ExperimentalGroup.create(condition, 1)
-    def experimentalGroup2 = ExperimentalGroup.create(condition, 1)
-    experimentalGroup.experimentalGroupId = 201
-    experimentalGroup2.experimentalGroupId = 202
-    expect:
-    !experimentalGroup.equals(experimentalGroup2)
-  }
-
-  def "Experimental groups with the same id have the same hashcode"() {
-    given:
-    def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
-    experimentalGroup.experimentalGroupId = 201
-    expect:
-    experimentalGroup.hashCode() == experimentalGroup.hashCode()
-  }
-
-  def "Experimental groups with the different ids have a different hashcode"() {
-    given:
-    def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
-    def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
-    experimentalGroup.experimentalGroupId = 201
-    experimentalGroup2.experimentalGroupId = 202
-    expect:
-    !experimentalGroup.hashCode().equals(experimentalGroup2.hashCode())
-  }
-
-  Condition createCondition(String variableName, String valueName, @Nullable String valueUnit) {
-    Condition condition
-    if (valueUnit != null) {
-      condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName, valueUnit))))
-    } else {
-      condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName))))
+    def "Experimental groups with the same id are equal"() {
+        given:
+        def experimentalGroup = ExperimentalGroup.create(condition, 1)
+        experimentalGroup.experimentalGroupId = 201
+        expect:
+        experimentalGroup.equals(experimentalGroup)
     }
-    return condition
-  }
+
+    def "Experimental groups with the different ids are not equal"() {
+        given:
+        def experimentalGroup = ExperimentalGroup.create(condition, 1)
+        def experimentalGroup2 = ExperimentalGroup.create(condition, 1)
+        experimentalGroup.experimentalGroupId = 201
+        experimentalGroup2.experimentalGroupId = 202
+        expect:
+        !experimentalGroup.equals(experimentalGroup2)
+    }
+
+    def "Experimental groups with the same id have the same hashcode"() {
+        given:
+        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+        experimentalGroup.experimentalGroupId = 201
+        expect:
+        experimentalGroup.hashCode() == experimentalGroup.hashCode()
+    }
+
+    def "Experimental groups with the different ids have a different hashcode"() {
+        given:
+        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+        def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
+        experimentalGroup.experimentalGroupId = 201
+        experimentalGroup2.experimentalGroupId = 202
+        expect:
+        !experimentalGroup.hashCode().equals(experimentalGroup2.hashCode())
+    }
+
+    Condition createCondition(String variableName, String valueName, @Nullable String valueUnit) {
+        Condition condition
+        if (valueUnit != null) {
+            condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName, valueUnit))))
+        } else {
+            condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName))))
+        }
+        return condition
+    }
 }

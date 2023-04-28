@@ -38,7 +38,7 @@ class ExperimentalDesignSpec extends Specification {
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
         design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
-        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))),5)
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))), 5)
         when: "an experimental group is defined with identical variable levels"
         var response = design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("normal"))), 4)
         then: "an exception is thrown"
@@ -50,17 +50,17 @@ class ExperimentalDesignSpec extends Specification {
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
         design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
-        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))),5)
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))), 5)
 
         when: "a new experimental group is defined"
-        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("altered"))),4)
+        design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("altered"))), 4)
 
         then: "both experimental groups are created and no exception is thrown"
         def groups = design.experimentalGroups
         groups.size() == 2
         def cond1 = Condition.create(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))))
         def cond2 = Condition.create(Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("altered"))))
-        def expectedConditions = new HashSet<Condition>(Arrays.asList(cond1,cond2))
+        def expectedConditions = new HashSet<Condition>(Arrays.asList(cond1, cond2))
         def returnedConditions = new HashSet<Condition>()
         for (ExperimentalGroup group : groups) {
             returnedConditions.add(group.condition())

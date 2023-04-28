@@ -17,7 +17,8 @@ public interface RegisterUserOutput {
   /**
    * Callback is executed, when the user registration failed.
    *
-   * @param userRegistrationException the Exception containing the reasons for the user registration failure
+   * @param userRegistrationException the Exception containing the reasons for the user registration
+   *                                  failure
    * @since 1.0.0
    */
   void onUnexpectedFailure(UserRegistrationException userRegistrationException);
