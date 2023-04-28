@@ -4,8 +4,8 @@ import life.qbic.authentication.domain.user.concept.EmailAddress
 import life.qbic.authentication.domain.user.concept.EncryptedPassword
 import life.qbic.authentication.domain.user.concept.FullName
 import life.qbic.authentication.domain.user.concept.User
-import life.qbic.authentication.domain.user.event.PasswordReset
-import life.qbic.domain.concepts.DomainEventPublisher
+import life.qbic.authentication.domain.user.event.PasswordResetRequested
+import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import spock.lang.Shared
 import spock.lang.Specification
@@ -42,15 +42,15 @@ class UserSpec extends Specification {
         boolean domainEventPublished = false
 
         and:
-        DomainEventPublisher publisher = DomainEventPublisher.instance()
-        publisher.subscribe(new DomainEventSubscriber<PasswordReset>() {
+        DomainEventDispatcher publisher = DomainEventDispatcher.instance()
+        publisher.subscribe(new DomainEventSubscriber<PasswordResetRequested>() {
             @Override
-            Class<PasswordReset> subscribedToEventType() {
-                return PasswordReset.class
+            Class<PasswordResetRequested> subscribedToEventType() {
+                return PasswordResetRequested.class
             }
 
             @Override
-            void handleEvent(PasswordReset event) {
+            void handleEvent(PasswordResetRequested event) {
                 domainEventPublished = true
             }
         })

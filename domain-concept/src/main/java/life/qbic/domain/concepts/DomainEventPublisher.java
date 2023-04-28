@@ -10,7 +10,10 @@ import java.util.List;
  * and publish domain events within the domain.
  *
  * @since 1.0.0
+ * @deprecated Please use the successor {@link DomainEventDispatcher} for subscribing to domain
+ * events.
  */
+@Deprecated(forRemoval = true)
 public class DomainEventPublisher {
 
   private static final ThreadLocal<List<DomainEventSubscriber<? extends DomainEvent>>> subscribers = new ThreadLocal<>();
@@ -18,12 +21,12 @@ public class DomainEventPublisher {
   private static final ThreadLocal<Boolean> publishing =
       ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-  public static DomainEventPublisher instance() {
-    return new DomainEventPublisher();
-  }
-
   public DomainEventPublisher() {
     super();
+  }
+
+  public static DomainEventPublisher instance() {
+    return new DomainEventPublisher();
   }
 
   public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {

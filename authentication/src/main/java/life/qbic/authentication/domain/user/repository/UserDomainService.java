@@ -6,7 +6,7 @@ import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.domain.concepts.DomainEventPublisher;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 
 /**
  * <b>User Domain Service</b>
@@ -49,6 +49,6 @@ public class UserDomainService {
     userRepository.addUser(user);
     var userCreatedEvent = UserRegistered.create(user.id().get(), user.fullName().get(),
         user.emailAddress().get());
-    DomainEventPublisher.instance().publish(userCreatedEvent);
+    DomainEventDispatcher.instance().dispatch(userCreatedEvent);
   }
 }
