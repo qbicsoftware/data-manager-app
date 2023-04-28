@@ -1,7 +1,7 @@
 package life.qbic.authentication.application.user.policy;
 
 import life.qbic.authentication.application.communication.UserContactService;
-import life.qbic.authentication.domain.user.event.PasswordReset;
+import life.qbic.authentication.domain.user.event.PasswordResetRequested;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordReset> {
+public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordResetRequested> {
 
     private final UserContactService userContactService;
 
@@ -31,11 +31,11 @@ public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubsc
 
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
-        return PasswordReset.class;
+        return PasswordResetRequested.class;
     }
 
     @Override
-    public void handleEvent(PasswordReset event) {
+    public void handleEvent(PasswordResetRequested event) {
         jobScheduler.enqueue(() -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(), event.userId()));
     }
 }

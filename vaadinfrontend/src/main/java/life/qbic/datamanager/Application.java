@@ -11,7 +11,7 @@ import life.qbic.authentication.application.user.password.PasswordResetRequest;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
 import life.qbic.authentication.domain.registry.DomainRegistry;
-import life.qbic.authentication.domain.user.event.PasswordReset;
+import life.qbic.authentication.domain.user.event.PasswordResetRequested;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.authentication.domain.user.repository.UserDomainService;
 import life.qbic.authentication.domain.user.repository.UserRepository;
@@ -61,7 +61,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
   public static final String USER_REGISTERED = "UserRegistered";
-  public static final String PASSWORD_RESET = "PasswordReset";
+  public static final String PASSWORD_RESET = "PasswordResetRequested";
   public static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
 
   public static void main(String[] args) {
@@ -114,11 +114,11 @@ public class Application extends SpringBootServletInitializer implements AppShel
     return (UserRegistered) ois.readObject();
   }
 
-  static PasswordReset deserializePasswordReset(String event)
+  static PasswordResetRequested deserializePasswordReset(String event)
       throws IOException, ClassNotFoundException {
     byte[] content = Base64.getDecoder().decode(event);
     ByteArrayInputStream bais = new ByteArrayInputStream(content);
     ObjectInputStream ois = new ObjectInputStream(bais);
-    return (PasswordReset) ois.readObject();
+    return (PasswordResetRequested) ois.readObject();
   }
 }
