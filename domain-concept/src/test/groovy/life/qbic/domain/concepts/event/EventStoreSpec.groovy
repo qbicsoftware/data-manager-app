@@ -3,6 +3,7 @@ package life.qbic.domain.concepts.event
 
 import life.qbic.domain.concepts.SimpleEventStore
 import life.qbic.domain.concepts.TemporaryEventRepository
+import life.qbic.domain.concepts.TestEvent
 import spock.lang.Specification
 
 class EventStoreSpec extends Specification {
