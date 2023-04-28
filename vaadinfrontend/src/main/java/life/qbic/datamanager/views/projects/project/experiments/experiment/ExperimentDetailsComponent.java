@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -190,10 +192,25 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
+
       experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
         fillExperimentalGroupDialog();
-        experimentalGroupsDialog.open();
+        handleAddExperimentalGroups();
       });
+    }
+
+    private void handleAddExperimentalGroups() {
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      if(!variables.isEmpty()) {
+        experimentalGroupsDialog.open();
+      } else {
+        experimentSheet.setSelectedIndex(0);
+        InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
+            "Please define all of your experimental variables before adding groups.");
+        StyledNotification notification = new StyledNotification(successMessage);
+        notification.open();
+      }
     }
 
     private void loadExperimentalGroups() {
