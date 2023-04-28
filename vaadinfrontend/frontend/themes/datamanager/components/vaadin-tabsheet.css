@@ -1,6 +1,6 @@
 /*Removes underline from tabSheet*/
 
 :host(.minimal) [part="tabs-container"] {
-    box-shadow: none;
-    --_lumo-tab-marker-display: none;
+  box-shadow: none;
+  --_lumo-tab-marker-display: none;
 }

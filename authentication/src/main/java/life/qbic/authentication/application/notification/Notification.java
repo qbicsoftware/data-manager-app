@@ -1,11 +1,10 @@
 package life.qbic.authentication.application.notification;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import life.qbic.domain.concepts.DomainEvent;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>Notification</b>

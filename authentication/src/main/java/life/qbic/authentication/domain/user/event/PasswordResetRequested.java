@@ -1,12 +1,11 @@
 package life.qbic.authentication.domain.user.event;
 
+import java.io.Serial;
+import java.time.Instant;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.domain.concepts.DomainEvent;
-
-import java.io.Serial;
-import java.time.Instant;
 
 /**
  * <b>Password Reset Domain Event</b>
@@ -37,12 +36,13 @@ public class PasswordResetRequested extends DomainEvent {
    * @return a new instance of a password reset domain event
    * @since 1.0.0
    */
-  public static PasswordResetRequested create(UserId userId, FullName name, EmailAddress emailAddress) {
+  public static PasswordResetRequested create(UserId userId, FullName name,
+      EmailAddress emailAddress) {
     return new PasswordResetRequested(userId, Instant.now(), name, emailAddress);
   }
 
   private PasswordResetRequested(UserId userId, Instant occurredOn, FullName name,
-                                 EmailAddress emailAddress) {
+      EmailAddress emailAddress) {
     super();
     this.userId = userId;
     this.occurredOn = occurredOn;

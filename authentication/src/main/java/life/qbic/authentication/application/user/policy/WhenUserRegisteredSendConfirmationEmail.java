@@ -15,13 +15,15 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class WhenUserRegisteredSendConfirmationEmail implements DomainEventSubscriber<UserRegistered> {
+public class WhenUserRegisteredSendConfirmationEmail implements
+    DomainEventSubscriber<UserRegistered> {
 
   private final UserContactService userContactService;
 
   private final JobScheduler jobScheduler;
 
-  public WhenUserRegisteredSendConfirmationEmail(@Autowired UserContactService userContactService, @Autowired JobScheduler jobScheduler) {
+  public WhenUserRegisteredSendConfirmationEmail(@Autowired UserContactService userContactService,
+      @Autowired JobScheduler jobScheduler) {
     this.userContactService = userContactService;
     DomainEventDispatcher.instance().subscribe(this);
     this.jobScheduler = jobScheduler;

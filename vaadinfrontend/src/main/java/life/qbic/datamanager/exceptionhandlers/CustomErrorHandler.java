@@ -1,8 +1,13 @@
 package life.qbic.datamanager.exceptionhandlers;
 
+import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ErrorEvent;
 import com.vaadin.flow.server.ErrorHandler;
+import java.util.Locale;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -12,12 +17,6 @@ import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
-
-import java.util.Locale;
-import java.util.Objects;
-
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 @Component
 public class CustomErrorHandler implements ErrorHandler,
@@ -54,7 +53,7 @@ public class CustomErrorHandler implements ErrorHandler,
   }
 
   private UserFriendlyErrorMessage getUserFriendlyMessage(ApplicationException applicationException,
-                                                          Locale locale) {
+      Locale locale) {
     String message = messageSource.getMessage(applicationException.errorCode().name(),
         applicationException.errorParameters().value(), locale);
     if (message.contains(MESSAGE_SEPARATOR)) {

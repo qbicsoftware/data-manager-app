@@ -9,13 +9,12 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
+import java.util.ArrayList;
+import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <b>Sample Registration Dialog</b>

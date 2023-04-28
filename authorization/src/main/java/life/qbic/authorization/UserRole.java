@@ -1,14 +1,22 @@
 package life.qbic.authorization;
 
-import jakarta.persistence.*;
-import org.springframework.security.core.GrantedAuthority;
+import static java.util.Objects.requireNonNull;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
-
-import static java.util.Objects.requireNonNull;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * Represents a role of a user. A user role can provides a granted authority and can provide

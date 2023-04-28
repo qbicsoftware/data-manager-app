@@ -1,5 +1,9 @@
 package life.qbic.authorization;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -9,11 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * <b>QBiC's implementation of the Spring PermissionEvaluator interface</b>
@@ -33,7 +32,7 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
 
   @Override
   public boolean hasPermission(Authentication authentication, Object targetDomainObject,
-                               Object permission) {
+      Object permission) {
     if (Objects.isNull(targetDomainObject)) {
       return false;
     }
@@ -73,7 +72,7 @@ public class QbicPermissionEvaluator implements PermissionEvaluator {
 
   @Override
   public boolean hasPermission(Authentication authentication, Serializable targetId,
-                               String targetType, Object permission) {
+      String targetType, Object permission) {
     return false;
   }
 }

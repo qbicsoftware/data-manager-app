@@ -1,10 +1,9 @@
 package life.qbic.persistence;
 
+import java.util.Objects;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
-
-import java.util.Objects;
 
 /**
  * Simple implementation of a {@link Pageable} interface that provides offset and limit based

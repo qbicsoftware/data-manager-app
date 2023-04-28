@@ -2,6 +2,9 @@ package life.qbic.datamanager.security;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinServletRequest;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.repository.UserRepository;
@@ -12,10 +15,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Component;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Optional;
 
 @Component
 public class SecurityService implements Serializable {
@@ -38,7 +37,8 @@ public class SecurityService implements Serializable {
 
   public Optional<User> get() {
     return getAuthentication()
-        .flatMap(authentication -> userRepository.findByEmail(EmailAddress.from(authentication.getName())));
+        .flatMap(authentication -> userRepository.findByEmail(
+            EmailAddress.from(authentication.getName())));
   }
 
   public void logout() {

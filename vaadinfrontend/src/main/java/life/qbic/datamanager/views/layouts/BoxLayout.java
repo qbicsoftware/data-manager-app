@@ -12,7 +12,8 @@ import life.qbic.datamanager.views.notifications.DisplayMessage;
 /**
  * <b>Box Layout</b>
  *
- * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons and a span to add links.
+ * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons
+ * and a span to add links.
  * Furthermore, the description text can be toggled visible or invisible
  *
  * @since 1.0.0
@@ -82,7 +83,8 @@ public class BoxLayout extends VerticalLayout {
         "pb-l",
         "pr-l",
         "pl-l");
-    contentLayout.add(layoutTitle, notificationLayout, descriptionText, fieldLayout, buttonLayout, linkSpan);
+    contentLayout.add(layoutTitle, notificationLayout, descriptionText, fieldLayout, buttonLayout,
+        linkSpan);
   }
 
   private void styleFieldLayout() {
@@ -169,7 +171,8 @@ public class BoxLayout extends VerticalLayout {
   }
 
   /**
-   * Span that will hold content like small texts and links that should be not so present as a button
+   * Span that will hold content like small texts and links that should be not so present as a
+   * button
    *
    * @param components Components like Text, RouterLink, or Tertiary Buttons
    */

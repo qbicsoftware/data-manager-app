@@ -10,7 +10,8 @@ import java.util.List;
  *
  * <p>
  * <strong>Disclaimer</strong>
- * <p>The implementation runs in the main application thread and is blocking. Depending on the number of registered subscriber
+ * <p>The implementation runs in the main application thread and is blocking. Depending on the
+ * number of registered subscriber
  * and their implementation, expect the dispatching of events to block your main app.</p>
  *
  * @since 1.0.0

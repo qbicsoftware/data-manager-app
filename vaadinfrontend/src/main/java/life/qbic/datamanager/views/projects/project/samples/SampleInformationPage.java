@@ -7,15 +7,14 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.Serial;
+import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.Serial;
-import java.util.Objects;
 
 /**
  * Sample Information page
@@ -36,17 +35,22 @@ public class SampleInformationPage extends Div {
   private static final Logger log = LoggerFactory.logger(SampleInformationPage.class);
   private final transient SampleInformationPageHandler sampleInformationPageHandler;
 
-  public SampleInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired SampleOverviewComponent sampleOverviewComponent) {
+  public SampleInformationPage(
+      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired SampleOverviewComponent sampleOverviewComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleOverviewComponent);
     setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
-    sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent, sampleOverviewComponent);
+    sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
+        sampleOverviewComponent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(sampleOverviewComponent)));
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        System.identityHashCode(sampleOverviewComponent)));
   }
 
-  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent, SampleOverviewComponent sampleOverviewComponent) {
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
+      SampleOverviewComponent sampleOverviewComponent) {
     Board board = new Board();
 
     Row topRow = new Row();
@@ -76,7 +80,8 @@ public class SampleInformationPage extends Div {
     ProjectNavigationBarComponent projectNavigationBarComponent;
     SampleOverviewComponent sampleOverviewComponent;
 
-    public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent, SampleOverviewComponent sampleOverviewComponent) {
+    public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
+        SampleOverviewComponent sampleOverviewComponent) {
       this.sampleOverviewComponent = sampleOverviewComponent;
       this.projectNavigationBarComponent = projectNavigationBarComponent;
     }

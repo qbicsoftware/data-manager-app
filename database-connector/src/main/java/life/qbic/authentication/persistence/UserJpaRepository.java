@@ -1,5 +1,7 @@
 package life.qbic.authentication.persistence;
 
+import java.util.List;
+import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
@@ -7,19 +9,18 @@ import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
-
 
 /**
  * <b>User JPA repository</b>
  *
  * <p>Implementation for the {@link UserDataStorage} interface.
  *
- * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact with
+ * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
+ * with
  * persistent {@link User} data in the storage layer.
  *
- * <p>The actual JPA implementation is done by {@link QbicUserRepo}, which is injected as dependency
+ * <p>The actual JPA implementation is done by {@link QbicUserRepo}, which is injected as
+ * dependency
  * upon creation.
  *
  * @since 1.0.0

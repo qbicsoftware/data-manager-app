@@ -1,14 +1,19 @@
 package life.qbic.datamanager.views.general;
 
-import com.vaadin.flow.component.*;
-import com.vaadin.flow.dom.Element;
-import org.slf4j.Logger;
-
-import java.util.Objects;
-import java.util.function.Function;
-
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
+
+import com.vaadin.flow.component.AbstractField;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.HasSize;
+import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.dom.Element;
+import java.util.Objects;
+import java.util.function.Function;
+import org.slf4j.Logger;
 
 /**
  * @param <S> the component to display when in viewing mode
@@ -34,8 +39,8 @@ public class ToggleDisplayEditComponent<S extends Component,
    * @param emptyDisplayComponent The display component to show when the field is empty.
    */
   public ToggleDisplayEditComponent(Function<U, S> displayProvider,
-                                    T inputComponent,
-                                    S emptyDisplayComponent) {
+      T inputComponent,
+      S emptyDisplayComponent) {
     super(inputComponent.getEmptyValue());
     requireNonNull(displayProvider, "Display provider must not be null");
     requireNonNull(inputComponent, "Input component must not be null");

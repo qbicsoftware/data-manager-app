@@ -12,14 +12,13 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.io.Serial;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
-
-import java.io.Serial;
 
 /**
  * ProjectNavigationBarComponent

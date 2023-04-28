@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.persistence;
 
+import java.util.List;
+import java.util.Objects;
 import life.qbic.persistence.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
@@ -8,9 +10,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Basic implementation to query project preview information
@@ -35,7 +34,7 @@ public class ProjectPreviewJpaRepository implements ProjectPreviewLookup {
 
   @Override
   public List<ProjectPreview> query(String filter, int offset, int limit,
-                                    List<SortOrder> sortOrders) {
+      List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
       Order order;
       if (it.isDescending()) {

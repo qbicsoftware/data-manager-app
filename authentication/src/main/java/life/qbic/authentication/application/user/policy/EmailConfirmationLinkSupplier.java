@@ -1,10 +1,9 @@
 package life.qbic.authentication.application.user.policy;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * Supplies mail confirmation routes
@@ -38,7 +37,8 @@ public class EmailConfirmationLinkSupplier {
   }
 
   public String emailConfirmationUrl(String userId) {
-    String pathWithQuery = "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
+    String pathWithQuery =
+        "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
     try {
       URL url = new URL(protocol, host, port, pathWithQuery);
       return url.toExternalForm();

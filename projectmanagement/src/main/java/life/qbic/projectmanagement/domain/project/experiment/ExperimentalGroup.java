@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-
 import java.util.Objects;
 
 /**
@@ -48,7 +47,8 @@ public class ExperimentalGroup {
     if (sampleSize < 1) {
       // Admitting not very meaningful to allow for sample size of 1 and 2
       // However we leave it up to the project manager to make that decision
-      throw new IllegalArgumentException("The number of biological replicates must be at least one");
+      throw new IllegalArgumentException(
+          "The number of biological replicates must be at least one");
     }
     return new ExperimentalGroup(condition, sampleSize);
   }

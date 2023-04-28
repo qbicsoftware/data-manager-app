@@ -15,6 +15,10 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -23,11 +27,6 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * A component displaying all links of a project
@@ -46,7 +45,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
-                               @Autowired OfferLookupService offerLookupService) {
+      @Autowired OfferLookupService offerLookupService) {
     Objects.requireNonNull(offerLookupService);
     Objects.requireNonNull(projectLinkingService);
     initOfferSearch(offerLookupService);
@@ -161,7 +160,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
        * @param fromClient whether the value change originated from the client
        */
       public SelectedOfferChangeEvent(OfferSearch source, HasValue<?, OfferPreview> hasValue,
-                                      OfferPreview oldValue, boolean fromClient) {
+          OfferPreview oldValue, boolean fromClient) {
         super(source, hasValue, oldValue, fromClient);
       }
     }

@@ -1,13 +1,12 @@
 package life.qbic.authorization.security;
 
+import java.io.Serial;
+import java.util.Collection;
+import java.util.List;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.io.Serial;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * <b>Implementation of the UserDetails interface</b>

@@ -4,6 +4,11 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.util.Base64;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordOutput;
 import life.qbic.authentication.application.user.password.PasswordResetOutput;
@@ -31,12 +36,6 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serial;
-import java.util.Base64;
 
 /**
  * The entry point of the Spring Boot application.

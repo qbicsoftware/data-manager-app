@@ -7,7 +7,8 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 /**
  * <b>Contact Element</b>
  *
- * <p>Element consisting of a vertical layout and labels to represent a {@link PersonReference} contact via full name and email.
+ * <p>Element consisting of a vertical layout and labels to represent a {@link PersonReference}
+ * contact via full name and email.
  * Furthermore, the element contains specific styling for the labels.
  * </p>
  * <p>Use this element when you want to represent contact data of a person!</p>

@@ -1,12 +1,11 @@
 package life.qbic.authentication.domain.user.repository;
 
-import life.qbic.authentication.domain.user.concept.EmailAddress;
-import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.concept.UserId;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
+import life.qbic.authentication.domain.user.concept.EmailAddress;
+import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.UserId;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
@@ -46,9 +45,9 @@ public class UserRepository implements Serializable {
    * Searches for a user with the provided mail address
    *
    * <p>Note: A runtime exception is thrown, when there is more than one user found. We want the
-   * mail addresses to be unique in the user context, but they might change over time. So emails
-   * are not suitable as entity identifiers but still need to be unique in the user management
-   * context at any given time.
+   * mail addresses to be unique in the user context, but they might change over time. So emails are
+   * not suitable as entity identifiers but still need to be unique in the user management context
+   * at any given time.
    *
    * <p>
    *

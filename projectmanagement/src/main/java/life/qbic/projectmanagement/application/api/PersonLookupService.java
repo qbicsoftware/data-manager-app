@@ -1,8 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
-import life.qbic.projectmanagement.domain.project.PersonReference;
-
 import java.util.List;
+import life.qbic.projectmanagement.domain.project.PersonReference;
 
 public interface PersonLookupService {
 

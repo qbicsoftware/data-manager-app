@@ -1,9 +1,8 @@
 package life.qbic.logging.subscription.provider.mail;
 
-import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
-
 import java.io.IOException;
 import java.util.Properties;
+import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
 
 /**
  * <b>Mail Service</b>

@@ -16,14 +16,13 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**

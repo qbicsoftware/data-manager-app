@@ -11,14 +11,13 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.projectmanagement.application.ExperimentValueFormatter;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
  * TODO!
@@ -71,7 +70,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   private static ExperimentalGroupCard getExperimentalGroup(
       ExperimentalGroupDTO experimentalGroup) {
     Set<VariableLevel> variableLevels = experimentalGroup.levels();
-    return new ExperimentalGroupCard(experimentalGroup.sampleSize(), variableLevels.toArray(VariableLevel[]::new));
+    return new ExperimentalGroupCard(experimentalGroup.sampleSize(),
+        variableLevels.toArray(VariableLevel[]::new));
   }
 
   public record AddExperimentalGroupCommand() {

@@ -10,7 +10,8 @@ import java.util.List;
  * and publish domain events within the domain.
  *
  * @since 1.0.0
- * @deprecated Please use the successor {@link DomainEventDispatcher} for subscribing to domain events.
+ * @deprecated Please use the successor {@link DomainEventDispatcher} for subscribing to domain
+ * events.
  */
 @Deprecated(forRemoval = true)
 public class DomainEventPublisher {
@@ -66,8 +67,8 @@ public class DomainEventPublisher {
    * method will return <code>false</code>.
    *
    * @return false, when there are currently domain events published to signal that the removal was
-   * not performed; true, when the publisher was not in the process of publishing
-   * and all subscribers have been removed.
+   * not performed; true, when the publisher was not in the process of publishing and all
+   * subscribers have been removed.
    * @since 1.0.0
    */
   public boolean clear() {

@@ -3,10 +3,9 @@ package life.qbic.authentication.domain.user.event;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import life.qbic.domain.concepts.DomainEvent;
-
 import java.io.Serial;
 import java.time.Instant;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>A user registered in the user management context.</b>
@@ -32,7 +31,7 @@ public class UserRegistered extends DomainEvent {
   }
 
   public static UserRegistered create(final String userId, final String fullName,
-                                      final String email) {
+      final String email) {
     return new UserRegistered(userId, fullName, email);
   }
 

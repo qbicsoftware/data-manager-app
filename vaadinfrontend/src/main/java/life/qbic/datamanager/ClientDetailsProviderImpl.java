@@ -3,7 +3,6 @@ package life.qbic.datamanager;
 import com.vaadin.flow.component.page.ExtendedClientDetails;
 import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-
 import java.util.Optional;
 
 /**

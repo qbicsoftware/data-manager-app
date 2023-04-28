@@ -1,25 +1,27 @@
 package life.qbic.authentication.application.user.registration;
 
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationResponse;
-import life.qbic.application.commons.Result;
-import life.qbic.authentication.application.ServiceException;
-import life.qbic.authentication.application.notification.Notification;
-import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.domain.registry.DomainRegistry;
-import life.qbic.authentication.domain.user.concept.*;
-import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
-import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
-import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
-import life.qbic.authentication.domain.user.repository.UserNotFoundException;
-import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.domain.concepts.DomainEvent;
-
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.authentication.application.ServiceException;
+import life.qbic.authentication.application.notification.Notification;
+import life.qbic.authentication.application.notification.NotificationService;
+import life.qbic.authentication.domain.registry.DomainRegistry;
+import life.qbic.authentication.domain.user.concept.EmailAddress;
+import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
+import life.qbic.authentication.domain.user.concept.EncryptedPassword;
+import life.qbic.authentication.domain.user.concept.EncryptedPassword.PasswordValidationException;
+import life.qbic.authentication.domain.user.concept.FullName;
+import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
+import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.UserId;
+import life.qbic.authentication.domain.user.repository.UserNotFoundException;
+import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>User Registration Service</b>
@@ -64,7 +66,7 @@ public final class UserRegistrationService {
    * @since 1.0.0
    */
   public ApplicationResponse registerUser(final String fullName, final String email,
-                                          final char[] rawPassword) {
+      final char[] rawPassword) {
 
     var registrationResponse = validateInput(fullName, email, rawPassword);
     if (registrationResponse.hasFailures()) {

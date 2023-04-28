@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.login;
 
 import com.vaadin.flow.router.BeforeEvent;
+import java.util.List;
+import java.util.Map;
 import life.qbic.authentication.application.user.registration.ConfirmEmailInput;
 import life.qbic.authentication.application.user.registration.ConfirmEmailOutput;
 import life.qbic.datamanager.Application;
@@ -13,9 +15,6 @@ import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * <b> The LoginHandler handles the view elements of the {@link LoginLayout}. </b>
@@ -35,7 +34,7 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Autowired
   LoginHandler(ConfirmEmailInput confirmEmailInput,
-               @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
+      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
     this.confirmEmailInput = confirmEmailInput;
     this.emailConfirmationParameter = emailConfirmationParameter;
   }

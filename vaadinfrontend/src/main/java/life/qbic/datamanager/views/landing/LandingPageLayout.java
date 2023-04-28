@@ -4,11 +4,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
-import life.qbic.datamanager.views.DataManagerLayout;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.views.DataManagerLayout;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b> The landing page that allows logging in for the user. </b>

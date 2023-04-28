@@ -1,14 +1,13 @@
 package life.qbic.logging.subscription.provider;
 
+import static java.util.Objects.requireNonNull;
+
+import java.io.IOException;
 import life.qbic.logging.subscription.api.LogLevel;
 import life.qbic.logging.subscription.api.LogMessage;
 import life.qbic.logging.subscription.api.Subscriber;
 import life.qbic.logging.subscription.provider.mail.MailService;
 import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
-
-import java.io.IOException;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Example mail on error {@link Subscriber} implementation.

@@ -2,16 +2,15 @@ package life.qbic.datamanager.views.login.newpassword;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.router.BeforeEvent;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
 import life.qbic.authentication.application.user.password.NewPasswordOutput;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * <b>Handles setting new passwords</b>
@@ -32,7 +31,7 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
 
   @Autowired
   NewPasswordHandler(NewPasswordInput newPasswordUseCase,
-                     @Value("${password-reset-parameter}") String newPasswordParam) {
+      @Value("${password-reset-parameter}") String newPasswordParam) {
     this.passwordReset = newPasswordUseCase;
     this.currentUserId = "";
     this.passwordResetQueryParameter = newPasswordParam;

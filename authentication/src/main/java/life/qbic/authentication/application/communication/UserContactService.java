@@ -1,5 +1,6 @@
 package life.qbic.authentication.application.communication;
 
+import java.util.Optional;
 import life.qbic.authentication.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.authentication.application.user.policy.PasswordResetLinkSupplier;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
@@ -11,8 +12,6 @@ import life.qbic.domain.concepts.communication.EmailService;
 import life.qbic.domain.concepts.communication.Recipient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -32,9 +31,9 @@ public class UserContactService {
   private final EmailConfirmationLinkSupplier emalConfirmationLinkSupplier;
 
   public UserContactService(@Autowired EmailService emailService,
-                            @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier,
-                            @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
-                            @Autowired UserRepository userRepository) {
+      @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier,
+      @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
+      @Autowired UserRepository userRepository) {
     this.emailService = emailService;
     this.passwordResetLinkSupplier = passwordResetLinkSupplier;
     this.userRepository = userRepository;
@@ -52,7 +51,8 @@ public class UserContactService {
 
   public void sendEmailConfirmation(String userId) {
     Optional<User> userSearchResult = userRepository.findById(UserId.from(userId));
-    User user = userSearchResult.orElseThrow(() -> new RuntimeException("Cannot send email confirmation. Unknown user with id " + userId));
+    User user = userSearchResult.orElseThrow(() -> new RuntimeException(
+        "Cannot send email confirmation. Unknown user with id " + userId));
     var emailAddressConfirmationEmail = EmailFactory.registrationEmail(NO_REPLY_QBIC_LIFE,
         new Recipient(user.emailAddress().get(), user.fullName().get()),
         emalConfirmationLinkSupplier.emailConfirmationUrl(userId));

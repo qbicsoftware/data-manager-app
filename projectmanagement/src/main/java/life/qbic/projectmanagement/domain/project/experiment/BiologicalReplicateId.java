@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import jakarta.persistence.Embeddable;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -14,6 +13,7 @@ import java.util.Random;
  */
 @Embeddable
 public class BiologicalReplicateId implements Serializable {
+
   @Serial
   private static final long serialVersionUID = 3380429168282318636L;
   private Long id;
@@ -33,8 +33,12 @@ public class BiologicalReplicateId implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     BiologicalReplicateId that = (BiologicalReplicateId) o;
     return Objects.equals(id, that.id);
   }

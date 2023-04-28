@@ -1,17 +1,29 @@
 package life.qbic.projectmanagement.domain.project;
 
-import jakarta.persistence.*;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
+import static java.util.Objects.requireNonNull;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static java.util.Objects.requireNonNull;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
 
 /**
  * A project planned and run at QBiC.
@@ -74,8 +86,8 @@ public class Project {
 
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
-                  PersonReference projectManager, PersonReference principalInvestigator,
-                  PersonReference responsiblePerson) {
+      PersonReference projectManager, PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
     requireNonNull(principalInvestigator, "requires non-null principal investigator");
     requireNonNull(projectCode, "requires non-null project code");
     requireNonNull(projectId, "requires non-null project id");
@@ -212,8 +224,8 @@ public class Project {
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
-                               PersonReference projectManager, PersonReference principalInvestigator,
-                               PersonReference responsiblePerson) {
+      PersonReference projectManager, PersonReference principalInvestigator,
+      PersonReference responsiblePerson) {
     return new Project(ProjectId.create(), projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }
@@ -229,8 +241,8 @@ public class Project {
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
-                           ProjectCode projectCode, PersonReference projectManager,
-                           PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      ProjectCode projectCode, PersonReference projectManager,
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
     return new Project(projectId, projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }

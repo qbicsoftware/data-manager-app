@@ -1,13 +1,12 @@
 package life.qbic.authentication.domain.user.concept;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.authentication.domain.policy.PolicyCheckReport;
 import life.qbic.authentication.domain.policy.PolicyStatus;
 import life.qbic.authentication.domain.user.policy.EmailFormatPolicy;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * <b>EmailAddress</b>
@@ -96,7 +95,7 @@ public class EmailAddress implements Serializable {
     private final transient PolicyCheckReport emailPolicyCheckReport;
 
     EmailValidationException(PolicyCheckReport emailAddressCheckReport,
-                             String invalidEmailAddress, String message) {
+        String invalidEmailAddress, String message) {
       super(message);
       this.emailPolicyCheckReport = emailAddressCheckReport;
       this.invalidEmailAddress = invalidEmailAddress;

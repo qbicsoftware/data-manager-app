@@ -1,8 +1,7 @@
 package life.qbic.domain.concepts.event;
 
-import life.qbic.domain.concepts.DomainEvent;
-
 import java.util.Set;
+import life.qbic.domain.concepts.DomainEvent;
 
 public interface EventStore {
 

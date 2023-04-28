@@ -2,5 +2,5 @@
 See https://vaadin.com/docs/latest/styling/getting-started/#styling.get-started.overriding-lumo for more information*/
 
 :host(.searchbox) [part="toggle-button"]::before {
-    content: var(--lumo-icons-search);
+  content: var(--lumo-icons-search);
 }

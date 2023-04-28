@@ -1,9 +1,8 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository.jpa;
 
 import jakarta.persistence.AttributeConverter;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 
 public class ExperimentalDesignDescriptionConverter implements
     AttributeConverter<ExperimentalDesignDescription, String> {

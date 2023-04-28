@@ -1,11 +1,10 @@
 package life.qbic.projectmanagement.application;
 
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import org.springframework.stereotype.Service;
 
 /**
  * SampleInformationService
@@ -65,8 +64,8 @@ public class SampleInformationService {
     }
 
     public static Sample create(String id, String label, String batch, String status,
-                                String experiment, String source, String condition1, String condition2, String species,
-                                String specimen) {
+        String experiment, String source, String condition1, String condition2, String species,
+        String specimen) {
       return new Sample(id, label, batch, status, experiment, source, condition1, condition2,
           species, specimen);
     }

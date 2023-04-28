@@ -1,6 +1,10 @@
 package life.qbic.datamanager.views.projects.create;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -20,18 +24,21 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
-import life.qbic.projectmanagement.domain.project.*;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.projectmanagement.domain.finances.offer.Offer;
+import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
+import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
  * <b>Create Project Component</b>
@@ -126,19 +133,23 @@ public class ProjectInformationDialog extends Dialog {
     handler.handle();
   }
 
-  public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+  public void addProjectCreationEventListener(
+      ComponentEventListener<ProjectCreationEvent> listener) {
     handler.addProjectCreationEventListener(listener);
   }
 
-  public void addCancelEventListener(ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
+  public void addCancelEventListener(
+      ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
     handler.addUserCancelEventListener(listener);
   }
 
   public ProjectCreationContent content() {
-    return new ProjectCreationContent(codeField.getValue(), offerSearchField.getPattern(), titleField.getValue(),
+    return new ProjectCreationContent(codeField.getValue(), offerSearchField.getPattern(),
+        titleField.getValue(),
         projectObjective.getValue(), speciesBox.getValue().stream().toList(),
         specimenBox.getValue().stream().toList(), analyteBox.getValue().stream().toList(),
-        experimentalDesignField.getValue(), principalInvestigator.getValue(), responsiblePerson.getValue(),
+        experimentalDesignField.getValue(), principalInvestigator.getValue(),
+        responsiblePerson.getValue(),
         projectManager.getValue());
   }
 
@@ -208,8 +219,9 @@ public class ProjectInformationDialog extends Dialog {
 
   private void initExperimentalDesignLayout() {
     Span experimentHeader = new Span("Experiment");
-    Span experimentDescription = new Span("Please specify the sample origin information of the samples. Multiple "
-        + "values are allowed!");
+    Span experimentDescription = new Span(
+        "Please specify the sample origin information of the samples. Multiple "
+            + "values are allowed!");
     experimentHeader.addClassName("font-bold");
     experimentalDesignLayout.setMargin(false);
     experimentalDesignLayout.setPadding(false);
@@ -262,7 +274,8 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void resetChildValues(Component component) {
-    component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>).forEach(comp -> ((HasValue<?, ?>) comp).clear());
+    component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
+        .forEach(comp -> ((HasValue<?, ?>) comp).clear());
 
   }
 
@@ -275,7 +288,8 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private void resetChildValidation(Component component) {
-    component.getChildren().filter(comp -> comp instanceof HasValidation).forEach(comp -> ((HasValidation) comp).setInvalid(false));
+    component.getChildren().filter(comp -> comp instanceof HasValidation)
+        .forEach(comp -> ((HasValidation) comp).setInvalid(false));
   }
 
   public void resetAndClose() {
@@ -284,6 +298,7 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   private class Handler {
+
     List<Binder<?>> binders = new ArrayList<>();
     private final List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<ProjectInformationDialog>>> cancelListeners =
@@ -305,39 +320,51 @@ public class ProjectInformationDialog extends Dialog {
       createButton.addClickListener(event -> {
         validateInput();
         if (isInputValid()) {
-          listeners.forEach(listener -> listener.onComponentEvent(new ProjectCreationEvent(ProjectInformationDialog.this, true)));
+          listeners.forEach(listener -> listener.onComponentEvent(
+              new ProjectCreationEvent(ProjectInformationDialog.this, true)));
         }
       });
-      cancelButton.addClickListener(event -> cancelListeners.forEach(listener -> listener.onComponentEvent(new UserCancelEvent<>(ProjectInformationDialog.this))));
+      cancelButton.addClickListener(event -> cancelListeners.forEach(
+          listener -> listener.onComponentEvent(
+              new UserCancelEvent<>(ProjectInformationDialog.this))));
 
     }
 
 
     private void configureValidators() {
       Binder<Container<String>> binderTitle = new Binder<>();
-      binderTitle.forField(titleField).withValidator(value -> !value.isBlank(), "Please provide a title").bind(Container::value, Container::setValue);
+      binderTitle.forField(titleField)
+          .withValidator(value -> !value.isBlank(), "Please provide a title")
+          .bind(Container::value, Container::setValue);
       Binder<Container<String>> binderObjective = new Binder<>();
       binderObjective.forField(projectObjective).withValidator(value -> !value.isBlank(),
           "Please provide an " + "objective").bind(Container::value, Container::setValue);
       Binder<Container<Set<Species>>> binderSpecies = new Binder<>();
-      binderSpecies.forField(speciesBox).asRequired("Please select at least one species").bind(Container::value
-          , Container::setValue);
+      binderSpecies.forField(speciesBox).asRequired("Please select at least one species")
+          .bind(Container::value
+              , Container::setValue);
       Binder<Container<Set<Analyte>>> binderAnalyte = new Binder<>();
-      binderAnalyte.forField(analyteBox).asRequired("Please select at least one analyte").bind(Container::value
-          , Container::setValue);
+      binderAnalyte.forField(analyteBox).asRequired("Please select at least one analyte")
+          .bind(Container::value
+              , Container::setValue);
       Binder<Container<Set<Specimen>>> binderSpecimen = new Binder<>();
-      binderSpecimen.forField(specimenBox).asRequired("Please select at least one specimen").bind(Container::value, Container::setValue);
+      binderSpecimen.forField(specimenBox).asRequired("Please select at least one specimen")
+          .bind(Container::value, Container::setValue);
       Binder<Container<PersonReference>> binderPI = new Binder<>();
-      binderPI.forField(principalInvestigator).asRequired("Please select at least one PI").bind(Container::value, Container::setValue);
+      binderPI.forField(principalInvestigator).asRequired("Please select at least one PI")
+          .bind(Container::value, Container::setValue);
       Binder<Container<PersonReference>> binderPM = new Binder<>();
-      binderPM.forField(projectManager).asRequired("Please select at least one PM").bind(Container::value,
-          Container::setValue);
-      binders.addAll(List.of(binderTitle, binderObjective, binderSpecies, binderAnalyte, binderSpecimen,
-          binderPI, binderPM));
+      binderPM.forField(projectManager).asRequired("Please select at least one PM")
+          .bind(Container::value,
+              Container::setValue);
+      binders.addAll(
+          List.of(binderTitle, binderObjective, binderSpecies, binderAnalyte, binderSpecimen,
+              binderPI, binderPM));
     }
 
     private void generateProjectCode() {
-      generateCodeButton.addClickListener(buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
+      generateCodeButton.addClickListener(
+          buttonClickEvent -> setCodeFieldValue(ProjectCode.random().value()));
     }
 
     private void setCodeFieldValue(String code) {
@@ -365,8 +392,10 @@ public class ProjectInformationDialog extends Dialog {
       addConsumedLengthHelper(experimentalDesignField, experimentalDesignField.getValue());
 
       titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      projectObjective.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      experimentalDesignField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      projectObjective.addValueChangeListener(
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
+      experimentalDesignField.addValueChangeListener(
+          e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
     private void addConsumedLengthHelper(TextArea textArea, String newValue) {
@@ -399,11 +428,13 @@ public class ProjectInformationDialog extends Dialog {
       return validateInput();
     }
 
-    public void addProjectCreationEventListener(ComponentEventListener<ProjectCreationEvent> listener) {
+    public void addProjectCreationEventListener(
+        ComponentEventListener<ProjectCreationEvent> listener) {
       this.listeners.add(listener);
     }
 
-    public void addUserCancelEventListener(ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
+    public void addUserCancelEventListener(
+        ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
       this.cancelListeners.add(listener);
     }
   }

@@ -1,13 +1,23 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
-
-import java.util.*;
 
 /**
  * <b>Experimental Design</b>
@@ -114,7 +124,7 @@ public class ExperimentalDesign {
    * @since 1.0.0
    */
   Result<VariableLevel, Exception> addLevelToVariable(String variableName,
-                                                      ExperimentalValue level) {
+      ExperimentalValue level) {
     Optional<ExperimentalVariable> experimentalVariableOptional = variableWithName(variableName);
     if (experimentalVariableOptional.isEmpty()) {
       return Result.fromError(
@@ -209,7 +219,7 @@ public class ExperimentalDesign {
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
   public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
-                                                           int sampleSize) {
+      int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
       throw new IllegalArgumentException("at least one variable level is required");

@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
 import jakarta.persistence.AttributeConverter;
-
 import java.util.Objects;
 
 /**

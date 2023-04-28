@@ -1,6 +1,12 @@
 package life.qbic.authentication.domain.user.concept;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import java.io.Serial;
+import java.io.Serializable;
 import life.qbic.authentication.domain.user.event.PasswordResetRequested;
 import life.qbic.authentication.domain.user.event.UserActivated;
 import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
@@ -8,9 +14,6 @@ import life.qbic.authentication.domain.user.repository.jpa.EmailConverter;
 import life.qbic.authentication.domain.user.repository.jpa.FullNameConverter;
 import life.qbic.authentication.domain.user.repository.jpa.PasswordConverter;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * <b>User class</b>
@@ -61,7 +64,7 @@ public class User implements Serializable {
    * @since 1.0.0
    */
   public static User create(FullName fullName, EmailAddress emailAddress,
-                            EncryptedPassword encryptedPassword) {
+      EncryptedPassword encryptedPassword) {
     UserId id = UserId.create();
     var user = new User(id, fullName, emailAddress, encryptedPassword);
     user.active = false;
@@ -70,7 +73,7 @@ public class User implements Serializable {
   }
 
   private User(UserId id, FullName fullName, EmailAddress emailAddress,
-               EncryptedPassword encryptedPassword) {
+      EncryptedPassword encryptedPassword) {
     this.id = id;
     this.fullName = fullName;
     this.emailAddress = emailAddress;

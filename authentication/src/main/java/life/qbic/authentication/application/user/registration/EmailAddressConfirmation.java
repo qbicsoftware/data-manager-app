@@ -1,8 +1,7 @@
 package life.qbic.authentication.application.user.registration;
 
-import life.qbic.authentication.domain.user.repository.UserNotFoundException;
-
 import java.util.Objects;
+import life.qbic.authentication.domain.user.repository.UserNotFoundException;
 
 /**
  * <b>Email Address Confirmation use case</b>

@@ -11,4 +11,5 @@ public record Email(
     String from,
     Recipient to,
     String mimeType) {
+
 }

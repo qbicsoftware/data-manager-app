@@ -1,10 +1,13 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import jakarta.persistence.*;
-import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
-
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import java.util.Objects;
 import java.util.StringJoiner;
+import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
  * <b>Variable Level</b>
@@ -25,7 +28,7 @@ public class VariableLevel {
   private ExperimentalValue experimentalValue;
 
   public VariableLevel(VariableName variableName,
-                       ExperimentalValue experimentalValue) {
+      ExperimentalValue experimentalValue) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(experimentalValue);
 
@@ -34,7 +37,7 @@ public class VariableLevel {
   }
 
   public static VariableLevel create(VariableName variableName,
-                                     ExperimentalValue experimentalValue) {
+      ExperimentalValue experimentalValue) {
     return new VariableLevel(variableName, experimentalValue);
   }
 

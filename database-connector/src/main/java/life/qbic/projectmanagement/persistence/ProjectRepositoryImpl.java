@@ -1,5 +1,9 @@
 package life.qbic.projectmanagement.persistence;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import java.util.List;
+import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -8,11 +12,6 @@ import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
-
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 
 /**
  * <b>Project repository implementation</b>
@@ -20,12 +19,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
  * <p>Implementation for the {@link ProjectRepository} interface.
  *
  * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
- * with
- * persistent {@link Project} data in the storage layer.
+ * with persistent {@link Project} data in the storage layer.
  *
  * <p>The actual JPA implementation is done by {@link QbicProjectRepo}, which is injected as
- * dependency
- * upon creation.
+ * dependency upon creation.
  * <p>
  * Also handles project storage in openBIS through {@link QbicProjectDataRepo}
  *

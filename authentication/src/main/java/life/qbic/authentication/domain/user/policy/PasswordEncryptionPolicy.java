@@ -1,13 +1,13 @@
 package life.qbic.authentication.domain.user.policy;
 
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * <b>Password encryption policy</b>
@@ -155,6 +155,7 @@ public class PasswordEncryptionPolicy {
   }
 
   static class EncryptionException extends RuntimeException {
+
     EncryptionException(String reason, Exception cause) {
       super(reason, cause);
     }

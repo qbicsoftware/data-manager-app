@@ -1,9 +1,8 @@
 package life.qbic.authorization;
 
+import java.util.List;
 import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.security.core.GrantedAuthority;
-
-import java.util.List;
 
 /**
  * <b>System Permission Service</b>

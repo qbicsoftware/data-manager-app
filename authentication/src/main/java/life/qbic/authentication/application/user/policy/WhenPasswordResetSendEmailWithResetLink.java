@@ -10,20 +10,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * When a password reset request reset event occurred, email
- * the user with a link to reset their password.
+ * When a password reset request reset event occurred, email the user with a link to reset their
+ * password.
  *
  * @since 1.0.0
  */
 @Component
-public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordResetRequested> {
+public class WhenPasswordResetSendEmailWithResetLink implements
+    DomainEventSubscriber<PasswordResetRequested> {
 
   private final UserContactService userContactService;
 
   private final JobScheduler jobScheduler;
 
   public WhenPasswordResetSendEmailWithResetLink(@Autowired UserContactService userContactService,
-                                                 @Autowired JobScheduler jobScheduler) {
+      @Autowired JobScheduler jobScheduler) {
     this.userContactService = userContactService;
     this.jobScheduler = jobScheduler;
     DomainEventDispatcher.instance().subscribe(this);
@@ -36,6 +37,8 @@ public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubsc
 
   @Override
   public void handleEvent(PasswordResetRequested event) {
-    jobScheduler.enqueue(() -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(), event.userId()));
+    jobScheduler.enqueue(
+        () -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(),
+            event.userId()));
   }
 }

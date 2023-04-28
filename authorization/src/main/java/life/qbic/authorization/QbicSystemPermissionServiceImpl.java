@@ -1,13 +1,12 @@
 package life.qbic.authorization;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.UserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class QbicSystemPermissionServiceImpl implements SystemPermissionService {
@@ -16,7 +15,7 @@ public class QbicSystemPermissionServiceImpl implements SystemPermissionService 
   private final UserRoleRepository userRoleRepository;
 
   public QbicSystemPermissionServiceImpl(@Autowired UserRoleRepository userRoleRepository,
-                                         @Autowired SystemRoleRepository systemRoleRepository) {
+      @Autowired SystemRoleRepository systemRoleRepository) {
     this.systemRoleRepository = systemRoleRepository;
     this.userRoleRepository = userRoleRepository;
   }

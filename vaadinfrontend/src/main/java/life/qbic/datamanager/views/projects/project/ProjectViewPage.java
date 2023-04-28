@@ -1,8 +1,14 @@
 package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.ParentLayout;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
+import java.io.Serial;
+import java.util.Objects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
@@ -12,9 +18,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.Serial;
-import java.util.Objects;
 
 /**
  * Project view page that shows project information and additional components to manage project
@@ -33,8 +36,8 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   private final transient ProjectViewHandler handler;
 
   public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
-                         @Autowired ExperimentInformationPage experimentInformationPage,
-                         @Autowired SampleInformationPage sampleInformationPage) {
+      @Autowired ExperimentInformationPage experimentInformationPage,
+      @Autowired SampleInformationPage sampleInformationPage) {
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
     handler = new ProjectViewHandler(projectInformationPage,

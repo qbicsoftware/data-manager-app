@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -19,6 +21,16 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.beans.PropertyDescriptor;
+import java.io.Serial;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
@@ -34,14 +46,6 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.slf4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.beans.PropertyDescriptor;
-import java.io.Serial;
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Sample Overview Component
@@ -78,9 +82,9 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
-                                 @Autowired ExperimentInformationService experimentInformationService,
-                                 @Autowired SampleInformationService sampleInformationService,
-                                 @Autowired SampleRegistrationService sampleRegistrationService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired SampleInformationService sampleInformationService,
+      @Autowired SampleRegistrationService sampleRegistrationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(sampleInformationService);
@@ -234,8 +238,8 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     private ProjectId projectId;
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
-                                          ExperimentInformationService experimentInformationService,
-                                          SampleInformationService sampleInformationService) {
+        ExperimentInformationService experimentInformationService,
+        SampleInformationService sampleInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       this.sampleInformationService = sampleInformationService;
@@ -311,7 +315,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     }
 
     private void setupSearchFieldForExperimentTabs(String experimentName,
-                                                   GridListDataView<Sample> sampleGridDataView) {
+        GridListDataView<Sample> sampleGridDataView) {
       searchField.addValueChangeListener(e -> sampleGridDataView.refreshAll());
       sampleGridDataView.addFilter(sample -> {
         String searchTerm = searchField.getValue().trim();

@@ -1,12 +1,11 @@
 package life.qbic.logging.impl.logger;
 
+import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
 import life.qbic.logging.subscription.api.LogLevel;
 import life.qbic.logging.subscription.api.LogMessage;
-
-import java.util.Objects;
 
 /**
  * Simple implementation of the {@link Logger} interface.

@@ -6,4 +6,5 @@ package life.qbic.domain.concepts.communication;
 public record Recipient(
     String address,
     String fullName) {
+
 }

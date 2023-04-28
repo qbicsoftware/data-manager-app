@@ -25,6 +25,7 @@ public class SuccessMessage extends DisplayMessage {
 
   @Override
   protected void styleSpecificLayout() {
-    super.getContent().addClassNames("p-s", "text-success", "bg-success-10", "rounded-l", "gap-y-s");
+    super.getContent()
+        .addClassNames("p-s", "text-success", "bg-success-10", "rounded-l", "gap-y-s");
   }
 }

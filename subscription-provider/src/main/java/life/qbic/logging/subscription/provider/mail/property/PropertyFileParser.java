@@ -1,13 +1,13 @@
 package life.qbic.logging.subscription.provider.mail.property;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
 
 /**
  * <b>Property File Parser</b>
