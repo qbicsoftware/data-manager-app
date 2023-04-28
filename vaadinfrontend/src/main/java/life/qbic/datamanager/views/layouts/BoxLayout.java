@@ -12,9 +12,9 @@ import life.qbic.datamanager.views.notifications.DisplayMessage;
 /**
  * <b>Box Layout</b>
  *
- * <p>A box with a shadow containing a title, description, a layout for fields, a layout for
- * buttons
- * and a span to add links. Furthermore, the description text can be toggled visible or invisible
+ * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons
+ * and a span to add links.
+ * Furthermore, the description text can be toggled visible or invisible
  *
  * @since 1.0.0
  */
