@@ -2,6 +2,7 @@ package life.qbic.authentication.application.user.registration;
 
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.application.commons.Result;
 import life.qbic.authentication.application.ServiceException;
 import life.qbic.authentication.application.notification.Notification;
 import life.qbic.authentication.application.notification.NotificationService;

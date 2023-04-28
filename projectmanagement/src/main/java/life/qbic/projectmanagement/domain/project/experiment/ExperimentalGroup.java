@@ -21,6 +21,7 @@ public class ExperimentalGroup {
   private Condition condition;
 
   private int sampleSize;
+
   @Id
   @GeneratedValue
   private Long experimentalGroupId;
@@ -68,13 +69,16 @@ public class ExperimentalGroup {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ExperimentalGroup that = (ExperimentalGroup) o;
-    return sampleSize == that.sampleSize && Objects.equals(condition, that.condition);
+    //It's not possible to compare an experimentalGroup entity if it has no id
+    if (this.experimentalGroupId == null) {
+      return false;
+    }
+    return this.experimentalGroupId.equals(((ExperimentalGroup) o).experimentalGroupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(condition, sampleSize);
+    return Objects.hash(experimentalGroupId);
   }
 
 }

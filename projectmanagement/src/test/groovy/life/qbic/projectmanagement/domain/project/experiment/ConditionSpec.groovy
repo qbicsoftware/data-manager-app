@@ -72,7 +72,38 @@ class ConditionSpec extends Specification {
 
         then:
         thrown(IllegalArgumentException)
+    }
+
+    def " Conditions with same variable levels are equal"() {
+        given:
+        ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
+        ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
+
+        def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
+
+        when:
+        def condition1 = Condition.create(Arrays.asList(level))
+        def condition2 = Condition.create(Arrays.asList(level))
+        then:
+        condition1.equals(condition2)
 
     }
+
+    def " Conditions with different variable levels are not equal"() {
+        given:
+        ExperimentalValue experimentalValue = ExperimentalValue.create("10", "cm")
+        ExperimentalValue experimentalValue2 = ExperimentalValue.create("20", "cm")
+        ExperimentalVariable experimentalVar = ExperimentalVariable.create("test variable", experimentalValue)
+
+        def level = VariableLevel.create(experimentalVar.name(), experimentalValue)
+        def level2 = VariableLevel.create(experimentalVar.name(), experimentalValue2)
+
+        when:
+        def condition1 = Condition.create(Arrays.asList(level))
+        def condition2 = Condition.create(Arrays.asList(level2))
+        then:
+        !condition1.equals(condition2)
+    }
+
 
 }
