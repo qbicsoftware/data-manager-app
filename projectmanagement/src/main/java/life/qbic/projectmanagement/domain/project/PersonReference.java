@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import jakarta.persistence.Embeddable;
+
 import java.util.Objects;
 
 /**

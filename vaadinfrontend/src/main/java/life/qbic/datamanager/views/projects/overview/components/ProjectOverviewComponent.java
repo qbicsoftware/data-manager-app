@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
@@ -21,16 +19,6 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.io.Serial;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
@@ -42,12 +30,7 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
 import life.qbic.datamanager.views.projects.create.ProjectInformationDialog;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.application.PersonSearchService;
-import life.qbic.projectmanagement.application.ProjectCreationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.*;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
@@ -59,6 +42,19 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>Projects Overview</b>
@@ -80,12 +76,12 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
   private final ClientDetailsProvider clientDetailsProvider;
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
-      @Autowired OfferLookupService offerLookupService,
-      @Autowired ProjectRepository projectRepository,
-      @Autowired ProjectInformationService projectInformationService,
-      @Autowired ProjectCreationService projectCreationService,
-      @Autowired PersonSearchService personSearchService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+                                  @Autowired OfferLookupService offerLookupService,
+                                  @Autowired ProjectRepository projectRepository,
+                                  @Autowired ProjectInformationService projectInformationService,
+                                  @Autowired ProjectCreationService projectCreationService,
+                                  @Autowired PersonSearchService personSearchService,
+                                  @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
     new Handler(offerLookupService,
         projectRepository,
@@ -164,11 +160,11 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
 
     public Handler(OfferLookupService offerLookupService,
-        ProjectRepository projectRepository,
-        ProjectInformationService projectInformationService,
-        ProjectCreationService projectCreationService,
-        PersonSearchService personSearchService,
-        ExperimentalDesignSearchService experimentalDesignSearchService) {
+                   ProjectRepository projectRepository,
+                   ProjectInformationService projectInformationService,
+                   ProjectCreationService projectCreationService,
+                   PersonSearchService personSearchService,
+                   ExperimentalDesignSearchService experimentalDesignSearchService) {
 
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
@@ -237,7 +233,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       projectInformationDialog.addCancelEventListener(event -> {
         projectInformationDialog.resetAndClose();
       });
-     }
+    }
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 

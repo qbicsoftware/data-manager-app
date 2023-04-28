@@ -1,11 +1,12 @@
 package life.qbic.authentication.domain.user.repository;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
@@ -14,7 +15,8 @@ import life.qbic.authentication.domain.user.concept.UserId;
  */
 public class UserRepository implements Serializable {
 
-  @Serial private static final long serialVersionUID = 5576670098610784078L;
+  @Serial
+  private static final long serialVersionUID = 5576670098610784078L;
 
   private static UserRepository INSTANCE;
 

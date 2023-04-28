@@ -1,27 +1,18 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.*;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.*;
 
 /**
  * Service that provides an API to query basic experiment information
@@ -83,7 +74,8 @@ public class ExperimentInformationService {
     return experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList();
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {}
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+  }
 
   /**
    * Adds species to an experiment.
@@ -148,7 +140,7 @@ public class ExperimentInformationService {
    *                     {@link ExperimentalVariable}
    */
   public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
-      List<String> levels) {
+                                      List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
     if (levels.isEmpty()) {

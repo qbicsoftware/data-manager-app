@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
@@ -10,17 +9,16 @@ import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
-import java.io.Serial;
-import java.util.Objects;
+import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.projects.project.info.ProjectDetailsComponent;
-import life.qbic.datamanager.views.projects.project.info.ProjectLinksComponent;
-import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.Objects;
 
 /**
  * Experiment Information page
@@ -43,7 +41,7 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
 
   public ExperimentInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ExperimentDetailsComponent experimentDetailsComponent,
-      @Autowired ExperimentListComponent experimentListComponent) {
+                                   @Autowired ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
@@ -82,7 +80,7 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
   }
 
   public void setComponentStyles(ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
+                                 ExperimentListComponent experimentListComponent) {
     experimentDetailsComponent.setId("experiment-details-component");
     experimentListComponent.setId("experiment-list-component");
   }
@@ -94,7 +92,7 @@ public class ExperimentInformationPage extends Div implements RouterLayout {
     private final ExperimentListComponent experimentListComponent;
 
     public ExperimentInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent, ExperimentDetailsComponent experimentDetailsComponent,
-        ExperimentListComponent experimentListComponent) {
+                                            ExperimentListComponent experimentListComponent) {
       this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.experimentDetailsComponent = experimentDetailsComponent;
       this.experimentListComponent = experimentListComponent;

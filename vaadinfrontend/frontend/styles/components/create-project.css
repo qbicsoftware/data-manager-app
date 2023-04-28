@@ -1,6 +1,6 @@
-.create-project-form vaadin-form-item::part(label){
+.create-project-form vaadin-form-item::part(label) {
     font-weight: bold;
-    color:black;
+    color: black;
 }
 
 .create-project-form {

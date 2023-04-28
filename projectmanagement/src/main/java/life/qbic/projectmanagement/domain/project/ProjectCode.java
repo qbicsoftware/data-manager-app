@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import jakarta.persistence.AttributeConverter;
+
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -220,7 +221,7 @@ public class ProjectCode {
     }
 
     Supplier<Character> flip(Supplier<Character> supplierIfHead,
-        Supplier<Character> supplierIfTails) {
+                             Supplier<Character> supplierIfTails) {
       var side = flip();
       if (side.equals(SIDE.HEAD)) {
         return supplierIfHead;

@@ -1,7 +1,5 @@
 package life.qbic.finance.persistence;
 
-import java.util.List;
-import java.util.Optional;
 import life.qbic.persistence.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -9,6 +7,9 @@ import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * <b>Simple OfferPreview Search Service</b>
@@ -32,7 +33,7 @@ public class SimpleOfferSearchService implements OfferSearchService {
 
   @Override
   public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId,
-      int offset, int limit) {
+                                                        int offset, int limit) {
     return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
         projectTitle, offerId, new OffsetBasedRequest(offset, limit)).stream().toList();
   }
@@ -44,7 +45,7 @@ public class SimpleOfferSearchService implements OfferSearchService {
 
   @Autowired
   public SimpleOfferSearchService(OfferPreviewRepository offerPreviewRepository,
-      OfferRepository offerRepository) {
+                                  OfferRepository offerRepository) {
     this.offerPreviewRepository = offerPreviewRepository;
     this.offerRepository = offerRepository;
   }

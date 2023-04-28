@@ -1,10 +1,11 @@
 package life.qbic.authentication.domain.user.repository;
 
-import java.util.List;
-import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * <b>User Data Storage Interface</b>
@@ -24,7 +25,7 @@ public interface UserDataStorage {
    *
    * @param emailAddress the mail address to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
-   *     the provided mail address
+   * the provided mail address
    * @since 1.0.0
    */
   List<User> findUsersByEmailAddress(EmailAddress emailAddress);
@@ -42,7 +43,7 @@ public interface UserDataStorage {
    *
    * @param id the user id to search for a matching entry in the storage
    * @return the user object, or {@link Optional#empty()} if no entity with the provided id was
-   *     found.
+   * found.
    * @since 1.0.0
    */
   Optional<User> findUserById(UserId id);

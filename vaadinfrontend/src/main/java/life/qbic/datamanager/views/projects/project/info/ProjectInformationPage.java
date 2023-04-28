@@ -8,14 +8,15 @@ import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
-import java.io.Serial;
-import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.Objects;
 
 /**
  * Project Information page
@@ -37,7 +38,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
   private final transient ProjectInformationPageHandler projectInformationPageHandler;
 
   public ProjectInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ProjectDetailsComponent projectDetailsComponent,
-      @Autowired ProjectLinksComponent projectLinksComponent) {
+                                @Autowired ProjectLinksComponent projectLinksComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
@@ -78,7 +79,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
   }
 
   public void setComponentStyles(ProjectDetailsComponent projectDetailsComponent,
-      ProjectLinksComponent projectLinksComponent) {
+                                 ProjectLinksComponent projectLinksComponent) {
     projectDetailsComponent.setId("project-details-component");
     projectLinksComponent.setId("project-links-component");
   }
@@ -90,7 +91,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
     private final ProjectLinksComponent projectLinksComponent;
 
     public ProjectInformationPageHandler(ProjectNavigationBarComponent projectNavigationComponent, ProjectDetailsComponent projectDetailsComponent,
-        ProjectLinksComponent projectLinksComponent) {
+                                         ProjectLinksComponent projectLinksComponent) {
       this.projectNavigationComponent = projectNavigationComponent;
       this.projectDetailsComponent = projectDetailsComponent;
       this.projectLinksComponent = projectLinksComponent;

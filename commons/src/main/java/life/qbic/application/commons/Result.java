@@ -202,7 +202,7 @@ public class Result<V, E extends Exception> {
    * @since 1.0.0
    */
   public void ifSuccessOrElse(Consumer<? super V> consumerOfValue,
-      Consumer<? super E> consumerOfError) {
+                              Consumer<? super E> consumerOfError) {
     if (type.equals(Type.FAILURE)) {
       consumerOfError.accept(exception);
     } else {
@@ -224,7 +224,7 @@ public class Result<V, E extends Exception> {
    * @since 1.0.0
    */
   public <X extends Throwable> void ifSuccessOrElseThrow(Consumer<? super V> consumerOfValue,
-      Supplier<? extends X> throwableSupplier) throws X {
+                                                         Supplier<? extends X> throwableSupplier) throws X {
     if (type.equals(Type.FAILURE)) {
       throw throwableSupplier.get();
     } else {

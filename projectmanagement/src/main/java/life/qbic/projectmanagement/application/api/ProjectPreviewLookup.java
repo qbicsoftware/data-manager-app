@@ -1,8 +1,9 @@
 package life.qbic.projectmanagement.application.api;
 
-import java.util.List;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
+
+import java.util.List;
 
 public interface ProjectPreviewLookup {
 

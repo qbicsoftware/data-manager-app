@@ -1,10 +1,6 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 /**
  * <b>Offer entity</b>

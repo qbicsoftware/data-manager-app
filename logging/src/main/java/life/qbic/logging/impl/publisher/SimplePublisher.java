@@ -1,16 +1,17 @@
 package life.qbic.logging.impl.publisher;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
+import life.qbic.logging.api.Publisher;
+import life.qbic.logging.subscription.api.LogMessage;
+import life.qbic.logging.subscription.api.Subscriber;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
-import life.qbic.logging.api.Publisher;
-import life.qbic.logging.subscription.api.LogMessage;
-import life.qbic.logging.subscription.api.Subscriber;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Basic implementation of the {@link Publisher} interface.

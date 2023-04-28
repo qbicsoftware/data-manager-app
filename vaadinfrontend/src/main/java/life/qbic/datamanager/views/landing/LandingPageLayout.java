@@ -4,11 +4,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import java.io.Serial;
-import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.Objects;
 
 /**
  * <b> The landing page that allows logging in for the user. </b>
@@ -23,6 +23,7 @@ public class LandingPageLayout extends DataManagerLayout {
 
   public Button register;
   public Button login;
+
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     Objects.requireNonNull(handlerInterface);
 

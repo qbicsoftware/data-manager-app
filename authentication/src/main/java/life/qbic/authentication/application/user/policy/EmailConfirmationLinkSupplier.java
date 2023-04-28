@@ -1,9 +1,10 @@
 package life.qbic.authentication.application.user.policy;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Supplies mail confirmation routes

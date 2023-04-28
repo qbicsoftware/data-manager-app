@@ -1,8 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
+import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
+
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
 
 /**
  * <a href="https://medical-dictionary.thefreedictionary.com/specimen">specimen</a>: A sample, as

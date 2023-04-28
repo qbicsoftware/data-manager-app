@@ -1,9 +1,10 @@
 package life.qbic.logging.impl.publisher;
 
-import java.util.Collection;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
 import life.qbic.logging.subscription.api.Subscriber;
+
+import java.util.Collection;
 
 /**
  * Factory for creating logging publishers providing the {@link Publisher} interface.

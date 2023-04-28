@@ -30,10 +30,10 @@ public class Notification implements Serializable {
   /**
    * Creates a new {@link Notification} instance.
    *
-   * @param eventType the event type
-   * @param occurredOn the time-point of the event
+   * @param eventType      the event type
+   * @param occurredOn     the time-point of the event
    * @param notificationId a unique notification id
-   * @param event the domain event
+   * @param event          the domain event
    * @return a notification with the arguments provided
    */
   public static Notification create(
@@ -54,6 +54,7 @@ public class Notification implements Serializable {
   public Instant occurredOn() {
     return occurredOn;
   }
+
   @JsonGetter("notificationId")
   public String notificationId() {
     return notificationId;

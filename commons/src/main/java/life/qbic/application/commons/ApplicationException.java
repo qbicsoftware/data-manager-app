@@ -26,7 +26,8 @@ public abstract class ApplicationException extends RuntimeException {
     UNDEFINED_VARIABLE_LEVEL,
     NO_SPECIES_DEFINED,
     NO_SPECIMEN_DEFINED,
-    NO_ANALYTE_DEFINED,;
+    NO_ANALYTE_DEFINED,
+    ;
 
     @Override
     public String toString() {
@@ -94,28 +95,28 @@ public abstract class ApplicationException extends RuntimeException {
   }
 
   protected ApplicationException(String message, ErrorCode errorCode,
-      ErrorParameters errorParameters) {
+                                 ErrorParameters errorParameters) {
     super(message);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
   protected ApplicationException(String message, Throwable cause, ErrorCode errorCode,
-      ErrorParameters errorParameters) {
+                                 ErrorParameters errorParameters) {
     super(message, cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
   protected ApplicationException(Throwable cause, ErrorCode errorCode,
-      ErrorParameters errorParameters) {
+                                 ErrorParameters errorParameters) {
     super(cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
   protected ApplicationException(String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
+                                 boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;

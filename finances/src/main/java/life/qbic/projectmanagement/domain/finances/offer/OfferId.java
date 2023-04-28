@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.finances.offer;
 
 import jakarta.persistence.AttributeConverter;
+
 import java.util.Objects;
 
 /**
@@ -66,6 +67,7 @@ public class OfferId {
       return OfferId.from(s);
     }
   }
+
   @Override
   public String toString() {
     return id();

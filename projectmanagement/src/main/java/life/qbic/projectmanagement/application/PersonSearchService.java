@@ -1,10 +1,11 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.List;
 import life.qbic.projectmanagement.application.api.PersonLookupService;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Person Search Service

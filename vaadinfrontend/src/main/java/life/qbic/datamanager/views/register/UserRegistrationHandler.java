@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.register;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.QueryParameters;
-import java.util.Map;
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.RegisterUserOutput;
 import life.qbic.authentication.application.user.registration.UserRegistrationException;
@@ -12,6 +11,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Handles the {@link UserRegistrationLayout} components
@@ -24,7 +25,7 @@ public class UserRegistrationHandler
     implements UserRegistrationHandlerInterface, RegisterUserOutput {
 
   private static final Logger log =
-     LoggerFactory.logger(UserRegistrationHandler.class.getName());
+      LoggerFactory.logger(UserRegistrationHandler.class.getName());
   private UserRegistrationLayout userRegistrationLayout;
   private final RegisterUserInput registrationUseCase;
 

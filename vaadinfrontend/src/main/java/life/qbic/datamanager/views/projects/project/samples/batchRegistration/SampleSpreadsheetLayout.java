@@ -6,12 +6,13 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.data.binder.Binder;
-import java.util.ArrayList;
-import java.util.List;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <b>Sample Spreadsheet Layout</b>

@@ -1,23 +1,19 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-import life.qbic.projectmanagement.domain.project.PersonReference;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Service that provides an API to query basic project information
@@ -32,7 +28,7 @@ public class ProjectInformationService {
   private final ProjectRepository projectRepository;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
-      @Autowired ProjectRepository projectRepository) {
+                                   @Autowired ProjectRepository projectRepository) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
@@ -50,7 +46,7 @@ public class ProjectInformationService {
    */
   @PostFilter("hasPermission(filterObject,'VIEW_PROJECT')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
-      List<SortOrder> sortOrders) {
+                                           List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<ProjectPreview> previewList = projectPreviewLookup.query(filter, offset, limit,
         sortOrders);

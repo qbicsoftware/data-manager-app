@@ -1,10 +1,11 @@
 package life.qbic.datamanager.views.projects.project;
 
-import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+
+import java.util.Objects;
 
 /**
  * Handler for the project view page that routes request parameter to the components.
@@ -18,8 +19,8 @@ class ProjectViewHandler {
   private final SampleInformationPage sampleInformationPage;
 
   public ProjectViewHandler(ProjectInformationPage projectInformationPage,
-      ExperimentInformationPage experimentInformationPage,
-      SampleInformationPage sampleInformationPage) {
+                            ExperimentInformationPage experimentInformationPage,
+                            SampleInformationPage sampleInformationPage) {
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
     Objects.requireNonNull(sampleInformationPage);

@@ -1,7 +1,8 @@
 package life.qbic.authentication.domain.registry;
 
-import java.util.Optional;
 import life.qbic.authentication.domain.user.repository.UserDomainService;
+
+import java.util.Optional;
 
 /**
  * <b>Domain Registry</b>

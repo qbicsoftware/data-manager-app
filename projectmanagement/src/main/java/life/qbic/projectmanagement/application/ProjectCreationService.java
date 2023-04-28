@@ -1,27 +1,21 @@
 package life.qbic.projectmanagement.application;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.PersonReference;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.ProjectIntent;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Application service facilitating the creation of projects.
@@ -36,7 +30,7 @@ public class ProjectCreationService {
   private final AddExperimentToProjectService addExperimentToProjectService;
 
   public ProjectCreationService(ProjectRepository projectRepository,
-      AddExperimentToProjectService addExperimentToProjectService) {
+                                AddExperimentToProjectService addExperimentToProjectService) {
     this.projectRepository = projectRepository;
     this.addExperimentToProjectService = addExperimentToProjectService;
   }
@@ -50,9 +44,9 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String code, String title, String objective,
-      String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson,
-      List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
+                                                             String experimentalDesign, String sourceOffer, PersonReference projectManager,
+                                                             PersonReference principalInvestigator, PersonReference responsiblePerson,
+                                                             List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
 
     try {
       Project project = createProject(code, title, objective, experimentalDesign,
@@ -92,12 +86,12 @@ public class ProjectCreationService {
   }
 
   private Project createProject(String code,
-      String title,
-      String objective,
-      String experimentalDesign,
-      PersonReference projectManager,
-      PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+                                String title,
+                                String objective,
+                                String experimentalDesign,
+                                PersonReference projectManager,
+                                PersonReference principalInvestigator,
+                                PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {

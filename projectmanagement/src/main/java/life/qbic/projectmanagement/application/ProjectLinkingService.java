@@ -1,11 +1,5 @@
 package life.qbic.projectmanagement.application;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -15,6 +9,13 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Allows for modification of existing projects

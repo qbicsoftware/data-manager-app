@@ -18,24 +18,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordResetRequested> {
 
-    private final UserContactService userContactService;
+  private final UserContactService userContactService;
 
-    private final JobScheduler jobScheduler;
+  private final JobScheduler jobScheduler;
 
-    public WhenPasswordResetSendEmailWithResetLink(@Autowired UserContactService userContactService,
-                                                   @Autowired JobScheduler jobScheduler) {
-        this.userContactService = userContactService;
-        this.jobScheduler = jobScheduler;
-        DomainEventDispatcher.instance().subscribe(this);
-    }
+  public WhenPasswordResetSendEmailWithResetLink(@Autowired UserContactService userContactService,
+                                                 @Autowired JobScheduler jobScheduler) {
+    this.userContactService = userContactService;
+    this.jobScheduler = jobScheduler;
+    DomainEventDispatcher.instance().subscribe(this);
+  }
 
-    @Override
-    public Class<? extends DomainEvent> subscribedToEventType() {
-        return PasswordResetRequested.class;
-    }
+  @Override
+  public Class<? extends DomainEvent> subscribedToEventType() {
+    return PasswordResetRequested.class;
+  }
 
-    @Override
-    public void handleEvent(PasswordResetRequested event) {
-        jobScheduler.enqueue(() -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(), event.userId()));
-    }
+  @Override
+  public void handleEvent(PasswordResetRequested event) {
+    jobScheduler.enqueue(() -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(), event.userId()));
+  }
 }

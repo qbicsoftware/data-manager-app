@@ -1,10 +1,10 @@
 package life.qbic.logging.subscription.provider.mail.property;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * <b>Email Property Loader</b>

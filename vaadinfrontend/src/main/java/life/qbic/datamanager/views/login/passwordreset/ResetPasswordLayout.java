@@ -12,8 +12,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.layouts.BoxLayout;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import life.qbic.datamanager.views.layouts.BoxLayout;
 import life.qbic.datamanager.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Reset Password")
 @Route(value = AppRoutes.RESET_PASSWORD, layout = LandingPageLayout.class)
 @AnonymousAllowed
-public class ResetPasswordLayout extends VerticalLayout{
+public class ResetPasswordLayout extends VerticalLayout {
 
   public EmailField email;
   public Button sendButton;
@@ -49,7 +49,7 @@ public class ResetPasswordLayout extends VerticalLayout{
 
     initEnterEmailLayout();
 
-    add(enterEmailLayout,linkSentLayout);
+    add(enterEmailLayout, linkSentLayout);
   }
 
   private void initEnterEmailLayout() {

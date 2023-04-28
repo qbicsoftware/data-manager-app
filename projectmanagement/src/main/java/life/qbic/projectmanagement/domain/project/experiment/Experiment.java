@@ -1,15 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PostLoad;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import jakarta.persistence.*;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
@@ -18,6 +9,11 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -108,7 +104,7 @@ public class Experiment {
    * @since 1.0.0
    */
   public Result<VariableLevel, Exception> addLevelToVariable(String variableName,
-      ExperimentalValue level) {
+                                                             ExperimentalValue level) {
     return experimentalDesign.addLevelToVariable(variableName, level);
   }
 
@@ -208,7 +204,7 @@ public class Experiment {
    * @since 1.0.0
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
-      List<ExperimentalValue> levels) {
+                                                             List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels);
   }
 
@@ -227,7 +223,7 @@ public class Experiment {
    * @return
    */
   public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
-      int sampleSize) {
+                                                           int sampleSize) {
     return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 

@@ -18,7 +18,7 @@ public class QbicProjectPermissionEvaluator {
   }
 
   public boolean hasPermission(UserId userId,
-      ProjectId projectId, SimpleGrantedAuthority permission) {
+                               ProjectId projectId, SimpleGrantedAuthority permission) {
     return projectPermissionService.loadUserPermissions(userId, projectId).stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch(it -> it.equals(permission.getAuthority()));

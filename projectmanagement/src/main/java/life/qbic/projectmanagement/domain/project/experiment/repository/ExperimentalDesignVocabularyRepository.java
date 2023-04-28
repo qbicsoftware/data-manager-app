@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.domain.project.experiment.repository;
 
-import java.util.List;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+
+import java.util.List;
 
 /**
  * Queries available vocabulary terms for species, specimens (tissues, cells, etc.) and the

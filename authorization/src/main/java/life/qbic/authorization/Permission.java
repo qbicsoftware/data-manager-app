@@ -1,16 +1,11 @@
 package life.qbic.authorization;
 
-import static java.util.Objects.requireNonNull;
-
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-import java.util.Optional;
+import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
+
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents a permission to do something

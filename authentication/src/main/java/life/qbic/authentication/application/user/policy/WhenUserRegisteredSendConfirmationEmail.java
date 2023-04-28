@@ -17,23 +17,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class WhenUserRegisteredSendConfirmationEmail implements DomainEventSubscriber<UserRegistered> {
 
-    private final UserContactService userContactService;
+  private final UserContactService userContactService;
 
-    private final JobScheduler jobScheduler;
+  private final JobScheduler jobScheduler;
 
-    public WhenUserRegisteredSendConfirmationEmail(@Autowired UserContactService userContactService, @Autowired JobScheduler jobScheduler) {
-        this.userContactService = userContactService;
-        DomainEventDispatcher.instance().subscribe(this);
-        this.jobScheduler = jobScheduler;
-    }
+  public WhenUserRegisteredSendConfirmationEmail(@Autowired UserContactService userContactService, @Autowired JobScheduler jobScheduler) {
+    this.userContactService = userContactService;
+    DomainEventDispatcher.instance().subscribe(this);
+    this.jobScheduler = jobScheduler;
+  }
 
-    @Override
-    public Class<? extends DomainEvent> subscribedToEventType() {
-        return UserRegistered.class;
-    }
+  @Override
+  public Class<? extends DomainEvent> subscribedToEventType() {
+    return UserRegistered.class;
+  }
 
-    @Override
-    public void handleEvent(UserRegistered event) {
-        this.jobScheduler.enqueue(() -> userContactService.sendEmailConfirmation(event.userId()));
-    }
+  @Override
+  public void handleEvent(UserRegistered event) {
+    this.jobScheduler.enqueue(() -> userContactService.sendEmailConfirmation(event.userId()));
+  }
 }

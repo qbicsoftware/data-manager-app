@@ -14,17 +14,17 @@ import java.io.Serial;
  * @since 1.0.0
  */
 public class UserCancelEvent<T extends Component> extends ComponentEvent<T> {
-    @Serial
-    private static final long serialVersionUID = 8068213210561270651L;
+  @Serial
+  private static final long serialVersionUID = 8068213210561270651L;
 
-    /**
-     * Creates a new event using the given source and indicator whether the
-     * event originated from the client side.
-     *
-     * @param source     the source component
-     */
-    public UserCancelEvent(T source) {
-        super(source, true);
-    }
+  /**
+   * Creates a new event using the given source and indicator whether the
+   * event originated from the client side.
+   *
+   * @param source the source component
+   */
+  public UserCancelEvent(T source) {
+    super(source, true);
+  }
 
 }

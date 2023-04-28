@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValue;
@@ -18,11 +16,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
-import java.io.Serial;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
@@ -31,17 +24,20 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-import life.qbic.projectmanagement.domain.project.PersonReference;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.*;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Project Details Component
@@ -72,9 +68,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
   private final transient Handler handler;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired PersonSearchService personSearchService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+                                 @Autowired PersonSearchService personSearchService,
+                                 @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+                                 @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
@@ -201,9 +197,9 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     private ExperimentId activeExperimentId;
 
     public Handler(ProjectInformationService projectInformationService,
-        PersonSearchService personSearchService,
-        ExperimentalDesignSearchService experimentalDesignSearchService,
-        ExperimentInformationService experimentInformationService) {
+                   PersonSearchService personSearchService,
+                   ExperimentalDesignSearchService experimentalDesignSearchService,
+                   ExperimentInformationService experimentInformationService) {
 
       this.projectInformationService = projectInformationService;
       this.personSearchService = personSearchService;
@@ -374,7 +370,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     }
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
-        Consumer<V> submitAction) {
+                                                                          Consumer<V> submitAction) {
       element.addValueChangeListener(it -> submitAction.accept(element.getValue()));
     }
 

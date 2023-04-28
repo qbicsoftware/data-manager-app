@@ -24,40 +24,40 @@ import java.util.Optional;
 @Service
 public class UserContactService {
 
-    private static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
-    private final EmailService emailService;
-    private final PasswordResetLinkSupplier passwordResetLinkSupplier;
+  private static final String NO_REPLY_QBIC_LIFE = "no-reply@qbic.life";
+  private final EmailService emailService;
+  private final PasswordResetLinkSupplier passwordResetLinkSupplier;
 
-    private final UserRepository userRepository;
-    private final EmailConfirmationLinkSupplier emalConfirmationLinkSupplier;
+  private final UserRepository userRepository;
+  private final EmailConfirmationLinkSupplier emalConfirmationLinkSupplier;
 
-    public UserContactService(@Autowired EmailService emailService,
-                              @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier,
-                              @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
-                              @Autowired UserRepository userRepository) {
-        this.emailService = emailService;
-        this.passwordResetLinkSupplier = passwordResetLinkSupplier;
-        this.userRepository = userRepository;
-        this.emalConfirmationLinkSupplier = emailConfirmationLinkSupplier;
-    }
+  public UserContactService(@Autowired EmailService emailService,
+                            @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier,
+                            @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
+                            @Autowired UserRepository userRepository) {
+    this.emailService = emailService;
+    this.passwordResetLinkSupplier = passwordResetLinkSupplier;
+    this.userRepository = userRepository;
+    this.emalConfirmationLinkSupplier = emailConfirmationLinkSupplier;
+  }
 
-    public void sendResetLink(EmailAddress emailAddress, FullName fullName, UserId userId) {
-        var passwordResetEmail = EmailFactory.passwordResetEmail(NO_REPLY_QBIC_LIFE,
-                new Recipient(emailAddress.get(),
-                        fullName.get())
-                , passwordResetLinkSupplier.passwordResetUrl(userId.get()));
+  public void sendResetLink(EmailAddress emailAddress, FullName fullName, UserId userId) {
+    var passwordResetEmail = EmailFactory.passwordResetEmail(NO_REPLY_QBIC_LIFE,
+        new Recipient(emailAddress.get(),
+            fullName.get())
+        , passwordResetLinkSupplier.passwordResetUrl(userId.get()));
 
-        emailService.send(passwordResetEmail);
-    }
+    emailService.send(passwordResetEmail);
+  }
 
-    public void sendEmailConfirmation(String userId) {
-        Optional<User> userSearchResult = userRepository.findById(UserId.from(userId));
-        User user = userSearchResult.orElseThrow(() -> new RuntimeException("Cannot send email confirmation. Unknown user with id " + userId));
-        var emailAddressConfirmationEmail = EmailFactory.registrationEmail(NO_REPLY_QBIC_LIFE,
-                new Recipient(user.emailAddress().get(), user.fullName().get()),
-                emalConfirmationLinkSupplier.emailConfirmationUrl(userId));
+  public void sendEmailConfirmation(String userId) {
+    Optional<User> userSearchResult = userRepository.findById(UserId.from(userId));
+    User user = userSearchResult.orElseThrow(() -> new RuntimeException("Cannot send email confirmation. Unknown user with id " + userId));
+    var emailAddressConfirmationEmail = EmailFactory.registrationEmail(NO_REPLY_QBIC_LIFE,
+        new Recipient(user.emailAddress().get(), user.fullName().get()),
+        emalConfirmationLinkSupplier.emailConfirmationUrl(userId));
 
-        emailService.send(emailAddressConfirmationEmail);
+    emailService.send(emailAddressConfirmationEmail);
 
-    }
+  }
 }

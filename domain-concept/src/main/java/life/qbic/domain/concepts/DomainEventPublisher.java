@@ -15,69 +15,69 @@ import java.util.List;
 @Deprecated(forRemoval = true)
 public class DomainEventPublisher {
 
-    private static final ThreadLocal<List<DomainEventSubscriber<? extends DomainEvent>>> subscribers = new ThreadLocal<>();
+  private static final ThreadLocal<List<DomainEventSubscriber<? extends DomainEvent>>> subscribers = new ThreadLocal<>();
 
-    private static final ThreadLocal<Boolean> publishing =
-            ThreadLocal.withInitial(() -> Boolean.FALSE);
+  private static final ThreadLocal<Boolean> publishing =
+      ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-    public DomainEventPublisher() {
-        super();
+  public DomainEventPublisher() {
+    super();
+  }
+
+  public static DomainEventPublisher instance() {
+    return new DomainEventPublisher();
+  }
+
+  public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
+    if (publishing.get()) {
+      return;
+    }
+    List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
+
+    if (registeredSubscribers == null) {
+      registeredSubscribers = new ArrayList<>();
+      subscribers.set(registeredSubscribers);
     }
 
-    public static DomainEventPublisher instance() {
-        return new DomainEventPublisher();
+    registeredSubscribers.add(subscriber);
+  }
+
+  public <T extends DomainEvent> void publish(final T domainEvent) {
+    if (publishing.get()) {
+      return;
     }
-
-    public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
-        if (publishing.get()) {
-            return;
-        }
-        List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
-
-        if (registeredSubscribers == null) {
-            registeredSubscribers = new ArrayList<>();
-            subscribers.set(registeredSubscribers);
-        }
-
-        registeredSubscribers.add(subscriber);
+    try {
+      publishing.set(Boolean.TRUE);
+      List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
+      Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
+      registeredSubscribers.stream()
+          .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
+          .map(it -> (DomainEventSubscriber<T>) it)
+          .forEach(subscriber -> subscriber.handleEvent(domainEvent));
+    } finally {
+      publishing.set(Boolean.FALSE);
     }
+  }
 
-    public <T extends DomainEvent> void publish(final T domainEvent) {
-        if (publishing.get()) {
-            return;
-        }
-        try {
-            publishing.set(Boolean.TRUE);
-            List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
-            Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
-            registeredSubscribers.stream()
-                    .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
-                    .map(it -> (DomainEventSubscriber<T>) it)
-                    .forEach(subscriber -> subscriber.handleEvent(domainEvent));
-        } finally {
-            publishing.set(Boolean.FALSE);
-        }
+  /**
+   * Removes all subscribers from the current thread's domain event subscription list.
+   * <p>
+   * This method is not interrupting current publishing domain event processes. In this case, the
+   * method will return <code>false</code>.
+   *
+   * @return false, when there are currently domain events published to signal that the removal was
+   * not performed; true, when the publisher was not in the process of publishing
+   * and all subscribers have been removed.
+   * @since 1.0.0
+   */
+  public boolean clear() {
+    if (publishing.get()) {
+      return false;
     }
-
-    /**
-     * Removes all subscribers from the current thread's domain event subscription list.
-     * <p>
-     * This method is not interrupting current publishing domain event processes. In this case, the
-     * method will return <code>false</code>.
-     *
-     * @return false, when there are currently domain events published to signal that the removal was
-     * not performed; true, when the publisher was not in the process of publishing
-     * and all subscribers have been removed.
-     * @since 1.0.0
-     */
-    public boolean clear() {
-        if (publishing.get()) {
-            return false;
-        }
-        var listSubscribers = subscribers.get();
-        if (listSubscribers != null) {
-            listSubscribers.clear();
-        }
-        return true;
+    var listSubscribers = subscribers.get();
+    if (listSubscribers != null) {
+      listSubscribers.clear();
     }
+    return true;
+  }
 }

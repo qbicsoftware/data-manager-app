@@ -14,42 +14,42 @@ import java.util.Random;
  */
 @Embeddable
 public class BiologicalReplicateId implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 3380429168282318636L;
-    private Long id;
+  @Serial
+  private static final long serialVersionUID = 3380429168282318636L;
+  private Long id;
 
-    protected BiologicalReplicateId() {
-        // Needed for JPA
-    }
+  protected BiologicalReplicateId() {
+    // Needed for JPA
+  }
 
-    private BiologicalReplicateId(Long id) {
-        this.id = id;
-    }
+  private BiologicalReplicateId(Long id) {
+    this.id = id;
+  }
 
-    public static BiologicalReplicateId create() {
-        Long id = new Random().nextLong(Long.MAX_VALUE);
-        return new BiologicalReplicateId(id);
-    }
+  public static BiologicalReplicateId create() {
+    Long id = new Random().nextLong(Long.MAX_VALUE);
+    return new BiologicalReplicateId(id);
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BiologicalReplicateId that = (BiologicalReplicateId) o;
-        return Objects.equals(id, that.id);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    BiologicalReplicateId that = (BiologicalReplicateId) o;
+    return Objects.equals(id, that.id);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 
-    public Long id() {
-        return id;
-    }
+  public Long id() {
+    return id;
+  }
 
-    @Override
-    public String toString() {
-        return "BiologicalReplicateId{" + "id=" + id + '}';
-    }
+  @Override
+  public String toString() {
+    return "BiologicalReplicateId{" + "id=" + id + '}';
+  }
 }

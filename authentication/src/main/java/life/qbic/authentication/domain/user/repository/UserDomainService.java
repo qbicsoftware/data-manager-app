@@ -7,7 +7,6 @@ import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.domain.concepts.DomainEventPublisher;
 
 /**
  * <b>User Domain Service</b>
@@ -37,9 +36,9 @@ public class UserDomainService {
    * This method is idempotent, if a user already exists with the given emailAddress, no new user
    * will be created.
    *
-   * @param fullName    the full name of the user
-   * @param emailAddress       a valid mail address
-   * @param password the password desired by the user
+   * @param fullName     the full name of the user
+   * @param emailAddress a valid mail address
+   * @param password     the password desired by the user
    * @since 1.0.0
    */
   public void createUser(FullName fullName, EmailAddress emailAddress, EncryptedPassword password) {

@@ -10,11 +10,6 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -23,6 +18,12 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * <b>ExperimentListComponent</b>
@@ -79,7 +80,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     private ProjectId projectId;
 
     public Handler(ProjectInformationService projectInformationService,
-        ExperimentInformationService experimentInformationService) {
+                   ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       experiments.setRenderer(experimentCardRenderer);

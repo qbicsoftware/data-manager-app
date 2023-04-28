@@ -1,16 +1,17 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import java.time.Instant;
-import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+
+import java.time.Instant;
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A limited view of the more complex {@link Project}.

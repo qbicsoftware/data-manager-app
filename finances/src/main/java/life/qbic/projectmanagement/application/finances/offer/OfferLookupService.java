@@ -1,12 +1,13 @@
 package life.qbic.projectmanagement.application.finances.offer;
 
-import java.util.List;
-import java.util.Optional;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * <b>OfferPreview Search Service</b>
@@ -38,7 +39,7 @@ public class OfferLookupService {
    * @since 1.0.0
    */
   public List<OfferPreview> findOfferContainingProjectTitleOrId(String projectTitle,
-      String offerId) {
+                                                                String offerId) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId);
   }
 
@@ -54,7 +55,7 @@ public class OfferLookupService {
    * @since 1.0.0
    */
   public List<OfferPreview> findOfferContainingProjectTitleOrId(String projectTitle, String offerId,
-      int offset, int limit) {
+                                                                int offset, int limit) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId, offset, limit);
   }
 

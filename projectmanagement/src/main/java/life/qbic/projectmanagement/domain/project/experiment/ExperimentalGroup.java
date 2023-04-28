@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.experiment;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+
 import java.util.Objects;
 
 /**
@@ -36,7 +37,7 @@ public class ExperimentalGroup {
   /**
    * Creates a new instance of an experimental group object.
    *
-   * @param condition the condition the experimental group represents
+   * @param condition  the condition the experimental group represents
    * @param sampleSize the number of samples in this experimental group
    * @return the experimental group
    * @since 1.0.0

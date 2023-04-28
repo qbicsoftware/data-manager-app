@@ -6,7 +6,6 @@ import life.qbic.authentication.domain.user.concept.FullName
 import life.qbic.authentication.domain.user.concept.User
 import life.qbic.authentication.domain.user.event.PasswordResetRequested
 import life.qbic.domain.concepts.DomainEventDispatcher
-import life.qbic.domain.concepts.DomainEventPublisher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import spock.lang.Shared
 import spock.lang.Specification

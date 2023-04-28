@@ -1,7 +1,8 @@
 package life.qbic.authorization;
 
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 
 /**
  * <b>Project Role Storage Interface</b>

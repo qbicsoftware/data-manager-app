@@ -77,7 +77,7 @@ public class ApplicationResponse {
    * @since 1.0.0
    */
   public void ifSuccessOrElse(Consumer<ApplicationResponse> downstreamSuccess,
-      Consumer<ApplicationResponse> downstreamFailure) {
+                              Consumer<ApplicationResponse> downstreamFailure) {
     if (hasFailures()) {
       downstreamFailure.accept(this);
     } else {

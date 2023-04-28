@@ -11,13 +11,14 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.projectmanagement.application.ExperimentValueFormatter;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
  * TODO!
@@ -105,7 +106,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       getStyle().set("margin", "5px 10px");
       fillWithVariableLevels(tagsContainer, variableLevels);
       H6 sampleSizeText = new H6();
-      sampleSizeText.setText("Group size: "+sampleSize);
+      sampleSizeText.setText("Group size: " + sampleSize);
       add(sampleSizeText);
     }
 

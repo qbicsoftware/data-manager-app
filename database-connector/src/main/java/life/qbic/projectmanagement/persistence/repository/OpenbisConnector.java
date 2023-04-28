@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.persistence.repository;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -17,10 +15,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCrit
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -31,6 +25,13 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Basic implementation to query project preview information
@@ -49,8 +50,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
-      @Value("${openbis.user.password}") String password,
-      @Value("${openbis.datasource.url}") String url) {
+                           @Value("${openbis.user.password}") String password,
+                           @Value("${openbis.datasource.url}") String url) {
     openBisClient = new OpenBisClient(
         userName, password, url);
     try {

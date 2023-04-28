@@ -79,12 +79,10 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
     for (RuntimeException failure : response.failures()) {
       if (failure instanceof EmailAddress.EmailValidationException) {
         showPasswordResetFailedError("Invalid mail address format", "Please provide a valid mail address.");
-      }
-      else if (failure instanceof UserNotFoundException) {
+      } else if (failure instanceof UserNotFoundException) {
         showPasswordResetFailedError(
             "User not found", "No user with the provided mail address is known.");
-      }
-      else if (failure instanceof UserRegistrationService.UserNotActivatedException) {
+      } else if (failure instanceof UserRegistrationService.UserNotActivatedException) {
         showPasswordResetFailedError("User not active", "Please activate your account first to reset the password.");
       } else {
         showPasswordResetFailedError(

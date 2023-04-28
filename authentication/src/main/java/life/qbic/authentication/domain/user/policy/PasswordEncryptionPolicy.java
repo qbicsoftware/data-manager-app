@@ -1,13 +1,13 @@
 package life.qbic.authentication.domain.user.policy;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 /**
  * <b>Password encryption policy</b>
@@ -75,7 +75,7 @@ public class PasswordEncryptionPolicy {
   /**
    * Compares a provided raw password with an encrypted hash.
    *
-   * @param rawPassword the raw password string to match
+   * @param rawPassword   the raw password string to match
    * @param encryptedHash the hash to match against
    * @return true, if the raw password matches the hash, else false
    * @since 1.0.0

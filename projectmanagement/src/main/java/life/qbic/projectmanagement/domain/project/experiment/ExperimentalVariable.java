@@ -1,19 +1,14 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
  * <b>Experimental Variable</b>
@@ -49,7 +44,7 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    for(ExperimentalValue level : levels) {
+    for (ExperimentalValue level : levels) {
       if (hasDifferentUnitAsExistingLevels(level)) {
         throw new IllegalArgumentException(
             "experimental value not applicable. This variable has other levels without a unit or with a different unit.");

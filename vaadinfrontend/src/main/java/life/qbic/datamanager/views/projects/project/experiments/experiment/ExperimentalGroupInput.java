@@ -9,19 +9,14 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.Min;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.VariableName;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * TODO!
@@ -117,6 +112,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     super.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
     return super.isInvalid();
   }
+
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");

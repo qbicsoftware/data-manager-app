@@ -66,7 +66,7 @@ class ConditionSpec extends Specification {
         thrown(IllegalArgumentException)
     }
 
-    def "If the number of provided variable levels is less than one, throw an IllegalArgumentException" () {
+    def "If the number of provided variable levels is less than one, throw an IllegalArgumentException"() {
         when:
         Condition.create(Arrays.asList())
 

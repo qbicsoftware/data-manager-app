@@ -1,9 +1,5 @@
 package life.qbic.projectmanagement.persistence;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import java.util.List;
-import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -11,6 +7,11 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 
 /**

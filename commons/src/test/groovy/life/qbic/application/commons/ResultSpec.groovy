@@ -29,7 +29,8 @@ class ResultSpec extends Specification {
     def "When a result contains a value, apple the provided function"() {
         given:
         Function<String, String> toUpperCase = s -> {
-            return s.toUpperCase()}
+            return s.toUpperCase()
+        }
 
         and:
         String word = "automobile"
@@ -46,7 +47,8 @@ class ResultSpec extends Specification {
     def "When a result contains an exception, dont apply the provided function but return the original result"() {
         given:
         Function<String, String> toUpperCase = s -> {
-            return s.toUpperCase()}
+            return s.toUpperCase()
+        }
 
         and:
         def result = Result.failure(new RuntimeException("test exception"))
@@ -167,7 +169,7 @@ class ResultSpec extends Specification {
 
     def "When a result contains an exception, call the exception supplier"() {
         given:
-        def exceptionSupplier = { return new RuntimeException("o.O")}
+        def exceptionSupplier = { return new RuntimeException("o.O") }
 
         and:
         Exception e = new RuntimeException("error")
@@ -185,7 +187,7 @@ class ResultSpec extends Specification {
 
     def "When a result contains a value, return the value without calling the exception supplier"() {
         given:
-        def exceptionSupplier = { return new RuntimeException("o.O")}
+        def exceptionSupplier = { return new RuntimeException("o.O") }
 
         and:
         String value = "Result value"

@@ -66,11 +66,11 @@ This application requires [Java 17](https://openjdk.java.net/projects/jdk/17/) t
 The env variables contain information about the salt and the secret. Both of them are used to
 encrypt and decrypt user information.
 
-| environment variable       | description               |
-|----------------------------|---------------------------|
-| `USER_DB_URL`              | The database host address |
-| `USER_DB_USER_NAME`        | The database user name    |
-| `USER_DB_USER_PW`          | The database password     |
+| environment variable | description               |
+|----------------------|---------------------------|
+| `USER_DB_URL`        | The database host address |
+| `USER_DB_USER_NAME`  | The database user name    |
+| `USER_DB_USER_PW`    | The database password     |
 
 The application properties file could look like the following:
 
@@ -143,11 +143,11 @@ password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
 Since the application will retrieve experimental design values from a list of defined vocabularies
 a connection to the datasource containing this information is necessary:
 
-| environment variable         | description                              |
-|------------------------------|------------------------------------------|
-| `OPENBIS_DATASOURCE_URL`     | The vocabulary database host API address |
-| `OPENBIS_USER_NAME`          | The vocabulary database user name        |
-| `OPENBIS_USER_PASSWORD`      | The vocabulary database password         |
+| environment variable     | description                              |
+|--------------------------|------------------------------------------|
+| `OPENBIS_DATASOURCE_URL` | The vocabulary database host API address |
+| `OPENBIS_USER_NAME`      | The vocabulary database user name        |
+| `OPENBIS_USER_PASSWORD`  | The vocabulary database password         |
 
 The application properties file could look like the following:
 

@@ -5,10 +5,10 @@ package life.qbic.domain.concepts.communication;
  *
  * @since <version tag>
  */
-public record Email (
-  String content,
-  String subject,
-  String from,
-  Recipient to,
-  String mimeType) {
+public record Email(
+    String content,
+    String subject,
+    String from,
+    Recipient to,
+    String mimeType) {
 }

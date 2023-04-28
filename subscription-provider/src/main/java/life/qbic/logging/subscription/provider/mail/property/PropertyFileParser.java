@@ -1,13 +1,13 @@
 package life.qbic.logging.subscription.provider.mail.property;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * <b>Property File Parser</b>
@@ -56,6 +56,7 @@ public class PropertyFileParser {
   /**
    * Parses an input stream for defined properties and resolves present placeholder against visible
    * environment variables.
+   *
    * @param inputStream the input stream with the defined properties
    * @return a {@link Properties} object with the parsed properties
    * @throws IOException if the file cannot be accessed

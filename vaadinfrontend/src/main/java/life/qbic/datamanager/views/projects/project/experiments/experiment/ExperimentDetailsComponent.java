@@ -17,9 +17,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.io.Serial;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
@@ -36,6 +33,10 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * <b>Experimental Details Component</b>
@@ -74,7 +75,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+                                    @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
@@ -186,7 +187,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     private final ExperimentInformationService experimentInformationService;
 
     public Handler(ProjectInformationService projectInformationService,
-        ExperimentInformationService experimentInformationService) {
+                   ExperimentInformationService experimentInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();

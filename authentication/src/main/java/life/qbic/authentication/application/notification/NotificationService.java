@@ -1,16 +1,15 @@
 package life.qbic.authentication.application.notification;
 
+import life.qbic.authentication.application.ServiceException;
+import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.broadcasting.MessageParameters;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
-import life.qbic.authentication.application.ServiceException;
-import life.qbic.broadcasting.MessageBusSubmission;
-import life.qbic.broadcasting.MessageParameters;
-import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>Notification Service</b>

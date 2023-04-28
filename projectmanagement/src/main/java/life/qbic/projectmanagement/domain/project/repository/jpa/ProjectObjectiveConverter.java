@@ -14,13 +14,13 @@ import life.qbic.projectmanagement.domain.project.ProjectObjective;
  * @since 1.0.0
  */
 public class ProjectObjectiveConverter implements AttributeConverter<ProjectObjective, String> {
-    @Override
-    public String convertToDatabaseColumn(ProjectObjective objective) {
-        return objective.objective();
-    }
+  @Override
+  public String convertToDatabaseColumn(ProjectObjective objective) {
+    return objective.objective();
+  }
 
-    @Override
-    public ProjectObjective convertToEntityAttribute(String s) {
-        return ProjectObjective.create(s);
-    }
+  @Override
+  public ProjectObjective convertToEntityAttribute(String s) {
+    return ProjectObjective.create(s);
+  }
 }

@@ -1,6 +1,5 @@
 package life.qbic.authorization.security;
 
-import java.util.List;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
@@ -12,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -21,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   @Autowired
   UserDetailsServiceImpl(UserRepository userRepository,
-      SystemPermissionService systemPermissionService) {
+                         SystemPermissionService systemPermissionService) {
     this.userRepository = userRepository;
     this.systemPermissionService = systemPermissionService;
   }
