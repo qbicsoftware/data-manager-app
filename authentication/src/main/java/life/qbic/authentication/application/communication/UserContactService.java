@@ -40,11 +40,14 @@ public class UserContactService {
     this.emalConfirmationLinkSupplier = emailConfirmationLinkSupplier;
   }
 
-  public void sendResetLink(EmailAddress emailAddress, FullName fullName, UserId userId) {
+  public void sendResetLink(String userId) {
+    Optional<User> userSearchResult = userRepository.findById(UserId.from(userId));
+    User user = userSearchResult.orElseThrow(() -> new RuntimeException(
+        "Cannot send email confirmation. Unknown user with id " + userId));
     var passwordResetEmail = EmailFactory.passwordResetEmail(NO_REPLY_QBIC_LIFE,
-        new Recipient(emailAddress.get(),
-            fullName.get())
-        , passwordResetLinkSupplier.passwordResetUrl(userId.get()));
+        new Recipient(user.emailAddress().get(),
+            user.fullName().get())
+        , passwordResetLinkSupplier.passwordResetUrl(userId));
 
     emailService.send(passwordResetEmail);
   }

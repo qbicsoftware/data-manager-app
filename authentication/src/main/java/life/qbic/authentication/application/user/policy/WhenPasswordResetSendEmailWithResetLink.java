@@ -38,7 +38,6 @@ public class WhenPasswordResetSendEmailWithResetLink implements
   @Override
   public void handleEvent(PasswordResetRequested event) {
     jobScheduler.enqueue(
-        () -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(),
-            event.userId()));
+        () -> userContactService.sendResetLink(event.userId().get()));
   }
 }
