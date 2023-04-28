@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
@@ -23,9 +24,11 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -47,8 +50,6 @@ public class ExperimentListComponent extends Composite<CardLayout> {
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final CardLayout experimentalDesignAddCard = new ExperimentalDesignAddCard();
   private final ExperimentCreationDialog experimentCreationDialog;
-  private final ComponentRenderer<Component, Experiment> experimentCardRenderer = new ComponentRenderer<>(
-      ExperimentalDesignCard::new);
 
   public ExperimentListComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
@@ -93,7 +94,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       this.addExperimentToProjectService = addExperimentToProjectService;
-      experiments.setRenderer(experimentCardRenderer);
+      experiments.setRenderer(renderExperimentsAsExperimentalDesignCards());
       openDialogUponClickingAddCard();
       configureExperimentCreationDialog();
     }
@@ -130,13 +131,33 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     }
 
     private void processExperimentCreation(ExperimentCreationContent experimentCreationContent) {
-      //Todo Exchange with Result object
       addExperimentToProjectService.addExperimentToProject(projectId,
-          experimentCreationContent.experimentName(), experimentCreationContent.species(),
-          experimentCreationContent.specimen(), experimentCreationContent.analytes());
-      experimentCreationDialog.resetAndClose();
-      experiments.getDataProvider().refreshAll();
-      //Todo Route to Experiment via ID
+              experimentCreationContent.experimentName(), experimentCreationContent.species(),
+              experimentCreationContent.specimen(), experimentCreationContent.analytes())
+          .ifSuccessOrElseThrow(experimentId -> {
+            experimentCreationDialog.resetAndClose();
+            experiments.getDataProvider().refreshAll();
+            routeToExperiment(experimentId);
+          });
+    }
+
+    private ComponentRenderer<Component, Experiment> renderExperimentsAsExperimentalDesignCards() {
+      return new ComponentRenderer<>(experiment -> {
+        ExperimentalDesignCard experimentalDesignCard = new ExperimentalDesignCard(experiment);
+        experimentalDesignCard.addClickListener(
+            cardClickEvent -> handler.routeToExperiment(experiment.experimentId()));
+        return experimentalDesignCard;
+      });
+    }
+
+    private void routeToExperiment(ExperimentId experimentId) {
+      getUI().ifPresentOrElse(it -> it.navigate(
+              String.format(Projects.EXPERIMENT, handler.projectId.value(), experimentId.value())),
+          () -> {
+            throw new ProjectManagementException(
+                "Could not navigate to newly created Experiment " + experimentId.value()
+                    + "Information Page for " + handler.projectId.value());
+          });
     }
   }
 
