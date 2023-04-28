@@ -191,10 +191,29 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
+
       experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
         fillExperimentalGroupDialog();
-        experimentalGroupsDialog.open();
+        handleAddExperimentalGroups();
       });
+    }
+
+    private void handleAddExperimentalGroups() {
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      if(!variables.isEmpty()) {
+        experimentalGroupsDialog.open();
+      } else {
+        selectSummaryTab();
+        InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
+            "Please define all of your experimental variables before adding groups.");
+        StyledNotification notification = new StyledNotification(successMessage);
+        notification.open();
+      }
+    }
+
+    private void selectSummaryTab() {
+      experimentSheet.setSelectedIndex(0);
     }
 
     private void loadExperimentalGroups() {
