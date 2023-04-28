@@ -34,7 +34,6 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -289,10 +288,21 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       AddExperimentalGroupResponse response = experimentInformationService.addExperimentalGroupToExperiment(
           experimentId,
           new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
-      if (response.responseCode() == ResponseCode.SUCCESS) {
-        loadExperimentalGroups();
-        groupSubmitted.source().close();
+      switch (response.responseCode()) {
+        case SUCCESS -> handleGroupSubmittedSuccess(groupSubmitted);
+        case CONDITION_EXISTS -> handleDuplicateConditionInput();
       }
+    }
+
+    private void handleGroupSubmittedSuccess(ExperimentalGroupSubmitEvent groupSubmitted) {
+      loadExperimentalGroups();
+      groupSubmitted.eventSourceDialog().close();
+    }
+
+    private void handleDuplicateConditionInput() {
+      InformationMessage infoMessage = new InformationMessage("A group with the same condition exists already.", "");
+      StyledNotification notification = new StyledNotification(infoMessage);
+      notification.open();
     }
   }
 }
