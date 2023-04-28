@@ -50,10 +50,9 @@ public class ProjectCreationService {
    * @return the created project
    */
   public Result<Project, ApplicationException> createProject(String sourceOffer, String code,
-      String title, String objective, String experimentalDesign,
-      List<Species> speciesList, List<Specimen> specimenList, List<Analyte> analyteList,
-      PersonReference principalInvestigator, PersonReference responsiblePerson,
-      PersonReference projectManager) {
+      String title, String objective, String experimentalDesign, List<Species> speciesList,
+      List<Specimen> specimenList, List<Analyte> analyteList, PersonReference principalInvestigator,
+      PersonReference responsiblePerson, PersonReference projectManager) {
 
     try {
       Project project = createProject(code, title, objective, experimentalDesign, projectManager,

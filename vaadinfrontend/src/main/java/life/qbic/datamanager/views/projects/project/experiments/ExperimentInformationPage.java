@@ -126,6 +126,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     }
 
     public void setProjectId(ProjectId projectId) {
+      this.projectId = projectId;
       projectNavigationBarComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
     }

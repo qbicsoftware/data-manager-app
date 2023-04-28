@@ -134,7 +134,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
       addExperimentToProjectService.addExperimentToProject(projectId,
               experimentCreationContent.experimentName(), experimentCreationContent.species(),
               experimentCreationContent.specimen(), experimentCreationContent.analytes())
-          .ifSuccessOrElseThrow(experimentId -> {
+          .onValue(experimentId -> {
             experimentCreationDialog.resetAndClose();
             experiments.getDataProvider().refreshAll();
             routeToExperiment(experimentId);
