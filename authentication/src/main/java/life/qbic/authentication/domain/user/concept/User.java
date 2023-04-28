@@ -166,6 +166,6 @@ public class User implements Serializable {
   private void activate() {
     this.active = true;
     UserActivated event = UserActivated.create(id.get());
-    DomainEventPublisher.instance().publish(event);
+    DomainEventDispatcher.instance().dispatch(event);
   }
 }

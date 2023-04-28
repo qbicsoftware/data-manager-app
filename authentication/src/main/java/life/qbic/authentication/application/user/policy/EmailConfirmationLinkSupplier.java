@@ -36,9 +36,14 @@ public class EmailConfirmationLinkSupplier {
     this.emailConfirmationParameter = emailConfirmationParameter;
   }
 
-  public String emailConfirmationUrl(String userId) throws MalformedURLException {
+  public String emailConfirmationUrl(String userId) {
     String pathWithQuery = "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
+    try {
+      URL url = new URL(protocol, host, port, pathWithQuery);
+      return url.toExternalForm();
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Link creation failed.", e);
+    }
 
-    return new URL(protocol, host, port, pathWithQuery).toExternalForm();
   }
 }

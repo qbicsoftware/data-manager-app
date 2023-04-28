@@ -38,9 +38,13 @@ public class PasswordResetLinkSupplier {
     this.passwordResetParameter = passwordResetParameter;
   }
 
-  public String passwordResetUrl(String userId) throws MalformedURLException {
+  public String passwordResetUrl(String userId) {
     String pathWithQuery = "/" + resetEndpoint + "?" + passwordResetParameter + "=" + userId;
-
-    return new URL(protocol, host, port, pathWithQuery).toExternalForm();
+    try {
+      URL url = new URL(protocol, host, port, pathWithQuery);
+      return url.toExternalForm();
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Cannot create password reset link.", e);
+    }
   }
 }

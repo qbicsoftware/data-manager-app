@@ -1,7 +1,7 @@
 package life.qbic.authentication.application.user.policy;
 
 import life.qbic.authentication.application.communication.UserContactService;
-import life.qbic.authentication.domain.user.event.PasswordReset;
+import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
@@ -17,26 +17,25 @@ import org.springframework.stereotype.Component;
  * @since <version tag>
  */
 @Component
-public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordReset> {
+public class WhenUserRegisteredSendConfirmationEmail implements DomainEventSubscriber<UserRegistered> {
 
     private final UserContactService userContactService;
 
     private final JobScheduler jobScheduler;
 
-    public WhenPasswordResetSendEmailWithResetLink(@Autowired UserContactService userContactService,
-                                                   @Autowired JobScheduler jobScheduler) {
+    public WhenUserRegisteredSendConfirmationEmail(@Autowired UserContactService userContactService, @Autowired JobScheduler jobScheduler) {
         this.userContactService = userContactService;
-        this.jobScheduler = jobScheduler;
         DomainEventDispatcher.instance().subscribe(this);
+        this.jobScheduler = jobScheduler;
     }
 
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
-        return PasswordReset.class;
+        return UserRegistered.class;
     }
 
     @Override
-    public void handleEvent(PasswordReset event) {
-        jobScheduler.enqueue(() -> userContactService.sendResetLink(event.userEmailAddress(), event.userFullName(), event.userId()));
+    public void handleEvent(UserRegistered event) {
+        this.jobScheduler.enqueue(() -> userContactService.sendEmailConfirmation(event.userId()));
     }
 }
