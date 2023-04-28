@@ -49,7 +49,7 @@ public class ExperimentalVariable {
       throw new IllegalArgumentException("At least one variable level required.");
     }
     this.name = VariableName.create(name);
-    for(ExperimentalValue level : levels) {
+    for (ExperimentalValue level : levels) {
       if (hasDifferentUnitAsExistingLevels(level)) {
         throw new IllegalArgumentException(
             "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
@@ -76,14 +76,14 @@ public class ExperimentalVariable {
    */
   Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
-      return Result.failure(new IllegalArgumentException(
+      return Result.fromError(new IllegalArgumentException(
           "experimental value not applicable. This variable has other levels without a unit or with a different unit."));
     }
     if (!levels.contains(experimentalValue)) {
       levels.add(experimentalValue);
     }
     VariableLevel variableLevel = new VariableLevel(name(), experimentalValue);
-    return Result.success(variableLevel);
+    return Result.fromValue(variableLevel);
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {

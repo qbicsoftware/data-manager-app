@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.application.commons.Result;
 import life.qbic.authentication.application.ServiceException;
 import life.qbic.authentication.application.notification.Notification;
 import life.qbic.authentication.application.notification.NotificationService;
-
 import life.qbic.authentication.domain.registry.DomainRegistry;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
@@ -20,16 +20,16 @@ import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
-import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.domain.concepts.DomainEventPublisher;
-import life.qbic.domain.concepts.DomainEventSubscriber;
-import life.qbic.domain.concepts.event.EventStore;
 import life.qbic.authentication.domain.user.event.PasswordReset;
 import life.qbic.authentication.domain.user.event.UserActivated;
 import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
 import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.authentication.domain.user.repository.UserNotFoundException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventPublisher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.event.EventStore;
 
 /**
  * <b>User Registration Service</b>
@@ -234,27 +234,32 @@ public final class UserRegistrationService {
    * {@link PasswordValidationException}.
    * @since 1.0.0
    */
-  public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
-    UserId id = UserId.from(userId);
-    EncryptedPassword encryptedPassword;
+  public Result<EncryptedPassword, RuntimeException> newUserPassword(String userId,
+      char[] newRawPassword) {
+    Result<User, ServiceException> user = Result.<UserId, ServiceException>fromValue(
+            UserId.from(userId))
+        .map(userRepository::findById)
+        .flatMap(it -> it.<Result<User, ServiceException>>map(Result::fromValue)
+            .orElseGet(() -> Result.fromError(new ServiceException("Unknown user id"))));
+    if (user.isError()) {
+      return Result.fromError(user.getError());
+    }
+
+    return Result
+        .<char[], RuntimeException>fromValue(newRawPassword)
+        .flatMap(this::attemptPasswordEncryption)
+        .onValue(password -> user
+            .onValue(u -> u.setNewPassword(password))
+            .onValue(userRepository::updateUser));
+  }
+
+  private Result<EncryptedPassword, RuntimeException> attemptPasswordEncryption(
+      char[] newPassword) {
     try {
-      encryptedPassword = EncryptedPassword.from(newRawPassword);
+      return Result.fromValue(EncryptedPassword.from(newPassword));
     } catch (PasswordValidationException e) {
-      return ApplicationResponse.failureResponse(e);
+      return Result.fromError(e);
     }
-
-    var optionalUser = userRepository.findById(id);
-
-    if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new ServiceException("Unknown user id"));
-    }
-
-    optionalUser.ifPresent(user -> {
-      user.setNewPassword(encryptedPassword);
-      userRepository.updateUser(user);
-    });
-
-    return ApplicationResponse.successResponse();
   }
 
   public static class UserExistsException extends ApplicationException {
@@ -335,7 +340,7 @@ public final class UserRegistrationService {
    * to the application
    * </p>
    */
-  public class UserNotActivatedException extends ApplicationException {
+  public static class UserNotActivatedException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;

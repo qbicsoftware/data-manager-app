@@ -52,6 +52,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     layout.setAlignItems(Alignment.CENTER);
     layout.setPadding(false);
   }
+
   private void initNavigationBar() {
 
     navigationBarLayout = new HorizontalLayout();

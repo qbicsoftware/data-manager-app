@@ -217,11 +217,15 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectCreationContent.projectResponsible(),
           projectCreationContent.projectManager());
 
-      project.ifSuccessOrElseThrow(result -> {
-        displaySuccessfulProjectCreationNotification();
-        projectCreationDialog.resetAndClose();
-        projectGrid.getDataProvider().refreshAll();
-      });
+      project
+          .onValue(result -> {
+            displaySuccessfulProjectCreationNotification();
+            projectCreationDialog.resetAndClose();
+            projectGrid.getDataProvider().refreshAll();
+          })
+          .onError(e -> {
+            throw e;
+          });
     }
 
     private void displaySuccessfulProjectCreationNotification() {

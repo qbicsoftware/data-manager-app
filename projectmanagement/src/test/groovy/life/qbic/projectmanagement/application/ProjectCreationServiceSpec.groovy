@@ -55,10 +55,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "an exception is thrown"
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
-  }
+        then: "an exception is thrown"
+        resultWithExperimentalDesign.isError()
+        resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_OBJECTIVE
+    }
 
   def "invalid experimental design description leads to INVALID_EXPERIMENTAL_DESIGN code"() {
     given:
@@ -79,10 +79,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "an exception is thrown"
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
-  }
+        then: "an exception is thrown"
+        resultWithExperimentalDesign.isError()
+        resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_EXPERIMENTAL_DESIGN
+    }
 
   def "when create is called without a project manager then an exception is thrown"() {
     given:
@@ -100,10 +100,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             null)
 
-    then: "an exception is thrown"
-    result.isFailure()
-    result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
-  }
+        then: "an exception is thrown"
+        result.isError()
+        result.getError().errorCode() == ApplicationException.ErrorCode.GENERAL
+    }
 
   def "when create is called without a principal investigator (PI) then an exception is thrown"() {
     given:
@@ -121,10 +121,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "an exception is thrown"
-    result.isFailure()
-    result.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
-  }
+        then: "an exception is thrown"
+        result.isError()
+        result.getError().errorCode() == ApplicationException.ErrorCode.GENERAL
+    }
 
   def "when create is called without a responsible person then the project does not contain a responsible person"() {
     given:
@@ -142,10 +142,10 @@ class ProjectCreationServiceSpec extends Specification {
             null,
             personReference)
 
-    then: "a project is returned"
-    result.isSuccess()
-    result.value().getResponsiblePerson().isEmpty()
-  }
+        then: "a project is returned"
+        result.isValue()
+        result.getValue().getResponsiblePerson().isEmpty()
+    }
 
   def "when analytes are provided at creation then an experiment is created with those analytes"() {
     given:
@@ -166,10 +166,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "the analytes can be retrieved"
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, _, analytes) >> Result.success(ExperimentId.create());
-    result.isSuccess()
-  }
+        then: "the analytes can be retrieved"
+        1 * addExperimentToProjectService.addExperimentToProject(_, _, analytes, _, _) >> Result.fromValue(ExperimentId.create());
+        result.isValue()
+    }
 
   def "when species are provided at creation then an experiment is created with those species"() {
     given:
@@ -190,10 +190,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "the analytes can be retrieved"
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, species, _, _) >> Result.success(ExperimentId.create())
-    result.isSuccess()
-  }
+        then: "the analytes can be retrieved"
+        1 * addExperimentToProjectService.addExperimentToProject(_, _, _, species, _) >> Result.fromValue(ExperimentId.create())
+        result.isValue()
+    }
 
   def "when specimens are provided at creation then an experiment is created with those specimens"() {
     given:
@@ -214,10 +214,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "the analytes can be retrieved"
-    1 * addExperimentToProjectService.addExperimentToProject(_, _, _, specimens, _) >> Result.success(ExperimentId.create())
-    result.isSuccess()
-  }
+        then: "the analytes can be retrieved"
+        1 * addExperimentToProjectService.addExperimentToProject(_, _, _, _, specimens) >> Result.fromValue(ExperimentId.create())
+        result.isValue()
+    }
 
   def "expect project creation returns the created project for a non-empty title"() {
     given:
@@ -236,10 +236,10 @@ class ProjectCreationServiceSpec extends Specification {
             personReference,
             personReference)
 
-    then: "the created project is returned"
-    result.isSuccess()
-    nonNull(result.value())
-  }
+        then: "the created project is returned"
+        result.isValue()
+        nonNull(result.getValue())
+    }
 
   def "expect unsuccessful save of a new project returns GENERAL error code"() {
     given:
@@ -258,8 +258,8 @@ class ProjectCreationServiceSpec extends Specification {
             personReference)
 
 
-    then:
-    resultWithExperimentalDesign.isFailure()
-    resultWithExperimentalDesign.exception().errorCode() == ApplicationException.ErrorCode.GENERAL
-  }
+        then:
+        resultWithExperimentalDesign.isError()
+        resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.GENERAL
+    }
 }

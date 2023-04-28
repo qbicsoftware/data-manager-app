@@ -5,10 +5,11 @@ package life.qbic.newshandler.usermanagement.email;
  *
  * @since <version tag>
  */
-public record Email (
-  String content,
-  String subject,
-  String from,
-  Recipient to,
-  String mimeType) {
+public record Email(
+    String content,
+    String subject,
+    String from,
+    Recipient to,
+    String mimeType) {
+
 }

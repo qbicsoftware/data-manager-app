@@ -37,7 +37,8 @@ public class EmailConfirmationLinkSupplier {
   }
 
   public String emailConfirmationUrl(String userId) throws MalformedURLException {
-    String pathWithQuery = "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
+    String pathWithQuery =
+        "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
 
     return new URL(protocol, host, port, pathWithQuery).toExternalForm();
   }

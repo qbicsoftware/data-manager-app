@@ -12,19 +12,19 @@ import com.vaadin.flow.router.BeforeEvent;
  */
 public interface NewPasswordHandlerInterface {
 
-    /**
-     * Registers a {@link NewPasswordLayout} to an implementing class
-     *
-     * @param registerLayout The view that is being handled
-     * @since 1.0.0
-     */
-    void handle(NewPasswordLayout registerLayout);
+  /**
+   * Registers a {@link NewPasswordLayout} to an implementing class
+   *
+   * @param registerLayout The view that is being handled
+   * @since 1.0.0
+   */
+  void handle(NewPasswordLayout registerLayout);
 
-    /**
-     * Notifies the handler about {@link BeforeEvent }.
-     *
-     * @param beforeEvent a before event from the registered layout
-     * @since 1.0.0
-     */
-    void handle(BeforeEvent beforeEvent);
+  /**
+   * Notifies the handler about {@link BeforeEvent }.
+   *
+   * @param beforeEvent a before event from the registered layout
+   * @since 1.0.0
+   */
+  void handle(BeforeEvent beforeEvent);
 }

@@ -19,12 +19,12 @@ public interface UserDataStorage {
    * Searches for any available user entities with the provided mail address.
    *
    * <p>Note, that the implementation must not make any assumptions by number of occurrences, even
-   * for the mail address. The implementation shall return any user entry with the provided mail address
-   * and leave the logic to the application layer.
+   * for the mail address. The implementation shall return any user entry with the provided mail
+   * address and leave the logic to the application layer.
    *
    * @param emailAddress the mail address to use as search filter
    * @return a list of matching {@link User} entries. Is empty, if no matching user is present with
-   *     the provided mail address
+   * the provided mail address
    * @since 1.0.0
    */
   List<User> findUsersByEmailAddress(EmailAddress emailAddress);
@@ -42,7 +42,7 @@ public interface UserDataStorage {
    *
    * @param id the user id to search for a matching entry in the storage
    * @return the user object, or {@link Optional#empty()} if no entity with the provided id was
-   *     found.
+   * found.
    * @since 1.0.0
    */
   Optional<User> findUserById(UserId id);

@@ -29,7 +29,7 @@ class AddExperimentToProjectServiceSpec extends Specification {
                 [Species.create("homo sapiens")],
                 [Specimen.create("blood")],
                 [Analyte.create("DNA")])
-        ExperimentId experimentId = result.value()
+        ExperimentId experimentId = result.getValue()
 
         then: "the project holds a reference to the created experiment"
         project.experiments().contains(experimentId)
