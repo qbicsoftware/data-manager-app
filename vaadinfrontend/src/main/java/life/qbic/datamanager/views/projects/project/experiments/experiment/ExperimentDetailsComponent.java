@@ -270,16 +270,20 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
           experimentId,
           new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
       switch (response.responseCode()) {
-        case SUCCESS -> {
-          loadExperimentalGroups();
-          groupSubmitted.source().close();
-        }
-        case CONDITION_EXISTS -> {
-          InformationMessage infoMessage = new InformationMessage("A group with the same condition exists already.", "");
-          StyledNotification notification = new StyledNotification(infoMessage);
-          notification.open();
-        }
+        case SUCCESS -> handleGroupSubmittedSuccess(groupSubmitted);
+        case CONDITION_EXISTS -> handleDuplicateConditionInput();
       }
+    }
+
+    private void handleGroupSubmittedSuccess(ExperimentalGroupSubmitEvent groupSubmitted) {
+      loadExperimentalGroups();
+      groupSubmitted.eventSourceDialog().close();
+    }
+
+    private void handleDuplicateConditionInput() {
+      InformationMessage infoMessage = new InformationMessage("A group with the same condition exists already.", "");
+      StyledNotification notification = new StyledNotification(infoMessage);
+      notification.open();
     }
   }
 }
