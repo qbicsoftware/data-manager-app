@@ -19,7 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class SecurityService implements Serializable {
 
-  @Serial private static final long serialVersionUID = 5199220688136926750L;
+  @Serial
+  private static final long serialVersionUID = 5199220688136926750L;
 
   private final UserRepository userRepository;
 
@@ -36,7 +37,8 @@ public class SecurityService implements Serializable {
 
   public Optional<User> get() {
     return getAuthentication()
-        .flatMap(authentication -> userRepository.findByEmail(EmailAddress.from(authentication.getName())));
+        .flatMap(authentication -> userRepository.findByEmail(
+            EmailAddress.from(authentication.getName())));
   }
 
   public void logout() {

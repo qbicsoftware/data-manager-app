@@ -79,7 +79,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   private static ExperimentalGroupCard getExperimentalGroup(
       ExperimentalGroupDTO experimentalGroup) {
     Set<VariableLevel> variableLevels = experimentalGroup.levels();
-    return new ExperimentalGroupCard(experimentalGroup.sampleSize(), variableLevels.toArray(VariableLevel[]::new));
+    return new ExperimentalGroupCard(experimentalGroup.sampleSize(),
+        variableLevels.toArray(VariableLevel[]::new));
   }
 
   public record AddExperimentalGroupCommand() {

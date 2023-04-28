@@ -1,8 +1,7 @@
 package life.qbic.authentication.application.notification;
 
-import life.qbic.domain.concepts.DomainEvent;
-
 import java.time.Instant;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>Notification</b>
@@ -25,10 +24,10 @@ public class Notification {
   /**
    * Creates a new {@link Notification} instance.
    *
-   * @param eventType the event type
-   * @param occurredOn the time-point of the event
+   * @param eventType      the event type
+   * @param occurredOn     the time-point of the event
    * @param notificationId a unique notification id
-   * @param event the domain event
+   * @param event          the domain event
    * @return a notification with the arguments provided
    */
   public static Notification create(

@@ -237,7 +237,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           event -> processProjectCreation(event.getSource().content()));
       projectInformationDialog.addCancelEventListener(
           event -> projectInformationDialog.resetAndClose());
-     }
+    }
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 

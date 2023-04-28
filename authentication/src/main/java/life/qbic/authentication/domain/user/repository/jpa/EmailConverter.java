@@ -7,8 +7,8 @@ import life.qbic.authentication.domain.user.concept.EmailAddress;
  * <b>Converts {@link EmailAddress} into a String and vice versa></b>
  *
  * <p>Converts the String value stored in the database to an
- * {@link EmailAddress}. Additionally converts the
- * {@link EmailAddress} to a string value to be stored in the database.
+ * {@link EmailAddress}. Additionally converts the {@link EmailAddress} to a string value to be
+ * stored in the database.
  * </p>
  *
  * @since 1.0.0

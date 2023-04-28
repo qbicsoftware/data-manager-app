@@ -36,22 +36,28 @@ public class ProjectInformationPage extends Div implements RouterLayout {
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ProjectInformationPageHandler projectInformationPageHandler;
 
-  public ProjectInformationPage(@Autowired ProjectNavigationBarComponent projectNavigationBarComponent, @Autowired ProjectDetailsComponent projectDetailsComponent,
+  public ProjectInformationPage(
+      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired ProjectDetailsComponent projectDetailsComponent,
       @Autowired ProjectLinksComponent projectLinksComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(projectDetailsComponent);
     Objects.requireNonNull(projectLinksComponent);
     setupBoard(projectNavigationBarComponent, projectDetailsComponent, projectLinksComponent);
     setComponentStyles(projectDetailsComponent, projectLinksComponent);
-    projectInformationPageHandler = new ProjectInformationPageHandler(projectNavigationBarComponent, projectDetailsComponent,
+    projectInformationPageHandler = new ProjectInformationPageHandler(projectNavigationBarComponent,
+        projectDetailsComponent,
         projectLinksComponent);
     log.debug(String.format(
         "New instance for project Information Page (#%s) created with Project Navigation Bar Component (#%s) and Project Details Component (#%s) and Project Links Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent), System.identityHashCode(projectDetailsComponent),
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        System.identityHashCode(projectDetailsComponent),
         System.identityHashCode(projectLinksComponent)));
   }
 
-  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent, ProjectDetailsComponent projectDetailsComponent, ProjectLinksComponent projectLinksComponent) {
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ProjectDetailsComponent projectDetailsComponent,
+      ProjectLinksComponent projectLinksComponent) {
     Board board = new Board();
 
     Row topRow = new Row();
@@ -89,7 +95,8 @@ public class ProjectInformationPage extends Div implements RouterLayout {
     private final ProjectDetailsComponent projectDetailsComponent;
     private final ProjectLinksComponent projectLinksComponent;
 
-    public ProjectInformationPageHandler(ProjectNavigationBarComponent projectNavigationComponent, ProjectDetailsComponent projectDetailsComponent,
+    public ProjectInformationPageHandler(ProjectNavigationBarComponent projectNavigationComponent,
+        ProjectDetailsComponent projectDetailsComponent,
         ProjectLinksComponent projectLinksComponent) {
       this.projectNavigationComponent = projectNavigationComponent;
       this.projectDetailsComponent = projectDetailsComponent;

@@ -25,6 +25,7 @@ public class MailOnErrorSubscriber implements Subscriber {
   private final String recipient;
 
   private final MailService emailService;
+
   public MailOnErrorSubscriber() throws IOException {
     var props = MailPropertyLoader.create().load();
     sender = requireNonNull(props.getProperty(NOTIFICATION_MAIL_SENDER));

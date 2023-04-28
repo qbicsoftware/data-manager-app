@@ -14,6 +14,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  * @since 1.0.0
  */
 public class DisplayMessage extends Composite<VerticalLayout> {
+
   protected Span titleSpan;
   public Span titleTextSpan;
 
