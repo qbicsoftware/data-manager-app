@@ -10,11 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * When a user registered, email the user a confirmation link to the provided email address.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class WhenUserRegisteredSendConfirmationEmail implements DomainEventSubscriber<UserRegistered> {

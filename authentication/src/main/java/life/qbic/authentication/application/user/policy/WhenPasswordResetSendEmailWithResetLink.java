@@ -10,11 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * When a password reset request reset event occurred, email
+ * the user with a link to reset their password.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class WhenPasswordResetSendEmailWithResetLink implements DomainEventSubscriber<PasswordReset> {

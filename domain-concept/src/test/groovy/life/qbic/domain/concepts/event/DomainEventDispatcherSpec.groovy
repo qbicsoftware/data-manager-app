@@ -9,11 +9,9 @@ import spock.lang.Specification
 import java.time.Instant
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Tests for the domain event dispatcher
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class DomainEventDispatcherSpec extends Specification {
 
