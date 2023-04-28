@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.application.commons.Result;
 import life.qbic.authentication.application.ServiceException;
 import life.qbic.authentication.application.notification.Notification;
 import life.qbic.authentication.application.notification.NotificationService;
@@ -166,27 +167,42 @@ public final class UserRegistrationService {
    * {@link PasswordValidationException}.
    * @since 1.0.0
    */
-  public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
-    UserId id = UserId.from(userId);
-    EncryptedPassword encryptedPassword;
+  public Result<EncryptedPassword, RuntimeException> newUserPassword(String userId,
+      char[] newRawPassword) {
+    Result<User, ServiceException> user = Result.<UserId, ServiceException>fromValue(
+            UserId.from(userId))
+        .map(userRepository::findById)
+        .flatMap(it -> it.<Result<User, ServiceException>>map(Result::fromValue)
+            .orElseGet(() -> Result.fromError(new ServiceException("Unknown user id"))));
+    if (user.isError()) {
+      return Result.fromError(user.getError());
+    }
+
+    return Result
+        .<char[], RuntimeException>fromValue(newRawPassword)
+        .flatMap(this::attemptPasswordEncryption)
+        .onValue(password -> user
+            .onValue(u -> u.setNewPassword(password))
+            .onValue(userRepository::updateUser));
+  }
+
+  private Result<EncryptedPassword, RuntimeException> attemptPasswordEncryption(
+      char[] newPassword) {
     try {
-      encryptedPassword = EncryptedPassword.from(newRawPassword);
+      return Result.fromValue(EncryptedPassword.from(newPassword));
     } catch (PasswordValidationException e) {
-      return ApplicationResponse.failureResponse(e);
+      return Result.fromError(e);
     }
+  }
 
-    var optionalUser = userRepository.findById(id);
+  public static class UserExistsException extends ApplicationException {
 
-    if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new ServiceException("Unknown user id"));
+    @Serial
+    private static final long serialVersionUID = 3147229431249844901L;
+
+    public UserExistsException() {
+      super();
     }
-
-    optionalUser.ifPresent(user -> {
-      user.setNewPassword(encryptedPassword);
-      userRepository.updateUser(user);
-    });
-
-    return ApplicationResponse.successResponse();
   }
 
   /**
@@ -207,23 +223,13 @@ public final class UserRegistrationService {
     });
   }
 
-  public static class UserExistsException extends ApplicationException {
-
-    @Serial
-    private static final long serialVersionUID = 3147229431249844901L;
-
-    public UserExistsException() {
-      super();
-    }
-  }
-
   /**
    * <p>
    * An exception to be thrown if a user is not activated. This implies that the user cannot log in
    * to the application
    * </p>
    */
-  public class UserNotActivatedException extends ApplicationException {
+  public static class UserNotActivatedException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;
