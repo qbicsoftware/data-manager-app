@@ -6,4 +6,5 @@ package life.qbic.newshandler.usermanagement.email;
 public record Recipient(
     String address,
     String fullName) {
+
 }

@@ -9,13 +9,13 @@ import life.qbic.authentication.application.user.registration.EmailAddressConfir
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
-import life.qbic.domain.concepts.SimpleEventStore;
-import life.qbic.domain.concepts.TemporaryEventRepository;
-import life.qbic.domain.concepts.event.EventStore;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.domain.concepts.SimpleEventStore;
+import life.qbic.domain.concepts.TemporaryEventRepository;
+import life.qbic.domain.concepts.event.EventStore;
 import life.qbic.newshandler.usermanagement.email.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;

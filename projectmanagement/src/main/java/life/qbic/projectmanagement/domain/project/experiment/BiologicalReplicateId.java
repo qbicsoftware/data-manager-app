@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
 import jakarta.persistence.Embeddable;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -14,42 +13,47 @@ import java.util.Random;
  */
 @Embeddable
 public class BiologicalReplicateId implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 3380429168282318636L;
-    private Long id;
 
-    protected BiologicalReplicateId() {
-        // Needed for JPA
-    }
+  @Serial
+  private static final long serialVersionUID = 3380429168282318636L;
+  private Long id;
 
-    private BiologicalReplicateId(Long id) {
-        this.id = id;
-    }
+  protected BiologicalReplicateId() {
+    // Needed for JPA
+  }
 
-    public static BiologicalReplicateId create() {
-        Long id = new Random().nextLong(Long.MAX_VALUE);
-        return new BiologicalReplicateId(id);
-    }
+  private BiologicalReplicateId(Long id) {
+    this.id = id;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BiologicalReplicateId that = (BiologicalReplicateId) o;
-        return Objects.equals(id, that.id);
-    }
+  public static BiologicalReplicateId create() {
+    Long id = new Random().nextLong(Long.MAX_VALUE);
+    return new BiologicalReplicateId(id);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BiologicalReplicateId that = (BiologicalReplicateId) o;
+    return Objects.equals(id, that.id);
+  }
 
-    public Long id() {
-        return id;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 
-    @Override
-    public String toString() {
-        return "BiologicalReplicateId{" + "id=" + id + '}';
-    }
+  public Long id() {
+    return id;
+  }
+
+  @Override
+  public String toString() {
+    return "BiologicalReplicateId{" + "id=" + id + '}';
+  }
 }

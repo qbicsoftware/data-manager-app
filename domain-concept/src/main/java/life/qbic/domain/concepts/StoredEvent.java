@@ -3,6 +3,7 @@ package life.qbic.domain.concepts;
 import java.time.Instant;
 
 public class StoredEvent {
+
   private final String eventBody;
   private long eventId;
   private final Instant occurredOn;

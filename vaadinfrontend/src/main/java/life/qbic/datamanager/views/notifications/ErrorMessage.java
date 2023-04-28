@@ -22,6 +22,7 @@ public class ErrorMessage extends DisplayMessage {
     messageIcon = new Icon(VaadinIcon.EXCLAMATION_CIRCLE_O);
     messageIcon.addClassName("icon-s");
   }
+
   @Override
   protected void styleSpecificLayout() {
     super.getContent().addClassNames("p-s", "text-error", "bg-error-10", "rounded-l", "gap-y-s");

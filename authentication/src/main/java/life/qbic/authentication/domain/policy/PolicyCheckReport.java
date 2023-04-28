@@ -10,4 +10,5 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 public record PolicyCheckReport(PolicyStatus status, String reason) implements Serializable {
+
 }

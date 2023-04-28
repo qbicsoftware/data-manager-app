@@ -70,7 +70,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   private static ExperimentalGroupCard getExperimentalGroup(
       ExperimentalGroupDTO experimentalGroup) {
     Set<VariableLevel> variableLevels = experimentalGroup.levels();
-    return new ExperimentalGroupCard(experimentalGroup.sampleSize(), variableLevels.toArray(VariableLevel[]::new));
+    return new ExperimentalGroupCard(experimentalGroup.sampleSize(),
+        variableLevels.toArray(VariableLevel[]::new));
   }
 
   public record AddExperimentalGroupCommand() {
@@ -105,7 +106,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       getStyle().set("margin", "5px 10px");
       fillWithVariableLevels(tagsContainer, variableLevels);
       H6 sampleSizeText = new H6();
-      sampleSizeText.setText("Group size: "+sampleSize);
+      sampleSizeText.setText("Group size: " + sampleSize);
       add(sampleSizeText);
     }
 
