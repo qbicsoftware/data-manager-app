@@ -15,9 +15,6 @@ import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
-import life.qbic.domain.concepts.event.EventStore;
-import life.qbic.newshandler.usermanagement.email.EmailService;
-import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -66,9 +63,9 @@ public class AppConfig {
 
   @Bean
   public UserRegistrationService userRegistrationService(
-      NotificationService notificationService, UserRepository userRepository,
-      EventStore eventStore) {
-    return new UserRegistrationService(notificationService, userRepository, eventStore);
+      UserRepository userRepository
+  ) {
+    return new UserRegistrationService(userRepository);
   }
 
   @Bean
@@ -79,11 +76,6 @@ public class AppConfig {
   @Bean
   public NotificationService notificationService(MessageBusSubmission messageBusInterface) {
     return new NotificationService(messageBusInterface);
-  }
-
-  @Bean
-  public EmailService emailService() {
-    return new EmailSubmissionService();
   }
 
   @Bean

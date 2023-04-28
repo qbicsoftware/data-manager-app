@@ -40,11 +40,11 @@ public class NotificationService {
   public void send(Notification notification) throws ServiceException {
     var messageParams =
         MessageParameters.durableTextParameters(
-            notification.eventType, notification.notificationId, notification.occurredOn);
+            notification.eventType(), notification.notificationId(), notification.occurredOn());
 
     String message;
     try {
-      message = ObjectSerializer.instance().serialise(notification.event);
+      message = ObjectSerializer.instance().serialise(notification.event());
     } catch (IOException e) {
       throw new ServiceException("Notification was not send", e.getCause());
     }
