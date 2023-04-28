@@ -17,9 +17,10 @@ public class LinkSentLayout extends BoxLayout {
     fillLayoutComponents();
   }
 
-  private void fillLayoutComponents(){
+  private void fillLayoutComponents() {
     setTitleText("Email has been sent!");
-    setDescriptionText("Please check your inbox and follow the instructions to reset your password.");
+    setDescriptionText(
+        "Please check your inbox and follow the instructions to reset your password.");
 
     loginButton = new Button("Login");
     addButtons(loginButton);
@@ -27,7 +28,7 @@ public class LinkSentLayout extends BoxLayout {
     styleButtons();
   }
 
-  private void styleButtons(){
+  private void styleButtons() {
     loginButton.setWidthFull();
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
   }

@@ -16,7 +16,8 @@ public interface Publisher {
    * multiple times has no additional effect.
    *
    * @param s an object of type {@link Subscriber} that gets notified via its
-   *          {@link Subscriber#onMessageArrived(LogMessage)} method on new messages to be published.
+   *          {@link Subscriber#onMessageArrived(LogMessage)} method on new messages to be
+   *          published.
    * @since 1.0.0
    */
   void subscribe(Subscriber s);
@@ -26,7 +27,8 @@ public interface Publisher {
    * subscriber multiple times has no additional effect.
    *
    * @param s an object of type {@link Subscriber} that gets notified via its
-   *          {@link Subscriber#onMessageArrived(LogMessage)} method on new messages to be published.
+   *          {@link Subscriber#onMessageArrived(LogMessage)} method on new messages to be
+   *          published.
    * @since 1.0.0
    */
   void unsubscribe(Subscriber s);

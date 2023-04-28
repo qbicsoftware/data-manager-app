@@ -21,7 +21,7 @@ public class DomainEventSerializer {
 
   public DomainEvent deserialize(String serializedEvent) {
     try (ByteArrayInputStream bais =
-            new ByteArrayInputStream(Base64.getDecoder().decode(serializedEvent));
+        new ByteArrayInputStream(Base64.getDecoder().decode(serializedEvent));
         ObjectInputStream ois = new ObjectInputStream(bais)) {
       return (DomainEvent) ois.readObject();
     } catch (IOException | ClassNotFoundException e) {

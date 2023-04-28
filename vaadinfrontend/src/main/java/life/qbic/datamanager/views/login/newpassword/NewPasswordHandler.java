@@ -49,16 +49,16 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
   public void handle(BeforeEvent beforeEvent) {
     Map<String, List<String>> params = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
-   var resetParam = params.keySet().stream()
+    var resetParam = params.keySet().stream()
         .filter(entry -> Objects.equals(
             entry, passwordResetQueryParameter)).findAny();
-   if (resetParam.isPresent()) {
-     currentUserId = params.get(passwordResetQueryParameter).get(0);
-   } else {
-     // unknown query
-     // TODO show error
-     throw new NotImplementedException();
-   }
+    if (resetParam.isPresent()) {
+      currentUserId = params.get(passwordResetQueryParameter).get(0);
+    } else {
+      // unknown query
+      // TODO show error
+      throw new NotImplementedException();
+    }
   }
 
   private void addClickListeners() {

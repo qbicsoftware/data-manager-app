@@ -49,7 +49,8 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title,
+      String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {

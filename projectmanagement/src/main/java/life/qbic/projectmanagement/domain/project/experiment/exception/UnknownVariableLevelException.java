@@ -4,9 +4,10 @@ import java.io.Serial;
 
 /**
  * <b>Unknown Variable Level Exception</b>
- *
- * Indicates, that a certain {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue} is not part of
- * a {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable}.
+ * <p>
+ * Indicates, that a certain
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue} is not part of a
+ * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable}.
  *
  * @since 1.0.0
  */
