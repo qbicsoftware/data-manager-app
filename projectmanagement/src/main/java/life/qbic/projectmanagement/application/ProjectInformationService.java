@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
@@ -68,7 +69,7 @@ public class ProjectInformationService {
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId);
-    return projectRepository.find(projectId).orElseThrow(() -> new ProjectManagementException(
+    return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
             "Project with id" + projectId + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db
     );

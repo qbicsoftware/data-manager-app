@@ -14,7 +14,7 @@ import java.util.StringJoiner;
  *
  * @since 1.0.0
  */
-public abstract class ApplicationException extends RuntimeException {
+public class ApplicationException extends RuntimeException {
 
   public enum ErrorCode {
     GENERAL,
@@ -77,45 +77,45 @@ public abstract class ApplicationException extends RuntimeException {
 
   private final ErrorParameters errorParameters;
 
-  protected ApplicationException() {
+  public ApplicationException() {
     this(ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(String message) {
+  public ApplicationException(String message) {
     this(message, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(String message, Throwable cause) {
+  public ApplicationException(String message, Throwable cause) {
     this(message, cause, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
+  public ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, ErrorCode errorCode,
+  public ApplicationException(String message, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, Throwable cause, ErrorCode errorCode,
+  public ApplicationException(String message, Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message, cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(Throwable cause, ErrorCode errorCode,
+  public ApplicationException(Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, Throwable cause, boolean enableSuppression,
+  public ApplicationException(String message, Throwable cause, boolean enableSuppression,
       boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace);
     this.errorCode = errorCode;
@@ -128,6 +128,19 @@ public abstract class ApplicationException extends RuntimeException {
 
   public ErrorParameters errorParameters() {
     return errorParameters;
+  }
+
+  public ApplicationException wrapping(String message, Exception e) {
+    if (e instanceof ApplicationException applicationException) {
+      return new ApplicationException(message, e, applicationException.errorCode(),
+          applicationException.errorParameters());
+    } else {
+      return new ApplicationException(message, e);
+    }
+  }
+
+  public <E extends ApplicationException> ApplicationException wrapping(String message, E e) {
+    return new ApplicationException(message, e, e.errorCode(), e.errorParameters());
   }
 
   @Override

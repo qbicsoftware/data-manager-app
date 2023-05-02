@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  * <a href="https://medical-dictionary.thefreedictionary.com/specimen">specimen</a>: A sample, as
@@ -15,7 +15,7 @@ public record Specimen(String label) implements Serializable {
   public Specimen {
     Objects.requireNonNull(label);
     if (label.isEmpty()) {
-      throw new ProjectManagementDomainException("Vocabulary label for Specimen is empty.");
+      throw new ApplicationException("Vocabulary label for Specimen is empty.");
     }
   }
 

@@ -9,13 +9,13 @@ import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,11 +57,11 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
       try {
         projectId = ProjectId.parse(projectIdParam);
       } catch (IllegalArgumentException e) {
-        throw new ProjectManagementException("Provided projectId " + projectIdParam + "is invalid");
+        throw new ApplicationException("Provided projectId " + projectIdParam + "is invalid");
       }
       handler.setProjectId(projectId);
     }, () -> {
-      throw new ProjectManagementException("no project id provided");
+      throw new ApplicationException("no project id provided");
     });
   }
 }
