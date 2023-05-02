@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.ComponentEvent;
-
 import java.io.Serial;
 
 /**

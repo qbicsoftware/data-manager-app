@@ -3,8 +3,6 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import javax.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -14,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager")
 public class MainLayout extends DataManagerLayout {
+
   public Button logout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {

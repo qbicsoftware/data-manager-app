@@ -38,3 +38,4 @@ error-screenshots/
 /frontend/generated/vaadin.ts
 /frontend/generated/vaadin-featureflags.ts
 /vaadinfrontend/vite.config.ts
+/vaadinfrontend/src/main/dev-bundle/

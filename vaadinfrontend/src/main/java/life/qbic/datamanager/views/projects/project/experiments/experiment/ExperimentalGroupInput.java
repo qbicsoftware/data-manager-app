@@ -8,6 +8,7 @@ import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.Binder;
+import jakarta.validation.constraints.Min;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.constraints.Min;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
@@ -79,7 +79,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     }
   }
 
-
   private void setLevels(Collection<VariableLevel> availableLevels) {
     variableLevelSelect.setItems(this::filterLevel, availableLevels);
     variableLevelSelect.addSelectionListener(event -> filterShownLevels());
@@ -117,6 +116,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     super.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
     return super.isInvalid();
   }
+
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");
@@ -148,7 +148,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
                     || !level.variableName().equals(selectedLevel.variableName())));
   }
 
-
   private boolean filterLevel(VariableLevel level, String filterString) {
     boolean levelValueContainsFilterString = ExperimentValueFormatter.format(
             level.experimentalValue()).toLowerCase()
@@ -169,7 +168,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       selectComboBox.deselect(previousSelectionOfSelectedVariable);
     });
   }
-
 
   public static class ExperimentalGroupBean {
 

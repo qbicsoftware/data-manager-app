@@ -4,15 +4,14 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.application.commons.Result;
 import life.qbic.authentication.application.ServiceException;
 import life.qbic.authentication.application.notification.Notification;
 import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.domain.event.DomainEvent;
-import life.qbic.authentication.domain.event.DomainEventPublisher;
-import life.qbic.authentication.domain.event.DomainEventSubscriber;
 import life.qbic.authentication.domain.registry.DomainRegistry;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
@@ -22,13 +21,9 @@ import life.qbic.authentication.domain.user.concept.FullName;
 import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationException;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
-import life.qbic.authentication.domain.user.event.EventStore;
-import life.qbic.authentication.domain.user.event.PasswordReset;
-import life.qbic.authentication.domain.user.event.UserActivated;
-import life.qbic.authentication.domain.user.event.UserEmailConfirmed;
-import life.qbic.authentication.domain.user.event.UserRegistered;
 import life.qbic.authentication.domain.user.repository.UserNotFoundException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>User Registration Service</b>
@@ -40,18 +35,23 @@ import life.qbic.authentication.domain.user.repository.UserRepository;
  */
 public final class UserRegistrationService {
 
-  private final NotificationService notificationService;
-
   private final UserRepository userRepository;
 
-  private final EventStore eventStore;
-
-  public UserRegistrationService(NotificationService notificationService,
-      UserRepository userRepository, EventStore eventStore) {
+  public UserRegistrationService(UserRepository userRepository) {
     super();
-    this.notificationService = notificationService;
     this.userRepository = userRepository;
-    this.eventStore = eventStore;
+  }
+
+  private static void sendNotification(DomainEvent event, NotificationService notificationService) {
+  Objects.requireNonNull(notificationService);
+    var notificationId = notificationService.newNotificationId();
+    var notification =
+        Notification.create(
+            event.getClass().getSimpleName(),
+            event.occurredOn(),
+            notificationId,
+            event);
+    notificationService.send(notification);
   }
 
   /**
@@ -81,38 +81,6 @@ public final class UserRegistrationService {
       throw new RuntimeException("User registration failed.");
     }
 
-    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
-    while (!domainEventPublisher.clear()) {
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserRegistered>() {
-      @Override
-      public Class<? extends DomainEvent> subscribedToEventType() {
-        return UserRegistered.class;
-      }
-
-      @Override
-      public void handleEvent(UserRegistered event) {
-        eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserRegistered event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
-      }
-    });
-
     var userEmail = EmailAddress.from(email);
     var userFullName = FullName.from(fullName);
     var userPassword = EncryptedPassword.from(rawPassword);
@@ -126,6 +94,7 @@ public final class UserRegistrationService {
 
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
+
     return ApplicationResponse.successResponse();
   }
 
@@ -183,41 +152,8 @@ public final class UserRegistrationService {
       return ApplicationResponse.failureResponse(new UserNotActivatedException("User not active"));
     }
 
-    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
-    while (!domainEventPublisher.clear()) {
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    domainEventPublisher.subscribe(new DomainEventSubscriber<PasswordReset>() {
-      @Override
-      public Class<? extends DomainEvent> subscribedToEventType() {
-        return PasswordReset.class;
-      }
-
-      @Override
-      public void handleEvent(PasswordReset event) {
-        eventStore.append(event);
-        sendNotification(event, notificationService);
-      }
-    });
-
     user.resetPassword();
     return ApplicationResponse.successResponse();
-  }
-
-  private static void sendNotification(DomainEvent event, NotificationService notificationService) {
-    var notificationId = notificationService.newNotificationId();
-    var notification =
-        Notification.create(
-            event.getClass().getSimpleName(),
-            event.occurredOn(),
-            notificationId,
-            event);
-    notificationService.send(notification);
   }
 
   /**
@@ -233,27 +169,32 @@ public final class UserRegistrationService {
    * {@link PasswordValidationException}.
    * @since 1.0.0
    */
-  public ApplicationResponse newUserPassword(String userId, char[] newRawPassword) {
-    UserId id = UserId.from(userId);
-    EncryptedPassword encryptedPassword;
+  public Result<EncryptedPassword, RuntimeException> newUserPassword(String userId,
+      char[] newRawPassword) {
+    Result<User, ServiceException> user = Result.<UserId, ServiceException>fromValue(
+            UserId.from(userId))
+        .map(userRepository::findById)
+        .flatMap(it -> it.<Result<User, ServiceException>>map(Result::fromValue)
+            .orElseGet(() -> Result.fromError(new ServiceException("Unknown user id"))));
+    if (user.isError()) {
+      return Result.fromError(user.getError());
+    }
+
+    return Result
+        .<char[], RuntimeException>fromValue(newRawPassword)
+        .flatMap(this::attemptPasswordEncryption)
+        .onValue(password -> user
+            .onValue(u -> u.setNewPassword(password))
+            .onValue(userRepository::updateUser));
+  }
+
+  private Result<EncryptedPassword, RuntimeException> attemptPasswordEncryption(
+      char[] newPassword) {
     try {
-      encryptedPassword = EncryptedPassword.from(newRawPassword);
+      return Result.fromValue(EncryptedPassword.from(newPassword));
     } catch (PasswordValidationException e) {
-      return ApplicationResponse.failureResponse(e);
+      return Result.fromError(e);
     }
-
-    var optionalUser = userRepository.findById(id);
-
-    if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new ServiceException("Unknown user id"));
-    }
-
-    optionalUser.ifPresent(user -> {
-      user.setNewPassword(encryptedPassword);
-      userRepository.updateUser(user);
-    });
-
-    return ApplicationResponse.successResponse();
   }
 
   public static class UserExistsException extends ApplicationException {
@@ -275,50 +216,6 @@ public final class UserRegistrationService {
    * @since 1.0.0
    */
   public void confirmUserEmail(String userId) throws UserNotFoundException {
-    DomainEventPublisher domainEventPublisher = DomainEventPublisher.instance();
-    while (!domainEventPublisher.clear()) {
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-    domainEventPublisher.subscribe(new DomainEventSubscriber<UserActivated>() {
-      @Override
-      public Class<UserActivated> subscribedToEventType() {
-        return UserActivated.class;
-      }
-
-      @Override
-      public void handleEvent(UserActivated event) {
-        eventStore.append(event);
-        sendNotification(event, notificationService);
-      }
-    });
-    DomainEventPublisher.instance().subscribe(new DomainEventSubscriber<UserEmailConfirmed>() {
-      @Override
-      public Class<UserEmailConfirmed> subscribedToEventType() {
-        return UserEmailConfirmed.class;
-      }
-
-      @Override
-      public void handleEvent(UserEmailConfirmed event) {
-        eventStore.append(event);
-        sendNotification(event);
-      }
-
-      private void sendNotification(UserEmailConfirmed event) {
-        var notificationId = notificationService.newNotificationId();
-        var notification =
-            Notification.create(
-                event.getClass().getSimpleName(),
-                event.occurredOn(),
-                notificationId,
-                event);
-        notificationService.send(notification);
-      }
-    });
-
     Optional<User> optionalUser = userRepository.findById(UserId.from(userId));
     optionalUser.ifPresentOrElse(user -> {
       user.confirmEmail();
@@ -334,7 +231,7 @@ public final class UserRegistrationService {
    * to the application
    * </p>
    */
-  public class UserNotActivatedException extends ApplicationException {
+  public static class UserNotActivatedException extends ApplicationException {
 
     @Serial
     private static final long serialVersionUID = -4253849498611530692L;

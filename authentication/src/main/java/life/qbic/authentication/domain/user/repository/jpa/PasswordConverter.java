@@ -1,14 +1,14 @@
 package life.qbic.authentication.domain.user.repository.jpa;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 import life.qbic.authentication.domain.user.concept.EncryptedPassword;
 
 /**
  * <b>Converts {@link EncryptedPassword} into a String and vice versa></b>
  *
  * <p>Converts the String value stored in the database to an
- * {@link EncryptedPassword}. Additionally converts the
- * {@link EncryptedPassword} to a string value to be stored in the database.
+ * {@link EncryptedPassword}. Additionally converts the {@link EncryptedPassword} to a string value
+ * to be stored in the database.
  * </p>
  *
  * @since 1.0.0

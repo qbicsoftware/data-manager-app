@@ -49,7 +49,8 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String code, String title, String objective,
+  public Result<Project, ApplicationException> createProject(String code, String title,
+      String objective,
       String experimentalDesign, String sourceOffer, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
@@ -66,29 +67,19 @@ public class ProjectCreationService {
               analyteList,
               speciesList,
               specimenList)
-          .ifFailure(e ->
+          .onError(e ->
           {
             projectRepository.deleteByProjectCode(project.getProjectCode());
             throw new ProjectManagementException(
                 "failed to add experiment to project " + project.getId(), e);
           });
-      return Result.success(project);
+      return Result.fromValue(project);
     } catch (ProjectManagementException projectManagementException) {
-      return Result.failure(projectManagementException);
+      return Result.fromError(projectManagementException);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
-      return Result.failure(new ProjectManagementException());
+      return Result.fromError(new ProjectManagementException());
     }
-  }
-
-  private ProjectCode createRandomCode() {
-    ProjectCode code = ProjectCode.random();
-    while (!projectRepository.find(code).isEmpty()) {
-      log.warn(String.format("Random generated code exists: %s", code.value()));
-      code = ProjectCode.random();
-    }
-    log.info(String.format("Created new random project code '%s'", code.value()));
-    return code;
   }
 
   private Project createProject(String code,

@@ -75,15 +75,20 @@ public class ExperimentInformationService {
   /**
    * Retrieve all analytes of an experiment.
    *
-   * @param experimentId the Id of the experiment for which the experimental groups should be retrieved
+   * @param experimentId the Id of the experiment for which the experimental groups should be
+   *                     retrieved
    * @return the list of experimental groups in the active experiment.
    */
   public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
-    return experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList();
+    return experiment.getExperimentalGroups().stream()
+        .map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize()))
+        .toList();
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {}
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+
+  }
 
   /**
    * Adds species to an experiment.

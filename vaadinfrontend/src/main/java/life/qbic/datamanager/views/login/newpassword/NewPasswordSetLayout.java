@@ -17,7 +17,7 @@ public class NewPasswordSetLayout extends BoxLayout {
     fillLayoutComponents();
   }
 
-  private void fillLayoutComponents(){
+  private void fillLayoutComponents() {
     setTitleText("New password saved!");
     setDescriptionText("You can now log in with your new password.");
 
@@ -27,7 +27,7 @@ public class NewPasswordSetLayout extends BoxLayout {
     styleButtons();
   }
 
-  private void styleButtons(){
+  private void styleButtons() {
     loginButton.setWidthFull();
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
   }

@@ -26,7 +26,8 @@ public abstract class ApplicationException extends RuntimeException {
     UNDEFINED_VARIABLE_LEVEL,
     NO_SPECIES_DEFINED,
     NO_SPECIMEN_DEFINED,
-    NO_ANALYTE_DEFINED,;
+    NO_ANALYTE_DEFINED,
+    ;
 
     @Override
     public String toString() {

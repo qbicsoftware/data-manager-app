@@ -10,7 +10,7 @@ import spock.lang.Specification
  */
 class EncryptedPasswordSpec extends Specification {
 
-    def "Given a weak password, throw a PasswordValidationException" () {
+    def "Given a weak password, throw a PasswordValidationException"() {
         when:
         EncryptedPassword.from(rawPassword.toCharArray())
 
@@ -21,7 +21,7 @@ class EncryptedPasswordSpec extends Specification {
         rawPassword << ["test", "1234", "", "toofew1"]
     }
 
-    def "Given a password, that fulfills the minimal criteria, create an instance" () {
+    def "Given a password, that fulfills the minimal criteria, create an instance"() {
         when:
         def encryptedPassword = EncryptedPassword.from(rawPassword.toCharArray())
 

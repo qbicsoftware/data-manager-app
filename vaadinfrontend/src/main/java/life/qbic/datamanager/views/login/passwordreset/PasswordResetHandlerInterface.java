@@ -10,11 +10,11 @@ package life.qbic.datamanager.views.login.passwordreset;
  */
 public interface PasswordResetHandlerInterface {
 
-    /**
-     * Registers a {@link ResetPasswordLayout} to an implementing class
-     *
-     * @param registerLayout The view that is being handled
-     * @since 1.0.0
-     */
-    void handle(ResetPasswordLayout registerLayout);
+  /**
+   * Registers a {@link ResetPasswordLayout} to an implementing class
+   *
+   * @param registerLayout The view that is being handled
+   * @since 1.0.0
+   */
+  void handle(ResetPasswordLayout registerLayout);
 }

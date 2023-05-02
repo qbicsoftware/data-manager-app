@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import java.util.Objects;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 
 /**
  * <b>Experimental Group</b>
@@ -20,6 +20,7 @@ public class ExperimentalGroup {
   private Condition condition;
 
   private int sampleSize;
+
   @Id
   @GeneratedValue
   private Long experimentalGroupId;
@@ -36,7 +37,7 @@ public class ExperimentalGroup {
   /**
    * Creates a new instance of an experimental group object.
    *
-   * @param condition the condition the experimental group represents
+   * @param condition  the condition the experimental group represents
    * @param sampleSize the number of samples in this experimental group
    * @return the experimental group
    * @since 1.0.0
@@ -46,7 +47,8 @@ public class ExperimentalGroup {
     if (sampleSize < 1) {
       // Admitting not very meaningful to allow for sample size of 1 and 2
       // However we leave it up to the project manager to make that decision
-      throw new IllegalArgumentException("The number of biological replicates must be at least one");
+      throw new IllegalArgumentException(
+          "The number of biological replicates must be at least one");
     }
     return new ExperimentalGroup(condition, sampleSize);
   }
@@ -67,13 +69,16 @@ public class ExperimentalGroup {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ExperimentalGroup that = (ExperimentalGroup) o;
-    return sampleSize == that.sampleSize && Objects.equals(condition, that.condition);
+    //It's not possible to compare an experimentalGroup entity if it has no id
+    if (this.experimentalGroupId == null) {
+      return false;
+    }
+    return this.experimentalGroupId.equals(((ExperimentalGroup) o).experimentalGroupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(condition, sampleSize);
+    return Objects.hash(experimentalGroupId);
   }
 
 }
