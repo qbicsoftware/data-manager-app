@@ -198,7 +198,6 @@ public class ProjectCreationDialog extends Dialog {
    * interfaces
    */
   public void reset() {
-
     resetChildValues(codeAndTitleLayout);
     resetChildValues(formLayout);
     resetChildValidation(formLayout);
