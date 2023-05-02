@@ -92,7 +92,6 @@ public class ProjectCreationDialog extends Dialog {
     initForm();
     styleForm();
     handler = new Handler();
-    handler.handle();
   }
 
   public void addProjectCreationEventListener(
@@ -235,9 +234,6 @@ public class ProjectCreationDialog extends Dialog {
     private final List<ComponentEventListener<UserCancelEvent<ProjectCreationDialog>>> cancelListeners = new ArrayList<>();
 
     Handler() {
-    }
-
-    private void handle() {
       restrictInputLength();
       generateProjectCode();
       resetDialogueUponClosure();

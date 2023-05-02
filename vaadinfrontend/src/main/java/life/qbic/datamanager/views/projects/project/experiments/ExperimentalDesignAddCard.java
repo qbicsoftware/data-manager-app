@@ -30,6 +30,7 @@ public class ExperimentalDesignAddCard extends CardLayout {
     addFields(verticalLayout);
     setWidthFull();
     setHeight(null);
+    this.getStyle().set("cursor", "pointer");
   }
 
 }
