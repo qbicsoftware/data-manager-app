@@ -130,7 +130,7 @@ public class ApplicationException extends RuntimeException {
     return errorParameters;
   }
 
-  public ApplicationException wrapping(String message, Exception e) {
+  public static ApplicationException wrapping(String message, Throwable e) {
     if (e instanceof ApplicationException applicationException) {
       return new ApplicationException(message, e, applicationException.errorCode(),
           applicationException.errorParameters());
@@ -139,7 +139,17 @@ public class ApplicationException extends RuntimeException {
     }
   }
 
-  public <E extends ApplicationException> ApplicationException wrapping(String message, E e) {
+  public static ApplicationException wrapping(Throwable e) {
+    if (e instanceof ApplicationException applicationException) {
+      return new ApplicationException(e, applicationException.errorCode(),
+          applicationException.errorParameters());
+    } else {
+      return new ApplicationException(e.getMessage(), e);
+    }
+  }
+
+  public static <E extends ApplicationException> ApplicationException wrapping(String message,
+      E e) {
     return new ApplicationException(message, e, e.errorCode(), e.errorParameters());
   }
 
