@@ -32,6 +32,7 @@
     <maven.compiler.target>17</maven.compiler.target>
     <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.15.0</jackson.version>
   </properties>
 
   <parent>
@@ -137,12 +138,6 @@
         <type>pom</type>
         <scope>test</scope>
       </dependency>
-      <!--If not specified, the 2.7.6 spring-boot-starter-parent dependency will introduce transitively the 1.30 version of snakeyaml, for which a multitude of security concerns are reported -->
-      <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>2.0</version>
-      </dependency>
       <dependency>
         <groupId>org.jobrunr</groupId>
         <artifactId>jobrunr-spring-boot-3-starter</artifactId>
@@ -150,14 +145,19 @@
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>2.15.0</version>
+        <version>${jackson.version}</version>
       </dependency>
       <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
       <dependency>
         <groupId>com.fasterxml.jackson.datatype</groupId>
         <artifactId>jackson-datatype-jsr310</artifactId>
-        <version>2.15.0</version>
+        <version>${jackson.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
