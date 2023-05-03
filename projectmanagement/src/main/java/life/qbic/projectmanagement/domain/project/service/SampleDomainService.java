@@ -51,18 +51,14 @@ public class SampleDomainService {
     var sample = Sample.create(label, assignedBatch, experimentId, experimentalGroupId,
         biologicalReplicateId,
         sampleOrigin);
-    Result<Void, ResponseCode> result = this.sampleRepository.add(sample);
+    Result<Sample, ResponseCode> result = this.sampleRepository.add(sample);
 
-    if (result.isError()) {
-      return Result.fromError(result.getError());
-    }
+    // For successful registration transactions we dispatch the event
+    result.onValue(createdSample -> DomainEventDispatcher.instance()
+        .dispatch(
+            SampleRegistered.create(createdSample.assignedBatch(), createdSample.sampleId())));
 
-    // After successful registration transaction we dispatch the event
-    DomainEventDispatcher.instance()
-        .dispatch(SampleRegistered.create(sample.assignedBatch(), sample.sampleId()));
-    return Result.fromValue(sample);
-
-
+    return result;
   }
 
   public enum ResponseCode {

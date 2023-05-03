@@ -19,6 +19,6 @@ public interface SampleRepository {
    * @param sample the sample to save.
    * @since 1.0.0
    */
-  Result<Void, ResponseCode> add(Sample sample);
+  Result<Sample, ResponseCode> add(Sample sample);
 
 }
