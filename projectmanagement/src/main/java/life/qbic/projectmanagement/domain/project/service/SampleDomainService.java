@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.service;
 
+import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
@@ -26,7 +27,7 @@ public class SampleDomainService {
 
   @Autowired
   public SampleDomainService(SampleRepository sampleRepository) {
-    this.sampleRepository = sampleRepository;
+    this.sampleRepository = Objects.requireNonNull(sampleRepository);
   }
 
   /**
