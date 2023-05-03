@@ -48,5 +48,20 @@
       <version>6.0.2</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>domain-concept</artifactId>
+      <version>0.15.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
   </dependencies>
 </project>
