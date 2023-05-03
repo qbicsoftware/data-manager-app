@@ -6,6 +6,8 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 
 import java.util.*;
+import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -53,40 +55,18 @@ public class Batch {
         return new Batch(batchId, label, sampleIds.stream().toList(), isPilot);
     }
 
-    public AddSampleResponse addSample(Sample sample) {
-        if (sample.assignedBatch().isPresent()) {
-            return new AddSampleResponse(AddSampleResponse.ResponseCode.SAMPLE_ALREADY_IN_OTHER_BATCH);
-        }
-        this.sampleIds.add(sample.sampleId());
-        sample.assignToBatch(this);
-        return new AddSampleResponse(AddSampleResponse.ResponseCode.SUCCESS);
+    public void addSample(SampleId sampleId) {
+        this.sampleIds.add(sampleId);
     }
 
-    public RemoveSampleResponse removeSample(Sample sampleToRemove) {
-        Optional<SampleId> sampleInBatch =
-                sampleIds.stream().filter(sampleId -> sampleToRemove.sampleId().equals(sampleId)).findAny();
-        if (sampleInBatch.isEmpty()) {
-            return new RemoveSampleResponse(RemoveSampleResponse.ResponseCode.SAMPLE_NOT_IN_BATCH);
-        }
-        sampleIds.remove(sampleToRemove.sampleId());
-        return new RemoveSampleResponse(RemoveSampleResponse.ResponseCode.SUCCESS);
+    public void removeSample(SampleId sampleToRemove) {
+        this.sampleIds.remove(sampleToRemove);
     }
 
     public BatchId batchId() {
         return this.id;
     }
 
-    public record AddSampleResponse(ResponseCode responseCode) {
-        public enum ResponseCode {
-            SUCCESS, SAMPLE_ALREADY_IN_OTHER_BATCH
-        }
-    }
-
-    public record RemoveSampleResponse(ResponseCode responseCode) {
-        public enum ResponseCode {
-            SUCCESS, SAMPLE_NOT_IN_BATCH
-        }
-    }
 
     @Override
     public boolean equals(Object o) {

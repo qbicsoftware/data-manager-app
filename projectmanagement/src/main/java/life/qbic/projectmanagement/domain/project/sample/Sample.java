@@ -25,7 +25,7 @@ public class Sample {
     private String label;
 
     @Embedded
-    private BatchId assignedBatch = null;
+    private BatchId assignedBatch;
 
     private Long experimentalGroupId;
 
@@ -39,7 +39,7 @@ public class Sample {
     private BiologicalReplicateId biologicalReplicateId;
 
     private Sample(
-            SampleId id, String label, ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin
+            SampleId id, BatchId assignedBatch, String label, ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin
             , BiologicalReplicateId replicateReference
     ) {
         this.id = id;
@@ -48,6 +48,7 @@ public class Sample {
         this.experimentalGroupId = experimentalGroupId;
         this.sampleOrigin = sampleOrigin;
         this.biologicalReplicateId = replicateReference;
+        this.assignedBatch = assignedBatch;
     }
 
     protected Sample() {
@@ -55,30 +56,15 @@ public class Sample {
     }
 
     public static Sample create(
-            String label, ExperimentId experimentId, Long experimentalGroupId,
+            String label, BatchId assignedBatch, ExperimentId experimentId, Long experimentalGroupId,
             BiologicalReplicateId replicateReference, SampleOrigin sampleOrigin
     ) {
         SampleId sampleId = SampleId.create();
-        return new Sample(sampleId, label, experimentId, experimentalGroupId, sampleOrigin, replicateReference);
+        return new Sample(sampleId, assignedBatch, label, experimentId, experimentalGroupId, sampleOrigin, replicateReference);
     }
 
-    public SampleAddResponse assignToBatch(Batch batch) {
-        Objects.requireNonNull(batch, "Batch id must not be null");
-        if (assignedBatch().isPresent()) {
-            return new SampleAddResponse(SampleAddResponse.ResponseCode.ALREADY_IN_BATCH);
-        }
-        assignedBatch = batch.batchId();
-        return new SampleAddResponse(SampleAddResponse.ResponseCode.SUCCESSFUL);
-    }
-
-    public Optional<BatchId> assignedBatch() {
-        return Optional.ofNullable(this.assignedBatch);
-    }
-
-    public record SampleAddResponse(ResponseCode code) {
-        public enum ResponseCode {
-            SUCCESSFUL, ALREADY_IN_BATCH
-        }
+    public BatchId assignedBatch() {
+        return this.assignedBatch;
     }
 
     public SampleId sampleId() {

@@ -59,4 +59,8 @@ public class BatchId implements Serializable {
     public int hashCode() {
         return Objects.hash(uuid);
     }
+
+    public String value() {
+        return this.uuid;
+    }
 }
