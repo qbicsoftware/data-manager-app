@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>0.14.0</version>
+  <version>0.15.1</version>
   <modules>
     <module>vaadinfrontend</module>
     <module>authentication</module>
@@ -21,6 +21,7 @@
     <module>subscription-api</module>
     <module>finances</module>
     <module>projectmanagement</module>
+    <module>domain-concept</module>
   </modules>
   <packaging>pom</packaging>
 
@@ -31,6 +32,7 @@
     <maven.compiler.target>17</maven.compiler.target>
     <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.15.0</jackson.version>
   </properties>
 
   <parent>
@@ -136,7 +138,28 @@
         <type>pom</type>
         <scope>test</scope>
       </dependency>
-      <!--If not specified, the 2.7.6 spring-boot-starter-parent dependency will introduce transitively the 1.30 version of snakeyaml, for which a multitude of security concerns are reported -->
+      <dependency>
+        <groupId>org.jobrunr</groupId>
+        <artifactId>jobrunr-spring-boot-3-starter</artifactId>
+        <version>6.1.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <!--If not specified, spring-boot-starter-parent dependency will introduce transitively the 1.33 version of snakeyaml, for a CVE exists. -->
       <dependency>
         <groupId>org.yaml</groupId>
         <artifactId>snakeyaml</artifactId>

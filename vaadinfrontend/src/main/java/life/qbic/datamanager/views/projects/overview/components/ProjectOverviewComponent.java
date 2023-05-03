@@ -233,11 +233,11 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     }
 
     private void configureProjectCreationDialog() {
-      projectInformationDialog.addProjectCreationEventListener(event -> processProjectCreation(event.getSource().content()));
-      projectInformationDialog.addCancelEventListener(event -> {
-        projectInformationDialog.resetAndClose();
-      });
-     }
+      projectInformationDialog.addProjectCreationEventListener(
+          event -> processProjectCreation(event.getSource().content()));
+      projectInformationDialog.addCancelEventListener(
+          event -> projectInformationDialog.resetAndClose());
+    }
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 
@@ -249,11 +249,14 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
           projectCreationContent.projectResponsible(), projectCreationContent.species(),
           projectCreationContent.analyte(), projectCreationContent.specimen());
 
-      project.ifSuccessOrElseThrow(
-          result -> {
+      project
+          .onValue(result -> {
             displaySuccessfulProjectCreationNotification();
             projectInformationDialog.resetAndClose();
             projectGrid.getDataProvider().refreshAll();
+          })
+          .onError(e -> {
+            throw e;
           });
     }
 

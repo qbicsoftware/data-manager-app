@@ -5,12 +5,20 @@ import com.vaadin.flow.component.ClickNotifier;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H5;
-import com.vaadin.flow.component.html.H6;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility.AlignSelf;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
+import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding.Right;
+import com.vaadin.flow.theme.lumo.LumoUtility.Padding.Top;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +48,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     experimentalGroupContainer.setAlignContent(ContentAlignment.STRETCH);
     add(experimentalGroupContainer);
     setHeight(80, Unit.PERCENTAGE);
+    setPadding(false);
   }
 
   public void setExperimentalGroups(List<ExperimentalGroupDTO> experimentalGroups) {
@@ -70,7 +79,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   private static ExperimentalGroupCard getExperimentalGroup(
       ExperimentalGroupDTO experimentalGroup) {
     Set<VariableLevel> variableLevels = experimentalGroup.levels();
-    return new ExperimentalGroupCard(experimentalGroup.sampleSize(), variableLevels.toArray(VariableLevel[]::new));
+    return new ExperimentalGroupCard(experimentalGroup.sampleSize(),
+        variableLevels.toArray(VariableLevel[]::new));
   }
 
   public record AddExperimentalGroupCommand() {
@@ -84,12 +94,31 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
 
   }
 
+  private static class BaseExperimentalGroupCard extends VerticalLayout {
 
-  private static class ExperimentalGroupCard extends VerticalLayout {
+    public static final String CARD_WIDTH = "200px";
+    public static final String CARD_HEIGHT = "200px";
 
-    private final static String CARD_WIDTH = "200px";
-    private final static String CARD_HEIGHT = "200px";
+    public BaseExperimentalGroupCard() {
+      setWidth(CARD_WIDTH);
+      setHeight(CARD_HEIGHT);
+      setSpacing(false);
+      getStyle().set("margin", "5px 5px");
+      setCardLayoutStyle();
+    }
 
+    private void setCardLayoutStyle() {
+      addClassNames(
+          "rounded-m",
+          "box-border",
+          "rounded-m",
+          "shadow-xs",
+          "p-m"
+      );
+    }
+  }
+
+  private static class ExperimentalGroupCard extends BaseExperimentalGroupCard {
 
     public ExperimentalGroupCard(int sampleSize, VariableLevel... variableLevels) {
       H5 cardTitle = new H5();
@@ -98,15 +127,28 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       tagsContainer.setFlexWrap(FlexWrap.WRAP);
       tagsContainer.setFlexDirection(FlexDirection.ROW);
       tagsContainer.setAlignContent(ContentAlignment.START);
+      tagsContainer.addClassNames(Overflow.HIDDEN);
+      tagsContainer.setSizeFull();
+      // inheriting width leads to tags bigger than the text they contain
+      // tags have to inherit container width as MAX-width, so they overflow correctly
+      // we only know what that width is after setting it to full here
+      tagsContainer.setMaxWidth(tagsContainer.getWidth());
       add(cardTitle, tagsContainer);
-      setWidth(CARD_WIDTH);
-      setHeight(CARD_HEIGHT);
-      getStyle().set("border", "1px solid gray");
-      getStyle().set("margin", "5px 10px");
       fillWithVariableLevels(tagsContainer, variableLevels);
-      H6 sampleSizeText = new H6();
-      sampleSizeText.setText("Group size: "+sampleSize);
+      Span sampleSizeText = new Span("Group size: "+sampleSize);
+      sampleSizeText.addClassNames(FontWeight.BOLD, FontSize.XSMALL, AlignSelf.END, Margin.Right.SMALL);
       add(sampleSizeText);
+    }
+
+    private void overWriteSpacingStyles(Tag tag) {
+      // classes have to be removed by name, or all classes are overwritten/multiple classes of the same type exist
+      tag.removeClassName(Margin.Top.SMALL);
+      tag.removeClassName(Padding.Top.SMALL);
+      tag.removeClassName(Padding.Right.SMALL);
+
+      tag.addClassName(Margin.Top.XSMALL);
+      tag.addClassName(Right.XSMALL);
+      tag.addClassName(Top.XSMALL);
     }
 
     private void fillWithVariableLevels(FlexLayout tagsContainer, VariableLevel[] variableLevels) {
@@ -114,19 +156,19 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
           .sorted((VariableLevel l1, VariableLevel l2) -> l1.variableName().value()
               .compareToIgnoreCase(l2.variableName().value())).toArray(VariableLevel[]::new);
       for (VariableLevel variableLevel : variableLevels) {
-        Tag tag = new Tag(
-            variableLevel.variableName().value() + ":" + ExperimentValueFormatter.format(
-                variableLevel.experimentalValue()));
+        String formattedValue = ExperimentValueFormatter.format(
+            variableLevel.experimentalValue());
+        String experimentalValueText = variableLevel.variableName().value() + ":" + formattedValue;
+        Tag tag = new Tag(experimentalValueText);
+        overWriteSpacingStyles(tag);
+        tag.getElement().setProperty("title", experimentalValueText);
         tagsContainer.add(tag);
       }
     }
   }
 
-  private static class AddExperimentalGroupCard extends VerticalLayout implements
+  private static class AddExperimentalGroupCard extends BaseExperimentalGroupCard implements
       ClickNotifier<VerticalLayout> {
-
-    private static final String CARD_WIDTH = "200px";
-    private static final String CARD_HEIGHT = "200px";
 
     public AddExperimentalGroupCard() {
       Button addButton = new Button("Add Group");
@@ -134,11 +176,8 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       setDefaultHorizontalComponentAlignment(Alignment.CENTER);
       setAlignItems(Alignment.CENTER);
       add(addButton);
-      setWidth(CARD_WIDTH);
-      setHeight(CARD_HEIGHT);
-      getStyle().set("border", "1px solid gray");
-      getStyle().set("margin", "5px 10px");
     }
+
   }
 
 

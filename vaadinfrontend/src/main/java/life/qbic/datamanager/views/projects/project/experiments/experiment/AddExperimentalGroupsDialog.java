@@ -37,7 +37,7 @@ public class AddExperimentalGroupsDialog extends Dialog {
 
   private final List<ExperimentalGroupSubmitListener> submitListeners = new ArrayList<>();
 
-  public record ExperimentalGroupSubmitEvent(Dialog source, Set<VariableLevel> variableLevels,
+  public record ExperimentalGroupSubmitEvent(Dialog eventSourceDialog, Set<VariableLevel> variableLevels,
                                              int sampleSize) {
 
   }

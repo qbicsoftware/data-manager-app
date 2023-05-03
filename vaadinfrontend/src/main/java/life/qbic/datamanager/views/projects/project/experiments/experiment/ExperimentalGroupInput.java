@@ -79,7 +79,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     }
   }
 
-
   private void setLevels(Collection<VariableLevel> availableLevels) {
     variableLevelSelect.setItems(this::filterLevel, availableLevels);
     variableLevelSelect.addSelectionListener(event -> filterShownLevels());
@@ -117,6 +116,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     super.setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid());
     return super.isInvalid();
   }
+
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");
@@ -148,7 +148,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
                     || !level.variableName().equals(selectedLevel.variableName())));
   }
 
-
   private boolean filterLevel(VariableLevel level, String filterString) {
     boolean levelValueContainsFilterString = ExperimentValueFormatter.format(
             level.experimentalValue()).toLowerCase()
@@ -169,7 +168,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       selectComboBox.deselect(previousSelectionOfSelectedVariable);
     });
   }
-
 
   public static class ExperimentalGroupBean {
 

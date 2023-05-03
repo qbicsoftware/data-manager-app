@@ -68,8 +68,7 @@ public class FullName implements Serializable {
    * <h1>Exception that indicates violations during the full name validation process/h1>
    *
    * <p>This exception is supposed to be thrown, if the provided full name for an user consists of
-   * only whitespace or is Empty.
-   * Its intention is to contain the invalid full name</p>
+   * only whitespace or is Empty. Its intention is to contain the invalid full name</p>
    *
    * @since 1.0.0
    */

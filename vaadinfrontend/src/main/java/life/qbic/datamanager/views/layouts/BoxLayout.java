@@ -12,7 +12,8 @@ import life.qbic.datamanager.views.notifications.DisplayMessage;
 /**
  * <b>Box Layout</b>
  *
- * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons and a span to add links.
+ * <p>A box with a shadow containing a title, description, a layout for fields, a layout for buttons
+ * and a span to add links.
  * Furthermore, the description text can be toggled visible or invisible
  *
  * @since 1.0.0
@@ -82,7 +83,8 @@ public class BoxLayout extends VerticalLayout {
         "pb-l",
         "pr-l",
         "pl-l");
-    contentLayout.add(layoutTitle, notificationLayout, descriptionText, fieldLayout, buttonLayout, linkSpan);
+    contentLayout.add(layoutTitle, notificationLayout, descriptionText, fieldLayout, buttonLayout,
+        linkSpan);
   }
 
   private void styleFieldLayout() {
@@ -91,24 +93,25 @@ public class BoxLayout extends VerticalLayout {
     fieldLayout.setPadding(false);
   }
 
-  private void styleButtonLayout(){
+  private void styleButtonLayout() {
     buttonLayout.setSpacing(false);
     buttonLayout.setMargin(false);
     buttonLayout.setPadding(false);
   }
 
-  private void styleNotificationLayout(){
+  private void styleNotificationLayout() {
     notificationLayout.setSpacing(false);
     notificationLayout.setMargin(false);
     notificationLayout.setPadding(false);
   }
 
-  private void styleDescriptionText(){
+  private void styleDescriptionText() {
     textLayout.addClassName("text-contrast-70");
   }
 
   /**
    * Sets the title text
+   *
    * @param text The text for the title
    */
   public void setTitleText(String text) {
@@ -117,6 +120,7 @@ public class BoxLayout extends VerticalLayout {
 
   /**
    * Adds the field components to the field layout
+   *
    * @param fields The fields could be TextFields, EmailFields, PasswordFields
    */
   public void addFields(Component... fields) {
@@ -125,6 +129,7 @@ public class BoxLayout extends VerticalLayout {
 
   /**
    * Adds buttons to the button layout
+   *
    * @param buttons The buttons that need to be part of the layout
    */
   public void addButtons(Button... buttons) {
@@ -133,39 +138,45 @@ public class BoxLayout extends VerticalLayout {
 
   /**
    * Sets the description text
+   *
    * @param text The text that allows to enter a description of the process
    */
-  public void setDescriptionText(String text){
+  public void setDescriptionText(String text) {
     descriptionText.setText(text);
   }
 
   /**
    * Adds a DisplayMessage {@link DisplayMessage} based notification to the BoxLayout
+   *
    * @param displayMessage The notification to be shown to the viewer.
    */
   public void setNotification(DisplayMessage displayMessage) {
     notificationLayout.add(displayMessage);
   }
+
   /**
    * Removes all DisplayMessage {@link DisplayMessage} based Notifications from the BoxLayout
    */
-  public void removeNotifications(){
+  public void removeNotifications() {
     notificationLayout.removeAll();
   }
 
   /**
    * Toggles the description text visible or invisible
+   *
    * @param visible The visibility status of the text
    */
-  public void setDescriptionTextVisible(boolean visible){
+  public void setDescriptionTextVisible(boolean visible) {
     descriptionText.setVisible(visible);
   }
 
   /**
-   * Span that will hold content like small texts and links that should be not so present as a button
+   * Span that will hold content like small texts and links that should be not so present as a
+   * button
+   *
    * @param components Components like Text, RouterLink, or Tertiary Buttons
    */
-  public void addLinkSpanContent(Component... components){
+  public void addLinkSpanContent(Component... components) {
     linkSpan.add(components);
   }
 }

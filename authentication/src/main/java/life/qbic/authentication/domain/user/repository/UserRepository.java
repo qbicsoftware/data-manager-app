@@ -14,7 +14,8 @@ import life.qbic.authentication.domain.user.concept.UserId;
  */
 public class UserRepository implements Serializable {
 
-  @Serial private static final long serialVersionUID = 5576670098610784078L;
+  @Serial
+  private static final long serialVersionUID = 5576670098610784078L;
 
   private static UserRepository INSTANCE;
 
@@ -44,9 +45,9 @@ public class UserRepository implements Serializable {
    * Searches for a user with the provided mail address
    *
    * <p>Note: A runtime exception is thrown, when there is more than one user found. We want the
-   * mail addresses to be unique in the user context, but they might change over time. So emails
-   * are not suitable as entity identifiers but still need to be unique in the user management
-   * context at any given time.
+   * mail addresses to be unique in the user context, but they might change over time. So emails are
+   * not suitable as entity identifiers but still need to be unique in the user management context
+   * at any given time.
    *
    * <p>
    *
