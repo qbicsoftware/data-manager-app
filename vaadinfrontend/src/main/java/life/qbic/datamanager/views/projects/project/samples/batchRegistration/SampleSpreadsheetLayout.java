@@ -114,7 +114,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       switch (metaDataTypes) {
         case PROTEOMICS -> addProteomicsSheet(spreadsheet);
         case LIGANDOMICS -> addLigandomicsSheet(spreadsheet);
-        case TRANSCRIPTOMIC_GENOMICS -> addGenomicsSheet(spreadsheet);
+        case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet);
         case METABOLOMICS -> addMetabolomicsSheet(spreadsheet);
       }
     }
