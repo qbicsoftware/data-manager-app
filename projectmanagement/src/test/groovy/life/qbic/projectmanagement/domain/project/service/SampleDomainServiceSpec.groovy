@@ -28,8 +28,11 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
+        Sample testSample = Sample.create("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")))
+
+        and:
         SampleRepository testRepo = Mock(SampleRepository)
-        testRepo.add(_ as Sample) >> Result.fromValue(Mock(Sample))
+        testRepo.add(_ as Sample) >> Result.fromValue(testSample)
         SampleDomainService sampleDomainService = new SampleDomainService(testRepo)
 
         and:
@@ -58,6 +61,5 @@ class SampleDomainServiceSpec extends Specification {
         then:
         sampleRegistered.batchIdOfEvent.equals(result.getValue().assignedBatch())
         sampleRegistered.sampleIdOfEvent.equals(result.getValue().sampleId())
-
     }
 }
