@@ -15,12 +15,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Page shown when a resource was not found.
  */
 @AnonymousAllowed
 public class NotFoundPage extends Div implements ErrorPage<NotFoundException> {
