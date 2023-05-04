@@ -32,9 +32,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   @Override
   public void serviceInit(ServiceInitEvent event) {
     event.getSource().addSessionInitListener(
-        initEvent -> {
-          log.info("A new Session has been initialized!");
-        });
+        initEvent -> log.info("A new Session has been initialized!"));
 
     event.getSource().addUIInitListener(
         initEvent -> {

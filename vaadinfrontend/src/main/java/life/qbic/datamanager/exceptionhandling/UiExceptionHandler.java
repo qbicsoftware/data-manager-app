@@ -26,7 +26,7 @@ public class UiExceptionHandler {
 
   /**
    * Vaadin Bug forces us to make the error handler ui aware
-   * https://github.com/vaadin/flow/issues/10533
+   * <a href="https://github.com/vaadin/flow/issues/10533">Vaadin Issue 10533</a>
    *
    * @param errorEvent the error event
    * @param ui         the UI

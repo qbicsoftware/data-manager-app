@@ -9,14 +9,13 @@ import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
-import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -52,16 +51,8 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    beforeEnterEvent.getRouteParameters().get("projectId").ifPresentOrElse(projectIdParam -> {
-      ProjectId projectId;
-      try {
-        projectId = ProjectId.parse(projectIdParam);
-      } catch (IllegalArgumentException e) {
-        throw new ApplicationException("Provided projectId " + projectIdParam + "is invalid");
-      }
-      handler.setProjectId(projectId);
-    }, () -> {
-      throw new ApplicationException("no project id provided");
-    });
+    beforeEnterEvent.getRouteParameters().get("projectId").ifPresentOrElse(
+        handler::setProjectId,
+        () -> beforeEnterEvent.forwardTo(Projects.PROJECTS));
   }
 }

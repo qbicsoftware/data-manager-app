@@ -32,10 +32,12 @@ class ProjectViewHandler {
   /**
    * Forwards a route parameter to all page components
    *
-   * @param projectId the route parameter
+   * @param projectIdParam the route parameter
    * @since 1.0.0
    */
-  public void setProjectId(ProjectId projectId) {
+  public void setProjectId(String projectIdParam) {
+    ProjectId projectId;
+    projectId = ProjectId.parse(projectIdParam);
     this.projectInformationPage.projectId(projectId);
     this.experimentInformationPage.projectId(projectId);
     this.sampleInformationPage.projectId(projectId);
