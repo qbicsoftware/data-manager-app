@@ -1,10 +1,13 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
+import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +15,7 @@ import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Sheet;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -104,6 +108,49 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private static class SampleRegistrationSheetBuilder {
 
+    SpreadsheetComponentFactory dropDownCellFactory = new SpreadsheetComponentFactory() {
+
+      @Override
+      public Component getCustomComponentForCell(Cell cell, int i, int i1, Spreadsheet spreadsheet,
+          Sheet sheet) {
+        return null;
+      }
+
+      @Override
+      public Component getCustomEditorForCell(Cell cell,
+          int rowIndex, int columnIndex,
+          Spreadsheet spreadsheet, Sheet sheet) {
+        if (spreadsheet.getActiveSheetIndex() == 0
+            && rowIndex > 0 && rowIndex < 100 && columnIndex == 0) {
+          return initCustomComboBox(rowIndex, columnIndex,
+              spreadsheet);
+        }
+        return null;
+      }
+
+      private Component initCustomComboBox(int rowIndex, int columnIndex,
+          Spreadsheet spreadsheet) {
+        System.err.println("init custom box called");
+
+        ComboBox analysisType = new ComboBox("", "RNA-Seq","DNA-Seq");
+        analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
+            spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
+        return analysisType;
+      }
+
+      @Override
+      public void onCustomEditorDisplayed(Cell cell, int rowIndex,
+          int columnIndex, Spreadsheet spreadsheet,
+          Sheet sheet, Component editor) {
+        System.err.println("oncustomEditor called with cell"+cell);
+        if (cell == null) {
+          return;
+        }
+        ((ComboBox) editor)
+            .setValue(cell.getStringCellValue());
+      }
+    };
+
     private final SampleRegistrationService sampleRegistrationService;
 
     public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
@@ -119,85 +166,59 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
     }
 
-    private void addProteomicsSheet(Spreadsheet spreadsheet) {
-      List<String> proteomicsHeader = sampleRegistrationService.retrieveProteomics();
-      CellStyle lockedCells = spreadsheet.getWorkbook().createCellStyle();
+    private void setAndStyleHeader(Spreadsheet spreadsheet, List<String> header) {
+      spreadsheet.setActiveSheetProtected("pwd");
+      CellStyle boldHeaderStyle = spreadsheet.getWorkbook().createCellStyle();
       Font font = spreadsheet.getWorkbook().createFont();
       font.setBold(true);
-      //toDo Locking cells currently does not work
-      lockedCells.setLocked(true);
-      lockedCells.setFont(font);
-      int columnIndex = 1;
-      //toDo This currently only adds the header
-      for (String columnHeader : proteomicsHeader) {
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
-        cell.setCellStyle(lockedCells);
-        columnIndex++;
-      }
-      spreadsheet.setMaxColumns(proteomicsHeader.size());
-      spreadsheet.reload();
+      boldHeaderStyle.setFont(font);
 
+      List<Cell> updatedCells = new ArrayList<Cell>();
+      int columnIndex = 0;
+      for (String columnHeader : header) {
+        String extraSpacer = "___";
+        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader+extraSpacer);
+        cell.setCellStyle(boldHeaderStyle);
+        spreadsheet.autofitColumn(columnIndex);
+        cell.setCellValue(columnHeader);
+        columnIndex++;
+
+      }
+      spreadsheet.refreshCells(updatedCells);
+
+      updatedCells = new ArrayList<Cell>();
+      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+      unLockedStyle.setLocked(false);
+      for (int i = 1; i < 100; i++) {
+        Cell cell = spreadsheet.createCell(i, 0, "");
+        cell.setCellStyle(unLockedStyle);
+      }
+      spreadsheet.refreshCells(updatedCells);
+    }
+
+    private void addProteomicsSheet(Spreadsheet spreadsheet) {
+      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveProteomics());
+      spreadsheet.reload();
     }
 
     private void addMetabolomicsSheet(Spreadsheet spreadsheet) {
-      List<String> metabolomicsHeader = sampleRegistrationService.retrieveMetabolomics();
-      CellStyle lockedCells = spreadsheet.getWorkbook().createCellStyle();
-      Font font = spreadsheet.getWorkbook().createFont();
-      font.setBold(true);
-      //toDo Locking cells currently does not work
-      lockedCells.setLocked(true);
-      lockedCells.setFont(font);
-      int columnIndex = 0;
-      //toDo This currently only adds the header
-      for (String columnHeader : metabolomicsHeader) {
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
-        cell.setCellStyle(lockedCells);
-        columnIndex++;
-      }
-      spreadsheet.setMaxColumns(metabolomicsHeader.size());
+      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveMetabolomics());
       spreadsheet.reload();
     }
 
     private void addLigandomicsSheet(Spreadsheet spreadsheet) {
-      List<String> ligandomicsHeader = sampleRegistrationService.retrieveLigandomics();
-      CellStyle lockedCells = spreadsheet.getWorkbook().createCellStyle();
-      Font font = spreadsheet.getWorkbook().createFont();
-      font.setBold(true);
-      //toDo Locking cells currently does not work
-      lockedCells.setLocked(true);
-      lockedCells.setFont(font);
-      int columnIndex = 0;
-      //toDo This currently only adds the header
-      for (String columnHeader : ligandomicsHeader) {
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
-        cell.setCellStyle(lockedCells);
-        spreadsheet.refreshCells(cell);
-        columnIndex++;
-      }
-      spreadsheet.setMaxColumns(ligandomicsHeader.size());
+      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveLigandomics());
       spreadsheet.reload();
     }
 
     private void addGenomicsSheet(Spreadsheet spreadsheet) {
-      List<String> genomicsHeader = sampleRegistrationService.retrieveGenomics();
-      CellStyle lockedCells = spreadsheet.getWorkbook().createCellStyle();
-      Font font = spreadsheet.getWorkbook().createFont();
-      font.setBold(true);
-      //toDo Locking cells currently does not work
-      lockedCells.setLocked(true);
-      lockedCells.setFont(font);
-      int columnIndex = 0;
-      //toDo This currently only adds the header
-      for (String columnHeader : genomicsHeader) {
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
-        cell.setCellStyle(lockedCells);
-        columnIndex++;
-      }
-      spreadsheet.createFreezePane(1, 0);
-      spreadsheet.setMaxColumns(genomicsHeader.size());
+      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveGenomics());
       spreadsheet.reload();
+      spreadsheet.setSpreadsheetComponentFactory(dropDownCellFactory);
     }
 
   }
+
+
 
 }
