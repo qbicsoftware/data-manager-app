@@ -1,10 +1,20 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
+import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility.Background;
+import com.vaadin.flow.theme.lumo.LumoUtility.Border;
+import com.vaadin.flow.theme.lumo.LumoUtility.BorderColor;
+import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
+import com.vaadin.flow.theme.lumo.LumoUtility.BoxShadow;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariablesDialog;
 
 /**
@@ -16,21 +26,31 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVa
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} via the
  * {@link AddVariablesDialog}
  */
-public class ExperimentalDesignAddCard extends CardLayout {
+public class ExperimentalDesignAddCard extends Composite<VerticalLayout> {
+
+  private final VerticalLayout contentLayout = getContent();
 
   public ExperimentalDesignAddCard() {
-    Icon myIcon = VaadinIcon.PLUS.create();
-    myIcon.addClassNames("mt-s", "mb-s");
-    Span text = new Span("Add Experiment");
-    text.addClassName("font-bold");
-    VerticalLayout verticalLayout = new VerticalLayout(myIcon, text);
-    verticalLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    verticalLayout.setAlignItems(Alignment.CENTER);
-    verticalLayout.setSizeFull();
-    addFields(verticalLayout);
-    setWidthFull();
-    setHeight(null);
-    this.getStyle().set("cursor", "pointer");
+    initCardLayout();
+    setCardStyles();
   }
 
+  private void initCardLayout() {
+    Icon myIcon = VaadinIcon.PLUS.create();
+    myIcon.setSize(IconSize.LARGE);
+    Span text = new Span("Add Experiment");
+    text.addClassName("font-bold");
+    contentLayout.addClassName(FontSize.LARGE);
+    contentLayout.add(myIcon, text);
+  }
+
+  private void setCardStyles() {
+    contentLayout.setMaxHeight(100, Unit.PERCENTAGE);
+    contentLayout.setMaxWidth(100, Unit.PERCENTAGE);
+    contentLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+    contentLayout.setAlignItems(Alignment.CENTER);
+    this.getStyle().set("cursor", "pointer");
+    this.addClassNames(Background.BASE, Border.ALL, BorderColor.CONTRAST_10, BorderRadius.MEDIUM,
+        BoxShadow.SMALL, FontSize.SMALL);
+  }
 }
