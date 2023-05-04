@@ -1,7 +1,5 @@
 package life.qbic.datamanager.exceptionhandling.routing.exception;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -10,7 +8,6 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
 import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
-import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -24,8 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ExceptionErrorPage extends VerticalLayout implements ErrorPage<Exception> {
 
   private final ErrorMessageTranslationService errorMessageTranslationService;
-  private static final Logger log = logger(ExceptionErrorPage.class);
-
   private final Span message;
   private final H3 title;
 
@@ -41,12 +36,6 @@ public class ExceptionErrorPage extends VerticalLayout implements ErrorPage<Exce
   public void showError(Exception error) {
     showUserFriendlyMessage(errorMessageTranslationService.translate(error));
   }
-
-  @Override
-  public void logError(Exception error) {
-    log.error(error.getMessage(), error);
-  }
-
 
   private void showUserFriendlyMessage(UserFriendlyErrorMessage message) {
     this.title.setText(message.title());

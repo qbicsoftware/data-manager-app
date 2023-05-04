@@ -1,7 +1,5 @@
 package life.qbic.datamanager.exceptionhandling.routing.notfound;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -14,7 +12,6 @@ import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
-import life.qbic.logging.api.Logger;
 
 /**
  * TODO!
@@ -27,8 +24,6 @@ import life.qbic.logging.api.Logger;
 @AnonymousAllowed
 public class NotFoundPage extends Div implements ErrorPage<NotFoundException> {
 
-  private static final Logger log = logger(NotFoundPage.class);
-
   public NotFoundPage() {
     HorizontalLayout horizontalLayout = new HorizontalLayout();
     horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
@@ -39,16 +34,6 @@ public class NotFoundPage extends Div implements ErrorPage<NotFoundException> {
     verticalLayout.add(
         new H2("The page you requested does not exist. Please contact support@qbic.zendesk.com."));
     getElement().appendChild(horizontalLayout.getElement());
-  }
-
-  @Override
-  public void showError(NotFoundException error) {
-    // no specific error display
-  }
-
-  @Override
-  public void logError(NotFoundException error) {
-    log.error(error.getMessage(), error);
   }
 
   @Override
