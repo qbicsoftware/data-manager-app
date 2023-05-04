@@ -32,6 +32,10 @@ public class BatchRegistered extends DomainEvent {
 
   @Override
   public Instant occurredOn() {
-    return null;
+    return occurredOn;
+  }
+
+  public BatchId batchId() {
+    return this.batchId;
   }
 }
