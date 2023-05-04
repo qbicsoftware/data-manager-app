@@ -70,7 +70,7 @@ public class ProjectInformationService {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId);
     return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
-            "Project with id" + projectId + "does not exit anymore")
+            "Project with id" + projectId + "does not exist anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }

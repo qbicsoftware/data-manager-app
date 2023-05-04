@@ -1,4 +1,4 @@
-package life.qbic.datamanager.exceptionhandlers;
+package life.qbic.datamanager.exceptionhandling;
 
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -6,7 +6,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ErrorEvent;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.exceptionhandlers.ErrorMessageTranslationService.UserFriendlyErrorMessage;
+import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.logging.api.Logger;
@@ -14,12 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CustomErrorHandler implements UiAwareErrorHandler {
+public class UiExceptionHandler {
 
-  private static final Logger log = logger(CustomErrorHandler.class);
+  private static final Logger log = logger(UiExceptionHandler.class);
   private final ErrorMessageTranslationService userMessageService;
 
-  public CustomErrorHandler(
+  public UiExceptionHandler(
       @Autowired ErrorMessageTranslationService userMessageService) {
     this.userMessageService = userMessageService;
   }
@@ -31,7 +31,6 @@ public class CustomErrorHandler implements UiAwareErrorHandler {
    * @param errorEvent the error event
    * @param ui         the UI
    */
-  @Override
   public void error(ErrorEvent errorEvent, UI ui) {
     var throwable = errorEvent.getThrowable();
     log.error(throwable.getMessage(), throwable);
@@ -43,8 +42,7 @@ public class CustomErrorHandler implements UiAwareErrorHandler {
     requireNonNull(ui);
     requireNonNull(exception);
 
-    UserFriendlyErrorMessage errorMessage = userMessageService.getUserFriendlyMessage(exception,
-        ui.getLocale());
+    UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
     ui.access(() -> showErrorDialog(errorMessage));
   }
 
