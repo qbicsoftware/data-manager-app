@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -60,6 +61,7 @@ public class BatchId implements Serializable {
         return Objects.hash(uuid);
     }
 
+    @JsonGetter()
     public String value() {
         return this.uuid;
     }
