@@ -39,8 +39,7 @@ public class ExceptionErrorPage extends VerticalLayout implements ErrorPage<Exce
 
   @Override
   public void showError(Exception error) {
-    UserFriendlyErrorMessage message = errorMessageTranslationService.translate(error);
-    showUserFriendlyMessage(message);
+    showUserFriendlyMessage(errorMessageTranslationService.translate(error));
   }
 
   @Override
