@@ -99,6 +99,7 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
     HorizontalLayout tagLayout = new HorizontalLayout();
     List<String> tags = List.of("Label 1", "Label 2");
     tags.forEach(tag -> tagLayout.add(new Tag(tag)));
+    tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
     tagLayout.addClassName("spacing-m");
     tagLayout.addClassName(Overflow.HIDDEN);
     tagLayout.addClassName(Whitespace.NOWRAP);
