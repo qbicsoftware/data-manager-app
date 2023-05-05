@@ -70,15 +70,15 @@ public class ProjectCreationService {
           .onError(e ->
           {
             projectRepository.deleteByProjectCode(project.getProjectCode());
-            throw new ProjectManagementException(
+            throw new ApplicationException(
                 "failed to add experiment to project " + project.getId(), e);
           });
       return Result.fromValue(project);
-    } catch (ProjectManagementException projectManagementException) {
+    } catch (ApplicationException projectManagementException) {
       return Result.fromError(projectManagementException);
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
-      return Result.fromError(new ProjectManagementException());
+      return Result.fromError(new ApplicationException());
     }
   }
 
@@ -95,7 +95,7 @@ public class ProjectCreationService {
       experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
     } catch (IllegalArgumentException e) {
       log.error(e.getMessage(), e);
-      throw new ProjectManagementException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
+      throw new ApplicationException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
           ErrorParameters.of(ExperimentalDesignDescription.maxLength(), experimentalDesign));
     }
 
@@ -104,12 +104,12 @@ public class ProjectCreationService {
     try {
       projectCode = ProjectCode.parse(code);
       if (!projectRepository.find(projectCode).isEmpty()) {
-        throw new ProjectManagementException("Project code: " + code + " is already in use.",
+        throw new ApplicationException("Project code: " + code + " is already in use.",
             ErrorCode.DUPLICATE_PROJECT_CODE,
             ErrorParameters.of(code));
       }
     } catch (IllegalArgumentException exception) {
-      throw new ProjectManagementException("Project code: " + code + " is invalid.", exception,
+      throw new ApplicationException("Project code: " + code + " is invalid.", exception,
           ErrorCode.INVALID_PROJECT_CODE,
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
@@ -122,7 +122,7 @@ public class ProjectCreationService {
     try {
       projectTitle = ProjectTitle.of(title);
     } catch (RuntimeException e) {
-      throw new ProjectManagementException(
+      throw new ApplicationException(
           "could not get project intent from title " + title, e,
           ErrorCode.INVALID_PROJECT_TITLE,
           ErrorParameters.of(ProjectTitle.maxLength(), title));
@@ -132,7 +132,7 @@ public class ProjectCreationService {
     try {
       projectObjective = ProjectObjective.create(objective);
     } catch (RuntimeException e) {
-      throw new ProjectManagementException(
+      throw new ApplicationException(
           "could not get project intent from objective " + objective, e,
           ErrorCode.INVALID_PROJECT_OBJECTIVE,
           ErrorParameters.of(objective));

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -51,20 +52,20 @@ public class ProjectLinkingService {
     projectRepository.update(project);
   }
 
-  private Offer loadOfferOrThrow(String offerIdentifier) throws ProjectManagementException {
+  private Offer loadOfferOrThrow(String offerIdentifier) throws ApplicationException {
     Optional<Offer> offerSearchResult = offerSearchService.findByOfferId(offerIdentifier);
     if (offerSearchResult.isEmpty()) {
-      throw new ProjectManagementException(
+      throw new ApplicationException(
           "No offer with identifier " + offerIdentifier + " exists.");
     }
     return offerSearchResult.get();
   }
 
-  private Project loadProjectOrThrow(String projectIdentifier) throws ProjectManagementException {
+  private Project loadProjectOrThrow(String projectIdentifier) throws ApplicationException {
     ProjectId projectId = ProjectId.of(UUID.fromString(projectIdentifier));
     Optional<Project> projectSearchResult = projectRepository.find(projectId);
     if (projectSearchResult.isEmpty()) {
-      throw new ProjectManagementException(
+      throw new ApplicationException(
           "No project with identifier " + projectIdentifier + " exists.");
     }
     return projectSearchResult.get();

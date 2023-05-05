@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  * The title of a project.
@@ -14,10 +15,10 @@ public record ProjectTitle(String title) {
   public ProjectTitle {
     Objects.requireNonNull(title);
     if (title.isEmpty()) {
-      throw new ProjectManagementDomainException("Project title is empty.");
+      throw new ApplicationException("Project title is empty.");
     }
     if (title.length() > MAX_LENGTH) {
-      throw new ProjectManagementDomainException(
+      throw new ApplicationException(
           "Project title is too long. Allowed: " + MAX_LENGTH + "; Provided: " + title.length());
     }
   }

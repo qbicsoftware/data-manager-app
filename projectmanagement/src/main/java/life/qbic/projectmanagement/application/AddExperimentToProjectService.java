@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
@@ -56,15 +57,15 @@ public class AddExperimentToProjectService {
     requireNonNull(projectId, "project id must not be null during experiment creation");
     requireNonNull(experimentName, "experiment name must not be null during experiment creation");
     if (CollectionUtils.isEmpty(analytes)) {
-      throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+      throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
           ErrorParameters.of(analytes));
     }
     if (CollectionUtils.isEmpty(species)) {
-      throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
+      throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
     }
     if (CollectionUtils.isEmpty(specimens)) {
-      throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
+      throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
           ErrorParameters.of(specimens));
     }
 
