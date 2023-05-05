@@ -49,30 +49,24 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String code, String title,
-      String objective,
-      String experimentalDesign, String sourceOffer, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson,
-      List<Species> speciesList, List<Analyte> analyteList, List<Specimen> specimenList) {
+  public Result<Project, ApplicationException> createProject(String sourceOffer, String code,
+      String title, String objective, String experimentalDesign, List<Species> speciesList,
+      List<Specimen> specimenList, List<Analyte> analyteList, PersonReference principalInvestigator,
+      PersonReference responsiblePerson, PersonReference projectManager) {
 
     try {
-      Project project = createProject(code, title, objective, experimentalDesign,
-          projectManager, principalInvestigator, responsiblePerson);
+      Project project = createProject(code, title, objective, experimentalDesign, projectManager,
+          principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       projectRepository.add(project);
-      addExperimentToProjectService.addExperimentToProject(project.getId(),
-              "Experiment 0",
-              analyteList,
-              speciesList,
-              specimenList)
-          .onError(e ->
-          {
-            projectRepository.deleteByProjectCode(project.getProjectCode());
-            throw new ApplicationException(
-                "failed to add experiment to project " + project.getId(), e);
-          });
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+          speciesList, specimenList, analyteList).onError(e -> {
+        projectRepository.deleteByProjectCode(project.getProjectCode());
+        throw new ApplicationException(
+            "failed to add experiment to project " + project.getId(), e);
+      });
       return Result.fromValue(project);
     } catch (ApplicationException projectManagementException) {
       return Result.fromError(projectManagementException);
@@ -82,13 +76,9 @@ public class ProjectCreationService {
     }
   }
 
-  private Project createProject(String code,
-      String title,
-      String objective,
-      String experimentalDesign,
-      PersonReference projectManager,
-      PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+  private Project createProject(String code, String title, String objective,
+      String experimentalDesign, PersonReference projectManager,
+      PersonReference principalInvestigator, PersonReference responsiblePerson) {
 
     ExperimentalDesignDescription experimentalDesignDescription;
     try {

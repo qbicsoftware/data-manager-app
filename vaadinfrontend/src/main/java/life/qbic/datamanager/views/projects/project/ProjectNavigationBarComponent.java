@@ -17,6 +17,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 
@@ -103,7 +104,8 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
             })));
     experimentalDesignButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject.value())),
+            it -> it.navigate(String.format(Projects.EXPERIMENT, handler.selectedProject.value(),
+                handler.experimentId)),
             () -> {
               throw new ApplicationException(
                   "Could not navigate to Experiment Information Page for "
@@ -123,6 +125,10 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     this.handler.setProjectId(projectId);
   }
 
+  public void experimentId(ExperimentId experimentId) {
+    this.handler.setExperimentId(experimentId);
+  }
+
   public void setStyles(String... componentStyles) {
     getContent().addClassNames(componentStyles);
   }
@@ -130,9 +136,14 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
   private final class Handler {
 
     private ProjectId selectedProject;
+    private ExperimentId experimentId;
 
     public void setProjectId(ProjectId projectId) {
       this.selectedProject = projectId;
+    }
+
+    public void setExperimentId(ExperimentId experimentId) {
+      this.experimentId = experimentId;
     }
   }
 }
