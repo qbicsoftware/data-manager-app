@@ -1,11 +1,14 @@
 package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService
+import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository
 import life.qbic.projectmanagement.domain.project.sample.BatchId
 import life.qbic.projectmanagement.domain.project.sample.SampleId
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered
 import org.hibernate.engine.jdbc.batch.spi.Batch
+import org.jobrunr.scheduling.JobScheduler
 import spock.lang.Specification
 
 /**
@@ -16,24 +19,24 @@ import spock.lang.Specification
  * @since <version tag>
  */
 
-class WhenSampleRegisteredUpdateBatchSpec extends Specification {
+class SampleRegisteredPolicySpec extends Specification {
 
-    def "Given a sample registered event, the policy is executed"() {
+    def "Given a sample registered event, the directive to add sample to batch is executed"() {
         given:
         SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create())
 
         and:
-        BatchRepository repo = Mock(BatchRepository.class)
-        repo.find(_ as BatchId) >> Optional.ofNullable(Stub(Batch.class))
+        AddSampleToBatch addSampleToBatch = Mock(AddSampleToBatch.class)
+        addSampleToBatch.subscribedToEventType() >> SampleRegistered.class
 
         and:
-        new WhenSampleRegisteredUpdateBatch(repo)
+        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch)
 
         when:
         DomainEventDispatcher.instance().dispatch(sampleRegistered)
 
         then:
-        1 * repo.find(_)
+        1 * addSampleToBatch.handleEvent(sampleRegistered)
     }
 
 
