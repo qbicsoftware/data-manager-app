@@ -172,7 +172,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       //TODO this should be known from experimental groups and sample size
       int maximumNumberOfSamples = 100;
       dropdownCellFactory.fromColIndex(0).toColIndex(0);
-      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1);
+      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+2);
       dropdownCellFactory.withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }

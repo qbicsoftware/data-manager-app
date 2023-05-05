@@ -58,6 +58,8 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet) {
+    if(cell==null)
+      return null;
     if (spreadsheet.getActiveSheetIndex() == 0
         && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex && columnIndex <= toColIndex) {
       String value = cell.getStringCellValue();
