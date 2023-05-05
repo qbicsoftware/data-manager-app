@@ -111,8 +111,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     SpreadsheetComponentFactory dropDownCellFactory = new SpreadsheetComponentFactory() {
 
       @Override
-      public Component getCustomComponentForCell(Cell cell, int i, int i1, Spreadsheet spreadsheet,
+      public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
           Sheet sheet) {
+        if (spreadsheet.getActiveSheetIndex() == 0
+            && rowIndex > 0 && rowIndex < 100 && columnIndex == 0 && cell.getStringCellValue()!=null) {
+          return initCustomComboBox(rowIndex, columnIndex,
+              spreadsheet);
+        }
         return null;
       }
 
@@ -130,7 +135,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
       private Component initCustomComboBox(int rowIndex, int columnIndex,
           Spreadsheet spreadsheet) {
-        System.err.println("init custom box called");
 
         ComboBox analysisType = new ComboBox("", "RNA-Seq","DNA-Seq");
         analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
@@ -142,7 +146,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       public void onCustomEditorDisplayed(Cell cell, int rowIndex,
           int columnIndex, Spreadsheet spreadsheet,
           Sheet sheet, Component editor) {
-        System.err.println("oncustomEditor called with cell"+cell);
+        System.err.println("custom editor displayed");
         if (cell == null) {
           return;
         }
