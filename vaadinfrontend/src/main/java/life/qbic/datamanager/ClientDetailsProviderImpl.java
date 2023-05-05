@@ -2,13 +2,15 @@ package life.qbic.datamanager;
 
 import com.vaadin.flow.component.page.ExtendedClientDetails;
 import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
-import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.util.Optional;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.SessionScope;
 
 /**
  * Receives client details from vaadin and provides them internally.
  */
-@SpringComponent
+@Component
+@SessionScope
 public class ClientDetailsProviderImpl implements ExtendedClientDetailsReceiver,
     ClientDetailsProvider {
 
