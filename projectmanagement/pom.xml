@@ -75,8 +75,7 @@
     </dependency>
     <dependency>
       <groupId>org.jobrunr</groupId>
-      <artifactId>jobrunr</artifactId>
-      <scope>compile</scope>
+      <artifactId>jobrunr-spring-boot-3-starter</artifactId>
     </dependency>
   </dependencies>
 </project>
