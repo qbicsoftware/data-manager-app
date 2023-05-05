@@ -3,12 +3,14 @@ package life.qbic.datamanager.views.projects.project;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
@@ -16,6 +18,8 @@ import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -32,15 +36,18 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   @Serial
   private static final long serialVersionUID = 3402433356187177105L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
-  private final transient ProjectViewHandler handler;
+  private final transient Handler handler;
 
   public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
       @Autowired ExperimentInformationPage experimentInformationPage,
-      @Autowired SampleInformationPage sampleInformationPage) {
+      @Autowired SampleInformationPage sampleInformationPage,
+      @Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
-    handler = new ProjectViewHandler(projectInformationPage,
-        experimentInformationPage, sampleInformationPage);
+    Objects.requireNonNull(sampleInformationPage);
+
+    handler = new Handler(projectInformationPage,
+        experimentInformationPage, sampleInformationPage, projectInformationService);
     log.debug(String.format(
         "New instance for project view (#%s) created with a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
         System.identityHashCode(this),
@@ -52,7 +59,72 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get("projectId").ifPresentOrElse(
-        handler::setProjectId,
+        param -> handler.validateProjectId(param)
+            .onError(e -> navigateToNotFound(e, beforeEnterEvent))
+            .onValue(handler::setProjectId),
         () -> beforeEnterEvent.forwardTo(Projects.PROJECTS));
+  }
+
+  private void navigateToNotFound(RuntimeException e, BeforeEnterEvent enterEvent) {
+    log.error(e.getMessage(), e);
+    enterEvent.rerouteToError(NotFoundException.class);
+  }
+
+  /**
+   * Handler for the project view page that routes request parameter to the components.
+   *
+   * @since 1.0.0
+   */
+  static class Handler {
+
+    private final ProjectInformationPage projectInformationPage;
+    private final ExperimentInformationPage experimentInformationPage;
+    private final SampleInformationPage sampleInformationPage;
+
+    private final ProjectInformationService projectInformationService;
+
+
+    public Handler(ProjectInformationPage projectInformationPage,
+        ExperimentInformationPage experimentInformationPage,
+        SampleInformationPage sampleInformationPage,
+        ProjectInformationService projectInformationService) {
+      Objects.requireNonNull(projectInformationPage);
+      Objects.requireNonNull(experimentInformationPage);
+      Objects.requireNonNull(sampleInformationPage);
+      Objects.requireNonNull(projectInformationService);
+
+      this.projectInformationPage = projectInformationPage;
+      this.experimentInformationPage = experimentInformationPage;
+      this.sampleInformationPage = sampleInformationPage;
+      this.projectInformationService = projectInformationService;
+    }
+
+    /**
+     * Forwards a route parameter to all page components
+     *
+     * @param projectId the route parameter
+     * @since 1.0.0
+     */
+    public void setProjectId(ProjectId projectId) {
+      this.projectInformationPage.projectId(projectId);
+      this.experimentInformationPage.projectId(projectId);
+      this.sampleInformationPage.projectId(projectId);
+    }
+
+    private Result<ProjectId, RuntimeException> validateProjectId(String projectIdParam) {
+      ProjectId projectId;
+      try {
+        projectId = ProjectId.parse(projectIdParam);
+      } catch (RuntimeException e) {
+        return Result.fromError(e);
+      }
+      boolean isProjectPresent = projectInformationService.find(projectId).isPresent();
+      if (isProjectPresent) {
+        return Result.fromValue(projectId);
+      } else {
+        return Result.fromError(
+            new NotFoundException("Project " + projectIdParam + " was not found."));
+      }
+    }
   }
 }
