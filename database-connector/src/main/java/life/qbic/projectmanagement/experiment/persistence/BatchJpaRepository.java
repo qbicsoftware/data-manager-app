@@ -2,10 +2,12 @@ package life.qbic.projectmanagement.experiment.persistence;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
+import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.service.BatchDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -38,5 +40,15 @@ public class BatchJpaRepository implements BatchRepository {
       return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
     }
     return Result.fromValue(batch);
+  }
+
+  @Override
+  public Optional<Batch> find(BatchId batchId) {
+    return this.qbicBatchRepo.findById(batchId);
+  }
+
+  @Override
+  public Result<Batch, ResponseCode> update(Batch batch) {
+    return Result.fromValue(this.qbicBatchRepo.save(batch));
   }
 }
