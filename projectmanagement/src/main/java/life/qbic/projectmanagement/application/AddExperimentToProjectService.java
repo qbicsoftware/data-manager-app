@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
@@ -57,15 +58,15 @@ public class AddExperimentToProjectService {
         experimentName = "Unnamed Experiment";
       }
       if (CollectionUtils.isEmpty(species)) {
-        throw new ProjectManagementException(ErrorCode.NO_SPECIES_DEFINED,
+        throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
             ErrorParameters.of(species));
       }
       if (CollectionUtils.isEmpty(specimens)) {
-        throw new ProjectManagementException(ErrorCode.NO_SPECIMEN_DEFINED,
+        throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
             ErrorParameters.of(specimens));
       }
       if (CollectionUtils.isEmpty(analytes)) {
-        throw new ProjectManagementException(ErrorCode.NO_ANALYTE_DEFINED,
+        throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
             ErrorParameters.of(analytes));
       }
       Optional<Project> optionalProject = projectRepository.find(projectId);
@@ -84,4 +85,5 @@ public class AddExperimentToProjectService {
           })
           .map(Experiment::experimentId);
   }
+
 }
