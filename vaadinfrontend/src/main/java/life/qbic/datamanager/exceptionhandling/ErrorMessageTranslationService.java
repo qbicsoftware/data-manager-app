@@ -11,11 +11,12 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 /**
- * <b>short description</b>
- * TODO
- * <p>detailed description</p>
+ * Translates an exception into a user-friendly message.
+ * <p>
+ * For ApplicationExceptions, messages can be defined in messages.properties, other exceptions will
+ * be mapped to the default message.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Service
 public class ErrorMessageTranslationService {
@@ -23,6 +24,11 @@ public class ErrorMessageTranslationService {
   private final MessageSource messageSource;
   private static final String MESSAGE_SEPARATOR = "->";
 
+  /**
+   * A user friendly error message. The error message has a title and a message detailing the error.
+   * @param title
+   * @param message
+   */
   public record UserFriendlyErrorMessage(String title, String message) {
 
   }
@@ -32,10 +38,25 @@ public class ErrorMessageTranslationService {
     this.messageSource = messageSource;
   }
 
+  /**
+   * Translates an exception into a user-friendly error message. English language is assumed.
+   * @param e the exception to translate
+   * @return a {@link UserFriendlyErrorMessage}
+   * @param <E> the class of the exception
+   */
   public <E extends Exception> UserFriendlyErrorMessage translate(E e) {
     return translate(e, Locale.ENGLISH);
   }
 
+  /**
+   *
+   * Translates an exception into a user-friendly error message.
+   * @param e the exception to translate
+   * @param locale the locale for which to provide the message
+   * @return a {@link UserFriendlyErrorMessage}
+   * @param <E> the class of the exception
+
+   */
   public <E extends Exception> UserFriendlyErrorMessage translate(E e, Locale locale) {
     ApplicationException applicationException = ApplicationException.wrapping(e);
     return getUserFriendlyMessage(applicationException.errorCode(),
