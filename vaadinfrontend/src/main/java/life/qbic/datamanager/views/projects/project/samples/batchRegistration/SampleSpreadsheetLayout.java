@@ -108,53 +108,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private static class SampleRegistrationSheetBuilder {
 
-    SpreadsheetComponentFactory dropDownCellFactory = new SpreadsheetComponentFactory() {
-
-      @Override
-      public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
-          Sheet sheet) {
-        if (spreadsheet.getActiveSheetIndex() == 0
-            && rowIndex > 0 && rowIndex < 100 && columnIndex == 0 && cell.getStringCellValue()!=null) {
-          return initCustomComboBox(rowIndex, columnIndex,
-              spreadsheet);
-        }
-        return null;
-      }
-
-      @Override
-      public Component getCustomEditorForCell(Cell cell,
-          int rowIndex, int columnIndex,
-          Spreadsheet spreadsheet, Sheet sheet) {
-        if (spreadsheet.getActiveSheetIndex() == 0
-            && rowIndex > 0 && rowIndex < 100 && columnIndex == 0) {
-          return initCustomComboBox(rowIndex, columnIndex,
-              spreadsheet);
-        }
-        return null;
-      }
-
-      private Component initCustomComboBox(int rowIndex, int columnIndex,
-          Spreadsheet spreadsheet) {
-
-        ComboBox analysisType = new ComboBox("", "RNA-Seq","DNA-Seq");
-        analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
-            spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
-        return analysisType;
-      }
-
-      @Override
-      public void onCustomEditorDisplayed(Cell cell, int rowIndex,
-          int columnIndex, Spreadsheet spreadsheet,
-          Sheet sheet, Component editor) {
-        System.err.println("custom editor displayed");
-        if (cell == null) {
-          return;
-        }
-        ((ComboBox) editor)
-            .setValue(cell.getStringCellValue());
-      }
-    };
-
     private final SampleRegistrationService sampleRegistrationService;
 
     public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
@@ -218,6 +171,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private void addGenomicsSheet(Spreadsheet spreadsheet) {
       setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveGenomics());
       spreadsheet.reload();
+      DropdownCellFactory dropDownCellFactory = new DropdownCellFactory();/TODO
       spreadsheet.setSpreadsheetComponentFactory(dropDownCellFactory);
     }
 
