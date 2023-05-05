@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.domain.project.experiment.vocabulary;
 
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.ProjectManagementDomainException;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  * <a href="https://medical-dictionary.thefreedictionary.com/species">species</a>: a taxonomic
@@ -16,7 +16,7 @@ public record Species(String label) implements Serializable {
   public Species {
     Objects.requireNonNull(label);
     if (label.isEmpty()) {
-      throw new ProjectManagementDomainException("Vocabulary label for Species is empty.");
+      throw new ApplicationException("Vocabulary label for Species is empty.");
     }
   }
 
