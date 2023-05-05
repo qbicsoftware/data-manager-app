@@ -1,21 +1,18 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
-import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Sheet;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -171,8 +168,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private void addGenomicsSheet(Spreadsheet spreadsheet) {
       setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveGenomics());
       spreadsheet.reload();
-      DropdownCellFactory dropDownCellFactory = new DropdownCellFactory();/TODO
-      spreadsheet.setSpreadsheetComponentFactory(dropDownCellFactory);
+      SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
+      //TODO this should be known from experimental groups and sample size
+      int maximumNumberOfSamples = 100;
+      dropdownCellFactory.fromColIndex(0).toColIndex(0);
+      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1);
+      dropdownCellFactory.withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
+      spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }
 
   }
