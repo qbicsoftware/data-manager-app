@@ -55,7 +55,9 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
   }
 
   private void initExperimentStatusLayout() {
-    experimentStatus.getStyle().set("writing-mode", "sideways-lr");
+    //Writing-mode sideway property is only supported in firefox browser, therefore manual rotation is necessary
+    experimentStatus.getStyle().set("rotate", "180deg");
+    experimentStatus.getStyle().set("writing-mode", "vertical-lr");
     experimentStatus.addClassName(TextAlignment.CENTER);
     //We want to keep the rounded corner of the card to also apply to only the leftmost corners of the span
     experimentStatus.getStyle()
