@@ -13,9 +13,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -97,7 +97,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
             it -> it.navigate(
                 String.format(Projects.PROJECT_INFO, handler.selectedProject.value())), () -> {
-              throw new ProjectManagementException(
+              throw new ApplicationException(
                   "Could not navigate to Project Information Page for "
                       + handler.selectedProject.value());
             })));
@@ -105,7 +105,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
             it -> it.navigate(String.format(Projects.EXPERIMENTS, handler.selectedProject.value())),
             () -> {
-              throw new ProjectManagementException(
+              throw new ApplicationException(
                   "Could not navigate to Experiment Information Page for "
                       + handler.selectedProject.value());
             })));
@@ -113,7 +113,7 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
             it -> it.navigate(String.format(Projects.SAMPLES, handler.selectedProject.value())),
             () -> {
-              throw new ProjectManagementException(
+              throw new ApplicationException(
                   "Could not navigate to Sample Information Page for "
                       + handler.selectedProject.value());
             })));

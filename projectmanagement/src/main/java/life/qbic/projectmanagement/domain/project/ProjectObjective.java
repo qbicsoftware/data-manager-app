@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  * The objective of a project.
@@ -15,10 +16,10 @@ public record ProjectObjective(String objective) {
   public ProjectObjective {
     Objects.requireNonNull(objective);
     if (objective.isEmpty()) {
-      throw new ProjectManagementDomainException("Project objective is empty.");
+      throw new ApplicationException("Project objective is empty.");
     }
     if (objective.length() > MAX_LENGTH) {
-      throw new ProjectManagementDomainException(
+      throw new ApplicationException(
           "Project objective is too long. Allowed max size: " + MAX_LENGTH
               + "; Provided size: " + objective.length());
     }

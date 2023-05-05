@@ -14,8 +14,13 @@ import java.util.StringJoiner;
  *
  * @since 1.0.0
  */
-public abstract class ApplicationException extends RuntimeException {
+public class ApplicationException extends RuntimeException {
 
+  /**
+   * The error code of an ApplicationException. This code can be used to determine what kind of
+   * error occurred. This allows for the message of the ApplicationException to hold debug
+   * information and avoids string matching to search for the error message.
+   */
   public enum ErrorCode {
     GENERAL,
     INVALID_EXPERIMENTAL_DESIGN,
@@ -36,6 +41,11 @@ public abstract class ApplicationException extends RuntimeException {
 
   }
 
+  /**
+   * Error parameters to be used in error messages.
+   *
+   * @param value an ordered array of parameters
+   */
   public record ErrorParameters(Object[] value) {
 
     public static ErrorParameters create() {
@@ -77,45 +87,45 @@ public abstract class ApplicationException extends RuntimeException {
 
   private final ErrorParameters errorParameters;
 
-  protected ApplicationException() {
+  public ApplicationException() {
     this(ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(String message) {
+  public ApplicationException(String message) {
     this(message, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(String message, Throwable cause) {
+  public ApplicationException(String message, Throwable cause) {
     this(message, cause, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
-  protected ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
+  public ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, ErrorCode errorCode,
+  public ApplicationException(String message, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, Throwable cause, ErrorCode errorCode,
+  public ApplicationException(String message, Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message, cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(Throwable cause, ErrorCode errorCode,
+  public ApplicationException(Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(cause);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
-  protected ApplicationException(String message, Throwable cause, boolean enableSuppression,
+  public ApplicationException(String message, Throwable cause, boolean enableSuppression,
       boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace);
     this.errorCode = errorCode;
@@ -128,6 +138,51 @@ public abstract class ApplicationException extends RuntimeException {
 
   public ErrorParameters errorParameters() {
     return errorParameters;
+  }
+
+  /**
+   * Wraps the provided throwable into an ApplicationException and sets the provided error message.
+   * <p>
+   * If the throwable is an ApplicationException itself, the wrapping exception will have the same
+   * error code and error parameters as the wrapped exception.
+   * <p>
+   * If the throwable is not an ApplicationException, the general error code and error parameters
+   * will be used.
+   * <p>
+   * The wrapped throwable is set as cause of the wrapping ApplicationException.
+   *
+   * @param message the debug message to set for the new application exception
+   * @param e       the throwable to be wrapped
+   * @return an ApplicationException with the message, an appropriate error code and e set as cause.
+   */
+  public static ApplicationException wrapping(String message, Throwable e) {
+    if (e instanceof ApplicationException applicationException) {
+      return new ApplicationException(message, e, applicationException.errorCode(),
+          applicationException.errorParameters());
+    } else {
+      return new ApplicationException(message, e);
+    }
+  }
+
+  /**
+   * Wraps the provided throwable into an ApplicationException.
+   * <p>
+   * If the throwable is an ApplicationException itself, the wrapping exception will have the same
+   * error code and error parameters as the wrapped exception; Otherwise the general error code and
+   * error parameters will be used.
+   * <p>
+   * The wrapped throwable is set as cause of the wrapping ApplicationException.
+   *
+   * @param e the throwable to be wrapped
+   * @return an ApplicationException with an appropriate error code and e set as cause.
+   */
+  public static ApplicationException wrapping(Throwable e) {
+    if (e instanceof ApplicationException applicationException) {
+      return new ApplicationException(e, applicationException.errorCode(),
+          applicationException.errorParameters());
+    } else {
+      return new ApplicationException(e.getMessage(), e);
+    }
   }
 
   @Override
