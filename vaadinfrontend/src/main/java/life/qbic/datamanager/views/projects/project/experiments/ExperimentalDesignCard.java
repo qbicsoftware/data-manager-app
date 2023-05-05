@@ -57,6 +57,9 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
   private void initExperimentStatusLayout() {
     experimentStatus.getStyle().set("writing-mode", "sideways-lr");
     experimentStatus.addClassName(TextAlignment.CENTER);
+    //We want to keep the rounded corner of the card to also apply to only the leftmost corners of the span
+    experimentStatus.getStyle()
+        .set("border radius", "var(--lumo-border-radius-m) 0 0 var(--lumo-border-radius-m)");
     setComplete(false);
     contentLayout.add(experimentStatus);
   }
@@ -68,6 +71,8 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
     initBottomRow();
     //Since the experimentStatusWidth is not taking into account we have to allow space for it otherwise the content overflows the container
     experimentDetailLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
+    experimentDetailLayout.setWidth(100, Unit.PERCENTAGE);
+    experimentDetailLayout.addClassName(Overflow.HIDDEN);
     contentLayout.add(experimentDetailLayout);
   }
 
@@ -102,10 +107,12 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
     Icon flaskIcon = VaadinIcon.FLASK.create();
     flaskIcon.addClassNames("mt-s", "mb-s");
     flaskIcon.setSize(IconSize.MEDIUM);
+    //We need a span to wrap around the icon so the icon stays at the same size if the screen size changes
+    Span iconSpan = new Span(flaskIcon);
     bottomRow.setWidthFull();
     bottomRow.setAlignItems(Alignment.CENTER);
     bottomRow.setJustifyContentMode(JustifyContentMode.BETWEEN);
-    bottomRow.add(tagLayout, flaskIcon);
+    bottomRow.add(tagLayout, iconSpan);
     experimentDetailLayout.add(bottomRow);
   }
 
@@ -135,7 +142,7 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
     this.isComplete = isComplete;
     if (isComplete) {
       experimentStatus.setText("Complete");
-      experimentStatus.addClassName(TextColor.PRIMARY_CONTRAST);
+      experimentStatus.addClassNames(Background.PRIMARY, TextColor.PRIMARY_CONTRAST);
     } else {
       experimentStatus.setText("Incomplete");
       experimentStatus.addClassName(Background.CONTRAST_30);
