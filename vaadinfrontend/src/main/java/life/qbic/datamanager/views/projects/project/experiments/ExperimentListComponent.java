@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
@@ -26,7 +27,6 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectManagementException;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -166,7 +166,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
       getUI().ifPresentOrElse(it -> it.navigate(
               String.format(Projects.EXPERIMENT, handler.projectId.value(), experimentId.value())),
           () -> {
-            throw new ProjectManagementException(
+            throw new ApplicationException(
                 "Could not navigate to newly created Experiment " + experimentId.value()
                     + "Information Page for " + handler.projectId.value());
           });
