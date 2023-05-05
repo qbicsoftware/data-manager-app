@@ -13,6 +13,18 @@ import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/**
+ * The exception handler intended to be hooked into every vaadin ui.
+ * <p>
+ * This exception handler acts as a global fallback exception handler. It is registered to every
+ * {@link UI} that is instantiated. When an exception is thrown inside the UI, this exception
+ * handler
+ * <ol>
+ *   <li>catches the exception</li>
+ *   <li>translates the exception into a helpful message (if possible)</li>
+ *   <li>shows a notification on the ui with the message</li>
+ * </ol>
+ */
 @Component
 public class UiExceptionHandler {
 
