@@ -121,7 +121,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void setAndStyleHeader(Spreadsheet spreadsheet, List<String> header) {
-      spreadsheet.setActiveSheetProtected("pwd");
       CellStyle boldHeaderStyle = spreadsheet.getWorkbook().createCellStyle();
       Font font = spreadsheet.getWorkbook().createFont();
       font.setBold(true);
@@ -137,15 +136,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         cell.setCellValue(columnHeader);
         columnIndex++;
 
-      }
-      spreadsheet.refreshCells(updatedCells);
-
-      updatedCells = new ArrayList<Cell>();
-      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-      unLockedStyle.setLocked(false);
-      for (int i = 1; i < 100; i++) {
-        Cell cell = spreadsheet.createCell(i, 0, "");
-        cell.setCellStyle(unLockedStyle);
       }
       spreadsheet.refreshCells(updatedCells);
     }
@@ -172,7 +162,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       //TODO this should be known from experimental groups and sample size
       int maximumNumberOfSamples = 100;
       dropdownCellFactory.fromColIndex(0).toColIndex(0);
-      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+2);
+      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1);
       dropdownCellFactory.withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }
