@@ -62,7 +62,7 @@ public class ProjectInformationService {
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   public Optional<Project> find(ProjectId projectId) {
     Objects.requireNonNull(projectId);
-    return Optional.ofNullable(loadProject(projectId));
+    return projectRepository.find(projectId);
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
