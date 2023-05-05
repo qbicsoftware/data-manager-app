@@ -72,17 +72,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-        /*
-        //This method is not necessary for this functionality atm
-        if (spreadsheet.getActiveSheetIndex() == 0
-        && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex && columnIndex <= toColIndex) {
-          String value = cell.getStringCellValue();
-          System.err.println("editor "+value);
-          if(value.isEmpty()) {
-            return initCustomComboBox(rowIndex, columnIndex,
-                spreadsheet);
-          }
-        }*/
     return null;
   }
 
@@ -99,16 +88,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
-        /*
-        //This method is not necessary for this functionality atm
-        System.err.println("custom editor displayed");
-        if (cell == null) {
-          return;
-        }
-        ((ComboBox) editor)
-            .setValue(cell.getStringCellValue());
-
-         */
   }
 
 }
