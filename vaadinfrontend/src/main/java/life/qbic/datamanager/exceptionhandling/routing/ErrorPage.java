@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
+import java.util.Locale;
 import life.qbic.logging.api.Logger;
 
 /**
@@ -30,7 +31,7 @@ public interface ErrorPage<E extends Exception> extends HasErrorParameter<E> {
    *
    * @param error the error for which to adapt the page.
    */
-  default void showError(E error) {
+  default void showError(E error, Locale locale) {
 
   }
 
@@ -56,7 +57,7 @@ public interface ErrorPage<E extends Exception> extends HasErrorParameter<E> {
   default int setErrorParameter(BeforeEnterEvent event, ErrorParameter<E> parameter) {
     E exception = parameter.getException();
     logError(exception);
-    showError(exception);
+    showError(exception, event.getUI().getLocale());
     return getStatusCode();
   }
 }

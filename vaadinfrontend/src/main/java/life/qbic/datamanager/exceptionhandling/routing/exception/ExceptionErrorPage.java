@@ -14,6 +14,7 @@ import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.util.Locale;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
 import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
@@ -62,8 +63,8 @@ public class ExceptionErrorPage extends Div implements ErrorPage<Exception> {
   }
 
   @Override
-  public void showError(Exception error) {
-    showUserFriendlyMessage(errorMessageTranslationService.translate(error));
+  public void showError(Exception error, Locale locale) {
+    showUserFriendlyMessage(errorMessageTranslationService.translate(error, locale));
   }
 
   private void showUserFriendlyMessage(UserFriendlyErrorMessage message) {
