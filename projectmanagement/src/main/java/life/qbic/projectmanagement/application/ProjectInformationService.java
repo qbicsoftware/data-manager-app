@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
@@ -68,9 +69,9 @@ public class ProjectInformationService {
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
-    log.debug("Search for project with id: " + projectId);
+    log.debug("Search for project with id: " + projectId.value());
     return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
-            "Project with id" + projectId + "does not exist anymore")
+            "Project with id" + projectId + "does not exit anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
@@ -112,6 +113,12 @@ public class ProjectInformationService {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);
+    projectRepository.update(project);
+  }
+
+  public void setActiveExperiment(ProjectId projectId, ExperimentId experimentId) {
+    Project project = loadProject(projectId);
+    project.setActiveExperiment(experimentId);
     projectRepository.update(project);
   }
 }

@@ -60,4 +60,13 @@ class ExperimentalGroupSpec extends Specification {
         }
         return condition
     }
+
+    def "If an experimental group has no id it will never equal another experimental group with an id"() {
+        given:
+        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+        def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
+        experimentalGroup2.experimentalGroupId = 202
+        expect:
+        !experimentalGroup.hashCode().equals(experimentalGroup2.hashCode())
+    }
 }

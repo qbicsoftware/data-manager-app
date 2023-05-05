@@ -3,7 +3,7 @@ package life.qbic.datamanager.views.layouts;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -19,7 +19,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 @CssImport("./styles/components/card-layout.css")
 public class CardLayout extends VerticalLayout {
 
-  private Label layoutTitle;
+  private Span layoutTitle;
   private VerticalLayout contentLayout;
   private VerticalLayout leftLayout;
   private VerticalLayout rightLayout;
@@ -39,7 +39,7 @@ public class CardLayout extends VerticalLayout {
     buttonLayout = new HorizontalLayout();
     fieldLayout = new VerticalLayout();
     titleLayout = new HorizontalLayout();
-    layoutTitle = new Label("");
+    layoutTitle = new Span("");
     titleLayout.add(layoutTitle);
     leftLayout.add(titleLayout, fieldLayout);
     rightLayout.add(buttonLayout);
