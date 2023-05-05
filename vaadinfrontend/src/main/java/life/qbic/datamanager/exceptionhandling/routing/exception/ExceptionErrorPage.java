@@ -1,6 +1,8 @@
 package life.qbic.datamanager.exceptionhandling.routing.exception;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -8,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -17,11 +20,7 @@ import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b>short description</b>
- * TODO
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Page shown when any error occurred. Shows an appropriate user friendly message.
  */
 @AnonymousAllowed
 @Route("error")
@@ -51,6 +50,12 @@ public class ExceptionErrorPage extends Div implements ErrorPage<Exception> {
     verticalLayout.add(title);
     verticalLayout.add(message);
     verticalLayout.add(errorCode);
+    Button goBack = new Button("Go back");
+    goBack.addClickListener(it -> {
+      History history = UI.getCurrent().getPage().getHistory();
+      history.back();
+    });
+    verticalLayout.add(goBack);
     verticalLayout.setSizeFull();
     horizontalLayout.setSizeFull();
     return horizontalLayout;
