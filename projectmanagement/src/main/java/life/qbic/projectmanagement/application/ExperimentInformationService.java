@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -40,14 +41,15 @@ public class ExperimentInformationService {
 
   public Optional<Experiment> find(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
-    log.debug("Search for experiment with id: " + experimentId);
+    log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     return experimentRepository.find(experimentId).orElseThrow(
-        () -> new ProjectManagementException("The active experiment does not exist anymore.")
+        () -> new ApplicationException(
+            "Experiment with id" + experimentId.value() + "does not exit anymore")
         // should never happen; indicates dirty removal of experiment from db
     );
   }

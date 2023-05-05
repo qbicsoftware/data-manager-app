@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.project
 
-
+import life.qbic.application.commons.ApplicationException
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -18,7 +18,7 @@ class ProjectTitleSpec extends Specification {
         when:
         new ProjectTitle("")
         then:
-        thrown(ProjectManagementDomainException)
+        thrown(ApplicationException)
     }
 
     def "expect creation with exactly max chars allowed works"() {
