@@ -117,12 +117,24 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
+      spreadsheet.setActiveSheetProtected("pwd");
       switch (metaDataTypes) {
         case PROTEOMICS -> addProteomicsSheet(spreadsheet, sampleRegistrationService.retrieveProteomics());
         case LIGANDOMICS -> addLigandomicsSheet(spreadsheet, sampleRegistrationService.retrieveLigandomics());
         case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet, sampleRegistrationService.retrieveGenomics());
         case METABOLOMICS -> addMetabolomicsSheet(spreadsheet, sampleRegistrationService.retrieveMetabolomics());
       }
+    }
+
+    private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow, int maxRow) {
+      List<Cell> updatedCells = new ArrayList<Cell>();
+      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+      unLockedStyle.setLocked(false);
+      for (int i = minRow; i <= maxRow; i++) {
+        Cell cell = spreadsheet.createCell(i, column, "");
+        cell.setCellStyle(unLockedStyle);
+      }
+      spreadsheet.refreshCells(updatedCells);
     }
 
     private void setAndStyleHeader(Spreadsheet spreadsheet, List<String> header) {

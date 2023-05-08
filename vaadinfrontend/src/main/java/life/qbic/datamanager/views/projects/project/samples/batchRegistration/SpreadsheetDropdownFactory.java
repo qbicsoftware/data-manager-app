@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -31,7 +32,8 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     DropDownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
 
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      if(cell==null || cell.getStringCellValue().isEmpty()) {
+      List<String> dropdownItems = dropDownColumn.getItems();
+      if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
@@ -49,8 +51,16 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   private Component initCustomComboBox(DropDownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
     ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), dropDownColumn.getItems());
-    analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
-        spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
+    // if a user selects a value from the dropdown, it is filled into the cell
+    // editing is allowed, as the wrong selection might have been taken.
+    // wrong inputs when editing are handled in getCustomComponentForCell()
+    analysisType.addValueChangeListener(e -> {
+      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+      unLockedStyle.setLocked(false);
+      Cell cell = spreadsheet.createCell(rowIndex, columnIndex, e.getValue());
+      cell.setCellStyle(unLockedStyle);
+      spreadsheet.refreshCells(cell);
+    });
     return analysisType;
   }
 
