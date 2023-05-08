@@ -26,9 +26,9 @@ public class SampleRegistered extends DomainEvent {
   private final SampleId registeredSample;
 
   private SampleRegistered(Instant occurredOn, BatchId assignedBatch, SampleId registeredSample) {
-    this.occurredOn = occurredOn;
-    this.assignedBatch = assignedBatch;
-    this.registeredSample = registeredSample;
+    this.occurredOn = Objects.requireNonNull(occurredOn);
+    this.assignedBatch = Objects.requireNonNull(assignedBatch);
+    this.registeredSample = Objects.requireNonNull(registeredSample);
   }
 
   /**
@@ -40,8 +40,6 @@ public class SampleRegistered extends DomainEvent {
    * @since 1.0.0
    */
   public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample) {
-    Objects.requireNonNull(assignedBatch);
-    Objects.requireNonNull(registeredSample);
     return new SampleRegistered(Instant.now(), assignedBatch, registeredSample);
   }
 

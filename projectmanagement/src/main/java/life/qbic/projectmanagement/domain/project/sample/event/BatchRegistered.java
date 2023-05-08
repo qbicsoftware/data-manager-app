@@ -23,12 +23,11 @@ public class BatchRegistered extends DomainEvent {
   private final Instant occurredOn;
 
   private BatchRegistered(Instant occurredOn, BatchId batchId) {
-    this.occurredOn = occurredOn;
-    this.batchId = batchId;
+    this.occurredOn = Objects.requireNonNull(occurredOn);
+    this.batchId = Objects.requireNonNull(batchId);
   }
 
   public static BatchRegistered create(BatchId batchId) {
-    Objects.requireNonNull(batchId);
     return new BatchRegistered(Instant.now(), batchId);
   }
 
