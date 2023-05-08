@@ -26,12 +26,14 @@ public class Sample {
   @Embedded
   private BatchId assignedBatch;
   @Embedded
+  @AttributeOverride(name = "id", column = @Column(name = "bio_replicate_id"))
   private BiologicalReplicateId biologicalReplicateId;
   @Embedded
   @AttributeOverride(name = "id", column = @Column(name = "experiment_id"))
   private ExperimentId experimentId;
   private Long experimentalGroupId;
   @EmbeddedId
+  @AttributeOverride(name = "id", column = @Column(name = "sample_id"))
   private SampleId id;
   private String label;
   @Embedded
