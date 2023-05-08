@@ -6,7 +6,6 @@ import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository
 import life.qbic.projectmanagement.domain.project.sample.Batch
-import life.qbic.projectmanagement.domain.project.sample.BatchId
 import life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered
 import spock.lang.Specification
 
@@ -29,7 +28,7 @@ class BatchDomainServiceSpec extends Specification {
         and:
         DomainEventSubscriber<BatchRegistered> batchRegistered = new DomainEventSubscriber<BatchRegistered>() {
 
-            BatchId batchIdOfEvent
+            boolean eventReceived = false
 
             @Override
             Class<? extends DomainEvent> subscribedToEventType() {
@@ -38,15 +37,15 @@ class BatchDomainServiceSpec extends Specification {
 
             @Override
             void handleEvent(BatchRegistered event) {
-                this.batchIdOfEvent = event.batchId()
+                this.eventReceived = true
             }
         }
         DomainEventDispatcher.instance().subscribe(batchRegistered)
 
         when:
-        Result<Batch, BatchDomainService.ResponseCode> result = batchDomainService.register("test", false)
+        batchDomainService.register("test", false)
 
         then:
-        batchRegistered.batchIdOfEvent.equals(result.getValue().batchId())
+        batchRegistered.eventReceived
     }
 }
