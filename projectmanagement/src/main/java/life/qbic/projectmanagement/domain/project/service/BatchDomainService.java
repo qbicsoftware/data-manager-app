@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.service;
 
+import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
@@ -23,7 +24,7 @@ public class BatchDomainService {
 
   @Autowired
   public BatchDomainService(BatchRepository batchRepository) {
-    this.batchRepository = batchRepository;
+    this.batchRepository = Objects.requireNonNull(batchRepository);
   }
 
   /**

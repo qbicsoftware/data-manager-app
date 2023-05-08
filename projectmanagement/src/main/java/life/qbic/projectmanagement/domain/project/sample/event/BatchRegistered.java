@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.domain.project.sample.event;
 
 import java.io.Serial;
 import java.time.Instant;
+import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 
@@ -27,6 +28,7 @@ public class BatchRegistered extends DomainEvent {
   }
 
   public static BatchRegistered create(BatchId batchId) {
+    Objects.requireNonNull(batchId);
     return new BatchRegistered(Instant.now(), batchId);
   }
 
