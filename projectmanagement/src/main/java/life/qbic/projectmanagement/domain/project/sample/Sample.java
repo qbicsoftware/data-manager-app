@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -26,6 +28,7 @@ public class Sample {
   @Embedded
   private BiologicalReplicateId biologicalReplicateId;
   @Embedded
+  @AttributeOverride(name = "id", column = @Column(name = "experiment_id"))
   private ExperimentId experimentId;
   private Long experimentalGroupId;
   @EmbeddedId
