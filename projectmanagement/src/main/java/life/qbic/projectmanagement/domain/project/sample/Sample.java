@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.sample;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -60,22 +61,17 @@ public class Sample {
   /**
    * Creates a new sample entity.
    *
-   * @param label               a human-readable semantic descriptor of the sample
-   * @param assignedBatch       the assigned batch
-   * @param experimentId        the experiment reference
-   * @param experimentalGroupId the experimental group id the sample is part of
-   * @param replicateReference  the biological replicated reference the sample has been taken from
-   * @param sampleOrigin        information about the sample origin.
-   * @return the sample
+   * @param sampleRegistrationRequest@return the sample
    * @since 1.0.0
    */
   public static Sample create(
-      String label, BatchId assignedBatch, ExperimentId experimentId, Long experimentalGroupId,
-      BiologicalReplicateId replicateReference, SampleOrigin sampleOrigin
-  ) {
+      SampleRegistrationRequest sampleRegistrationRequest) {
+    Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
-    return new Sample(sampleId, assignedBatch, label, experimentId, experimentalGroupId,
-        sampleOrigin, replicateReference);
+    return new Sample(sampleId, sampleRegistrationRequest.assignedBatch(),
+        sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
+        sampleRegistrationRequest.experimentalGroupId(),
+        sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference());
   }
 
   public BatchId assignedBatch() {

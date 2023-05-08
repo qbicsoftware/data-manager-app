@@ -10,10 +10,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository
-import life.qbic.projectmanagement.domain.project.sample.BatchId
-import life.qbic.projectmanagement.domain.project.sample.Sample
-import life.qbic.projectmanagement.domain.project.sample.SampleId
-import life.qbic.projectmanagement.domain.project.sample.SampleOrigin
+import life.qbic.projectmanagement.domain.project.sample.*
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered
 import spock.lang.Specification
 
@@ -28,7 +25,7 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")))
+        Sample testSample = Sample.create(new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test"))))
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
@@ -56,7 +53,8 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")))
+        Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample(
+                new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test"))))
 
         then:
         sampleRegistered.batchIdOfEvent.equals(result.getValue().assignedBatch())

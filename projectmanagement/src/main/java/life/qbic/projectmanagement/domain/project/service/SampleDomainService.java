@@ -3,12 +3,9 @@ package life.qbic.projectmanagement.domain.project.service;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
-import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
-import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
+import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,13 +42,10 @@ public class SampleDomainService {
    * {@link ResponseCode}
    * @since 1.0.0
    */
-  public Result<Sample, ResponseCode> registerSample(String label, BatchId assignedBatch,
-      ExperimentId experimentId,
-      long experimentalGroupId, BiologicalReplicateId biologicalReplicateId,
-      SampleOrigin sampleOrigin) {
-    var sample = Sample.create(label, assignedBatch, experimentId, experimentalGroupId,
-        biologicalReplicateId,
-        sampleOrigin);
+  public Result<Sample, ResponseCode> registerSample(
+      SampleRegistrationRequest sampleRegistrationRequest) {
+    Objects.requireNonNull(sampleRegistrationRequest);
+    var sample = Sample.create(sampleRegistrationRequest);
     Result<Sample, ResponseCode> result = this.sampleRepository.add(sample);
 
     // For successful registration transactions we dispatch the event
