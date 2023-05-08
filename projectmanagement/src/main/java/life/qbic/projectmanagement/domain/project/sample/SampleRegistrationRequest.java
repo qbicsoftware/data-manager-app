@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -21,4 +22,14 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
                                         BiologicalReplicateId replicateReference,
                                         SampleOrigin sampleOrigin) {
 
+  public SampleRegistrationRequest(String label, BatchId assignedBatch, ExperimentId experimentId,
+      Long experimentalGroupId, BiologicalReplicateId replicateReference,
+      SampleOrigin sampleOrigin) {
+    this.label = Objects.requireNonNull(label);
+    this.assignedBatch = Objects.requireNonNull(assignedBatch);
+    this.experimentId = Objects.requireNonNull(experimentId);
+    this.experimentalGroupId = Objects.requireNonNull(experimentalGroupId);
+    this.replicateReference = Objects.requireNonNull(replicateReference);
+    this.sampleOrigin = Objects.requireNonNull(sampleOrigin);
+  }
 }

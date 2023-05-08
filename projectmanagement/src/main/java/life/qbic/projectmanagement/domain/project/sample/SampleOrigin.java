@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -12,4 +13,10 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
  * @since <version tag>
  */
 public record SampleOrigin(Species species, Specimen specimen, Analyte analyte) {
+
+  public SampleOrigin(Species species, Specimen specimen, Analyte analyte) {
+    this.species = Objects.requireNonNull(species);
+    this.specimen = Objects.requireNonNull(specimen);
+    this.analyte = Objects.requireNonNull(analyte);
+  }
 }
