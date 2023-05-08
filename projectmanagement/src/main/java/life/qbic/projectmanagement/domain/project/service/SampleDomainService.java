@@ -16,7 +16,8 @@ import org.springframework.stereotype.Service;
 /**
  * <b>Sample Domain Service</b>
  * <p>
- * Service that handles entity creation and deletion events, that need to dispatch domain events.
+ * Service that handles {@link Sample} creation and deletion events, that need to dispatch domain
+ * events.
  *
  * @since 1.0.0
  */
@@ -61,6 +62,11 @@ public class SampleDomainService {
     return result;
   }
 
+  /**
+   * Response error codes for the sample registration
+   *
+   * @since 1.0.0
+   */
   public enum ResponseCode {
     REGISTRATION_FAILED
   }
