@@ -8,15 +8,12 @@ import life.qbic.projectmanagement.domain.project.repository.BatchRepository
 import life.qbic.projectmanagement.domain.project.sample.Batch
 import life.qbic.projectmanagement.domain.project.sample.BatchId
 import life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered
-import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered
 import spock.lang.Specification
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Tests for batch domain service behaviour.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class BatchDomainServiceSpec extends Specification {
 
@@ -47,7 +44,7 @@ class BatchDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(batchRegistered)
 
         when:
-        Result<Batch, BatchDomainService.ResponseCode> result = batchDomainService.register("test", [], false)
+        Result<Batch, BatchDomainService.ResponseCode> result = batchDomainService.register("test", false)
 
         then:
         batchRegistered.batchIdOfEvent.equals(result.getValue().batchId())
