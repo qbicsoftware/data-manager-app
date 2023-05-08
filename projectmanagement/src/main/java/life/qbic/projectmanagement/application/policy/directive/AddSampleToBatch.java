@@ -7,11 +7,12 @@ import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered;
 import org.jobrunr.scheduling.JobScheduler;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Directive: Add Sample to Batch</b>
+ * <p>
+ * After a sample has been registered and assigned to a batch, we need to update the batch and add
+ * the sample reference of the newly registered sample.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered> {
 
@@ -19,7 +20,8 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
 
   private final JobScheduler jobScheduler;
 
-  public AddSampleToBatch(BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
+  public AddSampleToBatch(BatchRegistrationService batchRegistrationService,
+      JobScheduler jobScheduler) {
     this.batchRegistrationService = batchRegistrationService;
     this.jobScheduler = jobScheduler;
   }
@@ -31,6 +33,7 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
 
   @Override
   public void handleEvent(SampleRegistered event) {
-    jobScheduler.enqueue(() -> batchRegistrationService.addSampleToBatch(event.registeredSample(), event.assignedBatch()));
+    jobScheduler.enqueue(() -> batchRegistrationService.addSampleToBatch(event.registeredSample(),
+        event.assignedBatch()));
   }
 }
