@@ -112,12 +112,24 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
+      spreadsheet.setActiveSheetProtected("pwd");
       switch (metaDataTypes) {
         case PROTEOMICS -> addProteomicsSheet(spreadsheet);
         case LIGANDOMICS -> addLigandomicsSheet(spreadsheet);
         case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet);
         case METABOLOMICS -> addMetabolomicsSheet(spreadsheet);
       }
+    }
+
+    private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow, int maxRow) {
+      List<Cell> updatedCells = new ArrayList<Cell>();
+      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+      unLockedStyle.setLocked(false);
+      for (int i = minRow; i <= maxRow; i++) {
+        Cell cell = spreadsheet.createCell(i, column, "");
+        cell.setCellStyle(unLockedStyle);
+      }
+      spreadsheet.refreshCells(updatedCells);
     }
 
     private void setAndStyleHeader(Spreadsheet spreadsheet, List<String> header) {
@@ -161,8 +173,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
       //TODO this should be known from experimental groups and sample size
       int maximumNumberOfSamples = 100;
-      dropdownCellFactory.fromColIndex(0).toColIndex(0);
-      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1);
+      int firstDataRow = 1;
+      int dropDownColumn = 0;
+      unlockColumn(spreadsheet, dropDownColumn, firstDataRow, maximumNumberOfSamples+firstDataRow);
+      dropdownCellFactory.fromColIndex(dropDownColumn).toColIndex(dropDownColumn);
+      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+firstDataRow);
       dropdownCellFactory.withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }

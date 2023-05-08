@@ -56,13 +56,13 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   }
 
   @Override
-  public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
-      Sheet sheet) {
+  public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
+      Spreadsheet spreadsheet, Sheet sheet) {
     if (spreadsheet.getActiveSheetIndex() == 0
-        && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex && columnIndex <= toColIndex) {
-      if(cell==null || cell.getStringCellValue().isEmpty()) {
-        return initCustomComboBox(rowIndex, columnIndex,
-            spreadsheet);
+        && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex
+        && columnIndex <= toColIndex) {
+      if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
+        return initCustomComboBox(rowIndex, columnIndex, spreadsheet);
       }
     }
     return null;
@@ -75,9 +75,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
-  private Component initCustomComboBox(int rowIndex, int columnIndex,
-      Spreadsheet spreadsheet) {
-
+  private Component initCustomComboBox(int rowIndex, int columnIndex, Spreadsheet spreadsheet) {
     ComboBox analysisType = new ComboBox(dropDownLabel, dropdownItems);
     analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
         spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
