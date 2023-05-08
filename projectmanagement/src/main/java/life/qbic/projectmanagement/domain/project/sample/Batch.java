@@ -37,9 +37,9 @@ public class Batch {
   }
 
   private Batch(BatchId id, String label, Collection<SampleId> sampleIds, boolean isPilot) {
-    this.id = id;
-    this.label = label;
-    this.sampleIds = sampleIds.stream().toList();
+    this.id = Objects.requireNonNull(id);
+    this.label = Objects.requireNonNull(label);
+    this.sampleIds = Objects.requireNonNull(sampleIds.stream().toList());
     this.pilot = isPilot;
   }
 
