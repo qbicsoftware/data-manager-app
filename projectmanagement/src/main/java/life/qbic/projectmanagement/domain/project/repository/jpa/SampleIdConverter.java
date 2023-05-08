@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.project.repository.jpa;
 
 import jakarta.persistence.AttributeConverter;
-import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
 
 /**
