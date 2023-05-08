@@ -21,24 +21,18 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 @Entity(name = "sample")
 public class Sample {
 
-  @EmbeddedId
-  private SampleId id;
-
-  private String label;
-
   @Embedded
   private BatchId assignedBatch;
-
-  private Long experimentalGroupId;
-
-  @Embedded
-  private ExperimentId experimentId;
-
-  @Embedded
-  private SampleOrigin sampleOrigin;
-
   @Embedded
   private BiologicalReplicateId biologicalReplicateId;
+  @Embedded
+  private ExperimentId experimentId;
+  private Long experimentalGroupId;
+  @EmbeddedId
+  private SampleId id;
+  private String label;
+  @Embedded
+  private SampleOrigin sampleOrigin;
 
   private Sample(
       SampleId id, BatchId assignedBatch, String label, ExperimentId experimentId,
