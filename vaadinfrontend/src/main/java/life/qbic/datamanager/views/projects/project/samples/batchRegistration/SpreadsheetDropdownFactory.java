@@ -4,6 +4,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -17,51 +19,20 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  private String dropDownLabel = "";
+  List<DropDownColumn> dropDownColumns = new ArrayList<>();
 
-  private List<String> dropdownItems;
-  private int fromRowIndex = 0;
-  private int fromColIndex = 0;
-  private int toRowIndex = 1000;
-  private int toColIndex = 1000;
-
-  public SpreadsheetDropdownFactory withDropdownLabel(String label) {
-    this.dropDownLabel = label;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory withItems(List<String> items) {
-    this.dropdownItems = items;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory fromRowIndex(int i) {
-    this.fromRowIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory toRowIndex(int i) {
-    this.toRowIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory fromColIndex(int i) {
-    this.fromColIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory toColIndex(int i) {
-    this.toColIndex = i;
-    return this;
+  public void addDropdownColumn(DropDownColumn column) {
+    this.dropDownColumns.add(column);
   }
 
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet) {
-    if (spreadsheet.getActiveSheetIndex() == 0
-        && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex && columnIndex <= toColIndex) {
+    DropDownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
+
+    if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
       if(cell==null || cell.getStringCellValue().isEmpty()) {
-        return initCustomComboBox(rowIndex, columnIndex,
+        return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
     }
@@ -75,10 +46,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
-  private Component initCustomComboBox(int rowIndex, int columnIndex,
+  private Component initCustomComboBox(DropDownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
-
-    ComboBox analysisType = new ComboBox(dropDownLabel, dropdownItems);
+    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), dropDownColumn.getItems());
     analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
         spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
     return analysisType;
@@ -88,6 +58,15 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
+  }
+
+  private DropDownColumn findColumnInRange(int rowIndex, int columnIndex) {
+    for(DropDownColumn dropDown : dropDownColumns) {
+      if(dropDown.isWithInRange(rowIndex, columnIndex)) {
+        return dropDown;
+      }
+    }
+    return null;
   }
 
 }

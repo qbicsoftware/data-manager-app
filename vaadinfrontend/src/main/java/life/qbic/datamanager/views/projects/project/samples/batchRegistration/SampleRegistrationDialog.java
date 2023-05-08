@@ -64,7 +64,7 @@ public class SampleRegistrationDialog extends Dialog {
   }
 
   private void initSampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
-    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService);
+    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService, null);
   }
 
   public void addSampleRegistrationEventListener(

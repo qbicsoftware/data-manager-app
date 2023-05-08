@@ -9,10 +9,12 @@ import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -29,10 +31,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
   private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
 
-  SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService) {
+  SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService, @Autowired ExperimentInformationService experimentInformationService) {
     initContent();
     this.setSizeFull();
-    sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
+    sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService, experimentInformationService);
     sampleMetadataLayoutHandler = new SampleMetadataLayoutHandler();
   }
 
@@ -106,17 +108,20 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private static class SampleRegistrationSheetBuilder {
 
     private final SampleRegistrationService sampleRegistrationService;
+    private final ExperimentInformationService experimentInformationService;
 
-    public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
+    public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService,
+        ExperimentInformationService experimentInformationService) {
       this.sampleRegistrationService = sampleRegistrationService;
+      this.experimentInformationService = experimentInformationService;
     }
 
     public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
       switch (metaDataTypes) {
-        case PROTEOMICS -> addProteomicsSheet(spreadsheet);
-        case LIGANDOMICS -> addLigandomicsSheet(spreadsheet);
-        case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet);
-        case METABOLOMICS -> addMetabolomicsSheet(spreadsheet);
+        case PROTEOMICS -> addProteomicsSheet(spreadsheet, sampleRegistrationService.retrieveProteomics());
+        case LIGANDOMICS -> addLigandomicsSheet(spreadsheet, sampleRegistrationService.retrieveLigandomics());
+        case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet, sampleRegistrationService.retrieveGenomics());
+        case METABOLOMICS -> addMetabolomicsSheet(spreadsheet, sampleRegistrationService.retrieveMetabolomics());
       }
     }
 
@@ -140,31 +145,90 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       spreadsheet.refreshCells(updatedCells);
     }
 
-    private void addProteomicsSheet(Spreadsheet spreadsheet) {
-      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveProteomics());
-      spreadsheet.reload();
-    }
-
-    private void addMetabolomicsSheet(Spreadsheet spreadsheet) {
-      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveMetabolomics());
-      spreadsheet.reload();
-    }
-
-    private void addLigandomicsSheet(Spreadsheet spreadsheet) {
-      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveLigandomics());
-      spreadsheet.reload();
-    }
-
-    private void addGenomicsSheet(Spreadsheet spreadsheet) {
-      setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveGenomics());
+    private void addProteomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+      setAndStyleHeader(spreadsheet, header);
       spreadsheet.reload();
       SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
-      //TODO this should be known from experimental groups and sample size
-      int maximumNumberOfSamples = 100;
-      dropdownCellFactory.fromColIndex(0).toColIndex(0);
-      dropdownCellFactory.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1);
-      dropdownCellFactory.withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
+      handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
+    }
+
+    private void addMetabolomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+      setAndStyleHeader(spreadsheet, header);
+      spreadsheet.reload();
+      SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
+      handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
+      spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
+    }
+
+    private void addLigandomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+      setAndStyleHeader(spreadsheet, header);
+      spreadsheet.reload();
+      SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
+      handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
+      spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
+    }
+
+    private void addGenomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+      setAndStyleHeader(spreadsheet, header);
+      spreadsheet.reload();
+      SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
+      //List<ExperimentalGroupDTO> groups = experimentInformationService.getExperimentalGroups(
+          //ExperimentId.parse("idbla"));
+      int maximumNumberOfSamples = 10;//groups.stream().map(ExperimentalGroupDTO::sampleSize)
+         // .mapToInt(Integer::valueOf).sum();
+      DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
+      techColumn.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1).atColIndex(0);
+
+      dropdownCellFactory.addDropdownColumn(techColumn);
+      handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
+      spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
+    }
+
+    /**
+     * Creates and adds species and specimen Dropdown columns to a spreadsheet via a provided
+     * SpreadsheetDropdownFactory dropdown column objects are only created if more than one species
+     * or specimen is part of this experiment. Otherwise, the value is added directly to the
+     * respective cells.
+     */
+    private void handleCommonMetadata(List<String> header, Spreadsheet spreadsheet,
+        SpreadsheetDropdownFactory dropdownCellFactory) {
+      int speciesColumn = header.indexOf("Species");
+      int specimenColumn = header.indexOf("Specimen");
+
+      /*
+      List<String> species = experimentInformationService.getSpeciesOfExperiment(
+          ExperimentId.parse("idbla")).stream().map(Species::value).toList();
+      List<String> specimens = experimentInformationService.getSpecimensOfExperiment(
+          ExperimentId.parse("idbla")).stream().map(Specimen::value).toList();
+*/
+      List<String> species = Arrays.asList("Canis lupus");
+      List<String> specimens = Arrays.asList("Whole Blood", "Urine");
+      int numberOfSamples = 100;
+
+      List<Cell> updatedCells = new ArrayList<Cell>();
+
+      if(species.size() == 1) {
+        for (int rowIndex = 1; rowIndex <= numberOfSamples+1; rowIndex++) {
+          Cell cell = spreadsheet.createCell(rowIndex, speciesColumn, species.get(0));
+          updatedCells.add(cell);
+        }
+      } else {
+        DropDownColumn speciesDropdown = new DropDownColumn().withItems(species);
+        speciesDropdown.fromRowIndex(1).toRowIndex(numberOfSamples + 1).atColIndex(speciesColumn);
+        dropdownCellFactory.addDropdownColumn(speciesDropdown);
+      }
+      if(specimens.size() == 1) {
+        for (int rowIndex = 1; rowIndex <= numberOfSamples+1; rowIndex++) {
+          Cell cell = spreadsheet.createCell(rowIndex, specimenColumn, specimens.get(0));
+          updatedCells.add(cell);
+        }
+      } else {
+        DropDownColumn specimenDropdown = new DropDownColumn().withItems(specimens);
+        specimenDropdown.fromRowIndex(1).toRowIndex(numberOfSamples + 1).atColIndex(specimenColumn);
+        dropdownCellFactory.addDropdownColumn(specimenDropdown);
+      }
+      spreadsheet.refreshCells(updatedCells);
     }
 
   }
