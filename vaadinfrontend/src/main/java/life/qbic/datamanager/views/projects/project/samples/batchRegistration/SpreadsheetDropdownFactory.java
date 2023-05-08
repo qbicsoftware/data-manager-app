@@ -60,9 +60,15 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Sheet sheet) {
     if (spreadsheet.getActiveSheetIndex() == 0
         && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex && columnIndex <= toColIndex) {
-      if(cell==null || cell.getStringCellValue().isEmpty()) {
+      if(cell==null) {
         return initCustomComboBox(rowIndex, columnIndex,
             spreadsheet);
+      } else {
+        String value = cell.getStringCellValue();
+        if(!dropdownItems.contains(value)) {
+          return initCustomComboBox(rowIndex, columnIndex,
+              spreadsheet);
+        }
       }
     }
     return null;
