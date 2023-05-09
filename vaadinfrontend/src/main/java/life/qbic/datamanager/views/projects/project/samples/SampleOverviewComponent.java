@@ -93,7 +93,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     Objects.requireNonNull(sampleInformationService);
     Objects.requireNonNull(sampleRegistrationService);
     addTitle(TITLE);
-    initRegistrationDialog(sampleRegistrationService, experimentInformationService);
+    initRegistrationDialog(sampleRegistrationService);
     initEmptyView();
     initSampleView();
     setSizeFull();
@@ -130,8 +130,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     sampleContentLayout.setVisible(false);
   }
 
-  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService,
-      ExperimentInformationService experimentInformationService) {
+  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
 
     sampleRegistrationDialog = new SampleRegistrationDialog(sampleRegistrationService);
   }

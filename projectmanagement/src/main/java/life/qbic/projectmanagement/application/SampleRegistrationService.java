@@ -15,24 +15,23 @@ public class SampleRegistrationService {
   }
 
   public List<String> retrieveProteomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+    return List.of("Sample label", "Biological replicate id", "Condition", "Species",
+        "Specimen", "Customer comment");
   }
 
   public List<String> retrieveLigandomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+    return List.of("Sample label", "Biological replicate id", "Condition", "Species",
+        "Specimen", "Customer comment");
   }
 
   public List<String> retrieveMetabolomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+    return List.of("Sample label", "Biological replicate id", "Condition", "Species",
+        "Specimen", "Customer comment");
   }
 
   public List<String> retrieveGenomics() {
-    return List.of("Analysis to be performed", "Plate position (e.g. A1)", "Plate title",
-        "Sample label", "Biological replicate reference id", "Species", "Specimen",
-        "FFPE material");
+    return List.of("Analysis to be performed", "Sample label", "Biological replicate id",
+        "Condition", "Species", "Specimen", "Customer comment");
   }
 
 }
