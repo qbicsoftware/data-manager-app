@@ -35,8 +35,6 @@ class SampleCodeJpaRepositorySpec extends Specification{
         then:
         result.isValue()
         result.getValue().code().equals("QTEST001AL")
-        println result.getValue()
-
     }
 
     def "Given a 999 sample statistic entry, generate the next available sample code with letter jump and counter starting with 001"() {
@@ -65,8 +63,6 @@ class SampleCodeJpaRepositorySpec extends Specification{
         then:
         result.isValue()
         result.getValue().code().equals("QTEST001BU")
-        println result.getValue()
-
     }
 
     def "Given a 1998 sample statistic entry, generate the next available sample code with letter jump and counter starting with 001"() {
@@ -78,7 +74,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
 
         and:
         SampleStatisticEntry sampleStatisticEntry = SampleStatisticEntry.create(projectId, ProjectCode.parse("QTEST"))
-        for (int i = 1; i < 1998; i++) {
+        for (int i = 1; i <= 1998; i++) {
             sampleStatisticEntry.drawNextSampleNumber()
         }
 
@@ -93,9 +89,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
 
         then:
         result.isValue()
-        result.getValue().code().equals("QTEST001B")
-        println result.getValue()
-
+        result.getValue().code().equals("QTEST001C5")
     }
 
 }
