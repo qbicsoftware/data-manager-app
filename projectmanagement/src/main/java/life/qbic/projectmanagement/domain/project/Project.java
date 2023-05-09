@@ -192,6 +192,11 @@ public class Project {
     }
   }
 
+  public void setActiveExperiment(ExperimentId experimentId) {
+    activeExperiment = experimentId;
+    lastModified = Instant.now();
+  }
+
   public List<OfferIdentifier> linkedOffers() {
     return linkedOffers.stream().toList();
   }

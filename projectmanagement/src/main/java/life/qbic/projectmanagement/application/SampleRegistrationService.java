@@ -30,8 +30,9 @@ public class SampleRegistrationService {
   }
 
   public List<String> retrieveGenomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+    return List.of("Analysis to be performed", "Plate position (e.g. A1)", "Plate title",
+        "Sample label", "Biological replicate reference id", "Species", "Specimen",
+        "FFPE material");
   }
 
 }

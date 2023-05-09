@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup
 import life.qbic.projectmanagement.domain.project.*
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
 import spock.lang.Specification
 
@@ -110,6 +111,22 @@ class ProjectInformationServiceSpec extends Specification {
 
         then: "the project intent contains the new project objective"
         project.projectIntent.objective().objective() == projectObjective
+
+        and: "the project is updated"
+        1 * projectRepository.update(project)
+    }
+
+    def "Updating the active Experiment via the ProjectInformationService sets the provided ExperimentId as the activeExperiment of the project"() {
+        given:
+        projectRepository.find(project.getId()) >> Optional.of(project)
+        projectRepository.find((ProjectId) _) >> Optional.empty()
+
+        when: "the active experiment is updated for a project"
+        ExperimentId experimentId = ExperimentId.create()
+        projectInformationService.setActiveExperiment(project.getId(), experimentId)
+
+        then: "the project intent contains the new project objective"
+        project.activeExperiment() == experimentId
 
         and: "the project is updated"
         1 * projectRepository.update(project)
