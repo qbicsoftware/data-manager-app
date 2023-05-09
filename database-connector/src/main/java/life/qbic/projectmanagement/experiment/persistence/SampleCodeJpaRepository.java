@@ -49,7 +49,7 @@ public class SampleCodeJpaRepository implements SampleCodeService {
   }
 
   private static char letterForMille(int sampleNumber) {
-    return (char) ((sampleNumber / 999) + 65);
+    return (char) (((sampleNumber -1) / 999) + 65);
   }
 
   private static int remainderCounter(int sampleNumber) {

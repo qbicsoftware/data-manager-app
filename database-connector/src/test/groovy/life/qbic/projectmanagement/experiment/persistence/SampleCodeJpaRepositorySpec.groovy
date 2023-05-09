@@ -37,6 +37,35 @@ class SampleCodeJpaRepositorySpec extends Specification{
         result.getValue().code().equals("QTEST001AL")
     }
 
+    def "Given 998 sample statistic entry, generate the next available sample code with no letter jump and counter starting with 999"() {
+        given:
+        SampleStatistic sampleStatistic = Mock(SampleStatistic.class)
+
+        and:
+        ProjectId projectId = ProjectId.create()
+
+        and:
+        SampleStatisticEntry sampleStatisticEntry = SampleStatisticEntry.create(projectId, ProjectCode.parse("QTEST"))
+        // Prime to 999 sample numbers that have been drawn already
+        for (int i = 1; i <= 998; i++) {
+            sampleStatisticEntry.drawNextSampleNumber()
+        }
+
+        and:
+        sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
+
+        and:
+        def repo = new SampleCodeJpaRepository(sampleStatistic)
+
+        when:
+        def result = repo.generateFor(projectId)
+
+        then:
+        result.isValue()
+        result.getValue().code().equals("QTEST999AW")
+    }
+
+
     def "Given a 999 sample statistic entry, generate the next available sample code with letter jump and counter starting with 001"() {
         given:
         SampleStatistic sampleStatistic = Mock(SampleStatistic.class)
@@ -90,6 +119,33 @@ class SampleCodeJpaRepositorySpec extends Specification{
         then:
         result.isValue()
         result.getValue().code().equals("QTEST001C5")
+    }
+
+    def "Given a 1997 sample statistic entry, generate the next available sample code with letter jump and counter starting with 001"() {
+        given:
+        SampleStatistic sampleStatistic = Mock(SampleStatistic.class)
+
+        and:
+        ProjectId projectId = ProjectId.create()
+
+        and:
+        SampleStatisticEntry sampleStatisticEntry = SampleStatisticEntry.create(projectId, ProjectCode.parse("QTEST"))
+        for (int i = 1; i <= 1997; i++) {
+            sampleStatisticEntry.drawNextSampleNumber()
+        }
+
+        and:
+        sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
+
+        and:
+        def repo = new SampleCodeJpaRepository(sampleStatistic)
+
+        when:
+        def result = repo.generateFor(projectId)
+
+        then:
+        result.isValue()
+        result.getValue().code().equals("QTEST999B7")
     }
 
 }
