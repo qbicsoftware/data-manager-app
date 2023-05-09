@@ -11,7 +11,7 @@ public class DropDownColumn {
 
   private String dropDownLabel = "";
   private List<String> dropdownItems;
-  private int fromRowIndex = 0;
+  private int fromRowIndex = 1;
   private int toRowIndex = 1000;
   private int colIndex = 0;
 
