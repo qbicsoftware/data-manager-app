@@ -11,10 +11,12 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
  * <b>Sample Registration Dialog</b>
@@ -31,7 +33,7 @@ public class SampleRegistrationDialog extends Dialog {
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
-  public SampleRegistrationDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
+  public SampleRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
     add(title);
     title.addClassNames("text-2xl", "font-bold", "text-secondary");
     initSampleMetadataLayout(sampleRegistrationService);
@@ -64,7 +66,7 @@ public class SampleRegistrationDialog extends Dialog {
   }
 
   private void initSampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
-    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService, null);
+    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService);
   }
 
   public void addSampleRegistrationEventListener(
@@ -86,6 +88,10 @@ public class SampleRegistrationDialog extends Dialog {
     List<String> exampleBatch = new ArrayList<>(
         List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
     return exampleBatch;
+  }
+
+  public void setActiveExperiment(Experiment experiment) {
+    sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }
 
   private class RegisterBatchDialogHandler {

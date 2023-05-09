@@ -31,8 +31,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -90,7 +93,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     Objects.requireNonNull(sampleInformationService);
     Objects.requireNonNull(sampleRegistrationService);
     addTitle(TITLE);
-    initRegistrationDialog(sampleRegistrationService);
+    initRegistrationDialog(sampleRegistrationService, experimentInformationService);
     initEmptyView();
     initSampleView();
     setSizeFull();
@@ -127,7 +130,9 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     sampleContentLayout.setVisible(false);
   }
 
-  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
+  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService,
+      ExperimentInformationService experimentInformationService) {
+
     sampleRegistrationDialog = new SampleRegistrationDialog(sampleRegistrationService);
   }
 
@@ -249,16 +254,42 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId).ifPresent(this::getSampleDataForProject);
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if(potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+
+        generateExperimentTabs(project);
+
+        Optional<Experiment> potentialExperiment = experimentInformationService.find(
+            project.activeExperiment());
+        if(potentialExperiment.isPresent()) {
+          sampleRegistrationDialog.setActiveExperiment(potentialExperiment.get());
+        }
+      }
     }
 
-    private void getSampleDataForProject(Project project) {
-      generateExperimentTabs(project);
+    private boolean hasExperimentalGroupsDefined() {
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if (potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+        return !experimentInformationService.getExperimentalGroups(project.activeExperiment())
+            .isEmpty();
+      }
+      return false;
     }
 
-    //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> sampleRegistrationDialog.open());
+      registerBatchButton.addClickListener(event -> {
+        if(hasExperimentalGroupsDefined()) {
+          sampleRegistrationDialog.open();
+        } else {
+          InformationMessage successMessage = new InformationMessage("No experimental groups are defined",
+              "You need to define experimental groups before adding samples.");
+          StyledNotification notification = new StyledNotification(successMessage);
+          notification.open();
+        }
+      });
+      //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 

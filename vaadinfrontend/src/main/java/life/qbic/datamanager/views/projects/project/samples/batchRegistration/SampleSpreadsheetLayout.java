@@ -10,20 +10,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
-import life.qbic.projectmanagement.domain.project.experiment.Condition;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.VariableName;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -40,10 +37,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
   private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
 
-  SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService, @Autowired ExperimentInformationService experimentInformationService) {
+  SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
-    sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService, experimentInformationService);
+    sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
     sampleMetadataLayoutHandler = new SampleMetadataLayoutHandler();
   }
 
@@ -82,6 +79,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     return sampleMetadataLayoutHandler.isInputValid();
   }
 
+  public void setActiveExperiment(Experiment experiment) {
+    SampleRegistrationSheetBuilder.setActiveExperiment(experiment);
+  }
+
   private class SampleMetadataLayoutHandler {
 
     private final List<Binder<?>> binders = new ArrayList<>();
@@ -117,13 +118,15 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private static class SampleRegistrationSheetBuilder {
 
     private final SampleRegistrationService sampleRegistrationService;
-    private final ExperimentInformationService experimentInformationService;
     public final String COL_SPACER = "___";
+    private static Experiment activeExperiment;
 
-    public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService,
-        ExperimentInformationService experimentInformationService) {
+    public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
       this.sampleRegistrationService = sampleRegistrationService;
-      this.experimentInformationService = experimentInformationService;
+    }
+
+    public static void setActiveExperiment(Experiment experiment) {
+      activeExperiment = experiment;
     }
 
     public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
@@ -138,22 +141,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }
 
-    private void addExperimentalVariableColumns(Spreadsheet spreadsheet,
-        SpreadsheetDropdownFactory dropdownCellFactory) {
-
-      /*
-      List<String> species = experimentInformationService.getSpeciesOfExperiment(
-          ExperimentId.parse("my experiment id")).stream().map(Species::value).toList();
-      List<String> specimens = experimentInformationService.getSpecimensOfExperiment(
-          ExperimentId.parse("my experiment id")).stream().map(Specimen::value).toList();
-          List<ExperimentalGroupDTO> groups = experimentInformationService.getExperimentalGroups(
-          ExperimentId.parse("my experiment id"));
-*/
-
-    }
-
     private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow, int maxRow) {
-      List<Cell> updatedCells = new ArrayList<Cell>();
+      List<Cell> updatedCells = new ArrayList<>();
       CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
       unLockedStyle.setLocked(false);
       for (int i = minRow; i <= maxRow; i++) {
@@ -169,7 +158,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       font.setBold(true);
       boldHeaderStyle.setFont(font);
 
-      List<Cell> updatedCells = new ArrayList<Cell>();
+      List<Cell> updatedCells = new ArrayList<>();
       int columnIndex = 0;
       for (String columnHeader : header) {
         Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader+COL_SPACER);
@@ -207,26 +196,23 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         SpreadsheetDropdownFactory dropdownCellFactory) {
       setAndStyleHeader(spreadsheet, header);
       spreadsheet.reload();
-      //List<ExperimentalGroupDTO> groups = experimentInformationService.getExperimentalGroups(
-          //ExperimentId.parse("my experiment id"));
-      int maximumNumberOfSamples = 10;//groups.stream().map(ExperimentalGroupDTO::sampleSize)
-         // .mapToInt(Integer::valueOf).sum();
+      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
+      int numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize).mapToInt(Integer::intValue).sum();
+
       DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
-      techColumn.fromRowIndex(1).toRowIndex(maximumNumberOfSamples+1).atColIndex(0);
+      techColumn.fromRowIndex(1).toRowIndex(numberOfSamples).atColIndex(0);
 
       dropdownCellFactory.addDropdownColumn(techColumn);
       handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
     }
 
-    Condition createCondition(String variableName, String valueName, String valueUnit) {
-      Condition condition;
-      if (valueUnit != null) {
-        condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName)), VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName, valueUnit))));
-      } else {
-        condition = Condition.create(List.of(VariableLevel.create(VariableName.create(variableName), ExperimentalValue.create(valueName))));
-      }
-      return condition;
-    }
+    //TODO check for max group size
+    /*
+    InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
+        "Please define all of your experimental variables before adding groups.");
+    StyledNotification notification = new StyledNotification(successMessage);
+        notification.open();
+        */
 
     /**
      * Creates and adds species and specimen Dropdown columns to a spreadsheet via a provided
@@ -236,89 +222,60 @@ class SampleSpreadsheetLayout extends VerticalLayout {
      */
     private void handleCommonMetadata(List<String> header, Spreadsheet spreadsheet,
         SpreadsheetDropdownFactory dropdownCellFactory) {
-      int speciesColumn = header.indexOf("Species");
-      int specimenColumn = header.indexOf("Specimen");
-      int conditionColumn = header.indexOf("Condition");
 
-      /*
-      List<String> species = experimentInformationService.getSpeciesOfExperiment(
-          ExperimentId.parse("my experiment id")).stream().map(Species::value).toList();
-      List<String> specimens = experimentInformationService.getSpecimensOfExperiment(
-          ExperimentId.parse("my experiment id")).stream().map(Specimen::value).toList();
-          List<ExperimentalGroupDTO> groups = experimentInformationService.getExperimentalGroups(
-          ExperimentId.parse("my experiment id"));
-*/
-      List<String> species = Arrays.asList("Canis lupus");
-      List<String> specimens = Arrays.asList("Whole Blood", "Urine");
-      int numberOfSamples = 100;
+      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
+      int numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize).mapToInt(Integer::intValue).sum();
 
-      // fix the width of dropdown columns
-      String longestString = species.stream().max(Comparator.comparingInt(String::length)).get();
-      Cell speciesCell = spreadsheet.createCell(1, speciesColumn, longestString+COL_SPACER);
-      spreadsheet.autofitColumn(speciesColumn);
+      List<String> species = activeExperiment.getSpecies().stream().map(Species::label).toList();
+      List<String> specimens = activeExperiment.getSpecimens().stream().map(Specimen::label).toList();
 
-      longestString = specimens.stream().max(Comparator.comparingInt(String::length)).get();
-      Cell specimenCell = spreadsheet.createCell(1, specimenColumn, longestString+COL_SPACER);
-      spreadsheet.autofitColumn(specimenColumn);
-
-      List<Cell> updatedCells = new ArrayList<Cell>();
-
-      if(species.size() == 1) {
-        for (int rowIndex = 1; rowIndex <= numberOfSamples+1; rowIndex++) {
-          Cell cell = spreadsheet.createCell(rowIndex, speciesColumn, species.get(0));
-          updatedCells.add(cell);
-        }
-      } else {
-        DropDownColumn speciesDropdown = new DropDownColumn().withItems(species);
-        speciesDropdown.toRowIndex(numberOfSamples + 1).atColIndex(speciesColumn);
-        dropdownCellFactory.addDropdownColumn(speciesDropdown);
-      }
-      if(specimens.size() == 1) {
-        for (int rowIndex = 1; rowIndex <= numberOfSamples+1; rowIndex++) {
-          Cell cell = spreadsheet.createCell(rowIndex, specimenColumn, specimens.get(0));
-          updatedCells.add(cell);
-        }
-      } else {
-        DropDownColumn specimenDropdown = new DropDownColumn().withItems(specimens);
-        specimenDropdown.toRowIndex(numberOfSamples + 1).atColIndex(specimenColumn);
-        dropdownCellFactory.addDropdownColumn(specimenDropdown);
-      }
-
-      Condition test1 = Condition.create(List.of(VariableLevel.create(VariableName.create("Color"), ExperimentalValue.create("red")),
-          VariableLevel.create(VariableName.create("Time"), ExperimentalValue.create("10", "Seconds"))));
-
-      Condition test2 = Condition.create(List.of(VariableLevel.create(VariableName.create("Color"), ExperimentalValue.create("blue")),
-          VariableLevel.create(VariableName.create("Time"), ExperimentalValue.create("10", "Seconds"))));
-
-      ExperimentalGroup eGroup1 = ExperimentalGroup.create(test1, 12);
-      ExperimentalGroup eGroup2 = ExperimentalGroup.create(test2, 8);
-
-      List<ExperimentalGroupDTO> groups = new ArrayList<>();
-
-      groups.add(new ExperimentalGroupDTO(eGroup1.condition().getVariableLevels(), eGroup1.sampleSize()));
-      groups.add(new ExperimentalGroupDTO(eGroup2.condition().getVariableLevels(), eGroup2.sampleSize()));
+      fillSampleSourceCells(header.indexOf("Species"), species, spreadsheet, dropdownCellFactory, numberOfSamples);
+      fillSampleSourceCells(header.indexOf("Specimen"), specimens, spreadsheet, dropdownCellFactory, numberOfSamples);
 
       List<String> conditionItems = new ArrayList<>();
 
       // create condition items for dropdown and fix cell width
-      for(ExperimentalGroupDTO group : groups) {
+      for(ExperimentalGroup group : groups) {
         List<String> varStrings = new ArrayList<>();
-        for(VariableLevel level : group.levels()) {
+        for(VariableLevel level : group.condition().getVariableLevels()) {
           String varName = level.variableName().value();
           String value = level.experimentalValue().value();
           varStrings.add(varName+":"+value);
         }
         conditionItems.add(String.join("; ", varStrings));
       }
-      longestString = conditionItems.stream().max(Comparator.comparingInt(String::length)).get();
+      String longestString = conditionItems.stream().max(Comparator.comparingInt(String::length)).get();
+      int conditionColumn = header.indexOf("Condition");
 
       spreadsheet.createCell(1, conditionColumn, longestString+COL_SPACER+COL_SPACER);
       spreadsheet.autofitColumn(conditionColumn);
 
       DropDownColumn variableDropdown = new DropDownColumn().withItems(conditionItems);
-      variableDropdown.toRowIndex(numberOfSamples + 1).atColIndex(conditionColumn);
+      variableDropdown.toRowIndex(numberOfSamples).atColIndex(conditionColumn);
       dropdownCellFactory.addDropdownColumn(variableDropdown);
 
+    }
+
+    private void fillSampleSourceCells(int colIndex, List<String> items, Spreadsheet spreadsheet,
+        SpreadsheetDropdownFactory dropdownCellFactory, int numberOfSamples) {
+
+      // fix the width of dropdown columns
+      String longestString = items.stream().max(Comparator.comparingInt(String::length)).get();
+      Cell speciesCell = spreadsheet.createCell(1, colIndex, longestString+COL_SPACER);
+      spreadsheet.autofitColumn(colIndex);
+
+      List<Cell> updatedCells = new ArrayList<>();
+
+      if(items.size() == 1) {
+        for (int rowIndex = 1; rowIndex <= numberOfSamples; rowIndex++) {
+          Cell cell = spreadsheet.createCell(rowIndex, colIndex, items.get(0));
+          updatedCells.add(cell);
+        }
+      } else {
+        DropDownColumn itemDropdown = new DropDownColumn().withItems(items);
+        itemDropdown.toRowIndex(numberOfSamples).atColIndex(colIndex);
+        dropdownCellFactory.addDropdownColumn(itemDropdown);
+      }
       spreadsheet.refreshCells(updatedCells);
     }
 
