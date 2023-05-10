@@ -22,6 +22,7 @@ import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -105,16 +106,15 @@ public class AppConfig {
   public SampleRegisteredPolicy sampleRegisteredPolicy(
       BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
     var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
-    jobScheduler.enqueue(() -> System.out.println("Hello Sven"));
     return new SampleRegisteredPolicy(addSampleToBatch);
   }
 
 
+  @Bean
   public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
-      JobScheduler jobScheduler, ProjectInformationService projectInformationService) {
+      JobScheduler jobScheduler, ProjectRepository projectRepository) {
     var createNewSampleStatisticsEntry = new CreateNewSampleStatisticsEntry(sampleCodeService, jobScheduler,
-        projectInformationService);
-    jobScheduler.enqueue(() -> System.out.println("Hello Sven"));
+        projectRepository);
     return new ProjectRegisteredPolicy(createNewSampleStatisticsEntry);
   }
 }

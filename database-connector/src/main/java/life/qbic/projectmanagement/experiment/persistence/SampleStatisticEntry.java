@@ -1,7 +1,11 @@
 package life.qbic.projectmanagement.experiment.persistence;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
@@ -13,25 +17,28 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 public class SampleStatisticEntry {
 
   @Id
-  private Long id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private long id;
   @Embedded
+  @AttributeOverride(name = "value", column = @Column(name = "projectCode"))
   private ProjectCode projectCode;
   @Embedded
   private ProjectId projectId;
+
   private int sampleCounter;
 
-  public SampleStatisticEntry(ProjectId projectId, ProjectCode projectCode, int sampleCounter) {
+  private SampleStatisticEntry(ProjectId projectId, ProjectCode projectCode, int sampleCounter) {
     this.projectId = Objects.requireNonNull(projectId);
     this.projectCode = Objects.requireNonNull(projectCode);
     this.sampleCounter = sampleCounter;
   }
 
-  public static SampleStatisticEntry create(ProjectId projectId, ProjectCode projectCode) {
-    return new SampleStatisticEntry(projectId, projectCode, 0);
-  }
-
   protected SampleStatisticEntry() {
 
+  }
+
+  public static SampleStatisticEntry create(ProjectId projectId, ProjectCode projectCode) {
+    return new SampleStatisticEntry(projectId, projectCode, 0);
   }
 
   public int drawNextSampleNumber() {
