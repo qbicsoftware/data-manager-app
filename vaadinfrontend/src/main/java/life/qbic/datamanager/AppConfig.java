@@ -15,6 +15,10 @@ import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -91,5 +95,11 @@ public class AppConfig {
   @Bean
   public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
     return new NewPassword(userRegistrationService);
+  }
+
+  @Bean
+  public SampleRegisteredPolicy sampleRegisteredPolicy(BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
+    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
+    return new SampleRegisteredPolicy(addSampleToBatch);
   }
 }

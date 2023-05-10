@@ -8,7 +8,6 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -27,8 +26,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -36,101 +35,63 @@ import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
- * <b>Create Project Component</b>
+ * <b>Project Creation Dialog</b>
  *
- * <p>Component to create a project based on a project intent</p>
+ * <p>Dialog to create a project based on a project intent</p>
  *
  * @since 1.0.0
  */
 @SpringComponent
 @UIScope
-public class ProjectInformationDialog extends Dialog {
+public class ProjectCreationDialog extends Dialog {
 
   @Serial
   private static final long serialVersionUID = 6132538769263078943L;
+  public final ComboBox<OfferPreview> offerSearchField = new ComboBox<>("Offer");
+  private HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
+  private final TextField codeField = new TextField("Code");
+  private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
+  private final FormLayout formLayout = new FormLayout();
+  private final TextField titleField = new TextField("Title");
+  private final TextArea projectObjective = new TextArea("Objective");
+  private final DefineExperimentComponent defineExperimentComponent;
+  private final VerticalLayout projectContactsLayout = new VerticalLayout();
+  public final ComboBox<PersonReference> principalInvestigator = new ComboBox<>(
+      "Principal Investigator");
+  public final ComboBox<PersonReference> responsiblePerson = new ComboBox<>(
+      "Project Responsible (optional)");
+  public final ComboBox<PersonReference> projectManager = new ComboBox<>("Project Manager");
+  private final Button createButton = new Button("Create");
+  private final Button cancelButton = new Button("Cancel");
   private final Handler handler;
-  public ComboBox<OfferPreview> offerSearchField;
-  private HorizontalLayout codeAndTitleLayout;
-  private final TextField codeField;
-  private final Button generateCodeButton;
-  private final TextField titleField;
-  private final Button createButton;
-  private final Button cancelButton;
-  private final FormLayout formLayout;
-  private final VerticalLayout experimentalDesignLayout;
-  private final TextArea experimentalDesignField;
-  private final TextArea projectObjective;
-  private final VerticalLayout projectContactsLayout;
-  public final ComboBox<PersonReference> principalInvestigator;
-  private final HorizontalLayout sampleCountLayout;
-  public final MultiSelectComboBox<Species> speciesBox;
-  public final MultiSelectComboBox<Specimen> specimenBox;
-  public final MultiSelectComboBox<Analyte> analyteBox;
-  public final ComboBox<PersonReference> responsiblePerson;
-  public final ComboBox<PersonReference> projectManager;
 
-  public ProjectInformationDialog() {
-    offerSearchField = new ComboBox<>("Offer");
-    formLayout = new FormLayout();
+  public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
 
-    codeField = new TextField("Code");
-    codeField.setRequired(true);
-    codeField.setHelperText("Q and 4 letters/numbers");
-    defaultProjectCodeCreation();
-
-    generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
-    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
-
-    titleField = new TextField("Title");
-    titleField.setRequired(true);
-
-    projectObjective = new TextArea("Objective");
+    initCodeAndTitleLayout();
     projectObjective.setRequired(true);
 
-    //ToDo Remove Field once experimental design backend is connected
-    experimentalDesignField = new TextArea("Experimental Design Description");
-    experimentalDesignLayout = new VerticalLayout();
-    initExperimentalDesignLayout();
+    defineExperimentComponent = new DefineExperimentComponent(experimentalDesignSearchService);
+    defineExperimentComponent.hideNameField();
 
-    //Layout with max width to keep the SampleCountField in a separate row
-    sampleCountLayout = new HorizontalLayout();
-    speciesBox = new MultiSelectComboBox<>("Species");
-    speciesBox.setRequired(true);
-    specimenBox = new MultiSelectComboBox<>("Specimen");
-    specimenBox.setRequired(true);
-    analyteBox = new MultiSelectComboBox<>("Analyte");
-    analyteBox.setRequired(true);
-
-    projectContactsLayout = new VerticalLayout();
     initProjectContactsLayout();
 
-    principalInvestigator = new ComboBox<>("Principal Investigator");
     principalInvestigator.setPlaceholder("Select a principal investigator");
     principalInvestigator.setRequired(true);
 
-    responsiblePerson = new ComboBox<>("Project Responsible (optional)");
     responsiblePerson.setPlaceholder("Select Project Responsible");
     responsiblePerson.setHelperText("Should be contacted about project related questions");
     //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
     responsiblePerson.setClearButtonVisible(true);
 
-    projectManager = new ComboBox<>("Project Manager");
     projectManager.setPlaceholder("Select a project manager");
     projectManager.setRequired(true);
 
-    createButton = new Button("Create");
-    cancelButton = new Button("Cancel");
     configureDialogLayout();
     initForm();
     styleForm();
     handler = new Handler();
-    handler.handle();
   }
 
   public void addProjectCreationEventListener(
@@ -139,43 +100,19 @@ public class ProjectInformationDialog extends Dialog {
   }
 
   public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
+      ComponentEventListener<UserCancelEvent<ProjectCreationDialog>> listener) {
     handler.addUserCancelEventListener(listener);
   }
 
   public ProjectCreationContent content() {
-    return new ProjectCreationContent(codeField.getValue(), offerSearchField.getPattern(),
-        titleField.getValue(),
-        projectObjective.getValue(), speciesBox.getValue().stream().toList(),
-        specimenBox.getValue().stream().toList(), analyteBox.getValue().stream().toList(),
-        experimentalDesignField.getValue(), principalInvestigator.getValue(),
-        responsiblePerson.getValue(),
-        projectManager.getValue());
-  }
-
-
-  private void styleForm() {
-    formLayout.setClassName("create-project-form");
-    styleSearchBox();
-
-    codeField.setMaxWidth(20, Unit.VW);
-    offerSearchField.setMaxWidth(30, Unit.VW);
-
-    titleField.setMaxWidth(60, Unit.VW);
-    projectObjective.setMaxWidth(60, Unit.VW);
-
-    speciesBox.addClassName("chip-badge");
-    specimenBox.addClassName("chip-badge");
-    analyteBox.addClassName("chip-badge");
-    experimentalDesignField.setMaxWidth(60, Unit.VW);
-
-    speciesBox.setMaxWidth(60, Unit.VW);
-    specimenBox.setMaxWidth(60, Unit.VW);
-    analyteBox.setMaxWidth(60, Unit.VW);
-
-    principalInvestigator.setMaxWidth(60, Unit.VW);
-    responsiblePerson.setMaxWidth(60, Unit.VW);
-    projectManager.setMaxWidth(60, Unit.VW);
+    return new ProjectCreationContent(offerSearchField.getPattern(),
+        codeField.getValue(), titleField.getValue(), projectObjective.getValue(),
+        defineExperimentComponent.experimentNameField.getValue(),
+        defineExperimentComponent.speciesBox.getValue().stream().toList(),
+        defineExperimentComponent.specimenBox.getValue().stream().toList(),
+        defineExperimentComponent.analyteBox.getValue().stream().toList(),
+        defineExperimentComponent.experimentalDesignDescription.getValue(),
+        principalInvestigator.getValue(), responsiblePerson.getValue(), projectManager.getValue());
   }
 
   private void configureDialogLayout() {
@@ -187,23 +124,31 @@ public class ProjectInformationDialog extends Dialog {
     this.setMaxWidth(66, Unit.VW);
   }
 
-  private void initForm() {
+  private void initCodeAndTitleLayout() {
     codeAndTitleLayout = new HorizontalLayout();
-    codeAndTitleLayout.setWidthFull();
+    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
+    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    defaultProjectCodeCreation();
+
+    codeField.setMaxWidth(20, Unit.VW);
+    codeField.setRequired(true);
+    codeField.setHelperText("Q and 4 letters/numbers");
+    titleField.setRequired(true);
+
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
-    codeAndTitleLayout.add(offerSearchField);
+    codeAndTitleLayout.add(titleField);
+    titleField.setWidthFull();
     codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-    formLayout.add(codeAndTitleLayout);
+    codeAndTitleLayout.setWidthFull();
+  }
 
-    formLayout.add(titleField);
+  private void initForm() {
+
+    formLayout.add(offerSearchField);
+    formLayout.add(codeAndTitleLayout);
     formLayout.add(projectObjective);
-    formLayout.add(experimentalDesignLayout);
-    formLayout.add(sampleCountLayout);
-    formLayout.add(speciesBox);
-    formLayout.add(specimenBox);
-    formLayout.add(analyteBox);
-    formLayout.add(experimentalDesignField);
+    formLayout.add(defineExperimentComponent);
     formLayout.add(projectContactsLayout);
     formLayout.add(principalInvestigator);
     formLayout.add(responsiblePerson);
@@ -212,22 +157,16 @@ public class ProjectInformationDialog extends Dialog {
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
 
-  private void styleSearchBox() {
-    offerSearchField.setPlaceholder("Search");
-    offerSearchField.setClassName("searchbox");
+  private void styleForm() {
+    formLayout.setClassName("create-project-form");
+    styleSearchBox();
+    formLayout.setMaxWidth(60, Unit.VW);
   }
 
-  private void initExperimentalDesignLayout() {
-    Span experimentHeader = new Span("Experiment");
-    Span experimentDescription = new Span(
-        "Please specify the sample origin information of the samples. Multiple "
-            + "values are allowed!");
-    experimentHeader.addClassName("font-bold");
-    experimentalDesignLayout.setMargin(false);
-    experimentalDesignLayout.setPadding(false);
-    experimentalDesignLayout.addClassName("pt-m");
-    experimentalDesignLayout.add(experimentHeader);
-    experimentalDesignLayout.add(experimentDescription);
+  private void styleSearchBox() {
+    offerSearchField.setMaxWidth(30, Unit.VW);
+    offerSearchField.setPlaceholder("Search");
+    offerSearchField.setClassName("searchbox");
   }
 
   private void initProjectContactsLayout() {
@@ -253,30 +192,21 @@ public class ProjectInformationDialog extends Dialog {
     return titleField.getValue();
   }
 
-  public String getObjective() {
-    return projectObjective.getValue();
-  }
-
-  //ToDo Replace with values from Comboboxes
-  public String getExperimentalDesign() {
-    return experimentalDesignField.getValue();
-  }
-
   /**
    * Resets the values and validity of all components that implement value storing and validity
    * interfaces
    */
   public void reset() {
-    resetChildValues(formLayout);
     resetChildValues(codeAndTitleLayout);
+    resetChildValues(formLayout);
     resetChildValidation(formLayout);
     resetChildValidation(codeAndTitleLayout);
+    defineExperimentComponent.reset();
   }
 
   private void resetChildValues(Component component) {
     component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
         .forEach(comp -> ((HasValue<?, ?>) comp).clear());
-
   }
 
   private void defaultProjectCodeCreation() {
@@ -301,13 +231,9 @@ public class ProjectInformationDialog extends Dialog {
 
     List<Binder<?>> binders = new ArrayList<>();
     private final List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<ProjectInformationDialog>>> cancelListeners =
-        new ArrayList<>();
+    private final List<ComponentEventListener<UserCancelEvent<ProjectCreationDialog>>> cancelListeners = new ArrayList<>();
 
     Handler() {
-    }
-
-    private void handle() {
       restrictInputLength();
       generateProjectCode();
       resetDialogueUponClosure();
@@ -321,13 +247,12 @@ public class ProjectInformationDialog extends Dialog {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
-              new ProjectCreationEvent(ProjectInformationDialog.this, true)));
+              new ProjectCreationEvent(ProjectCreationDialog.this, true)));
         }
       });
       cancelButton.addClickListener(event -> cancelListeners.forEach(
           listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(ProjectInformationDialog.this))));
-
+              new UserCancelEvent<>(ProjectCreationDialog.this))));
     }
 
 
@@ -337,29 +262,16 @@ public class ProjectInformationDialog extends Dialog {
           .withValidator(value -> !value.isBlank(), "Please provide a title")
           .bind(Container::value, Container::setValue);
       Binder<Container<String>> binderObjective = new Binder<>();
-      binderObjective.forField(projectObjective).withValidator(value -> !value.isBlank(),
-          "Please provide an " + "objective").bind(Container::value, Container::setValue);
-      Binder<Container<Set<Species>>> binderSpecies = new Binder<>();
-      binderSpecies.forField(speciesBox).asRequired("Please select at least one species")
-          .bind(Container::value
-              , Container::setValue);
-      Binder<Container<Set<Analyte>>> binderAnalyte = new Binder<>();
-      binderAnalyte.forField(analyteBox).asRequired("Please select at least one analyte")
-          .bind(Container::value
-              , Container::setValue);
-      Binder<Container<Set<Specimen>>> binderSpecimen = new Binder<>();
-      binderSpecimen.forField(specimenBox).asRequired("Please select at least one specimen")
+      binderObjective.forField(projectObjective)
+          .withValidator(value -> !value.isBlank(), "Please provide an " + "objective")
           .bind(Container::value, Container::setValue);
       Binder<Container<PersonReference>> binderPI = new Binder<>();
       binderPI.forField(principalInvestigator).asRequired("Please select at least one PI")
           .bind(Container::value, Container::setValue);
       Binder<Container<PersonReference>> binderPM = new Binder<>();
       binderPM.forField(projectManager).asRequired("Please select at least one PM")
-          .bind(Container::value,
-              Container::setValue);
-      binders.addAll(
-          List.of(binderTitle, binderObjective, binderSpecies, binderAnalyte, binderSpecimen,
-              binderPI, binderPM));
+          .bind(Container::value, Container::setValue);
+      binders.addAll(List.of(binderTitle, binderObjective, binderPI, binderPM));
     }
 
     private void generateProjectCode() {
@@ -374,27 +286,30 @@ public class ProjectInformationDialog extends Dialog {
     public void loadOfferContent(Offer offer) {
       titleField.setValue(offer.projectTitle().title());
       projectObjective.setValue(offer.projectObjective().objective());
-      experimentalDesignField.setValue(offer.experimentalDesignDescription().description());
-
+      defineExperimentComponent.experimentalDesignDescription.setValue(
+          offer.experimentalDesignDescription().description());
     }
 
     private void restrictInputLength() {
       titleField.setMaxLength((int) ProjectTitle.maxLength());
       projectObjective.setMaxLength((int) ProjectObjective.maxLength());
-      experimentalDesignField.setMaxLength((int) ExperimentalDesignDescription.maxLength());
+      defineExperimentComponent.experimentalDesignDescription.setMaxLength(
+          (int) ExperimentalDesignDescription.maxLength());
 
       titleField.setValueChangeMode(ValueChangeMode.EAGER);
       projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-      experimentalDesignField.setValueChangeMode(ValueChangeMode.EAGER);
+      defineExperimentComponent.experimentalDesignDescription.setValueChangeMode(
+          ValueChangeMode.EAGER);
 
       addConsumedLengthHelper(titleField, titleField.getValue());
       addConsumedLengthHelper(projectObjective, projectObjective.getValue());
-      addConsumedLengthHelper(experimentalDesignField, experimentalDesignField.getValue());
+      addConsumedLengthHelper(defineExperimentComponent.experimentalDesignDescription,
+          defineExperimentComponent.experimentalDesignDescription.getValue());
 
       titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
       projectObjective.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-      experimentalDesignField.addValueChangeListener(
+      defineExperimentComponent.experimentalDesignDescription.addValueChangeListener(
           e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
     }
 
@@ -421,7 +336,7 @@ public class ProjectInformationDialog extends Dialog {
 
     protected boolean validateInput() {
       binders.forEach(Binder::validate);
-      return binders.stream().allMatch(Binder::isValid);
+      return binders.stream().allMatch(Binder::isValid) && defineExperimentComponent.isValid();
     }
 
     public boolean isInputValid() {
@@ -434,7 +349,7 @@ public class ProjectInformationDialog extends Dialog {
     }
 
     public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<ProjectInformationDialog>> listener) {
+        ComponentEventListener<UserCancelEvent<ProjectCreationDialog>> listener) {
       this.cancelListeners.add(listener);
     }
   }

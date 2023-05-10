@@ -10,7 +10,7 @@ import java.io.Serial;
  *
  * @since 1.0.0
  */
-public class ProjectCreationEvent extends ComponentEvent<ProjectInformationDialog> {
+public class ProjectCreationEvent extends ComponentEvent<ProjectCreationDialog> {
 
   @Serial
   private static final long serialVersionUID = 1072173555312630829L;
@@ -23,7 +23,7 @@ public class ProjectCreationEvent extends ComponentEvent<ProjectInformationDialo
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ProjectCreationEvent(ProjectInformationDialog source, boolean fromClient) {
+  public ProjectCreationEvent(ProjectCreationDialog source, boolean fromClient) {
     super(source, fromClient);
   }
 }
