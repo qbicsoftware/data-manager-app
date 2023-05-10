@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.project.event;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.Objects;
@@ -19,14 +20,14 @@ public class ProjectRegisteredEvent extends DomainEvent {
   private static final long serialVersionUID = -8611090109019335947L;
   private final Instant occurredOn;
 
-  private final ProjectId createdProject;
+  private final String createdProject;
 
   private ProjectRegisteredEvent(Instant occurredOn, ProjectId projectId) {
     this.occurredOn = Objects.requireNonNull(occurredOn);
-    this.createdProject = Objects.requireNonNull(projectId);
+    this.createdProject = Objects.requireNonNull(projectId.value());
   }
 
-  private static ProjectRegisteredEvent create(ProjectId projectId) {
+  public static ProjectRegisteredEvent create(ProjectId projectId) {
     return new ProjectRegisteredEvent(Instant.now(), projectId);
   }
 
@@ -35,7 +36,8 @@ public class ProjectRegisteredEvent extends DomainEvent {
     return occurredOn;
   }
 
-  public ProjectId createdProject() {
+  @JsonGetter("createdProject")
+  public String createdProject() {
     return createdProject;
   }
 }

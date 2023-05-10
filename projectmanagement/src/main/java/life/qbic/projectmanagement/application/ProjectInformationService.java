@@ -67,6 +67,11 @@ public class ProjectInformationService {
   }
 
   @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
+  public Optional<Project> find(String projectId) throws IllegalArgumentException{
+    return find(ProjectId.parse(projectId));
+  }
+
+  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());

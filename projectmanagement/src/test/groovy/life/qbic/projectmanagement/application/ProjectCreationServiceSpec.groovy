@@ -27,7 +27,7 @@ class ProjectCreationServiceSpec extends Specification {
     when: "null input is provided"
 
 
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             null,
             "objective",
             "design description",
@@ -46,7 +46,7 @@ class ProjectCreationServiceSpec extends Specification {
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             null,
             "design description",
@@ -70,7 +70,7 @@ class ProjectCreationServiceSpec extends Specification {
     String descriptionWithToManyCharacters = "test" * 1000
 
     when: "null input is provided"
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             descriptionWithToManyCharacters,
@@ -91,7 +91,7 @@ class ProjectCreationServiceSpec extends Specification {
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "design description",
@@ -112,7 +112,7 @@ class ProjectCreationServiceSpec extends Specification {
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "design description",
@@ -133,7 +133,7 @@ class ProjectCreationServiceSpec extends Specification {
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "design description",
@@ -157,7 +157,7 @@ class ProjectCreationServiceSpec extends Specification {
     def analytes = List.of(Analyte.create("my analyte"))
 
     when: "analytes are provided at creation"
-    Result<Project, ApplicationException> result = projectCreationService.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationService.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "some description",
@@ -181,7 +181,7 @@ class ProjectCreationServiceSpec extends Specification {
     def species = List.of(Species.create("my analyte"))
 
     when: "species are provided at creation"
-    Result<Project, ApplicationException> result = projectCreationService.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationService.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "some description",
@@ -205,7 +205,7 @@ class ProjectCreationServiceSpec extends Specification {
     def specimens = List.of(Specimen.create("my analyte"))
 
     when: "specimens are provided at creation"
-    Result<Project, ApplicationException> result = projectCreationService.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationService.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "some description",
@@ -227,7 +227,7 @@ class ProjectCreationServiceSpec extends Specification {
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
 
     when: "a project is created with a non-empty title"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "some description",
@@ -248,7 +248,7 @@ class ProjectCreationServiceSpec extends Specification {
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
 
     when:
-    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.registerProject("source offer", "QABCD",
             "my title",
             "objective",
             "some description",

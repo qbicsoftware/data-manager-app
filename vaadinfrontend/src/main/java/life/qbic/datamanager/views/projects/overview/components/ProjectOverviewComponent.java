@@ -208,7 +208,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(
+      Result<Project, ApplicationException> project = projectCreationService.registerProject(
           projectCreationContent.offerId(), projectCreationContent.projectCode(),
           projectCreationContent.title(), projectCreationContent.objective(),
           projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),

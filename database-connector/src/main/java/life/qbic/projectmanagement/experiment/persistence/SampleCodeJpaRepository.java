@@ -3,6 +3,8 @@ package life.qbic.projectmanagement.experiment.persistence;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -40,6 +42,11 @@ public class SampleCodeJpaRepository implements SampleCodeService {
     } else {
       return Result.fromError(ResponseCode.SAMPLE_STATISTICS_RECORD_NOT_FOUND);
     }
+  }
+
+  @Override
+  public void addProjectToSampleStats(ProjectId projectId, ProjectCode projectCode) {
+    sampleStatistic.save(SampleStatisticEntry.create(projectId, projectCode));
   }
 
   private static SampleCode generateSampleCode(ProjectCode code, int sampleNumber) {

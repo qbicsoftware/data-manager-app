@@ -3,11 +3,13 @@ package life.qbic.projectmanagement.experiment.persistence;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
 @Entity
+@Table(name = "sample_statistics_entry")
 public class SampleStatisticEntry {
 
   @Id

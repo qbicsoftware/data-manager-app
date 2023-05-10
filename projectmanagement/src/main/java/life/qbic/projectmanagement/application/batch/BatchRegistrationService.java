@@ -46,7 +46,10 @@ public class BatchRegistrationService {
   }
 
   public enum ResponseCode {
-    BATCH_UPDATE_FAILED, BATCH_NOT_FOUND, BATCH_CREATION_FAILED
+    BATCH_UPDATE_FAILED,
+    BATCH_NOT_FOUND,
+    BATCH_CREATION_FAILED
+
   }
 
 }
