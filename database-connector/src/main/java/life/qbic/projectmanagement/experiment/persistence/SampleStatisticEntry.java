@@ -12,6 +12,17 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
+/**
+ * Sample Statistics Entry
+ * <p>
+ * A sample statistics entry describes the accumulative sample registrations for a specific
+ * project.
+ * <p>
+ * The accumulative sample registration count enables the automated QBiC sample code generation,
+ * since the counter is only increased, never decreased.
+ *
+ * @since 1.0.0
+ */
 @Entity
 @Table(name = "sample_statistics_entry")
 public class SampleStatisticEntry {

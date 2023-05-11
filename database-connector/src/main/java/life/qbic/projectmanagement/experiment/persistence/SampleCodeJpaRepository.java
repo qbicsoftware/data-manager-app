@@ -46,7 +46,9 @@ public class SampleCodeJpaRepository implements SampleCodeService {
 
   @Override
   public void addProjectToSampleStats(ProjectId projectId, ProjectCode projectCode) {
-    sampleStatistic.save(SampleStatisticEntry.create(projectId, projectCode));
+    if (!sampleStatisticsEntryExistsFor(projectId)) {
+      sampleStatistic.save(SampleStatisticEntry.create(projectId, projectCode));
+    }
   }
 
   @Override
