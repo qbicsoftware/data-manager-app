@@ -5,8 +5,11 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -20,19 +23,18 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  List<DropDownColumn> dropDownColumns = new ArrayList<>();
+  private List<DropDownColumn> dropDownColumns = new ArrayList<>();
 
   public void addDropdownColumn(DropDownColumn column) {
     this.dropDownColumns.add(column);
   }
 
   @Override
-  public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex, Spreadsheet spreadsheet,
-      Sheet sheet) {
+  public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
+      Spreadsheet spreadsheet, Sheet sheet) {
     DropDownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
-
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      List<String> dropdownItems = dropDownColumn.getItems();
+      Set<String> dropdownItems = dropDownColumn.getDropdownItemsWithMaxUse().keySet();
       if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
@@ -50,18 +52,54 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private Component initCustomComboBox(DropDownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
-    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), dropDownColumn.getItems());
+    Map<String, Integer> itemsWithMaxUse = dropDownColumn.getDropdownItemsWithMaxUse();
+    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), itemsWithMaxUse.keySet());
     // if a user selects a value from the dropdown, it is filled into the cell
     // editing is allowed, as the wrong selection might have been taken.
-    // wrong inputs when editing are handled in getCustomComponentForCell()
+    // wrong inputs when editing are handled in getCustomComponentForCell
     analysisType.addValueChangeListener(e -> {
-      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-      unLockedStyle.setLocked(false);
-      Cell cell = spreadsheet.createCell(rowIndex, columnIndex, e.getValue());
-      cell.setCellStyle(unLockedStyle);
-      spreadsheet.refreshCells(cell);
+      String newValue = (String) e.getValue();
+
+      int countedSelections = countConditionsInColumn(spreadsheet, dropDownColumn, newValue, columnIndex);
+
+      if(countedSelections <= itemsWithMaxUse.get(newValue)) {
+        CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+        unLockedStyle.setLocked(false);
+        Cell cell = spreadsheet.createCell(rowIndex, columnIndex, newValue);
+        cell.setCellStyle(unLockedStyle);
+        spreadsheet.refreshCells(cell);
+      } else {
+        Cell cell = spreadsheet.createCell(rowIndex, columnIndex, null);
+        spreadsheet.refreshCells(cell);
+        //reportSampleSizeExceeded(newValue);
+      }
     });
     return analysisType;
+  }
+
+  private int countConditionsInColumn(Spreadsheet spreadsheet, DropDownColumn dropDownColumn, String condition, int column) {
+    int res = 1;
+    for(int row = 1; row < Integer.MAX_VALUE; row++) {
+      if(!dropDownColumn.isWithInRange(row, column)) {
+        break;
+      }
+      Cell cell = spreadsheet.getCell(row, column);
+      if(cell!=null) {
+        System.err.println(cell.getStringCellValue()+" counted");
+      }
+      if(cell!=null && condition.equals(cell.getStringCellValue())) {
+        res++;
+      }
+    }
+    System.err.println("condition: "+res);
+    return res;
+  }
+
+  private void reportSampleSizeExceeded(String condition) {
+    InformationMessage infoMessage = new InformationMessage("Sample size exceeded",
+        "Group with condition: '"+condition+"' was selected for more samples than expected.");
+    StyledNotification notification = new StyledNotification(infoMessage);
+        notification.open();
   }
 
   @Override
@@ -70,7 +108,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Sheet sheet, Component editor) {
   }
 
-  private DropDownColumn findColumnInRange(int rowIndex, int columnIndex) {
+  public DropDownColumn findColumnInRange(int rowIndex, int columnIndex) {
     for(DropDownColumn dropDown : dropDownColumns) {
       if(dropDown.isWithInRange(rowIndex, columnIndex)) {
         return dropDown;

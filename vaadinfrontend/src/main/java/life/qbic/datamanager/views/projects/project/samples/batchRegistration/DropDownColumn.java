@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Describes a table column (without header) that contains a dropdown menu with items and optional
@@ -10,13 +12,17 @@ import java.util.List;
 public class DropDownColumn {
 
   private String dropDownLabel = "";
-  private List<String> dropdownItems;
+  private Map<String, Integer> dropdownItemsWithMaxUse = new HashMap<>();
   private int fromRowIndex = 1;
   private int toRowIndex = 1000;
   private int colIndex = 0;
 
-  public DropDownColumn withItems(List<String> items) {
-    this.dropdownItems = items;
+  public DropDownColumn addItem(String item) {
+    return addItemWithMaxUse(item, Integer.MAX_VALUE);
+  }
+
+  public DropDownColumn addItemWithMaxUse(String item, int maxUse) {
+    this.dropdownItemsWithMaxUse.put(item, maxUse);
     return this;
   }
 
@@ -43,7 +49,7 @@ public class DropDownColumn {
     return dropDownLabel;
   }
 
-  public List<String> getItems() {
-    return dropdownItems;
+  public Map<String, Integer> getDropdownItemsWithMaxUse() {
+    return dropdownItemsWithMaxUse;
   }
 }
