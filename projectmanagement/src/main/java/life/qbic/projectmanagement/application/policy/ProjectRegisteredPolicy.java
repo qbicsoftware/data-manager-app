@@ -5,11 +5,16 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Registered Policy</b>
+ * <p>
+ * Implementation of QBiC's event policy, after a project has been registered.
+ * <p>
+ * The policy contains the directives:
+ * <ul>
+ *   <li>Create new sample statistics entry ({@link CreateNewSampleStatisticsEntry})</li>
+ * </ul>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectRegisteredPolicy {
 

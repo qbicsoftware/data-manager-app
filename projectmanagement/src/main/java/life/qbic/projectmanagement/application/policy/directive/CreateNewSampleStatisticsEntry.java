@@ -16,11 +16,11 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Directive to create a new sample statistics entry</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Subscribes to {@link ProjectRegisteredEvent}</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class CreateNewSampleStatisticsEntry implements
