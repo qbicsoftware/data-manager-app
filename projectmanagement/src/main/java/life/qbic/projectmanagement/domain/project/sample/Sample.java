@@ -38,14 +38,16 @@ public class Sample {
   private SampleId id;
   private String label;
   @Embedded
+  private SampleCode sampleCode;
+  @Embedded
   private SampleOrigin sampleOrigin;
 
-  private Sample(
-      SampleId id, BatchId assignedBatch, String label, ExperimentId experimentId,
-      Long experimentalGroupId, SampleOrigin sampleOrigin
-      , BiologicalReplicateId replicateReference
+  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
+      ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
+      BiologicalReplicateId replicateReference
   ) {
     this.id = id;
+    this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
     this.experimentId = experimentId;
     this.experimentalGroupId = experimentalGroupId;
@@ -65,10 +67,12 @@ public class Sample {
    * @since 1.0.0
    */
   public static Sample create(
+      SampleCode sampleCode,
       SampleRegistrationRequest sampleRegistrationRequest) {
     Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
-    return new Sample(sampleId, sampleRegistrationRequest.assignedBatch(),
+    return new Sample(sampleId, sampleCode,
+        sampleRegistrationRequest.assignedBatch(),
         sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
         sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference());
@@ -80,5 +84,9 @@ public class Sample {
 
   public SampleId sampleId() {
     return this.id;
+  }
+
+  public SampleCode sampleCode() {
+    return this.sampleCode;
   }
 }

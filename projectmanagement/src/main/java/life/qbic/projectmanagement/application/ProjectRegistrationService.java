@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -21,24 +22,29 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.project.service.ProjectDomainService;
+import life.qbic.projectmanagement.domain.project.service.ProjectDomainService.ResponseCode;
 import org.springframework.stereotype.Service;
 
 /**
  * Application service facilitating the creation of projects.
  */
 @Service
-public class ProjectCreationService {
+public class ProjectRegistrationService {
 
-  private static final Logger log = logger(ProjectCreationService.class);
+  private static final Logger log = logger(ProjectRegistrationService.class);
 
   private final ProjectRepository projectRepository;
 
   private final AddExperimentToProjectService addExperimentToProjectService;
+  private final ProjectDomainService projectDomainService;
 
-  public ProjectCreationService(ProjectRepository projectRepository,
-      AddExperimentToProjectService addExperimentToProjectService) {
-    this.projectRepository = projectRepository;
-    this.addExperimentToProjectService = addExperimentToProjectService;
+  public ProjectRegistrationService(ProjectRepository projectRepository,
+      AddExperimentToProjectService addExperimentToProjectService,
+      ProjectDomainService projectDomainService) {
+    this.projectRepository = Objects.requireNonNull(projectRepository);
+    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService);
+    this.projectDomainService = Objects.requireNonNull(projectDomainService);
   }
 
   /**
@@ -49,18 +55,17 @@ public class ProjectCreationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> createProject(String sourceOffer, String code,
+  public Result<Project, ApplicationException> registerProject(String sourceOffer, String code,
       String title, String objective, String experimentalDesign, List<Species> speciesList,
       List<Specimen> specimenList, List<Analyte> analyteList, PersonReference principalInvestigator,
       PersonReference responsiblePerson, PersonReference projectManager) {
 
     try {
-      Project project = createProject(code, title, objective, experimentalDesign, projectManager,
+      Project project = registerProject(code, title, objective, experimentalDesign, projectManager,
           principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-      projectRepository.add(project);
       addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
           speciesList, specimenList, analyteList).onError(e -> {
         projectRepository.deleteByProjectCode(project.getProjectCode());
@@ -76,7 +81,7 @@ public class ProjectCreationService {
     }
   }
 
-  private Project createProject(String code, String title, String objective,
+  private Project registerProject(String code, String title, String objective,
       String experimentalDesign, PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson) {
 
@@ -103,8 +108,14 @@ public class ProjectCreationService {
           ErrorCode.INVALID_PROJECT_CODE,
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
-    return Project.create(intent, projectCode, projectManager, principalInvestigator,
-        responsiblePerson);
+
+    var registrationResult = projectDomainService.registerProject(intent, projectCode, projectManager, principalInvestigator, responsiblePerson);
+
+    if (registrationResult.isError() && registrationResult.getError().equals(ResponseCode.PROJECT_REGISTRATION_FAILED)) {
+      throw new ApplicationException("Project registration failed.", ErrorCode.GENERAL, ErrorParameters.of(code));
+    }
+
+    return registrationResult.getValue();
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {
