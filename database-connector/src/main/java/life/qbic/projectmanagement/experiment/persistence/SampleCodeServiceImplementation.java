@@ -3,8 +3,6 @@ package life.qbic.projectmanagement.experiment.persistence;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -13,19 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Implementation of the {@link SampleCodeService} interface.
+ * <p>
+ * Utilises the JPA implementation {@link SampleStatistic}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Service
-public class SampleCodeJpaRepository implements SampleCodeService {
+public class SampleCodeServiceImplementation implements SampleCodeService {
 
   private final SampleStatistic sampleStatistic;
 
   @Autowired
-  public SampleCodeJpaRepository(SampleStatistic sampleStatistic) {
+  public SampleCodeServiceImplementation(SampleStatistic sampleStatistic) {
     this.sampleStatistic = Objects.requireNonNull(sampleStatistic);
   }
 
@@ -57,13 +55,11 @@ public class SampleCodeJpaRepository implements SampleCodeService {
   }
 
   private static SampleCode generateSampleCode(ProjectCode code, int sampleNumber) {
-    String sampleCode = String.format("%s%03d", code.value(), remainderCounter(sampleNumber)) + letterForMille(sampleNumber);
+    String sampleCode =
+        String.format("%s%03d", code.value(), remainderCounter(sampleNumber)) + letterForMille(
+            sampleNumber);
     String sampleCodeWithChecksum = sampleCode + checksum(sampleCode);
     return new SampleCode(sampleCodeWithChecksum);
-  }
-
-  private static char letterForMille(int sampleNumber) {
-    return (char) (((sampleNumber -1) / 999) + 65);
   }
 
   private static int remainderCounter(int sampleNumber) {
@@ -71,14 +67,18 @@ public class SampleCodeJpaRepository implements SampleCodeService {
     return remainder == 0 ? 999 : remainder;
   }
 
+  private static char letterForMille(int sampleNumber) {
+    return (char) (((sampleNumber - 1) / 999) + 65);
+  }
+
   private static char checksum(String code) {
-      int i = 1;
-      int sum = 0;
-      for (int idx = 0; idx <= code.length() - 1; idx++) {
-        sum += (((int) code.charAt(idx))) * i;
-        i += 1;
-      }
-      return mapToChar(sum % 34);
+    int i = 1;
+    int sum = 0;
+    for (int idx = 0; idx <= code.length() - 1; idx++) {
+      sum += (((int) code.charAt(idx))) * i;
+      i += 1;
+    }
+    return mapToChar(sum % 34);
   }
 
   private static char mapToChar(int i) {

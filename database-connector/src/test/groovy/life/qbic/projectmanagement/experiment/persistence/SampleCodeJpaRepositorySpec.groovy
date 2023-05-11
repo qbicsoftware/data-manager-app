@@ -27,7 +27,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
         sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
 
         and:
-        def repo = new SampleCodeJpaRepository(sampleStatistic)
+        def repo = new SampleCodeServiceImplementation(sampleStatistic)
 
         when:
         def result = repo.generateFor(projectId)
@@ -55,7 +55,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
         sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
 
         and:
-        def repo = new SampleCodeJpaRepository(sampleStatistic)
+        def repo = new SampleCodeServiceImplementation(sampleStatistic)
 
         when:
         def result = repo.generateFor(projectId)
@@ -84,7 +84,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
         sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
 
         and:
-        def repo = new SampleCodeJpaRepository(sampleStatistic)
+        def repo = new SampleCodeServiceImplementation(sampleStatistic)
 
         when:
         def result = repo.generateFor(projectId)
@@ -111,7 +111,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
         sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
 
         and:
-        def repo = new SampleCodeJpaRepository(sampleStatistic)
+        def repo = new SampleCodeServiceImplementation(sampleStatistic)
 
         when:
         def result = repo.generateFor(projectId)
@@ -138,7 +138,7 @@ class SampleCodeJpaRepositorySpec extends Specification{
         sampleStatistic.findByProjectId(projectId) >> [sampleStatisticEntry]
 
         and:
-        def repo = new SampleCodeJpaRepository(sampleStatistic)
+        def repo = new SampleCodeServiceImplementation(sampleStatistic)
 
         when:
         def result = repo.generateFor(projectId)
