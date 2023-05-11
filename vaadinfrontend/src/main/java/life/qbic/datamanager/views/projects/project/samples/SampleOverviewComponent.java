@@ -131,7 +131,6 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   }
 
   private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
-
     sampleRegistrationDialog = new SampleRegistrationDialog(sampleRegistrationService);
   }
 
@@ -282,9 +281,9 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
         if(hasExperimentalGroupsDefined()) {
           sampleRegistrationDialog.open();
         } else {
-          InformationMessage successMessage = new InformationMessage("No experimental groups are defined",
+          InformationMessage infoMessage = new InformationMessage("No experimental groups are defined",
               "You need to define experimental groups before adding samples.");
-          StyledNotification notification = new StyledNotification(successMessage);
+          StyledNotification notification = new StyledNotification(infoMessage);
           notification.open();
         }
       });
