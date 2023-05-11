@@ -5,11 +5,9 @@ import life.qbic.projectmanagement.domain.project.ProjectId
 import spock.lang.Specification
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Tests for the sample code service implementation
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 class SampleCodeJpaRepositorySpec extends Specification{
 

@@ -30,16 +30,16 @@ import org.springframework.stereotype.Service;
  * Application service facilitating the creation of projects.
  */
 @Service
-public class ProjectCreationService {
+public class ProjectRegistrationService {
 
-  private static final Logger log = logger(ProjectCreationService.class);
+  private static final Logger log = logger(ProjectRegistrationService.class);
 
   private final ProjectRepository projectRepository;
 
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final ProjectDomainService projectDomainService;
 
-  public ProjectCreationService(ProjectRepository projectRepository,
+  public ProjectRegistrationService(ProjectRepository projectRepository,
       AddExperimentToProjectService addExperimentToProjectService,
       ProjectDomainService projectDomainService) {
     this.projectRepository = Objects.requireNonNull(projectRepository);

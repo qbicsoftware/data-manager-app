@@ -8,11 +8,11 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Registered Event</b>
+ * <p>
+ * Domain event that indicates a new project registration.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectRegisteredEvent extends DomainEvent {
 
