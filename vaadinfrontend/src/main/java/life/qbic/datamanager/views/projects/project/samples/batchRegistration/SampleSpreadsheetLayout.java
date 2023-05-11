@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import life.qbic.datamanager.views.notifications.InformationMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -118,8 +116,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private static class SampleRegistrationSheetBuilder {
 
     private final SampleRegistrationService sampleRegistrationService;
-    public final String COL_SPACER = "___";
     private static Experiment activeExperiment;
+
+    private static int numberOfSamples;
 
     public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
       this.sampleRegistrationService = sampleRegistrationService;
@@ -127,6 +126,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     public static void setActiveExperiment(Experiment experiment) {
       activeExperiment = experiment;
+      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
+      numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize)
+          .mapToInt(Integer::intValue).sum();
     }
 
     public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
@@ -138,14 +140,36 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet, sampleRegistrationService.retrieveGenomics(), dropdownCellFactory);
         case METABOLOMICS -> addMetabolomicsSheet(spreadsheet, sampleRegistrationService.retrieveMetabolomics(), dropdownCellFactory);
       }
+      unlockEmptyColumns(spreadsheet, dropdownCellFactory);
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
     }
 
-    private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow, int maxRow) {
+    private void unlockEmptyColumns(Spreadsheet spreadsheet, SpreadsheetDropdownFactory dropdownCellFactory) {
+      for(int column = 0; column < Integer.MAX_VALUE; column++) {
+        Cell firstCell = spreadsheet.getCell(0, column);
+        Cell firstDataCell = spreadsheet.getCell(1, column);
+        boolean hasHeader = !isCellEmpty(firstCell);
+        if(!hasHeader) {
+          break;
+        }
+        boolean hasData = !isCellEmpty(firstDataCell);
+        boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, column)!=null;
+        //columns need to be unlocked if they have a header and no data/dropdown
+        if(!hasData && !hasDropdown) {
+          unlockColumn(spreadsheet, column, 1);
+        }
+      }
+    }
+
+    private boolean isCellEmpty(Cell cell) {
+      return cell==null || cell.getStringCellValue().isEmpty();
+    }
+
+    private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow) {
       List<Cell> updatedCells = new ArrayList<>();
       CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
       unLockedStyle.setLocked(false);
-      for (int i = minRow; i <= maxRow; i++) {
+      for (int i = minRow; i <= numberOfSamples; i++) {
         Cell cell = spreadsheet.createCell(i, column, "");
         cell.setCellStyle(unLockedStyle);
       }
@@ -161,12 +185,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       List<Cell> updatedCells = new ArrayList<>();
       int columnIndex = 0;
       for (String columnHeader : header) {
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader+COL_SPACER);
+        fixColumnWidth(spreadsheet, columnIndex, columnHeader, new ArrayList<>());
+        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
         cell.setCellStyle(boldHeaderStyle);
-        spreadsheet.autofitColumn(columnIndex);
-        cell.setCellValue(columnHeader);
+        updatedCells.add(cell);
         columnIndex++;
-
       }
       spreadsheet.refreshCells(updatedCells);
     }
@@ -196,23 +219,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         SpreadsheetDropdownFactory dropdownCellFactory) {
       setAndStyleHeader(spreadsheet, header);
       spreadsheet.reload();
-      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
-      int numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize).mapToInt(Integer::intValue).sum();
 
-      DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.asList("DNA-Seq", "RNA-Seq"));
+      DropDownColumn techColumn = new DropDownColumn().addItem("DNA-Seq").addItem("RNA-Seq");
       techColumn.fromRowIndex(1).toRowIndex(numberOfSamples).atColIndex(0);
 
       dropdownCellFactory.addDropdownColumn(techColumn);
       handleCommonMetadata(header, spreadsheet, dropdownCellFactory);
     }
-
-    //TODO check for max group size
-    /*
-    InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
-        "Please define all of your experimental variables before adding groups.");
-    StyledNotification notification = new StyledNotification(successMessage);
-        notification.open();
-        */
 
     /**
      * Creates and adds species and specimen Dropdown columns to a spreadsheet via a provided
@@ -223,17 +236,23 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private void handleCommonMetadata(List<String> header, Spreadsheet spreadsheet,
         SpreadsheetDropdownFactory dropdownCellFactory) {
 
-      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
-      int numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize).mapToInt(Integer::intValue).sum();
-
       List<String> species = activeExperiment.getSpecies().stream().map(Species::label).toList();
-      List<String> specimens = activeExperiment.getSpecimens().stream().map(Specimen::label).toList();
+      List<String> specimens = activeExperiment.getSpecimens().stream()
+          .map(Specimen::label).toList();
 
-      fillSampleSourceCells(header.indexOf("Species"), species, spreadsheet, dropdownCellFactory, numberOfSamples);
-      fillSampleSourceCells(header.indexOf("Specimen"), specimens, spreadsheet, dropdownCellFactory, numberOfSamples);
+      fixColumnWidth(spreadsheet, header.indexOf("Species"), "Species", species);
+      fixColumnWidth(spreadsheet, header.indexOf("Specimen"), "Specimen", specimens);
 
+      fillSampleSourceCells(header.indexOf("Species"), species, spreadsheet, dropdownCellFactory);
+      fillSampleSourceCells(header.indexOf("Specimen"), specimens, spreadsheet, dropdownCellFactory);
+      fillConditionCells(header.indexOf("Condition"), spreadsheet, dropdownCellFactory);
+    }
+
+    private void fillConditionCells(int colIndex, Spreadsheet spreadsheet,
+        SpreadsheetDropdownFactory dropdownCellFactory) {
+      List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
       List<String> conditionItems = new ArrayList<>();
-
+      DropDownColumn variableDropdown = new DropDownColumn();
       // create condition items for dropdown and fix cell width
       for(ExperimentalGroup group : groups) {
         List<String> varStrings = new ArrayList<>();
@@ -242,27 +261,48 @@ class SampleSpreadsheetLayout extends VerticalLayout {
           String value = level.experimentalValue().value();
           varStrings.add(varName+":"+value);
         }
-        conditionItems.add(String.join("; ", varStrings));
+        String conditionString = String.join("; ", varStrings);
+        conditionItems.add(conditionString);
       }
-      String longestString = conditionItems.stream().max(Comparator.comparingInt(String::length)).get();
-      int conditionColumn = header.indexOf("Condition");
+      fixColumnWidth(spreadsheet, colIndex, "Condition", conditionItems);
 
-      spreadsheet.createCell(1, conditionColumn, longestString+COL_SPACER+COL_SPACER);
-      spreadsheet.autofitColumn(conditionColumn);
+      variableDropdown.toRowIndex(numberOfSamples).atColIndex(colIndex);
+      variableDropdown.withItems(conditionItems);
 
-      DropDownColumn variableDropdown = new DropDownColumn().withItems(conditionItems);
-      variableDropdown.toRowIndex(numberOfSamples).atColIndex(conditionColumn);
       dropdownCellFactory.addDropdownColumn(variableDropdown);
-
     }
 
-    private void fillSampleSourceCells(int colIndex, List<String> items, Spreadsheet spreadsheet,
-        SpreadsheetDropdownFactory dropdownCellFactory, int numberOfSamples) {
-
-      // fix the width of dropdown columns
-      String longestString = items.stream().max(Comparator.comparingInt(String::length)).get();
-      Cell speciesCell = spreadsheet.createCell(1, colIndex, longestString+COL_SPACER);
+    /*
+     * Changes width of a spreadsheet column based on header element and potential known entries.
+     */
+    private void fixColumnWidth(Spreadsheet spreadsheet, int colIndex, String header, List<String> entries) {
+      final String COL_SPACER = "___";
+      List<String> stringList = new ArrayList<>(Arrays.asList(header));
+      stringList.addAll(entries);
+      String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
+          .get();
+      String spacingValue = longestString+COL_SPACER;
+      Cell cell = spreadsheet.getCell(1, colIndex);
+      String oldValue = "";
+      if(cell==null) {
+        spreadsheet.createCell(1, colIndex, spacingValue);
+      } else {
+        oldValue = cell.getStringCellValue();
+        spreadsheet.getCell(1, colIndex).setCellValue(spacingValue);
+      }
       spreadsheet.autofitColumn(colIndex);
+      spreadsheet.getCell(1, colIndex).setCellValue(oldValue);
+    }
+
+    /**
+     * Used to generate columns for Species and Specimen
+     * @param colIndex
+     * @param items
+     * @param spreadsheet
+     * @param dropdownCellFactory
+     */
+    private void fillSampleSourceCells(int colIndex, List<String> items, Spreadsheet spreadsheet,
+        SpreadsheetDropdownFactory dropdownCellFactory) {
 
       List<Cell> updatedCells = new ArrayList<>();
 
@@ -272,7 +312,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
           updatedCells.add(cell);
         }
       } else {
-        DropDownColumn itemDropdown = new DropDownColumn().withItems(items);
+        DropDownColumn itemDropdown = new DropDownColumn();
+        itemDropdown.withItems(items);
         itemDropdown.toRowIndex(numberOfSamples).atColIndex(colIndex);
         dropdownCellFactory.addDropdownColumn(itemDropdown);
       }
