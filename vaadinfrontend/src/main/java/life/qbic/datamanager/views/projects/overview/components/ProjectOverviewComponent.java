@@ -43,7 +43,7 @@ import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
-import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
@@ -79,13 +79,13 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       @Autowired OfferLookupService offerLookupService,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectInformationService projectInformationService,
-      @Autowired ProjectCreationService projectCreationService,
+      @Autowired ProjectRegistrationService projectRegistrationService,
       @Autowired PersonSearchService personSearchService,
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
     this.projectCreationDialog = new ProjectCreationDialog(experimentalDesignSearchService);
     new Handler(offerLookupService, projectRepository, projectInformationService,
-        projectCreationService, personSearchService);
+        projectRegistrationService, personSearchService);
     layoutComponents();
   }
 
@@ -139,7 +139,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private static final Logger log = logger(Handler.class);
     private final OfferLookupService offerLookupService;
-    private final ProjectCreationService projectCreationService;
+    private final ProjectRegistrationService projectRegistrationService;
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
 
@@ -148,7 +148,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     public Handler(OfferLookupService offerLookupService, ProjectRepository projectRepository,
         ProjectInformationService projectInformationService,
-        ProjectCreationService projectCreationService, PersonSearchService personSearchService) {
+        ProjectRegistrationService projectRegistrationService, PersonSearchService personSearchService) {
 
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
@@ -158,8 +158,8 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
       Objects.requireNonNull(projectInformationService);
       this.projectInformationService = projectInformationService;
 
-      Objects.requireNonNull(projectCreationService);
-      this.projectCreationService = projectCreationService;
+      Objects.requireNonNull(projectRegistrationService);
+      this.projectRegistrationService = projectRegistrationService;
 
       Objects.requireNonNull(personSearchService);
       this.personSearchService = personSearchService;
@@ -208,7 +208,7 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
 
     private void processProjectCreation(ProjectCreationContent projectCreationContent) {
 
-      Result<Project, ApplicationException> project = projectCreationService.createProject(
+      Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
           projectCreationContent.offerId(), projectCreationContent.projectCode(),
           projectCreationContent.title(), projectCreationContent.objective(),
           projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
