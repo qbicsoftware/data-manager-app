@@ -51,12 +51,21 @@ public class CreateNewSampleStatisticsEntry implements
   }
 
   public void createSampleStatisticsEntry(String projectId) {
-    Optional<Project> searchResult = projectRepository.find(ProjectId.parse(projectId)).stream()
-        .findFirst();
-    if (searchResult.isEmpty()) {
-      throw new RuntimeException("Domain event processing failed!");
+    var id = ProjectId.parse(projectId);
+    if (sampleStatisticsEntryMissing(id)) {
+      Optional<Project> searchResult = projectRepository.find(id).stream()
+          .findFirst();
+      if (searchResult.isEmpty()) {
+        throw new RuntimeException("Project with id " + projectId
+            + " not found. Domain event processing failed for directive "
+            + getClass().getSimpleName());
+      }
+      sampleCodeService.addProjectToSampleStats(searchResult.get().getId(),
+          searchResult.get().getProjectCode());
     }
-    sampleCodeService.addProjectToSampleStats(searchResult.get().getId(),
-        searchResult.get().getProjectCode());
+  }
+
+  private boolean sampleStatisticsEntryMissing(ProjectId projectId) {
+    return !sampleCodeService.sampleStatisticsEntryExistsFor(projectId);
   }
 }

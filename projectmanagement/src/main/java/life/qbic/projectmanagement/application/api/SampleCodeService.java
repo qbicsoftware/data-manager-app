@@ -11,6 +11,8 @@ public interface SampleCodeService {
 
   void addProjectToSampleStats(ProjectId projectId, ProjectCode projectCode);
 
+  boolean sampleStatisticsEntryExistsFor(ProjectId projectId);
+
   enum ResponseCode {
     
     SAMPLE_STATISTICS_RECORD_NOT_FOUND

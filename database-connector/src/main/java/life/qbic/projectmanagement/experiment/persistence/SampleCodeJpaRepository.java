@@ -49,6 +49,11 @@ public class SampleCodeJpaRepository implements SampleCodeService {
     sampleStatistic.save(SampleStatisticEntry.create(projectId, projectCode));
   }
 
+  @Override
+  public boolean sampleStatisticsEntryExistsFor(ProjectId projectId) {
+    return !sampleStatistic.findByProjectId(projectId).isEmpty();
+  }
+
   private static SampleCode generateSampleCode(ProjectCode code, int sampleNumber) {
     String sampleCode = String.format("%s%03d", code.value(), remainderCounter(sampleNumber)) + letterForMille(sampleNumber);
     String sampleCodeWithChecksum = sampleCode + checksum(sampleCode);
