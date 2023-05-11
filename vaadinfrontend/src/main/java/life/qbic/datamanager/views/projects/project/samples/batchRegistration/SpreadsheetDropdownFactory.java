@@ -64,31 +64,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return analysisType;
   }
 
-  private int countConditionsInColumn(Spreadsheet spreadsheet, DropDownColumn dropDownColumn, String condition, int column) {
-    int res = 1;
-    for(int row = 1; row < Integer.MAX_VALUE; row++) {
-      if(!dropDownColumn.isWithInRange(row, column)) {
-        break;
-      }
-      Cell cell = spreadsheet.getCell(row, column);
-      if(cell!=null) {
-        System.err.println(cell.getStringCellValue()+" counted");
-      }
-      if(cell!=null && condition.equals(cell.getStringCellValue())) {
-        res++;
-      }
-    }
-    System.err.println("condition: "+res);
-    return res;
-  }
-
-  private void reportSampleSizeExceeded(String condition) {
-    InformationMessage infoMessage = new InformationMessage("Sample size exceeded",
-        "Group with condition: '"+condition+"' was selected for more samples than expected.");
-    StyledNotification notification = new StyledNotification(infoMessage);
-        notification.open();
-  }
-
   @Override
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
