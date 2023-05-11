@@ -127,7 +127,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     public static void setActiveExperiment(Experiment experiment) {
       activeExperiment = experiment;
       List<ExperimentalGroup> groups = activeExperiment.getExperimentalGroups().stream().toList();
-      numberOfSamples = groups.stream().map(ExperimentalGroup::sampleSize)
+      numberOfSamples = 3*groups.stream().map(ExperimentalGroup::sampleSize)
           .mapToInt(Integer::intValue).sum();
     }
 
