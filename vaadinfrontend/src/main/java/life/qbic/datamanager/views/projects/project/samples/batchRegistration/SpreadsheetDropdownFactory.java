@@ -6,8 +6,6 @@ import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import org.apache.poi.ss.usermodel.Cell;
@@ -34,7 +32,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Spreadsheet spreadsheet, Sheet sheet) {
     DropDownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      Set<String> dropdownItems = dropDownColumn.getDropdownItemsWithMaxUse().keySet();
+      List<String> dropdownItems = dropDownColumn.getItems();
       if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
@@ -52,27 +50,16 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private Component initCustomComboBox(DropDownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
-    Map<String, Integer> itemsWithMaxUse = dropDownColumn.getDropdownItemsWithMaxUse();
-    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), itemsWithMaxUse.keySet());
-    // if a user selects a value from the dropdown, it is filled into the cell
-    // editing is allowed, as the wrong selection might have been taken.
-    // wrong inputs when editing are handled in getCustomComponentForCell
+    List<String> items = dropDownColumn.getItems();
+    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), items);
+
     analysisType.addValueChangeListener(e -> {
       String newValue = (String) e.getValue();
-
-      int countedSelections = countConditionsInColumn(spreadsheet, dropDownColumn, newValue, columnIndex);
-
-      if(countedSelections <= itemsWithMaxUse.get(newValue)) {
-        CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-        unLockedStyle.setLocked(false);
-        Cell cell = spreadsheet.createCell(rowIndex, columnIndex, newValue);
-        cell.setCellStyle(unLockedStyle);
-        spreadsheet.refreshCells(cell);
-      } else {
-        Cell cell = spreadsheet.createCell(rowIndex, columnIndex, null);
-        spreadsheet.refreshCells(cell);
-        //reportSampleSizeExceeded(newValue);
-      }
+      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+      unLockedStyle.setLocked(false);
+      Cell cell = spreadsheet.createCell(rowIndex, columnIndex, newValue);
+      cell.setCellStyle(unLockedStyle);
+      spreadsheet.refreshCells(cell);
     });
     return analysisType;
   }
