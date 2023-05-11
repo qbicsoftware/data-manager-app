@@ -9,6 +9,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
+import life.qbic.projectmanagement.domain.project.service.ProjectDomainService
 import spock.lang.Specification
 
 import static java.util.Objects.nonNull
@@ -17,7 +18,8 @@ class ProjectCreationServiceSpec extends Specification {
 
   ProjectRepository projectRepositoryStub = Stub()
   AddExperimentToProjectService addExperimentToProjectServiceStub = Stub()
-  ProjectCreationService projectCreationServiceWithStubs = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectServiceStub)
+  ProjectDomainService projectDomainServiceStub = Stub()
+  ProjectCreationService projectCreationServiceWithStubs = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectServiceStub, projectDomainServiceStub)
 
   def "invalid project title leads to INVALID_PROJECT_TITLE code"() {
     given:
@@ -152,7 +154,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_) >> {}
     projectRepositoryStub.update(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
-    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
+    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService, projectDomainServiceStub)
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
     def analytes = List.of(Analyte.create("my analyte"))
 
@@ -176,7 +178,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
-    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
+    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService, projectDomainServiceStub)
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
     def species = List.of(Species.create("my analyte"))
 
@@ -200,7 +202,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
-    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService)
+    ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, addExperimentToProjectService, projectDomainServiceStub)
     def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
     def specimens = List.of(Specimen.create("my analyte"))
 
