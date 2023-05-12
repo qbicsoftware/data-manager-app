@@ -41,7 +41,7 @@ public class DropDownColumn {
     return this;
   }
 
-  public boolean isWithInRange(int row, int col) {
+  public boolean isWithinRange(int row, int col) {
     return fromRowIndex <= row && toRowIndex >= row && col == colIndex;
   }
 
