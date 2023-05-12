@@ -17,12 +17,14 @@ public class DropDownColumn {
   private int colIndex = 0;
 
   public DropDownColumn addItem(String item) {
-    items.add(item);
+    items.add(item+" ");
     return this;
   }
 
   public DropDownColumn withItems(List<String> items) {
-    this.items = items;
+    for(String item : items) {
+      this.addItem(item);
+    }
     return this;
   }
 
