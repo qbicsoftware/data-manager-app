@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -23,9 +24,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   public void addDropdownColumn(DropDownColumn column) {
     this.dropDownColumns.add(column);
-    for(String item : column.getItems()) {
-      System.err.println("x"+item+"x");
-    }
   }
 
   @Override
@@ -45,7 +43,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       }
 
       if(!dropdownItems.contains(cell.getStringCellValue())) {
-        System.err.println(cell.getStringCellValue()+" not in "+dropdownItems);
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
