@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -220,7 +221,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       setAndStyleHeader(spreadsheet, header);
       spreadsheet.reload();
 
-      DropDownColumn techColumn = new DropDownColumn().addItem("DNA-Seq").addItem("RNA-Seq");
+      DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisTypes
+              .values())
+          .map(e -> e.label)
+          .collect(Collectors.toList()));
       techColumn.fromRowIndex(1).toRowIndex(numberOfSamples).atColIndex(0);
 
       dropdownCellFactory.addDropdownColumn(techColumn);
@@ -322,6 +326,19 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   }
 
+  /**
+   * SequenceAnalysisTypes enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
+   * of Analysis will be performed.
+   *
+   * @since 1.0.0
+   */
+  enum SequenceAnalysisTypes {
+    RNASEQ("RNA-Seq"), DNASEQ("DNA-Seq");
+    final String label;
 
+    SequenceAnalysisTypes(String label) {
+      this.label = label;
+    }
+  }
 
 }
