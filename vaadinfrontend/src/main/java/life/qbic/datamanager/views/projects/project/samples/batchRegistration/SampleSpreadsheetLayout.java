@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -20,6 +21,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -82,6 +84,41 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     SampleRegistrationSheetBuilder.setActiveExperiment(experiment);
   }
 
+  public List<NGSRowDTO> getFilledRows(List<String> header) {
+    List<NGSRowDTO> rows = new ArrayList<>();
+    for(int i = 1; i < Integer.MAX_VALUE; i++) {
+      Row row = sampleRegistrationSpreadsheet.getActiveSheet().getRow(i);
+      Cell analysisTypeCell = row.getCell(header.indexOf("Analysis to be performed"));
+      Cell sampleLabelCell = row.getCell(header.indexOf("Sample label"));
+      Cell replicateIDCell = row.getCell(header.indexOf("Biological replicate id"));
+      Cell conditionCell = row.getCell(header.indexOf("Condition"));
+      Cell speciesCell = row.getCell(header.indexOf("Species"));
+      Cell specimenCell = row.getCell(header.indexOf("Specimen"));
+      Cell commentCell = row.getCell(header.indexOf("Customer comment"));
+
+      Stream<Cell> mandatoryCellStream = Stream.of(analysisTypeCell, sampleLabelCell,
+          replicateIDCell, conditionCell, speciesCell, specimenCell);
+
+      if (mandatoryCellStream.anyMatch(x -> x == null)) {
+        break;
+      }
+      if(mandatoryCellStream.noneMatch(x -> x.getStringCellValue().isEmpty())) {
+        rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(), sampleLabelCell.getStringCellValue().trim(),
+            replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim(),
+            speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), commentCell.getStringCellValue().trim()));
+      }
+
+      if(analysisTypeCell==null) {
+        break;
+      }
+    }
+    return rows;
+  }
+
+  public record NGSRowDTO(String analysisType, String sampleLabel, String bioReplicateID,
+                          String condition, String species, String specimen,
+                          String customerComment) {
+  }
   private class SampleMetadataLayoutHandler {
 
     private final List<Binder<?>> binders = new ArrayList<>();
@@ -263,7 +300,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         for(VariableLevel level : group.condition().getVariableLevels()) {
           String varName = level.variableName().value();
           String value = level.experimentalValue().value();
-          varStrings.add(varName+":"+value);
+          String unit = "";
+          if(level.experimentalValue().unit().isPresent()) {
+            unit = " "+level.experimentalValue().unit().get();
+          }
+          varStrings.add(varName+":"+value+unit);
         }
         String conditionString = String.join("; ", varStrings);
         conditionItems.add(conditionString);
