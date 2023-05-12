@@ -6,8 +6,6 @@ import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.views.notifications.InformationMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -25,6 +23,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   public void addDropdownColumn(DropDownColumn column) {
     this.dropDownColumns.add(column);
+    for(String item : column.getItems()) {
+      System.err.println("x"+item+"x");
+    }
   }
 
   @Override
@@ -33,7 +34,18 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     DropDownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
       List<String> dropdownItems = dropDownColumn.getItems();
-      if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
+      if(cell==null) {
+        cell = spreadsheet.createCell(rowIndex, columnIndex, "");
+      }
+      if(cell.getCellStyle().getLocked()) {
+        CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+        unLockedStyle.setLocked(false);
+        cell.setCellStyle(unLockedStyle);
+        spreadsheet.refreshCells(cell);
+      }
+
+      if(!dropdownItems.contains(cell.getStringCellValue())) {
+        System.err.println(cell.getStringCellValue()+" not in "+dropdownItems);
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
@@ -55,10 +67,8 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
     analysisType.addValueChangeListener(e -> {
       String newValue = (String) e.getValue();
-      CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-      unLockedStyle.setLocked(false);
-      Cell cell = spreadsheet.createCell(rowIndex, columnIndex, newValue);
-      cell.setCellStyle(unLockedStyle);
+      Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
+      cell.setCellValue(newValue);
       spreadsheet.refreshCells(cell);
     });
     return analysisType;
