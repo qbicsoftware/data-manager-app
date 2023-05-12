@@ -72,7 +72,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   public DropDownColumn findColumnInRange(int rowIndex, int columnIndex) {
     for(DropDownColumn dropDown : dropDownColumns) {
-      if(dropDown.isWithInRange(rowIndex, columnIndex)) {
+      if(dropDown.isWithinRange(rowIndex, columnIndex)) {
         return dropDown;
       }
     }
