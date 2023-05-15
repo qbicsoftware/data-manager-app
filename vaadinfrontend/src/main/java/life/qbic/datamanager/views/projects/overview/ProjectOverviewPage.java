@@ -30,6 +30,12 @@ public class ProjectOverviewPage extends Div {
 
   public ProjectOverviewPage(@Autowired ProjectOverviewComponent projectOverviewComponent) {
     add(projectOverviewComponent);
+    stylePage();
+  }
+
+  private void stylePage() {
+    this.setWidthFull();
+    this.setHeightFull();
   }
 
 }

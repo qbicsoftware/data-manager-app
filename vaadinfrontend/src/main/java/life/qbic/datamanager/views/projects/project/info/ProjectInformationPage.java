@@ -45,6 +45,7 @@ public class ProjectInformationPage extends Div implements RouterLayout {
     Objects.requireNonNull(projectLinksComponent);
     setupBoard(projectNavigationBarComponent, projectDetailsComponent, projectLinksComponent);
     setComponentStyles(projectDetailsComponent, projectLinksComponent);
+    stylePage();
     projectInformationPageHandler = new ProjectInformationPageHandler(projectNavigationBarComponent,
         projectDetailsComponent,
         projectLinksComponent);
@@ -87,6 +88,11 @@ public class ProjectInformationPage extends Div implements RouterLayout {
       ProjectLinksComponent projectLinksComponent) {
     projectDetailsComponent.setId("project-details-component");
     projectLinksComponent.setId("project-links-component");
+  }
+
+  private void stylePage() {
+    this.setWidthFull();
+    this.setHeightFull();
   }
 
   private final class ProjectInformationPageHandler {

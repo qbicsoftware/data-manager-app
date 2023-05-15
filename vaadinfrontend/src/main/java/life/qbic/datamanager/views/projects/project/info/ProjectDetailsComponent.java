@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -52,7 +52,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends Composite<CardLayout> {
+public class ProjectDetailsComponent extends Composite<PageComponent> {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
 
@@ -108,7 +108,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    getContent().addFields(formLayout);
+    getContent().addContent(formLayout);
     getContent().addTitle(TITLE);
   }
 

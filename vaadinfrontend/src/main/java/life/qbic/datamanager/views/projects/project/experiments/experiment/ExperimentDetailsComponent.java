@@ -5,12 +5,11 @@ import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.charts.Chart;
-import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -21,7 +20,8 @@ import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.CardComponent;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
@@ -40,34 +40,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * <b>Experimental Details Component</b>
  *
- * <p>A CardLayout based Composite showing the information stored in the
+ * <p>A PageComponent based Composite showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
  * a {@link Project} within the {@link ExperimentInformationPage}
  */
 @UIScope
 @SpringComponent
-public class ExperimentDetailsComponent extends Composite<CardLayout> {
+public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient Handler handler;
-  private ToggleDisplayEditComponent<Span, TextField, String> experimentNotes;
-  private Chart registeredSamples;
-  private HorizontalLayout topLayout;
-  private HorizontalLayout tagLayout;
-  private VerticalLayout detailLayout;
-  private TabSheet experimentSheet;
-  private Board summaryCardBoard;
-  private ExperimentalGroupsLayout experimentalGroupsLayoutBoard;
-  private CardLayout sampleOriginCard;
-  private VerticalLayout speciesForm;
-  private VerticalLayout specimenForm;
-  private VerticalLayout analyteForm;
-
-  //Todo Move all cardLayouts into separate components.
-  private CardLayout blockingVariableCard;
+  private final HorizontalLayout tagLayout = new HorizontalLayout();
+  private final TabSheet experimentSheet = new TabSheet();
+  private final Board summaryCardBoard = new Board();
+  private final ExperimentalGroupsLayout experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
+  private final CardComponent sampleOriginCard = new CardComponent();
+  private final VerticalLayout speciesForm = new VerticalLayout();
+  private final VerticalLayout specimenForm = new VerticalLayout();
+  private final VerticalLayout analyteForm = new VerticalLayout();
+  private final CardComponent blockingVariableCard = new CardComponent();
   private ExperimentalVariableCard experimentalVariableCard;
-  private Button addBlockingVariableButton;
+  private final Button addBlockingVariableButton = new Button("Add");
   private final AddVariablesDialog addVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
 
@@ -77,7 +71,8 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
-    initTopLayout();
+    getContent().indentContent(false);
+    initTagAndNotesLayout();
     initTabSheet(experimentInformationService);
     experimentalGroupsDialog = createExperimentalGroupDialog();
     this.handler = new Handler(projectInformationService, experimentInformationService);
@@ -87,36 +82,29 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     this.handler.setExperimentId(experimentId);
   }
 
-  private void initTopLayout() {
-    topLayout = new HorizontalLayout();
-    registeredSamples = new Chart(ChartType.AREASPLINE);
-    initDetailLayout();
-    topLayout.add(detailLayout, registeredSamples);
-    getContent().addFields(topLayout);
-    topLayout.setWidthFull();
-  }
-
-  private void initDetailLayout() {
-    detailLayout = new VerticalLayout();
-    tagLayout = new HorizontalLayout();
+  private void initTagAndNotesLayout() {
+    VerticalLayout tagAndNotesLayout = new VerticalLayout();
+    tagLayout.setSpacing(false);
     Span noNotesDefined = new Span("Click to add Notes");
-    experimentNotes = new ToggleDisplayEditComponent<>(Span::new, new TextField(), noNotesDefined);
-    detailLayout.setWidthFull();
-    detailLayout.add(tagLayout, experimentNotes);
+    ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
+        Span::new, new TextField(), noNotesDefined);
+    tagAndNotesLayout.setWidthFull();
+    tagAndNotesLayout.add(tagLayout, experimentNotes);
+    tagAndNotesLayout.setPadding(false);
+    tagAndNotesLayout.setMargin(false);
+    getContent().addContent(tagAndNotesLayout);
   }
 
   private void initTabSheet(ExperimentInformationService experimentInformationService) {
-    experimentSheet = new TabSheet();
     initSummaryCardBoard(experimentInformationService);
-    initSampleGroupsCardBoard();
+    initExperimentalGroupsBoard();
     experimentSheet.add("Summary", summaryCardBoard);
     experimentSheet.add("Experimental Groups", experimentalGroupsLayoutBoard);
-    getContent().addFields(experimentSheet);
+    getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
   }
 
   private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
-    summaryCardBoard = new Board();
     initSampleOriginCard();
     initBlockingVariableCard();
     initExperimentalVariableCard(experimentInformationService);
@@ -124,6 +112,7 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
     Row bottomRow = new Row(experimentalVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
+
   }
 
   private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
@@ -135,43 +124,39 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
 
 
   private void initSampleOriginCard() {
-    sampleOriginCard = new CardLayout();
     sampleOriginCard.addTitle("Sample Origin");
     FormLayout sampleOriginLayout = new FormLayout();
     sampleOriginLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    speciesForm = new VerticalLayout();
-    specimenForm = new VerticalLayout();
-    analyteForm = new VerticalLayout();
     sampleOriginLayout.addFormItem(speciesForm, "Species");
     sampleOriginLayout.addFormItem(specimenForm, "Specimen");
     sampleOriginLayout.addFormItem(analyteForm, "Analyte");
     sampleOriginLayout.setSizeFull();
-    sampleOriginCard.addFields(sampleOriginLayout);
+    sampleOriginCard.setMargin(false);
+    sampleOriginCard.addContent(sampleOriginLayout);
   }
 
   private void initBlockingVariableCard() {
-    blockingVariableCard = new CardLayout();
     blockingVariableCard.addTitle("Blocking Variables");
     VerticalLayout templateLayout = new VerticalLayout();
     Span templateText = new Span("No Blocking Variable defined");
-    addBlockingVariableButton = new Button("Add");
     addBlockingVariableButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     templateLayout.add(templateText, addBlockingVariableButton);
     templateLayout.setAlignItems(Alignment.CENTER);
     templateLayout.setSizeFull();
-    blockingVariableCard.addFields(templateLayout);
+    templateLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+    blockingVariableCard.addContent(templateLayout);
+    blockingVariableCard.setMargin(false);
   }
 
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
     experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
+    experimentalVariableCard.setMargin(false);
     experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
   }
 
-  private void initSampleGroupsCardBoard() {
-    experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
+  private void initExperimentalGroupsBoard() {
     experimentalGroupsLayoutBoard.setWidthFull();
-    //ToDo Fill with Content
   }
 
   public void setStyles(String... componentStyles) {
@@ -189,7 +174,6 @@ public class ExperimentDetailsComponent extends Composite<CardLayout> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
-
       experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
         fillExperimentalGroupDialog();
         handleAddExperimentalGroups();

@@ -19,7 +19,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-public class ProjectLinksComponent extends Composite<CardLayout> {
+public class ProjectLinksComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
@@ -51,7 +51,7 @@ public class ProjectLinksComponent extends Composite<CardLayout> {
     initOfferSearch(offerLookupService);
     initProjectLinksGrid();
     getContent().addTitle(TITLE);
-    getContent().addFields(offerSearch, projectLinks);
+    getContent().addContent(offerSearch, projectLinks);
     projectLinksComponentHandler = new ProjectLinksComponentHandler(projectLinkingService);
   }
 

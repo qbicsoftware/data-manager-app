@@ -20,7 +20,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVa
 /**
  * <b>Experimental Design Add Card</b>
  *
- * <p>A CardLayout based Component which is simliarly structured as the
+ * <p>A PageComponent based Component which is simliarly structured as the
  * {@link ExperimentalDesignCard}. However it's content is fixed and it's purpose is to allow for a
  * user to click on the card to create a new
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} via the

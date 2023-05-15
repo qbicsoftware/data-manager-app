@@ -45,7 +45,7 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
     Objects.requireNonNull(projectInformationPage);
     Objects.requireNonNull(experimentInformationPage);
     Objects.requireNonNull(sampleInformationPage);
-
+    stylePage();
     handler = new Handler(projectInformationPage,
         experimentInformationPage, sampleInformationPage, projectInformationService);
     log.debug(String.format(
@@ -63,6 +63,11 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
             .onError(e -> navigateToNotFound(e, beforeEnterEvent))
             .onValue(handler::setProjectId),
         () -> beforeEnterEvent.forwardTo(Projects.PROJECTS));
+  }
+
+  private void stylePage() {
+    this.setWidthFull();
+    this.setHeightFull();
   }
 
   private void navigateToNotFound(RuntimeException e, BeforeEnterEvent enterEvent) {

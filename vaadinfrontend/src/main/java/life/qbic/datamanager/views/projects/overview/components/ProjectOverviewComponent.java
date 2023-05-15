@@ -13,6 +13,7 @@ import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -35,7 +36,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
@@ -43,9 +44,9 @@ import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.PersonSearchService;
-import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -65,10 +66,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-public class ProjectOverviewComponent extends Composite<CardLayout> {
+public class ProjectOverviewComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = 5435551053955979169L;
+
+  private final String TITLE = "Projects";
   final Button create = new Button("Create");
   final TextField projectSearchField = new TextField();
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
@@ -93,10 +96,11 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
     HorizontalLayout layout = new HorizontalLayout();
     create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     create.addClassNames("mt-s", "mb-s");
+    layout.setJustifyContentMode(JustifyContentMode.BETWEEN);
 
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
-    projectSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+    projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     projectSearchField.addClassNames("mt-xs", "mb-xs");
 
     layout.add(projectSearchField, create);
@@ -116,7 +120,9 @@ public class ProjectOverviewComponent extends Composite<CardLayout> {
         "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified");
 
     projectGrid.setMultiSort(true);
-    getContent().addFields(layout, projectGrid);
+    getContent().addContent(layout, projectGrid);
+    getContent().addTitle(TITLE);
+    getContent().indentContent(false);
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
