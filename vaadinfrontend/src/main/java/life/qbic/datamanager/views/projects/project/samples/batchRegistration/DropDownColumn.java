@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import java.rmi.ServerError;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,4 +57,13 @@ public class DropDownColumn {
     return items;
   }
 
+  public boolean isInColumn(int columnIndex) {
+    return columnIndex == colIndex;
+  }
+
+  public void increaseToRow(int rowIndex) {
+    if(this.toRowIndex < rowIndex) {
+      this.toRowIndex = rowIndex;
+    }
+  }
 }

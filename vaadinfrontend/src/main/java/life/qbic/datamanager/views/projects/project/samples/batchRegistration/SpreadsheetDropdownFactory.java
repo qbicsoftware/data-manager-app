@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -86,4 +85,20 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
+  public void addDropDownCell(int rowIndex, int columnIndex) {
+    for(DropDownColumn dropDown : dropDownColumns) {
+      if(dropDown.isInColumn(columnIndex)) {
+        dropDown.increaseToRow(rowIndex);
+      }
+    }
+  }
+
+  public DropDownColumn getColumn(int columnIndex) {
+    for(DropDownColumn dropDown : dropDownColumns) {
+      if(dropDown.isInColumn(columnIndex)) {
+        return dropDown;
+      }
+    }
+    return null;
+  }
 }
