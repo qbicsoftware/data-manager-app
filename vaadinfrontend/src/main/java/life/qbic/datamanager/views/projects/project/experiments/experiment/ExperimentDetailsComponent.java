@@ -16,7 +16,12 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.Display;
+import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
+import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
+import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
@@ -84,7 +89,12 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initTagAndNotesLayout() {
     VerticalLayout tagAndNotesLayout = new VerticalLayout();
-    tagLayout.setSpacing(false);
+    tagLayout.setWidthFull();
+    tagLayout.addClassName("spacing-s");
+    tagLayout.addClassName(Overflow.HIDDEN);
+    tagLayout.addClassName(Whitespace.NOWRAP);
+    tagLayout.addClassName(TextOverflow.ELLIPSIS);
+    tagLayout.addClassName(Display.INLINE);
     Span noNotesDefined = new Span("Click to add Notes");
     ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
         Span::new, new TextField(), noNotesDefined);
@@ -183,11 +193,12 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     private void handleAddExperimentalGroups() {
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
-      if(!variables.isEmpty()) {
+      if (!variables.isEmpty()) {
         experimentalGroupsDialog.open();
       } else {
         selectSummaryTab();
-        InformationMessage successMessage = new InformationMessage("No experimental variables are defined",
+        InformationMessage successMessage = new InformationMessage(
+            "No experimental variables are defined",
             "Please define all of your experimental variables before adding groups.");
         StyledNotification notification = new StyledNotification(successMessage);
         notification.open();
@@ -241,9 +252,12 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
     private void loadTagInformation(Experiment experiment) {
       tagLayout.removeAll();
-      experiment.getSpecies().forEach(species -> tagLayout.add(new Tag(species.value())));
-      experiment.getSpecimens().forEach(specimen -> tagLayout.add(new Tag(specimen.value())));
-      experiment.getAnalytes().forEach(analyte -> tagLayout.add(new Tag(analyte.value())));
+      List<String> tags = new ArrayList<>();
+      experiment.getSpecies().forEach(species -> tags.add(species.value()));
+      experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
+      experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
+      tags.forEach(tag -> tagLayout.add(new Tag(tag)));
+      tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {
@@ -275,7 +289,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void handleDuplicateConditionInput() {
-      InformationMessage infoMessage = new InformationMessage("A group with the same condition exists already.", "");
+      InformationMessage infoMessage = new InformationMessage(
+          "A group with the same condition exists already.", "");
       StyledNotification notification = new StyledNotification(infoMessage);
       notification.open();
     }
