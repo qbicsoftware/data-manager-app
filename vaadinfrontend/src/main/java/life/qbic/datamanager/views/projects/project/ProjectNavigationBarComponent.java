@@ -15,7 +15,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Scope;
 @SpringComponent
 @UIScope
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class ProjectNavigationBarComponent extends Composite<CardLayout> {
+public class ProjectNavigationBarComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = 2246439877362853798L;
@@ -93,7 +93,8 @@ public class ProjectNavigationBarComponent extends Composite<CardLayout> {
     navigationBarLayout.setHeightFull();
     navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
     navigationBarLayout.setAlignItems(Alignment.CENTER);
-    getContent().addFields(navigationBarLayout);
+    getContent().addContent(navigationBarLayout);
+    getContent().removeTitle();
     projectInformationButton.addClickListener(
         ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
             it -> it.navigate(

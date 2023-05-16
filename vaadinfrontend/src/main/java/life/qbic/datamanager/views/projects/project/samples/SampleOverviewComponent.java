@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.CardLayout;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -60,7 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class SampleOverviewComponent extends CardLayout implements Serializable {
+public class SampleOverviewComponent extends PageComponent implements Serializable {
 
   private final String TITLE = "Samples";
   @Serial
@@ -117,7 +117,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     noBatchDefinedLayout.setSizeFull();
     noBatchDefinedLayout.setMinWidth(100, Unit.PERCENTAGE);
     noBatchDefinedLayout.setMinHeight(100, Unit.PERCENTAGE);
-    addFields(noBatchDefinedLayout);
+    addContent(noBatchDefinedLayout);
   }
 
   private void initSampleView() {
@@ -125,7 +125,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     initButtonAndFieldBar();
     sampleContentLayout.add(buttonAndFieldBar);
     sampleContentLayout.add(sampleExperimentTabSheet);
-    addFields(sampleContentLayout);
+    addContent(sampleContentLayout);
     sampleContentLayout.setSizeFull();
     sampleContentLayout.setVisible(false);
   }

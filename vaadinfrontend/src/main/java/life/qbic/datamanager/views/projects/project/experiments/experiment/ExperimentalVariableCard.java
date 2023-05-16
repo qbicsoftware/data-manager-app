@@ -8,7 +8,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
@@ -21,15 +21,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * <b>Experiment Variable Card</b>
  *
- * <p>A CardLayout based Component showing the information stored in the
+ * <p>A PageComponent based Component showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} associated
  * with an experiment {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} in
  * the {@link ExperimentDetailsComponent} of the {@link ExperimentInformationPage}
  */
 
 
-public class ExperimentalVariableCard extends CardLayout {
-
+public class ExperimentalVariableCard extends CardComponent {
 
   FormLayout experimentalVariablesFormLayout = new FormLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
@@ -40,7 +39,7 @@ public class ExperimentalVariableCard extends CardLayout {
   public ExperimentalVariableCard(
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService);
-    addTitle("Experimental Variables");
+    this.addTitle("Experimental Variables");
     initEmptyView();
     initVariableView();
     setSizeFull();
@@ -61,7 +60,7 @@ public class ExperimentalVariableCard extends CardLayout {
 
   private void initVariableView() {
     experimentalVariablesFormLayout.setSizeFull();
-    addFields(experimentalVariablesFormLayout);
+    this.addContent(experimentalVariablesFormLayout);
   }
 
   private void initEmptyView() {
@@ -70,7 +69,7 @@ public class ExperimentalVariableCard extends CardLayout {
     noExperimentalVariableLayout.add(templateText, addExperimentalVariableButton);
     noExperimentalVariableLayout.setAlignItems(Alignment.CENTER);
     noExperimentalVariableLayout.setSizeFull();
-    addFields(noExperimentalVariableLayout);
+    this.addContent(noExperimentalVariableLayout);
   }
 
   public void refresh() {
