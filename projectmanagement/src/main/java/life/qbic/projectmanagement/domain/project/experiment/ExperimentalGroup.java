@@ -1,8 +1,14 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,17 +23,20 @@ import java.util.Objects;
 @Entity(name = "experimental_group")
 public class ExperimentalGroup {
 
+  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
+  @JoinColumn(name = "experimentalGroupId")
+  private List<BiologicalReplicate> biologicalReplicates;
   private Condition condition;
-
-  private int sampleSize;
-
   @Id
   @GeneratedValue
   private Long experimentalGroupId;
+  private int sampleSize;
 
-  private ExperimentalGroup(Condition condition, int sampleSize) {
+  private ExperimentalGroup(Condition condition, int sampleSize,
+      Collection<BiologicalReplicate> biologicalReplicates) {
     this.condition = condition;
     this.sampleSize = sampleSize;
+    this.biologicalReplicates = biologicalReplicates.stream().toList();
   }
 
   protected ExperimentalGroup() {
@@ -50,7 +59,16 @@ public class ExperimentalGroup {
       throw new IllegalArgumentException(
           "The number of biological replicates must be at least one");
     }
-    return new ExperimentalGroup(condition, sampleSize);
+    return new ExperimentalGroup(condition, sampleSize, createBiologicalReplicates(sampleSize));
+  }
+
+  private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
+    List<BiologicalReplicate> replicates = new ArrayList<>(amount);
+    BiologicalReplicate.resetReplicateCounter();
+    for (int i = 1; i <= amount; i++) {
+      replicates.add(BiologicalReplicate.create());
+    }
+    return replicates;
   }
 
   public Condition condition() {
@@ -59,6 +77,11 @@ public class ExperimentalGroup {
 
   public int sampleSize() {
     return this.sampleSize;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(experimentalGroupId);
   }
 
   @Override
@@ -74,11 +97,6 @@ public class ExperimentalGroup {
       return false;
     }
     return this.experimentalGroupId.equals(((ExperimentalGroup) o).experimentalGroupId);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(experimentalGroupId);
   }
 
 }
