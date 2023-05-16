@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class ExperimentListComponent extends Composite<CardLayout> {
+public class ExperimentListComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
@@ -65,7 +65,7 @@ public class ExperimentListComponent extends Composite<CardLayout> {
     contentLayout.setPadding(false);
     contentLayout.setMargin(false);
     getContent().addTitle(TITLE);
-    getContent().addFields(contentLayout);
+    getContent().addContent(contentLayout);
     experiments.setWidthFull();
     contentLayout.setMinWidth(100, Unit.PERCENTAGE);
 

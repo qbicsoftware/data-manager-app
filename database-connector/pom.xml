@@ -87,5 +87,10 @@
       <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

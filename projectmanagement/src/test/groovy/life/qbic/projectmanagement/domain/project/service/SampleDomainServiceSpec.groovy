@@ -25,7 +25,7 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test"))))
+        Sample testSample = Sample.create(new SampleCode("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test"))))
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
@@ -53,7 +53,7 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample(
+        Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample(new SampleCode("test"),
                 new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test"))))
 
         then:

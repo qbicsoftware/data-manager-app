@@ -47,7 +47,7 @@ public class Project {
   @JoinColumn(name = "project")
   private List<Experiment> experiments = new ArrayList<>();
 
-  @Convert(converter = ProjectCode.Converter.class)
+  @Embedded
   @Column(name = "projectCode", nullable = false)
   private ProjectCode projectCode;
 

@@ -33,7 +33,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 /**
  * <b>Experimental Design Card</b>
  *
- * <p>A CardLayout based Component showing the information stored in the
+ * <p>A PageComponent based Component showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
  * a project in the {@link ExperimentListComponent} of the {@link ProjectViewPage}
  */

@@ -5,6 +5,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
+import life.qbic.projectmanagement.domain.project.sample.SampleCode;
 import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +43,11 @@ public class SampleDomainService {
    * {@link ResponseCode}
    * @since 1.0.0
    */
-  public Result<Sample, ResponseCode> registerSample(
+  public Result<Sample, ResponseCode> registerSample(SampleCode sampleCode,
       SampleRegistrationRequest sampleRegistrationRequest) {
+    Objects.requireNonNull(sampleCode);
     Objects.requireNonNull(sampleRegistrationRequest);
-    var sample = Sample.create(sampleRegistrationRequest);
+    var sample = Sample.create(sampleCode, sampleRegistrationRequest);
     Result<Sample, ResponseCode> result = this.sampleRepository.add(sample);
 
     // For successful registration transactions we dispatch the event
