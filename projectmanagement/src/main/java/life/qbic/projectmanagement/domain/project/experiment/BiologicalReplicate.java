@@ -19,6 +19,8 @@ public class BiologicalReplicate implements Serializable {
   @Serial
   private static final long serialVersionUID = 1551778532201183788L;
 
+  private static int COUNTER = 0;
+
   @EmbeddedId
   private BiologicalReplicateId id;
 
@@ -34,8 +36,19 @@ public class BiologicalReplicate implements Serializable {
   }
 
   public static BiologicalReplicate create() {
-    String randomLabel = "biol-rep-" + new Random().nextInt(Integer.MAX_VALUE);
-    return new BiologicalReplicate(randomLabel);
+    return new BiologicalReplicate(generateLabel());
+  }
+
+  public static void resetReplicateCounter() {
+    COUNTER = 0;
+  }
+
+  private static String generateLabel() {
+    if (COUNTER == Integer.MAX_VALUE) {
+      COUNTER = 0;
+    }
+    COUNTER++;
+    return "biol-rep-" + COUNTER;
   }
 
   public String label() {
