@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
@@ -41,6 +42,7 @@ public class SampleInformationPage extends Div {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleOverviewComponent);
     setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
+    stylePage();
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
         sampleOverviewComponent);
     log.debug(String.format(
@@ -59,11 +61,13 @@ public class SampleInformationPage extends Div {
 
     Row secondRow = new Row();
     secondRow.add(sampleOverviewComponent, 4);
-
     board.add(topRow, secondRow);
 
     board.setSizeFull();
-
+    board.setMinHeight(100, Unit.PERCENTAGE);
+    board.setMinWidth(100, Unit.PERCENTAGE);
+    board.setMaxWidth(100, Unit.PERCENTAGE);
+    board.setMinWidth(100, Unit.PERCENTAGE);
     add(board);
   }
 
@@ -71,8 +75,9 @@ public class SampleInformationPage extends Div {
     sampleInformationPageHandler.setProjectId(projectId);
   }
 
-  public void setComponentStyles(SampleOverviewComponent sampleOverviewComponent) {
-    sampleOverviewComponent.setId("sample-overview-component");
+  private void stylePage() {
+    this.setWidthFull();
+    this.setHeightFull();
   }
 
   private final class SampleInformationPageHandler {
