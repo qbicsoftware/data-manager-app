@@ -121,10 +121,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
             replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim(),
             speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), commentCell.getStringCellValue().trim()));
       }
-
-      if(analysisTypeCell==null) {
-        break;
-      }
     }
     return rows;
   }
