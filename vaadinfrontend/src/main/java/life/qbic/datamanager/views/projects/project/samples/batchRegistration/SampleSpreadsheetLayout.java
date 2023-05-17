@@ -79,9 +79,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
 
-  public void generateSampleRegistrationSheet(MetaDataTypes metaDataTypes) {
+  public void generateSampleRegistrationSheet(MetaDataType metaDataType) {
     sampleRegistrationSpreadsheet.reset();
-    sampleRegistrationSheetBuilder.addSheetToSpreadsheet(metaDataTypes,
+    sampleRegistrationSheetBuilder.addSheetToSpreadsheet(metaDataType,
         sampleRegistrationSpreadsheet);
     sampleRegistrationSpreadsheet.reload();
   }
@@ -181,6 +181,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       this.sampleRegistrationService = sampleRegistrationService;
     }
 
+    /**
+     * Sets an experiment in order to provide the spreadsheet builder with known metadata
+     * to prefill certain columns
+     * @param experiment An Experiment object, most likely the active one
+     */
     public static void setExperimentMetadata(Experiment experiment) {
       species = experiment.getSpecies().stream().map(Species::label).toList();
       specimens = experiment.getSpecimens().stream()
@@ -219,9 +224,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       return replicateLabels;
     }
 
+    /**
+     * Adds a row to the spreadsheet that contains prefilled data, selectable dropdowns and editable
+     * free-text cells. The row is added below the last row containing data.
+     * @param spreadsheet the Spreadsheet object the row should be added to.
+     */
     public void addRow(Spreadsheet spreadsheet) {
       int rowIndex = findLastRow(spreadsheet)+1;
-
 
       for(int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
         String colHeader = header.get(columnIndex);
@@ -281,11 +290,17 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
     }
 
-    public void addSheetToSpreadsheet(MetaDataTypes metaDataTypes, Spreadsheet spreadsheet) {
+    /**
+     * Adds an active sheet to the spreadsheet, prefills and styles the header and adds as many rows
+     * as the known sample size suggests.
+     * @param metaDataType the MetaDataType describing what kind of spreadsheet should be created
+     * @param spreadsheet the Spreadsheet object the metadata should be added to
+     */
+    public void addSheetToSpreadsheet(MetaDataType metaDataType, Spreadsheet spreadsheet) {
       spreadsheet.setActiveSheetProtected("password-needed-to-lock");
       dropdownCellFactory = new SpreadsheetDropdownFactory();
 
-      switch (metaDataTypes) {
+      switch (metaDataType) {
         case PROTEOMICS -> addProteomicsSheet(spreadsheet, sampleRegistrationService.retrieveProteomics());
         case LIGANDOMICS -> addLigandomicsSheet(spreadsheet, sampleRegistrationService.retrieveLigandomics());
         case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(spreadsheet, sampleRegistrationService.retrieveGenomics());

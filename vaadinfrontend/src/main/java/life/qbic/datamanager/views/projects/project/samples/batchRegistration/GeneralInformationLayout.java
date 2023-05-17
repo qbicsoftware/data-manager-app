@@ -28,7 +28,7 @@ import java.util.List;
 class GeneralInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
-  public final RadioButtonGroup<MetaDataTypes> dataTypeSelection = new RadioButtonGroup<>();
+  public final RadioButtonGroup<MetaDataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
   private final GeneralInformationLayoutHandler generalInformationLayoutHandler;
@@ -72,15 +72,15 @@ class GeneralInformationLayout extends VerticalLayout {
   }
 
   private void initDataTypeSelection() {
-    dataTypeSelection.setItems(MetaDataTypes.values());
+    dataTypeSelection.setItems(MetaDataType.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetaDataTypes -> {
-      Span metaDataType = new Span(MetaDataTypes.metaDataType);
+    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetaDataType -> {
+      Span metaDataType = new Span(MetaDataType.metaDataType);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(MetaDataTypes.metaDataDescription);
+      infoIcon.setTooltipText(MetaDataType.metaDataDescription);
       return new HorizontalLayout(metaDataType, infoIcon);
     }));
   }

@@ -21,6 +21,10 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private List<DropDownColumn> dropDownColumns = new ArrayList<>();
 
+  /**
+   * Initialises the dropdown factory to display a dropdown menu (ComboBox) in a specific column
+   * @param column a DropDownColumn object specifying column index and items to be displayed
+   */
   public void addDropdownColumn(DropDownColumn column) {
     this.dropDownColumns.add(column);
   }
@@ -76,6 +80,14 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Sheet sheet, Component editor) {
   }
 
+  /**
+   * Tests if a DropDownColumn has been defined for a provided column index and if it includes a
+   * provided row, that is, if a cell is to be rendered as a dropdown. If yes, the DropDownColumn
+   * object is returned, null otherwise.
+   * @param rowIndex the row index of the spreadsheet cell to test
+   * @param columnIndex the column index of the spreadsheet cell to test
+   * @return the DropDownColumn object if it has been defined for the cell, null otherwise
+   */
   public DropDownColumn findColumnInRange(int rowIndex, int columnIndex) {
     for(DropDownColumn dropDown : dropDownColumns) {
       if(dropDown.isWithinRange(rowIndex, columnIndex)) {
@@ -85,6 +97,12 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
+  /**
+   * Increases rendering of a DropDownColumn in the specified column to include the specified row
+   * Nothing happens if no DropDownColumn is defined for this column
+   * @param rowIndex the row index of the spreadsheet cell
+   * @param columnIndex the column index of the spreadsheet cell
+   */
   public void addDropDownCell(int rowIndex, int columnIndex) {
     for(DropDownColumn dropDown : dropDownColumns) {
       if(dropDown.isInColumn(columnIndex)) {
@@ -93,6 +111,12 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     }
   }
 
+  /**
+   * Returns a DropDownColumn defined for a specific column, irrespective of its row range. Returns
+   * null if no DropDownColumn was defined.
+   * @param columnIndex the spreadsheet column of the DropDownColumn
+   * @return the DropDownColumn object if it has been defined at this index, null otherwise
+   */
   public DropDownColumn getColumn(int columnIndex) {
     for(DropDownColumn dropDown : dropDownColumns) {
       if(dropDown.isInColumn(columnIndex)) {
