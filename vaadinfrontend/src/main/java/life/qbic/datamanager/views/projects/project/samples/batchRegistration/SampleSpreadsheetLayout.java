@@ -11,12 +11,14 @@ import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -172,7 +174,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private static List<String> header;
     private static List<String> species;
     private static List<String> specimens;
-    private static List<String> conditions;
+    private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
     private static int numberOfSamples;
 
     public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
@@ -190,8 +192,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private static void prepareConditionItems(List<ExperimentalGroup> groups) {
-      // create condition items for dropdown and fix cell width
-      conditions = new ArrayList<>();
+      // create condition items for dropdown and fix cell width. Remember replicates for each condition
+      conditionsToReplicates = new HashMap<>();
       for(ExperimentalGroup group : groups) {
         List<String> varStrings = new ArrayList<>();
         for(VariableLevel level : group.condition().getVariableLevels()) {
@@ -204,19 +206,32 @@ class SampleSpreadsheetLayout extends VerticalLayout {
           varStrings.add(varName+":"+value+unit);
         }
         String conditionString = String.join("; ", varStrings);
-        conditions.add(conditionString);
+        conditionsToReplicates.put(conditionString, group.biologicalReplicates());
       }
+    }
+
+    private List<String> getReplicateLabels() {
+      //TODO values should depend on selected condition!?
+      List<String> replicateLabels = new ArrayList<>();
+      for(List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
+        replicateLabels.addAll(replicates.stream().map(BiologicalReplicate::label).toList());
+      }
+      return replicateLabels;
     }
 
     public void addRow(Spreadsheet spreadsheet) {
       int rowIndex = findLastRow(spreadsheet)+1;
+
 
       for(int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
         String colHeader = header.get(columnIndex);
         switch (colHeader) {
           case "Species" -> prefillCell(columnIndex, rowIndex, species, spreadsheet);
           case "Specimen" -> prefillCell(columnIndex, rowIndex, specimens, spreadsheet);
-          case "Condition" -> prefillCell(columnIndex, rowIndex, conditions, spreadsheet);
+          case "Condition" -> prefillCell(columnIndex, rowIndex,
+              conditionsToReplicates.keySet().stream().toList(), spreadsheet);
+          case "Biological replicate id" -> prefillCell(columnIndex, rowIndex, getReplicateLabels(),
+              spreadsheet);
           default -> {
             DropDownColumn column = dropdownCellFactory.getColumn(columnIndex);
             if(column!=null) {
@@ -286,7 +301,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private void setupCommonDropDownColumns() {
       initDropDownColumn(header.indexOf("Species"), species);
       initDropDownColumn(header.indexOf("Specimen"), specimens);
-      initDropDownColumn(header.indexOf("Condition"), conditions);
+      initDropDownColumn(header.indexOf("Condition"), conditionsToReplicates.keySet().stream().toList());
+      initDropDownColumn(header.indexOf("Biological replicate id"), getReplicateLabels());
     }
 
     private void initDropDownColumn(int colIndex, List<String> items) {
@@ -348,10 +364,12 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         updatedCells.add(cell);
         columnIndex++;
       }
+      /*
       fixColumnWidth(spreadsheet, header.indexOf("Species"), "Species", species);
       fixColumnWidth(spreadsheet, header.indexOf("Specimen"), "Specimen", specimens);
-      fixColumnWidth(spreadsheet, header.indexOf("Condition"), "Condition", conditions);
-
+      fixColumnWidth(spreadsheet, header.indexOf("Condition"), "Condition",
+          conditionsToReplicates.keySet().stream().toList());
+*/
       spreadsheet.refreshCells(updatedCells);
     }
 
@@ -362,7 +380,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
       headerToPresets.put("Species", species);
       headerToPresets.put("Specimen", specimens);
-      headerToPresets.put("Condition", conditions);
+      headerToPresets.put("Condition", conditionsToReplicates.keySet().stream().toList());
+      headerToPresets.put("Biological replicate id", getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
       setupCommonDropDownColumns();
@@ -392,11 +411,12 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
       headerToPresets.put("Species", species);
       headerToPresets.put("Specimen", specimens);
-      headerToPresets.put("Condition", conditions);
+      headerToPresets.put("Condition", conditionsToReplicates.keySet().stream().toList());
       headerToPresets.put("Analysis to be performed", Arrays.stream(SequenceAnalysisTypes
               .values())
           .map(e -> e.label)
           .collect(Collectors.toList()));
+      headerToPresets.put("Biological replicate id", getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
       DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisTypes
