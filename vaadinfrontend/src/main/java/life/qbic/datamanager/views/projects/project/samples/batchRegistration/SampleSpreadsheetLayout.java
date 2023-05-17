@@ -423,14 +423,14 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       headerToPresets.put("Species", species);
       headerToPresets.put("Specimen", specimens);
       headerToPresets.put("Condition", conditionsToReplicates.keySet().stream().toList());
-      headerToPresets.put("Analysis to be performed", Arrays.stream(SequenceAnalysisTypes
+      headerToPresets.put("Analysis to be performed", Arrays.stream(SequenceAnalysisType
               .values())
           .map(e -> e.label)
           .collect(Collectors.toList()));
       headerToPresets.put("Biological replicate id", getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
-      DropDownColumn analysisTypeColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisTypes
+      DropDownColumn analysisTypeColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisType
               .values())
           .map(e -> e.label)
           .collect(Collectors.toList()));
@@ -465,16 +465,16 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   }
 
   /**
-   * SequenceAnalysisTypes enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
+   * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
    * of Analysis will be performed.
    *
    * @since 1.0.0
    */
-  enum SequenceAnalysisTypes {
+  enum SequenceAnalysisType {
     RNASEQ("RNA-Seq"), DNASEQ("DNA-Seq");
     final String label;
 
-    SequenceAnalysisTypes(String label) {
+    SequenceAnalysisType(String label) {
       this.label = label;
     }
   }
