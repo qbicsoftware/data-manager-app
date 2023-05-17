@@ -430,14 +430,14 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       headerToPresets.put("Biological replicate id", getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
-      DropDownColumn techColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisTypes
+      DropDownColumn analysisTypeColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisTypes
               .values())
           .map(e -> e.label)
           .collect(Collectors.toList()));
-      techColumn.toRowIndex(0)
+      analysisTypeColumn.toRowIndex(0)
           .atColIndex(header.indexOf("Analysis to be performed"));
 
-      dropdownCellFactory.addDropdownColumn(techColumn);
+      dropdownCellFactory.addDropdownColumn(analysisTypeColumn);
       setupCommonDropDownColumns();
     }
 
