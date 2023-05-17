@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,6 +42,11 @@ public class ExperimentalGroup {
 
   protected ExperimentalGroup() {
     // Please use the create method. This is needed for JPA
+  }
+
+  @PostLoad
+  private void loadReplicates() {
+    this.biologicalReplicates.size();
   }
 
   /**
