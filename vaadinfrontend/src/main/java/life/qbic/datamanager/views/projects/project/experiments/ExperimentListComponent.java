@@ -47,7 +47,7 @@ public class ExperimentListComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = -2255999216830849632L;
-  private static final String TITLE = "Experimental Design";
+  private static final String TITLE = "Experiments";
   private final transient Handler handler;
   private final VirtualList<Experiment> experiments = new VirtualList<>();
   private final ExperimentalDesignAddCard experimentalDesignAddCard = new ExperimentalDesignAddCard();
@@ -66,6 +66,7 @@ public class ExperimentListComponent extends Composite<PageComponent> {
     contentLayout.setMargin(false);
     getContent().addTitle(TITLE);
     getContent().addContent(contentLayout);
+    getContent().indentContent(false);
     experiments.setWidthFull();
     contentLayout.setMinWidth(100, Unit.PERCENTAGE);
 
