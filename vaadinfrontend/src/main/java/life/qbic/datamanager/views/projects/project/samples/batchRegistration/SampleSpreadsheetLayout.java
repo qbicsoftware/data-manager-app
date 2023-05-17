@@ -113,7 +113,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       Stream<Cell> mandatoryCellStream = Stream.of(analysisTypeCell, sampleLabelCell,
           replicateIDCell, conditionCell, speciesCell, specimenCell);
 
-      if (mandatoryCellStream.anyMatch(x -> x == null)) {
+      if (mandatoryCellStream.anyMatch(Objects::isNull)) {
         break;
       }
       if(mandatoryCellStream.noneMatch(x -> x.getStringCellValue().isEmpty())) {
