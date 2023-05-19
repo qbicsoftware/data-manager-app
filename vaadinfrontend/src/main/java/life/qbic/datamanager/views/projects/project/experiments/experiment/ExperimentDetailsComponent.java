@@ -65,7 +65,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final VerticalLayout specimenForm = new VerticalLayout();
   private final VerticalLayout analyteForm = new VerticalLayout();
   private final CardComponent blockingVariableCard = new CardComponent();
-  private ExperimentalVariableCard experimentalVariableCard;
+  private ExperimentalVariablesCard experimentalVariablesCard;
   private final Button addBlockingVariableButton = new Button("Add");
   private final AddVariablesDialog addVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
@@ -118,8 +118,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initSampleOriginCard();
     initBlockingVariableCard();
     initExperimentalVariableCard(experimentInformationService);
-    Row topRow = new Row(sampleOriginCard, blockingVariableCard);
-    Row bottomRow = new Row(experimentalVariableCard);
+    Row topRow = new Row(sampleOriginCard, experimentalVariablesCard);
+    Row bottomRow = new Row(blockingVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
 
@@ -160,9 +160,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
-    experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
-    experimentalVariableCard.setMargin(false);
-    experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
+    experimentalVariablesCard = new ExperimentalVariablesCard(experimentInformationService);
+    experimentalVariablesCard.setMargin(false);
+    experimentalVariablesCard.setAddButtonAction(addVariablesDialog::open);
   }
 
   private void initExperimentalGroupsBoard() {
@@ -220,7 +220,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     private void addCloseListenerForAddVariableDialog() {
       addVariablesDialog.addOpenedChangeListener(it -> {
         if (!it.isOpened()) {
-          experimentalVariableCard.refresh();
+          experimentalVariablesCard.refresh();
         }
       });
     }
@@ -244,7 +244,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       loadTagInformation(experiment);
       loadSampleOriginInformation(experiment);
       loadBlockingVariableInformation();
-      experimentalVariableCard.experimentId(experiment.experimentId());
+      experimentalVariablesCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
       fillExperimentalGroupDialog();
       loadExperimentalGroups();
