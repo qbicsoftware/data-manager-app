@@ -14,8 +14,10 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BoxSizing;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.Flex;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 
@@ -55,10 +57,11 @@ public class CardComponent extends VerticalLayout {
     this.setMargin(false);
     this.setMaxHeight(100, Unit.PERCENTAGE);
     this.setMaxWidth(100, Unit.PERCENTAGE);
+    setClickable(true);
   }
 
   private void setDefaultTitleStyle() {
-    layoutTitle.addClassNames("text-2xl", "font-bold", "text-secondary");
+    layoutTitle.addClassNames(FontSize.XXLARGE, FontWeight.BOLD, TextColor.SECONDARY);
     layoutTitle.addClassName(Whitespace.NOWRAP);
     layoutTitle.addClassName(TextOverflow.ELLIPSIS);
     layoutTitle.addClassName(Overflow.HIDDEN);
@@ -112,12 +115,19 @@ public class CardComponent extends VerticalLayout {
   }
 
   public void setTitleStyles(String... styles) {
-    layoutTitle.getClassNames().forEach(layoutTitle::removeClassName);
     layoutTitle.addClassNames(styles);
   }
 
   public void setCardStyle(String... styles) {
     cardLayout.getClassNames().forEach(this::removeClassName);
     cardLayout.addClassNames(styles);
+  }
+
+  public void setClickable(boolean isClickable) {
+    if (isClickable) {
+      this.getElement().getStyle().set("cursor", "pointer");
+    } else {
+      this.getElement().getStyle().set("cursor", "default");
+    }
   }
 }
