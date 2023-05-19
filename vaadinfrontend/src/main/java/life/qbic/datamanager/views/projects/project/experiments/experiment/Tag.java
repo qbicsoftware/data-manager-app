@@ -19,6 +19,7 @@ public class Tag extends Span {
     styleSpacing();
     this.addClassName(Display.INLINE);
     getElement().getThemeList().add("badge");
+    getElement().setAttribute("Title", text);
   }
 
   private void styleOverflow() {
