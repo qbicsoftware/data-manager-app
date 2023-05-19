@@ -4,14 +4,20 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.details.DetailsVariant;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.theme.lumo.LumoUtility.AlignItems;
+import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 
 public class ExperimentalVariablesCard extends CardComponent {
-
 
   VerticalLayout experimentalVariablesLayout = new VerticalLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
@@ -126,11 +131,15 @@ public class ExperimentalVariablesCard extends CardComponent {
       showVariablesView();
     }
 
-    private Details generateExperimentalVariableDetails(
-        ExperimentalVariable experimentalVariable) {
-      Span experimentalVariableName = new Span(experimentalVariable.name().value());
+    private Details generateExperimentalVariableDetails(ExperimentalVariable experimentalVariable) {
+      Icon experimentalVariableIcon = VaadinIcon.OPTION_A.create();
+      experimentalVariableIcon.setSize("1em");
+      Label experimentalVariableName = new Label(experimentalVariable.name().value());
       experimentalVariableName.addClassName(FontWeight.BOLD);
-      Details experimentalVariableDetails = new Details(experimentalVariableName);
+      Span experimentalVariableHeader = new Span(experimentalVariableIcon,
+          experimentalVariableName);
+      experimentalVariableHeader.addClassNames(AlignItems.CENTER, Gap.XSMALL, Display.FLEX);
+      Details experimentalVariableDetails = new Details(experimentalVariableHeader);
       FlexLayout experimentalValues = new FlexLayout();
       experimentalValues.setFlexDirection(FlexDirection.ROW);
       experimentalValues.setFlexWrap(FlexWrap.WRAP);
