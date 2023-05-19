@@ -6,6 +6,8 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
@@ -14,6 +16,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility.AlignSelf;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
@@ -171,10 +174,15 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       ClickNotifier<VerticalLayout> {
 
     public AddExperimentalGroupCard() {
+      Icon plusIcon = new Icon(VaadinIcon.PLUS);
+      plusIcon.setSize(IconSize.LARGE);
       Button addButton = new Button("Add Group");
       addButton.addClickListener(it -> fireEvent(new ClickEvent<VerticalLayout>(this)));
       setDefaultHorizontalComponentAlignment(Alignment.CENTER);
       setAlignItems(Alignment.CENTER);
+      setJustifyContentMode(JustifyContentMode.CENTER);
+      this.setSpacing(true);
+      add(plusIcon);
       add(addButton);
     }
 
