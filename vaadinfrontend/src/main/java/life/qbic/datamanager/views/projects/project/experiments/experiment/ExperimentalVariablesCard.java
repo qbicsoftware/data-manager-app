@@ -2,10 +2,17 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.details.DetailsVariant;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardComponent;
@@ -28,15 +35,16 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 
 
-public class ExperimentalVariableCard extends CardComponent {
+public class ExperimentalVariablesCard extends CardComponent {
 
-  FormLayout experimentalVariablesFormLayout = new FormLayout();
+
+  VerticalLayout experimentalVariablesLayout = new VerticalLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
   private final Button addExperimentalVariableButton = new Button("Add");
   private final Handler handler;
   private Registration addButtonListener;
 
-  public ExperimentalVariableCard(
+  public ExperimentalVariablesCard(
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService);
     this.addTitle("Experimental Variables");
@@ -50,8 +58,7 @@ public class ExperimentalVariableCard extends CardComponent {
     if (addButtonListener != null) {
       addButtonListener.remove();
     }
-    addButtonListener = addExperimentalVariableButton.addClickListener(
-        it -> runnable.run());
+    addButtonListener = addExperimentalVariableButton.addClickListener(it -> runnable.run());
   }
 
   public void experimentId(ExperimentId experimentId) {
@@ -59,8 +66,12 @@ public class ExperimentalVariableCard extends CardComponent {
   }
 
   private void initVariableView() {
-    experimentalVariablesFormLayout.setSizeFull();
-    this.addContent(experimentalVariablesFormLayout);
+    experimentalVariablesLayout.setSizeFull();
+    setPadding(false);
+    experimentalVariablesLayout.setSpacing(false);
+    experimentalVariablesLayout.setMargin(false);
+    experimentalVariablesLayout.setPadding(false);
+    this.addContent(experimentalVariablesLayout);
   }
 
   private void initEmptyView() {
@@ -105,31 +116,47 @@ public class ExperimentalVariableCard extends CardComponent {
     }
 
     public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
-      experimentalVariablesFormLayout.removeAll();
+      experimentalVariablesLayout.removeAll();
       for (ExperimentalVariable experimentalVariable : experimentalVariables) {
-        VerticalLayout experimentalVariableLayout = new VerticalLayout();
-        experimentalVariablesFormLayout.addFormItem(experimentalVariableLayout,
-            experimentalVariable.name().value());
-        experimentalVariable
-            .levels().stream()
-            .map(VariableLevel::experimentalValue)
-            .map(ExperimentValueFormatter::format)
-            .forEach(text ->
-                experimentalVariableLayout.add(new Span(text)));
+        Details experimentalVariableDetails = generateExperimentalVariableDetails(
+            experimentalVariable);
+
+        experimentalVariablesLayout.add(experimentalVariableDetails);
       }
       showVariablesView();
     }
 
+    private Details generateExperimentalVariableDetails(
+        ExperimentalVariable experimentalVariable) {
+      Span experimentalVariableName = new Span(experimentalVariable.name().value());
+      experimentalVariableName.addClassName(FontWeight.BOLD);
+      Details experimentalVariableDetails = new Details(experimentalVariableName);
+      FlexLayout experimentalValues = new FlexLayout();
+      experimentalValues.setFlexDirection(FlexDirection.ROW);
+      experimentalValues.setFlexWrap(FlexWrap.WRAP);
+      experimentalValues.setAlignContent(ContentAlignment.STRETCH);
+      experimentalVariable.levels().stream().map(VariableLevel::experimentalValue)
+          .map(ExperimentValueFormatter::format).forEach(text -> {
+            Tag experimentalVariableTag = new Tag(text);
+            experimentalVariableTag.addClassName(TextOverflow.ELLIPSIS);
+            experimentalValues.add(experimentalVariableTag);
+          });
+      experimentalVariableDetails.addContent(experimentalValues);
+      experimentalVariableDetails.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE,
+          DetailsVariant.SMALL);
+      experimentalVariableDetails.setWidthFull();
+      experimentalVariableDetails.setOpened(true);
+      return experimentalVariableDetails;
+    }
+
     private void showEmptyView() {
-      experimentalVariablesFormLayout.setVisible(false);
+      experimentalVariablesLayout.setVisible(false);
       noExperimentalVariableLayout.setVisible(true);
     }
 
     private void showVariablesView() {
       noExperimentalVariableLayout.setVisible(false);
-      experimentalVariablesFormLayout.setVisible(true);
+      experimentalVariablesLayout.setVisible(true);
     }
   }
-
-
 }
