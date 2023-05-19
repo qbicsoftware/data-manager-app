@@ -130,12 +130,13 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private NumberField generateSampleSizeField() {
     NumberField numberField = new NumberField();
-    numberField.setLabel("Number of Samples");
+    numberField.setLabel("Number of biological replicates");
     numberField.setStepButtonsVisible(true);
     numberField.setStep(1);
     numberField.setMin(1);
     numberField.setValue(1.0);
-    numberField.setWidth(150, Unit.PIXELS);
+    //Min Width necessary so label is not cut off
+    numberField.setMinWidth(225, Unit.PIXELS);
     return numberField;
   }
 
