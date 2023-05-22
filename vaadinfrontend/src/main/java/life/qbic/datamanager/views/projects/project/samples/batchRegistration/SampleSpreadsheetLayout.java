@@ -330,23 +330,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
     }
 
-    private void unlockEmptyCells(Spreadsheet spreadsheet) {
-      for(int column = 0; column < Integer.MAX_VALUE; column++) {
-        Cell firstCell = spreadsheet.getCell(0, column);
-        Cell firstDataCell = spreadsheet.getCell(1, column);
-        boolean hasHeader = !isCellEmpty(firstCell);
-        if(!hasHeader) {
-          break;
-        }
-        boolean hasData = !isCellEmpty(firstDataCell);
-        boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, column)!=null;
-        //columns need to be unlocked if they have a header and no data/dropdown
-        if(!hasData && !hasDropdown) {
-          unlockCell(spreadsheet, column, 1);
-        }
-      }
-    }
-
     private boolean isCellEmpty(Cell cell) {
       return cell==null || cell.getStringCellValue().isEmpty();
     }
