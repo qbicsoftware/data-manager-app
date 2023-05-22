@@ -256,6 +256,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
     }
 
+    private int lastColumn() {
+      return header.size();
+    }
+
     private int findLastRow(Spreadsheet spreadsheet) {
       int res = 0;
       for(int row = 1; row <= Integer.MAX_VALUE; row++) {
