@@ -8,7 +8,7 @@ package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
  *
  * @since 1.0.0
  */
-enum MetaDataType {
+enum MetadataType {
   LIGANDOMICS("Ligandomics", "Detailed Explanation for Ligandomics"), METABOLOMICS("Metabolomics",
       "Detailed Explanation for Metabolomics"), TRANSCRIPTOMICS_GENOMICS("Transcriptomics/Genomics",
       "Detailed Explanation for Transcriptomics/Genomics"), PROTEOMICS("Proteomics",
@@ -16,7 +16,7 @@ enum MetaDataType {
   final String metaDataType;
   final String metaDataDescription;
 
-  MetaDataType(String metaDataType, String metaDataDescription) {
+  MetadataType(String metaDataType, String metaDataDescription) {
     this.metaDataType = metaDataType;
     this.metaDataDescription = metaDataDescription;
   }

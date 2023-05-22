@@ -34,28 +34,28 @@ public class SampleRegistrationService {
     this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
   }
 
-  public List<SampleSheetHeaderLabel> retrieveProteomics() {
-    return List.of(SampleSheetHeaderLabel.SAMPLE_LABEL, SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID,
-        SampleSheetHeaderLabel.CONDITION, SampleSheetHeaderLabel.SPECIES, SampleSheetHeaderLabel.SPECIMEN,
-        SampleSheetHeaderLabel.CUSTOMER_COMMENT);
+  public List<SamplesheetHeaderName> retrieveProteomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<SampleSheetHeaderLabel> retrieveLigandomics() {
-    return List.of(SampleSheetHeaderLabel.SAMPLE_LABEL, SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID,
-        SampleSheetHeaderLabel.CONDITION, SampleSheetHeaderLabel.SPECIES, SampleSheetHeaderLabel.SPECIMEN,
-        SampleSheetHeaderLabel.CUSTOMER_COMMENT);
+  public List<SamplesheetHeaderName> retrieveLigandomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<SampleSheetHeaderLabel> retrieveMetabolomics() {
-    return List.of(SampleSheetHeaderLabel.SAMPLE_LABEL, SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID,
-        SampleSheetHeaderLabel.CONDITION, SampleSheetHeaderLabel.SPECIES, SampleSheetHeaderLabel.SPECIMEN,
-        SampleSheetHeaderLabel.CUSTOMER_COMMENT);
+  public List<SamplesheetHeaderName> retrieveMetabolomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<SampleSheetHeaderLabel> retrieveGenomics() {
-    return List.of(SampleSheetHeaderLabel.SEQ_ANALYSIS_TYPE, SampleSheetHeaderLabel.SAMPLE_LABEL,
-        SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID, SampleSheetHeaderLabel.CONDITION,
-        SampleSheetHeaderLabel.SPECIES, SampleSheetHeaderLabel.SPECIMEN, SampleSheetHeaderLabel.CUSTOMER_COMMENT);
+  public List<SamplesheetHeaderName> retrieveGenomics() {
+    return List.of(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
+        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
+        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN, SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
   public Result<Sample, ResponseCode> registerSample(
@@ -81,7 +81,7 @@ public class SampleRegistrationService {
    *
    * @since 1.0.0
    */
-  public enum SampleSheetHeaderLabel {
+  public enum SamplesheetHeaderName {
     SEQ_ANALYSIS_TYPE("Analysis to be performed"),
     SAMPLE_LABEL("Sample label"),
     BIOLOGICAL_REPLICATE_ID("Biological replicate id"),
@@ -91,7 +91,7 @@ public class SampleRegistrationService {
     CUSTOMER_COMMENT("Customer comment");
     public final String label;
 
-    SampleSheetHeaderLabel(String label) {
+    SamplesheetHeaderName(String label) {
       this.label = label;
     }
   }

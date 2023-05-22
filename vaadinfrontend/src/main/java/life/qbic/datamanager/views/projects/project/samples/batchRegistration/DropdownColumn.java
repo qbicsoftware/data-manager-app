@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
-import java.rmi.ServerError;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,9 +8,9 @@ import java.util.List;
  * label to style a spreadsheet
  * @since 1.0.0
  */
-public class DropDownColumn {
+public class DropdownColumn {
 
-  private String dropDownLabel = "";
+  private String dropdownLabel = "";
   private List<String> items = new ArrayList<>();
   private int fromRowIndex = 1;
   private int toRowIndex = 1000;
@@ -23,7 +21,7 @@ public class DropDownColumn {
    * @param item String denoting the item
    * @return this DropdownColumn, now with one more item
    */
-  public DropDownColumn addItem(String item) {
+  public DropdownColumn addItem(String item) {
     items.add(item+" ");
     return this;
   }
@@ -33,7 +31,7 @@ public class DropDownColumn {
    * @param items List of Strings denoting the items
    * @return this DropdownColumn, now with the provided items
    */
-  public DropDownColumn withItems(List<String> items) {
+  public DropdownColumn withItems(List<String> items) {
     this.items = new ArrayList<>();
     for(String item : items) {
       this.addItem(item);
@@ -46,7 +44,7 @@ public class DropDownColumn {
    * @param i the first row index
    * @return this DropdownColumn
    */
-  public DropDownColumn fromRowIndex(int i) {
+  public DropdownColumn fromRowIndex(int i) {
     this.fromRowIndex = i;
     return this;
   }
@@ -56,7 +54,7 @@ public class DropDownColumn {
    * @param i the last row index
    * @return this DropdownColumn
    */
-  public DropDownColumn toRowIndex(int i) {
+  public DropdownColumn toRowIndex(int i) {
     this.toRowIndex = i;
     return this;
   }
@@ -66,7 +64,7 @@ public class DropDownColumn {
    * @param i the column index
    * @return this DropdownColumn
    */
-  public DropDownColumn atColIndex(int i) {
+  public DropdownColumn atColIndex(int i) {
     this.colIndex = i;
     return this;
   }
@@ -87,7 +85,7 @@ public class DropDownColumn {
    * @return the label, which might be an empty String
    */
   public String getLabel() {
-    return dropDownLabel;
+    return dropdownLabel;
   }
 
   /**
