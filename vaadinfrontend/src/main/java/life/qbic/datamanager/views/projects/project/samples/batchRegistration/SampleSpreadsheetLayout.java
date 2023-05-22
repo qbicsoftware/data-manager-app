@@ -168,9 +168,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     private final SampleRegistrationService sampleRegistrationService;
 
-    private static SpreadsheetDropdownFactory dropdownCellFactory;
+    private SpreadsheetDropdownFactory dropdownCellFactory;
 
-    private static List<SamplesheetHeaderName> header;
+    private List<SamplesheetHeaderName> header;
     private static List<String> species;
     private static List<String> specimens;
     private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
