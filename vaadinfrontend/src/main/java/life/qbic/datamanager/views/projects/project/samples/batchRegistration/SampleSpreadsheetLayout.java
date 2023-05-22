@@ -272,7 +272,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     /**
-     * Used to generate cell for Species, Specimen and Condition
+     * Generates and prefills the correct cell component dependent on already specified values.
      * @param colIndex
      * @param rowIndex
      * @param items
