@@ -354,12 +354,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       int columnIndex = 0;
       for (SamplesheetHeaderName columnHeader : headerToPresets.keySet()) {
         List<String> presets = headerToPresets.get(columnHeader);
+        String columnLabel = columnHeader.label;
         if (presets == null) {
-          fixColumnWidth(spreadsheet, columnIndex, columnHeader, new ArrayList<>());
+          fixColumnWidth(spreadsheet, columnIndex, columnLabel, new ArrayList<>());
         } else {
-          fixColumnWidth(spreadsheet, columnIndex, columnHeader, presets);
+          fixColumnWidth(spreadsheet, columnIndex, columnLabel, presets);
         }
-        Cell cell = spreadsheet.createCell(0, columnIndex, columnHeader);
+        Cell cell = spreadsheet.createCell(0, columnIndex, columnLabel);
         cell.setCellStyle(boldHeaderStyle);
         updatedCells.add(cell);
         columnIndex++;
@@ -427,9 +428,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     /*
      * Changes width of a spreadsheet column based on header element and potential known entries.
      */
-    private void fixColumnWidth(Spreadsheet spreadsheet, int colIndex, SamplesheetHeaderName colLabel, List<String> entries) {
+    private void fixColumnWidth(Spreadsheet spreadsheet, int colIndex, String colLabel, List<String> entries) {
       final String COL_SPACER = "___";
-      List<String> stringList = new ArrayList<>(Arrays.asList(colLabel.label));
+      List<String> stringList = new ArrayList<>(Arrays.asList(colLabel));
       stringList.addAll(entries);
       String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
           .get();
