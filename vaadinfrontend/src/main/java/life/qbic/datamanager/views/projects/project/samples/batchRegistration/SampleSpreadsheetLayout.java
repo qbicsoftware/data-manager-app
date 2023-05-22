@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
+import life.qbic.projectmanagement.application.SampleRegistrationService.SampleSheetHeaderLabel;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -103,13 +104,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     List<NGSRowDTO> rows = new ArrayList<>();
     for(int i = 1; i < Integer.MAX_VALUE; i++) {
       Row row = sampleRegistrationSpreadsheet.getActiveSheet().getRow(i);
-      Cell analysisTypeCell = row.getCell(header.indexOf("Analysis to be performed"));
-      Cell sampleLabelCell = row.getCell(header.indexOf("Sample label"));
-      Cell replicateIDCell = row.getCell(header.indexOf("Biological replicate id"));
-      Cell conditionCell = row.getCell(header.indexOf("Condition"));
-      Cell speciesCell = row.getCell(header.indexOf("Species"));
-      Cell specimenCell = row.getCell(header.indexOf("Specimen"));
-      Cell commentCell = row.getCell(header.indexOf("Customer comment"));
+      Cell analysisTypeCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.SEQ_ANALYSIS_TYPE));
+      Cell sampleLabelCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.SAMPLE_LABEL));
+      Cell replicateIDCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID));
+      Cell conditionCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.CONDITION));
+      Cell speciesCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.SPECIES));
+      Cell specimenCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.SPECIMEN));
+      Cell commentCell = row.getCell(header.indexOf(SampleSheetHeaderLabel.CUSTOMER_COMMENT));
 
       Stream<Cell> mandatoryCellStream = Stream.of(analysisTypeCell, sampleLabelCell,
           replicateIDCell, conditionCell, speciesCell, specimenCell);
@@ -168,7 +169,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     private static SpreadsheetDropdownFactory dropdownCellFactory;
 
-    private static List<String> header;
+    private static List<SampleSheetHeaderLabel> header;
     private static List<String> species;
     private static List<String> specimens;
     private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
@@ -230,13 +231,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       int rowIndex = findLastRow(spreadsheet)+1;
 
       for(int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
-        String colHeader = header.get(columnIndex);
+        SampleSheetHeaderLabel colHeader = header.get(columnIndex);
         switch (colHeader) {
-          case "Species" -> prefillCell(columnIndex, rowIndex, species, spreadsheet);
-          case "Specimen" -> prefillCell(columnIndex, rowIndex, specimens, spreadsheet);
-          case "Condition" -> prefillCell(columnIndex, rowIndex,
+          case SPECIES -> prefillCell(columnIndex, rowIndex, species, spreadsheet);
+          case SPECIMEN -> prefillCell(columnIndex, rowIndex, specimens, spreadsheet);
+          case CONDITION -> prefillCell(columnIndex, rowIndex,
               conditionsToReplicates.keySet().stream().toList(), spreadsheet);
-          case "Biological replicate id" -> prefillCell(columnIndex, rowIndex, getReplicateLabels(),
+          case BIOLOGICAL_REPLICATE_ID -> prefillCell(columnIndex, rowIndex, getReplicateLabels(),
               spreadsheet);
           default -> {
             DropDownColumn column = dropdownCellFactory.getColumn(columnIndex);
@@ -315,10 +316,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void setupCommonDropDownColumns() {
-      initDropDownColumn(header.indexOf("Species"), species);
-      initDropDownColumn(header.indexOf("Specimen"), specimens);
-      initDropDownColumn(header.indexOf("Condition"), conditionsToReplicates.keySet().stream().toList());
-      initDropDownColumn(header.indexOf("Biological replicate id"), getReplicateLabels());
+      initDropDownColumn(header.indexOf(SampleSheetHeaderLabel.SPECIES), species);
+      initDropDownColumn(header.indexOf(SampleSheetHeaderLabel.SPECIMEN), specimens);
+      initDropDownColumn(header.indexOf(SampleSheetHeaderLabel.CONDITION), conditionsToReplicates.keySet().stream().toList());
+      initDropDownColumn(header.indexOf(SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID), getReplicateLabels());
     }
 
     private void initDropDownColumn(int colIndex, List<String> items) {
@@ -342,7 +343,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       spreadsheet.refreshCells(cell);
     }
 
-    private void prepareColumnHeaderAndWidth(Spreadsheet spreadsheet, LinkedHashMap<String,
+    private void prepareColumnHeaderAndWidth(Spreadsheet spreadsheet, LinkedHashMap<SampleSheetHeaderLabel,
         List<String>> headerToPresets) {
       CellStyle boldHeaderStyle = spreadsheet.getWorkbook().createCellStyle();
       Font font = spreadsheet.getWorkbook().createFont();
@@ -351,7 +352,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
       List<Cell> updatedCells = new ArrayList<>();
       int columnIndex = 0;
-      for (String columnHeader : headerToPresets.keySet()) {
+      for (SampleSheetHeaderLabel columnHeader : headerToPresets.keySet()) {
         List<String> presets = headerToPresets.get(columnHeader);
         if (presets == null) {
           fixColumnWidth(spreadsheet, columnIndex, columnHeader, new ArrayList<>());
@@ -367,49 +368,49 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void prepareCommonSheetTasks(Spreadsheet spreadsheet) {
-      LinkedHashMap<String, List<String>> headerToPresets = new LinkedHashMap<>();
-      for(String head : header) {
-        headerToPresets.put(head, new ArrayList<>());
+      LinkedHashMap<SampleSheetHeaderLabel, List<String>> headerToPresets = new LinkedHashMap<>();
+      for(SampleSheetHeaderLabel label : header) {
+        headerToPresets.put(label, new ArrayList<>());
       }
-      headerToPresets.put("Species", species);
-      headerToPresets.put("Specimen", specimens);
-      headerToPresets.put("Condition", conditionsToReplicates.keySet().stream().toList());
-      headerToPresets.put("Biological replicate id", getReplicateLabels());
+      headerToPresets.put(SampleSheetHeaderLabel.SPECIES, species);
+      headerToPresets.put(SampleSheetHeaderLabel.SPECIMEN, specimens);
+      headerToPresets.put(SampleSheetHeaderLabel.CONDITION, conditionsToReplicates.keySet().stream().toList());
+      headerToPresets.put(SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
       setupCommonDropDownColumns();
     }
 
-    private void addProteomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+    private void addProteomicsSheet(Spreadsheet spreadsheet, List<SampleSheetHeaderLabel> header) {
       this.header = header;
       prepareCommonSheetTasks(spreadsheet);
 
     }
 
-    private void addMetabolomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+    private void addMetabolomicsSheet(Spreadsheet spreadsheet, List<SampleSheetHeaderLabel> header) {
       this.header = header;
       prepareCommonSheetTasks(spreadsheet);
     }
 
-    private void addLigandomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+    private void addLigandomicsSheet(Spreadsheet spreadsheet, List<SampleSheetHeaderLabel> header) {
       this.header = header;
       prepareCommonSheetTasks(spreadsheet);
     }
 
-    private void addGenomicsSheet(Spreadsheet spreadsheet, List<String> header) {
+    private void addGenomicsSheet(Spreadsheet spreadsheet, List<SampleSheetHeaderLabel> header) {
       this.header = header;
-      LinkedHashMap<String, List<String>> headerToPresets = new LinkedHashMap<>();
-      for(String head : header) {
+      LinkedHashMap<SampleSheetHeaderLabel, List<String>> headerToPresets = new LinkedHashMap<>();
+      for(SampleSheetHeaderLabel head : header) {
         headerToPresets.put(head, new ArrayList<>());
       }
-      headerToPresets.put("Species", species);
-      headerToPresets.put("Specimen", specimens);
-      headerToPresets.put("Condition", conditionsToReplicates.keySet().stream().toList());
-      headerToPresets.put("Analysis to be performed", Arrays.stream(SequenceAnalysisType
+      headerToPresets.put(SampleSheetHeaderLabel.SPECIES, species);
+      headerToPresets.put(SampleSheetHeaderLabel.SPECIMEN, specimens);
+      headerToPresets.put(SampleSheetHeaderLabel.CONDITION, conditionsToReplicates.keySet().stream().toList());
+      headerToPresets.put(SampleSheetHeaderLabel.SEQ_ANALYSIS_TYPE, Arrays.stream(SequenceAnalysisType
               .values())
           .map(e -> e.label)
           .collect(Collectors.toList()));
-      headerToPresets.put("Biological replicate id", getReplicateLabels());
+      headerToPresets.put(SampleSheetHeaderLabel.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
       prepareColumnHeaderAndWidth(spreadsheet, headerToPresets);
       spreadsheet.reload();
       DropDownColumn analysisTypeColumn = new DropDownColumn().withItems(Arrays.stream(SequenceAnalysisType
@@ -417,7 +418,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
           .map(e -> e.label)
           .collect(Collectors.toList()));
       analysisTypeColumn.toRowIndex(0)
-          .atColIndex(header.indexOf("Analysis to be performed"));
+          .atColIndex(header.indexOf(SampleSheetHeaderLabel.SEQ_ANALYSIS_TYPE));
 
       dropdownCellFactory.addDropdownColumn(analysisTypeColumn);
       setupCommonDropDownColumns();
@@ -426,9 +427,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     /*
      * Changes width of a spreadsheet column based on header element and potential known entries.
      */
-    private void fixColumnWidth(Spreadsheet spreadsheet, int colIndex, String colHeader, List<String> entries) {
+    private void fixColumnWidth(Spreadsheet spreadsheet, int colIndex, SampleSheetHeaderLabel colLabel, List<String> entries) {
       final String COL_SPACER = "___";
-      List<String> stringList = new ArrayList<>(Arrays.asList(colHeader));
+      List<String> stringList = new ArrayList<>(Arrays.asList(colLabel.label));
       stringList.addAll(entries);
       String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
           .get();
