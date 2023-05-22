@@ -13,11 +13,11 @@ enum MetadataType {
       "Detailed Explanation for Metabolomics"), TRANSCRIPTOMICS_GENOMICS("Transcriptomics/Genomics",
       "Detailed Explanation for Transcriptomics/Genomics"), PROTEOMICS("Proteomics",
       "Detailed Explanation for Proteomics");
-  final String metaDataType;
-  final String metaDataDescription;
+  final String metadataType;
+  final String metadataDescription;
 
   MetadataType(String metaDataType, String metaDataDescription) {
-    this.metaDataType = metaDataType;
-    this.metaDataDescription = metaDataDescription;
+    this.metadataType = metaDataType;
+    this.metadataDescription = metaDataDescription;
   }
 }

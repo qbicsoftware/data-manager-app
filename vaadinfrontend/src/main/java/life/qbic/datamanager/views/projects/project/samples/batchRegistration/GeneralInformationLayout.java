@@ -76,11 +76,11 @@ class GeneralInformationLayout extends VerticalLayout {
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     dataTypeSelection.setRenderer(new ComponentRenderer<>(MetadataType -> {
-      Span metaDataType = new Span(MetadataType.metaDataType);
+      Span metaDataType = new Span(MetadataType.metadataType);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(MetadataType.metaDataDescription);
+      infoIcon.setTooltipText(MetadataType.metadataDescription);
       return new HorizontalLayout(metaDataType, infoIcon);
     }));
   }
