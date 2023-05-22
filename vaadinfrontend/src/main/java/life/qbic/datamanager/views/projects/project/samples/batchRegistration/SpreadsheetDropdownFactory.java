@@ -63,7 +63,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   private Component initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
     List<String> items = dropDownColumn.getItems();
-    ComboBox analysisType = new ComboBox(dropDownColumn.getLabel(), items);
+    ComboBox<String> analysisType = new ComboBox<>(dropDownColumn.getLabel(), items);
 
     analysisType.addValueChangeListener(e -> {
       String newValue = (String) e.getValue();
