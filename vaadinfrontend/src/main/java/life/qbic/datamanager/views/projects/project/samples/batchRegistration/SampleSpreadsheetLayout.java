@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
@@ -112,13 +113,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       Cell specimenCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIMEN));
       Cell commentCell = row.getCell(header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
 
-      Stream<Cell> mandatoryCellStream = Stream.of(analysisTypeCell, sampleLabelCell,
+      Supplier<Stream<Cell>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeCell, sampleLabelCell,
           replicateIDCell, conditionCell, speciesCell, specimenCell);
 
-      if (mandatoryCellStream.anyMatch(Objects::isNull)) {
+      if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
         break;
       }
-      if(mandatoryCellStream.noneMatch(x -> x.getStringCellValue().isEmpty())) {
+      if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
         rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(), sampleLabelCell.getStringCellValue().trim(),
             replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim(),
             speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), commentCell.getStringCellValue().trim()));
