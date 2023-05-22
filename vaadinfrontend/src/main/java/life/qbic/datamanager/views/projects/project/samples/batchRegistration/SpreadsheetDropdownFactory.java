@@ -66,9 +66,8 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     ComboBox<String> analysisType = new ComboBox<>(dropDownColumn.getLabel(), items);
 
     analysisType.addValueChangeListener(e -> {
-      String newValue = (String) e.getValue();
       Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
-      cell.setCellValue(newValue);
+      cell.setCellValue(e.getValue());
       spreadsheet.refreshCells(cell);
     });
     return analysisType;
