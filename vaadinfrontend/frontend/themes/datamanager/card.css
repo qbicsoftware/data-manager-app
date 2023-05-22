@@ -1,0 +1,27 @@
+.card {
+  display: flex;
+  flex: auto;
+  flex-direction: column;
+  border-color: var(--lumo-contrast-10pct);
+  padding: var(--lumo-space-l);
+  font-size: var(--lumo-font-size-s);
+  box-shadow: var(--lumo-box-shadow-s);
+  border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+  background-color: var(--lumo-base-color);
+  margin: 5px;
+  gap: 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card .title {
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-header-text-color);
+}
+
+.card .content {
+
+}
