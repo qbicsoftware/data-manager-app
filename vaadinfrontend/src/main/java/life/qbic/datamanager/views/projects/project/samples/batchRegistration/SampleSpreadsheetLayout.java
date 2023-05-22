@@ -366,7 +366,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       int columnIndex = 0;
       for (String columnHeader : headerToPresets.keySet()) {
         List<String> presets = headerToPresets.get(columnHeader);
-        if(presets==null) {
+        if (presets == null) {
           fixColumnWidth(spreadsheet, columnIndex, columnHeader, new ArrayList<>());
         } else {
           fixColumnWidth(spreadsheet, columnIndex, columnHeader, presets);
@@ -376,12 +376,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         updatedCells.add(cell);
         columnIndex++;
       }
-      /*
-      fixColumnWidth(spreadsheet, header.indexOf("Species"), "Species", species);
-      fixColumnWidth(spreadsheet, header.indexOf("Specimen"), "Specimen", specimens);
-      fixColumnWidth(spreadsheet, header.indexOf("Condition"), "Condition",
-          conditionsToReplicates.keySet().stream().toList());
-*/
       spreadsheet.refreshCells(updatedCells);
     }
 
