@@ -51,6 +51,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     setPadding(false);
   }
 
+  /*
   public void setExperimentalGroups(List<ExperimentalGroupDTO> experimentalGroups) {
     experimentalGroupContainer.removeAll();
     AddExperimentalGroupCard addExperimentalGroupCard = new AddExperimentalGroupCard();
@@ -62,6 +63,10 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
       experimentalGroupContainer.add(experimentalGroupCard);
     }
 
+  }*/
+
+  public void setExperimentalGroups(List<life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard> experimentalGroups) {
+    this.experimentalGroupContainer.add(experimentalGroups);
   }
 
   public void setExperimentalGroupCommandListener(ExperimentalGroupCommandListener listener) {

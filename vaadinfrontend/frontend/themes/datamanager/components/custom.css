@@ -1,0 +1,24 @@
+/* This file defines the styling and layout for all custom components. The components are sorted alphabetically */
+.card .page-area {
+  background-color: var(--lumo-base-color);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card.experimental-group {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-l);
+}
+
+.card.experimental-group > .title {
+  color: var(--lumo-header-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: bold;
+  white-space: nowrap;
+}

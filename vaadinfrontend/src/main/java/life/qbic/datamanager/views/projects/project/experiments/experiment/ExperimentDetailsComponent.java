@@ -38,6 +38,7 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final TabSheet experimentSheet = new TabSheet();
   private final Board summaryCardBoard = new Board();
   private final ExperimentalGroupsLayout experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
+
+  private final ExperimentalGroupsCollection experimentalGroupsCollection = new ExperimentalGroupsCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
   private final VerticalLayout speciesForm = new VerticalLayout();
   private final VerticalLayout specimenForm = new VerticalLayout();
@@ -215,6 +218,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
           experimentId);
       experimentalGroupsLayoutBoard.setExperimentalGroups(experimentalGroups);
 
+      List<ExperimentalGroup> expGroups = experimentInformationService.experimentalGroupsFor(experimentId);
+
+      experimentalGroupsCollection.addComponents(expGroups.stream().map(ExperimentalGroupCard::new).toList());
     }
 
     private void addCloseListenerForAddVariableDialog() {

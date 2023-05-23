@@ -85,6 +85,10 @@ public class ExperimentalGroup {
     return this.sampleSize;
   }
 
+  public long id() {
+    return this.experimentalGroupId;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(experimentalGroupId);

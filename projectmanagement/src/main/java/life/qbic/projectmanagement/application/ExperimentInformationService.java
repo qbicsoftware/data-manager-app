@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -88,7 +89,13 @@ public class ExperimentInformationService {
         .toList();
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+  public List<ExperimentalGroup> experimentalGroupsFor(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream().toList();
+  }
+
+
+    public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
 
   }
 
