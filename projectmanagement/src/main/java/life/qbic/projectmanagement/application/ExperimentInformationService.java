@@ -94,8 +94,14 @@ public class ExperimentInformationService {
     return experiment.getExperimentalGroups().stream().toList();
   }
 
+  public void deleteExperimentGroup(ExperimentId experimentId, long groupId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.removeExperimentGroup(groupId);
+    experimentRepository.update(experiment);
+  }
 
-    public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
 
   }
 

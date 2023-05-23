@@ -243,4 +243,8 @@ public class ExperimentalDesign {
   public Set<ExperimentalGroup> getExperimentalGroups() {
     return Collections.unmodifiableSet(experimentalGroups);
   }
+
+  public void removeExperimentalGroup(long groupId) {
+    this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
+  }
 }

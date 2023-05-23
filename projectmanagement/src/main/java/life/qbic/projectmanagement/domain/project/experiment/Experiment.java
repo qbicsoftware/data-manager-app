@@ -234,4 +234,8 @@ public class Experiment {
   public Set<ExperimentalGroup> getExperimentalGroups() {
     return experimentalDesign.getExperimentalGroups();
   }
+
+  public void removeExperimentGroup(long groupId) {
+    experimentalDesign.removeExperimentalGroup(groupId);
+  }
 }

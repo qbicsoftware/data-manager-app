@@ -1,11 +1,18 @@
 /* This file defines the styling and layout for all custom components. The components are sorted alphabetically */
-.card .page-area {
+.card {
   background-color: var(--lumo-base-color);
+  border: black;
   border-radius: var(--lumo-border-radius-m);
   box-shadow: var(--lumo-box-shadow-s);
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.card-deck {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
 }
 
 .card.experimental-group {
@@ -14,6 +21,7 @@
   flex: auto;
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-l);
+  max-width: 300px;
 }
 
 .card.experimental-group > .title {

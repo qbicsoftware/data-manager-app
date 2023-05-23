@@ -11,9 +11,11 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.AlignSelf;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
@@ -46,6 +48,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
     experimentalGroupContainer.setFlexDirection(FlexDirection.ROW);
     experimentalGroupContainer.setFlexWrap(FlexWrap.WRAP);
     experimentalGroupContainer.setAlignContent(ContentAlignment.STRETCH);
+    experimentalGroupContainer.addClassName(Gap.SMALL);
     add(experimentalGroupContainer);
     setHeight(80, Unit.PERCENTAGE);
     setPadding(false);
@@ -66,7 +69,7 @@ public class ExperimentalGroupsLayout extends VerticalLayout {
   }*/
 
   public void setExperimentalGroups(List<life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard> experimentalGroups) {
-    this.experimentalGroupContainer.add(experimentalGroups);
+    experimentalGroups.forEach(experimentalGroupContainer::add);
   }
 
   public void setExperimentalGroupCommandListener(ExperimentalGroupCommandListener listener) {

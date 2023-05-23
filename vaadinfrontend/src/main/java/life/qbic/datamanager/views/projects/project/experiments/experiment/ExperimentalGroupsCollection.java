@@ -1,7 +1,10 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.HasSize;
+import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import java.io.Serial;
 import java.util.Collection;
 
@@ -12,18 +15,23 @@ import java.util.Collection;
  *
  * @since <version tag>
  */
-public class ExperimentalGroupsCollection extends Composite<Div> {
+@Tag(Tag.DIV)
+public class ExperimentalGroupsCollection extends Component implements HasComponents, HasSize {
 
   @Serial
   private static final long serialVersionUID = -5835580091959912561L;
 
   public ExperimentalGroupsCollection() {
+    addClassName(Gap.SMALL);
+    addClassName("card-deck");
+  }
 
+  public void setComponents(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
+    removeAll();
+    addComponents(experimentalGroupComponents);
   }
 
   public void addComponents(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
-    experimentalGroupComponents.stream().forEach(experimentalGroupComponent ->
-      getContent().add(experimentalGroupComponent)
-    );
+    experimentalGroupComponents.forEach(this::add);
   }
 }
