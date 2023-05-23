@@ -23,17 +23,16 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class SampleRegistrationDialog extends Dialog {
 
-  private final Span title = new Span("Upload Laboratory Metadata");
+  private final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
-  private final Tab generalInformationTab = createTabStep("1", "General Information");
-  private final Tab sampleMetadataTab = createTabStep("2", "Sample Metadata");
+  private final Tab generalInformationTab = createTabStep("1", "Batch Information");
+  private final Tab sampleMetadataTab = createTabStep("2", "Register Samples");
   private final GeneralInformationLayout generalInformationLayout = new GeneralInformationLayout();
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public SampleRegistrationDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
-    add(title);
-    title.addClassNames("text-2xl", "font-bold", "text-secondary");
+    setHeaderTitle(TITLE);
     initSampleMetadataLayout(sampleRegistrationService);
     initTabStepper();
     styleStepper();
@@ -130,6 +129,7 @@ public class SampleRegistrationDialog extends Dialog {
             && generalInformationLayout.isInputValid()) {
           sampleSpreadsheetLayout.generateSampleRegistrationSheet(
               generalInformationLayout.dataTypeSelection.getValue());
+          sampleSpreadsheetLayout.setBatchName(generalInformationLayout.batchNameField.getValue());
         } else {
           tabStepper.setSelectedTab(generalInformationTab);
         }

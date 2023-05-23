@@ -2,10 +2,13 @@ package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,9 +26,12 @@ import org.apache.poi.ss.usermodel.Font;
  */
 class SampleSpreadsheetLayout extends VerticalLayout {
 
+  private final Span sampleInformationHeader = new Span("Sample Information");
+  private final Span batchRegistrationInstruction = new Span();
+  private final Label batchName = new Label();
   public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
-  public final Button nextButton = new Button("Next");
+  public final Button nextButton = new Button("Register");
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
   private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
 
@@ -37,9 +43,19 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   }
 
   private void initContent() {
+    initHeaderAndInstruction();
     add(sampleRegistrationSpreadsheet);
     styleSampleRegistrationSpreadSheet();
     initButtonLayout();
+  }
+
+  private void initHeaderAndInstruction() {
+    sampleInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
+    batchRegistrationInstruction.add("Please register your samples for Batch: ");
+    batchRegistrationInstruction.add(batchName);
+    batchName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
+    add(sampleInformationHeader);
+    add(batchRegistrationInstruction);
   }
 
   private void initButtonLayout() {
@@ -67,6 +83,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     sampleMetadataLayoutHandler.reset();
   }
 
+  public void setBatchName(String text) {
+    batchName.setText(text);
+  }
+
   public boolean isInputValid() {
     return sampleMetadataLayoutHandler.isInputValid();
   }
@@ -89,6 +109,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void resetChildValues() {
+      batchName.setText("");
       sampleRegistrationSpreadsheet.reset();
       sampleRegistrationSpreadsheet.reload();
     }

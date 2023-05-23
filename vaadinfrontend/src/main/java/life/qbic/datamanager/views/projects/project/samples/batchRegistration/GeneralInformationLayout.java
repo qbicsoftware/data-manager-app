@@ -40,7 +40,7 @@ class GeneralInformationLayout extends VerticalLayout {
   }
 
   private void initContent() {
-    Span generalInformationHeader = new Span("General Information");
+    Span generalInformationHeader = new Span("Batch Information");
     generalInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
     add(generalInformationHeader);
     initBatchLayout();
