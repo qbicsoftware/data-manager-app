@@ -77,7 +77,7 @@ public class SampleRegistrationService {
 
 
   /**
-   * SampleSheetHeaderLabel enums are used to refer to the labels of different columns of the spreadsheet for different technologies
+   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers of the different columns of the {@link life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleSpreadsheetLayout} for different technologies
    *
    * @since 1.0.0
    */
