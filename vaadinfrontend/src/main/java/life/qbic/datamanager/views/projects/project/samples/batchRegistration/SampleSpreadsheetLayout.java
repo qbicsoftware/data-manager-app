@@ -68,7 +68,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     addRowButton.addClickListener(new ComponentEventListener<ClickEvent<Button>>() {
       @Override
       public void onComponentEvent(ClickEvent<Button> buttonClickEvent) {
-        sampleRegistrationSheetBuilder.addRow(sampleRegistrationSpreadsheet);
+        sampleRegistrationSheetBuilder.addRows(sampleRegistrationSpreadsheet,
+            sampleRegistrationSheetBuilder.findLastRow(sampleRegistrationSpreadsheet)+1);
       }
     });
     sampleMetadataButtons.add(addRowButton, cancelButton, nextButton);
@@ -224,21 +225,21 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     /**
-     * Adds a row to the spreadsheet that contains prefilled data, selectable dropdowns and editable
-     * free-text cells. The row is added below the last row containing data.
+     * Adds rows to the spreadsheet that contains prefilled data, selectable dropdowns and editable
+     * free-text cells. The rows are added below the last row containing data.
      * @param spreadsheet the Spreadsheet object the row should be added to.
+     * @param rowIndex the row index of the last row
      */
-    public void addRow(Spreadsheet spreadsheet) {
-      int rowIndex = findLastRow(spreadsheet)+1;
+    public void addRows(Spreadsheet spreadsheet, int rowIndex) {
 
       for(int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
         SamplesheetHeaderName colHeader = header.get(columnIndex);
         switch (colHeader) {
-          case SPECIES -> prefillCell(columnIndex, rowIndex, species, spreadsheet);
-          case SPECIMEN -> prefillCell(columnIndex, rowIndex, specimens, spreadsheet);
-          case CONDITION -> prefillCell(columnIndex, rowIndex,
+          case SPECIES -> prefillCellsToRow(columnIndex, rowIndex, species, spreadsheet);
+          case SPECIMEN -> prefillCellsToRow(columnIndex, rowIndex, specimens, spreadsheet);
+          case CONDITION -> prefillCellsToRow(columnIndex, rowIndex,
               conditionsToReplicates.keySet().stream().toList(), spreadsheet);
-          case BIOLOGICAL_REPLICATE_ID -> prefillCell(columnIndex, rowIndex, getReplicateLabels(),
+          case BIOLOGICAL_REPLICATE_ID -> prefillCellsToRow(columnIndex, rowIndex, getReplicateLabels(),
               spreadsheet);
           default -> {
             DropdownColumn column = dropdownCellFactory.getColumn(columnIndex);
@@ -253,7 +254,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex)!=null;
         //cells need to be unlocked if they have no data/dropdown
         if(!hasData && !hasDropdown) {
-          unlockCell(spreadsheet, rowIndex, columnIndex);
+          unlockCellsToRow(spreadsheet, rowIndex, columnIndex);
         }
       }
     }
@@ -278,18 +279,22 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     /**
-     * Generates and prefills the correct cell component dependent on already specified values.
+     * Generates and prefills the correct cell components dependent on already specified values.
      * @param colIndex
-     * @param rowIndex
+     * @param maxRow
      * @param items
      * @param spreadsheet
      */
-    private void prefillCell(int colIndex, int rowIndex, List<String> items, Spreadsheet spreadsheet) {
+    private void prefillCellsToRow(int colIndex, int maxRow, List<String> items, Spreadsheet spreadsheet) {
       if(items.size() == 1) {
-        Cell cell = spreadsheet.createCell(rowIndex, colIndex, items.get(0));
-        spreadsheet.refreshCells(cell);
+        List<Cell> cells = new ArrayList<>();
+        for(int row = 1; row <= maxRow; row++) {
+          Cell cell = spreadsheet.createCell(row, colIndex, items.get(0));
+          cells.add(cell);
+        }
+        spreadsheet.refreshCells(cells);
       } else {
-        dropdownCellFactory.addDropDownCell(rowIndex, colIndex);
+        dropdownCellFactory.addDropDownCell(maxRow, colIndex);
       }
     }
 
@@ -311,9 +316,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       }
       spreadsheet.setSpreadsheetComponentFactory(dropdownCellFactory);
       //initialise first rows based on known sample size
-      for(int rowIndex = 1; rowIndex <= numberOfSamples; rowIndex++) {
-        addRow(spreadsheet);
-      }
+      addRows(spreadsheet, numberOfSamples);
     }
 
     private void setupCommonDropDownColumns() {
@@ -336,12 +339,18 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       return cell==null || cell.getStringCellValue().isEmpty();
     }
 
-    private void unlockCell(Spreadsheet spreadsheet, int row, int column) {
+    private void unlockCellsToRow(Spreadsheet spreadsheet, int maxRow, int column) {
+      List<Cell> cells = new ArrayList<>();
       CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
       unLockedStyle.setLocked(false);
-      Cell cell = spreadsheet.createCell(row, column, "");
-      cell.setCellStyle(unLockedStyle);
-      spreadsheet.refreshCells(cell);
+      for(int row = 1; row <= maxRow; row++) {
+        if(isCellEmpty(spreadsheet.getCell(row, column))) {
+          Cell cell = spreadsheet.createCell(row, column, "");
+          cell.setCellStyle(unLockedStyle);
+          cells.add(cell);
+        }
+      }
+      spreadsheet.refreshCells(cells);
     }
 
     private void prepareColumnHeaderAndWidth(Spreadsheet spreadsheet, LinkedHashMap<SamplesheetHeaderName,
@@ -386,7 +395,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     private void addProteomicsSheet(Spreadsheet spreadsheet, List<SamplesheetHeaderName> header) {
       this.header = header;
       prepareCommonSheetTasks(spreadsheet);
-
     }
 
     private void addMetabolomicsSheet(Spreadsheet spreadsheet, List<SamplesheetHeaderName> header) {
