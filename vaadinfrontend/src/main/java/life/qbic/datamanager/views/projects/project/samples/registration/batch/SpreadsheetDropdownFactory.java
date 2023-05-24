@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
+package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -35,17 +35,17 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
       List<String> dropdownItems = dropDownColumn.getItems();
-      if(cell==null) {
+      if (cell == null) {
         cell = spreadsheet.createCell(rowIndex, columnIndex, "");
       }
-      if(cell.getCellStyle().getLocked()) {
+      if (cell.getCellStyle().getLocked()) {
         CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
         unLockedStyle.setLocked(false);
         cell.setCellStyle(unLockedStyle);
         spreadsheet.refreshCells(cell);
       }
 
-      if(!dropdownItems.contains(cell.getStringCellValue())) {
+      if (!dropdownItems.contains(cell.getStringCellValue())) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
@@ -77,6 +77,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
+    /* not implemented since no custom editor is currently used */
   }
 
   /**

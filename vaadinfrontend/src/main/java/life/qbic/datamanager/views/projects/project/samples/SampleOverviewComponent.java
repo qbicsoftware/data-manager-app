@@ -37,7 +37,7 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
-import life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
@@ -293,16 +293,11 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     private void configureBatchRegistrationDialog() {
       sampleRegistrationDialog.addSampleRegistrationEventListener(event -> {
-        processSampleRegistration(event.getSource().content());
         sampleRegistrationDialog.resetAndClose();
         showSamplesView();
       });
       sampleRegistrationDialog.addCancelEventListener(
           event -> sampleRegistrationDialog.resetAndClose());
-    }
-
-    //Todo Add ApplicationService for Sample Registration here
-    private void processSampleRegistration(List<String> exampleBatchInformation) {
     }
 
     private void generateExperimentTabs(Project project) {

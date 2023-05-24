@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
+package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -53,7 +53,6 @@ public class PageComponent extends VerticalLayout {
   }
 
   private void setDefaultCardStyle() {
-    this.setSizeFull();
     this.setMaxHeight(100, Unit.PERCENTAGE);
     this.setMaxWidth(100, Unit.PERCENTAGE);
     this.addClassName(Padding.SMALL);
