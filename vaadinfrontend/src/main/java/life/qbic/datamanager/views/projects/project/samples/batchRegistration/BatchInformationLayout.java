@@ -19,30 +19,29 @@ import java.util.List;
 
 
 /**
- * <b>General Information Layout </b>
+ * <b>Batch Information Layout </b>
  * <p>
- * Layout in which the user will provide the general information necessary during sample
- * registration
+ * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-class GeneralInformationLayout extends VerticalLayout {
+class BatchInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetaDataTypes> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
-  private final GeneralInformationLayoutHandler generalInformationLayoutHandler;
+  private final BatchInformationLayoutHandler batchInformationLayoutHandler;
 
-  public GeneralInformationLayout() {
+  public BatchInformationLayout() {
     initContent();
     this.setSizeFull();
-    generalInformationLayoutHandler = new GeneralInformationLayoutHandler();
+    batchInformationLayoutHandler = new BatchInformationLayoutHandler();
   }
 
   private void initContent() {
-    Span generalInformationHeader = new Span("Batch Information");
-    generalInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
-    add(generalInformationHeader);
+    Span batchInformationHeader = new Span("Batch Information");
+    batchInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
+    add(batchInformationHeader);
     initBatchLayout();
     initDataTypeLayout();
     initButtonLayout();
@@ -86,26 +85,26 @@ class GeneralInformationLayout extends VerticalLayout {
   }
 
   private void initButtonLayout() {
-    HorizontalLayout generalInformationButtons = new HorizontalLayout();
+    HorizontalLayout batchInformationButtons = new HorizontalLayout();
     nextButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    generalInformationButtons.add(cancelButton, nextButton);
-    this.setAlignSelf(Alignment.END, generalInformationButtons);
-    add(generalInformationButtons);
+    batchInformationButtons.add(cancelButton, nextButton);
+    this.setAlignSelf(Alignment.END, batchInformationButtons);
+    add(batchInformationButtons);
   }
 
   public boolean isInputValid() {
-    return generalInformationLayoutHandler.isInputValid();
+    return batchInformationLayoutHandler.isInputValid();
   }
 
   public void reset() {
-    generalInformationLayoutHandler.reset();
+    batchInformationLayoutHandler.reset();
   }
 
-  private class GeneralInformationLayoutHandler {
+  private class BatchInformationLayoutHandler {
 
     private final List<Binder<?>> binders = new ArrayList<>();
 
-    public GeneralInformationLayoutHandler() {
+    public BatchInformationLayoutHandler() {
       configureValidators();
     }
 

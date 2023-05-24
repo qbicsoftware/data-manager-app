@@ -31,15 +31,15 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private final Label batchName = new Label();
   public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
-  public final Button nextButton = new Button("Register");
+  public final Button registerButton = new Button("Register");
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
-  private final SampleMetadataLayoutHandler sampleMetadataLayoutHandler;
+  private final SampleMetadataLayoutHandler sampleInformationLayoutHandler;
 
   SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
     sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
-    sampleMetadataLayoutHandler = new SampleMetadataLayoutHandler();
+    sampleInformationLayoutHandler = new SampleMetadataLayoutHandler();
   }
 
   private void initContent() {
@@ -59,11 +59,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   }
 
   private void initButtonLayout() {
-    HorizontalLayout sampleMetadataButtons = new HorizontalLayout();
-    nextButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sampleMetadataButtons.add(cancelButton, nextButton);
-    this.setAlignSelf(Alignment.END, sampleMetadataButtons);
-    add(sampleMetadataButtons);
+    HorizontalLayout sampleInformationButtons = new HorizontalLayout();
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sampleInformationButtons.add(cancelButton, registerButton);
+    this.setAlignSelf(Alignment.END, sampleInformationButtons);
+    add(sampleInformationButtons);
   }
 
   private void styleSampleRegistrationSpreadSheet() {
@@ -80,7 +80,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   }
 
   public void reset() {
-    sampleMetadataLayoutHandler.reset();
+    sampleInformationLayoutHandler.reset();
   }
 
   public void setBatchName(String text) {
@@ -88,7 +88,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   }
 
   public boolean isInputValid() {
-    return sampleMetadataLayoutHandler.isInputValid();
+    return sampleInformationLayoutHandler.isInputValid();
   }
 
   private class SampleMetadataLayoutHandler {

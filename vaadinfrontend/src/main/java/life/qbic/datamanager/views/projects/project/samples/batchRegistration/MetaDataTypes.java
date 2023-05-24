@@ -2,9 +2,9 @@ package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
 
 
 /**
- * MetaDataType enums are used in {@link GeneralInformationLayout}, to indicate which type of Sample
+ * MetaDataType enums are used in {@link BatchInformationLayout}, to indicate which type of Sample
  * Metadata will be provided during Sample Registration. Additionally, they host a detailed
- * description for the relative metadatatype
+ * description for the relative metaDataType
  *
  * @since 1.0.0
  */

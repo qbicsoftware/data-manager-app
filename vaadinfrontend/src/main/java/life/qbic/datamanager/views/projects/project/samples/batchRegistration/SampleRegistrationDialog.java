@@ -25,9 +25,9 @@ public class SampleRegistrationDialog extends Dialog {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
-  private final Tab generalInformationTab = createTabStep("1", "Batch Information");
-  private final Tab sampleMetadataTab = createTabStep("2", "Register Samples");
-  private final GeneralInformationLayout generalInformationLayout = new GeneralInformationLayout();
+  private final Tab batchInformationTab = createTabStep("1", "Batch Information");
+  private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
+  private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
@@ -41,8 +41,8 @@ public class SampleRegistrationDialog extends Dialog {
   }
 
   private void initTabStepper() {
-    tabStepper.add(generalInformationTab, generalInformationLayout);
-    tabStepper.add(sampleMetadataTab, sampleSpreadsheetLayout);
+    tabStepper.add(batchInformationTab, batchInformationLayout);
+    tabStepper.add(sampleInformationTab, sampleSpreadsheetLayout);
     add(tabStepper);
   }
 
@@ -94,21 +94,21 @@ public class SampleRegistrationDialog extends Dialog {
 
     public RegisterBatchDialogHandler() {
       resetDialogueUponClosure();
-      setGeneralInformationButtonsListeners();
+      setbatchInformationButtonsListeners();
       setSampleRegistrationSubmission();
       setTabSelectionListener();
     }
 
-    private void setGeneralInformationButtonsListeners() {
-      generalInformationLayout.nextButton.addClickListener(
-          event -> tabStepper.setSelectedTab(sampleMetadataTab));
-      generalInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
+    private void setbatchInformationButtonsListeners() {
+      batchInformationLayout.nextButton.addClickListener(
+          event -> tabStepper.setSelectedTab(sampleInformationTab));
+      batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
           listener -> listener.onComponentEvent(
               new UserCancelEvent<>(SampleRegistrationDialog.this))));
     }
 
     private void setSampleRegistrationSubmission() {
-      sampleSpreadsheetLayout.nextButton.addClickListener(event -> {
+      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
               new SampleRegistrationEvent(SampleRegistrationDialog.this, true)));
@@ -120,18 +120,18 @@ public class SampleRegistrationDialog extends Dialog {
     }
 
     protected boolean isInputValid() {
-      return generalInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
+      return batchInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
     }
 
     private void setTabSelectionListener() {
       tabStepper.addSelectedChangeListener(event -> {
-        if (event.getSelectedTab() == sampleMetadataTab
-            && generalInformationLayout.isInputValid()) {
+        if (event.getSelectedTab() == sampleInformationTab
+            && batchInformationLayout.isInputValid()) {
           sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-              generalInformationLayout.dataTypeSelection.getValue());
-          sampleSpreadsheetLayout.setBatchName(generalInformationLayout.batchNameField.getValue());
+              batchInformationLayout.dataTypeSelection.getValue());
+          sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
         } else {
-          tabStepper.setSelectedTab(generalInformationTab);
+          tabStepper.setSelectedTab(batchInformationTab);
         }
       });
     }
@@ -152,9 +152,9 @@ public class SampleRegistrationDialog extends Dialog {
     }
 
     private void reset() {
-      generalInformationLayout.reset();
+      batchInformationLayout.reset();
       sampleSpreadsheetLayout.reset();
-      tabStepper.setSelectedTab(generalInformationTab);
+      tabStepper.setSelectedTab(batchInformationTab);
     }
 
     private void resetDialogueUponClosure() {
