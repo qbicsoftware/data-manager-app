@@ -271,10 +271,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           event -> sampleRegistrationDialog.resetAndClose());
     }
 
-    //Todo Add ApplicationService for Sample Registration here
-    private void processSampleRegistration(List<String> exampleBatchInformation) {
-    }
-
     private void generateExperimentTabs(Project project) {
       resetTabSheet();
       resetTabSelect();

@@ -118,7 +118,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
   }
 
-  private static class SampleRegistrationSheetBuilder {
+  private static class SampleRegistrationSheetBuilder implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 573778360298068552L;
@@ -139,7 +139,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void unlockColumn(Spreadsheet spreadsheet, int column, int minRow, int maxRow) {
-      List<Cell> updatedCells = new ArrayList<Cell>();
+      List<Cell> updatedCells = new ArrayList<>();
       CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
       unLockedStyle.setLocked(false);
       for (int i = minRow; i <= maxRow; i++) {
@@ -155,7 +155,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       font.setBold(true);
       boldHeaderStyle.setFont(font);
 
-      List<Cell> updatedCells = new ArrayList<Cell>();
+      List<Cell> updatedCells = new ArrayList<>();
       int columnIndex = 0;
       for (String columnHeader : header) {
         String extraSpacer = "___";
