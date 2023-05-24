@@ -13,10 +13,12 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
  * <b>Sample Registration Dialog</b>
@@ -33,7 +35,7 @@ public class SampleRegistrationDialog extends Dialog {
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
   private final RegisterBatchDialogHandler registerBatchDialogHandler;
 
-  public SampleRegistrationDialog(@Autowired SampleRegistrationService sampleRegistrationService) {
+  public SampleRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
     setHeaderTitle(TITLE);
     initSampleMetadataLayout(sampleRegistrationService);
     initTabStepper();
@@ -80,6 +82,17 @@ public class SampleRegistrationDialog extends Dialog {
 
   public void resetAndClose() {
     registerBatchDialogHandler.resetAndClose();
+  }
+
+  //ToDo Replace with values in Spreadsheet
+  public List<String> content() {
+    List<String> exampleBatch = new ArrayList<>(
+        List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
+    return exampleBatch;
+  }
+
+  public void setActiveExperiment(Experiment experiment) {
+    sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }
 
   private class RegisterBatchDialogHandler implements Serializable {

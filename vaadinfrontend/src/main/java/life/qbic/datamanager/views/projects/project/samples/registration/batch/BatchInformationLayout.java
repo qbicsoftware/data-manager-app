@@ -29,7 +29,7 @@ import java.util.List;
 class BatchInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
-  public final RadioButtonGroup<MetaDataTypes> dataTypeSelection = new RadioButtonGroup<>();
+  public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
   private final BatchInformationLayoutHandler batchInformationLayoutHandler;
@@ -73,16 +73,16 @@ class BatchInformationLayout extends VerticalLayout {
   }
 
   private void initDataTypeSelection() {
-    dataTypeSelection.setItems(MetaDataTypes.values());
+    dataTypeSelection.setItems(MetadataType.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(metaDataTypes -> {
-      Span metaDataType = new Span(metaDataTypes.metaDataType);
+    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetadataType -> {
+      Span metadataType = new Span(MetadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(metaDataTypes.metaDataDescription);
-      return new HorizontalLayout(metaDataType, infoIcon);
+      infoIcon.setTooltipText(MetadataType.description);
+      return new HorizontalLayout(metadataType, infoIcon);
     }));
   }
 

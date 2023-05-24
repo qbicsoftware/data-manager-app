@@ -4,8 +4,10 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -17,52 +19,36 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  private String dropDownLabel = "";
+  private List<DropdownColumn> dropdownColumns = new ArrayList<>();
 
-  private List<String> dropdownItems;
-  private int fromRowIndex = 0;
-  private int fromColIndex = 0;
-  private int toRowIndex = 1000;
-  private int toColIndex = 1000;
-
-  public SpreadsheetDropdownFactory withDropdownLabel(String label) {
-    this.dropDownLabel = label;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory withItems(List<String> items) {
-    this.dropdownItems = items;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory fromRowIndex(int i) {
-    this.fromRowIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory toRowIndex(int i) {
-    this.toRowIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory fromColIndex(int i) {
-    this.fromColIndex = i;
-    return this;
-  }
-
-  public SpreadsheetDropdownFactory toColIndex(int i) {
-    this.toColIndex = i;
-    return this;
+  /**
+   * Initialises the dropdown factory to display a dropdown menu (ComboBox) in a specific column
+   * @param column a DropDownColumn object specifying column index and items to be displayed
+   */
+  public void addDropdownColumn(DropdownColumn column) {
+    this.dropdownColumns.add(column);
   }
 
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-    if (spreadsheet.getActiveSheetIndex() == 0
-        && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex
-        && columnIndex <= toColIndex && (cell == null || !dropdownItems.contains(
-        cell.getStringCellValue()))) {
-      return initCustomComboBox(rowIndex, columnIndex, spreadsheet);
+    DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
+    if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
+      List<String> dropdownItems = dropDownColumn.getItems();
+      if (cell == null) {
+        cell = spreadsheet.createCell(rowIndex, columnIndex, "");
+      }
+      if (cell.getCellStyle().getLocked()) {
+        CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
+        unLockedStyle.setLocked(false);
+        cell.setCellStyle(unLockedStyle);
+        spreadsheet.refreshCells(cell);
+      }
+
+      if (!dropdownItems.contains(cell.getStringCellValue())) {
+        return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
+            spreadsheet);
+      }
     }
     return null;
   }
@@ -74,10 +60,16 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
-  private Component initCustomComboBox(int rowIndex, int columnIndex, Spreadsheet spreadsheet) {
-    ComboBox<String> analysisType = new ComboBox<>(dropDownLabel, dropdownItems);
-    analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
-        spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
+  private Component initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
+      Spreadsheet spreadsheet) {
+    List<String> items = dropDownColumn.getItems();
+    ComboBox<String> analysisType = new ComboBox<>(dropDownColumn.getLabel(), items);
+
+    analysisType.addValueChangeListener(e -> {
+      Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
+      cell.setCellValue(e.getValue());
+      spreadsheet.refreshCells(cell);
+    });
     return analysisType;
   }
 
@@ -88,4 +80,49 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     /* not implemented since no custom editor is currently used */
   }
 
+  /**
+   * Tests if a DropDownColumn has been defined for a provided column index and if it includes a
+   * provided row, that is, if a cell is to be rendered as a dropdown. If yes, the DropDownColumn
+   * object is returned, null otherwise.
+   * @param rowIndex the row index of the spreadsheet cell to test
+   * @param columnIndex the column index of the spreadsheet cell to test
+   * @return the DropDownColumn object if it has been defined for the cell, null otherwise
+   */
+  public DropdownColumn findColumnInRange(int rowIndex, int columnIndex) {
+    for(DropdownColumn dropDown : dropdownColumns) {
+      if(dropDown.isWithinRange(rowIndex, columnIndex)) {
+        return dropDown;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Increases rendering of a DropDownColumn in the specified column to include the specified row
+   * Nothing happens if no DropDownColumn is defined for this column
+   * @param rowIndex the row index of the spreadsheet cell
+   * @param columnIndex the column index of the spreadsheet cell
+   */
+  public void addDropDownCell(int rowIndex, int columnIndex) {
+    for(DropdownColumn dropDown : dropdownColumns) {
+      if(dropDown.isInColumn(columnIndex)) {
+        dropDown.increaseToRow(rowIndex);
+      }
+    }
+  }
+
+  /**
+   * Returns a DropDownColumn defined for a specific column, irrespective of its row range. Returns
+   * null if no DropDownColumn was defined.
+   * @param columnIndex the spreadsheet column of the DropDownColumn
+   * @return the DropDownColumn object if it has been defined at this index, null otherwise
+   */
+  public DropdownColumn getColumn(int columnIndex) {
+    for(DropdownColumn dropDown : dropdownColumns) {
+      if(dropDown.isInColumn(columnIndex)) {
+        return dropDown;
+      }
+    }
+    return null;
+  }
 }

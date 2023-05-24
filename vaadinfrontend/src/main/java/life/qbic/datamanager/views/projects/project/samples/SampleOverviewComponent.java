@@ -31,7 +31,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationDialog;
@@ -249,16 +252,42 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId).ifPresent(this::getSampleDataForProject);
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if(potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+
+        generateExperimentTabs(project);
+
+        Optional<Experiment> potentialExperiment = experimentInformationService.find(
+            project.activeExperiment());
+        if(potentialExperiment.isPresent()) {
+          sampleRegistrationDialog.setActiveExperiment(potentialExperiment.get());
+        }
+      }
     }
 
-    private void getSampleDataForProject(Project project) {
-      generateExperimentTabs(project);
+    private boolean hasExperimentalGroupsDefined() {
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if (potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+        return !experimentInformationService.getExperimentalGroups(project.activeExperiment())
+            .isEmpty();
+      }
+      return false;
     }
 
-    //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> sampleRegistrationDialog.open());
+      registerBatchButton.addClickListener(event -> {
+        if(hasExperimentalGroupsDefined()) {
+          sampleRegistrationDialog.open();
+        } else {
+          InformationMessage infoMessage = new InformationMessage("No experimental groups are defined",
+              "You need to define experimental groups before adding samples.");
+          StyledNotification notification = new StyledNotification(infoMessage);
+          notification.open();
+        }
+      });
+      //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 

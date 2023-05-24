@@ -2,22 +2,22 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 
 /**
- * MetaDataType enums are used in {@link BatchInformationLayout}, to indicate which type of Sample
+ * MetadataType enums are used in {@link BatchInformationLayout}, to indicate which type of Sample
  * Metadata will be provided during Sample Registration. Additionally, they host a detailed
- * description for the relative metaDataType
+ * description for the respective metadata type
  *
  * @since 1.0.0
  */
-enum MetaDataTypes {
+enum MetadataType {
   LIGANDOMICS("Ligandomics", "Detailed Explanation for Ligandomics"), METABOLOMICS("Metabolomics",
       "Detailed Explanation for Metabolomics"), TRANSCRIPTOMICS_GENOMICS("Transcriptomics/Genomics",
       "Detailed Explanation for Transcriptomics/Genomics"), PROTEOMICS("Proteomics",
       "Detailed Explanation for Proteomics");
-  final String metaDataType;
-  final String metaDataDescription;
+  final String label;
+  final String description;
 
-  MetaDataTypes(String metaDataType, String metaDataDescription) {
-    this.metaDataType = metaDataType;
-    this.metaDataDescription = metaDataDescription;
+  MetadataType(String label, String description) {
+    this.label = label;
+    this.description = description;
   }
 }
