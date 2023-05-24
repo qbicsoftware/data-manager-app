@@ -60,10 +60,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Spreadsheet spreadsheet, Sheet sheet) {
     if (spreadsheet.getActiveSheetIndex() == 0
         && rowIndex >= fromRowIndex && rowIndex <= toRowIndex && columnIndex >= fromColIndex
-        && columnIndex <= toColIndex) {
-      if(cell==null || !dropdownItems.contains(cell.getStringCellValue())) {
-        return initCustomComboBox(rowIndex, columnIndex, spreadsheet);
-      }
+        && columnIndex <= toColIndex && (cell == null || !dropdownItems.contains(
+        cell.getStringCellValue()))) {
+      return initCustomComboBox(rowIndex, columnIndex, spreadsheet);
     }
     return null;
   }
@@ -76,7 +75,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   }
 
   private Component initCustomComboBox(int rowIndex, int columnIndex, Spreadsheet spreadsheet) {
-    ComboBox analysisType = new ComboBox(dropDownLabel, dropdownItems);
+    ComboBox<String> analysisType = new ComboBox<>(dropDownLabel, dropdownItems);
     analysisType.addValueChangeListener(e -> spreadsheet.refreshCells(
         spreadsheet.createCell(rowIndex, columnIndex, e.getValue())));
     return analysisType;
@@ -86,6 +85,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
+    /* not implemented since no custom editor is currently used */
   }
 
 }

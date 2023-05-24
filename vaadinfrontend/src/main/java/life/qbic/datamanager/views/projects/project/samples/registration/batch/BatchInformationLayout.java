@@ -14,6 +14,8 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,12 +76,12 @@ class BatchInformationLayout extends VerticalLayout {
     dataTypeSelection.setItems(MetaDataTypes.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetaDataTypes -> {
-      Span metaDataType = new Span(MetaDataTypes.metaDataType);
+    dataTypeSelection.setRenderer(new ComponentRenderer<>(metaDataTypes -> {
+      Span metaDataType = new Span(metaDataTypes.metaDataType);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(MetaDataTypes.metaDataDescription);
+      infoIcon.setTooltipText(metaDataTypes.metaDataDescription);
       return new HorizontalLayout(metaDataType, infoIcon);
     }));
   }
@@ -100,8 +102,10 @@ class BatchInformationLayout extends VerticalLayout {
     batchInformationLayoutHandler.reset();
   }
 
-  private class BatchInformationLayoutHandler {
+  private class BatchInformationLayoutHandler implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 6406633989864983798L;
     private final List<Binder<?>> binders = new ArrayList<>();
 
     public BatchInformationLayoutHandler() {

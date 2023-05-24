@@ -264,7 +264,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     private void configureBatchRegistrationDialog() {
       sampleRegistrationDialog.addSampleRegistrationEventListener(event -> {
-        processSampleRegistration(event.getSource().content());
         sampleRegistrationDialog.resetAndClose();
         showSamplesView();
       });

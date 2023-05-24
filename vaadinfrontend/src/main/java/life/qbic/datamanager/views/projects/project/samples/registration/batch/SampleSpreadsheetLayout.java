@@ -9,6 +9,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +31,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
   private final Label batchName = new Label();
-  public Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
+  public final Spreadsheet sampleRegistrationSpreadsheet = new Spreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button registerButton = new Button("Register");
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
@@ -91,31 +93,23 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     return sampleInformationLayoutHandler.isInputValid();
   }
 
-  private class SampleMetadataLayoutHandler {
+  private class SampleMetadataLayoutHandler implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 2837608401189525502L;
     private final List<Binder<?>> binders = new ArrayList<>();
 
     public SampleMetadataLayoutHandler() {
-      configureValidators();
-    }
-
-    //ToDo add Binders for Cell Values in Spreadsheet
-    private void configureValidators() {
     }
 
     private void reset() {
       resetChildValues();
-      resetChildValidation();
     }
 
     private void resetChildValues() {
       batchName.setText("");
       sampleRegistrationSpreadsheet.reset();
       sampleRegistrationSpreadsheet.reload();
-    }
-
-    //ToDo reset Binder Validation State for each Cell
-    private void resetChildValidation() {
     }
 
     private boolean isInputValid() {
@@ -126,7 +120,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private static class SampleRegistrationSheetBuilder {
 
-    private final SampleRegistrationService sampleRegistrationService;
+    @Serial
+    private static final long serialVersionUID = 573778360298068552L;
+    private final transient SampleRegistrationService sampleRegistrationService;
 
     public SampleRegistrationSheetBuilder(SampleRegistrationService sampleRegistrationService) {
       this.sampleRegistrationService = sampleRegistrationService;
@@ -192,7 +188,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       setAndStyleHeader(spreadsheet, sampleRegistrationService.retrieveGenomics());
       spreadsheet.reload();
       SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
-      //TODO this should be known from experimental groups and sample size
       int maximumNumberOfSamples = 100;
       int firstDataRow = 1;
       int dropDownColumn = 0;

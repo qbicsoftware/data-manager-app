@@ -9,6 +9,8 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
@@ -80,15 +82,10 @@ public class SampleRegistrationDialog extends Dialog {
     registerBatchDialogHandler.resetAndClose();
   }
 
-  //ToDo Replace with values in Spreadsheet
-  public List<String> content() {
-    List<String> exampleBatch = new ArrayList<>(
-        List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
-    return exampleBatch;
-  }
+  private class RegisterBatchDialogHandler implements Serializable {
 
-  private class RegisterBatchDialogHandler {
-
+    @Serial
+    private static final long serialVersionUID = -2692766151162405263L;
     private final List<ComponentEventListener<SampleRegistrationEvent>> listeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
