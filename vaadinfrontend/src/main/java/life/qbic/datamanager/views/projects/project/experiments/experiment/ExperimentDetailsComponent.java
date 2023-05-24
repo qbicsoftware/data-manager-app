@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.board.Board;
@@ -25,6 +26,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.CreationCard;
+import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -39,7 +42,6 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,8 +55,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ExperimentDetailsComponent extends Composite<PageComponent> implements
-    ComponentEventListener<ExperimentalGroupDeletionEvent> {
+public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private ExperimentalVariableCard experimentalVariableCard;
   @Serial
@@ -83,8 +84,10 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> impleme
     getContent().indentContent(false);
     initTagAndNotesLayout();
     initTabSheet(experimentInformationService);
+    addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
     this.handler = new Handler(projectInformationService, experimentInformationService);
+
   }
 
   private void initTagAndNotesLayout() {
@@ -134,7 +137,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> impleme
 
   private void initExperimentalGroupsBoard() {
     experimentalGroupsCollection.setWidthFull();
-    experimentalGroupsLayoutBoard.setWidthFull();
   }
 
   private void initSampleOriginCard() {
@@ -177,11 +179,20 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> impleme
     getContent().addClassNames(componentStyles);
   }
 
-  @Override
-  public void onComponentEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
+  public void handleEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
     handler.experimentInformationService.deleteExperimentGroup(handler.experimentId,
         experimentalGroupDeletionEvent.getSource().groupId());
     experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
+  }
+
+  public void handleEvent(CreationClickedEvent creationClickedEvent) {
+    addVariablesDialog.open();
+  }
+
+  private void addCreationCard() {
+    CreationCard creationCard = CreationCard.create("Add Experimental Group");
+    creationCard.addListener(this::handleEvent);
+    experimentalGroupsCollection.addComponentAsFirst(creationCard);
   }
 
   private final class Handler {
@@ -277,24 +288,17 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> impleme
     }
 
     private void loadExperimentalGroups() {
-      Objects.requireNonNull(experimentId, "experiment id not set");
-      List<ExperimentalGroupDTO> experimentalGroups = experimentInformationService.getExperimentalGroups(
-          experimentId);
-      List<ExperimentalGroup> experimentalGroups1 = experimentInformationService.experimentalGroupsFor(
-          experimentId);
-      List<ExperimentalGroupCard> experimentalGroupCards = experimentalGroups1.stream()
-          .map(ExperimentalGroupCard::new).toList();
-      experimentalGroupsLayoutBoard.setExperimentalGroups(experimentalGroupCards);
+      Objects.requireNonNull(experimentId, "Experiment id not set");
+      // We load the experimental groups of the experiment and render them as cards
+      List<ExperimentalGroupCard> experimentalGroupsCards = experimentInformationService.experimentalGroupsFor(
+          experimentId).stream().map(ExperimentalGroupCard::new).toList();
 
-      List<ExperimentalGroup> expGroups = experimentInformationService.experimentalGroupsFor(
-          experimentId);
-      List<ExperimentalGroupCard> experimentalGroupList = expGroups.stream()
-          .map(ExperimentalGroupCard::new).toList();
-      experimentalGroupList.forEach(
-          experimentalGroupCard ->
-            experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this));
-      experimentalGroupsCollection.addComponents(
-          experimentalGroupList);
+      // We register the experimental details component as listener for group deletion events
+      experimentalGroupsCards.forEach(experimentalGroupCard ->
+          experimentalGroupCard.addDeletionEventListener(
+              ExperimentDetailsComponent.this::handleEvent));
+
+      experimentalGroupsCollection.addComponents(experimentalGroupsCards);
     }
 
     public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {

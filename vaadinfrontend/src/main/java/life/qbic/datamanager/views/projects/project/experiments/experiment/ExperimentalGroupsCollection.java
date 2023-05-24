@@ -34,4 +34,5 @@ public class ExperimentalGroupsCollection extends Component implements HasCompon
   public void addComponents(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
     experimentalGroupComponents.forEach(this::add);
   }
+
 }
