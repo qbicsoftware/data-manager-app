@@ -34,7 +34,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
-import life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
+package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
