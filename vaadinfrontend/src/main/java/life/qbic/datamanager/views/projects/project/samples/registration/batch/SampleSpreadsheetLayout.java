@@ -35,13 +35,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   public final Button cancelButton = new Button("Cancel");
   public final Button registerButton = new Button("Register");
   private final SampleRegistrationSheetBuilder sampleRegistrationSheetBuilder;
-  private final SampleMetadataLayoutHandler sampleInformationLayoutHandler;
+  private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
 
   SampleSpreadsheetLayout(SampleRegistrationService sampleRegistrationService) {
     initContent();
     this.setSizeFull();
     sampleRegistrationSheetBuilder = new SampleRegistrationSheetBuilder(sampleRegistrationService);
-    sampleInformationLayoutHandler = new SampleMetadataLayoutHandler();
+    sampleInformationLayoutHandler = new SampleInformationLayoutHandler();
   }
 
   private void initContent() {
@@ -93,14 +93,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     return sampleInformationLayoutHandler.isInputValid();
   }
 
-  private class SampleMetadataLayoutHandler implements Serializable {
+  private class SampleInformationLayoutHandler implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 2837608401189525502L;
     private final List<Binder<?>> binders = new ArrayList<>();
-
-    public SampleMetadataLayoutHandler() {
-    }
 
     private void reset() {
       resetChildValues();

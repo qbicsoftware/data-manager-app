@@ -91,12 +91,12 @@ public class SampleRegistrationDialog extends Dialog {
 
     public RegisterBatchDialogHandler() {
       resetDialogueUponClosure();
-      setbatchInformationButtonsListeners();
+      setBatchInformationButtonsListeners();
       setSampleRegistrationSubmission();
       setTabSelectionListener();
     }
 
-    private void setbatchInformationButtonsListeners() {
+    private void setBatchInformationButtonsListeners() {
       batchInformationLayout.nextButton.addClickListener(
           event -> tabStepper.setSelectedTab(sampleInformationTab));
       batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
