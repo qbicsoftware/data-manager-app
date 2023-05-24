@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class SampleRegistrationDialog extends Dialog {
 
-  private final String TITLE = "Register Batch";
+  private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
   private final Tab generalInformationTab = createTabStep("1", "Batch Information");
   private final Tab sampleMetadataTab = createTabStep("2", "Register Samples");
