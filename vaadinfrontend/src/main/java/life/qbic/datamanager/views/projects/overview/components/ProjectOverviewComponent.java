@@ -22,6 +22,7 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.Height;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -104,7 +105,6 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
     projectSearchField.addClassNames("mt-xs", "mb-xs");
 
     layout.add(projectSearchField, create);
-    layout.setWidthFull();
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.END, create);
     layout.setVerticalComponentAlignment(FlexComponent.Alignment.START, projectSearchField);
     projectGrid.addColumn(new ComponentRenderer<>(
@@ -123,6 +123,7 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
     getContent().addContent(layout, projectGrid);
     getContent().addTitle(TITLE);
     getContent().indentContent(false);
+    this.addClassName(Height.FULL);
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {

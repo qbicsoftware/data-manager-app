@@ -34,25 +34,28 @@ public class SampleRegistrationService {
     this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
   }
 
-  public List<String> retrieveProteomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+  public List<SamplesheetHeaderName> retrieveProteomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<String> retrieveLigandomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+  public List<SamplesheetHeaderName> retrieveLigandomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<String> retrieveMetabolomics() {
-    return List.of("Sample Name", "Biological Replicate", "Treatment", "Cell Line", "Species",
-        "Specimen", "Analyte", "Comment");
+  public List<SamplesheetHeaderName> retrieveMetabolomics() {
+    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
+        SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<String> retrieveGenomics() {
-    return List.of("Analysis to be performed", "Plate position (e.g. A1)", "Plate title",
-        "Sample label", "Biological replicate reference id", "Species", "Specimen",
-        "FFPE material");
+  public List<SamplesheetHeaderName> retrieveGenomics() {
+    return List.of(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
+        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
+        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN, SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
   public Result<Sample, ResponseCode> registerSample(
@@ -70,6 +73,26 @@ public class SampleRegistrationService {
 
   public enum ResponseCode {
     SAMPLE_REGISTRATION_FAILED
+  }
+
+  /**
+   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers of the different columns of the {@link life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleSpreadsheetLayout} for different technologies
+   *
+   * @since 1.0.0
+   */
+  public enum SamplesheetHeaderName {
+    SEQ_ANALYSIS_TYPE("Analysis to be performed"),
+    SAMPLE_LABEL("Sample label"),
+    BIOLOGICAL_REPLICATE_ID("Biological replicate id"),
+    CONDITION("Condition"),
+    SPECIES("Species"),
+    SPECIMEN("Specimen"),
+    CUSTOMER_COMMENT("Customer comment");
+    public final String label;
+
+    SamplesheetHeaderName(String label) {
+      this.label = label;
+    }
   }
 
 }
