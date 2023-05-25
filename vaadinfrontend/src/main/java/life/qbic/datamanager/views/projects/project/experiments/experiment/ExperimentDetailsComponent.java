@@ -64,7 +64,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
   private final Board summaryCardBoard = new Board();
-  private final ExperimentalGroupsLayout experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
   private final VerticalLayout speciesForm = new VerticalLayout();
@@ -206,10 +205,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
-      experimentalGroupsLayoutBoard.setExperimentalGroupCommandListener(it -> {
-        fillExperimentalGroupDialog();
-        handleAddExperimentalGroups();
-      });
     }
 
     private void addCloseListenerForAddVariableDialog() {
