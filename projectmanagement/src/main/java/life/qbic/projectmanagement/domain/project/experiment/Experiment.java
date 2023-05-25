@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -226,7 +227,7 @@ public class Experiment {
    * @param sampleSize     the number of samples that are expected for this experimental group
    * @return
    */
-  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(Collection<VariableLevel> variableLevels,
       int sampleSize) {
     return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }

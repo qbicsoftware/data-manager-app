@@ -218,7 +218,7 @@ public class ExperimentalDesign {
    *                       experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public AddExperimentalGroupResponse addExperimentalGroup(Collection<VariableLevel> variableLevels,
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(Collection<VariableLevel> variableLevels,
       int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
@@ -234,10 +234,11 @@ public class ExperimentalDesign {
 
     Condition condition = Condition.create(variableLevels);
     if (isConditionDefined(condition)) {
-      return new AddExperimentalGroupResponse(ResponseCode.CONDITION_EXISTS);
+      return Result.fromError(ResponseCode.CONDITION_EXISTS);
     }
-    experimentalGroups.add(ExperimentalGroup.create(condition, sampleSize));
-    return new AddExperimentalGroupResponse(ResponseCode.SUCCESS);
+    var newExperimentalGroup = ExperimentalGroup.create(condition, sampleSize);
+    experimentalGroups.add(newExperimentalGroup);
+    return Result.fromValue(newExperimentalGroup);
   }
 
   public Set<ExperimentalGroup> getExperimentalGroups() {

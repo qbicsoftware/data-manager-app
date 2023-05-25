@@ -1,33 +1,48 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H5;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Creation Card</b>
+ * <p>
+ * A card component that can be used to indicate creation of something in the application
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class CreationCard extends Card {
 
+  @Serial
+  private static final long serialVersionUID = 7298407268081888530L;
   private final List<ComponentEventListener<CreationClickedEvent>> listeners;
 
-  private Button addButton;
+  private final Div content;
 
-  public CreationCard(Button button) {
-    this.addButton = button;
+  private CreationCard(String label) {
     this.listeners = new ArrayList<>();
-    add(addButton);
-    addClassName("creation-card");
+    content = styleLayout(label);
+    add(content);
     setupEvents();
   }
 
+  private Div styleLayout(String label) {
+    final Div content;
+    addClassName("creation-card");
+    content = new Div();
+    Icon addIcon = new Icon(VaadinIcon.PLUS);
+    content.add(addIcon);
+    content.add(new H5(label));
+    return content;
+  }
+
   private void setupEvents() {
-    this.addButton.addClickListener(listener -> {
+    this.content.addClickListener(listener -> {
       CreationClickedEvent creationClickedEvent = new CreationClickedEvent(this, true);
       listeners.forEach(eventListener -> eventListener.onComponentEvent(creationClickedEvent));
     });
@@ -38,7 +53,7 @@ public class CreationCard extends Card {
   }
 
   public static CreationCard create(String label) {
-    return new CreationCard(new Button(label));
+    return new CreationCard(label);
   }
 
   public void addListener(ComponentEventListener<CreationClickedEvent> listener) {

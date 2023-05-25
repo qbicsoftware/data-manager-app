@@ -1,10 +1,15 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H5;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.menubar.MenuBarVariant;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,65 +17,92 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experimental Group Card</b>
+ * <p>
+ * An experimental group card can be used to display content of {@link ExperimentalGroup} and
+ * provide interaction, such as edit and deletion.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *Ø
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentalGroupCard extends Card {
 
-  private Button deleteButton;
-  private ExperimentalGroup experimentalGroup;
-  private List<ComponentEventListener<ExperimentalGroupDeletionEvent>> listenersDeletionEvent;
+  private transient ExperimentalGroup experimentalGroup;
   @Serial
   private static final long serialVersionUID = -8400631799486647200L;
+  private final List<ComponentEventListener<ExperimentalGroupDeletionEvent>> listenersDeletionEvent;
+  private final Icon editIcon = new Icon(VaadinIcon.EDIT);
+  private final Icon deleteIcon = new Icon(VaadinIcon.TRASH);
 
   public ExperimentalGroupCard(ExperimentalGroup experimentalGroup) {
     super();
     this.experimentalGroup = experimentalGroup;
-    this.deleteButton = buttonCreation();
     this.listenersDeletionEvent = new ArrayList<>();
-    setTitle();
-    setSampleSize(experimentalGroup);
-    add(deleteButton);
     layoutComponent();
-    configureEvents();
-  }
-
-  private void setSampleSize(ExperimentalGroup experimentalGroup) {
-    Span span = new Span();
-    span.add("Sample size:");
-    span.add(String.valueOf(experimentalGroup.sampleSize()));
-    this.add(span);
-  }
-
-  private void setTitle() {
-    H5 cardTitle = new H5();
-    cardTitle.setText("Experimental Group");
-    this.add(cardTitle);
-  }
-
-  private static Button buttonCreation() {
-    return new Button("delete");
   }
 
   private void layoutComponent() {
     addClassName("experimental-group");
+
+    MenuBar menuBar = createMenuBar();
+
+    Div cardHeader = new Div();
+    cardHeader.addClassName("card-header");
+
+    Div controls = new Div();
+    controls.addClassName("experimental-group-controls");
+    controls.add(menuBar);
+
+    cardHeader.add(title("Experimental Group"));
+    cardHeader.add(controls);
+    this.add(cardHeader);
+
+    Div container = new Div();
+    container.add(condition());
+    container.add(sampleSize());
+    this.add(container);
   }
 
-  private void configureEvents() {
-    this.deleteButton.addClickListener(listener -> fireDeletionEvent());
+  private MenuBar createMenuBar() {
+    MenuBar menuBar = new MenuBar();
+    menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
+    MenuItem menuItem = menuBar.addItem("•••");
+    SubMenu subMenu = menuItem.getSubMenu();
+    subMenu.addItem("Edit", event -> {
+    });
+    subMenu.addItem("Delete", event -> fireDeletionEvent());
+    return menuBar;
   }
 
-  public void addDeletionEventListener(
-      ComponentEventListener<ExperimentalGroupDeletionEvent> listener) {
-    this.listenersDeletionEvent.add(listener);
+  private H5 title(String value) {
+    H5 cardTitle = new H5();
+    cardTitle.setText(value);
+    return cardTitle;
+  }
+
+  private Div condition() {
+    var variableLevels = experimentalGroup.condition().getVariableLevels();
+    Div layout = new Div();
+    List<Tag> tags = variableLevels.stream()
+        .map(variableLevel -> new Tag(variableLevel.experimentalValue().value())).toList();
+    tags.forEach(layout::add);
+    return layout;
+  }
+
+  private Span sampleSize() {
+    Span span = new Span();
+    span.add("Replicates: ");
+    span.add(String.valueOf(experimentalGroup.sampleSize()));
+    return span;
   }
 
   public void fireDeletionEvent() {
     var deletionEvent = new ExperimentalGroupDeletionEvent(ExperimentalGroupCard.this, true);
     listenersDeletionEvent.forEach(listener -> listener.onComponentEvent(deletionEvent));
+  }
+
+  public void addDeletionEventListener(
+      ComponentEventListener<ExperimentalGroupDeletionEvent> listener) {
+    this.listenersDeletionEvent.add(listener);
   }
 
   public void setExperimentalGroup(ExperimentalGroup experimentalGroup) {

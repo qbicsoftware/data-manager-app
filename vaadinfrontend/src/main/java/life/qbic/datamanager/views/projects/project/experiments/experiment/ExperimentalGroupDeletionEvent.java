@@ -4,11 +4,12 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experimental Group Deletion Event</b>
+ * <p>
+ * Event that indicates that the user wants to delete a certain experimental group via the
+ * {@link ExperimentalGroupCard}
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentalGroupDeletionEvent extends ComponentEvent<ExperimentalGroupCard> {
 

@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -61,18 +62,19 @@ public class ExperimentInformationService {
    * @param experimentId      the Id of the experiment for which to add the species
    * @param experimentalGroup the experimental groups to add
    */
-  public AddExperimentalGroupResponse addExperimentalGroupToExperiment(
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroupToExperiment(
       ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
     Experiment activeExperiment = loadExperimentById(experimentId);
-    AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
+    Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
         experimentalGroup.levels(), experimentalGroup.sampleSize());
-    if (response.responseCode() == ResponseCode.SUCCESS) {
+    if(result.isValue()) {
       experimentRepository.update(activeExperiment);
+      return result;
     }
-    return response;
+    return result;
   }
 
   /**

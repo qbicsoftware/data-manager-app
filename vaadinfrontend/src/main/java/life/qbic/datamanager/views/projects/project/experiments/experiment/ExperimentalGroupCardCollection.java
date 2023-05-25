@@ -9,19 +9,19 @@ import java.io.Serial;
 import java.util.Collection;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experimental Group Collection</b>
+ * <p>
+ * Container of one or more {@link ExperimentalGroupCard}
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Tag(Tag.DIV)
-public class ExperimentalGroupsCollection extends Component implements HasComponents, HasSize {
+public class ExperimentalGroupCardCollection extends Component implements HasComponents, HasSize {
 
   @Serial
   private static final long serialVersionUID = -5835580091959912561L;
 
-  public ExperimentalGroupsCollection() {
+  public ExperimentalGroupCardCollection() {
     addClassName(Gap.SMALL);
     addClassName("card-deck");
   }

@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
@@ -26,6 +24,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
@@ -41,7 +40,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +65,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final TabSheet experimentSheet = new TabSheet();
   private final Board summaryCardBoard = new Board();
   private final ExperimentalGroupsLayout experimentalGroupsLayoutBoard = new ExperimentalGroupsLayout();
-  private final ExperimentalGroupsCollection experimentalGroupsCollection = new ExperimentalGroupsCollection();
+  private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
   private final VerticalLayout speciesForm = new VerticalLayout();
   private final VerticalLayout specimenForm = new VerticalLayout();
@@ -186,7 +186,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   public void handleEvent(CreationClickedEvent creationClickedEvent) {
-    addVariablesDialog.open();
+    experimentalGroupsDialog.open();
   }
 
   private void addCreationCard() {
@@ -294,26 +294,31 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
           experimentId).stream().map(ExperimentalGroupCard::new).toList();
 
       // We register the experimental details component as listener for group deletion events
-      experimentalGroupsCards.forEach(experimentalGroupCard ->
-          experimentalGroupCard.addDeletionEventListener(
-              ExperimentDetailsComponent.this::handleEvent));
+      experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
 
       experimentalGroupsCollection.addComponents(experimentalGroupsCards);
     }
 
+    private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
+      experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleEvent);
+    }
+
     public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
-      AddExperimentalGroupResponse response = experimentInformationService.addExperimentalGroupToExperiment(
+      Result<ExperimentalGroup, ResponseCode> response = experimentInformationService.addExperimentalGroupToExperiment(
           experimentId,
           new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
-      switch (response.responseCode()) {
-        case SUCCESS -> handleGroupSubmittedSuccess(groupSubmitted);
-        case CONDITION_EXISTS -> handleDuplicateConditionInput();
+      if (response.isValue()) {
+        handleGroupSubmittedSuccess();
+      } else {
+        handleDuplicateConditionInput();
       }
     }
 
-    private void handleGroupSubmittedSuccess(ExperimentalGroupSubmitEvent groupSubmitted) {
+    private void handleGroupSubmittedSuccess() {
+      experimentalGroupsCollection.removeAll();
       loadExperimentalGroups();
-      groupSubmitted.eventSourceDialog().close();
+      addCreationCard();
+      experimentalGroupsDialog.close();
     }
 
     private void handleDuplicateConditionInput() {
