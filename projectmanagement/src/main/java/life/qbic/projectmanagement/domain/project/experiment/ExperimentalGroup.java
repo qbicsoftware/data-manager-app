@@ -24,7 +24,6 @@ import java.util.Objects;
 
 @Entity(name = "experimental_group")
 public class ExperimentalGroup {
-
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private List<BiologicalReplicate> biologicalReplicates;
@@ -89,6 +88,8 @@ public class ExperimentalGroup {
   public long id() {
     return this.experimentalGroupId;
   }
+
+  public List<BiologicalReplicate> biologicalReplicates() { return this.biologicalReplicates; }
 
   @Override
   public int hashCode() {

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.samples.batchRegistration;
+package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -14,35 +14,36 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 
 /**
- * <b>General Information Layout </b>
+ * <b>Batch Information Layout </b>
  * <p>
- * Layout in which the user will provide the general information necessary during sample
- * registration
+ * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-class GeneralInformationLayout extends VerticalLayout {
+class BatchInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
-  public final RadioButtonGroup<MetaDataTypes> dataTypeSelection = new RadioButtonGroup<>();
+  public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
-  private final GeneralInformationLayoutHandler generalInformationLayoutHandler;
+  private final BatchInformationLayoutHandler batchInformationLayoutHandler;
 
-  public GeneralInformationLayout() {
+  public BatchInformationLayout() {
     initContent();
     this.setSizeFull();
-    generalInformationLayoutHandler = new GeneralInformationLayoutHandler();
+    batchInformationLayoutHandler = new BatchInformationLayoutHandler();
   }
 
   private void initContent() {
-    Span generalInformationHeader = new Span("General Information");
-    generalInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
-    add(generalInformationHeader);
+    Span batchInformationHeader = new Span("Batch Information");
+    batchInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
+    add(batchInformationHeader);
     initBatchLayout();
     initDataTypeLayout();
     initButtonLayout();
@@ -72,40 +73,42 @@ class GeneralInformationLayout extends VerticalLayout {
   }
 
   private void initDataTypeSelection() {
-    dataTypeSelection.setItems(MetaDataTypes.values());
+    dataTypeSelection.setItems(MetadataType.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetaDataTypes -> {
-      Span metaDataType = new Span(MetaDataTypes.metaDataType);
+    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetadataType -> {
+      Span metadataType = new Span(MetadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(MetaDataTypes.metaDataDescription);
-      return new HorizontalLayout(metaDataType, infoIcon);
+      infoIcon.setTooltipText(MetadataType.description);
+      return new HorizontalLayout(metadataType, infoIcon);
     }));
   }
 
   private void initButtonLayout() {
-    HorizontalLayout generalInformationButtons = new HorizontalLayout();
+    HorizontalLayout batchInformationButtons = new HorizontalLayout();
     nextButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    generalInformationButtons.add(cancelButton, nextButton);
-    this.setAlignSelf(Alignment.END, generalInformationButtons);
-    add(generalInformationButtons);
+    batchInformationButtons.add(cancelButton, nextButton);
+    this.setAlignSelf(Alignment.END, batchInformationButtons);
+    add(batchInformationButtons);
   }
 
   public boolean isInputValid() {
-    return generalInformationLayoutHandler.isInputValid();
+    return batchInformationLayoutHandler.isInputValid();
   }
 
   public void reset() {
-    generalInformationLayoutHandler.reset();
+    batchInformationLayoutHandler.reset();
   }
 
-  private class GeneralInformationLayoutHandler {
+  private class BatchInformationLayoutHandler implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 6406633989864983798L;
     private final List<Binder<?>> binders = new ArrayList<>();
 
-    public GeneralInformationLayoutHandler() {
+    public BatchInformationLayoutHandler() {
       configureValidators();
     }
 
