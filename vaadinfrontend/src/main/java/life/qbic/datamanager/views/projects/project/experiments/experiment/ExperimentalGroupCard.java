@@ -6,12 +6,11 @@ import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -26,12 +25,10 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
  */
 public class ExperimentalGroupCard extends Card {
 
-  private transient ExperimentalGroup experimentalGroup;
   @Serial
   private static final long serialVersionUID = -8400631799486647200L;
+  private final transient ExperimentalGroup experimentalGroup;
   private final List<ComponentEventListener<ExperimentalGroupDeletionEvent>> listenersDeletionEvent;
-  private final Icon editIcon = new Icon(VaadinIcon.EDIT);
-  private final Icon deleteIcon = new Icon(VaadinIcon.TRASH);
 
   public ExperimentalGroupCard(ExperimentalGroup experimentalGroup) {
     super();
@@ -82,8 +79,11 @@ public class ExperimentalGroupCard extends Card {
   private Div condition() {
     var variableLevels = experimentalGroup.condition().getVariableLevels();
     Div layout = new Div();
+    String tagFormat = "%s %s"; // "<value> [<unit>]"
     List<Tag> tags = variableLevels.stream()
-        .map(variableLevel -> new Tag(variableLevel.experimentalValue().value())).toList();
+        .sorted(Comparator.comparing(o -> o.variableName().value()))
+        .map(variableLevel -> new Tag(tagFormat.formatted(variableLevel.experimentalValue().value(),
+            variableLevel.experimentalValue().unit().orElse("").trim()))).toList();
     tags.forEach(layout::add);
     return layout;
   }
@@ -103,10 +103,6 @@ public class ExperimentalGroupCard extends Card {
   public void addDeletionEventListener(
       ComponentEventListener<ExperimentalGroupDeletionEvent> listener) {
     this.listenersDeletionEvent.add(listener);
-  }
-
-  public void setExperimentalGroup(ExperimentalGroup experimentalGroup) {
-    this.experimentalGroup = experimentalGroup;
   }
 
   public long groupId() {
