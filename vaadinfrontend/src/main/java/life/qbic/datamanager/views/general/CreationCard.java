@@ -32,13 +32,12 @@ public class CreationCard extends Card {
   }
 
   private Div styleLayout(String label) {
-    final Div content;
+    var div = new Div();
     addClassName("creation-card");
-    content = new Div();
     Icon addIcon = new Icon(VaadinIcon.PLUS);
-    content.add(addIcon);
-    content.add(new H5(label));
-    return content;
+    div.add(addIcon);
+    div.add(new H5(label));
+    return div;
   }
 
   private void setupEvents() {
