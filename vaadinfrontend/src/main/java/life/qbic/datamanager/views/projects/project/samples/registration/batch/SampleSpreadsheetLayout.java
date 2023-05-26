@@ -14,6 +14,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
@@ -59,8 +60,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private void initButtonLayout() {
     HorizontalLayout sampleInformationButtons = new HorizontalLayout();
     addRowButton.addClickListener(
-        (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRows(
-            sampleRegistrationSpreadsheet.findLastRow(sampleRegistrationSpreadsheet) + 1));
+        (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sampleInformationButtons.add(addRowButton, cancelButton, registerButton);
     this.setAlignSelf(Alignment.END, sampleInformationButtons);
@@ -95,6 +95,10 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
   }
 
+  public List<SampleRegistrationContent> getContent() {
+    return sampleInformationLayoutHandler.getContent();
+  }
+
   private class SampleInformationLayoutHandler implements Serializable {
 
     @Serial
@@ -116,21 +120,18 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       return binders.stream().allMatch(Binder::isValid);
     }
 
-  }
-
-  /**
-   * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
-   * of Analysis will be performed.
-   *
-   * @since 1.0.0
-   */
-  enum SequenceAnalysisType {
-    RNASEQ("RNA-Seq"), DNASEQ("DNA-Seq");
-    final String label;
-
-    SequenceAnalysisType(String label) {
-      this.label = label;
+    private List<SampleRegistrationContent> getContent() {
+      List<NGSRowDTO> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
+      List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
+      filledRows.forEach(row -> {
+        SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
+            row.sampleLabel(), row.bioReplicateID(), row.condition(), row.species(), row.specimen(),
+            row.analyte(), row.customerComment());
+        samplesToRegister.add(sampleRegistrationContent);
+      });
+      return samplesToRegister;
     }
-  }
 
+
+  }
 }

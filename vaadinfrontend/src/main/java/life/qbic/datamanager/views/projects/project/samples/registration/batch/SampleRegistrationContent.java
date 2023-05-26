@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-import java.util.List;
-import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 
 /**
  * <class short description - One Line!>
@@ -10,7 +8,9 @@ import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationReque
  *
  * @since <version tag>
  */
-public record SampleRegistrationContent(
-    List<SampleRegistrationRequest> sampleRegistrationRequests) {
+public record SampleRegistrationContent(String label, String biologicalReplicateId,
+                                        String condition, String species, String specimen,
+                                        String analyte,
+                                        String comment) {
 
 }

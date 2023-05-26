@@ -149,12 +149,9 @@ public class BatchRegistrationDialog extends Dialog {
     }
 
     private void setSampleRegistrationSubmission() {
-      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
-        if (isInputValid()) {
-          sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
-              new SampleRegistrationEvent(BatchRegistrationDialog.this, true)));
-        }
-      });
+      sampleSpreadsheetLayout.registerButton.addClickListener(
+          event -> sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
+              new SampleRegistrationEvent(BatchRegistrationDialog.this, true))));
     }
 
     protected boolean isInputValid() {
@@ -199,15 +196,7 @@ public class BatchRegistrationDialog extends Dialog {
     return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(), false);
   }
 
-  public SampleRegistrationContent sampleRegistrationContent() {
-    /*
-    retrievedRows = sampleSpreadsheetLayout.getFilledRows()
-    SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest();
-    String label, BatchId assignedBatch,
-        ExperimentId experimentId, Long experimentalGroupId,
-        BiologicalReplicateId replicateReference,
-        SampleOrigin sampleOrigin
-    */
-    return new SampleRegistrationContent(null);
+  public List<SampleRegistrationContent> sampleRegistrationContent() {
+    return sampleSpreadsheetLayout.getContent();
   }
 }

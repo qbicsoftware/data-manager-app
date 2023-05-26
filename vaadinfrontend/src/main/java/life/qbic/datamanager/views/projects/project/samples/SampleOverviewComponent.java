@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +48,22 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
-import life.qbic.projectmanagement.application.SampleRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
+import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.experiment.VariableName;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
+import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 import org.slf4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -246,6 +257,8 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
+    private ExperimentId experimentId;
+    private BatchId lastCreatedBatch;
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
@@ -264,14 +277,14 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
       Optional<Project> potentialProject = projectInformationService.find(projectId);
-      if(potentialProject.isPresent()) {
+      if (potentialProject.isPresent()) {
         Project project = potentialProject.get();
 
         generateExperimentTabs(project);
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
-        potentialExperiment.ifPresent(
-            batchRegistrationDialog::setActiveExperiment);
+        potentialExperiment.ifPresent(batchRegistrationDialog::setActiveExperiment);
+        this.experimentId = potentialExperiment.get().experimentId();
       }
     }
 
@@ -287,10 +300,11 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     private void registerSamplesListener() {
       registerBatchButton.addClickListener(event -> {
-        if(hasExperimentalGroupsDefined()) {
+        if (hasExperimentalGroupsDefined()) {
           batchRegistrationDialog.open();
         } else {
-          InformationMessage infoMessage = new InformationMessage("No experimental groups are defined",
+          InformationMessage infoMessage = new InformationMessage(
+              "No experimental groups are defined",
               "You need to define experimental groups before adding samples.");
           StyledNotification notification = new StyledNotification(infoMessage);
           notification.open();
@@ -368,27 +382,68 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       //Todo add Batch name here and trigger processSampleCreation() method
       Result<BatchId, BatchRegistrationService.ResponseCode> batch = batchRegistrationService.registerBatch(
           batchRegistrationContent.batchLabel(), batchRegistrationContent.isPilot());
-      batch
-          .onValue(result -> {
-            batchRegistrationDialog.resetAndClose();
-            //ToDo Replace Values
-          })
-          .onError(e -> {
-            //ToDo What should happen here?
-          });
+      batch.onValue(result -> {
+        batchRegistrationDialog.resetAndClose();
+        lastCreatedBatch = result;
+        //ToDo Replace Values
+      }).onError(e -> {
+        //ToDo What should happen here?
+      });
     }
 
-    private void processSampleRegistration(SampleRegistrationContent sampleRegistrationContent) {
-
-      sampleRegistrationContent.sampleRegistrationRequests().forEach(sampleRegistrationRequest -> {
-        Result<life.qbic.projectmanagement.domain.project.sample.Sample, ResponseCode> registrationResult = sampleRegistrationService.registerSample(
-            sampleRegistrationRequest, projectId);
-        registrationResult.onError(e -> {
-          //Todo What should happen here
-        });
+    private void processSampleRegistration(
+        List<SampleRegistrationContent> sampleRegistrationContentList) {
+      //ToDo Sample Comments are currently not stored
+      sampleRegistrationContentList.forEach(sampleRegistrationContent -> {
+        //ToDo Where should these domain objects be generated?
+        Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
+        Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
+        Species species = new Species(sampleRegistrationContent.species());
+        BiologicalReplicateId biologicalReplicateId = BiologicalReplicateId.create();
+        SampleOrigin sampleOrigin = new SampleOrigin(species, specimen, analyte);
+        Condition condition = StringToConditions(sampleRegistrationContent.condition());
+        Optional<Experiment> experiment = experimentInformationService.find(experimentId);
+        experiment.ifPresent(foundExperiment -> foundExperiment.getExperimentalGroups()
+            .forEach(experimentalGroup -> {
+              if (sameVariableLevelsInCondition(experimentalGroup.condition(), condition)) {
+                SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest(
+                    sampleRegistrationContent.label(), lastCreatedBatch, experimentId,
+                    experimentalGroup.experimentalGroupId(), biologicalReplicateId, sampleOrigin);
+                sampleRegistrationService.registerSample(sampleRegistrationRequest, projectId)
+                    .onError(e -> {
+                      //Todo What should happen here
+                    });
+              }
+            }));
       });
       showSamplesView();
       displaySuccessfulBatchRegistrationNotification();
+    }
+
+    private Condition StringToConditions(String conditionString) {
+      Collection<VariableLevel> variableLevels = new HashSet<>();
+      List<String> experimentalVariables = List.of(conditionString.split(";"));
+      experimentalVariables.forEach(experimentalVariable -> {
+        VariableName experimentalVariableName = VariableName.create(
+            experimentalVariable.split(":")[0]);
+        String experimentalValue = experimentalVariable.split(":")[1];
+        String[] experimentalValueParts = experimentalValue.split(" ");
+        ExperimentalValue finalExperimentalValue;
+        if (experimentalValueParts.length > 1) {
+          finalExperimentalValue = ExperimentalValue.create(experimentalValueParts[0],
+              experimentalValueParts[1]);
+        } else {
+          finalExperimentalValue = ExperimentalValue.create(experimentalValueParts[0]);
+        }
+        VariableLevel variableLevel = VariableLevel.create(experimentalVariableName,
+            finalExperimentalValue);
+        variableLevels.add(variableLevel);
+      });
+      return Condition.create(variableLevels);
+    }
+
+    private boolean sameVariableLevelsInCondition(Condition condition1, Condition condition2) {
+      return condition1.getVariableLevels().equals(condition2.getVariableLevels());
     }
 
     private void displaySuccessfulBatchRegistrationNotification() {
