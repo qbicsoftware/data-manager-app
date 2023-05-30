@@ -17,13 +17,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.application.SampleRegistrationService.SamplesheetHeaderName;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
@@ -125,6 +130,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   public List<NGSRowDTO> getFilledRows(List<String> header) {
     List<NGSRowDTO> rows = new ArrayList<>();
+    Set<String> uniqueSamples = new HashSet<>();
     for(int i = 1; i < Integer.MAX_VALUE; i++) {
       Row row = sampleRegistrationSpreadsheet.getActiveSheet().getRow(i);
       Cell analysisTypeCell = row.getCell(header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
@@ -135,17 +141,39 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       Cell specimenCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIMEN));
       Cell commentCell = row.getCell(header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
 
+      // we need to stream this list twice, so we use a supplier
       Supplier<Stream<Cell>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeCell, sampleLabelCell,
           replicateIDCell, conditionCell, speciesCell, specimenCell);
 
+      // stop reading at the end of the fillable table (all cells null)
       if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
         break;
       }
       if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
-        rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(), sampleLabelCell.getStringCellValue().trim(),
-            replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim(),
-            speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), commentCell.getStringCellValue().trim()));
+        String replicateID = replicateIDCell.getStringCellValue().trim();
+        String condition = conditionCell.getStringCellValue().trim();
+        String uniqueSampleString = replicateID+condition;
+        if(uniqueSamples.contains(uniqueSampleString)) {
+          InformationMessage infoMessage = new InformationMessage(
+              "Duplicate Id", "Biological replicate Id "+replicateID+" can only be used once for each condition.");
+          StyledNotification notification = new StyledNotification(infoMessage);
+          notification.open();
+        } else {
+          rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
+              sampleLabelCell.getStringCellValue().trim(),
+              replicateID,
+              condition,
+              speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(),
+              commentCell.getStringCellValue().trim()));
+          uniqueSamples.add(uniqueSampleString);
+        }
+      } else {
+        InformationMessage infoMessage = new InformationMessage(
+            "Incomplete metadata", "Please fill all mandatory fields in row "+i);
+        StyledNotification notification = new StyledNotification(infoMessage);
+        notification.open();
       }
+
     }
     return rows;
   }
