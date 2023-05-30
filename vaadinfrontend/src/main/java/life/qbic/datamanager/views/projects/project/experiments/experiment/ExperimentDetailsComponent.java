@@ -265,6 +265,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
       fillExperimentalGroupDialog();
+      loadExperimentalGroups();
       if (experiment.variables().isEmpty()) {
         displayDisclaimer();
         removeCreationCard();
