@@ -27,7 +27,7 @@ public class SampleCode implements Serializable {
     return new SampleCode(code);
   }
 
-  public String value() {
+  public String code() {
     return this.code;
   }
 

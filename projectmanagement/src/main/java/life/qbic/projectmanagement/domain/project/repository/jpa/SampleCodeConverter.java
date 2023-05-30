@@ -17,7 +17,7 @@ public class SampleCodeConverter implements AttributeConverter<SampleCode, Strin
 
   @Override
   public String convertToDatabaseColumn(SampleCode sampleCode) {
-    return sampleCode.value();
+    return sampleCode.code();
   }
 
   @Override
