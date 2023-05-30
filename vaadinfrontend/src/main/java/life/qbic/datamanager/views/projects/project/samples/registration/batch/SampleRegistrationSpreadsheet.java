@@ -52,6 +52,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private Sheet sampleRegistrationSheet;
 
   public SampleRegistrationSpreadsheet() {
+    // The SampleRegistrationSpreadsheet component only makes sense once information has been filled via the experiment information,
+    // which can only happen once the experiment is loaded, therefore the setExperimentMetadata() method should be used.
 
   }
 

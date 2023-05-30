@@ -30,7 +30,7 @@ public class BatchRegistrationDialog extends Dialog {
   private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
   private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
-  private final RegisterBatchDialogHandler registerBatchDialogHandler;
+  private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
     setHeaderTitle(TITLE);
