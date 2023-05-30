@@ -89,7 +89,7 @@ public class ExperimentalGroup {
   }
 
   public List<BiologicalReplicate> biologicalReplicates() {
-    return this.biologicalReplicates;
+    return new ArrayList<>(biologicalReplicates);
   }
 
   @Override
