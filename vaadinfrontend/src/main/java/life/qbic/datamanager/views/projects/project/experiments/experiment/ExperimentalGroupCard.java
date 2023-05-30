@@ -81,7 +81,7 @@ public class ExperimentalGroupCard extends Card {
     Div layout = new Div();
     String tagFormat = "%s %s"; // "<value> [<unit>]"
     List<Tag> tags = variableLevels.stream()
-        .sorted(Comparator.comparing(o -> o.variableName().value()))
+        .sorted(Comparator.comparing(variable -> variable.variableName().value()))
         .map(variableLevel -> new Tag(tagFormat.formatted(variableLevel.experimentalValue().value(),
             variableLevel.experimentalValue().unit().orElse("").trim()))).toList();
     tags.forEach(layout::add);

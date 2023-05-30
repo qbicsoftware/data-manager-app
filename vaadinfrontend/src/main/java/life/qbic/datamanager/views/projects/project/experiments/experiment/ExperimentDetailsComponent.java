@@ -85,7 +85,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initTabSheet(experimentInformationService);
     addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
-    this.handler = new Handler(projectInformationService, experimentInformationService);
+    this.handler = new Handler(experimentInformationService);
 
   }
 
@@ -197,12 +197,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final class Handler {
 
     private ExperimentId experimentId;
-    private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
 
-    public Handler(ProjectInformationService projectInformationService,
-        ExperimentInformationService experimentInformationService) {
-      this.projectInformationService = projectInformationService;
+    public Handler(ExperimentInformationService experimentInformationService) {
       this.experimentInformationService = experimentInformationService;
       addCloseListenerForAddVariableDialog();
     }
@@ -222,25 +219,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       List<VariableLevel> levels = variables.stream()
           .flatMap(variable -> variable.levels().stream()).toList();
       experimentalGroupsDialog.setLevels(levels);
-    }
-
-    private void handleAddExperimentalGroups() {
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      if (!variables.isEmpty()) {
-        experimentalGroupsDialog.open();
-      } else {
-        selectSummaryTab();
-        InformationMessage successMessage = new InformationMessage(
-            "No experimental variables are defined",
-            "Please define all of your experimental variables before adding groups.");
-        StyledNotification notification = new StyledNotification(successMessage);
-        notification.open();
-      }
-    }
-
-    private void selectSummaryTab() {
-      experimentSheet.setSelectedIndex(0);
     }
 
     private void setExperimentId(ExperimentId experimentId) {
@@ -290,7 +268,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
       // We register the experimental details component as listener for group deletion events
       experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
-
+      experimentalGroupsCollection.removeAll();
       experimentalGroupsCollection.addComponents(experimentalGroupsCards);
     }
 
@@ -310,7 +288,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void handleGroupSubmittedSuccess() {
-      experimentalGroupsCollection.removeAll();
       loadExperimentalGroups();
       addCreationCard();
       experimentalGroupsDialog.close();
