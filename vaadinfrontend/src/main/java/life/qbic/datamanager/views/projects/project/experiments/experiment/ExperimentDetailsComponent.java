@@ -78,7 +78,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private final DisclaimerCard noExperimentalVariablesDefined;
 
-  private final CreationCard experimentalGroupCreationCard = CreationCard.create("Add Experimental Group");
+  private final CreationCard experimentalGroupCreationCard = CreationCard.create(
+      "Add Experimental Group");
 
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
@@ -100,10 +101,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     var disclaimer = DisclaimerCard.create("No experiment variables defined", "Add");
     disclaimer.subscribe(this::handleEvent);
     return disclaimer;
-  }
-
-  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
-    experimentSheet.setSelectedIndex(0);
   }
 
   private void initTagAndNotesLayout() {
@@ -133,11 +130,23 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     experimentSheet.setSizeFull();
   }
 
+  private void addCreationCard() {
+    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
+  }
+
   private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
     AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
     dialog.addExperimentalGroupSubmitListener(
         groupSubmitted -> handler.onGroupSubmitted(groupSubmitted));
     return dialog;
+  }
+
+  private void setUpCreationCard() {
+    experimentalGroupCreationCard.addListener(this::handleEvent);
+  }
+
+  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
+    experimentSheet.setSelectedIndex(0);
   }
 
   private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
@@ -153,6 +162,10 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initExperimentalGroupsBoard() {
     experimentalGroupsCollection.setWidthFull();
+  }
+
+  public void handleEvent(CreationClickedEvent creationClickedEvent) {
+    experimentalGroupsDialog.open();
   }
 
   private void initSampleOriginCard() {
@@ -201,30 +214,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
   }
 
-  public void handleEvent(CreationClickedEvent creationClickedEvent) {
-    experimentalGroupsDialog.open();
-  }
-
-  private void addCreationCard() {
-    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
-  }
-
-  private void removeCreationCard() {
-    experimentalGroupsCollection.remove(experimentalGroupCreationCard);
-  }
-
-  private void setUpCreationCard() {
-    experimentalGroupCreationCard.addListener(this::handleEvent);
-  }
-
-  private void displayDisclaimer() {
-    this.experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
-  }
-
-  private void removeDisclaimer() {
-    this.experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
-  }
-
   private final class Handler {
 
     private ExperimentId experimentId;
@@ -241,15 +230,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
           experimentalVariableCard.refresh();
         }
       });
-    }
-
-    private void fillExperimentalGroupDialog() {
-      Objects.requireNonNull(experimentId, "experiment id not set");
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream()).toList();
-      experimentalGroupsDialog.setLevels(levels);
     }
 
     private void loadExperiment(ExperimentId experimentId) {
@@ -298,6 +278,15 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       //ToDo load information from backend once implemented
     }
 
+    private void fillExperimentalGroupDialog() {
+      Objects.requireNonNull(experimentId, "experiment id not set");
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      List<VariableLevel> levels = variables.stream()
+          .flatMap(variable -> variable.levels().stream()).toList();
+      experimentalGroupsDialog.setLevels(levels);
+    }
+
     private void loadExperimentalGroups() {
       Objects.requireNonNull(experimentId, "Experiment id not set");
       // We load the experimental groups of the experiment and render them as cards
@@ -308,6 +297,18 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
       experimentalGroupsCollection.removeAll();
       experimentalGroupsCollection.addComponents(experimentalGroupsCards);
+    }
+
+    private void displayDisclaimer() {
+      experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
+    }
+
+    private void removeCreationCard() {
+      experimentalGroupsCollection.remove(experimentalGroupCreationCard);
+    }
+
+    private void removeDisclaimer() {
+      experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
     }
 
     private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
