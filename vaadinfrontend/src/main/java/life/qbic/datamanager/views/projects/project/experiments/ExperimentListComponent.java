@@ -66,6 +66,7 @@ public class ExperimentListComponent extends Composite<PageComponent> {
     contentLayout.setMargin(false);
     getContent().addTitle(TITLE);
     getContent().addContent(contentLayout);
+    getContent().indentContent(false);
     experiments.setWidthFull();
     contentLayout.setMinWidth(100, Unit.PERCENTAGE);
 
