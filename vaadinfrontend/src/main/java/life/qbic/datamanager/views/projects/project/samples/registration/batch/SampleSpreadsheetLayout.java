@@ -125,7 +125,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
       filledRows.forEach(row -> {
         SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
-            row.sampleLabel(), row.bioReplicateID(), row.condition(), row.species(), row.specimen(),
+            row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
+            row.specimen(),
             row.analyte(), row.customerComment());
         samplesToRegister.add(sampleRegistrationContent);
       });

@@ -27,7 +27,6 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +51,8 @@ import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
-import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -400,50 +395,17 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
         Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
         Species species = new Species(sampleRegistrationContent.species());
         BiologicalReplicateId biologicalReplicateId = BiologicalReplicateId.create();
-        SampleOrigin sampleOrigin = new SampleOrigin(species, specimen, analyte);
-        Condition condition = StringToConditions(sampleRegistrationContent.condition());
-        Optional<Experiment> experiment = experimentInformationService.find(experimentId);
-        experiment.ifPresent(foundExperiment -> foundExperiment.getExperimentalGroups()
-            .forEach(experimentalGroup -> {
-              if (sameVariableLevelsInCondition(experimentalGroup.condition(), condition)) {
-                SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest(
-                    sampleRegistrationContent.label(), lastCreatedBatch, experimentId,
-                    experimentalGroup.experimentalGroupId(), biologicalReplicateId, sampleOrigin);
-                sampleRegistrationService.registerSample(sampleRegistrationRequest, projectId)
-                    .onError(e -> {
-                      //Todo What should happen here
-                    });
-              }
-            }));
+        SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest(
+            sampleRegistrationContent.label(), lastCreatedBatch, experimentId,
+            sampleRegistrationContent.experimentalGroupId(), biologicalReplicateId, sampleOrigin);
+        sampleRegistrationService.registerSample(sampleRegistrationRequest, projectId)
+            .onError(e -> {
+              //Todo What should happen here
+            });
       });
       showSamplesView();
       displaySuccessfulBatchRegistrationNotification();
-    }
-
-    private Condition StringToConditions(String conditionString) {
-      Collection<VariableLevel> variableLevels = new HashSet<>();
-      List<String> experimentalVariables = List.of(conditionString.split(";"));
-      experimentalVariables.forEach(experimentalVariable -> {
-        VariableName experimentalVariableName = VariableName.create(
-            experimentalVariable.split(":")[0]);
-        String experimentalValue = experimentalVariable.split(":")[1];
-        String[] experimentalValueParts = experimentalValue.split(" ");
-        ExperimentalValue finalExperimentalValue;
-        if (experimentalValueParts.length > 1) {
-          finalExperimentalValue = ExperimentalValue.create(experimentalValueParts[0],
-              experimentalValueParts[1]);
-        } else {
-          finalExperimentalValue = ExperimentalValue.create(experimentalValueParts[0]);
-        }
-        VariableLevel variableLevel = VariableLevel.create(experimentalVariableName,
-            finalExperimentalValue);
-        variableLevels.add(variableLevel);
-      });
-      return Condition.create(variableLevels);
-    }
-
-    private boolean sameVariableLevelsInCondition(Condition condition1, Condition condition2) {
-      return condition1.getVariableLevels().equals(condition2.getVariableLevels());
     }
 
     private void displaySuccessfulBatchRegistrationNotification() {

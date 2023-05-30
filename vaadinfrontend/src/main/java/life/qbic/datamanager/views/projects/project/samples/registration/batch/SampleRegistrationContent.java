@@ -9,7 +9,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
  * @since <version tag>
  */
 public record SampleRegistrationContent(String label, String biologicalReplicateId,
-                                        String condition, String species, String specimen,
+                                        Long experimentalGroupId, String species, String specimen,
                                         String analyte,
                                         String comment) {
 

@@ -44,6 +44,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static List<String> species;
   private static List<String> specimens;
   private static List<String> analytes;
+
+  //Spreadsheet component only allows retrieval of strings so we have to store the experimentalGroupId separately
+  private static Map<String, ExperimentalGroup> experimentalGroupToConditionString;
   private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
   private static int numberOfSamples;
   private Sheet sampleRegistrationSheet;
@@ -97,6 +100,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static void prepareConditionItems(List<ExperimentalGroup> groups) {
     // create condition items for dropdown and fix cell width. Remember replicates for each condition
     conditionsToReplicates = new HashMap<>();
+    experimentalGroupToConditionString = new HashMap<>();
     for (ExperimentalGroup group : groups) {
       List<String> varStrings = new ArrayList<>();
       for (VariableLevel level : group.condition().getVariableLevels()) {
@@ -110,6 +114,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
       String conditionString = String.join("; ", varStrings);
       conditionsToReplicates.put(conditionString, group.biologicalReplicates());
+      experimentalGroupToConditionString.put(conditionString.trim(), group);
     }
   }
 
@@ -412,9 +417,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         break;
       }
       if (mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
+        ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
+            conditionCell.getStringCellValue().trim());
+        Long experimentalGroupId = experimentalGroup.experimentalGroupId();
         rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
             sampleLabelCell.getStringCellValue().trim(),
-            replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim(),
+            replicateIDCell.getStringCellValue().trim(), experimentalGroupId,
             speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(),
             analyteCell.getStringCellValue().trim(),
             commentCell.getStringCellValue().trim()));
@@ -424,9 +432,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public record NGSRowDTO(String analysisType, String sampleLabel, String bioReplicateID,
-                          String condition, String species, String specimen, String analyte,
+                          Long experimentalGroupId, String species, String specimen, String analyte,
                           String customerComment) {
-
   }
 
   /**
