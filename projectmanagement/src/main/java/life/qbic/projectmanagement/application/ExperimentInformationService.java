@@ -72,7 +72,6 @@ public class ExperimentInformationService {
         experimentalGroup.levels(), experimentalGroup.sampleSize());
     if(result.isValue()) {
       experimentRepository.update(activeExperiment);
-      return result;
     }
     return result;
   }
