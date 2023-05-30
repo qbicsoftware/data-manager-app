@@ -27,6 +27,8 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
+import life.qbic.datamanager.views.general.DisclaimerCard;
+import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -74,19 +76,34 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final AddVariablesDialog addVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
 
+  private final DisclaimerCard noExperimentalVariablesDefined;
+
+  private final CreationCard experimentalGroupCreationCard = CreationCard.create("Add Experimental Group");
+
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
+    this.noExperimentalVariablesDefined = createDisclaimer();
     getContent().indentContent(false);
     initTagAndNotesLayout();
     initTabSheet(experimentInformationService);
     addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
     this.handler = new Handler(experimentInformationService);
+    setUpCreationCard();
+  }
 
+  public DisclaimerCard createDisclaimer() {
+    var disclaimer = DisclaimerCard.create("No experiment variables defined", "Add");
+    disclaimer.subscribe(this::handleEvent);
+    return disclaimer;
+  }
+
+  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
+    experimentSheet.setSelectedIndex(0);
   }
 
   private void initTagAndNotesLayout() {
@@ -189,9 +206,23 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void addCreationCard() {
-    CreationCard creationCard = CreationCard.create("Add Experimental Group");
-    creationCard.addListener(this::handleEvent);
-    experimentalGroupsCollection.addComponentAsFirst(creationCard);
+    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
+  }
+
+  private void removeCreationCard() {
+    experimentalGroupsCollection.remove(experimentalGroupCreationCard);
+  }
+
+  private void setUpCreationCard() {
+    experimentalGroupCreationCard.addListener(this::handleEvent);
+  }
+
+  private void displayDisclaimer() {
+    this.experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
+  }
+
+  private void removeDisclaimer() {
+    this.experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
   }
 
   private final class Handler {
@@ -234,7 +265,13 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
       fillExperimentalGroupDialog();
-      loadExperimentalGroups();
+      if (experiment.variables().isEmpty()) {
+        displayDisclaimer();
+        removeCreationCard();
+      } else {
+        removeDisclaimer();
+        addCreationCard();
+      }
     }
 
     private void loadTagInformation(Experiment experiment) {
@@ -299,5 +336,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       StyledNotification notification = new StyledNotification(infoMessage);
       notification.open();
     }
+
   }
 }

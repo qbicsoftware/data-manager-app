@@ -70,4 +70,19 @@
   cursor: pointer;
 }
 
+.disclaimer-card {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+  max-width: 300px;
+  flex: auto;
+}
+
+.disclaimer-card > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 
