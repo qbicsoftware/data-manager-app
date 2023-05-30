@@ -20,6 +20,10 @@ public class SampleCode implements Serializable {
   }
 
   private SampleCode(String code) {
+    Objects.requireNonNull(code, "Sample code must not be null");
+    if (code.isBlank()) {
+      throw new IllegalArgumentException("Sample code must not be blank");
+    }
     this.code = code;
   }
 
