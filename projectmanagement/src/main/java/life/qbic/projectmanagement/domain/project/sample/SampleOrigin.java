@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -8,6 +9,9 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 /**
  * <b>Sample Origin</b>
  * <p>
+ * The sample origin contains the {@link Species}, {@link Specimen} and {@link Analyte} specified
+ * for an {@link Experiment}. It's information is associated with the information stored within the
+ * {@link Sample}
  * <p>
  *
  * @since 1.0.0
