@@ -42,7 +42,7 @@ class ExperimentalDesignSpec extends Specification {
         when: "an experimental group is defined with identical variable levels"
         var response = design.addExperimentalGroup(Arrays.asList(VariableLevel.create(VariableName.create("environment"), ExperimentalValue.create("normal"))), 4)
         then: "an exception is thrown"
-        response.responseCode() == ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode.CONDITION_EXISTS
+        response.getError() == ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode.CONDITION_EXISTS
     }
 
     def "when an experimental group is not defined in the design, a new one is added"() {
