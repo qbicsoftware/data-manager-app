@@ -84,7 +84,13 @@ public class ExperimentalGroup {
     return this.sampleSize;
   }
 
-  public List<BiologicalReplicate> biologicalReplicates() { return this.biologicalReplicates; }
+  public Long experimentalGroupId() {
+    return this.experimentalGroupId;
+  }
+
+  public List<BiologicalReplicate> biologicalReplicates() {
+    return this.biologicalReplicates;
+  }
 
   @Override
   public int hashCode() {

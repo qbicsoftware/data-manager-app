@@ -4,16 +4,16 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b>Sample Registration Event</b>
+ * <b>Batch Registration Event</b>
  *
- * <p>Indicates that a user submitted a sample registration request</p>
+ * <p>Indicates that a user submitted a batch registration request</p>
  *
  * @since 1.0.0
  */
-public class SampleRegistrationEvent extends ComponentEvent<BatchRegistrationDialog> {
+public class BatchRegistrationEvent extends ComponentEvent<BatchRegistrationDialog> {
 
   @Serial
-  private static final long serialVersionUID = 9182977233447104965L;
+  private static final long serialVersionUID = -2975369166457982204L;
 
   /**
    * Creates a new event using the given source and indicator whether the event originated from the
@@ -23,7 +23,7 @@ public class SampleRegistrationEvent extends ComponentEvent<BatchRegistrationDia
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public SampleRegistrationEvent(BatchRegistrationDialog source, boolean fromClient) {
+  public BatchRegistrationEvent(BatchRegistrationDialog source, boolean fromClient) {
     super(source, fromClient);
   }
 

@@ -26,7 +26,7 @@ import java.util.List;
  * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-class BatchInformationLayout extends VerticalLayout {
+public class BatchInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
