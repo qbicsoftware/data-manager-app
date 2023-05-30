@@ -170,8 +170,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
   }
 
-  public void experimentId(ExperimentId experimentId) {
-    this.handler.setExperimentId(experimentId);
+  public void loadExperiment(ExperimentId experimentId) {
+    this.handler.loadExperiment(experimentId);
   }
 
   public void setStyles(String... componentStyles) {
@@ -221,7 +221,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       experimentalGroupsDialog.setLevels(levels);
     }
 
-    private void setExperimentId(ExperimentId experimentId) {
+    private void loadExperiment(ExperimentId experimentId) {
       experimentInformationService.find(experimentId).ifPresent(this::loadExperimentInformation);
     }
 
