@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
@@ -43,10 +42,10 @@ public class ExperimentalGroupCard extends Card {
     MenuBar menuBar = createMenuBar();
 
     Div cardHeader = new Div();
-    cardHeader.addClassName("card-header");
+    cardHeader.addClassName("header");
 
     Div controls = new Div();
-    controls.addClassName("experimental-group-controls");
+    controls.addClassName("controls");
     controls.add(menuBar);
 
     cardHeader.add(title("Experimental Group"));
@@ -70,9 +69,10 @@ public class ExperimentalGroupCard extends Card {
     return menuBar;
   }
 
-  private H5 title(String value) {
-    H5 cardTitle = new H5();
+  private Span title(String value) {
+    Span cardTitle = new Span();
     cardTitle.setText(value);
+    cardTitle.addClassName("title");
     return cardTitle;
   }
 
