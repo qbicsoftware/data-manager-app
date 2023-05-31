@@ -408,7 +408,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       displaySuccessfulBatchRegistrationNotification();
     }
 
-    private void displaySuccessfulBatchRegistrationNotification() {
+    private void displayRegistrationSuccess() {
       SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
       StyledNotification notification = new StyledNotification(successMessage);
       notification.open();
