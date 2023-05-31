@@ -15,6 +15,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.BoxShadow;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
+import java.io.Serial;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVariablesDialog;
 
 /**
@@ -28,6 +29,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.AddVa
  */
 public class ExperimentalDesignAddCard extends Composite<VerticalLayout> {
 
+  @Serial
+  private static final long serialVersionUID = 2082499691092642085L;
   private final VerticalLayout contentLayout = getContent();
 
   public ExperimentalDesignAddCard() {
