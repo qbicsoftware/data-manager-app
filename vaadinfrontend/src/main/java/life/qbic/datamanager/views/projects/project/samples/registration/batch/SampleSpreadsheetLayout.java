@@ -1,7 +1,9 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Label;
@@ -124,8 +126,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       if(content.isError()) {
         InformationMessage infoMessage = new InformationMessage(
             "Incomplete or erroneous metadata found",
-            content.getError().getMessage() + "Row: "+content.getError().getInvalidRow());
+            content.getError().getMessage() + " Row: "+content.getError().getInvalidRow());
         StyledNotification notification = new StyledNotification(infoMessage);
+        // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
+        notification.addAttachListener(
+            (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
+        notification.addDetachListener(
+            (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
         notification.open();
         return false;
       }

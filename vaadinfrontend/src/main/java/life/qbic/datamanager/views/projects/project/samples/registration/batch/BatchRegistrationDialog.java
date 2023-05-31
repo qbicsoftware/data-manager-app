@@ -144,7 +144,6 @@ public class BatchRegistrationDialog extends Dialog {
           batchRegistrationListeners.forEach(listener -> listener.onComponentEvent(
               new BatchRegistrationEvent(BatchRegistrationDialog.this, true)));
         }
-        sampleSpreadsheetLayout.sampleRegistrationSpreadsheet.reload();
       });
     }
 
@@ -154,7 +153,6 @@ public class BatchRegistrationDialog extends Dialog {
           sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
               new SampleRegistrationEvent(BatchRegistrationDialog.this, true)));
         }
-        sampleSpreadsheetLayout.sampleRegistrationSpreadsheet.reload();
       });
     }
 
