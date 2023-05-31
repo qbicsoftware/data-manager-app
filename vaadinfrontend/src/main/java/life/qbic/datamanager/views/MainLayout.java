@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Data Manager")
 public class MainLayout extends DataManagerLayout {
 
+  public Button homeButton;
   public Button logout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
@@ -29,8 +30,9 @@ public class MainLayout extends DataManagerLayout {
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
+    homeButton = new Button("Home");
     logout = new Button("Log out");
-    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(logout);
+    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(homeButton, logout);
     loggedInButtonLayout.addClassName("button-layout-spacing");
 
     return loggedInButtonLayout;
