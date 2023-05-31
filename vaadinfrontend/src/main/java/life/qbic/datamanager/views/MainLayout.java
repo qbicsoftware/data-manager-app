@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Data Manager")
 public class MainLayout extends DataManagerLayout {
 
-  public Button homeButton;
-  public Button logout;
+  private Button homeButton;
+  private Button logout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
     createNavBarContent();
@@ -37,4 +37,8 @@ public class MainLayout extends DataManagerLayout {
 
     return loggedInButtonLayout;
   }
+
+  public Button logout() { return logout; }
+
+  public Button homeButton() { return homeButton; }
 }

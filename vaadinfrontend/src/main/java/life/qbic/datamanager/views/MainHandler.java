@@ -32,8 +32,8 @@ public class MainHandler implements MainHandlerInterface {
   }
 
   private void addClickListeners() {
-    registeredMainLayout.homeButton.addClickListener(event -> UI.getCurrent().getPage().setLocation(
+    registeredMainLayout.homeButton().addClickListener(event -> UI.getCurrent().getPage().setLocation(
         Projects.PROJECTS));
-    registeredMainLayout.logout.addClickListener(event -> securityService.logout());
+    registeredMainLayout.logout().addClickListener(event -> securityService.logout());
   }
 }
