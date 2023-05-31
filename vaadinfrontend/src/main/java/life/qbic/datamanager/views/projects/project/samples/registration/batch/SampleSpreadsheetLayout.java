@@ -14,7 +14,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SpreadsheetValidationException;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
@@ -116,19 +120,29 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private boolean isInputValid() {
-      binders.forEach(Binder::validate);
-      return binders.stream().allMatch(Binder::isValid);
+      Result<List<NGSRowDTO>, SpreadsheetValidationException> content = sampleRegistrationSpreadsheet.getFilledRows();
+      if(content.isError()) {
+        InformationMessage infoMessage = new InformationMessage(
+            "Incomplete or erroneous metadata found",
+            content.getError().getMessage() + "Row: "+content.getError().getInvalidRow());
+        StyledNotification notification = new StyledNotification(infoMessage);
+        notification.open();
+        return false;
+      }
+      return true;
     }
 
     private List<SampleRegistrationContent> getContent() {
-      List<NGSRowDTO> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
+      Result<List<NGSRowDTO>, SpreadsheetValidationException> content = sampleRegistrationSpreadsheet.getFilledRows();
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
-      filledRows.forEach(row -> {
-        SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
-            row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
-            row.specimen(),
-            row.analyte(), row.customerComment());
-        samplesToRegister.add(sampleRegistrationContent);
+      content.onValue(filledRows -> {
+        filledRows.forEach(row -> {
+          SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
+              row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
+              row.specimen(),
+              row.analyte(), row.customerComment());
+          samplesToRegister.add(sampleRegistrationContent);
+        });
       });
       return samplesToRegister;
     }

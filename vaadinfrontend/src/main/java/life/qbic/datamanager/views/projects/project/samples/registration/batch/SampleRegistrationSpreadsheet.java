@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import java.io.Serial;
 import java.io.Serializable;
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,8 +18,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import life.qbic.datamanager.views.notifications.InformationMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -26,6 +27,7 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -128,7 +130,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
       replicateLabels.addAll(replicates.stream().map(BiologicalReplicate::label).toList());
     }
-    return replicateLabels;
+    return replicateLabels.stream().distinct().toList();
   }
 
   /**
@@ -399,22 +401,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public List<NGSRowDTO> getFilledRowsNew(List<String> header) {
+  public Result<List<NGSRowDTO>, SpreadsheetValidationException> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
     Set<String> uniqueSamples = new HashSet<>();
-    for(int i = 1; i < Integer.MAX_VALUE; i++) {
-      Row row = sampleRegistrationSpreadsheet.getActiveSheet().getRow(i);
+    for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
+      Row row = sampleRegistrationSheet.getRow(rowId);
+
       Cell analysisTypeCell = row.getCell(header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
       Cell sampleLabelCell = row.getCell(header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL));
       Cell replicateIDCell = row.getCell(header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID));
       Cell conditionCell = row.getCell(header.indexOf(SamplesheetHeaderName.CONDITION));
       Cell speciesCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIES));
       Cell specimenCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIMEN));
+      Cell analyteCell = row.getCell(header.indexOf(SamplesheetHeaderName.ANALYTE));
       Cell commentCell = row.getCell(header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
 
       // we need to stream this list twice, so we use a supplier
       Supplier<Stream<Cell>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeCell, sampleLabelCell,
-          replicateIDCell, conditionCell, speciesCell, specimenCell);
+          replicateIDCell, conditionCell, speciesCell, specimenCell, analyteCell);
 
       // stop reading at the end of the fillable table (all cells null)
       if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
@@ -425,64 +429,27 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         String condition = conditionCell.getStringCellValue().trim();
         String uniqueSampleString = replicateID+condition;
         if(uniqueSamples.contains(uniqueSampleString)) {
-          InformationMessage infoMessage = new InformationMessage(
-              "Duplicate Id", "Biological replicate Id "+replicateID+" can only be used once for each condition.");
-          StyledNotification notification = new StyledNotification(infoMessage);
-          notification.open();
+          return Result.fromError(new SpreadsheetValidationException(
+              "Biological replicate Id "+replicateID+" was used multiple times for the same condition.", rowId));
         } else {
+          ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
+              condition);
+          Long experimentalGroupId = experimentalGroup.experimentalGroupId();
           rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
               sampleLabelCell.getStringCellValue().trim(),
               replicateID,
-              condition,
-              speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(),
+              experimentalGroupId,
+              speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), analyteCell.getStringCellValue().trim(),
               commentCell.getStringCellValue().trim()));
           uniqueSamples.add(uniqueSampleString);
         }
       } else {
-        InformationMessage infoMessage = new InformationMessage(
-            "Incomplete metadata", "Please fill all mandatory fields in row "+i);
-        StyledNotification notification = new StyledNotification(infoMessage);
-        notification.open();
+        return Result.fromError(new SpreadsheetValidationException(
+            "Missing mandatory fields.", rowId));
       }
 
     }
-    return rows;
-  }
-
-  public List<NGSRowDTO> getFilledRows() {
-    List<NGSRowDTO> rows = new ArrayList<>();
-    for (int i = 1; i < sampleRegistrationSheet.getLastRowNum(); i++) {
-      Row row = sampleRegistrationSheet.getRow(i);
-      Cell analysisTypeCell = row.getCell(header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
-      Cell sampleLabelCell = row.getCell(header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL));
-      Cell replicateIDCell = row.getCell(
-          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID));
-      Cell conditionCell = row.getCell(header.indexOf(SamplesheetHeaderName.CONDITION));
-      Cell speciesCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIES));
-      Cell specimenCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIMEN));
-      Cell analyteCell = row.getCell(header.indexOf(SamplesheetHeaderName.ANALYTE));
-      Cell commentCell = row.getCell(header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
-
-      Supplier<Stream<Cell>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeCell,
-          sampleLabelCell,
-          replicateIDCell, conditionCell, speciesCell, specimenCell, analyteCell);
-
-      if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
-        break;
-      }
-      if (mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
-        ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
-            conditionCell.getStringCellValue().trim());
-        Long experimentalGroupId = experimentalGroup.experimentalGroupId();
-        rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
-            sampleLabelCell.getStringCellValue().trim(),
-            replicateIDCell.getStringCellValue().trim(), experimentalGroupId,
-            speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(),
-            analyteCell.getStringCellValue().trim(),
-            commentCell.getStringCellValue().trim()));
-      }
-    }
-    return rows;
+    return Result.fromValue(rows);
   }
 
   public record NGSRowDTO(String analysisType, String sampleLabel, String bioReplicateID,
@@ -502,6 +469,23 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
     SequenceAnalysisType(String label) {
       this.label = label;
+    }
+  }
+
+  public static class SpreadsheetValidationException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = 3532483874741500810L;
+
+    private final int invalidRow;
+
+    SpreadsheetValidationException(String message, int invalidRow) {
+      super(message);
+      this.invalidRow = invalidRow;
+    }
+
+    public int getInvalidRow() {
+      return invalidRow;
     }
   }
 }

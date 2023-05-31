@@ -144,14 +144,18 @@ public class BatchRegistrationDialog extends Dialog {
           batchRegistrationListeners.forEach(listener -> listener.onComponentEvent(
               new BatchRegistrationEvent(BatchRegistrationDialog.this, true)));
         }
+        sampleSpreadsheetLayout.sampleRegistrationSpreadsheet.reload();
       });
-
     }
 
     private void setSampleRegistrationSubmission() {
-      sampleSpreadsheetLayout.registerButton.addClickListener(
-          event -> sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
-              new SampleRegistrationEvent(BatchRegistrationDialog.this, true))));
+      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
+        if (isInputValid()) {
+          sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
+              new SampleRegistrationEvent(BatchRegistrationDialog.this, true)));
+        }
+        sampleSpreadsheetLayout.sampleRegistrationSpreadsheet.reload();
+      });
     }
 
     protected boolean isInputValid() {
