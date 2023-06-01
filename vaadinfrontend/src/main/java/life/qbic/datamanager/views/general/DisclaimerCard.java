@@ -43,9 +43,10 @@ public class DisclaimerCard extends Card {
     addClassName("disclaimer-card");
     Div content = new Div();
     Paragraph paragraph = new Paragraph(disclaimerLabel);
-    paragraph.addClassName("disclaimer-label");
+    paragraph.addClassName("label");
     content.add(paragraph);
     content.add(confirmation);
+    confirmation.addClassName("button");
     add(content);
   }
 

@@ -1,88 +1,10 @@
 /* This file defines the styling and layout for all custom components. The components are sorted alphabetically */
-.card {
-  background-color: var(--lumo-base-color);
-  border: black;
-  border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-s);
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
+/*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
+@import "card.css";
 
 .card-deck {
   display: flex;
   align-content: space-evenly;
   flex-flow: row wrap;
 }
-
-.card.experimental-group {
-  display: flex;
-  flex-direction: column;
-  flex: auto;
-  font-size: var(--lumo-font-size-s);
-  padding: var(--lumo-space-l);
-  max-width: 300px;
-}
-
-.card.experimental-group div{
-  margin-bottom: 1em;
-}
-
-.card.experimental-group h5{
-  margin-bottom: 1em;
-}
-
-.card.experimental-group vaadin-icon{
-  cursor: pointer;
-  width: 1em;
-  color: darkgrey;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.experimental-group-controls {
-}
-
-.card.experimental-group > .title {
-  color: var(--lumo-header-text-color);
-  font-size: var(--lumo-font-size-m);
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.creation-card {
-  display: flex;
-  justify-content: center;
-  padding: 1.5rem;
-  max-width: 300px;
-  flex: auto;
-}
-
-.creation-card > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.disclaimer-card {
-  display: flex;
-  justify-content: center;
-  padding: 1.5rem;
-  max-width: 300px;
-  flex: auto;
-}
-
-.disclaimer-card > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-
