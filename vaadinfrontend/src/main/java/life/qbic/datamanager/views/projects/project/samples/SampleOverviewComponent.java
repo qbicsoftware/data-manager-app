@@ -273,8 +273,10 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
         generateExperimentTabs(project);
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
-        potentialExperiment.ifPresent(batchRegistrationDialog::setActiveExperiment);
-        this.experimentId = potentialExperiment.get().experimentId();
+        potentialExperiment.ifPresent(experiment -> {
+          batchRegistrationDialog.setActiveExperiment(experiment);
+          this.experimentId = experiment.experimentId();
+        });
       }
     }
 
