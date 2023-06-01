@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Paragraph;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -41,9 +40,10 @@ public class DisclaimerCard extends Card {
     addClassName("disclaimer-card");
     Div content = new Div();
     Paragraph paragraph = new Paragraph(disclaimerLabel);
-    paragraph.addClassName("disclaimer-label");
+    paragraph.addClassName("label");
     content.add(paragraph);
     content.add(confirmation);
+    confirmation.addClassName("button");
     add(content);
   }
 
