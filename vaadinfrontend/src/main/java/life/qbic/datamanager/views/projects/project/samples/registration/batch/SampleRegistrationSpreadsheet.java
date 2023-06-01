@@ -421,7 +421,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       if (mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
         ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
             conditionCell.getStringCellValue().trim());
-        Long experimentalGroupId = experimentalGroup.experimentalGroupId();
+        Long experimentalGroupId = experimentalGroup.id();
         rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
             sampleLabelCell.getStringCellValue().trim(),
             replicateIDCell.getStringCellValue().trim(), experimentalGroupId,
