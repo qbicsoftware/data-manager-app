@@ -434,7 +434,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         } else {
           ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
               condition);
-          Long experimentalGroupId = experimentalGroup.experimentalGroupId();
+          Long experimentalGroupId = experimentalGroup.id();
           rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
               sampleLabelCell.getStringCellValue().trim(),
               replicateID,
