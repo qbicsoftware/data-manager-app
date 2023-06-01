@@ -35,6 +35,7 @@ import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -88,8 +89,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
   private final Select<String> tabFilterSelect = new Select<>();
   private final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
-
-  //ToDo Remove showEmptyViewButton once sample information can be loaded
   private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
@@ -169,7 +168,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     experimentSamples.forEach((experiment, samples) -> {
       Span experimentName = new Span(experiment.getName());
       Tab experimentSampleTab = new Tab(experimentName);
-      //Todo How to provide information from different services in the vaadin grid?
       Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
       sampleGrid.addColumn(createSampleIdComponentRenderer()).setComparator(Sample::id)
           .setHeader("Sample Id");
@@ -183,7 +181,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
       sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
       sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
-      //ToDo make this virtual list with data Providers and implement lazy loading?
       GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
       sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
           sampleGridDataView);
@@ -233,7 +230,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
   }
 
   private static final SerializableBiConsumer<Anchor, Sample> styleSampleIdAnchor = (anchor, sample) -> {
-    //ToDo maybe the projectId could be read from the UI URL?
     String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(), sample.id());
     anchor.setHref(anchorURL);
     anchor.setText(sample.id());
@@ -266,7 +262,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       this.sampleRegistrationService = sampleRegistrationService;
       this.batchRegistrationService = batchRegistrationService;
       registerSamplesListener();
-      configureBatchRegistrationDialog();
+      addEventListeners();
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -305,26 +301,17 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           notification.open();
         }
       });
-      //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 
-    private void configureBatchRegistrationDialog() {
-
+    private void addEventListeners() {
       batchRegistrationDialog.addBatchRegistrationEventListener(
-          event -> registerBatch(event.getSource().batchRegistrationContent()).onValue(result -> {
-            batchRegistrationDialog.resetAndClose();
+          batchRegistrationEvent -> registerBatch(
+              batchRegistrationEvent.getSource().batchRegistrationContent()).onValue(result -> {
             lastCreatedBatch = result;
-          }).onError(e -> {
-            //ToDo What should happen here?
-          }));
-      batchRegistrationDialog.addSampleRegistrationEventListener(
-          event -> event.getSource().sampleRegistrationContent().forEach(
-              sampleRegistrationContent -> registerSample(sampleRegistrationContent).onValue(
-                  result -> {
-                  }).onError(e -> {
-                //ToDo What should happen here?
-              })));
+            batchRegistrationEvent.getSource().sampleRegistrationContent()
+                .forEach(this::registerSample);
+          }).onError(result -> displayRegistrationFailure()));
       batchRegistrationDialog.addCancelEventListener(
           event -> batchRegistrationDialog.resetAndClose());
     }
@@ -409,6 +396,12 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private void displayRegistrationSuccess() {
       SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
       StyledNotification notification = new StyledNotification(successMessage);
+      notification.open();
+    }
+
+    private void displayRegistrationFailure() {
+      ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
+      StyledNotification notification = new StyledNotification(errorMessage);
       notification.open();
     }
   }
