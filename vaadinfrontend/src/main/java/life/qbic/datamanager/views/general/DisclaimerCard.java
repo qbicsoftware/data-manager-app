@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Paragraph;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -27,12 +26,15 @@ public class DisclaimerCard extends Card {
   private static final long serialVersionUID = -6441310468106881703L;
   private final String disclaimerLabel;
 
+  private final String title;
+
   private final Button confirmation;
 
-  private DisclaimerCard(String disclaimer, String buttonLabel) {
+  private DisclaimerCard(String disclaimer, String buttonLabel, String title) {
+    this.title = title;
     this.disclaimerLabel = disclaimer;
     this.confirmation = new Button(buttonLabel);
-    listeners = new ArrayList<>();
+    this.listeners = new ArrayList<>();
     initLayout();
     initConfirmation();
   }
@@ -52,7 +54,11 @@ public class DisclaimerCard extends Card {
   }
 
   public static DisclaimerCard create(String disclaimer, String buttonLabel) {
-    return new DisclaimerCard(disclaimer, buttonLabel);
+    return new DisclaimerCard(disclaimer, buttonLabel, "");
+  }
+
+  public static DisclaimerCard create(String disclaimer, String buttonLabel, String title) {
+    return new DisclaimerCard(disclaimer, buttonLabel, title);
   }
 
   public void subscribe(ComponentEventListener<DisclaimerConfirmedEvent> listener) {
@@ -62,6 +68,14 @@ public class DisclaimerCard extends Card {
   private void fireDisclaimerConfirmedEvent() {
     var event = new DisclaimerConfirmedEvent(this, true);
     listeners.forEach(listener -> listener.onComponentEvent(event));
+  }
+
+  public void hideConfirmationButton() {
+    this.confirmation.setVisible(false);
+  }
+
+  public void displayConfirmationButton() {
+    this.confirmation.setVisible(true);
   }
 
 }
