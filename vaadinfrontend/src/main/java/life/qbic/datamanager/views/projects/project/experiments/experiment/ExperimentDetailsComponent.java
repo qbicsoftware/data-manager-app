@@ -98,7 +98,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   public DisclaimerCard createDisclaimer() {
-    var disclaimer = DisclaimerCard.create("No experiment variables defined", "Add");
+    var disclaimer = DisclaimerCard.createWithTitle("Missing variables", "No experiment variables defined", "Add");
     disclaimer.subscribe(this::handleEvent);
     return disclaimer;
   }
