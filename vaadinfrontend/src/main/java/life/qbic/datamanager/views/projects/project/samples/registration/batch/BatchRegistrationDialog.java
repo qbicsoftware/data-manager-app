@@ -67,20 +67,40 @@ public class BatchRegistrationDialog extends Dialog {
     sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   }
 
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link BatchRegistrationEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
   public void addBatchRegistrationEventListener(
       ComponentEventListener<BatchRegistrationEvent> listener) {
     registerBatchDialogHandler.addBatchRegistrationEventListener(listener);
   }
 
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link UserCancelEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
   public void addCancelEventListener(
       ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
+  /**
+   * Resets the dialogue to its original state, removing all user input and changes and closes the
+   * dialog window
+   */
   public void resetAndClose() {
     registerBatchDialogHandler.resetAndClose();
   }
 
+  /**
+   * Defines the currently active {@link Experiment} within the project from which the information
+   * will be derived in the {@link SampleRegistrationSpreadsheet}
+   */
   public void setActiveExperiment(Experiment experiment) {
     sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }
