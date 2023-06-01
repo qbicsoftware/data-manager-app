@@ -1,11 +1,11 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <p> BatchRegistrationContent contains the batch specific information provided by the user during sample batch creation in the {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog}
+ * </p>
  *
- * @since <version tag>
+ * @param batchLabel name of the to be registered batch
+ * @param isPilot    specifies if the to be registered batch functions as a pilot
  */
 public record BatchRegistrationContent(String batchLabel, boolean isPilot) {
 
