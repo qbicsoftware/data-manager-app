@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +43,13 @@ public class DisclaimerCard extends Card {
   private void initLayout() {
     addClassName("disclaimer-card");
     Div content = new Div();
+    Span titleSpan = new Span();
+    titleSpan.add(this.title);
+    titleSpan.addClassName("title");
     Paragraph paragraph = new Paragraph(disclaimerLabel);
     paragraph.addClassName("label");
+
+    content.add(titleSpan);
     content.add(paragraph);
     content.add(confirmation);
     confirmation.addClassName("button");
