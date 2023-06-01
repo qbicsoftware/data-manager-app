@@ -1,0 +1,17 @@
+name: Label Pull Requests
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [ opened, edited ]
+
+jobs:
+  Assign-Label-To-Pull-Request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5.0.0-alpha.1
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
