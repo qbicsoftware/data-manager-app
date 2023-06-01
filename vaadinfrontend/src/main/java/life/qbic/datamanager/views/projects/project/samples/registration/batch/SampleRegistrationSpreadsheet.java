@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import java.io.Serial;
 import java.io.Serializable;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,7 +26,6 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -57,9 +55,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static int numberOfSamples;
   private Sheet sampleRegistrationSheet;
 
-  public SampleRegistrationSpreadsheet() {
-
-  }
+  public SampleRegistrationSpreadsheet() {}
 
   /**
    * Sets an experiment in order to provide the spreadsheet builder with known metadata to prefill
