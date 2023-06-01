@@ -1,0 +1,13 @@
+feature:
+  - any:
+      - head-branch: [ '^feature' ]
+fix:
+  - any:
+      - head-branch: [ '^fix', '^hotfix' ]
+chore:
+  - any:
+      - head-branch: [ '^chore', '^documentation', '^docs', '^ci', '^refactor' ]
+release:
+  - all:
+      - base-branch: [ 'main', 'master' ]
+      - head-branch: [ 'development', 'dev' ]
