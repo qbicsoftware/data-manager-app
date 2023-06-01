@@ -13,10 +13,16 @@ import java.util.List;
  * <b>Disclaimer Card</b>
  *
  * <p>Disclaimer cards are special cards that render a disclaimer to the user,
- * with a clickable button for confirmation.</p>
+ * with an clickable confirmation element to either confirm or redirect the user to a follow up
+ * step.</p>
  * <p>
  * The component fires a {@link DisclaimerConfirmedEvent} after a user has confirmed the
  * disclaimer.
+ * <p>
+ * The card consists of a title that can be set, as well as a disclaimer text and an clickable
+ * element that fires the event.
+ * <p>
+ * The confirmation element can be enabled (default) or disabled.
  *
  * @since 1.0.0
  */
@@ -29,12 +35,12 @@ public class DisclaimerCard extends Card {
 
   private final String title;
 
-  private final Button confirmation;
+  private final Button confirmationElement;
 
-  private DisclaimerCard(String disclaimer, String buttonLabel, String title) {
+  private DisclaimerCard(String disclaimer, String confirmationLabel, String title) {
     this.title = title;
     this.disclaimerLabel = disclaimer;
-    this.confirmation = new Button(buttonLabel);
+    this.confirmationElement = new Button(confirmationLabel);
     this.listeners = new ArrayList<>();
     initLayout();
     initConfirmation();
@@ -51,25 +57,13 @@ public class DisclaimerCard extends Card {
 
     content.add(titleSpan);
     content.add(paragraph);
-    content.add(confirmation);
-    confirmation.addClassName("button");
+    content.add(confirmationElement);
+    confirmationElement.addClassName("button");
     add(content);
   }
 
   private void initConfirmation() {
-    confirmation.addClickListener(listener -> fireDisclaimerConfirmedEvent());
-  }
-
-  public static DisclaimerCard create(String disclaimer, String buttonLabel) {
-    return new DisclaimerCard(disclaimer, buttonLabel, "");
-  }
-
-  public static DisclaimerCard create(String disclaimer, String buttonLabel, String title) {
-    return new DisclaimerCard(disclaimer, buttonLabel, title);
-  }
-
-  public void subscribe(ComponentEventListener<DisclaimerConfirmedEvent> listener) {
-    this.listeners.add(listener);
+    confirmationElement.addClickListener(listener -> fireDisclaimerConfirmedEvent());
   }
 
   private void fireDisclaimerConfirmedEvent() {
@@ -77,12 +71,41 @@ public class DisclaimerCard extends Card {
     listeners.forEach(listener -> listener.onComponentEvent(event));
   }
 
+  /**
+   * Creates a disclaimer card without title
+   *
+   * @param disclaimer        the disclaimer shown on the card
+   * @param confirmationLabel the label shown on the confirmation element.
+   * @return an instance of a {@link DisclaimerCard}
+   * @since 1.0.0
+   */
+  public static DisclaimerCard create(String disclaimer, String confirmationLabel) {
+    return new DisclaimerCard(disclaimer, confirmationLabel, "");
+  }
+
+  /**
+   * Creates a disclaimer card with a title
+   *
+   * @param disclaimer  the disclaimer shown on the card
+   * @param confirmationLabel the label shown on the confirmation element.
+   * @param title       the card title
+   * @return an instance of a {@link DisclaimerCard}
+   * @since 1.0.0
+   */
+  public static DisclaimerCard create(String disclaimer, String confirmationLabel, String title) {
+    return new DisclaimerCard(disclaimer, confirmationLabel, title);
+  }
+
+  public void subscribe(ComponentEventListener<DisclaimerConfirmedEvent> listener) {
+    this.listeners.add(listener);
+  }
+
   public void disableConfirmation() {
-    this.confirmation.setVisible(false);
+    this.confirmationElement.setVisible(false);
   }
 
   public void enableConfirmation() {
-    this.confirmation.setVisible(true);
+    this.confirmationElement.setVisible(true);
   }
 
 }
