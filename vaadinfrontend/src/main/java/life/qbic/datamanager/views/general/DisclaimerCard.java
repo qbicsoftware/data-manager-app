@@ -13,13 +13,13 @@ import java.util.List;
  * <b>Disclaimer Card</b>
  *
  * <p>Disclaimer cards are special cards that render a disclaimer to the user,
- * with an clickable confirmation element to either confirm or redirect the user to a follow up
+ * with a clickable confirmation element to either confirm or redirect the user to a follow up
  * step.</p>
  * <p>
  * The component fires a {@link DisclaimerConfirmedEvent} after a user has confirmed the
  * disclaimer.
  * <p>
- * The card consists of a title that can be set, as well as a disclaimer text and an clickable
+ * The card consists of a title that can be set, as well as a disclaimer text and a clickable
  * element that fires the event.
  * <p>
  * The confirmation element can be enabled (default) or disabled.
