@@ -71,10 +71,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private final Div contentExperimentalGroupsTab = new Div();
 
-  private static final int POSITION_SUMMARY_TAB = 0;
-
-  private static final int POSITION_EXP_GROUPS_TAB = 1;
-
   private final Board summaryCardBoard = new Board();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
