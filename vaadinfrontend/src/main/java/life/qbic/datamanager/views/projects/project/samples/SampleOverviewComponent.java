@@ -249,7 +249,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
     private ExperimentId experimentId;
-    private BatchId lastCreatedBatch;
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
@@ -307,11 +306,13 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private void addEventListeners() {
       batchRegistrationDialog.addBatchRegistrationEventListener(
           batchRegistrationEvent -> registerBatch(
-              batchRegistrationEvent.getSource().batchRegistrationContent()).onValue(result -> {
-            lastCreatedBatch = result;
+              batchRegistrationEvent.getSource().batchRegistrationContent()).onValue(batchId -> {
             batchRegistrationEvent.getSource().sampleRegistrationContent()
-                .forEach(this::registerSample);
-          }).onError(result -> displayRegistrationFailure()));
+                .forEach(sampleRegistrationContent -> registerSampleForBatch(batchId,
+                    sampleRegistrationContent));
+            batchRegistrationDialog.resetAndClose();
+            displayRegistrationSuccess();
+          }).onError(responseCode -> displayRegistrationFailure()));
       batchRegistrationDialog.addCancelEventListener(
           event -> batchRegistrationDialog.resetAndClose());
     }
@@ -374,21 +375,21 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           batchRegistrationContent.isPilot());
     }
 
-    private Result<life.qbic.projectmanagement.domain.project.sample.Sample, SampleRegistrationService.ResponseCode> registerSample(
-        SampleRegistrationContent sampleRegistrationContent) {
+    private Result<life.qbic.projectmanagement.domain.project.sample.Sample, SampleRegistrationService.ResponseCode> registerSampleForBatch(
+        BatchId batchId, SampleRegistrationContent sampleRegistrationContent) {
       SampleRegistrationRequest sampleRegistrationRequest = createSampleRegistrationRequest(
-          sampleRegistrationContent);
+          batchId, sampleRegistrationContent);
       return sampleRegistrationService.registerSample(sampleRegistrationRequest, projectId);
     }
 
-    private SampleRegistrationRequest createSampleRegistrationRequest(
+    private SampleRegistrationRequest createSampleRegistrationRequest(BatchId batchId,
         SampleRegistrationContent sampleRegistrationContent) {
       Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
       Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
       Species species = new Species(sampleRegistrationContent.species());
       BiologicalReplicateId biologicalReplicateId = BiologicalReplicateId.create();
       SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-      return new SampleRegistrationRequest(sampleRegistrationContent.label(), lastCreatedBatch,
+      return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
           experimentId, sampleRegistrationContent.experimentalGroupId(), biologicalReplicateId,
           sampleOrigin);
     }
