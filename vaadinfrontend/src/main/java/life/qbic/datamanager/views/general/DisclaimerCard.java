@@ -77,11 +77,11 @@ public class DisclaimerCard extends Card {
     listeners.forEach(listener -> listener.onComponentEvent(event));
   }
 
-  public void hideConfirmationButton() {
+  public void disableConfirmation() {
     this.confirmation.setVisible(false);
   }
 
-  public void displayConfirmationButton() {
+  public void enableConfirmation() {
     this.confirmation.setVisible(true);
   }
 
