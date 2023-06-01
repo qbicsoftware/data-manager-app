@@ -7,11 +7,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -36,6 +38,7 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -65,6 +68,13 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final transient Handler handler;
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
+
+  private final Div contentExperimentalGroupsTab = new Div();
+
+  private static final int POSITION_SUMMARY_TAB = 0;
+
+  private static final int POSITION_EXP_GROUPS_TAB = 1;
+
   private final Board summaryCardBoard = new Board();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
@@ -124,8 +134,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private void initTabSheet(ExperimentInformationService experimentInformationService) {
     initSummaryCardBoard(experimentInformationService);
     initExperimentalGroupsBoard();
-    experimentSheet.add("Summary", summaryCardBoard);
-    experimentSheet.add("Experimental Groups", experimentalGroupsCollection);
+    experimentSheet.add( "Summary", summaryCardBoard);
+    experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -248,11 +258,19 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       loadExperimentalGroups();
       if (experiment.variables().isEmpty()) {
         displayDisclaimer();
-        removeCreationCard();
+        hideExperimentalGroupsCollection();
       } else {
         removeDisclaimer();
-        addCreationCard();
+        displayExperimentalGroupsCollection();
       }
+    }
+
+    private void displayExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.add(experimentalGroupsCollection);
+    }
+
+    private void hideExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
     }
 
     private void loadTagInformation(Experiment experiment) {
@@ -300,15 +318,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void displayDisclaimer() {
-      experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
-    }
-
-    private void removeCreationCard() {
-      experimentalGroupsCollection.remove(experimentalGroupCreationCard);
+      contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
     }
 
     private void removeDisclaimer() {
-      experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
+      contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
     }
 
     private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
