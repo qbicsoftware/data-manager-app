@@ -2,32 +2,16 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.details.DetailsVariant;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
-import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
-import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.shared.Registration;
-import com.vaadin.flow.theme.lumo.LumoUtility.AlignItems;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
-import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
-import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -123,39 +107,11 @@ public class ExperimentalVariablesCard extends CardComponent {
     public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
       experimentalVariablesLayout.removeAll();
       for (ExperimentalVariable experimentalVariable : experimentalVariables) {
-        Details experimentalVariableDetails = generateExperimentalVariableDetails(
+        ExperimentalVariablePanel experimentalVariablePanel = new ExperimentalVariablePanel(
             experimentalVariable);
-
-        experimentalVariablesLayout.add(experimentalVariableDetails);
+        experimentalVariablesLayout.add(experimentalVariablePanel);
       }
       showVariablesView();
-    }
-
-    private Details generateExperimentalVariableDetails(ExperimentalVariable experimentalVariable) {
-      Icon experimentalVariableIcon = VaadinIcon.OPTION_A.create();
-      experimentalVariableIcon.setSize("1em");
-      Label experimentalVariableName = new Label(experimentalVariable.name().value());
-      experimentalVariableName.addClassName(FontWeight.BOLD);
-      Span experimentalVariableHeader = new Span(experimentalVariableIcon,
-          experimentalVariableName);
-      experimentalVariableHeader.addClassNames(AlignItems.CENTER, Gap.XSMALL, Display.FLEX);
-      Details experimentalVariableDetails = new Details(experimentalVariableHeader);
-      FlexLayout experimentalValues = new FlexLayout();
-      experimentalValues.setFlexDirection(FlexDirection.ROW);
-      experimentalValues.setFlexWrap(FlexWrap.WRAP);
-      experimentalValues.setAlignContent(ContentAlignment.STRETCH);
-      experimentalVariable.levels().stream().map(VariableLevel::experimentalValue)
-          .map(ExperimentValueFormatter::format).forEach(text -> {
-            Tag experimentalVariableTag = new Tag(text);
-            experimentalVariableTag.addClassName(TextOverflow.ELLIPSIS);
-            experimentalValues.add(experimentalVariableTag);
-          });
-      experimentalVariableDetails.addContent(experimentalValues);
-      experimentalVariableDetails.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE,
-          DetailsVariant.SMALL);
-      experimentalVariableDetails.setWidthFull();
-      experimentalVariableDetails.setOpened(true);
-      return experimentalVariableDetails;
     }
 
     private void showEmptyView() {

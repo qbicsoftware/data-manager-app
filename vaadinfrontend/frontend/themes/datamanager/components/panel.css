@@ -1,0 +1,35 @@
+.panel {
+  background-color: var(--lumo-contrast-5pct);
+  border-radius: var(--lumo-border-radius-m);
+  margin: var(--lumo-space-xs) 0;
+}
+
+.experimental-variable-panel {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-s);
+  max-width: 100%;
+}
+
+.experimental-variable-panel .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.experimental-variable-panel .tags {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.experimental-variable-panel .title {
+  color: var(--lumo-header-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: bold;
+  white-space: nowrap;
+  margin-bottom: 1em;
+}
