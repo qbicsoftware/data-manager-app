@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
@@ -36,6 +37,7 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.component.ExperimentInfoComponent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -66,6 +68,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
   private final Board summaryCardBoard = new Board();
+
+  private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
   private final VerticalLayout speciesForm = new VerticalLayout();
@@ -93,6 +97,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initTabSheet(experimentInformationService);
     addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
+
+
+
     this.handler = new Handler(experimentInformationService);
     setUpCreationCard();
   }
@@ -124,7 +131,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private void initTabSheet(ExperimentInformationService experimentInformationService) {
     initSummaryCardBoard(experimentInformationService);
     initExperimentalGroupsBoard();
-    experimentSheet.add("Summary", summaryCardBoard);
+    experimentSheet.add("Summary", experimentSummary);
     experimentSheet.add("Experimental Groups", experimentalGroupsCollection);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
@@ -169,6 +176,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void initSampleOriginCard() {
+
     sampleOriginCard.addTitle("Sample Origin");
     FormLayout sampleOriginLayout = new FormLayout();
     sampleOriginLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
@@ -266,6 +274,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void loadSampleOriginInformation(Experiment experiment) {
+      ExperimentInfoComponent sampleOriginComponent = ExperimentInfoComponent.create(experiment.getSpecies(), experiment.getSpecimens(), experiment.getAnalytes());
+      ExperimentDetailsComponent.this.experimentSummary.add(sampleOriginComponent);
+      sampleOriginComponent.showMenu();
       speciesForm.removeAll();
       specimenForm.removeAll();
       analyteForm.removeAll();
