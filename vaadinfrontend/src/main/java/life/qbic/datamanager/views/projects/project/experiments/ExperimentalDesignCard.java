@@ -16,7 +16,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.BoxShadow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Bottom;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Right;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
@@ -25,8 +27,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.TextAlignment;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
-import java.util.List;
-import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
@@ -81,7 +81,7 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
   private void initTopRow() {
     HorizontalLayout topRow = new HorizontalLayout();
     Span experimentTitle = new Span(experiment.getName());
-    experimentTitle.addClassNames("text-2xl", "font-bold");
+    experimentTitle.addClassNames(FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
     experimentTitle.addClassName(Whitespace.NOWRAP);
     experimentTitle.addClassName(TextOverflow.ELLIPSIS);
     experimentTitle.addClassName(Overflow.HIDDEN);
@@ -98,24 +98,15 @@ public class ExperimentalDesignCard extends Composite<HorizontalLayout> {
 
   private void initBottomRow() {
     HorizontalLayout bottomRow = new HorizontalLayout();
-    HorizontalLayout tagLayout = new HorizontalLayout();
-    List<String> tags = List.of("Label 1", "Label 2");
-    tags.forEach(tag -> tagLayout.add(new Tag(tag)));
-    tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
-    tagLayout.addClassName("spacing-m");
-    tagLayout.addClassName(Overflow.HIDDEN);
-    tagLayout.addClassName(Whitespace.NOWRAP);
-    tagLayout.addClassName(TextOverflow.ELLIPSIS);
-    tagLayout.addClassName(Display.INLINE);
     Icon flaskIcon = VaadinIcon.FLASK.create();
-    flaskIcon.addClassNames("mt-s", "mb-s");
+    flaskIcon.addClassNames(Top.SMALL, Bottom.SMALL);
     flaskIcon.setSize(IconSize.MEDIUM);
     //We need a span to wrap around the icon so the icon stays at the same size if the screen size changes
     Span iconSpan = new Span(flaskIcon);
     bottomRow.setWidthFull();
-    bottomRow.setAlignItems(Alignment.CENTER);
-    bottomRow.setJustifyContentMode(JustifyContentMode.BETWEEN);
-    bottomRow.add(tagLayout, iconSpan);
+    bottomRow.setAlignItems(Alignment.END);
+    bottomRow.setJustifyContentMode(JustifyContentMode.END);
+    bottomRow.add(iconSpan);
     experimentDetailLayout.add(bottomRow);
   }
 
