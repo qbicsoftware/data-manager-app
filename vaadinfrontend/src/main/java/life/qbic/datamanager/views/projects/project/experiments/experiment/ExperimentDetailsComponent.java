@@ -29,6 +29,7 @@ import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.datamanager.views.general.DisclaimerCard;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -59,7 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
-  private ExperimentalVariableCard experimentalVariableCard;
+  private ExperimentalVariablesCard experimentalVariablesCard;
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient Handler handler;
@@ -153,8 +154,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initSampleOriginCard();
     initBlockingVariableCard();
     initExperimentalVariableCard(experimentInformationService);
-    Row topRow = new Row(sampleOriginCard, blockingVariableCard);
-    Row bottomRow = new Row(experimentalVariableCard);
+    Row topRow = new Row(sampleOriginCard, experimentalVariablesCard);
+    Row bottomRow = new Row(blockingVariableCard);
     summaryCardBoard.add(topRow, bottomRow);
     summaryCardBoard.setSizeFull();
 
@@ -195,9 +196,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initExperimentalVariableCard(
       ExperimentInformationService experimentInformationService) {
-    experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
-    experimentalVariableCard.setMargin(false);
-    experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
+    experimentalVariablesCard = new ExperimentalVariablesCard(experimentInformationService);
+    experimentalVariablesCard.setMargin(false);
+    experimentalVariablesCard.setAddButtonAction(addVariablesDialog::open);
   }
 
   public void loadExperiment(ExperimentId experimentId) {
@@ -227,7 +228,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     private void addCloseListenerForAddVariableDialog() {
       addVariablesDialog.addOpenedChangeListener(it -> {
         if (!it.isOpened()) {
-          experimentalVariableCard.refresh();
+          experimentalVariablesCard.refresh();
         }
       });
     }
@@ -242,7 +243,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       loadTagInformation(experiment);
       loadSampleOriginInformation(experiment);
       loadBlockingVariableInformation();
-      experimentalVariableCard.experimentId(experiment.experimentId());
+      experimentalVariablesCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
       fillExperimentalGroupDialog();
       loadExperimentalGroups();
