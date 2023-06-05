@@ -7,10 +7,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
@@ -39,14 +43,15 @@ public class ExperimentInformationService {
 
   public Optional<Experiment> find(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
-    log.debug("Search for experiment with id: " + experimentId);
+    log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     return experimentRepository.find(experimentId).orElseThrow(
-        () -> new ProjectManagementException("The active experiment does not exist anymore.")
+        () -> new ApplicationException(
+            "Experiment with id" + experimentId.value() + "does not exit anymore")
         // should never happen; indicates dirty removal of experiment from db
     );
   }
@@ -54,33 +59,52 @@ public class ExperimentInformationService {
   /**
    * Add sample groups to the experiment
    *
-   * @param experimentId the Id of the experiment for which to add the species
-   * @param experimentalGroups      the experimental groups to add
+   * @param experimentId      the Id of the experiment for which to add the species
+   * @param experimentalGroup the experimental groups to add
    */
-  public void addExperimentalGroupsToExperiment(ExperimentId experimentId, Set<ExperimentalGroupDTO> experimentalGroups) {
-    experimentalGroups.forEach(Objects::requireNonNull);
-    if (experimentalGroups.size() < 1) {
-      return;
-    }
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroupToExperiment(
+      ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
+    Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
+    Objects.requireNonNull(experimentId, "experiment id must not be null");
+
     Experiment activeExperiment = loadExperimentById(experimentId);
-    for(ExperimentalGroupDTO experimentalGroup : experimentalGroups) {
-      activeExperiment.addExperimentalGroup(experimentalGroup.levels(), experimentalGroup.sampleSize());
+    Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
+        experimentalGroup.levels(), experimentalGroup.sampleSize());
+    if(result.isValue()) {
+      experimentRepository.update(activeExperiment);
     }
-    experimentRepository.update(activeExperiment);
+    return result;
   }
 
   /**
    * Retrieve all analytes of an experiment.
    *
-   * @param experimentId the Id of the experiment for which the experimental groups should be retrieved
+   * @param experimentId the Id of the experiment for which the experimental groups should be
+   *                     retrieved
    * @return the list of experimental groups in the active experiment.
    */
   public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
-    return experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList();
+    return experiment.getExperimentalGroups().stream()
+        .map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize()))
+        .toList();
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {}
+  public List<ExperimentalGroup> experimentalGroupsFor(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream().toList();
+  }
+
+  public void deleteExperimentGroup(ExperimentId experimentId, long groupId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.removeExperimentGroup(groupId);
+    experimentRepository.update(experiment);
+  }
+
+
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+
+  }
 
   /**
    * Adds species to an experiment.

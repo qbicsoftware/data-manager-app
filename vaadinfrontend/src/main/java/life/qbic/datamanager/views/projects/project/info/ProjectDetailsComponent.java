@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -52,7 +52,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends Composite<CardLayout> {
+public class ProjectDetailsComponent extends Composite<PageComponent> {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
 
@@ -108,7 +108,7 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    getContent().addFields(formLayout);
+    getContent().addContent(formLayout);
     getContent().addTitle(TITLE);
   }
 
@@ -375,21 +375,29 @@ public class ProjectDetailsComponent extends Composite<CardLayout> {
 
     private static <V, T extends HasValue<?, V>> void submitOnValueChange(T element,
         Consumer<V> submitAction) {
-      element.addValueChangeListener(it -> submitAction.accept(element.getValue()));
+      element.addValueChangeListener(it -> {
+        //Only fire events on user input(e.g. avoid firing event when the page was reloaded)
+        if (it.isFromClient()) {
+          submitAction.accept(element.getValue());
+        }
+      });
     }
 
     private static <V extends Collection<?>, T extends HasValue<?, V>> void submitOnValueAdded(
         T element, Consumer<V> submitAction) {
       element.addValueChangeListener(it -> {
-        V oldValue = it.getOldValue();
-        V value = it.getValue();
-        if (oldValue.containsAll(value)) {
-          // nothing was added -> so we do not need to do anything
-        } else if (value.containsAll(oldValue)) {
-          // only added something
-          submitAction.accept(value);
-        } else {
-          //FIXME what to do? there seem to be elements deleted and added in this event
+        //Only fire events on user input(e.g. avoid firing event when the page was reloaded)
+        if (it.isFromClient()) {
+          V oldValueList = it.getOldValue();
+          V newValueList = it.getValue();
+          if (oldValueList.containsAll(newValueList)) {
+            // nothing was added -> so we do not need to do anything
+          } else if (newValueList.containsAll(oldValueList)) {
+            // only added something
+            submitAction.accept(newValueList);
+          } else {
+            //FIXME what to do? there seem to be elements deleted and added in this event
+          }
         }
       });
     }

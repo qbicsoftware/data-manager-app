@@ -1,10 +1,12 @@
 package life.qbic.projectmanagement.domain.project;
 
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Supplier;
-import javax.persistence.AttributeConverter;
 
 /**
  * QBiC Project Code
@@ -14,11 +16,13 @@ import javax.persistence.AttributeConverter;
  *
  * @since 1.0.0
  */
+@Embeddable
 public class ProjectCode {
 
   public static final String[] BLACKLIST = new String[]{"FUCK", "SHIT"};
 
-  private final String value;
+  @Column(name = "projectCode")
+  private String value;
 
   private static final int LENGTH = 5;
 
@@ -27,6 +31,10 @@ public class ProjectCode {
   public static final char[] ALLOWED_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX".toCharArray();
 
   public static final char[] ALLOWED_NUMBERS = "0123456789".toCharArray();
+
+  protected ProjectCode() {
+    // Needed for JPA
+  }
 
   /**
    * Creates a random project code containing of letters from the English alphabet and natural
@@ -230,16 +238,4 @@ public class ProjectCode {
     }
   }
 
-  public static class Converter implements AttributeConverter<ProjectCode, String> {
-
-    @Override
-    public String convertToDatabaseColumn(ProjectCode projectCode) {
-      return projectCode.value();
-    }
-
-    @Override
-    public ProjectCode convertToEntityAttribute(String s) {
-      return ProjectCode.parse(s);
-    }
-  }
 }

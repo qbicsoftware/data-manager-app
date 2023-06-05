@@ -1,17 +1,18 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.PostLoad;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableNotDefinedException;
@@ -81,23 +82,10 @@ public class Experiment {
   }
 
   /**
-   * Provides a {@link VariableLevel} of the <code>value</code> for the variable
-   * <code>variableName</code>. If the variable does not exist, or level creation failed, an
-   * {@link Optional#empty()} is returned.
-   *
-   * @param value        the value of the variable
-   * @param variableName the name of the variable
-   */
-  public Optional<VariableLevel> getLevel(String variableName,
-      ExperimentalValue value) {
-    return experimentalDesign.getLevel(variableName, value);
-  }
-
-  /**
    * Retrieves the list of experimental variables stored within the Experiment.
    *
    * @return Provides the list of {@link ExperimentalVariable} defined within the
-   * {@link ExperimentalDesign} of the {@link Experiment}
+   * {@link ExperimentalDesign} of the Experiment
    */
 
   public List<ExperimentalVariable> variables() {
@@ -107,11 +95,11 @@ public class Experiment {
 
   /**
    * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
    * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isFailure()} if this is the case.
+   * {@link Result#isError()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
    * @param level        the value to be added to the levels of that variable
@@ -207,11 +195,11 @@ public class Experiment {
 
   /**
    * Creates a new experimental variable and adds it to the experimental design. A successful
-   * operation is indicated in the result, which can be verified via {@link Result#isSuccess()}.
+   * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
    * <b>Note</b>: If a variable with the provided name already exists, the creation will fail with
    * an {@link ExperimentalVariableExistsException} and no variable is added to the design. You can
-   * check via {@link Result#isFailure()} if this is the case.
+   * check via {@link Result#isError()} if this is the case.
    *
    * @param variableName a declarative and unique name for the variable
    * @param levels       a list containing at least one value for the variable
@@ -226,8 +214,8 @@ public class Experiment {
   }
 
   /**
-   * Creates an experimental group consisting of one or more levels of distinct variables and the sample size
-   * and adds it to the experimental design.
+   * Creates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and adds it to the experimental design.
    * <p>
    * <ul>
    *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
@@ -236,13 +224,19 @@ public class Experiment {
    * </ul>
    *
    * @param variableLevels at least one value for a variable defined in this experiment
-   * @param sampleSize the number of samples that are expected for this experimental group
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   * @return
    */
-  public void addExperimentalGroup(Collection<VariableLevel> variableLevels, int sampleSize) {
-    experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(Collection<VariableLevel> variableLevels,
+      int sampleSize) {
+    return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 
   public Set<ExperimentalGroup> getExperimentalGroups() {
     return experimentalDesign.getExperimentalGroups();
+  }
+
+  public void removeExperimentGroup(long groupId) {
+    experimentalDesign.removeExperimentalGroup(groupId);
   }
 }

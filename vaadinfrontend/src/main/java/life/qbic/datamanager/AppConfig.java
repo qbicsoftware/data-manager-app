@@ -9,15 +9,21 @@ import life.qbic.authentication.application.user.registration.EmailAddressConfir
 import life.qbic.authentication.application.user.registration.RegisterUserInput;
 import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
-import life.qbic.authentication.domain.event.SimpleEventStore;
-import life.qbic.authentication.domain.event.TemporaryEventRepository;
-import life.qbic.authentication.domain.user.event.EventStore;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
-import life.qbic.newshandler.usermanagement.email.EmailService;
-import life.qbic.newshandler.usermanagement.email.EmailSubmissionService;
+import life.qbic.domain.concepts.SimpleEventStore;
+import life.qbic.domain.concepts.TemporaryEventRepository;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
+import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -66,9 +72,9 @@ public class AppConfig {
 
   @Bean
   public UserRegistrationService userRegistrationService(
-      NotificationService notificationService, UserRepository userRepository,
-      EventStore eventStore) {
-    return new UserRegistrationService(notificationService, userRepository, eventStore);
+      UserRepository userRepository
+  ) {
+    return new UserRegistrationService(userRepository);
   }
 
   @Bean
@@ -79,11 +85,6 @@ public class AppConfig {
   @Bean
   public NotificationService notificationService(MessageBusSubmission messageBusInterface) {
     return new NotificationService(messageBusInterface);
-  }
-
-  @Bean
-  public EmailService emailService() {
-    return new EmailSubmissionService();
   }
 
   @Bean
@@ -99,5 +100,21 @@ public class AppConfig {
   @Bean
   public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
     return new NewPassword(userRegistrationService);
+  }
+
+  @Bean
+  public SampleRegisteredPolicy sampleRegisteredPolicy(
+      BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
+    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
+    return new SampleRegisteredPolicy(addSampleToBatch);
+  }
+
+
+  @Bean
+  public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
+      JobScheduler jobScheduler, ProjectRepository projectRepository) {
+    var createNewSampleStatisticsEntry = new CreateNewSampleStatisticsEntry(sampleCodeService, jobScheduler,
+        projectRepository);
+    return new ProjectRegisteredPolicy(createNewSampleStatisticsEntry);
   }
 }

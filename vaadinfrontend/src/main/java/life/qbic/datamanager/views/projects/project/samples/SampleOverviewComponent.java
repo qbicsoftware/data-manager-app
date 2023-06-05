@@ -31,12 +31,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.layouts.PageComponent;
+import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
+import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -45,16 +51,16 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Sample Overview Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Component embedded within the {@link SampleInformationPage} in the {@link ProjectViewPage}. It
+ * allows the user to see the information associated for all {@link Sample} for each
+ * {@link Experiment within a {@link Project}
  */
 
 @SpringComponent
 @UIScope
-public class SampleOverviewComponent extends CardLayout implements Serializable {
+public class SampleOverviewComponent extends PageComponent implements Serializable {
 
   private final String TITLE = "Samples";
   @Serial
@@ -74,16 +80,20 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
   private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
-  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
   private static final Logger log = getLogger(SampleOverviewComponent.class);
+  private SampleRegistrationDialog sampleRegistrationDialog;
+  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
 
   public SampleOverviewComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleInformationService sampleInformationService) {
+      @Autowired SampleInformationService sampleInformationService,
+      @Autowired SampleRegistrationService sampleRegistrationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(sampleInformationService);
+    Objects.requireNonNull(sampleRegistrationService);
     addTitle(TITLE);
+    initRegistrationDialog(sampleRegistrationService);
     initEmptyView();
     initSampleView();
     setSizeFull();
@@ -107,7 +117,7 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     noBatchDefinedLayout.setSizeFull();
     noBatchDefinedLayout.setMinWidth(100, Unit.PERCENTAGE);
     noBatchDefinedLayout.setMinHeight(100, Unit.PERCENTAGE);
-    addFields(noBatchDefinedLayout);
+    addContent(noBatchDefinedLayout);
   }
 
   private void initSampleView() {
@@ -115,9 +125,13 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
     initButtonAndFieldBar();
     sampleContentLayout.add(buttonAndFieldBar);
     sampleContentLayout.add(sampleExperimentTabSheet);
-    addFields(sampleContentLayout);
+    addContent(sampleContentLayout);
     sampleContentLayout.setSizeFull();
     sampleContentLayout.setVisible(false);
+  }
+
+  private void initRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
+    sampleRegistrationDialog = new SampleRegistrationDialog(sampleRegistrationService);
   }
 
   private void initButtonAndFieldBar() {
@@ -233,21 +247,57 @@ public class SampleOverviewComponent extends CardLayout implements Serializable 
       this.experimentInformationService = experimentInformationService;
       this.sampleInformationService = sampleInformationService;
       registerSamplesListener();
+      configureBatchRegistrationDialog();
     }
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectInformationService.find(projectId).ifPresent(this::getSampleDataForProject);
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if(potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+
+        generateExperimentTabs(project);
+
+        Optional<Experiment> potentialExperiment = experimentInformationService.find(
+            project.activeExperiment());
+        if(potentialExperiment.isPresent()) {
+          sampleRegistrationDialog.setActiveExperiment(potentialExperiment.get());
+        }
+      }
     }
 
-    private void getSampleDataForProject(Project project) {
-      generateExperimentTabs(project);
+    private boolean hasExperimentalGroupsDefined() {
+      Optional<Project> potentialProject = projectInformationService.find(projectId);
+      if (potentialProject.isPresent()) {
+        Project project = potentialProject.get();
+        return !experimentInformationService.getExperimentalGroups(project.activeExperiment())
+            .isEmpty();
+      }
+      return false;
     }
 
-    //ToDo Replace with received samples from SampleInformationService
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> showSamplesView());
+      registerBatchButton.addClickListener(event -> {
+        if(hasExperimentalGroupsDefined()) {
+          sampleRegistrationDialog.open();
+        } else {
+          InformationMessage infoMessage = new InformationMessage("No experimental groups are defined",
+              "You need to define experimental groups before adding samples.");
+          StyledNotification notification = new StyledNotification(infoMessage);
+          notification.open();
+        }
+      });
+      //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
+    }
+
+    private void configureBatchRegistrationDialog() {
+      sampleRegistrationDialog.addSampleRegistrationEventListener(event -> {
+        sampleRegistrationDialog.resetAndClose();
+        showSamplesView();
+      });
+      sampleRegistrationDialog.addCancelEventListener(
+          event -> sampleRegistrationDialog.resetAndClose());
     }
 
     private void generateExperimentTabs(Project project) {

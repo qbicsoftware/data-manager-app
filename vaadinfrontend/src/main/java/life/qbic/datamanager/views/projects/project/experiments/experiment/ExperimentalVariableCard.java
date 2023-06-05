@@ -5,54 +5,62 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.layouts.CardLayout;
+import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
  * <b>Experiment Variable Card</b>
  *
- * <p>A CardLayout based Component showing the information stored in the
+ * <p>A PageComponent based Component showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} associated
  * with an experiment {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} in
  * the {@link ExperimentDetailsComponent} of the {@link ExperimentInformationPage}
  */
 
 
-public class ExperimentalVariableCard extends CardLayout {
+public class ExperimentalVariableCard extends CardComponent {
 
-  private AddVariableToExperimentDialog addVariableToExperimentDialog;
   FormLayout experimentalVariablesFormLayout = new FormLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
   private final Button addExperimentalVariableButton = new Button("Add");
   private final Handler handler;
+  private Registration addButtonListener;
 
   public ExperimentalVariableCard(
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService);
-    addTitle("Experimental Variables");
+    this.addTitle("Experimental Variables");
     initEmptyView();
     initVariableView();
-    initAddExperimentDialog(experimentInformationService);
     setSizeFull();
     this.handler = new Handler(experimentInformationService);
   }
 
+  public void setAddButtonAction(Runnable runnable) {
+    if (addButtonListener != null) {
+      addButtonListener.remove();
+    }
+    addButtonListener = addExperimentalVariableButton.addClickListener(
+        it -> runnable.run());
+  }
+
   public void experimentId(ExperimentId experimentId) {
     handler.setExperimentId(experimentId);
-    addVariableToExperimentDialog.experimentId(experimentId);
   }
 
   private void initVariableView() {
     experimentalVariablesFormLayout.setSizeFull();
-    addFields(experimentalVariablesFormLayout);
+    this.addContent(experimentalVariablesFormLayout);
   }
 
   private void initEmptyView() {
@@ -61,11 +69,11 @@ public class ExperimentalVariableCard extends CardLayout {
     noExperimentalVariableLayout.add(templateText, addExperimentalVariableButton);
     noExperimentalVariableLayout.setAlignItems(Alignment.CENTER);
     noExperimentalVariableLayout.setSizeFull();
-    addFields(noExperimentalVariableLayout);
+    this.addContent(noExperimentalVariableLayout);
   }
 
-  private void initAddExperimentDialog(ExperimentInformationService experimentInformationService) {
-    addVariableToExperimentDialog = new AddVariableToExperimentDialog(experimentInformationService);
+  public void refresh() {
+    handler.refresh();
   }
 
   private final class Handler {
@@ -75,25 +83,11 @@ public class ExperimentalVariableCard extends CardLayout {
 
     public Handler(ExperimentInformationService experimentInformationService) {
       this.experimentInformationService = experimentInformationService;
-      setAddExperimentalVariableButtonListener();
-      setCloseDialogListener();
     }
 
     public void setExperimentId(ExperimentId experimentId) {
       this.experimentId = experimentId;
       loadExperimentalVariableInformation();
-    }
-
-    private void setAddExperimentalVariableButtonListener() {
-      addExperimentalVariableButton.addClickListener(event -> addVariableToExperimentDialog.open());
-    }
-
-    private void setCloseDialogListener() {
-      addVariableToExperimentDialog.addOpenedChangeListener(openedChangeEvent -> {
-        if (!openedChangeEvent.isOpened()) {
-          loadExperimentalVariableInformation();
-        }
-      });
     }
 
     private void loadExperimentalVariableInformation() {
@@ -106,14 +100,22 @@ public class ExperimentalVariableCard extends CardLayout {
       }
     }
 
+    public void refresh() {
+      loadExperimentalVariableInformation();
+    }
+
     public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
       experimentalVariablesFormLayout.removeAll();
       for (ExperimentalVariable experimentalVariable : experimentalVariables) {
         VerticalLayout experimentalVariableLayout = new VerticalLayout();
         experimentalVariablesFormLayout.addFormItem(experimentalVariableLayout,
             experimentalVariable.name().value());
-        experimentalVariable.levels().forEach(level -> experimentalVariableLayout.add(
-            new Span(ExperimentValueFormatter.format(level))));
+        experimentalVariable
+            .levels().stream()
+            .map(VariableLevel::experimentalValue)
+            .map(ExperimentValueFormatter::format)
+            .forEach(text ->
+                experimentalVariableLayout.add(new Span(text)));
       }
       showVariablesView();
     }

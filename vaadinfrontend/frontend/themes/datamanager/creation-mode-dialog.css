@@ -1,0 +1,44 @@
+.dialogue-button.secondary {
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-primary-color-10pct);
+}
+
+.dialogue-button.selected {
+  color: var(--lumo-primary-contrast-color);
+  background-color: var(--lumo-primary-color);
+}
+
+.dialogue-button.contrast {
+  color: var(--lumo-body-text-color);
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.dialogue-button-label {
+  font-size: var(--lumo-font-size-m);
+}
+
+.dialogue-button {
+  width: 9rem;
+  height: 9rem;
+  border-radius: 1rem;
+  padding: 0;
+}
+
+.dialogue-button > vaadin-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+}
+
+/*Since V24 chips are now distinct elements within the vaadin-multi-select-combobox*/
+.chip-badge > vaadin-multi-select-combo-box-chip {
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-primary-color-10pct);
+  font-size: var(--lumo-font-size-s);
+}
+
+.chip-badge > vaadin-multi-select-combo-box-chip[slot="overflow"] {
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-primary-color-10pct);
+  font-size: var(--lumo-font-size-s);
+}

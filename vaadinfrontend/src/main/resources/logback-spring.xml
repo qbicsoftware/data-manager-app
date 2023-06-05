@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-  <property name="LOGS" value="${DM_LOG_PATH:-./logs}" />
+  <property name="LOGS" value="${DM_LOG_PATH:-./logs}"/>
 
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
@@ -17,7 +17,7 @@
     <file>${LOGS}/datamanager-logger.log</file>
     <encoder
       class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-      <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
+      <Pattern>%d %p %C{1} [%t] %m%n</Pattern>
     </encoder>
 
     <rollingPolicy
@@ -34,14 +34,14 @@
 
   <!-- LOG everything at INFO level -->
   <root level="info">
-    <appender-ref ref="RollingFile" />
-    <appender-ref ref="Console" />
+    <appender-ref ref="RollingFile"/>
+    <appender-ref ref="Console"/>
   </root>
 
   <!-- LOG "life.qbic" at TRACE level -->
   <logger name="life.qbic" level="trace" additivity="false">
-    <appender-ref ref="RollingFile" />
-    <appender-ref ref="Console" />
+    <appender-ref ref="RollingFile"/>
+    <appender-ref ref="Console"/>
   </logger>
 
 </configuration>

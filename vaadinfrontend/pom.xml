@@ -11,7 +11,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>0.13.0</version>
+    <version>0.15.1</version>
   </parent>
 
   <repositories>
@@ -115,6 +115,11 @@
       <artifactId>mysql-connector-j</artifactId>
     </dependency>
     <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
@@ -153,59 +158,68 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>authentication</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>newsreader</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.11</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>projectmanagement</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>authorization</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>database-connector</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>domain-concept</artifactId>
+      <version>0.15.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.vaadin</groupId>
+      <artifactId>vaadin-spreadsheet-flow</artifactId>
     </dependency>
 
 

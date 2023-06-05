@@ -1,0 +1,109 @@
+/* All custom css for components which extend the card component go in here! */
+
+.card {
+  background-color: var(--lumo-base-color);
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.creation-card {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+  max-width: 300px;
+  flex: auto;
+}
+
+.creation-card > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.disclaimer-card {
+  display: flex;
+  justify-content: center;
+  padding: 1.0rem;
+  max-width: 300px;
+  flex: auto;
+}
+
+.disclaimer-card > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.disclaimer-card .label {
+  font-weight: normal;
+  color: #2d2d2d;
+  font-size: var(--lumo-font-size-s);
+}
+
+.disclaimer-card .title {
+  font-weight: bold;
+  color: #2d2d2d;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+/* Styles shamelessly stolen from the vaadin primary theme */
+
+.disclaimer-card .button {
+  background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
+  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
+  font-weight: 600;
+  min-width: calc(var(--lumo-button-size) * 2.5);
+}
+
+.disclaimer-card .button::before {
+  background-color: black;
+}
+
+.disclaimer-card .button:hover::before {
+  opacity: 0.05;
+}
+
+.experimental-group {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-l);
+  max-width: 300px;
+}
+
+.experimental-group .controls {
+
+}
+
+.experimental-group div {
+  margin-bottom: 1em;
+}
+
+.experimental-group .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.experimental-group .title {
+  color: var(--lumo-header-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: bold;
+  white-space: nowrap;
+  margin-bottom: 1em;
+}
+
+.experimental-group vaadin-icon {
+  cursor: pointer;
+  width: 1em;
+  color: darkgrey;
+}

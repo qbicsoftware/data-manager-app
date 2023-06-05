@@ -1,19 +1,28 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
-import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.board.Board;
+import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
-import javax.annotation.security.PermitAll;
+import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -27,56 +36,118 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments", layout = ProjectViewPage.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ProjectViewPage.class)
 @PermitAll
-//ToDo Move CSS into own class
-@CssImport("./styles/views/project/project-view.css")
-public class ExperimentInformationPage extends Div implements RouterLayout {
+public class ExperimentInformationPage extends Div implements BeforeEnterObserver, RouterLayout {
 
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
 
-  public ExperimentInformationPage(@Autowired ExperimentDetailsComponent experimentDetailsComponent,
-      @Autowired ExperimentListComponent experimentListComponent) {
+  public ExperimentInformationPage(
+      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired ExperimentDetailsComponent experimentDetailsComponent,
+      @Autowired ExperimentListComponent experimentListComponent,
+      @Autowired ProjectInformationService projectInformationService) {
+    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
-    add(experimentDetailsComponent);
-    add(experimentListComponent);
-    setComponentStyles(experimentDetailsComponent, experimentListComponent);
+    Objects.requireNonNull(projectInformationService);
+    setupBoard(projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
     experimentInformationPageHandler = new ExperimentInformationPageHandler(
-        experimentDetailsComponent, experimentListComponent);
+        projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent,
+        projectInformationService);
     log.debug(String.format(
-        "\"New instance for Experiment Information page (#%s) created with Experiment Details Component (#%s) and Experiment List Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(experimentDetailsComponent),
+        "\"New instance for Experiment Information page (#%s) created with Project Navigation Bar Component (#%s) and Experiment Details Component (#%s) and Experiment List Component (#%s)",
+        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        System.identityHashCode(experimentDetailsComponent),
         System.identityHashCode(experimentListComponent)));
+  }
+
+  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
+      ExperimentDetailsComponent experimentDetailsComponent,
+      ExperimentListComponent experimentListComponent) {
+    Board board = new Board();
+
+    Row rootRow = new Row();
+
+    VerticalLayout mainComponents = new VerticalLayout();
+    mainComponents.setPadding(false);
+    mainComponents.setMargin(false);
+    mainComponents.setSpacing(false);
+    mainComponents.add(projectNavigationBarComponent, experimentDetailsComponent);
+
+    rootRow.add(mainComponents, 3);
+    rootRow.add(experimentListComponent, 1);
+
+    board.add(rootRow);
+
+    board.setSizeFull();
+
+    add(board);
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    beforeEnterEvent.getRouteParameters().get("experimentId").ifPresent(experimentIdParam -> {
+      try {
+        ExperimentId experimentId = ExperimentId.parse(experimentIdParam);
+        experimentInformationPageHandler.setExperimentId(experimentId);
+      } catch (IllegalArgumentException e) {
+        log.debug(String.format("Provided ExperimentId %s is invalid due to %s", experimentIdParam,
+            e.getMessage()));
+        experimentInformationPageHandler.rerouteToActiveExperiment(beforeEnterEvent);
+      }
+    });
   }
 
   public void projectId(ProjectId projectId) {
     experimentInformationPageHandler.setProjectId(projectId);
   }
 
-  public void setComponentStyles(ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
-    experimentDetailsComponent.setId("experiment-details-component");
-    experimentListComponent.setId("experiment-list-component");
-  }
-
   private final class ExperimentInformationPageHandler {
 
+    private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ExperimentDetailsComponent experimentDetailsComponent;
     private final ExperimentListComponent experimentListComponent;
+    private final ProjectInformationService projectInformationService;
+    private ProjectId projectId;
 
-    public ExperimentInformationPageHandler(ExperimentDetailsComponent experimentDetailsComponent,
-        ExperimentListComponent experimentListComponent) {
+    public ExperimentInformationPageHandler(
+        ProjectNavigationBarComponent projectNavigationBarComponent,
+        ExperimentDetailsComponent experimentDetailsComponent,
+        ExperimentListComponent experimentListComponent,
+        ProjectInformationService projectInformationService) {
+      this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.experimentDetailsComponent = experimentDetailsComponent;
       this.experimentListComponent = experimentListComponent;
+      this.projectInformationService = projectInformationService;
     }
 
     public void setProjectId(ProjectId projectId) {
-      experimentDetailsComponent.projectId(projectId);
+      this.projectId = projectId;
+      projectNavigationBarComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
+    }
+
+    public ExperimentId getActiveExperimentIdForProject() {
+      return projectInformationService.find(projectId).get().activeExperiment();
+    }
+
+    public void setExperimentId(ExperimentId experimentId) {
+      experimentDetailsComponent.loadExperiment(experimentId);
+      projectNavigationBarComponent.experimentId(experimentId);
+    }
+
+    public void rerouteToActiveExperiment(BeforeEnterEvent beforeEnterEvent) {
+      ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject();
+      log.debug(String.format("Rerouting to active experiment %s of project %s",
+          activeExperimentId.value(), projectId.value()));
+      RouteParam experimentIdParam = new RouteParam("experimentId", activeExperimentId.value());
+      RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
+      RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
+      beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
     }
   }
 

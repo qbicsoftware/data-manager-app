@@ -5,28 +5,23 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>0.13.0</version>
+    <version>0.15.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>life.qbic.logging</groupId>
   <artifactId>subscription-provider</artifactId>
-
   <dependencies>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-api</artifactId>
-      <version>0.13.0</version>
+      <version>0.15.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.sun.mail</groupId>
-      <artifactId>javax.mail</artifactId>
-      <version>1.6.2</version>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.1</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
-    <!-- https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
-
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -37,11 +32,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
 </project>

@@ -3,8 +3,6 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import javax.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -14,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Data Manager")
 public class MainLayout extends DataManagerLayout {
-  public Button logout;
+
+  private Button homeButton;
+  private Button logout;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
     createNavBarContent();
@@ -30,10 +30,15 @@ public class MainLayout extends DataManagerLayout {
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
+    homeButton = new Button("Home");
     logout = new Button("Log out");
-    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(logout);
+    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(homeButton, logout);
     loggedInButtonLayout.addClassName("button-layout-spacing");
 
     return loggedInButtonLayout;
   }
+
+  public Button logout() { return logout; }
+
+  public Button homeButton() { return homeButton; }
 }

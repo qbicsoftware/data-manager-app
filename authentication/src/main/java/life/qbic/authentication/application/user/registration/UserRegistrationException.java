@@ -11,11 +11,14 @@ import life.qbic.authentication.domain.user.concept.FullName.FullNameValidationE
 /**
  * <h1>Exception that indicates violations during the user registration process</h1>
  *
- * <p>This exception is supposed to be thrown, if the provided user credentials violate one or more policies
- *  during the registration process. It's intention is to contain the exceptions thrown for each of the vioolated credentials</p>
- *
- *  Example: A user provides a malformed mail value and an empty user name.
- *  Since this violates the established policies, the method will catch the individual ApplicationExceptions and add them to this Exception
+ * <p>This exception is supposed to be thrown, if the provided user credentials violate one or more
+ * policies
+ * during the registration process. It's intention is to contain the exceptions thrown for each of
+ * the vioolated credentials</p>
+ * <p>
+ * Example: A user provides a malformed mail value and an empty user name. Since this violates the
+ * established policies, the method will catch the individual ApplicationExceptions and add them to
+ * this Exception
  *
  * @since 1.0.0
  */

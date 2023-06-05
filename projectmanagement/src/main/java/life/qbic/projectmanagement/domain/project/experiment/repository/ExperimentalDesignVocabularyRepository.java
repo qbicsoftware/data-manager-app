@@ -6,8 +6,8 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
- * Queries available vocabulary terms for species, specimens (tissues, cells, etc.) and the
- * analytes of a project
+ * Queries available vocabulary terms for species, specimens (tissues, cells, etc.) and the analytes
+ * of a project
  *
  * @since 1.0.0
  */

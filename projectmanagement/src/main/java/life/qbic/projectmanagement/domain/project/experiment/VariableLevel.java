@@ -1,11 +1,12 @@
 package life.qbic.projectmanagement.domain.project.experiment;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import java.util.Objects;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Convert;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
+import java.util.StringJoiner;
 import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.VariableNameAttributeConverter;
 
 /**
@@ -44,11 +45,6 @@ public class VariableLevel {
     // used for jpa
   }
 
-  private boolean isValueMissingInVariableLevels(ExperimentalVariable experimentalVariable,
-      ExperimentalValue experimentalValue) {
-    return experimentalVariable.levels().stream().noneMatch(experimentalValue::equals);
-  }
-
   public VariableName variableName() {
     return variableName;
   }
@@ -77,5 +73,13 @@ public class VariableLevel {
   @Override
   public int hashCode() {
     return Objects.hash(variableName, experimentalValue);
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", VariableLevel.class.getSimpleName() + "[", "]")
+        .add("variableName=" + variableName)
+        .add("experimentalValue=" + experimentalValue)
+        .toString();
   }
 }

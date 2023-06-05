@@ -2,25 +2,25 @@ package life.qbic.projectmanagement.domain.project;
 
 import static java.util.Objects.requireNonNull;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.PostLoad;
-import javax.persistence.Table;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.jpa.OfferIdentifierConverter;
@@ -47,7 +47,7 @@ public class Project {
   @JoinColumn(name = "project")
   private List<Experiment> experiments = new ArrayList<>();
 
-  @Convert(converter = ProjectCode.Converter.class)
+  @Embedded
   @Column(name = "projectCode", nullable = false)
   private ProjectCode projectCode;
 
@@ -190,6 +190,11 @@ public class Project {
     if (offerRemoved) {
       this.lastModified = Instant.now();
     }
+  }
+
+  public void setActiveExperiment(ExperimentId experimentId) {
+    activeExperiment = experimentId;
+    lastModified = Instant.now();
   }
 
   public List<OfferIdentifier> linkedOffers() {

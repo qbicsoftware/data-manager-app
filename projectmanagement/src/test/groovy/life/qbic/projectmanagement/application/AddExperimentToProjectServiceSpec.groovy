@@ -26,10 +26,10 @@ class AddExperimentToProjectServiceSpec extends Specification {
         when: "an experiment is added to a project"
         def result = service.addExperimentToProject(project.id,
                 "Pilot",
-                [Analyte.create("DNA")],
                 [Species.create("homo sapiens")],
-                [Specimen.create("blood")])
-        ExperimentId experimentId = result.value()
+                [Specimen.create("blood")],
+                [Analyte.create("DNA")])
+        ExperimentId experimentId = result.getValue()
 
         then: "the project holds a reference to the created experiment"
         project.experiments().contains(experimentId)
