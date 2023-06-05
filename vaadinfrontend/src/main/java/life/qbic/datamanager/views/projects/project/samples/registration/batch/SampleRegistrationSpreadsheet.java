@@ -49,7 +49,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static Map<String, ExperimentalGroup> experimentalGroupToConditionString;
   private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
   private static int numberOfSamples;
-  private Sheet sampleRegistrationSheet;
+  private transient Sheet sampleRegistrationSheet;
 
   public SampleRegistrationSpreadsheet() {
     // The SampleRegistrationSpreadsheet component only makes sense once information has been filled via the experiment information,
