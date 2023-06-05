@@ -106,6 +106,7 @@ public class ExperimentalVariablesCard extends CardComponent {
 
     public void setExperimentalVariables(List<ExperimentalVariable> experimentalVariables) {
       experimentalVariablesLayout.removeAll();
+      experimentalVariablesLayout.addClassName("experimental-variable-panel-list");
       for (ExperimentalVariable experimentalVariable : experimentalVariables) {
         ExperimentalVariablePanel experimentalVariablePanel = new ExperimentalVariablePanel(
             experimentalVariable);

@@ -2,9 +2,17 @@
 
 /*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
 @import "card.css";
+@import "tag.css";
+@import "panel.css";
 
 .card-deck {
   display: flex;
   align-content: space-evenly;
+  flex-flow: row wrap;
+}
+
+.experimental-variable-panel-list {
+  display: flex;
+  align-content: flex-start;
   flex-flow: row wrap;
 }

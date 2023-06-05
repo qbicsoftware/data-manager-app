@@ -8,6 +8,7 @@
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
 }
 
 .creation-card {
