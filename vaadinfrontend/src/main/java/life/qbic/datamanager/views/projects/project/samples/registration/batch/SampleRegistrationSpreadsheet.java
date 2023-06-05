@@ -121,7 +121,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private List<String> getReplicateLabels() {
-    //TODO values should depend on selected condition!?
     List<String> replicateLabels = new ArrayList<>();
     for (List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
       replicateLabels.addAll(replicates.stream().map(BiologicalReplicate::label).toList());

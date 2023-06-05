@@ -33,6 +33,7 @@ public class SampleRegistrationService {
   public Result<List<Sample>, ResponseCode> registerSamples(
       List<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
     Objects.requireNonNull(sampleRegistrationRequests);
+    Objects.requireNonNull(projectId);
     if (sampleRegistrationRequests.size() < 1) {
       return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
     }
