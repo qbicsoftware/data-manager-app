@@ -122,7 +122,7 @@
   align-items: stretch;
 }
 
-.experiment-info-card ul {
+.card .experiment-info-card ul {
   list-style-type: none;
   display: block;
 }
