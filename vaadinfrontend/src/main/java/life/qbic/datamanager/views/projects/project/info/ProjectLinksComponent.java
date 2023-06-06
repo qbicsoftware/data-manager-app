@@ -42,7 +42,6 @@ public class ProjectLinksComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
-  private List<ComponentEventListener<DisclaimerConfirmedEvent>> listeners;
 
   private final String title = "Attachments";
   private OfferSearch offerSearch;
@@ -64,17 +63,14 @@ public class ProjectLinksComponent extends PageArea {
   }
 
   private void initLayout() {
-    Div test = new Div();
-    test.setSizeFull();
-    test.addClassName("attachments-area");
+    addClassName("attachments-area");
     Span titleSpan = new Span();
     titleSpan.add(this.title);
     titleSpan.addClassName("title");
 
-    test.add(titleSpan);
-    test.add(offerSearch);
-    test.add(projectLinks);
-    add(test);
+    add(titleSpan);
+    add(offerSearch);
+    add(projectLinks);
   }
 
   public void projectId(ProjectId projectId) {
