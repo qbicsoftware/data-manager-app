@@ -108,14 +108,14 @@
   color: darkgrey;
 }
 
-.experiment-info-card {
+.card .experiment-info-card {
   flex: auto;
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-l);
   max-width: 300px;
 }
 
-.experiment-info-card .content {
+.card .experiment-info-card .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -127,7 +127,7 @@
   display: block;
 }
 
-.experiment-info-card .header {
+.card .experiment-info-card .header {
   color: var(--lumo-header-text-color);
   font-size: var(--lumo-font-size-m);
   font-weight: bold;
@@ -136,6 +136,6 @@
   align-items: baseline;
 }
 
-.experiment-info .title {
+.card .experiment-info .title {
   font-weight: bold;
 }
