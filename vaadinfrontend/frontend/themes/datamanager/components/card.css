@@ -1,9 +1,5 @@
 /* All custom css for components which extend the card component go in here! */
 
-.title {
-  font-weight: bold;
-}
-
 .card {
   background-color: var(--lumo-base-color);
   border: black;
@@ -138,4 +134,8 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.experiment-info .title {
+  font-weight: bold;
 }

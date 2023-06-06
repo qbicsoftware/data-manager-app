@@ -20,9 +20,9 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
- * <b>Sample Origin Component</b>
+ * <b>Experiment Info Component</b>
  *
- * <p>A component that nicely renders sample origin information of an experiment</p>
+ * <p>A component that nicely renders experiment-related general information</p>
  *
  * @since 1.0.0
  */
