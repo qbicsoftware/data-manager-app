@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
 import java.io.Serial;
 
@@ -12,7 +13,7 @@ import java.io.Serial;
  * @since <version tag>
  */
 @Tag(Tag.DIV)
-public class PageArea extends Component {
+public class PageArea extends Component implements HasComponents {
 
   @Serial
   private static final long serialVersionUID = 4895835532001673549L;

@@ -9,6 +9,9 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -19,6 +22,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -33,11 +38,13 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-public class ProjectLinksComponent extends Composite<PageComponent> {
+public class ProjectLinksComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
-  private static final String TITLE = "Attachments";
+  private List<ComponentEventListener<DisclaimerConfirmedEvent>> listeners;
+
+  private final String title = "Attachments";
   private OfferSearch offerSearch;
   private final Grid<ProjectLink> projectLinks = new Grid<>(ProjectLink.class);
   private static final String OFFER_TYPE_NAME = "Offer";
@@ -50,9 +57,24 @@ public class ProjectLinksComponent extends Composite<PageComponent> {
     Objects.requireNonNull(projectLinkingService);
     initOfferSearch(offerLookupService);
     initProjectLinksGrid();
-    getContent().addTitle(TITLE);
-    getContent().addContent(offerSearch, projectLinks);
+
+    initLayout();
+
     projectLinksComponentHandler = new ProjectLinksComponentHandler(projectLinkingService);
+  }
+
+  private void initLayout() {
+    Div test = new Div();
+    test.setSizeFull();
+    test.addClassName("attachments-area");
+    Span titleSpan = new Span();
+    titleSpan.add(this.title);
+    titleSpan.addClassName("title");
+
+    test.add(titleSpan);
+    test.add(offerSearch);
+    test.add(projectLinks);
+    add(test);
   }
 
   public void projectId(ProjectId projectId) {
@@ -82,11 +104,10 @@ public class ProjectLinksComponent extends Composite<PageComponent> {
   private void initProjectLinksGrid() {
     projectLinks.addColumn(ProjectLink::type).setHeader("Type");
     projectLinks.addColumn(ProjectLink::reference).setHeader("Reference");
-    projectLinks.addColumn(new ComponentRenderer<>(Button::new, (button, projectLink) -> {
-      button.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_ERROR,
-          ButtonVariant.LUMO_TERTIARY);
-      button.setIcon(new Icon("lumo", "cross"));
-      button.addClickListener(e -> projectLinksComponentHandler.removeLink(projectLink));
+    projectLinks.addColumn(new ComponentRenderer<>(Button::new, (deleteButton, projectLink) -> {
+      deleteButton.addClassName("delete-button");
+      deleteButton.setIcon(new Icon("lumo", "cross"));
+      deleteButton.addClickListener(e -> projectLinksComponentHandler.removeLink(projectLink));
     }));
     projectLinks.setItems(new ArrayList<>());
   }
@@ -103,7 +124,7 @@ public class ProjectLinksComponent extends Composite<PageComponent> {
   }
 
   public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
+    addClassNames(componentStyles);
   }
 
   private final class ProjectLinksComponentHandler {
