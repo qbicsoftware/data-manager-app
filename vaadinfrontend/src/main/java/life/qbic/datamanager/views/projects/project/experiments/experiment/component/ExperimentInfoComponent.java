@@ -31,6 +31,7 @@ public class ExperimentInfoComponent extends Card {
   private boolean controlsEnabled = true;
   @Serial
   private static final long serialVersionUID = -4790635833822470484L;
+  public static final String TITLE = "title";
   private final Collection<Species> species;
   private final Collection<Specimen> specimen;
   private final Collection<Analyte> analytes;
@@ -49,14 +50,14 @@ public class ExperimentInfoComponent extends Card {
   }
 
   private MenuBar createMenuBar() {
-    MenuBar menuBar = new MenuBar();
-    menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
-    MenuItem menuItem = menuBar.addItem("•••");
+    MenuBar menu = new MenuBar();
+    menu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
+    MenuItem menuItem = menu.addItem("•••");
     SubMenu subMenu = menuItem.getSubMenu();
     subMenu.addItem("Edit", event -> {
       fireEditEvent();
     });
-    return menuBar;
+    return menu;
   }
 
   private void layoutComponent() {
@@ -72,19 +73,19 @@ public class ExperimentInfoComponent extends Card {
 
     Div content = new Div();
     Span span = new Span("Species");
-    span.addClassName("title");
-    var species = speciesList();
-    content.add(span, species);
+    span.addClassName(TITLE);
+    var speciesList = speciesList();
+    content.add(span, speciesList);
 
     Span specimenTitle = new Span("Specimen");
-    specimenTitle.addClassName("title");
-    var specimen = specimenList();
-    content.add(specimenTitle, specimen);
+    specimenTitle.addClassName(TITLE);
+    var specimenList = specimenList();
+    content.add(specimenTitle, specimenList);
 
     Span analytesTitle = new Span("Analytes");
-    analytesTitle.addClassName("title");
-    var analytes = analytesList();
-    content.add(analytesTitle, analytes);
+    analytesTitle.addClassName(TITLE);
+    var analytesList = analytesList();
+    content.add(analytesTitle, analytesList);
     content.addClassName("content");
 
     add(content);
