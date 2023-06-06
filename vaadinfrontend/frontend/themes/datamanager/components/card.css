@@ -115,7 +115,7 @@
   color: darkgrey;
 }
 
-.card .experiment-info {
+.card.experiment-info {
   flex: auto;
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-l);
