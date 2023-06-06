@@ -108,26 +108,26 @@
   color: darkgrey;
 }
 
-.experiment-info {
+.experiment-info-card {
   flex: auto;
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-l);
   max-width: 300px;
 }
 
-.experiment-info .content {
+.experiment-info-card .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
 }
 
-.experiment-info ul {
+.experiment-info-card ul {
   list-style-type: none;
   display: block;
 }
 
-.experiment-info .header {
+.experiment-info-card .header {
   color: var(--lumo-header-text-color);
   font-size: var(--lumo-font-size-m);
   font-weight: bold;

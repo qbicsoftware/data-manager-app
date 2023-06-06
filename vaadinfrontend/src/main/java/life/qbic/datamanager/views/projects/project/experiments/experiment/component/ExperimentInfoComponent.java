@@ -88,7 +88,7 @@ public class ExperimentInfoComponent extends Card {
     content.addClassName("content");
 
     add(content);
-    addClassName("experiment-info");
+    addClassName("experiment-info-card");
   }
 
   private void fireEditEvent() {
