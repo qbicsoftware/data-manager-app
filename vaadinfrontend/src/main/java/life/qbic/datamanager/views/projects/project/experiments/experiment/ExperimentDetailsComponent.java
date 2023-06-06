@@ -5,15 +5,12 @@ import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -38,6 +35,7 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.component.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
@@ -72,11 +70,10 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final Div contentExperimentalGroupsTab = new Div();
 
   private final Board summaryCardBoard = new Board();
+
+  private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
-  private final VerticalLayout speciesForm = new VerticalLayout();
-  private final VerticalLayout specimenForm = new VerticalLayout();
-  private final VerticalLayout analyteForm = new VerticalLayout();
   private final CardComponent blockingVariableCard = new CardComponent();
   private final Button addBlockingVariableButton = new Button("Add");
   private final AddVariablesDialog addVariablesDialog;
@@ -99,12 +96,14 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initTabSheet(experimentInformationService);
     addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
+
     this.handler = new Handler(experimentInformationService);
     setUpCreationCard();
   }
 
   public DisclaimerCard createDisclaimer() {
-    var disclaimer = DisclaimerCard.createWithTitle("Missing variables", "No experiment variables defined", "Add");
+    var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
+        "No experiment variables defined", "Add");
     disclaimer.subscribe(this::handleEvent);
     return disclaimer;
   }
@@ -130,7 +129,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private void initTabSheet(ExperimentInformationService experimentInformationService) {
     initSummaryCardBoard(experimentInformationService);
     initExperimentalGroupsBoard();
-    experimentSheet.add( "Summary", summaryCardBoard);
+    experimentSheet.add("Summary", experimentSummary);
     experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
@@ -156,7 +155,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
-    initSampleOriginCard();
     initBlockingVariableCard();
     initExperimentalVariableCard(experimentInformationService);
     Row topRow = new Row(sampleOriginCard, blockingVariableCard);
@@ -172,18 +170,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   public void handleEvent(CreationClickedEvent creationClickedEvent) {
     experimentalGroupsDialog.open();
-  }
-
-  private void initSampleOriginCard() {
-    sampleOriginCard.addTitle("Sample Origin");
-    FormLayout sampleOriginLayout = new FormLayout();
-    sampleOriginLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    sampleOriginLayout.addFormItem(speciesForm, "Species");
-    sampleOriginLayout.addFormItem(specimenForm, "Specimen");
-    sampleOriginLayout.addFormItem(analyteForm, "Analyte");
-    sampleOriginLayout.setSizeFull();
-    sampleOriginCard.setMargin(false);
-    sampleOriginCard.addContent(sampleOriginLayout);
   }
 
   private void initBlockingVariableCard() {
@@ -246,7 +232,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       this.experimentId = experiment.experimentId();
       getContent().addTitle(experiment.getName());
       loadTagInformation(experiment);
-      loadSampleOriginInformation(experiment);
+      loadExperimentInfo(experiment);
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
@@ -279,13 +265,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
     }
 
-    private void loadSampleOriginInformation(Experiment experiment) {
-      speciesForm.removeAll();
-      specimenForm.removeAll();
-      analyteForm.removeAll();
-      experiment.getSpecies().forEach(species -> speciesForm.add(new Span(species.value())));
-      experiment.getSpecimens().forEach(specimen -> specimenForm.add(new Span(specimen.value())));
-      experiment.getAnalytes().forEach(analyte -> analyteForm.add(new Span(analyte.value())));
+    private void loadExperimentInfo(Experiment experiment) {
+      ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
+          experiment.getSpecimens(), experiment.getAnalytes());
+      ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
+      factSheet.showMenu();
     }
 
     private void loadBlockingVariableInformation() {

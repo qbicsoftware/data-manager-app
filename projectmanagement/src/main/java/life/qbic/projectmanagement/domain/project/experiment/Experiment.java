@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
 
 
 /**
