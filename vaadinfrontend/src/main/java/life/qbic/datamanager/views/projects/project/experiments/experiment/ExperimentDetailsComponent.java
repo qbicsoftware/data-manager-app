@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -65,6 +66,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final transient Handler handler;
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
+
+  private final Div contentExperimentalGroupsTab = new Div();
+
   private final Board summaryCardBoard = new Board();
 
   private final Div experimentSummary = new Div();
@@ -126,7 +130,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initSummaryCardBoard(experimentInformationService);
     initExperimentalGroupsBoard();
     experimentSheet.add("Summary", experimentSummary);
-    experimentSheet.add("Experimental Groups", experimentalGroupsCollection);
+    experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -236,11 +240,19 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       loadExperimentalGroups();
       if (experiment.variables().isEmpty()) {
         displayDisclaimer();
-        removeCreationCard();
+        hideExperimentalGroupsCollection();
       } else {
         removeDisclaimer();
-        addCreationCard();
+        displayExperimentalGroupsCollection();
       }
+    }
+
+    private void displayExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.add(experimentalGroupsCollection);
+    }
+
+    private void hideExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
     }
 
     private void loadTagInformation(Experiment experiment) {
@@ -286,15 +298,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void displayDisclaimer() {
-      experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
-    }
-
-    private void removeCreationCard() {
-      experimentalGroupsCollection.remove(experimentalGroupCreationCard);
+      contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
     }
 
     private void removeDisclaimer() {
-      experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
+      contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
     }
 
     private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
