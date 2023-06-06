@@ -43,10 +43,10 @@ public class ProjectLinksComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
 
-  private final String title = "Attachments";
+  private static final String TITLE = "Attachments";
+  private static final String OFFER_TYPE_NAME = "Offer";
   private OfferSearch offerSearch;
   private final Grid<ProjectLink> projectLinks = new Grid<>(ProjectLink.class);
-  private static final String OFFER_TYPE_NAME = "Offer";
 
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
@@ -65,7 +65,7 @@ public class ProjectLinksComponent extends PageArea {
   private void initLayout() {
     addClassName("attachments-area");
     Span titleSpan = new Span();
-    titleSpan.add(this.title);
+    titleSpan.add(TITLE);
     titleSpan.addClassName("title");
 
     add(titleSpan);
