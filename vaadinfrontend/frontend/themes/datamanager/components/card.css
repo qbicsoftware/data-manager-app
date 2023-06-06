@@ -115,26 +115,26 @@
   color: darkgrey;
 }
 
-.card .experiment-info-card {
+.card .experiment-info {
   flex: auto;
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-l);
   max-width: 300px;
 }
 
-.card .experiment-info-card .content {
+.experiment-info .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
 }
 
-.card .experiment-info-card ul {
+.experiment-info ul {
   list-style-type: none;
   display: block;
 }
 
-.card .experiment-info-card .header {
+.experiment-info .header {
   color: var(--lumo-header-text-color);
   font-size: var(--lumo-font-size-m);
   font-weight: bold;
@@ -143,6 +143,6 @@
   align-items: baseline;
 }
 
-.card .experiment-info .title {
+.experiment-info .title {
   font-weight: bold;
 }

@@ -28,10 +28,10 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
  */
 public class ExperimentInfoComponent extends Card {
 
+  public static final String CARD_SECTION_TITLE = "title";
   private boolean controlsEnabled = true;
   @Serial
   private static final long serialVersionUID = -4790635833822470484L;
-  public static final String TITLE = "title";
   private final Collection<Species> species;
   private final Collection<Specimen> specimen;
   private final Collection<Analyte> analytes;
@@ -54,9 +54,7 @@ public class ExperimentInfoComponent extends Card {
     menu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
     MenuItem menuItem = menu.addItem("•••");
     SubMenu subMenu = menuItem.getSubMenu();
-    subMenu.addItem("Edit", event -> {
-      fireEditEvent();
-    });
+    subMenu.addItem("Edit", event -> fireEditEvent());
     return menu;
   }
 
@@ -73,23 +71,23 @@ public class ExperimentInfoComponent extends Card {
 
     Div content = new Div();
     Span span = new Span("Species");
-    span.addClassName(TITLE);
+    span.addClassName(CARD_SECTION_TITLE);
     var speciesList = speciesList();
     content.add(span, speciesList);
 
     Span specimenTitle = new Span("Specimen");
-    specimenTitle.addClassName(TITLE);
+    specimenTitle.addClassName(CARD_SECTION_TITLE);
     var specimenList = specimenList();
     content.add(specimenTitle, specimenList);
 
     Span analytesTitle = new Span("Analytes");
-    analytesTitle.addClassName(TITLE);
+    analytesTitle.addClassName(CARD_SECTION_TITLE);
     var analytesList = analytesList();
     content.add(analytesTitle, analytesList);
     content.addClassName("content");
 
     add(content);
-    addClassName("experiment-info-card");
+    addClassName("experiment-info");
   }
 
   private void fireEditEvent() {
@@ -99,20 +97,17 @@ public class ExperimentInfoComponent extends Card {
 
   private UnorderedList speciesList() {
     return new UnorderedList(
-        this.species.stream().map(thisSpecies -> new ListItem(thisSpecies.value())).toList()
-            .toArray(ListItem[]::new));
+        this.species.stream().map(thisSpecies -> new ListItem(thisSpecies.value())).toArray(ListItem[]::new));
   }
 
   private UnorderedList specimenList() {
     return new UnorderedList(
-        this.specimen.stream().map(thisSpecimen -> new ListItem(thisSpecimen.value())).toList()
-            .toArray(ListItem[]::new));
+        this.specimen.stream().map(thisSpecimen -> new ListItem(thisSpecimen.value())).toArray(ListItem[]::new));
   }
 
   private UnorderedList analytesList() {
     return new UnorderedList(
-        this.analytes.stream().map(thisAnalyte -> new ListItem(thisAnalyte.value())).toList()
-            .toArray(ListItem[]::new));
+        this.analytes.stream().map(thisAnalyte -> new ListItem(thisAnalyte.value())).toArray(ListItem[]::new));
   }
 
   public static ExperimentInfoComponent create(Collection<Species> species,
