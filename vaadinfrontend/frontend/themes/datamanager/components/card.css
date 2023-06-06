@@ -80,6 +80,13 @@
   max-width: 300px;
 }
 
+.experimental-group-card-collection {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 1rem;
+}
+
 .experimental-group .controls {
 
 }
