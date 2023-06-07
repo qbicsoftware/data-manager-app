@@ -54,6 +54,8 @@ public class ProjectLinksComponent extends PageArea {
       @Autowired OfferLookupService offerLookupService) {
     Objects.requireNonNull(offerLookupService);
     Objects.requireNonNull(projectLinkingService);
+    addClassName("attachments-area");
+
     initOfferSearch(offerLookupService);
     initProjectLinksGrid();
 
@@ -63,7 +65,6 @@ public class ProjectLinksComponent extends PageArea {
   }
 
   private void initLayout() {
-    addClassName("attachments-area");
     Span titleSpan = new Span();
     titleSpan.add(TITLE);
     titleSpan.addClassName("title");
