@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment.component;
+package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
