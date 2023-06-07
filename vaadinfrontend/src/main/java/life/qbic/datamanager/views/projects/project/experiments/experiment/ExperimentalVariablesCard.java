@@ -30,7 +30,7 @@ public class ExperimentalVariablesCard extends CardComponent {
   VerticalLayout experimentalVariablesLayout = new VerticalLayout();
   VerticalLayout noExperimentalVariableLayout = new VerticalLayout();
   private final Button addExperimentalVariableButton = new Button("Add");
-  private final Handler handler;
+  private final transient Handler handler;
   private Registration addButtonListener;
 
   public ExperimentalVariablesCard(
