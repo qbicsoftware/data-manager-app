@@ -57,8 +57,10 @@ class SampleRegistrationServiceSpec extends Specification {
         sampleDomainService.registerSample(sampleCode, sampleRegistrationRequest) >> Result.fromValue(sample)
         List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>()
         sampleRegistrationRequests.add(sampleRegistrationRequest)
+        
         when: "A List with a valid SampleRegistrationRequest is provided"
         var result = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+        
         then: "The result contains the information of the sample registration request"
         result.isValue()
         result.getValue().get(0) == sample
