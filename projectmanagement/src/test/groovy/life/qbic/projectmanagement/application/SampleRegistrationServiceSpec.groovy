@@ -41,6 +41,7 @@ class SampleRegistrationServiceSpec extends Specification {
         List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>()
         sampleRegistrationRequests.add(sampleRegistrationRequest)
         var result = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+        
         then: "The result contains the sample_registration_failed response code"
         result.isError()
         result.getError() == SampleRegistrationService.ResponseCode.SAMPLE_REGISTRATION_FAILED
