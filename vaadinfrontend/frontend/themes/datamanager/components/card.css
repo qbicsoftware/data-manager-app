@@ -80,6 +80,13 @@
   max-width: 300px;
 }
 
+.experimental-group-card-collection {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 1rem;
+}
+
 .experimental-group .controls {
 
 }
@@ -106,4 +113,36 @@
   cursor: pointer;
   width: 1em;
   color: darkgrey;
+}
+
+.card.experiment-info {
+  flex: auto;
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-l);
+  max-width: 300px;
+}
+
+.experiment-info .content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.experiment-info ul {
+  list-style-type: none;
+  display: block;
+}
+
+.experiment-info .header {
+  color: var(--lumo-header-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.experiment-info .title {
+  font-weight: bold;
 }
