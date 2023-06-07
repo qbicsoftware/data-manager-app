@@ -12,6 +12,7 @@ import com.vaadin.flow.component.menubar.MenuBarVariant;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
@@ -97,7 +98,8 @@ public class ExperimentalVariablesComponent extends Card {
     Div variableValues = new Div();
     variableValues.addClassName("variable-values");
     UnorderedList variableLevels = new UnorderedList(experimentalVariable.levels().stream().map(
-            VariableLevel::experimentalValue).map(ExperimentalValue::value).map(ListItem::new)
+            VariableLevel::experimentalValue).map(ExperimentalValue::value)
+        .sorted(new StringOrNumberComparator()).map(ListItem::new)
         .toArray(ListItem[]::new));
     variableValues.add(variableLevels);
     variableFactSheet.add(headerSection);
@@ -153,6 +155,37 @@ public class ExperimentalVariablesComponent extends Card {
 
   private void removeControlMenu() {
     controls.remove(menuBar);
+  }
+
+  /*
+  Small helper class to nicely sort String or Numbers
+   */
+  private static class StringOrNumberComparator implements Comparator<String> {
+
+    public StringOrNumberComparator() {
+    }
+
+    @Override
+    public int compare(String o1, String o2) {
+      if (bothAreNumbers(o1, o2)) {
+        return compareNumbers(Double.parseDouble(o1), Double.parseDouble(o2));
+      }
+      return o1.compareTo(o2);
+    }
+
+    public boolean bothAreNumbers(String o1, String o2) {
+      try {
+        Double.parseDouble(o1);
+        Double.parseDouble(o2);
+      } catch (NumberFormatException ignore) {
+        return false;
+      }
+      return true;
+    }
+
+    private int compareNumbers(Double o1, Double o2) {
+      return (int) (o1 - o2);
+    }
   }
 
 }
