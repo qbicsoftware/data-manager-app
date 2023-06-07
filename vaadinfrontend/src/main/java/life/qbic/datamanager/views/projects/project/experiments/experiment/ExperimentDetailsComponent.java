@@ -35,8 +35,9 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.component.ExperimentInfoComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -268,7 +269,9 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     private void loadExperimentInfo(Experiment experiment) {
       ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
           experiment.getSpecimens(), experiment.getAnalytes());
+      ExperimentalVariablesComponent experimentalVariables = ExperimentalVariablesComponent.create(experiment.variables());
       ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
+      ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariables);
       factSheet.showMenu();
     }
 
