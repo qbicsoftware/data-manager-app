@@ -15,11 +15,11 @@
 }
 
 .support-area {
+  gap: var(--lumo-space-m);
+  display: flex;
 }
 
 .attachments-area {
-  display: flex;
-  gap: var(--lumo-space-m);
   flex-direction: column;
 }
 
