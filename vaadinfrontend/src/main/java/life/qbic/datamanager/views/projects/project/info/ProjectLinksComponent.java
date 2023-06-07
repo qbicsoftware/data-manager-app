@@ -120,10 +120,6 @@ public class ProjectLinksComponent extends PageArea {
         .toList();
   }
 
-  public void setStyles(String... componentStyles) {
-    addClassNames(componentStyles);
-  }
-
   private final class ProjectLinksComponentHandler {
 
     ProjectId projectId;
