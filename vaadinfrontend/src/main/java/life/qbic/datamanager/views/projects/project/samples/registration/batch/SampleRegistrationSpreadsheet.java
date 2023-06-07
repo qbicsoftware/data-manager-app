@@ -12,10 +12,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -421,9 +423,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
             conditionCell.getStringCellValue().trim());
         Long experimentalGroupId = experimentalGroup.id();
+        BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(
+            replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim());
         rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
             sampleLabelCell.getStringCellValue().trim(),
-            replicateIDCell.getStringCellValue().trim(), experimentalGroupId,
+            biologicalReplicateId, experimentalGroupId,
             speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(),
             analyteCell.getStringCellValue().trim(),
             commentCell.getStringCellValue().trim()));
@@ -432,9 +436,25 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return rows;
   }
 
-  public record NGSRowDTO(String analysisType, String sampleLabel, String bioReplicateID,
+  private BiologicalReplicateId retrieveBiologicalReplicateId(String replicateLabel,
+      String condition) {
+    Optional<BiologicalReplicate> biologicalReplicate = conditionsToReplicates.get(condition)
+        .stream()
+        .filter(bioRep -> bioRep.label().equals(replicateLabel)).findFirst();
+    BiologicalReplicateId biologicalReplicateId;
+    if (biologicalReplicate.isPresent()) {
+      biologicalReplicateId = biologicalReplicate.get().id();
+    } else {
+      biologicalReplicateId = BiologicalReplicateId.create();
+    }
+    return biologicalReplicateId;
+  }
+
+  public record NGSRowDTO(String analysisType, String sampleLabel,
+                          BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
                           String customerComment) {
+
   }
 
   /**

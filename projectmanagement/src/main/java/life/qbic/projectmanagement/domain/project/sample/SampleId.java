@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -22,6 +23,7 @@ public class SampleId implements Serializable {
     @Serial
     private static final long serialVersionUID = 1841536150220843163L;
 
+    @Column(name = "sample_id")
     private String uuid;
 
     private SampleId(UUID id) {
@@ -57,6 +59,7 @@ public class SampleId implements Serializable {
         return Objects.hash(uuid);
     }
 
+    @JsonGetter()
     public String value() {
         return this.uuid;
     }

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -18,7 +19,9 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
  * @param comment               Sample specific comments
  */
 
-public record SampleRegistrationContent(String label, String biologicalReplicateId, Long experimentalGroupId,
-                                        String species, String specimen, String analyte, String comment) {
+public record SampleRegistrationContent(String label, BiologicalReplicateId biologicalReplicateId,
+                                        Long experimentalGroupId,
+                                        String species, String specimen, String analyte,
+                                        String comment) {
 
 }

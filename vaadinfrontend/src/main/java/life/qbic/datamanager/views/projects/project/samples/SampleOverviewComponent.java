@@ -25,7 +25,6 @@ import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -50,9 +49,9 @@ import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -307,16 +306,14 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private void addEventListeners() {
-      batchRegistrationDialog.addBatchRegistrationEventListener(
-          batchRegistrationEvent -> registerBatch(
-              batchRegistrationEvent.getSource().batchRegistrationContent()).onValue(batchId -> {
-            List<SampleRegistrationContent> sampleRegistrationContents = batchRegistrationEvent.getSource()
-                .sampleRegistrationContent();
-            registerSamplesForBatch(batchId, sampleRegistrationContents).onValue(result -> {
-              batchRegistrationDialog.resetAndClose();
-              displayRegistrationSuccess();
-            }).onError(responseCode -> displayRegistrationFailure());
-          }).onError(responseCode -> displayRegistrationFailure()));
+      batchRegistrationDialog.addBatchRegistrationEventListener(batchRegistrationEvent -> {
+        BatchRegistrationDialog batchRegistrationSource = batchRegistrationEvent.getSource();
+        registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
+            batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
+          batchRegistrationDialog.resetAndClose();
+          displayRegistrationSuccess();
+        });
+      });
       batchRegistrationDialog.addCancelEventListener(
           event -> batchRegistrationDialog.resetAndClose());
     }
@@ -373,34 +370,36 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       });
     }
 
-    private Result<BatchId, BatchRegistrationService.ResponseCode> registerBatch(
+    private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
+        List<SampleRegistrationContent> sampleRegistrationContent) {
+      return registerBatchInformation(batchRegistrationContent).onValue(
+          batchId -> registerSamples(batchId, sampleRegistrationContent));
+    }
+
+    private Result<BatchId, ResponseCode> registerBatchInformation(
         BatchRegistrationContent batchRegistrationContent) {
       return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
-          batchRegistrationContent.isPilot());
+          batchRegistrationContent.isPilot()).onError(responseCode -> displayRegistrationFailure());
     }
 
-    private Result<List<life.qbic.projectmanagement.domain.project.sample.Sample>, SampleRegistrationService.ResponseCode> registerSamplesForBatch(
-        BatchId batchId, List<SampleRegistrationContent> sampleRegistrationContents) {
-      List<SampleRegistrationRequest> sampleRegistrationRequests = createSampleRegistrationRequests(
-          batchId, sampleRegistrationContents);
-      return sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId);
+    private void registerSamples(BatchId batchId,
+        List<SampleRegistrationContent> sampleRegistrationContents) {
+      List<SampleRegistrationRequest> sampleRegistrationRequests = sampleRegistrationContents.stream()
+          .map(sampleRegistrationContent -> createSampleRegistrationRequest(batchId,
+              sampleRegistrationContent)).toList();
+      sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+          .onError(responseCode -> displayRegistrationFailure());
     }
 
-    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
-        List<SampleRegistrationContent> sampleRegistrationContent) {
-      List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>();
-      for (SampleRegistrationContent registrationContent : sampleRegistrationContent) {
-        Analyte analyte = new Analyte(registrationContent.analyte());
-        Specimen specimen = new Specimen(registrationContent.specimen());
-        Species species = new Species(registrationContent.species());
-        BiologicalReplicateId biologicalReplicateId = BiologicalReplicateId.create();
-        SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest(
-            registrationContent.label(), batchId, experimentId,
-            registrationContent.experimentalGroupId(), biologicalReplicateId, sampleOrigin);
-        sampleRegistrationRequests.add(sampleRegistrationRequest);
-      }
-      return sampleRegistrationRequests;
+    private SampleRegistrationRequest createSampleRegistrationRequest(BatchId batchId,
+        SampleRegistrationContent sampleRegistrationContent) {
+      Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
+      Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
+      Species species = new Species(sampleRegistrationContent.species());
+      SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
+      return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId, experimentId,
+          sampleRegistrationContent.experimentalGroupId(),
+          sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
     }
 
     private void displayRegistrationSuccess() {
