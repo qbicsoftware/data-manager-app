@@ -19,16 +19,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.general.CreationCard;
-import life.qbic.datamanager.views.general.CreationClickedEvent;
-import life.qbic.datamanager.views.general.DisclaimerCard;
-import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
-import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
+import life.qbic.datamanager.views.general.*;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
@@ -42,13 +34,14 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.*;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * <b>Experimental Details Component</b>
@@ -272,6 +265,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       ExperimentalVariablesComponent experimentalVariables = ExperimentalVariablesComponent.create(experiment.variables());
       ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
       ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariables);
+      ExperimentDetailsComponent.this.experimentSummary.add(blockingVariableCard);
       factSheet.showMenu();
     }
 
