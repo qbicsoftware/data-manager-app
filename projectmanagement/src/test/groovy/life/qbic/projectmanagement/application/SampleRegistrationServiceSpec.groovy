@@ -23,7 +23,7 @@ class SampleRegistrationServiceSpec extends Specification {
         given:
         List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>()
         when: "A List with no SampleRegistrationRequests is provided"
-        Result<List<Sample>, SampleRegistrationService.ResponseCode> resultWithSamples = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+        Result<Collection<Sample>, SampleRegistrationService.ResponseCode> resultWithSamples = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
         then: "an exception is thrown"
         resultWithSamples.isError()
         resultWithSamples.getError() == SampleRegistrationService.ResponseCode.NO_SAMPLES_DEFINED
@@ -35,13 +35,15 @@ class SampleRegistrationServiceSpec extends Specification {
         SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 5, BiologicalReplicateId.create(), sampleOrigin)
         SampleCode sampleCode = SampleCode.create("QABCDE")
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
-        sampleDomainService.registerSample(sampleCode, sampleRegistrationRequest) >> Result.fromError(_)
+        Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
+        sampleCodesToRegistrationRequests.put(sampleCode, sampleRegistrationRequest)
+        sampleDomainService.registerSamples(sampleCodesToRegistrationRequests) >> Result.fromError(SampleDomainService.ResponseCode.REGISTRATION_FAILED)
 
         when: "A list with an invalid SampleRegistrationRequest is provided"
         List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>()
         sampleRegistrationRequests.add(sampleRegistrationRequest)
         var result = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
-        
+
         then: "The result contains the sample_registration_failed response code"
         result.isError()
         result.getError() == SampleRegistrationService.ResponseCode.SAMPLE_REGISTRATION_FAILED
@@ -54,13 +56,15 @@ class SampleRegistrationServiceSpec extends Specification {
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
-        sampleDomainService.registerSample(sampleCode, sampleRegistrationRequest) >> Result.fromValue(sample)
+        Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
+        sampleCodesToRegistrationRequests.put(sampleCode, sampleRegistrationRequest)
+        sampleDomainService.registerSamples(sampleCodesToRegistrationRequests) >> Result.fromValue(List.of(sample))
         List<SampleRegistrationRequest> sampleRegistrationRequests = new ArrayList<>()
         sampleRegistrationRequests.add(sampleRegistrationRequest)
-        
+
         when: "A List with a valid SampleRegistrationRequest is provided"
         var result = sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
-        
+
         then: "The result contains the information of the sample registration request"
         result.isValue()
         result.getValue().get(0) == sample
