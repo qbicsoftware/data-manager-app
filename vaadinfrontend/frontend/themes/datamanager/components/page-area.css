@@ -15,4 +15,24 @@
 }
 
 .support-area {
+  gap: var(--lumo-space-m);
+  display: flex;
+}
+
+.attachments-area {
+  flex-direction: column;
+}
+
+.attachments-area .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.attachments-area .delete-button {
+  color: var(--lumo-error-text-color);
+  --lumo-button-size: var(--lumo-size-m);
+  cursor: pointer;
+  background-color: inherit;
 }
