@@ -373,7 +373,11 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
         List<SampleRegistrationContent> sampleRegistrationContent) {
       return registerBatchInformation(batchRegistrationContent).onValue(
-          batchId -> registerSamples(batchId, sampleRegistrationContent));
+          batchId -> {
+            List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
+                batchId, sampleRegistrationContent);
+            registerSamples(sampleRegistrationsRequests);
+          });
     }
 
     private Result<BatchId, ResponseCode> registerBatchInformation(
@@ -382,24 +386,24 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           batchRegistrationContent.isPilot()).onError(responseCode -> displayRegistrationFailure());
     }
 
-    private void registerSamples(BatchId batchId,
-        List<SampleRegistrationContent> sampleRegistrationContents) {
-      List<SampleRegistrationRequest> sampleRegistrationRequests = sampleRegistrationContents.stream()
-          .map(sampleRegistrationContent -> createSampleRegistrationRequest(batchId,
-              sampleRegistrationContent)).toList();
+    private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
       sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
           .onError(responseCode -> displayRegistrationFailure());
     }
 
-    private SampleRegistrationRequest createSampleRegistrationRequest(BatchId batchId,
-        SampleRegistrationContent sampleRegistrationContent) {
-      Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
-      Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
-      Species species = new Species(sampleRegistrationContent.species());
-      SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-      return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId, experimentId,
-          sampleRegistrationContent.experimentalGroupId(),
-          sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
+    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
+        List<SampleRegistrationContent> sampleRegistrationContents) {
+      return sampleRegistrationContents.stream()
+          .map(sampleRegistrationContent -> {
+            Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
+            Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
+            Species species = new Species(sampleRegistrationContent.species());
+            SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
+            return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
+                experimentId,
+                sampleRegistrationContent.experimentalGroupId(),
+                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
+          }).toList();
     }
 
     private void displayRegistrationSuccess() {
