@@ -18,7 +18,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
@@ -90,6 +90,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     criteria.withVocabulary().withCode().thatEquals(vocabularyCode.openbisCode());
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
+    openBisClient.ensureLoggedIn();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm> searchResult =
         openBisClient.getV3()
             .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
@@ -104,6 +105,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     criteria.withCode().thatEquals(code);
 
     ProjectFetchOptions options = new ProjectFetchOptions();
+    openBisClient.ensureLoggedIn();
     SearchResult<Project> searchResult =
         openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
 
@@ -159,9 +161,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
-
+    openBisClient.ensureLoggedIn();
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
-    List<IOperation> operationOptions = Arrays.asList(operation);
+    List<IOperation> operationOptions = Collections.singletonList(operation);
     try {
       api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions);
     } catch (Exception e) {
@@ -186,7 +188,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   // Convenience RTE to describe connection issues
-  class ConnectionException extends RuntimeException {
+  static class ConnectionException extends RuntimeException {
 
   }
 
