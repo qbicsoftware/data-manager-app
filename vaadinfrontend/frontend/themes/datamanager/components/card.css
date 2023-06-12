@@ -27,6 +27,23 @@
   cursor: pointer;
 }
 
+/* Styles shamelessly stolen from the vaadin primary theme */
+
+.creation-card .button {
+  background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
+  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
+  font-weight: 600;
+  min-width: calc(var(--lumo-button-size) * 2.5);
+}
+
+.creation-card .button::before {
+  background-color: black;
+}
+
+.creation-card .button:hover::before {
+  opacity: 0.05;
+}
+
 .disclaimer-card {
   display: flex;
   justify-content: center;

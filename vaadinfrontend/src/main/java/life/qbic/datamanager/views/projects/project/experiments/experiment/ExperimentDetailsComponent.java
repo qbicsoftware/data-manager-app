@@ -76,7 +76,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
-      "Add Experimental Group");
+      "Add more experimental groups");
 
 
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
