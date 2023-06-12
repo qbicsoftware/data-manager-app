@@ -117,7 +117,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         varStrings.add(varName + ":" + value + unit);
       }
       String conditionString = String.join("; ", varStrings);
-      conditionsToReplicates.put(conditionString, group.biologicalReplicates());
+      conditionsToReplicates.put(conditionString.trim(), group.biologicalReplicates());
       experimentalGroupToConditionString.put(conditionString.trim(), group);
     }
   }
