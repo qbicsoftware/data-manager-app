@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.board.Board;
-import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -60,28 +58,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @SpringComponent
 public class ExperimentDetailsComponent extends Composite<PageComponent> {
-
+  private ExperimentId experimentId;
+  private ExperimentInfoComponent experimentInfoComponent;
   private ExperimentalVariableCard experimentalVariableCard;
+  private ExperimentalVariablesComponent experimentalVariablesComponent;
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
-  private final transient Handler handler;
+  private final ExperimentInformationService experimentInformationService;
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
-
   private final Div contentExperimentalGroupsTab = new Div();
-
-  private final Board summaryCardBoard = new Board();
-
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  private final CardComponent sampleOriginCard = new CardComponent();
   private final CardComponent blockingVariableCard = new CardComponent();
   private final Button addBlockingVariableButton = new Button("Add");
   private final AddVariablesDialog addVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
-
   private final DisclaimerCard noExperimentalVariablesDefined;
-
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add Experimental Group");
 
@@ -89,24 +82,53 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+
     this.addVariablesDialog = new AddVariablesDialog(experimentInformationService);
     this.noExperimentalVariablesDefined = createDisclaimer();
-    getContent().indentContent(false);
-    initTagAndNotesLayout();
-    initTabSheet(experimentInformationService);
-    addCreationCard();
-    experimentalGroupsDialog = createExperimentalGroupDialog();
+    this.experimentalGroupsDialog = createExperimentalGroupDialog();
 
-    this.handler = new Handler(experimentInformationService);
-    setUpCreationCard();
+    layoutComponent();
+    configureComponent();
   }
 
-  public DisclaimerCard createDisclaimer() {
+  private DisclaimerCard createDisclaimer() {
     var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
         "No experiment variables defined", "Add");
     disclaimer.subscribe(this::handleEvent);
     return disclaimer;
+  }
+
+  private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
+    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
+    dialog.addExperimentalGroupSubmitListener(
+        groupSubmitted -> onGroupSubmitted(groupSubmitted));
+    return dialog;
+  }
+
+  private void layoutComponent() {
+    initTagAndNotesLayout();
+    layoutTabSheet();
+  }
+
+  private void configureComponent() {
+    configureExperimentalGroupCreation();
+    addCloseListenerForAddVariableDialog();
+  }
+
+  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
+    experimentSheet.setSelectedIndex(0);
+  }
+
+  public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
+    Result<ExperimentalGroup, ResponseCode> response = experimentInformationService.addExperimentalGroupToExperiment(
+        experimentId,
+        new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
+    if (response.isValue()) {
+      handleGroupSubmittedSuccess();
+    } else {
+      handleDuplicateConditionInput();
+    }
   }
 
   private void initTagAndNotesLayout() {
@@ -127,50 +149,155 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     getContent().addContent(tagAndNotesLayout);
   }
 
-  private void initTabSheet(ExperimentInformationService experimentInformationService) {
-    initSummaryCardBoard(experimentInformationService);
-    initExperimentalGroupsBoard();
+  private void layoutTabSheet() {
     experimentSheet.add("Summary", experimentSummary);
     experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
   }
 
-  private void addCreationCard() {
-    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
-  }
-
-  private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
-    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-    dialog.addExperimentalGroupSubmitListener(
-        groupSubmitted -> handler.onGroupSubmitted(groupSubmitted));
-    return dialog;
-  }
-
-  private void setUpCreationCard() {
+  private void configureExperimentalGroupCreation() {
     experimentalGroupCreationCard.addListener(this::handleEvent);
   }
 
-  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
-    experimentSheet.setSelectedIndex(0);
+  private void addCloseListenerForAddVariableDialog() {
+    addVariablesDialog.addOpenedChangeListener(it -> {
+      if (!it.isOpened()) {
+        experimentalVariableCard.refresh();
+      }
+    });
   }
 
-  private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
-    initBlockingVariableCard();
-    initExperimentalVariableCard(experimentInformationService);
-    Row topRow = new Row(sampleOriginCard, blockingVariableCard);
-    Row bottomRow = new Row(experimentalVariableCard);
-    summaryCardBoard.add(topRow, bottomRow);
-    summaryCardBoard.setSizeFull();
-
+  private void handleGroupSubmittedSuccess() {
+    reloadExperimentalGroups();
+    experimentalGroupsDialog.close();
   }
 
-  private void initExperimentalGroupsBoard() {
-    experimentalGroupsCollection.setWidthFull();
+  private void reloadExperimentalGroups() {
+    loadExperimentalGroups();
+    addCreationCardToExperimentalGroupCollection();
   }
 
-  public void handleEvent(CreationClickedEvent creationClickedEvent) {
+  private void handleDuplicateConditionInput() {
+    InformationMessage infoMessage = new InformationMessage(
+        "A group with the same condition exists already.", "");
+    StyledNotification notification = new StyledNotification(infoMessage);
+    notification.open();
+  }
+
+  private void handleEvent(CreationClickedEvent creationClickedEvent) {
     experimentalGroupsDialog.open();
+  }
+
+  private void loadExperimentalGroups() {
+    Objects.requireNonNull(experimentId, "Experiment id not set");
+    // We load the experimental groups of the experiment and render them as cards
+    List<ExperimentalGroupCard> experimentalGroupsCards = experimentInformationService.experimentalGroupsFor(
+        experimentId).stream().map(ExperimentalGroupCard::new).toList();
+
+    // We register the experimental details component as listener for group deletion events
+    experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
+    experimentalGroupsCollection.setComponents(experimentalGroupsCards);
+    addCreationCardToExperimentalGroupCollection();
+  }
+
+  private void addCreationCardToExperimentalGroupCollection() {
+    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
+  }
+
+  private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
+    experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleEvent);
+  }
+
+  private void handleEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
+    experimentInformationService.deleteExperimentGroup(experimentId,
+        experimentalGroupDeletionEvent.getSource().groupId());
+    experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
+  }
+
+  /**
+   * Sets the experiment identifier for the component, the component does the rest.
+   *
+   * @param experimentId the experiment identifier
+   * @since 1.0.0
+   */
+  public void setExperiment(ExperimentId experimentId) {
+    this.loadExperiment(experimentId);
+  }
+
+  private void loadExperiment(ExperimentId experimentId) {
+    experimentInformationService.find(experimentId).ifPresent(this::loadExperimentInformation);
+  }
+
+  private void loadExperimentInformation(Experiment experiment) {
+    this.experimentId = experiment.experimentId();
+    getContent().addTitle(experiment.getName());
+    loadTagInformation(experiment);
+    loadExperimentInfo(experiment);
+    loadBlockingVariableInformation();
+    addVariablesDialog.experimentId(experiment.experimentId());
+    fillExperimentalGroupDialog();
+    loadExperimentalGroups();
+    if (experiment.variables().isEmpty()) {
+      useCaseNoVariablesYet();
+    } else {
+      removeDisclaimer();
+      displayExperimentalGroupsCollection();
+    }
+  }
+
+  private void useCaseNoVariablesYet() {
+    displayDisclaimer();
+    hideExperimentalGroupsCollection();
+  }
+
+  private void loadTagInformation(Experiment experiment) {
+    tagLayout.removeAll();
+    List<String> tags = new ArrayList<>();
+    experiment.getSpecies().forEach(species -> tags.add(species.value()));
+    experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
+    experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
+    tags.forEach(tag -> tagLayout.add(new Tag(tag)));
+    tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
+  }
+
+  private void loadExperimentInfo(Experiment experiment) {
+    ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
+        experiment.getSpecimens(), experiment.getAnalytes());
+    ExperimentalVariablesComponent experimentalVariables = ExperimentalVariablesComponent.create(
+        experiment.variables());
+    ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
+    ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariables);
+    factSheet.showMenu();
+  }
+
+  private void loadBlockingVariableInformation() {
+    //ToDo load information from backend once implemented
+  }
+
+  private void fillExperimentalGroupDialog() {
+    Objects.requireNonNull(experimentId, "experiment id not set");
+    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+        experimentId);
+    List<VariableLevel> levels = variables.stream()
+        .flatMap(variable -> variable.levels().stream()).toList();
+    experimentalGroupsDialog.setLevels(levels);
+  }
+
+  private void displayDisclaimer() {
+    contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
+  }
+
+  private void hideExperimentalGroupsCollection() {
+    contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
+  }
+
+  private void removeDisclaimer() {
+    contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
+  }
+
+  private void displayExperimentalGroupsCollection() {
+    contentExperimentalGroupsTab.add(experimentalGroupsCollection);
   }
 
   private void initBlockingVariableCard() {
@@ -186,155 +313,4 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     blockingVariableCard.setMargin(false);
   }
 
-  private void initExperimentalVariableCard(
-      ExperimentInformationService experimentInformationService) {
-    experimentalVariableCard = new ExperimentalVariableCard(experimentInformationService);
-    experimentalVariableCard.setMargin(false);
-    experimentalVariableCard.setAddButtonAction(addVariablesDialog::open);
-  }
-
-  public void loadExperiment(ExperimentId experimentId) {
-    this.handler.loadExperiment(experimentId);
-  }
-
-  public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
-  }
-
-  public void handleEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
-    handler.experimentInformationService.deleteExperimentGroup(handler.experimentId,
-        experimentalGroupDeletionEvent.getSource().groupId());
-    experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
-  }
-
-  private final class Handler {
-
-    private ExperimentId experimentId;
-    private final ExperimentInformationService experimentInformationService;
-
-    public Handler(ExperimentInformationService experimentInformationService) {
-      this.experimentInformationService = experimentInformationService;
-      addCloseListenerForAddVariableDialog();
-    }
-
-    private void addCloseListenerForAddVariableDialog() {
-      addVariablesDialog.addOpenedChangeListener(it -> {
-        if (!it.isOpened()) {
-          experimentalVariableCard.refresh();
-        }
-      });
-    }
-
-    private void loadExperiment(ExperimentId experimentId) {
-      experimentInformationService.find(experimentId).ifPresent(this::loadExperimentInformation);
-    }
-
-    private void loadExperimentInformation(Experiment experiment) {
-      this.experimentId = experiment.experimentId();
-      getContent().addTitle(experiment.getName());
-      loadTagInformation(experiment);
-      loadExperimentInfo(experiment);
-      loadBlockingVariableInformation();
-      experimentalVariableCard.experimentId(experiment.experimentId());
-      addVariablesDialog.experimentId(experiment.experimentId());
-      fillExperimentalGroupDialog();
-      loadExperimentalGroups();
-      if (experiment.variables().isEmpty()) {
-        displayDisclaimer();
-        hideExperimentalGroupsCollection();
-      } else {
-        removeDisclaimer();
-        displayExperimentalGroupsCollection();
-      }
-    }
-
-    private void displayExperimentalGroupsCollection() {
-      contentExperimentalGroupsTab.add(experimentalGroupsCollection);
-    }
-
-    private void hideExperimentalGroupsCollection() {
-      contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
-    }
-
-    private void loadTagInformation(Experiment experiment) {
-      tagLayout.removeAll();
-      List<String> tags = new ArrayList<>();
-      experiment.getSpecies().forEach(species -> tags.add(species.value()));
-      experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
-      experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
-      tags.forEach(tag -> tagLayout.add(new Tag(tag)));
-      tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
-    }
-
-    private void loadExperimentInfo(Experiment experiment) {
-      ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
-          experiment.getSpecimens(), experiment.getAnalytes());
-      ExperimentalVariablesComponent experimentalVariables = ExperimentalVariablesComponent.create(experiment.variables());
-      ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
-      ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariables);
-      factSheet.showMenu();
-    }
-
-    private void loadBlockingVariableInformation() {
-      //ToDo load information from backend once implemented
-    }
-
-    private void fillExperimentalGroupDialog() {
-      Objects.requireNonNull(experimentId, "experiment id not set");
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream()).toList();
-      experimentalGroupsDialog.setLevels(levels);
-    }
-
-    private void loadExperimentalGroups() {
-      Objects.requireNonNull(experimentId, "Experiment id not set");
-      // We load the experimental groups of the experiment and render them as cards
-      List<ExperimentalGroupCard> experimentalGroupsCards = experimentInformationService.experimentalGroupsFor(
-          experimentId).stream().map(ExperimentalGroupCard::new).toList();
-
-      // We register the experimental details component as listener for group deletion events
-      experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
-      experimentalGroupsCollection.removeAll();
-      experimentalGroupsCollection.addComponents(experimentalGroupsCards);
-    }
-
-    private void displayDisclaimer() {
-      contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
-    }
-
-    private void removeDisclaimer() {
-      contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
-    }
-
-    private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
-      experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleEvent);
-    }
-
-    public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
-      Result<ExperimentalGroup, ResponseCode> response = experimentInformationService.addExperimentalGroupToExperiment(
-          experimentId,
-          new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
-      if (response.isValue()) {
-        handleGroupSubmittedSuccess();
-      } else {
-        handleDuplicateConditionInput();
-      }
-    }
-
-    private void handleGroupSubmittedSuccess() {
-      loadExperimentalGroups();
-      addCreationCard();
-      experimentalGroupsDialog.close();
-    }
-
-    private void handleDuplicateConditionInput() {
-      InformationMessage infoMessage = new InformationMessage(
-          "A group with the same condition exists already.", "");
-      StyledNotification notification = new StyledNotification(infoMessage);
-      notification.open();
-    }
-
-  }
 }
