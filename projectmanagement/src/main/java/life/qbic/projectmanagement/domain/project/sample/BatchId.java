@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -9,6 +8,7 @@ import jakarta.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 /**
@@ -27,10 +27,14 @@ public class BatchId implements Serializable {
     private String uuid;
 
     protected BatchId() {
+        this(UUID.randomUUID());
         // needed for JPA
     }
 
     private BatchId(UUID id) {
+        if (Objects.isNull(id)) {
+            throw new IllegalArgumentException("uuid must be provided");
+        }
         this.uuid = id.toString();
     }
 
@@ -57,11 +61,17 @@ public class BatchId implements Serializable {
     }
 
     @Override
+    public String toString() {
+        return new StringJoiner(", ", BatchId.class.getSimpleName() + "[", "]")
+                .add("uuid=" + uuid)
+                .toString();
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(uuid);
     }
 
-    @JsonGetter()
     public String value() {
         return this.uuid;
     }

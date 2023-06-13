@@ -35,6 +35,7 @@ import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -48,9 +49,9 @@ import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
@@ -88,8 +89,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
   private final Select<String> tabFilterSelect = new Select<>();
   private final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
-
-  //ToDo Remove showEmptyViewButton once sample information can be loaded
   private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
@@ -169,7 +168,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     experimentSamples.forEach((experiment, samples) -> {
       Span experimentName = new Span(experiment.getName());
       Tab experimentSampleTab = new Tab(experimentName);
-      //Todo How to provide information from different services in the vaadin grid?
       Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
       sampleGrid.addColumn(createSampleIdComponentRenderer()).setComparator(Sample::id)
           .setHeader("Sample Id");
@@ -183,7 +181,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
       sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
       sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
-      //ToDo make this virtual list with data Providers and implement lazy loading?
       GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
       sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
           sampleGridDataView);
@@ -233,7 +230,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
   }
 
   private static final SerializableBiConsumer<Anchor, Sample> styleSampleIdAnchor = (anchor, sample) -> {
-    //ToDo maybe the projectId could be read from the UI URL?
     String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(), sample.id());
     anchor.setHref(anchorURL);
     anchor.setText(sample.id());
@@ -253,7 +249,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
     private ExperimentId experimentId;
-    private BatchId lastCreatedBatch;
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
@@ -266,7 +261,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       this.sampleRegistrationService = sampleRegistrationService;
       this.batchRegistrationService = batchRegistrationService;
       registerSamplesListener();
-      configureBatchRegistrationDialog();
+      addEventListeners();
     }
 
     public void setProjectId(ProjectId projectId) {
@@ -278,8 +273,10 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
         generateExperimentTabs(project);
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
-        potentialExperiment.ifPresent(batchRegistrationDialog::setActiveExperiment);
-        this.experimentId = potentialExperiment.get().experimentId();
+        potentialExperiment.ifPresent(experiment -> {
+          batchRegistrationDialog.setActiveExperiment(experiment);
+          this.experimentId = experiment.experimentId();
+        });
       }
     }
 
@@ -305,16 +302,18 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           notification.open();
         }
       });
-      //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
 
-    private void configureBatchRegistrationDialog() {
-
-      batchRegistrationDialog.addBatchRegistrationEventListener(
-          event -> processBatchRegistration(event.getSource().batchRegistrationContent()));
-      batchRegistrationDialog.addSampleRegistrationEventListener(
-          event -> processSampleRegistration(event.getSource().sampleRegistrationContent()));
+    private void addEventListeners() {
+      batchRegistrationDialog.addBatchRegistrationEventListener(batchRegistrationEvent -> {
+        BatchRegistrationDialog batchRegistrationSource = batchRegistrationEvent.getSource();
+        registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
+            batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
+          batchRegistrationDialog.resetAndClose();
+          displayRegistrationSuccess();
+        });
+      });
       batchRegistrationDialog.addCancelEventListener(
           event -> batchRegistrationDialog.resetAndClose());
     }
@@ -326,7 +325,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
           .ifPresent(foundExperiments::add));
       Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
-      //ToDo retrieve sample information as soon as it's clear how they are linked
       for (Experiment experiment : foundExperiments) {
         experimentToSampleDict.put(experiment,
             sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId()));
@@ -372,45 +370,51 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       });
     }
 
-
-    private void processBatchRegistration(BatchRegistrationContent batchRegistrationContent) {
-      //Todo add Batch name here and trigger processSampleCreation() method
-      Result<BatchId, BatchRegistrationService.ResponseCode> batch = batchRegistrationService.registerBatch(
-          batchRegistrationContent.batchLabel(), batchRegistrationContent.isPilot());
-      batch.onValue(result -> {
-        batchRegistrationDialog.resetAndClose();
-        lastCreatedBatch = result;
-        //ToDo Replace Values
-      }).onError(e -> {
-        //ToDo What should happen here?
-      });
+    private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
+        List<SampleRegistrationContent> sampleRegistrationContent) {
+      return registerBatchInformation(batchRegistrationContent).onValue(
+          batchId -> {
+            List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
+                batchId, sampleRegistrationContent);
+            registerSamples(sampleRegistrationsRequests);
+          });
     }
 
-    private void processSampleRegistration(
-        List<SampleRegistrationContent> sampleRegistrationContentList) {
-      //ToDo Sample Comments are currently not stored
-      sampleRegistrationContentList.forEach(sampleRegistrationContent -> {
-        //ToDo Where should these domain objects be generated?
-        Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
-        Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
-        Species species = new Species(sampleRegistrationContent.species());
-        BiologicalReplicateId biologicalReplicateId = BiologicalReplicateId.create();
-        SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest(
-            sampleRegistrationContent.label(), lastCreatedBatch, experimentId,
-            sampleRegistrationContent.experimentalGroupId(), biologicalReplicateId, sampleOrigin);
-        sampleRegistrationService.registerSample(sampleRegistrationRequest, projectId)
-            .onError(e -> {
-              //Todo What should happen here
-            });
-      });
-      showSamplesView();
-      displaySuccessfulBatchRegistrationNotification();
+    private Result<BatchId, ResponseCode> registerBatchInformation(
+        BatchRegistrationContent batchRegistrationContent) {
+      return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
+          batchRegistrationContent.isPilot()).onError(responseCode -> displayRegistrationFailure());
     }
 
-    private void displaySuccessfulBatchRegistrationNotification() {
+    private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
+      sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+          .onError(responseCode -> displayRegistrationFailure());
+    }
+
+    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
+        List<SampleRegistrationContent> sampleRegistrationContents) {
+      return sampleRegistrationContents.stream()
+          .map(sampleRegistrationContent -> {
+            Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
+            Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
+            Species species = new Species(sampleRegistrationContent.species());
+            SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
+            return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
+                experimentId,
+                sampleRegistrationContent.experimentalGroupId(),
+                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
+          }).toList();
+    }
+
+    private void displayRegistrationSuccess() {
       SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
       StyledNotification notification = new StyledNotification(successMessage);
+      notification.open();
+    }
+
+    private void displayRegistrationFailure() {
+      ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
+      StyledNotification notification = new StyledNotification(errorMessage);
       notification.open();
     }
   }

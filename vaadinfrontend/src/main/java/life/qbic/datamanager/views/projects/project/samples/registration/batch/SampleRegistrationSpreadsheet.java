@@ -20,6 +20,12 @@ import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -53,9 +59,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static Map<String, ExperimentalGroup> experimentalGroupToConditionString;
   private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
   private static int numberOfSamples;
-  private Sheet sampleRegistrationSheet;
+  private transient Sheet sampleRegistrationSheet;
 
-  public SampleRegistrationSpreadsheet() {}
+  public SampleRegistrationSpreadsheet() {
+    // The SampleRegistrationSpreadsheet component only makes sense once information has been filled via the experiment information,
+    // which can only happen once the experiment is loaded, therefore the setExperimentMetadata() method should be used.
+  }
 
   /**
    * Sets an experiment in order to provide the spreadsheet builder with known metadata to prefill
@@ -115,13 +124,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         varStrings.add(varName + ":" + value + unit);
       }
       String conditionString = String.join("; ", varStrings);
-      conditionsToReplicates.put(conditionString, group.biologicalReplicates());
+      conditionsToReplicates.put(conditionString.trim(), group.biologicalReplicates());
       experimentalGroupToConditionString.put(conditionString.trim(), group);
     }
   }
 
   private List<String> getReplicateLabels() {
-    //TODO values should depend on selected condition!?
     List<String> replicateLabels = new ArrayList<>();
     for (List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
       replicateLabels.addAll(replicates.stream().map(BiologicalReplicate::label).toList());
@@ -431,9 +439,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
               condition);
           Long experimentalGroupId = experimentalGroup.id();
+          BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(
+              replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim());
           rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
               sampleLabelCell.getStringCellValue().trim(),
-              replicateID,
+              biologicalReplicateId,
               experimentalGroupId,
               speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), analyteCell.getStringCellValue().trim(),
               commentCell.getStringCellValue().trim()));
@@ -448,10 +458,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return Result.fromValue(rows);
   }
 
-  public record NGSRowDTO(String analysisType, String sampleLabel, String bioReplicateID,
-                          Long experimentalGroupId, String species, String specimen, String analyte,
-                          String customerComment) {
+  private BiologicalReplicateId retrieveBiologicalReplicateId(String replicateLabel,
+      String condition) {
+    Optional<BiologicalReplicate> biologicalReplicate = conditionsToReplicates.get(condition)
+        .stream()
+        .filter(bioRep -> bioRep.label().equals(replicateLabel)).findFirst();
+    BiologicalReplicateId biologicalReplicateId;
+    if (biologicalReplicate.isPresent()) {
+      biologicalReplicateId = biologicalReplicate.get().id();
+    } else {
+      biologicalReplicateId = BiologicalReplicateId.create();
+    }
+    return biologicalReplicateId;
   }
+
+  public record NGSRowDTO(String analysisType, String sampleLabel,
+                          BiologicalReplicateId bioReplicateID,
+                          Long experimentalGroupId, String species, String specimen, String analyte,
+                          String customerComment) {}
 
   /**
    * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
@@ -484,4 +508,5 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       return invalidRow;
     }
   }
+
 }

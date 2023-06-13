@@ -35,7 +35,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
   private final Label batchName = new Label();
-  public final SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
+  public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
   public final Button registerButton = new Button("Register");
@@ -109,7 +109,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     @Serial
     private static final long serialVersionUID = 2837608401189525502L;
-    private final List<Binder<?>> binders = new ArrayList<>();
 
     private void reset() {
       resetChildValues();
@@ -140,16 +139,14 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private List<SampleRegistrationContent> getContent() {
-      Result<List<NGSRowDTO>, SpreadsheetValidationException> content = sampleRegistrationSpreadsheet.getFilledRows();
+      Result<List<NGSRowDTO>, SpreadsheetValidationException> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
-      content.onValue(filledRows -> {
-        filledRows.forEach(row -> {
-          SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
-              row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
-              row.specimen(),
-              row.analyte(), row.customerComment());
-          samplesToRegister.add(sampleRegistrationContent);
-        });
+      filledRows.getValue().forEach(row -> {
+        SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
+            row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
+            row.specimen(),
+            row.analyte(), row.customerComment());
+        samplesToRegister.add(sampleRegistrationContent);
       });
       return samplesToRegister;
     }

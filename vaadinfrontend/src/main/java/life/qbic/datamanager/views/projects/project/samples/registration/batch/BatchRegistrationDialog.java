@@ -30,7 +30,7 @@ public class BatchRegistrationDialog extends Dialog {
   private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
   private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
-  private final RegisterBatchDialogHandler registerBatchDialogHandler;
+  private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
     setHeaderTitle(TITLE);
@@ -67,25 +67,40 @@ public class BatchRegistrationDialog extends Dialog {
     sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   }
 
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link BatchRegistrationEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
   public void addBatchRegistrationEventListener(
       ComponentEventListener<BatchRegistrationEvent> listener) {
     registerBatchDialogHandler.addBatchRegistrationEventListener(listener);
   }
 
-  public void addSampleRegistrationEventListener(
-      ComponentEventListener<SampleRegistrationEvent> listener) {
-    registerBatchDialogHandler.addSampleRegistrationEventListener(listener);
-  }
-
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link UserCancelEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
   public void addCancelEventListener(
       ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
+  /**
+   * Resets the dialogue to its original state, removing all user input and changes and closes the
+   * dialog window
+   */
   public void resetAndClose() {
     registerBatchDialogHandler.resetAndClose();
   }
 
+  /**
+   * Defines the currently active {@link Experiment} within the project from which the information
+   * will be derived in the {@link SampleRegistrationSpreadsheet}
+   */
   public void setActiveExperiment(Experiment experiment) {
     sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }
@@ -94,7 +109,7 @@ public class BatchRegistrationDialog extends Dialog {
 
     @Serial
     private static final long serialVersionUID = -2692766151162405263L;
-    private final List<ComponentEventListener<SampleRegistrationEvent>> sampleRegistrationListeners = new ArrayList<>();
+
     private final List<ComponentEventListener<BatchRegistrationEvent>> batchRegistrationListeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
@@ -112,21 +127,26 @@ public class BatchRegistrationDialog extends Dialog {
 
     private void setTabSelectionListener() {
       tabStepper.addSelectedChangeListener(event -> {
-        if (event.getSelectedTab() == sampleInformationTab
-            && batchInformationLayout.isInputValid()) {
-          sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-              batchInformationLayout.dataTypeSelection.getValue());
-          sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-        } else {
-          tabStepper.setSelectedTab(batchInformationTab);
+        if (event.getSelectedTab() == sampleInformationTab) {
+          if (batchInformationLayout.isInputValid()) {
+            generateSampleRegistrationLayout();
+            tabStepper.setSelectedTab(event.getSelectedTab());
+          } else {
+            tabStepper.setSelectedTab(event.getPreviousTab());
+          }
         }
       });
+    }
+
+    private void generateSampleRegistrationLayout() {
+      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+          batchInformationLayout.dataTypeSelection.getValue());
     }
 
     private void setSubmissionListeners() {
       setCancelSubmission();
       setBatchRegistrationSubmission();
-      setSampleRegistrationSubmission();
     }
 
     private void setCancelSubmission() {
@@ -147,28 +167,13 @@ public class BatchRegistrationDialog extends Dialog {
       });
     }
 
-    private void setSampleRegistrationSubmission() {
-      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
-        if (isInputValid()) {
-          sampleRegistrationListeners.forEach(listener -> listener.onComponentEvent(
-              new SampleRegistrationEvent(BatchRegistrationDialog.this, true)));
-        }
-      });
-    }
-
     protected boolean isInputValid() {
       return batchInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
     }
 
-
     public void addBatchRegistrationEventListener(
         ComponentEventListener<BatchRegistrationEvent> listener) {
       this.batchRegistrationListeners.add(listener);
-    }
-
-    public void addSampleRegistrationEventListener(
-        ComponentEventListener<SampleRegistrationEvent> listener) {
-      this.sampleRegistrationListeners.add(listener);
     }
 
     public void addUserCancelEventListener(

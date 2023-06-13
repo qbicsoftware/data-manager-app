@@ -1,16 +1,26 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <p> SampleRegistrationContent contains the sample information provided by the user during sample batch creation in the {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog}
+ * </p>
  *
- * @since <version tag>
+ * @param label                 User specified sample label
+ * @param biologicalReplicateId the biological replicate id from which the sample was derived
+ * @param experimentalGroupId   the experimental group id hosting the conditions applicable for the sample
+ * @param species               String representation of the {@link Species}
+ * @param specimen              String representation of the {@link Specimen}
+ * @param analyte               String representation of the {@link Analyte}
+ * @param comment               Sample specific comments
  */
-public record SampleRegistrationContent(String label, String biologicalReplicateId,
-                                        Long experimentalGroupId, String species, String specimen,
-                                        String analyte,
+
+public record SampleRegistrationContent(String label, BiologicalReplicateId biologicalReplicateId,
+                                        Long experimentalGroupId,
+                                        String species, String specimen, String analyte,
                                         String comment) {
 
 }
