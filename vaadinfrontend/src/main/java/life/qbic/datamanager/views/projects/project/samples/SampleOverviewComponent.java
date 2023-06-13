@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -93,7 +94,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
   private final Select<String> tabFilterSelect = new Select<>();
   private final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
-  private final Button showEmptyViewButton = new Button("Empty View");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private static ProjectId projectId;
   private static final Logger log = getLogger(SampleOverviewComponent.class);
@@ -157,7 +157,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     fieldBar.add(searchField, tabFilterSelect);
     //Items in layout should be aligned at the end due to searchFieldLabel taking up space
-    buttonBar.add(showEmptyViewButton, registerButton, metadataDownloadButton);
+    buttonBar.add(registerButton, metadataDownloadButton);
     fieldBar.setAlignSelf(Alignment.START, buttonAndFieldBar);
     buttonBar.setAlignSelf(Alignment.END, buttonAndFieldBar);
     fieldBar.setAlignItems(Alignment.END);
@@ -232,10 +232,12 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final ExperimentInformationService experimentInformationService;
     private final SampleInformationService sampleInformationService;
     private final SampleRegistrationService sampleRegistrationService;
-
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
     private ExperimentId experimentId;
+
+    //ToDo Replace with Call to service
+    private final Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
@@ -267,30 +269,28 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private boolean hasExperimentalGroupsDefined() {
-      Optional<Project> potentialProject = projectInformationService.find(projectId);
-      if (potentialProject.isPresent()) {
-        Project project = potentialProject.get();
-        return !experimentInformationService.getExperimentalGroups(project.activeExperiment())
-            .isEmpty();
-      }
-      return false;
+      boolean areExperimentalGroupsDefined = experimentToSampleDict.keySet().forEach(
+          experiment -> experimentInformationService.getExperimentalGroups(experimentId).stream()
+              .findFirst().isPresent());
+      //ToDo check if any experiment has an experimentalgroup.
     }
 
     private void registerSamplesListener() {
-      registerBatchButton.addClickListener(event -> {
-        if (hasExperimentalGroupsDefined()) {
-          batchRegistrationDialog.open();
-        } else {
-          InformationMessage infoMessage = new InformationMessage(
-              "No experimental groups are defined",
-              "You need to define experimental groups before adding samples.");
-          StyledNotification notification = new StyledNotification(infoMessage);
-          notification.open();
-        }
-      });
-      showEmptyViewButton.addClickListener(event -> showEmptyView());
+      registerBatchButton.addClickListener(this::openBatchRegistrationDialog);
+      registerButton.addClickListener(this::openBatchRegistrationDialog);
     }
 
+    private void openBatchRegistrationDialog(ComponentEvent<?> componentEvent) {
+      if (hasExperimentalGroupsDefined()) {
+        batchRegistrationDialog.open();
+      } else {
+        InformationMessage infoMessage = new InformationMessage(
+            "No experimental groups are defined",
+            "You need to define experimental groups before adding samples.");
+        StyledNotification notification = new StyledNotification(infoMessage);
+        notification.open();
+      }
+    }
 
     private void addEventListeners() {
       batchRegistrationDialog.addBatchRegistrationEventListener(batchRegistrationEvent -> {
@@ -299,7 +299,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
-          showSamplesView();
+          displaySampleView();
         });
       });
       batchRegistrationDialog.addCancelEventListener(
@@ -309,10 +309,10 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private void generateExperimentTabs(Project project) {
       resetTabSheet();
       resetTabSelect();
+      experimentToSampleDict.clear();
       List<Experiment> foundExperiments = new LinkedList<>();
       project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
           .ifPresent(foundExperiments::add));
-      Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
       for (Experiment experiment : foundExperiments) {
         sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
             .onValue(samples -> {
@@ -321,11 +321,13 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
               }
             });
       }
-      if (!experimentToSampleDict.isEmpty()) {
-        addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
-        createExperimentTabs(experimentToSampleDict);
-        showSamplesView();
-      }
+      addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
+      createExperimentTabs(experimentToSampleDict);
+      displaySampleView();
+    }
+
+    private boolean areSamplesInExperiments() {
+      return !experimentToSampleDict.isEmpty();
     }
 
     private void resetTabSelect() {
@@ -337,12 +339,20 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           .forEach(component -> component.getElement().removeAllChildren());
     }
 
-    private void showEmptyView() {
+    private void displaySampleView() {
+      if (areSamplesInExperiments()) {
+        displaySampleGrid();
+      } else {
+        displayEmptyView();
+      }
+    }
+
+    private void displayEmptyView() {
       sampleContentLayout.setVisible(false);
       noBatchDefinedLayout.setVisible(true);
     }
 
-    private void showSamplesView() {
+    private void displaySampleGrid() {
       noBatchDefinedLayout.setVisible(false);
       sampleContentLayout.setVisible(true);
     }
