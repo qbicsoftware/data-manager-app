@@ -31,13 +31,17 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 public class ExperimentalVariablesComponent extends Card {
 
   private boolean controlsEnabled = true;
+  private List<Div> variableFactSheets = new ArrayList<>();
   @Serial
   private static final long serialVersionUID = 7589385115005753849L;
   private final Collection<ExperimentalVariable> experimentalVariables;
   private final MenuBar menuBar;
   private final Div controls = new Div();
+  private final Div content = new Div();
 
   private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
+
+  private final List<ComponentEventListener<AddNewExperimentalVariableEvent>> listenersNewVariable = new ArrayList<>();
 
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
     this.experimentalVariables = experimentalVariables;
@@ -50,7 +54,9 @@ public class ExperimentalVariablesComponent extends Card {
     menu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
     MenuItem menuItem = menu.addItem("•••");
     SubMenu subMenu = menuItem.getSubMenu();
+    subMenu.addItem("Add", event -> fireAddEvent());
     subMenu.addItem("Edit", event -> fireEditEvent());
+t
     return menu;
   }
 
@@ -66,14 +72,19 @@ public class ExperimentalVariablesComponent extends Card {
     cardHeader.add(controls);
     this.add(cardHeader);
 
-    Div content = new Div();
-
-    List<Div> variableFactSheets = generateFactSheets(experimentalVariables);
+    variableFactSheets.addAll(generateFactSheets(experimentalVariables));
     variableFactSheets.forEach(content::add);
 
     content.addClassName("content");
 
     add(content);
+  }
+
+  private void fireAddEvent() {
+    AddNewExperimentalVariableEvent addNewExperimentalVariableEvent = new AddNewExperimentalVariableEvent(
+        this, true);
+    listenersNewVariable.forEach(
+        listener -> listener.onComponentEvent(addNewExperimentalVariableEvent));
   }
 
   private void fireEditEvent() {
@@ -117,12 +128,41 @@ public class ExperimentalVariablesComponent extends Card {
    * Register an {@link ComponentEventListener} that will get informed with a
    * {@link ExperimentalVariablesEditEvent}, as soon as a user wants to edit experiment variables.
    *
-   * @param listener A listener for edit events
+   * @param listener a listener for edit events
    * @since 1.0.0
    */
   public void subscribeToEditEvent(
       ComponentEventListener<ExperimentalVariablesEditEvent> listener) {
     this.listeners.add(listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that will get informed with an
+   * {@link AddNewExperimentalVariableEvent}, as soon as a user wants to add new experimental
+   * variables.
+   *
+   * @param listener a listener for adding variables events
+   * @since 1.0.0
+   */
+  public void subscribeToAddEvent(
+      ComponentEventListener<AddNewExperimentalVariableEvent> listener) {
+    this.listenersNewVariable.add(listener);
+  }
+
+  /**
+   * Sets a new list of experimental variables.
+   * <p>
+   * All previously contained variables and fact sheets will be removed.
+   *
+   * @param variables the new experimental variables to display
+   * @since 1.0.0
+   */
+  public void setExperimentalVariables(List<ExperimentalVariable> variables) {
+    this.experimentalVariables.clear();
+    this.experimentalVariables.addAll(variables);
+    content.removeAll();
+    variableFactSheets = generateFactSheets(experimentalVariables);
+    variableFactSheets.forEach(content::add);
   }
 
   /**
