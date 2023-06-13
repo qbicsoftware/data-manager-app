@@ -56,7 +56,6 @@ public class ExperimentalVariablesComponent extends Card {
     SubMenu subMenu = menuItem.getSubMenu();
     subMenu.addItem("Add", event -> fireAddEvent());
     subMenu.addItem("Edit", event -> fireEditEvent());
-t
     return menu;
   }
 
