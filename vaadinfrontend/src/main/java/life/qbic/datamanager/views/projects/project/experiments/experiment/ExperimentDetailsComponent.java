@@ -4,11 +4,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -25,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
-import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.datamanager.views.general.DisclaimerCard;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardComponent;
@@ -168,7 +164,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void configureExperimentalGroupCreation() {
-    experimentalGroupCreationCard.addListener(this::handleEvent);
+    experimentalGroupCreationCard.addListener(event -> experimentalGroupsDialog.open());
   }
 
   private void addCancelListenerForAddVariableDialog() {
@@ -187,9 +183,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     notification.open();
   }
 
-  private void handleEvent(CreationClickedEvent creationClickedEvent) {
-    experimentalGroupsDialog.open();
-  }
 
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
@@ -213,10 +206,10 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
-    experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleEvent);
+    experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleCreationClickedEvent);
   }
 
-  private void handleEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
+  private void handleCreationClickedEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
     experimentInformationService.deleteExperimentGroup(experimentId,
         experimentalGroupDeletionEvent.getSource().groupId());
     experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
@@ -329,19 +322,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void hideExperimentalGroupsCollection() {
     contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
-  }
-
-  private void initBlockingVariableCard() {
-    blockingVariableCard.addTitle("Blocking Variables");
-    VerticalLayout templateLayout = new VerticalLayout();
-    Span templateText = new Span("No Blocking Variable defined");
-    addBlockingVariableButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    templateLayout.add(templateText, addBlockingVariableButton);
-    templateLayout.setAlignItems(Alignment.CENTER);
-    templateLayout.setSizeFull();
-    templateLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    blockingVariableCard.addContent(templateLayout);
-    blockingVariableCard.setMargin(false);
   }
 
 }
