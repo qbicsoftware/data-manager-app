@@ -5,8 +5,7 @@ import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
@@ -20,33 +19,29 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.general.CreationCard;
-import life.qbic.datamanager.views.general.CreationClickedEvent;
-import life.qbic.datamanager.views.general.DisclaimerCard;
-import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
-import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
+import life.qbic.datamanager.views.general.*;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.*;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * <b>Experimental Details Component</b>
@@ -65,12 +60,14 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final transient Handler handler;
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
+
+  private final Div contentExperimentalGroupsTab = new Div();
+
   private final Board summaryCardBoard = new Board();
+
+  private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent sampleOriginCard = new CardComponent();
-  private final VerticalLayout speciesForm = new VerticalLayout();
-  private final VerticalLayout specimenForm = new VerticalLayout();
-  private final VerticalLayout analyteForm = new VerticalLayout();
   private final CardComponent blockingVariableCard = new CardComponent();
   private final Button addBlockingVariableButton = new Button("Add");
   private final AddVariablesDialog addVariablesDialog;
@@ -93,12 +90,14 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     initTabSheet(experimentInformationService);
     addCreationCard();
     experimentalGroupsDialog = createExperimentalGroupDialog();
+
     this.handler = new Handler(experimentInformationService);
     setUpCreationCard();
   }
 
   public DisclaimerCard createDisclaimer() {
-    var disclaimer = DisclaimerCard.createWithTitle("Missing variables", "No experiment variables defined", "Add");
+    var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
+        "No experiment variables defined", "Add");
     disclaimer.subscribe(this::handleEvent);
     return disclaimer;
   }
@@ -124,8 +123,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private void initTabSheet(ExperimentInformationService experimentInformationService) {
     initSummaryCardBoard(experimentInformationService);
     initExperimentalGroupsBoard();
-    experimentSheet.add("Summary", summaryCardBoard);
-    experimentSheet.add("Experimental Groups", experimentalGroupsCollection);
+    experimentSheet.add("Summary", experimentSummary);
+    experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
   }
@@ -150,7 +149,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void initSummaryCardBoard(ExperimentInformationService experimentInformationService) {
-    initSampleOriginCard();
     initBlockingVariableCard();
     initExperimentalVariableCard(experimentInformationService);
     Row topRow = new Row(sampleOriginCard, blockingVariableCard);
@@ -166,18 +164,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   public void handleEvent(CreationClickedEvent creationClickedEvent) {
     experimentalGroupsDialog.open();
-  }
-
-  private void initSampleOriginCard() {
-    sampleOriginCard.addTitle("Sample Origin");
-    FormLayout sampleOriginLayout = new FormLayout();
-    sampleOriginLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    sampleOriginLayout.addFormItem(speciesForm, "Species");
-    sampleOriginLayout.addFormItem(specimenForm, "Specimen");
-    sampleOriginLayout.addFormItem(analyteForm, "Analyte");
-    sampleOriginLayout.setSizeFull();
-    sampleOriginCard.setMargin(false);
-    sampleOriginCard.addContent(sampleOriginLayout);
   }
 
   private void initBlockingVariableCard() {
@@ -240,7 +226,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       this.experimentId = experiment.experimentId();
       getContent().addTitle(experiment.getName());
       loadTagInformation(experiment);
-      loadSampleOriginInformation(experiment);
+      loadExperimentInfo(experiment);
       loadBlockingVariableInformation();
       experimentalVariableCard.experimentId(experiment.experimentId());
       addVariablesDialog.experimentId(experiment.experimentId());
@@ -248,11 +234,19 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       loadExperimentalGroups();
       if (experiment.variables().isEmpty()) {
         displayDisclaimer();
-        removeCreationCard();
+        hideExperimentalGroupsCollection();
       } else {
         removeDisclaimer();
-        addCreationCard();
+        displayExperimentalGroupsCollection();
       }
+    }
+
+    private void displayExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.add(experimentalGroupsCollection);
+    }
+
+    private void hideExperimentalGroupsCollection() {
+      contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
     }
 
     private void loadTagInformation(Experiment experiment) {
@@ -265,13 +259,14 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
     }
 
-    private void loadSampleOriginInformation(Experiment experiment) {
-      speciesForm.removeAll();
-      specimenForm.removeAll();
-      analyteForm.removeAll();
-      experiment.getSpecies().forEach(species -> speciesForm.add(new Span(species.value())));
-      experiment.getSpecimens().forEach(specimen -> specimenForm.add(new Span(specimen.value())));
-      experiment.getAnalytes().forEach(analyte -> analyteForm.add(new Span(analyte.value())));
+    private void loadExperimentInfo(Experiment experiment) {
+      ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
+          experiment.getSpecimens(), experiment.getAnalytes());
+      ExperimentalVariablesComponent experimentalVariables = ExperimentalVariablesComponent.create(experiment.variables());
+      ExperimentDetailsComponent.this.experimentSummary.add(factSheet);
+      ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariables);
+      ExperimentDetailsComponent.this.experimentSummary.add(blockingVariableCard);
+      factSheet.showMenu();
     }
 
     private void loadBlockingVariableInformation() {
@@ -300,15 +295,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
 
     private void displayDisclaimer() {
-      experimentalGroupsCollection.addComponentAsFirst(noExperimentalVariablesDefined);
-    }
-
-    private void removeCreationCard() {
-      experimentalGroupsCollection.remove(experimentalGroupCreationCard);
+      contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
     }
 
     private void removeDisclaimer() {
-      experimentalGroupsCollection.remove(noExperimentalVariablesDefined);
+      contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
     }
 
     private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
