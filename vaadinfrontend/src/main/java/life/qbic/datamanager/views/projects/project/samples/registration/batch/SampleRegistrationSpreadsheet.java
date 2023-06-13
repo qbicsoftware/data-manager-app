@@ -411,42 +411,39 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
 
-      Cell analysisTypeCell = row.getCell(header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
-      Cell sampleLabelCell = row.getCell(header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL));
-      Cell replicateIDCell = row.getCell(header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID));
-      Cell conditionCell = row.getCell(header.indexOf(SamplesheetHeaderName.CONDITION));
-      Cell speciesCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIES));
-      Cell specimenCell = row.getCell(header.indexOf(SamplesheetHeaderName.SPECIMEN));
-      Cell analyteCell = row.getCell(header.indexOf(SamplesheetHeaderName.ANALYTE));
-      Cell commentCell = row.getCell(header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
+      String analysisTypeInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
+      String sampleLabelInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL));
+      String replicateIDInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID));
+      String conditionInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.CONDITION));
+      String speciesInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SPECIES));
+      String specimenInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SPECIMEN));
+      String analyteInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.ANALYTE));
+      String commentInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
 
       // we need to stream this list twice, so we use a supplier
-      Supplier<Stream<Cell>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeCell, sampleLabelCell,
-          replicateIDCell, conditionCell, speciesCell, specimenCell, analyteCell);
+      Supplier<Stream<String>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeInput,
+          sampleLabelInput,
+          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput);
 
-      // stop reading at the end of the fillable table (all cells null)
       if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
         break;
       }
-      if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.getStringCellValue().isEmpty())) {
-        String replicateID = replicateIDCell.getStringCellValue().trim();
-        String condition = conditionCell.getStringCellValue().trim();
-        String uniqueSampleString = replicateID+condition;
+
+      if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.isEmpty())) {
+        String uniqueSampleString = replicateIDInput+conditionInput;
         if(uniqueSamples.contains(uniqueSampleString)) {
           return Result.fromError(new SpreadsheetValidationException(
-              "Biological replicate Id "+replicateID+" was used multiple times for the same condition.", rowId));
+              "Biological replicate Id "+replicateIDInput+" was used multiple times for the same condition.", rowId));
         } else {
           ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
-              condition);
+              conditionInput);
           Long experimentalGroupId = experimentalGroup.id();
           BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(
-              replicateIDCell.getStringCellValue().trim(), conditionCell.getStringCellValue().trim());
-          rows.add(new NGSRowDTO(analysisTypeCell.getStringCellValue().trim(),
-              sampleLabelCell.getStringCellValue().trim(),
-              biologicalReplicateId,
-              experimentalGroupId,
-              speciesCell.getStringCellValue().trim(), specimenCell.getStringCellValue().trim(), analyteCell.getStringCellValue().trim(),
-              commentCell.getStringCellValue().trim()));
+              replicateIDInput, conditionInput);
+          rows.add(new NGSRowDTO(analysisTypeInput, sampleLabelInput,
+              biologicalReplicateId, experimentalGroupId,
+              speciesInput, specimenInput, analyteInput,
+              commentInput));
           uniqueSamples.add(uniqueSampleString);
         }
       } else {
@@ -456,6 +453,30 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
     }
     return Result.fromValue(rows);
+  }
+
+  private String parseAndTrimCellOfRow(Row row, int colId) {
+    Cell cell = row.getCell(colId);
+    if(cell==null) {
+      return null;
+    }
+    switch (cell.getCellType()) {
+      case STRING -> {
+        return cell.getStringCellValue().trim();
+      }
+      case NUMERIC -> {
+        double dbl = cell.getNumericCellValue();
+        if((dbl % 1) == 0) {
+          int integer = (int) Math.floor(dbl);
+          return Integer.toString(integer);
+        } else {
+          return Double.toString(dbl);
+        }
+      }
+      default -> {
+        return null;
+      }
+    }
   }
 
   private BiologicalReplicateId retrieveBiologicalReplicateId(String replicateLabel,

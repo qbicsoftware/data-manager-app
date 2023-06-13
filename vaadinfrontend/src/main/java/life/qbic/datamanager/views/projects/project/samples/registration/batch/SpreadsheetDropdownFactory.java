@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -45,12 +46,35 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         spreadsheet.refreshCells(cell);
       }
 
-      if (!dropdownItems.contains(cell.getStringCellValue())) {
+      if (!dropdownItems.contains(inputToString(cell))) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
     }
     return null;
+  }
+
+  private String inputToString(Cell cell) {
+    if(cell==null) {
+      return null;
+    }
+    switch (cell.getCellType()) {
+      case STRING -> {
+        return cell.getStringCellValue();
+      }
+      case NUMERIC -> {
+        double dbl = cell.getNumericCellValue();
+        if((dbl % 1) == 0) {
+          int integer = (int) Math.floor(dbl);
+          return Integer.toString(integer);
+        } else {
+          return Double.toString(dbl);
+        }
+      }
+      default -> {
+        return null;
+      }
+    }
   }
 
   @Override
