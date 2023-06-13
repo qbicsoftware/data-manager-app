@@ -37,7 +37,6 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -79,9 +78,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final DisclaimerCard addExperimentalVariablesNote;
 
 
-  public ExperimentDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
-    Objects.requireNonNull(projectInformationService);
+  public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
 
     this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
