@@ -166,7 +166,7 @@ public class ProjectCreationDialog extends Dialog {
   private void styleSearchBox() {
     offerSearchField.setMaxWidth(30, Unit.VW);
     offerSearchField.setPlaceholder("Search");
-    offerSearchField.setClassName("searchbox");
+    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
   }
 
   private void initProjectContactsLayout() {
