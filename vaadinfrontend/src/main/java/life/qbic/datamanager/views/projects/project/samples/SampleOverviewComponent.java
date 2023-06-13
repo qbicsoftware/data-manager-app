@@ -256,7 +256,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       Optional<Project> potentialProject = projectInformationService.find(projectId);
       if (potentialProject.isPresent()) {
         Project project = potentialProject.get();
-
         generateExperimentTabs(project);
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
@@ -316,10 +315,17 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
       for (Experiment experiment : foundExperiments) {
         sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-            .onValue(samples -> experimentToSampleDict.put(experiment, samples));
+            .onValue(samples -> {
+              if (samples.size() > 0) {
+                experimentToSampleDict.put(experiment, samples);
+              }
+            });
       }
-      addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
-      createExperimentTabs(experimentToSampleDict);
+      if (!experimentToSampleDict.isEmpty()) {
+        addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
+        createExperimentTabs(experimentToSampleDict);
+        showSamplesView();
+      }
     }
 
     private void resetTabSelect() {
