@@ -101,7 +101,7 @@ public class ExperimentalVariablesComponent extends Card {
     Div variableFactSheet = new Div();
     variableFactSheet.addClassName("experimental-variables-fact-sheet");
     Div headerSection = new Div();
-    Span variableName = new Span(experimentalVariable.name().value());
+    Span variableName = new Span(formatVariableName(experimentalVariable));
     headerSection.addClassName("variable-header");
     headerSection.add(variableName);
 
@@ -115,6 +115,13 @@ public class ExperimentalVariablesComponent extends Card {
     variableFactSheet.add(headerSection);
     variableFactSheet.add(variableValues);
     return variableFactSheet;
+  }
+
+  private static String formatVariableName(ExperimentalVariable experimentalVariable) {
+    var unit = experimentalVariable.levels().get(0).experimentalValue().unit();
+    return unit.map(s -> experimentalVariable.name().value() + " [" + s + "]")
+        .orElseGet(() -> experimentalVariable.name().value());
+
   }
 
   public static ExperimentalVariablesComponent create(
