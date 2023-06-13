@@ -5,11 +5,12 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Cancel Event</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Event that indicates that the user wants to cancel the current action
+ * associated with a component of type {@link T}</p>.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class CancelEvent<T extends Component> extends ComponentEvent<T> {
 
