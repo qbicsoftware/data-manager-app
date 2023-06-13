@@ -14,8 +14,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+
+;
 
 /**
  * <b>Sample Registration Dialog</b>

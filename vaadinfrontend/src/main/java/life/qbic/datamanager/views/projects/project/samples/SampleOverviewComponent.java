@@ -33,12 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.application.commons.Result;
 import java.util.Set;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -56,15 +55,15 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.slf4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -294,14 +293,14 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
 
-
     private void addEventListeners() {
       batchRegistrationDialog.addBatchRegistrationEventListener(batchRegistrationEvent -> {
         BatchRegistrationDialog batchRegistrationSource = batchRegistrationEvent.getSource();
         registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
-                batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
+            batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
+          showSamplesView();
         });
       });
       batchRegistrationDialog.addCancelEventListener(
@@ -411,26 +410,26 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
   }
 
-    private boolean isInSample(Sample sample, String searchTerm) {
-      boolean result = false;
-      for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
-        if (!descriptor.getName().equals("class")) {
-          try {
-            String value = descriptor.getReadMethod().invoke(sample).toString();
-            result |= matchesTerm(value, searchTerm);
-          } catch (IllegalAccessException | InvocationTargetException e) {
-            log.info("Could not invoke " + descriptor.getName()
-                + " getter when filtering samples. Ignoring property.");
-          }
+  private boolean isInSample(Sample sample, String searchTerm) {
+    boolean result = false;
+    for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
+      if (!descriptor.getName().equals("class")) {
+        try {
+          String value = descriptor.getReadMethod().invoke(sample).toString();
+          result |= matchesTerm(value, searchTerm);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          log.info("Could not invoke " + descriptor.getName()
+              + " getter when filtering samples. Ignoring property.");
         }
       }
-      return result;
     }
-
-    private boolean matchesTerm(String fieldValue, String searchTerm) {
-      return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
-    }
+    return result;
   }
+
+  private boolean matchesTerm(String fieldValue, String searchTerm) {
+    return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
+  }
+
 
   private class SampleExperimentTab extends Tab {
 
@@ -468,6 +467,5 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
       return badge;
     }
-
   }
 }
