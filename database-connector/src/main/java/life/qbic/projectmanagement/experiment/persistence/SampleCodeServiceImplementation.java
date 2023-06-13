@@ -59,7 +59,7 @@ public class SampleCodeServiceImplementation implements SampleCodeService {
         String.format("%s%03d", code.value(), remainderCounter(sampleNumber)) + letterForMille(
             sampleNumber);
     String sampleCodeWithChecksum = sampleCode + checksum(sampleCode);
-    return new SampleCode(sampleCodeWithChecksum);
+    return SampleCode.create(sampleCodeWithChecksum);
   }
 
   private static int remainderCounter(int sampleNumber) {

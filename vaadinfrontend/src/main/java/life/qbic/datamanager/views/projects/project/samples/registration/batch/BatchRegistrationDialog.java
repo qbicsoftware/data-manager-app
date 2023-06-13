@@ -13,11 +13,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
-import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
@@ -25,7 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
  *
  * <p>Component to register {@link Sample} with their associated metadata information</p>
  */
-public class SampleRegistrationDialog extends Dialog {
+public class BatchRegistrationDialog extends Dialog {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
@@ -33,11 +30,11 @@ public class SampleRegistrationDialog extends Dialog {
   private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
   private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
   private SampleSpreadsheetLayout sampleSpreadsheetLayout;
-  private final RegisterBatchDialogHandler registerBatchDialogHandler;
+  private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
-  public SampleRegistrationDialog(SampleRegistrationService sampleRegistrationService) {
+  public BatchRegistrationDialog() {
     setHeaderTitle(TITLE);
-    initSampleMetadataLayout(sampleRegistrationService);
+    initSampleRegistrationLayout();
     initTabStepper();
     styleStepper();
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
@@ -66,31 +63,44 @@ public class SampleRegistrationDialog extends Dialog {
     tabStepper.setClassName("minimal");
   }
 
-  private void initSampleMetadataLayout(SampleRegistrationService sampleRegistrationService) {
-    sampleSpreadsheetLayout = new SampleSpreadsheetLayout(sampleRegistrationService);
+  private void initSampleRegistrationLayout() {
+    sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   }
 
-  public void addSampleRegistrationEventListener(
-      ComponentEventListener<SampleRegistrationEvent> listener) {
-    registerBatchDialogHandler.addSampleRegistrationEventListener(listener);
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link BatchRegistrationEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
+  public void addBatchRegistrationEventListener(
+      ComponentEventListener<BatchRegistrationEvent> listener) {
+    registerBatchDialogHandler.addBatchRegistrationEventListener(listener);
   }
 
+  /**
+   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
+   * if an {@link UserCancelEvent} occurs within this Dialog
+   *
+   * @param listener The {@link ComponentEventListener} to be notified
+   */
   public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>> listener) {
+      ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
+  /**
+   * Resets the dialogue to its original state, removing all user input and changes and closes the
+   * dialog window
+   */
   public void resetAndClose() {
     registerBatchDialogHandler.resetAndClose();
   }
 
-  //ToDo Replace with values in Spreadsheet
-  public List<String> content() {
-    List<String> exampleBatch = new ArrayList<>(
-        List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
-    return exampleBatch;
-  }
-
+  /**
+   * Defines the currently active {@link Experiment} within the project from which the information
+   * will be derived in the {@link SampleRegistrationSpreadsheet}
+   */
   public void setActiveExperiment(Experiment experiment) {
     sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }
@@ -99,60 +109,75 @@ public class SampleRegistrationDialog extends Dialog {
 
     @Serial
     private static final long serialVersionUID = -2692766151162405263L;
-    private final List<ComponentEventListener<SampleRegistrationEvent>> listeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>>> cancelListeners = new ArrayList<>();
+    private final List<ComponentEventListener<BatchRegistrationEvent>> batchRegistrationListeners = new ArrayList<>();
+    private final List<ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
     public RegisterBatchDialogHandler() {
+      setNavigationListeners();
+      setSubmissionListeners();
       resetDialogueUponClosure();
-      setBatchInformationButtonsListeners();
-      setSampleRegistrationSubmission();
+    }
+
+    private void setNavigationListeners() {
+      batchInformationLayout.nextButton.addClickListener(
+          event -> tabStepper.setSelectedTab(sampleInformationTab));
       setTabSelectionListener();
     }
 
-    private void setBatchInformationButtonsListeners() {
-      batchInformationLayout.nextButton.addClickListener(
-          event -> tabStepper.setSelectedTab(sampleInformationTab));
-      batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(SampleRegistrationDialog.this))));
-    }
-
-    private void setSampleRegistrationSubmission() {
-      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
-        if (isInputValid()) {
-          listeners.forEach(listener -> listener.onComponentEvent(
-              new SampleRegistrationEvent(SampleRegistrationDialog.this, true)));
+    private void setTabSelectionListener() {
+      tabStepper.addSelectedChangeListener(event -> {
+        if (event.getSelectedTab() == sampleInformationTab) {
+          if (batchInformationLayout.isInputValid()) {
+            generateSampleRegistrationLayout();
+            tabStepper.setSelectedTab(event.getSelectedTab());
+          } else {
+            tabStepper.setSelectedTab(event.getPreviousTab());
+          }
         }
       });
+    }
+
+    private void generateSampleRegistrationLayout() {
+      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+          batchInformationLayout.dataTypeSelection.getValue());
+    }
+
+    private void setSubmissionListeners() {
+      setCancelSubmission();
+      setBatchRegistrationSubmission();
+    }
+
+    private void setCancelSubmission() {
+      batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
+          listener -> listener.onComponentEvent(
+              new UserCancelEvent<>(BatchRegistrationDialog.this))));
       sampleSpreadsheetLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
           listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(SampleRegistrationDialog.this))));
+              new UserCancelEvent<>(BatchRegistrationDialog.this))));
+    }
+
+    private void setBatchRegistrationSubmission() {
+      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
+        if (isInputValid()) {
+          batchRegistrationListeners.forEach(listener -> listener.onComponentEvent(
+              new BatchRegistrationEvent(BatchRegistrationDialog.this, true)));
+        }
+      });
     }
 
     protected boolean isInputValid() {
       return batchInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
     }
 
-    private void setTabSelectionListener() {
-      tabStepper.addSelectedChangeListener(event -> {
-        if (event.getSelectedTab() == sampleInformationTab
-            && batchInformationLayout.isInputValid()) {
-          sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-              batchInformationLayout.dataTypeSelection.getValue());
-          sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-        } else {
-          tabStepper.setSelectedTab(batchInformationTab);
-        }
-      });
-    }
 
-    public void addSampleRegistrationEventListener(
-        ComponentEventListener<SampleRegistrationEvent> listener) {
-      this.listeners.add(listener);
+    public void addBatchRegistrationEventListener(
+        ComponentEventListener<BatchRegistrationEvent> listener) {
+      this.batchRegistrationListeners.add(listener);
     }
 
     public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<SampleRegistrationDialog>> listener) {
+        ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
       this.cancelListeners.add(listener);
     }
 
@@ -172,5 +197,13 @@ public class SampleRegistrationDialog extends Dialog {
       addDialogCloseActionListener(closeActionEvent -> resetAndClose());
     }
 
+  }
+
+  public BatchRegistrationContent batchRegistrationContent() {
+    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(), false);
+  }
+
+  public List<SampleRegistrationContent> sampleRegistrationContent() {
+    return sampleSpreadsheetLayout.getContent();
   }
 }
