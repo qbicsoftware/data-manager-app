@@ -1,14 +1,10 @@
 package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
-import life.qbic.projectmanagement.domain.project.repository.BatchRepository
 import life.qbic.projectmanagement.domain.project.sample.BatchId
 import life.qbic.projectmanagement.domain.project.sample.SampleId
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered
-import org.hibernate.engine.jdbc.batch.spi.Batch
-import org.jobrunr.scheduling.JobScheduler
 import spock.lang.Specification
 
 /**

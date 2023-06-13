@@ -37,12 +37,15 @@ public class BatchRegistrationService {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
       return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
-    }
-    searchResult.ifPresent(batch -> {
+    } else {
+      Batch batch = searchResult.get();
       batch.addSample(sampleId);
-      batchRepository.update(batch);
-    });
-    return Result.fromValue(batchId);
+      var result = batchRepository.update(batch);
+      if (result.isError()) {
+        return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
+      }
+      return Result.fromValue(batch.batchId());
+    }
   }
 
   public enum ResponseCode {

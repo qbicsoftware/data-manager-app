@@ -1,16 +1,19 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.List;
-import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
+import life.qbic.projectmanagement.domain.project.sample.SampleCode;
 import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Sample Registration Service
@@ -20,79 +23,49 @@ import org.springframework.stereotype.Service;
 @Service
 public class SampleRegistrationService {
 
-  private final SampleRepository sampleRepository;
+    private final SampleCodeService sampleCodeService;
+    private final SampleDomainService sampleDomainService;
 
-  private final SampleCodeService sampleCodeService;
-
-  private final SampleDomainService sampleDomainService;
-
-  @Autowired
-  public SampleRegistrationService(SampleRepository sampleRepository,
-      SampleCodeService sampleCodeService, SampleDomainService sampleDomainService) {
-    this.sampleRepository = Objects.requireNonNull(sampleRepository);
-    this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
-    this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
-  }
-
-  public List<SamplesheetHeaderName> retrieveProteomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
-        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveLigandomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
-        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveMetabolomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL, SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
-        SamplesheetHeaderName.CONDITION, SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveGenomics() {
-    return List.of(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
-        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
-        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN, SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public Result<Sample, ResponseCode> registerSample(
-      SampleRegistrationRequest sampleRegistrationRequest, ProjectId projectId) {
-    var result = sampleCodeService.generateFor(projectId);
-    if (result.isError()) {
-      return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
+    @Autowired
+    public SampleRegistrationService(SampleCodeService sampleCodeService,
+                                     SampleDomainService sampleDomainService) {
+        this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
+        this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
     }
-    var registration = sampleDomainService.registerSample(result.getValue(), sampleRegistrationRequest);
-    if (registration.isValue()) {
-      return Result.fromValue(registration.getValue());
+
+    public Result<Sample, ResponseCode> registerSample(SampleRegistrationRequest sampleRegistrationRequest, ProjectId projectId) {
+        Objects.requireNonNull(sampleRegistrationRequest);
+        Objects.requireNonNull(projectId);
+        var sampleCode = sampleCodeService.generateFor(projectId);
+        if (sampleCode.isError()) {
+            return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
+        }
+        var result = sampleDomainService.registerSample(sampleCode.getValue(), sampleRegistrationRequest);
+        if (result.isError()) {
+            return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
+        }
+        return Result.fromValue(result.getValue());
     }
-    return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
-  }
 
-  public enum ResponseCode {
-    SAMPLE_REGISTRATION_FAILED
-  }
+    public Result<Collection<Sample>, ResponseCode> registerSamples(
+            Collection<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
+        Objects.requireNonNull(sampleRegistrationRequests);
+        Objects.requireNonNull(projectId);
+        if (sampleRegistrationRequests.size() < 1) {
+            return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
+        }
+        Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>();
+        sampleRegistrationRequests.forEach(sampleRegistrationRequest -> sampleCodeService.generateFor(projectId)
+                .onValue(sampleCode -> sampleCodesToRegistrationRequests.put(sampleCode, sampleRegistrationRequest))
+                .onError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED)));
+        var result = sampleDomainService.registerSamples(sampleCodesToRegistrationRequests);
+        return result.onValue(Result::fromValue).flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
 
-  /**
-   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers of the different columns of the {@link life.qbic.datamanager.views.projects.project.samples.batchRegistration.SampleSpreadsheetLayout} for different technologies
-   *
-   * @since 1.0.0
-   */
-  public enum SamplesheetHeaderName {
-    SEQ_ANALYSIS_TYPE("Analysis to be performed"),
-    SAMPLE_LABEL("Sample label"),
-    BIOLOGICAL_REPLICATE_ID("Biological replicate id"),
-    CONDITION("Condition"),
-    SPECIES("Species"),
-    SPECIMEN("Specimen"),
-    CUSTOMER_COMMENT("Customer comment");
-    public final String label;
-
-    SamplesheetHeaderName(String label) {
-      this.label = label;
     }
-  }
+
+    public enum ResponseCode {
+        SAMPLE_REGISTRATION_FAILED,
+        NO_SAMPLES_DEFINED
+    }
 
 }
