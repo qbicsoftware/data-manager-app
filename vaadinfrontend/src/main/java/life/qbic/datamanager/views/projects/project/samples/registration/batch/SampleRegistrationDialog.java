@@ -82,13 +82,6 @@ public class SampleRegistrationDialog extends Dialog {
     registerBatchDialogHandler.resetAndClose();
   }
 
-  //ToDo Replace with values in Spreadsheet
-  public List<String> content() {
-    List<String> exampleBatch = new ArrayList<>(
-        List.of("SampleInfo1", "SampleInfo2", "SampleInfo3"));
-    return exampleBatch;
-  }
-
   public void setActiveExperiment(Experiment experiment) {
     sampleSpreadsheetLayout.setActiveExperiment(experiment);
   }

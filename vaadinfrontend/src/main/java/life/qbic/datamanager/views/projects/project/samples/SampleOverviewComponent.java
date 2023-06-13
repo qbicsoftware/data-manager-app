@@ -172,7 +172,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     sampleGrid.addColumn(sample -> sample.sampleOrigin().getAnalyte().value()).setHeader("Analyte");
     //ToDo Replace with Experimental Group information
     sampleGrid.addColumn(Sample::getExperimentalGroupId).setHeader("Experimental Group Id");
-    ;
     //ToDo make this virtual list with data Providers and implement lazy loading?
     return sampleGrid;
   }
@@ -269,9 +268,8 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
-        if (potentialExperiment.isPresent()) {
-          sampleRegistrationDialog.setActiveExperiment(potentialExperiment.get());
-        }
+        potentialExperiment.ifPresent(
+            experiment -> sampleRegistrationDialog.setActiveExperiment(experiment));
       }
     }
 
