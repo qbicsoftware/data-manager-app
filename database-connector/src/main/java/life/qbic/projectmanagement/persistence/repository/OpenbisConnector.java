@@ -90,7 +90,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     criteria.withVocabulary().withCode().thatEquals(vocabularyCode.openbisCode());
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
-    openBisClient.ensureLoggedIn();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm> searchResult =
         openBisClient.getV3()
             .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
@@ -105,7 +104,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     criteria.withCode().thatEquals(code);
 
     ProjectFetchOptions options = new ProjectFetchOptions();
-    openBisClient.ensureLoggedIn();
     SearchResult<Project> searchResult =
         openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
 
@@ -161,7 +159,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
-    openBisClient.ensureLoggedIn();
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
     List<IOperation> operationOptions = Collections.singletonList(operation);
     try {
