@@ -18,7 +18,6 @@ public class SupportArea extends PageArea {
   private static final long serialVersionUID = 8725002232001994549L;
 
   public SupportArea() {
-    super();
     this.addClassName("support-area");
   }
 

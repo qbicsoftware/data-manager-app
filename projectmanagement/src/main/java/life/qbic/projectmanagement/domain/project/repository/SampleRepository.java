@@ -24,6 +24,8 @@ public interface SampleRepository {
    */
   Result<Sample, ResponseCode> add(Sample sample);
 
+  Result<Collection<Sample>, ResponseCode> addAll(Collection<Sample> sample);
+
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
       ExperimentId experimentId);
 }

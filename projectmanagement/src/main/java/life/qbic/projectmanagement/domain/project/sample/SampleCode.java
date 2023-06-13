@@ -4,7 +4,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
-
 /**
  * The sample code of a sample.
  * <li> Must not be empty or null
