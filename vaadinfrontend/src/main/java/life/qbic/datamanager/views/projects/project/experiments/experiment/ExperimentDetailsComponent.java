@@ -27,7 +27,6 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.datamanager.views.general.DisclaimerCard;
-import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -80,7 +79,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
-      "Add more experimental groups");
+      "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
 
 
@@ -221,10 +220,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     experimentInformationService.deleteExperimentGroup(experimentId,
         experimentalGroupDeletionEvent.getSource().groupId());
     experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
-  }
-
-  private void handleEvent(DisclaimerConfirmedEvent disclaimerConfirmedEvent) {
-    experimentSheet.setSelectedIndex(0);
   }
 
   private void addConfirmListenerForAddVariableDialog() {

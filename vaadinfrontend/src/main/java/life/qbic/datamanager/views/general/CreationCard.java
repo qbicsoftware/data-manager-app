@@ -3,15 +3,11 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import org.atmosphere.interceptor.AtmosphereResourceStateRecovery.B;
 
 /**
  * <b>Creation Card</b>
