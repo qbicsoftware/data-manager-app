@@ -89,4 +89,21 @@ public class Sample {
   public SampleCode sampleCode() {
     return this.sampleCode;
   }
+
+  public SampleOrigin sampleOrigin() {
+    return this.sampleOrigin;
+  }
+
+  public String label() {
+    return this.label;
+  }
+
+  public Long getExperimentalGroupId() {
+    return this.experimentalGroupId;
+  }
+
+  public BiologicalReplicateId getBiologicalReplicateId() {
+    return this.biologicalReplicateId;
+  }
+
 }

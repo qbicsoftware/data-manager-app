@@ -27,25 +27,29 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
-import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.slf4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,48 +159,52 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     buttonAndFieldBar.setWidthFull();
   }
 
-  private void createSampleTabs(Map<Experiment, Collection<Sample>> experimentSamples) {
+  private Grid<Sample> createSampleGrid() {
+    Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
+    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id");
+    sampleGrid.addColumn(Sample::label).setHeader("Sample Label");
+    sampleGrid.addColumn(sample -> sample.assignedBatch().value()).setHeader("Batch");
+    sampleGrid.addColumn(sample -> sample.getBiologicalReplicateId().id())
+        .setHeader("Sample Source");
+    sampleGrid.addColumn(sample -> sample.sampleOrigin().getSpecies().value()).setHeader("Species");
+    sampleGrid.addColumn(sample -> sample.sampleOrigin().getSpecimen().value())
+        .setHeader("Specimen");
+    sampleGrid.addColumn(sample -> sample.sampleOrigin().getAnalyte().value()).setHeader("Analyte");
+    //ToDo Replace with Experimental Group information
+    sampleGrid.addColumn(Sample::getExperimentalGroupId).setHeader("Experimental Group Id");
+    ;
+    //ToDo make this virtual list with data Providers and implement lazy loading?
+    return sampleGrid;
+  }
+
+  private void createExperimentTabs(Map<Experiment, Collection<Sample>> experimentSamples) {
     experimentSamples.forEach((experiment, samples) -> {
-      Span experimentName = new Span(experiment.getName());
-      Tab experimentSampleTab = new Tab(experimentName);
-      //Todo How to provide information from different services in the vaadin grid?
-      Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
-      sampleGrid.addColumn(createSampleIdComponentRenderer()).setComparator(Sample::id)
-          .setHeader("Sample Id");
-      sampleGrid.addColumn(Sample::label, "label").setHeader("Sample Label");
-      sampleGrid.addColumn(Sample::batch, "batch").setHeader("Batch");
-      sampleGrid.addColumn(createSampleStatusComponentRenderer()).setComparator(Sample::status)
-          .setHeader("Status");
-      sampleGrid.addColumn(Sample::experiment, "experiment").setHeader("Experiment");
-      sampleGrid.addColumn(Sample::source, "source").setHeader("Sample Source");
-      sampleGrid.addColumn(Sample::condition1, "condition1").setHeader("Brushing Time");
-      sampleGrid.addColumn(Sample::condition2, "condition2").setHeader("Tooth Paste");
-      sampleGrid.addColumn(Sample::species, "species").setHeader("Species");
-      sampleGrid.addColumn(Sample::specimen, "specimen").setHeader("Specimen");
-      //ToDo make this virtual list with data Providers and implement lazy loading?
+      SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
+          samples.size());
+      Grid<Sample> sampleGrid = createSampleGrid();
+      generateConditionColumnHeaders(experiment);
       GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
       sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
           sampleGridDataView);
+      sampleExperimentTabSheet.add(experimentTab, sampleGrid);
       //Update Number count in tab if user searches for value
-      sampleGridDataView.addItemCountChangeListener(event -> {
-        Span sampleCount = new Span(createBadge(sampleGridDataView.getItemCount()));
-        experimentSampleTab.removeAll();
-        experimentSampleTab.add(experimentName, sampleCount);
-      });
-      sampleExperimentTabSheet.add(experimentSampleTab, sampleGrid);
+      sampleGridDataView.addItemCountChangeListener(
+          event -> experimentTab.setSampleCount(event.getItemCount()));
     });
   }
 
-  /**
-   * Helper method for creating a badge.
-   */
-  private Span createBadge(int numberOfSamples) {
-    Span badge = new Span(String.valueOf(numberOfSamples));
-    badge.getElement().getThemeList().add("badge small contrast");
-    badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
-    return badge;
+  private List<String> generateConditionColumnHeaders(Experiment experiment) {
+    Set<String> uniqueVariableNames = new HashSet<>();
+    for (ExperimentalGroup experimentalGroup : experiment.getExperimentalGroups()) {
+      for (VariableLevel level : experimentalGroup.condition().getVariableLevels()) {
+        uniqueVariableNames.add(level.variableName().value());
+      }
+    }
+    return uniqueVariableNames.stream().toList();
   }
 
+
+  /*
   private static ComponentRenderer<Span, Sample> createSampleStatusComponentRenderer() {
     return new ComponentRenderer<>(Span::new, styleSampleStatusSpan);
   }
@@ -217,16 +225,17 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       return "badge ";
     }
   }
-
+*/
   private static ComponentRenderer<Anchor, Sample> createSampleIdComponentRenderer() {
     return new ComponentRenderer<>(Anchor::new, styleSampleIdAnchor);
   }
 
   private static final SerializableBiConsumer<Anchor, Sample> styleSampleIdAnchor = (anchor, sample) -> {
     //ToDo maybe the projectId could be read from the UI URL?
-    String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(), sample.id());
+    String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(),
+        sample.sampleId().value());
     anchor.setHref(anchorURL);
-    anchor.setText(sample.id());
+    anchor.setText(sample.sampleCode().code());
   };
 
   public void setStyles(String... componentStyles) {
@@ -253,14 +262,14 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
       Optional<Project> potentialProject = projectInformationService.find(projectId);
-      if(potentialProject.isPresent()) {
+      if (potentialProject.isPresent()) {
         Project project = potentialProject.get();
 
         generateExperimentTabs(project);
 
         Optional<Experiment> potentialExperiment = experimentInformationService.find(
             project.activeExperiment());
-        if(potentialExperiment.isPresent()) {
+        if (potentialExperiment.isPresent()) {
           sampleRegistrationDialog.setActiveExperiment(potentialExperiment.get());
         }
       }
@@ -278,10 +287,11 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     private void registerSamplesListener() {
       registerBatchButton.addClickListener(event -> {
-        if(hasExperimentalGroupsDefined()) {
+        if (hasExperimentalGroupsDefined()) {
           sampleRegistrationDialog.open();
         } else {
-          InformationMessage infoMessage = new InformationMessage("No experimental groups are defined",
+          InformationMessage infoMessage = new InformationMessage(
+              "No experimental groups are defined",
               "You need to define experimental groups before adding samples.");
           StyledNotification notification = new StyledNotification(infoMessage);
           notification.open();
@@ -290,6 +300,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       //ToDo Replace with received samples from SampleInformationService
       showEmptyViewButton.addClickListener(event -> showEmptyView());
     }
+
 
     private void configureBatchRegistrationDialog() {
       sampleRegistrationDialog.addSampleRegistrationEventListener(event -> {
@@ -307,21 +318,21 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
           .ifPresent(foundExperiments::add));
       Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
-      //ToDo retrieve sample information as soon as it's clear how they are linked
       for (Experiment experiment : foundExperiments) {
-        experimentToSampleDict.put(experiment,
-            sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId()));
+        sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+            .onValue(samples -> experimentToSampleDict.put(experiment, samples));
       }
       addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
-      createSampleTabs(experimentToSampleDict);
-    }
-
-    private void resetTabSheet() {
-      sampleExperimentTabSheet.getChildren().toList().forEach(sampleExperimentTabSheet::remove);
+      createExperimentTabs(experimentToSampleDict);
     }
 
     private void resetTabSelect() {
       tabFilterSelect.removeAll();
+    }
+
+    private void resetTabSheet() {
+      sampleExperimentTabSheet.getChildren()
+          .forEach(component -> component.getElement().removeAllChildren());
     }
 
     private void showEmptyView() {
@@ -352,25 +363,65 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
         }
       });
     }
-  }
 
-  private boolean isInSample(Sample sample, String searchTerm) {
-    boolean result = false;
-    for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
-      if (!descriptor.getName().equals("class")) {
-        try {
-          String value = descriptor.getReadMethod().invoke(sample).toString();
-          result |= matchesTerm(value, searchTerm);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          log.info("Could not invoke " + descriptor.getName()
-              + " getter when filtering samples. Ignoring property.");
+
+    private boolean isInSample(Sample sample, String searchTerm) {
+      boolean result = false;
+      for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
+        if (!descriptor.getName().equals("class")) {
+          try {
+            String value = descriptor.getReadMethod().invoke(sample).toString();
+            result |= matchesTerm(value, searchTerm);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            log.info("Could not invoke " + descriptor.getName()
+                + " getter when filtering samples. Ignoring property.");
+          }
         }
       }
+      return result;
     }
-    return result;
+
+    private boolean matchesTerm(String fieldValue, String searchTerm) {
+      return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
+    }
   }
 
-  private boolean matchesTerm(String fieldValue, String searchTerm) {
-    return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
+  private class SampleExperimentTab extends Tab {
+
+    private final Span sampleCountComponent;
+    private final Span experimentNameComponent;
+
+    public SampleExperimentTab(String experimentName, int sampleCount) {
+      this.experimentNameComponent = new Span(experimentName);
+      this.sampleCountComponent = createBadge(sampleCount);
+      this.add(experimentNameComponent, sampleCountComponent);
+    }
+
+    public String getExperimentName() {
+      return experimentNameComponent.getText();
+    }
+
+    public void setExperimentName(String experimentName) {
+      experimentNameComponent.setText(experimentName);
+    }
+
+    public int getSampleCount() {
+      return Integer.parseInt(sampleCountComponent.getText());
+    }
+
+    public void setSampleCount(int sampleCount) {
+      sampleCountComponent.setText(Integer.toString(sampleCount));
+    }
+
+    /**
+     * Helper method for creating a badge.
+     */
+    private Span createBadge(int numberOfSamples) {
+      Span badge = new Span(String.valueOf(numberOfSamples));
+      badge.getElement().getThemeList().add("badge small contrast");
+      badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
+      return badge;
+    }
+
   }
 }

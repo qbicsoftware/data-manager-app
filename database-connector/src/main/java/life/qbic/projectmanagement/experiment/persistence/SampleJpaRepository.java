@@ -2,13 +2,18 @@ package life.qbic.projectmanagement.experiment.persistence;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Collection;
+import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.SampleInformationService;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+
 
 /**
  * <b>Sample JPA Repository</b>
@@ -38,5 +43,20 @@ public class SampleJpaRepository implements SampleRepository {
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     return Result.fromValue(sample);
+  }
+
+  @Override
+  public Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
+      ExperimentId experimentId) {
+    Objects.requireNonNull(experimentId);
+    Collection<Sample> samples;
+    try {
+      samples = qbicSampleRepository.findAllByExperimentId(experimentId);
+    } catch (Exception e) {
+      log.error(
+          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e);
+      return Result.fromError(SampleInformationService.ResponseCode.SAMPLES_NOT_FOUND);
+    }
+    return Result.fromValue(samples);
   }
 }

@@ -13,17 +13,15 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
  * <b>Sample Registration Dialog</b>
  *
- * <p>Component to register {@link Sample} with their associated metadata information</p>
+ * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
+ * their associated metadata information</p>
  */
 public class SampleRegistrationDialog extends Dialog {
 
