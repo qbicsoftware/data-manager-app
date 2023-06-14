@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,12 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -38,7 +33,6 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.hibernate.validator.internal.constraintvalidators.hv.ru.INNValidator;
 
 /**
  * <class short description - One Line!>
@@ -166,7 +160,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
 
       Cell newCell = this.getCell(lastRowIndex, columnIndex);
-      boolean hasData = !this.isCellEmpty(newCell);
+      boolean hasData = !this.isCellUnused(newCell);
       boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex) != null;
       //cells need to be unlocked if they have no data/dropdown
       if (!hasData && !hasDropdown) {
@@ -269,7 +263,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
     unLockedStyle.setLocked(false);
     for (int row = 1; row <= maxRow; row++) {
-      if (isCellEmpty(spreadsheet.getCell(row, column))) {
+      if (isCellUnused(spreadsheet.getCell(row, column))) {
         Cell cell = spreadsheet.createCell(row, column, "");
         cell.setCellStyle(unLockedStyle);
         cells.add(cell);
@@ -278,7 +272,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     spreadsheet.refreshCells(cells);
   }
 
-  boolean isCellEmpty(Cell cell) {
+  //an unused cell is either null or empty (not blank)
+  private boolean isCellUnused(Cell cell) {
     return cell == null || cell.getStringCellValue().isEmpty();
   }
 
@@ -431,7 +426,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         break;
       }
 
-      if(mandatoryCellList.stream().noneMatch(x -> x.isEmpty())) {
+      if(mandatoryCellList.stream().noneMatch(x -> x.isBlank())) {
         String uniqueSampleString = replicateIDInput+conditionInput;
         if(uniqueSamples.contains(uniqueSampleString)) {
           return Result.fromError(new InvalidSpreadsheetRow(
