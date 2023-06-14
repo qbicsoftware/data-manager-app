@@ -4,8 +4,11 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.apache.poi.ss.usermodel.Cell;
 
-class SpreadsheetMethods {
+final class SpreadsheetMethods {
 
+  private SpreadsheetMethods() {
+
+  }
   private static final Logger log = LoggerFactory.logger(SpreadsheetMethods.class);
 
   /**

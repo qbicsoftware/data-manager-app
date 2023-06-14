@@ -479,7 +479,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public record NGSRowDTO(String analysisType, String sampleLabel,
                           BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
-                          String customerComment) {}
+                          String customerComment) {
+    
+  }
 
   /**
    * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
