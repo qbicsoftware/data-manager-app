@@ -65,7 +65,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       case NUMERIC -> {
         double dbl = cell.getNumericCellValue();
         if((dbl % 1) == 0) {
-          int integer = (int) Math.floor(dbl);
+          int integer = (int) dbl;
           return Integer.toString(integer);
         } else {
           return Double.toString(dbl);
