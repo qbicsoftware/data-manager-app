@@ -121,20 +121,20 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     private boolean isInputValid() {
       Result<List<NGSRowDTO>, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.getFilledRows();
-      if(content.isError()) {
-        InformationMessage infoMessage = new InformationMessage(
-            "Incomplete or erroneous metadata found",
-            content.getError().getInvalidationReason());
-        StyledNotification notification = new StyledNotification(infoMessage);
-        // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
-        notification.addAttachListener(
-            (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
-        notification.addDetachListener(
-            (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
-        notification.open();
-        return false;
-      }
-      return true;
+      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason())).isValue();
+    }
+
+    private void displayInputInvalidMessage(String invalidationReason) {
+      InformationMessage infoMessage = new InformationMessage(
+          "Incomplete or erroneous metadata found",
+          invalidationReason);
+      StyledNotification notification = new StyledNotification(infoMessage);
+      // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
+      notification.addAttachListener(
+          (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
+      notification.addDetachListener(
+          (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
+      notification.open();
     }
 
     private List<SampleRegistrationContent> getContent() {
