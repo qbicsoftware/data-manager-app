@@ -19,12 +19,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -49,6 +47,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   @Serial
   private static final long serialVersionUID = 573778360298068552L;
+  private static final Logger log = LoggerFactory.logger(SampleRegistrationSpreadsheet.class);
+
   private SpreadsheetDropdownFactory dropdownCellFactory;
   private List<SamplesheetHeaderName> header;
   private static List<String> species;
@@ -474,6 +474,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         }
       }
       default -> {
+        log.debug("Cell with type "+cell.getCellType()+ " was not handled.");
         return null;
       }
     }
