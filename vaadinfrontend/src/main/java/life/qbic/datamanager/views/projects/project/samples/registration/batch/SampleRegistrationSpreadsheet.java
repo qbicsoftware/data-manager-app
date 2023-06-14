@@ -37,6 +37,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.hibernate.validator.internal.constraintvalidators.hv.ru.INNValidator;
 
 /**
  * <class short description - One Line!>
@@ -407,7 +408,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public Result<List<NGSRowDTO>, SpreadsheetValidationException> getFilledRows() {
+  public Result<List<NGSRowDTO>, InvalidSpreadsheetRow> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
     Set<String> uniqueSamples = new HashSet<>();
     for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
@@ -434,8 +435,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.isEmpty())) {
         String uniqueSampleString = replicateIDInput+conditionInput;
         if(uniqueSamples.contains(uniqueSampleString)) {
-          return Result.fromError(new SpreadsheetValidationException(
-              "Biological replicate Id "+replicateIDInput+" was used multiple times for the same condition.", rowId));
+          return Result.fromError(new InvalidSpreadsheetRow(
+              SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
         } else {
           ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
               conditionInput);
@@ -449,8 +450,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           uniqueSamples.add(uniqueSampleString);
         }
       } else {
-        return Result.fromError(new SpreadsheetValidationException(
-            "Missing mandatory fields.", rowId));
+        return Result.fromError(new InvalidSpreadsheetRow(
+            SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
       }
 
     }
@@ -516,21 +517,50 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
-  public static class SpreadsheetValidationException extends ApplicationException {
-
-    @Serial
-    private static final long serialVersionUID = 3532483874741500810L;
+  public static class InvalidSpreadsheetRow {
 
     private final int invalidRow;
+    private final SpreadsheetInvalidationReason reason;
+    private final String additionalInfo;
 
-    SpreadsheetValidationException(String message, int invalidRow) {
-      super(message);
+    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow, String additionalInfo) {
+      this.reason = reason;
       this.invalidRow = invalidRow;
+      this.additionalInfo = additionalInfo;
     }
 
-    public int getInvalidRow() {
-      return invalidRow;
+    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow) {
+      this(reason, invalidRow, "");
     }
+
+    /**
+     * Returns a String mentioning the invalid row of the spreadsheet and the reason
+     * why it is invalid. If this object was created with additional information on
+     * the reason, it is added.
+     *
+     * @return String stating row and reason for the row being invalid
+     */
+    public String getInvalidationReason() {
+      String message = "";
+      switch (reason) {
+        case MISSING_INPUT -> {
+          message = "Mandatory information missing in row "+ invalidRow+".";
+        }
+        case DUPLICATE_ID -> {
+          message = "Biological replicate Id was used multiple times for the "
+              + "same condition in row "+invalidRow+".";
+        }
+      }
+      if(!additionalInfo.isEmpty()) {
+        message += " "+additionalInfo;
+      }
+
+      return "";
+    }
+  }
+
+  enum SpreadsheetInvalidationReason {
+    MISSING_INPUT, DUPLICATE_ID;
   }
 
 }

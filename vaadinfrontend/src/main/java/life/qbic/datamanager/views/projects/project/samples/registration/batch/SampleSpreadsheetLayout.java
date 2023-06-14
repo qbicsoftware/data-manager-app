@@ -10,7 +10,6 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.io.Serial;
 import java.io.Serializable;
@@ -19,8 +18,8 @@ import java.util.List;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetRow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SpreadsheetValidationException;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
@@ -121,11 +120,11 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private boolean isInputValid() {
-      Result<List<NGSRowDTO>, SpreadsheetValidationException> content = sampleRegistrationSpreadsheet.getFilledRows();
+      Result<List<NGSRowDTO>, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.getFilledRows();
       if(content.isError()) {
         InformationMessage infoMessage = new InformationMessage(
             "Incomplete or erroneous metadata found",
-            content.getError().getMessage() + " Row: "+content.getError().getInvalidRow());
+            content.getError().getInvalidationReason());
         StyledNotification notification = new StyledNotification(infoMessage);
         // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
         notification.addAttachListener(
@@ -139,7 +138,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private List<SampleRegistrationContent> getContent() {
-      Result<List<NGSRowDTO>, SpreadsheetValidationException> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
+      Result<List<NGSRowDTO>, InvalidSpreadsheetRow> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
       filledRows.getValue().forEach(row -> {
         SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
