@@ -74,7 +74,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private void styleSampleRegistrationSpreadSheet() {
     sampleRegistrationSpreadsheet.setSizeFull();
-    sampleRegistrationSpreadsheet.setSheetSelectionBarVisible(true);
+    sampleRegistrationSpreadsheet.setSheetSelectionBarVisible(false);
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
 

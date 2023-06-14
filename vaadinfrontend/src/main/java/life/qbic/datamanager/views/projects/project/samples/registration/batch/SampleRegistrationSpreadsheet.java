@@ -480,7 +480,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
                           BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
                           String customerComment) {
-    
+
   }
 
   /**
