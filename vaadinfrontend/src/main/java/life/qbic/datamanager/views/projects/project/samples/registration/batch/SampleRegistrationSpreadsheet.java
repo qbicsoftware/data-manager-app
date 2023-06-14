@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -423,16 +424,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       String analyteInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.ANALYTE));
       String commentInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
 
-      // we need to stream this list twice, so we use a supplier
-      Supplier<Stream<String>> mandatoryCellStreamSupplier = () -> Stream.of(analysisTypeInput,
-          sampleLabelInput,
-          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput);
+      List<String> mandatoryCellList = new ArrayList<>(Arrays.asList(analysisTypeInput, sampleLabelInput,
+          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput));
 
-      if (mandatoryCellStreamSupplier.get().anyMatch(Objects::isNull)) {
+      if (mandatoryCellList.stream().anyMatch(Objects::isNull)) {
         break;
       }
 
-      if(mandatoryCellStreamSupplier.get().noneMatch(x -> x.isEmpty())) {
+      if(mandatoryCellList.stream().noneMatch(x -> x.isEmpty())) {
         String uniqueSampleString = replicateIDInput+conditionInput;
         if(uniqueSamples.contains(uniqueSampleString)) {
           return Result.fromError(new InvalidSpreadsheetRow(
