@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -130,11 +132,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private List<String> getReplicateLabels() {
-    List<String> replicateLabels = new ArrayList<>();
+    Set<String> replicateLabels = new TreeSet<>();
     for (List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
       replicateLabels.addAll(replicates.stream().map(BiologicalReplicate::label).toList());
     }
-    return replicateLabels.stream().distinct().toList();
+    return replicateLabels.stream().toList();
   }
 
   /**
