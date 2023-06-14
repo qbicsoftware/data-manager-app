@@ -26,14 +26,13 @@ import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -185,20 +184,8 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     return sampleGrid;
   }
 
-  private void createExperimentTabs(Map<Experiment, Collection<Sample>> experimentSamples) {
-    experimentSamples.forEach((experiment, samples) -> {
-      SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
-          samples.size());
-      Grid<Sample> sampleGrid = createSampleGrid();
-      generateConditionColumnHeaders(experiment);
-      GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
-      sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
-          sampleGridDataView);
-      sampleExperimentTabSheet.add(experimentTab, sampleGrid);
-      //Update Number count in tab if user searches for value
-      sampleGridDataView.addItemCountChangeListener(
-          event -> experimentTab.setSampleCount(event.getItemCount()));
-    });
+  private void createExperimentTab(Experiment experiment, Collection<Sample> samples) {
+
   }
 
   private List<String> generateConditionColumnHeaders(Experiment experiment) {
@@ -234,7 +221,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final SampleRegistrationService sampleRegistrationService;
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
-    private ExperimentId experimentId;
 
     //ToDo Replace with Call to service
     private final Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
@@ -255,38 +241,36 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      Optional<Project> potentialProject = projectInformationService.find(projectId);
-      if (potentialProject.isPresent()) {
-        Project project = potentialProject.get();
-        generateExperimentTabs(project);
-        Optional<Experiment> potentialExperiment = experimentInformationService.find(
-            project.activeExperiment());
-        potentialExperiment.ifPresent(experiment -> {
-          batchRegistrationDialog.setActiveExperiment(experiment);
-          this.experimentId = experiment.experimentId();
-        });
-      }
+      projectInformationService.find(projectId).ifPresent(this::loadExperimentInformation);
     }
 
-    private boolean hasExperimentalGroupsDefined() {
-      boolean areExperimentalGroupsDefined = experimentToSampleDict.keySet().forEach(
-          experiment -> experimentInformationService.getExperimentalGroups(experimentId).stream()
-              .findFirst().isPresent());
-      //ToDo check if any experiment has an experimentalgroup.
+    public void loadExperimentInformation(Project project) {
+      resetTabSheet();
+      resetTabSelect();
+      List<Experiment> foundExperiments = new ArrayList<>();
+      project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
+          .ifPresent(experiment -> {
+            foundExperiments.add(experiment);
+            generateExperimentTab(experiment);
+          }));
+      addExperimentsToTabSelect(foundExperiments);
+      displayDisclaimerOrSampleView();
     }
+
 
     private void registerSamplesListener() {
       registerBatchButton.addClickListener(this::openBatchRegistrationDialog);
       registerButton.addClickListener(this::openBatchRegistrationDialog);
     }
 
+
     private void openBatchRegistrationDialog(ComponentEvent<?> componentEvent) {
-      if (hasExperimentalGroupsDefined()) {
+      if (areExperimentGroupsInProject(projectId)) {
         batchRegistrationDialog.open();
       } else {
         InformationMessage infoMessage = new InformationMessage(
             "No experimental groups are defined",
-            "You need to define experimental groups before adding samples.");
+            "You need to define experimental groups for at least one experiment before adding samples.");
         StyledNotification notification = new StyledNotification(infoMessage);
         notification.open();
       }
@@ -299,35 +283,49 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
-          displaySampleView();
+          displayDisclaimerOrSampleView();
         });
       });
       batchRegistrationDialog.addCancelEventListener(
           event -> batchRegistrationDialog.resetAndClose());
     }
 
-    private void generateExperimentTabs(Project project) {
-      resetTabSheet();
-      resetTabSelect();
-      experimentToSampleDict.clear();
-      List<Experiment> foundExperiments = new LinkedList<>();
-      project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
-          .ifPresent(foundExperiments::add));
-      for (Experiment experiment : foundExperiments) {
-        sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-            .onValue(samples -> {
-              if (samples.size() > 0) {
-                experimentToSampleDict.put(experiment, samples);
-              }
-            });
-      }
-      addExperimentsToTabSelect(experimentToSampleDict.keySet().stream().toList());
-      createExperimentTabs(experimentToSampleDict);
-      displaySampleView();
+    private void generateExperimentTab(Experiment experiment) {
+      Collection<Sample> samples = retrieveSamplesForExperiment(
+          experiment.experimentId());
+      SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
+          samples.size());
+      Grid<Sample> sampleGrid = createSampleGrid();
+      generateConditionColumnHeaders(experiment);
+      GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
+      sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
+          sampleGridDataView);
+      sampleExperimentTabSheet.add(experimentTab, sampleGrid);
+      //Update Number count in tab if user searches for value
+      sampleGridDataView.addItemCountChangeListener(
+          event -> experimentTab.setSampleCount(event.getItemCount()));
     }
 
-    private boolean areSamplesInExperiments() {
-      return !experimentToSampleDict.isEmpty();
+
+    private boolean areExperimentGroupsInProject(ProjectId projectId) {
+      Project project = projectInformationService.find(projectId).get();
+      return project.experiments().stream()
+          .anyMatch(experimentInformationService::hasExperimentalGroup);
+    }
+
+    private boolean areSamplesInProject(ProjectId projectId) {
+      Project project = projectInformationService.find(projectId).get();
+      return project.experiments().stream()
+          .anyMatch(
+              experimentId -> !sampleInformationService.retrieveSamplesForExperiment(experimentId)
+                  .getValue().isEmpty());
+    }
+
+    private Collection<Sample> retrieveSamplesForExperiment(ExperimentId experimentId) {
+      return sampleInformationService.retrieveSamplesForExperiment(experimentId)
+          .onError(responseCode -> {
+            //ToDo Show Error
+          }).getValue();
     }
 
     private void resetTabSelect() {
@@ -339,9 +337,9 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           .forEach(component -> component.getElement().removeAllChildren());
     }
 
-    private void displaySampleView() {
-      if (areSamplesInExperiments()) {
-        displaySampleGrid();
+    private void displayDisclaimerOrSampleView() {
+      if (areSamplesInProject(projectId)) {
+        displaySampleView();
       } else {
         displayEmptyView();
       }
@@ -352,12 +350,13 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       noBatchDefinedLayout.setVisible(true);
     }
 
-    private void displaySampleGrid() {
-      noBatchDefinedLayout.setVisible(false);
+    private void displaySampleView() {
       sampleContentLayout.setVisible(true);
+      noBatchDefinedLayout.setVisible(false);
     }
 
-    private void addExperimentsToTabSelect(List<Experiment> experimentList) {
+    private void addExperimentsToTabSelect(Collection<Experiment> experimentList) {
+      tabFilterSelect.removeAll();
       tabFilterSelect.setItems(experimentList.stream().map(Experiment::getName).toList());
     }
 

@@ -202,7 +202,8 @@ public class BatchRegistrationDialog extends Dialog {
   }
 
   public BatchRegistrationContent batchRegistrationContent() {
-    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(), false);
+    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(),
+        batchInformationLayout.experimentSelect.getValue(), false);
   }
 
   public List<SampleRegistrationContent> sampleRegistrationContent() {

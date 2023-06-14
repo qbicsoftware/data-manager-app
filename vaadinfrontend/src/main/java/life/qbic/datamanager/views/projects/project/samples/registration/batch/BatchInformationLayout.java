@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -18,6 +19,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 
 /**
@@ -32,6 +34,7 @@ public class BatchInformationLayout extends VerticalLayout {
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
+  public final Select<Experiment> experimentSelect = new Select<>();
   private final BatchInformationLayoutHandler batchInformationLayoutHandler;
 
   public BatchInformationLayout() {
@@ -50,7 +53,8 @@ public class BatchInformationLayout extends VerticalLayout {
   }
 
   private void initBatchLayout() {
-    HorizontalLayout batchLayout = new HorizontalLayout();
+    VerticalLayout batchLayout = new VerticalLayout();
+    batchLayout.add(experimentSelect);
     batchLayout.add(batchNameField);
     add(batchLayout);
   }
@@ -117,7 +121,10 @@ public class BatchInformationLayout extends VerticalLayout {
       binderBatchName.forField(batchNameField)
           .withValidator(value -> !value.isBlank(), "Please provide a valid batch name")
           .bind(Container::value, Container::setValue);
-      binders.add(binderBatchName);
+      Binder<Container<Experiment>> binderExperimentSelect = new Binder<>();
+      binderExperimentSelect.forField(experimentSelect)
+          .bind(Container::value, Container::setValue);
+      binders.addAll(List.of(binderBatchName, binderExperimentSelect));
     }
 
     private boolean isInputValid() {
