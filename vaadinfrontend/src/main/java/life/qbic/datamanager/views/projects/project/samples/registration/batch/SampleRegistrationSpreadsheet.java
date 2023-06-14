@@ -45,7 +45,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   @Serial
   private static final long serialVersionUID = 573778360298068552L;
-  private static final Logger log = LoggerFactory.logger(SampleRegistrationSpreadsheet.class);
 
   private SpreadsheetDropdownFactory dropdownCellFactory;
   private List<SamplesheetHeaderName> header;
@@ -406,29 +405,40 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   public Result<List<NGSRowDTO>, InvalidSpreadsheetRow> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
-    Set<String> uniqueSamples = new HashSet<>();
+    Set<String> concatenatedSampleIDs = new HashSet<>();
     for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
 
-      String analysisTypeInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
-      String sampleLabelInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL));
-      String replicateIDInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID));
-      String conditionInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.CONDITION));
-      String speciesInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SPECIES));
-      String specimenInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.SPECIMEN));
-      String analyteInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.ANALYTE));
-      String commentInput = parseAndTrimCellOfRow(row, header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT));
+      String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE)));
+      String sampleLabelInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL)));
+      String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID)));
+      String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.CONDITION)));
+      String speciesInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.SPECIES)));
+      String specimenInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.SPECIMEN)));
+      String analyteInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.ANALYTE)));
+      String commentInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT)));
 
-      List<String> mandatoryCellList = new ArrayList<>(Arrays.asList(analysisTypeInput, sampleLabelInput,
-          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput));
+      List<String> mandatoryInputList = Arrays.asList(analysisTypeInput, sampleLabelInput,
+          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput);
 
-      if (mandatoryCellList.stream().anyMatch(Objects::isNull)) {
+      if (mandatoryInputList.stream().anyMatch(Objects::isNull)) {
         break;
       }
 
-      if(mandatoryCellList.stream().noneMatch(x -> x.isBlank())) {
-        String uniqueSampleString = replicateIDInput+conditionInput;
-        if(uniqueSamples.contains(uniqueSampleString)) {
+      if(mandatoryInputList.stream().noneMatch(x -> x.isBlank())) {
+        replicateIDInput = replicateIDInput.trim();
+        conditionInput = conditionInput.trim();
+        // Sample uniqueness needs to be guaranteed by condition and replicate ID
+        String concatenatedSampleID = replicateIDInput+conditionInput;
+        if(concatenatedSampleIDs.contains(concatenatedSampleID)) {
           return Result.fromError(new InvalidSpreadsheetRow(
               SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
         } else {
@@ -437,11 +447,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           Long experimentalGroupId = experimentalGroup.id();
           BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(
               replicateIDInput, conditionInput);
-          rows.add(new NGSRowDTO(analysisTypeInput, sampleLabelInput,
+          rows.add(new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(),
               biologicalReplicateId, experimentalGroupId,
-              speciesInput, specimenInput, analyteInput,
-              commentInput));
-          uniqueSamples.add(uniqueSampleString);
+              speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
+              commentInput.trim()));
+          concatenatedSampleIDs.add(concatenatedSampleID);
         }
       } else {
         return Result.fromError(new InvalidSpreadsheetRow(
@@ -450,31 +460,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
     }
     return Result.fromValue(rows);
-  }
-
-  private String parseAndTrimCellOfRow(Row row, int colId) {
-    Cell cell = row.getCell(colId);
-    if(cell==null) {
-      return null;
-    }
-    switch (cell.getCellType()) {
-      case STRING -> {
-        return cell.getStringCellValue().trim();
-      }
-      case NUMERIC -> {
-        double dbl = cell.getNumericCellValue();
-        if((dbl % 1) == 0) {
-          int integer = (int) dbl;
-          return Integer.toString(integer);
-        } else {
-          return Double.toString(dbl);
-        }
-      }
-      default -> {
-        log.debug("Cell with type "+cell.getCellType()+ " was not handled.");
-        return null;
-      }
-    }
   }
 
   private BiologicalReplicateId retrieveBiologicalReplicateId(String replicateLabel,
@@ -538,18 +523,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       String message = "";
       switch (reason) {
         case MISSING_INPUT -> {
-          message = "Mandatory information missing in row "+ invalidRow+".";
+          message = "Mandatory information missing in row "+ invalidRow;
         }
         case DUPLICATE_ID -> {
           message = "Biological replicate Id was used multiple times for the "
-              + "same condition in row "+invalidRow+".";
+              + "same condition in row "+invalidRow;
         }
       }
       if(!additionalInfo.isEmpty()) {
-        message += " "+additionalInfo;
+        message += ": "+additionalInfo;
       }
 
-      return "";
+      return message;
     }
   }
 
