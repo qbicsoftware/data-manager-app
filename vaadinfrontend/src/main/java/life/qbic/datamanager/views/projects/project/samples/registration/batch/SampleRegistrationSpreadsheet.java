@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
@@ -363,11 +361,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         "Sample label"), BIOLOGICAL_REPLICATE_ID("Biological replicate id"), CONDITION(
         "Condition"), SPECIES("Species"), SPECIMEN("Specimen"), ANALYTE(
         "Analyte"), CUSTOMER_COMMENT(
-        "Customer comment");
+        "Customer comment", false);
     public final String label;
+    public final boolean isMandatory;
 
     SamplesheetHeaderName(String label) {
       this.label = label;
+      this.isMandatory = true;
+    }
+
+    SamplesheetHeaderName(String label, boolean isMandatory) {
+      this.label = label;
+      this.isMandatory = isMandatory;
     }
   }
 
@@ -403,9 +408,47 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public Result<List<NGSRowDTO>, InvalidSpreadsheetRow> getFilledRows() {
-    List<NGSRowDTO> rows = new ArrayList<>();
+  public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
+
     Set<String> concatenatedSampleIDs = new HashSet<>();
+    for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
+      Row row = sampleRegistrationSheet.getRow(rowId);
+      List<String> mandatoryInputs = new ArrayList<>();
+      for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
+        if(name.isMandatory) {
+          mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
+              header.indexOf(name))));
+        }
+      }
+      // break when cells in row are undefined
+      if (mandatoryInputs.stream().anyMatch(Objects::isNull)) {
+        break;
+      }
+
+      // mandatory not filled in --> invalid
+      if (mandatoryInputs.stream().anyMatch(x -> x.isBlank())) {
+        return Result.fromError(new InvalidSpreadsheetRow(
+            SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
+      }
+
+      String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
+      String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.CONDITION))).trim();
+      // Sample uniqueness needs to be guaranteed by condition and replicate ID
+      String concatenatedSampleID = replicateIDInput + conditionInput;
+      if (concatenatedSampleIDs.contains(concatenatedSampleID)) {
+        return Result.fromError(new InvalidSpreadsheetRow(
+            SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
+      }
+      concatenatedSampleIDs.add(concatenatedSampleID);
+    }
+    return Result.fromValue(null);
+  }
+
+  public List<NGSRowDTO> getFilledRows() {
+    List<NGSRowDTO> rows = new ArrayList<>();
+
     for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
 
@@ -426,40 +469,22 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       String commentInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT)));
 
-      List<String> mandatoryInputList = Arrays.asList(analysisTypeInput, sampleLabelInput,
-          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput);
-
-      if (mandatoryInputList.stream().anyMatch(Objects::isNull)) {
+      // break when cells in row are undefined
+      if (Arrays.asList(analysisTypeInput, sampleLabelInput,
+          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput)
+          .stream().anyMatch(Objects::isNull)) {
         break;
       }
 
-      if(mandatoryInputList.stream().noneMatch(x -> x.isBlank())) {
-        replicateIDInput = replicateIDInput.trim();
-        conditionInput = conditionInput.trim();
-        // Sample uniqueness needs to be guaranteed by condition and replicate ID
-        String concatenatedSampleID = replicateIDInput+conditionInput;
-        if(concatenatedSampleIDs.contains(concatenatedSampleID)) {
-          return Result.fromError(new InvalidSpreadsheetRow(
-              SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
-        } else {
-          ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(
-              conditionInput);
-          Long experimentalGroupId = experimentalGroup.id();
-          BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(
-              replicateIDInput, conditionInput);
-          rows.add(new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(),
-              biologicalReplicateId, experimentalGroupId,
-              speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
-              commentInput.trim()));
-          concatenatedSampleIDs.add(concatenatedSampleID);
-        }
-      } else {
-        return Result.fromError(new InvalidSpreadsheetRow(
-            SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
-      }
-
+      ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(conditionInput);
+      Long experimentalGroupId = experimentalGroup.id();
+      BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(replicateIDInput,
+          conditionInput);
+      rows.add(new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(), biologicalReplicateId,
+          experimentalGroupId, speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
+          commentInput.trim()));
     }
-    return Result.fromValue(rows);
+    return rows;
   }
 
   private BiologicalReplicateId retrieveBiologicalReplicateId(String replicateLabel,

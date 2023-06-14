@@ -120,7 +120,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private boolean isInputValid() {
-      Result<List<NGSRowDTO>, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.getFilledRows();
+      Result<Void, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.areInputsValid();
       return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason())).isValue();
     }
 
@@ -138,9 +138,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private List<SampleRegistrationContent> getContent() {
-      Result<List<NGSRowDTO>, InvalidSpreadsheetRow> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
+      List<NGSRowDTO> filledRows = sampleRegistrationSpreadsheet.getFilledRows();
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
-      filledRows.getValue().forEach(row -> {
+      filledRows.forEach(row -> {
         SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
             row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
             row.specimen(),
