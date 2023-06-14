@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import java.util.Optional;
@@ -426,7 +427,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
 
       // mandatory not filled in --> invalid
-      if (mandatoryInputs.stream().anyMatch(x -> x.isBlank())) {
+      if (mandatoryInputs.stream().anyMatch(String::isBlank)) {
         return Result.fromError(new InvalidSpreadsheetRow(
             SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
       }
@@ -470,9 +471,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT)));
 
       // break when cells in row are undefined
-      if (Arrays.asList(analysisTypeInput, sampleLabelInput,
-          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput)
-          .stream().anyMatch(Objects::isNull)) {
+      if (Stream.of(analysisTypeInput, sampleLabelInput,
+          replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput).anyMatch(Objects::isNull)) {
         break;
       }
 
