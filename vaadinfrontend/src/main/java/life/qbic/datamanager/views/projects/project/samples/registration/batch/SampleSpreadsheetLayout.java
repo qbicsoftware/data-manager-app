@@ -1,19 +1,24 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetRow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
@@ -103,7 +108,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
     @Serial
     private static final long serialVersionUID = 2837608401189525502L;
-    private final List<Binder<?>> binders = new ArrayList<>();
 
     private void reset() {
       resetChildValues();
@@ -116,8 +120,21 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private boolean isInputValid() {
-      binders.forEach(Binder::validate);
-      return binders.stream().allMatch(Binder::isValid);
+      Result<Void, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.areInputsValid();
+      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason())).isValue();
+    }
+
+    private void displayInputInvalidMessage(String invalidationReason) {
+      InformationMessage infoMessage = new InformationMessage(
+          "Incomplete or erroneous metadata found",
+          invalidationReason);
+      StyledNotification notification = new StyledNotification(infoMessage);
+      // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
+      notification.addAttachListener(
+          (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
+      notification.addDetachListener(
+          (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
+      notification.open();
     }
 
     private List<SampleRegistrationContent> getContent() {
