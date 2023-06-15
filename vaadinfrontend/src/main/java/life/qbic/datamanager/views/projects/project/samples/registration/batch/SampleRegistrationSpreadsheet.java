@@ -99,7 +99,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
-    for (int currentRow = 1; currentRow < numberOfSamples; currentRow++) {
+    for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
   }
@@ -407,9 +407,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
-
     Set<String> concatenatedSampleIDs = new HashSet<>();
-    for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
@@ -447,7 +446,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public List<NGSRowDTO> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
 
-    for (int rowId = 1; rowId < sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
 
       String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
