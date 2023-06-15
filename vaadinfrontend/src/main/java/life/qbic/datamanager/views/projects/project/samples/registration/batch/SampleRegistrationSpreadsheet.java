@@ -544,8 +544,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
      * @return String stating row and reason for the row being invalid
      */
     public String getInvalidationReason() {
-      String message = "";
-      switch (reason) {
+      String message = switch (reason) {
         case MISSING_INPUT -> {
           message = "Mandatory information missing in row "+ invalidRow;
         }
