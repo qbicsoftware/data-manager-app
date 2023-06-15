@@ -430,17 +430,28 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
-      String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.CONDITION))).trim();
       // Sample uniqueness needs to be guaranteed by condition and replicate ID
-      String concatenatedSampleID = replicateIDInput + conditionInput;
-      if (concatenatedSampleIDs.contains(concatenatedSampleID)) {
+      if (!isUniqueSampleRow(concatenatedSampleIDs, row)) {
         return Result.fromError(new InvalidSpreadsheetRow(
             SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
       }
-      concatenatedSampleIDs.add(concatenatedSampleID);
     }
     return Result.fromValue(null);
+  }
+
+  private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
+    String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+        header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
+    String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+        header.indexOf(SamplesheetHeaderName.CONDITION))).trim();
+    // Sample uniqueness needs to be guaranteed by condition and replicate ID
+    String concatenatedSampleID = replicateIDInput + conditionInput;
+    if(knownIDs.contains(concatenatedSampleID)) {
+      return false;
+    } else {
+      knownIDs.add(concatenatedSampleID);
+      return true;
+    }
   }
 
   public List<NGSRowDTO> getFilledRows() {
