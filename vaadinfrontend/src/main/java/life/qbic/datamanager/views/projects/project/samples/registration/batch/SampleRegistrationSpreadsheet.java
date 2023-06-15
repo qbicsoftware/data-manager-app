@@ -358,18 +358,15 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @since 1.0.0
    */
   public enum SamplesheetHeaderName {
-    SEQ_ANALYSIS_TYPE("Analysis to be performed"), SAMPLE_LABEL(
-        "Sample label"), BIOLOGICAL_REPLICATE_ID("Biological replicate id"), CONDITION(
-        "Condition"), SPECIES("Species"), SPECIMEN("Specimen"), ANALYTE(
-        "Analyte"), CUSTOMER_COMMENT(
+    SEQ_ANALYSIS_TYPE("Analysis to be performed", true), SAMPLE_LABEL(
+        "Sample label", true), BIOLOGICAL_REPLICATE_ID(
+            "Biological replicate id", true), CONDITION("Condition",
+        true), SPECIES("Species", true), SPECIMEN("Specimen",
+        true), ANALYTE("Analyte", true), CUSTOMER_COMMENT(
         "Customer comment", false);
+
     public final String label;
     public final boolean isMandatory;
-
-    SamplesheetHeaderName(String label) {
-      this.label = label;
-      this.isMandatory = true;
-    }
 
     SamplesheetHeaderName(String label, boolean isMandatory) {
       this.label = label;
