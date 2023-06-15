@@ -103,8 +103,8 @@ public class BatchRegistrationDialog extends Dialog {
    * Defines the currently active {@link Experiment} within the project from which the information
    * will be derived in the {@link SampleRegistrationSpreadsheet}
    */
-  public void setActiveExperiment(Experiment experiment) {
-    sampleSpreadsheetLayout.setActiveExperiment(experiment);
+  public void setExperiments(List<Experiment> experiments) {
+    batchInformationLayout.experimentSelect.setItems(experiments);
   }
 
   private class RegisterBatchDialogHandler implements Serializable {
@@ -141,6 +141,7 @@ public class BatchRegistrationDialog extends Dialog {
 
     private void generateSampleRegistrationLayout() {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
       sampleSpreadsheetLayout.generateSampleRegistrationSheet(
           batchInformationLayout.dataTypeSelection.getValue());
     }
@@ -203,7 +204,7 @@ public class BatchRegistrationDialog extends Dialog {
 
   public BatchRegistrationContent batchRegistrationContent() {
     return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(),
-        batchInformationLayout.experimentSelect.getValue(), false);
+        batchInformationLayout.experimentSelect.getValue().experimentId(), false);
   }
 
   public List<SampleRegistrationContent> sampleRegistrationContent() {

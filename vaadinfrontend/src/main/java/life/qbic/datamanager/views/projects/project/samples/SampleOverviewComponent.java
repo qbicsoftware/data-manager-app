@@ -28,12 +28,8 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -55,8 +51,6 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -184,20 +178,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     return sampleGrid;
   }
 
-  private void createExperimentTab(Experiment experiment, Collection<Sample> samples) {
-
-  }
-
-  private List<String> generateConditionColumnHeaders(Experiment experiment) {
-    Set<String> uniqueVariableNames = new HashSet<>();
-    for (ExperimentalGroup experimentalGroup : experiment.getExperimentalGroups()) {
-      for (VariableLevel level : experimentalGroup.condition().getVariableLevels()) {
-        uniqueVariableNames.add(level.variableName().value());
-      }
-    }
-    return uniqueVariableNames.stream().toList();
-  }
-
   private static ComponentRenderer<Anchor, Sample> createSampleIdComponentRenderer() {
     return new ComponentRenderer<>(Anchor::new, styleSampleIdAnchor);
   }
@@ -221,9 +201,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final SampleRegistrationService sampleRegistrationService;
     private final BatchRegistrationService batchRegistrationService;
     private ProjectId projectId;
-
-    //ToDo Replace with Call to service
-    private final Map<Experiment, Collection<Sample>> experimentToSampleDict = new HashMap<>();
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
@@ -253,6 +230,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
             foundExperiments.add(experiment);
             generateExperimentTab(experiment);
           }));
+      batchRegistrationDialog.setExperiments(foundExperiments);
       addExperimentsToTabSelect(foundExperiments);
       displayDisclaimerOrSampleView();
     }
@@ -296,7 +274,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
           samples.size());
       Grid<Sample> sampleGrid = createSampleGrid();
-      generateConditionColumnHeaders(experiment);
       GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
       sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
           sampleGridDataView);
@@ -381,7 +358,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       return registerBatchInformation(batchRegistrationContent).onValue(
           batchId -> {
             List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
-                batchId, sampleRegistrationContent);
+                batchId, batchRegistrationContent.experimentId(), sampleRegistrationContent);
             registerSamples(sampleRegistrationsRequests);
           });
     }
@@ -398,6 +375,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
+        ExperimentId experimentId,
         List<SampleRegistrationContent> sampleRegistrationContents) {
       return sampleRegistrationContents.stream()
           .map(sampleRegistrationContent -> {

@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -28,7 +27,8 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
-  private final Label batchName = new Label();
+  private final Span batchName = new Span();
+  private final Span experimentName = new Span();
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
@@ -50,8 +50,13 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   private void initHeaderAndInstruction() {
     sampleInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
-    batchRegistrationInstruction.add("Please register your samples for Batch: ");
-    batchRegistrationInstruction.add(batchName);
+    Span instructionSpan = new Span();
+    instructionSpan.add("Please register your samples for experiment: ");
+    instructionSpan.add(experimentName);
+    experimentName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
+    instructionSpan.add(" in batch: ");
+    instructionSpan.add(batchName);
+    batchRegistrationInstruction.add(instructionSpan);
     batchName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
     add(sampleInformationHeader);
     add(batchRegistrationInstruction);
@@ -91,8 +96,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     return sampleInformationLayoutHandler.isInputValid();
   }
 
-  public void setActiveExperiment(Experiment experiment) {
+  public void setExperiment(Experiment experiment) {
     SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
+    experimentName.setText(experiment.getName());
   }
 
   public List<SampleRegistrationContent> getContent() {
@@ -110,7 +116,16 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void resetChildValues() {
+      resetInstructions();
+      resetSpreadSheet();
+    }
+
+    private void resetInstructions() {
       batchName.setText("");
+      experimentName.setText("");
+    }
+
+    private void resetSpreadSheet() {
       sampleRegistrationSpreadsheet.reset();
       sampleRegistrationSpreadsheet.reload();
     }
@@ -132,7 +147,5 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       });
       return samplesToRegister;
     }
-
-
   }
 }

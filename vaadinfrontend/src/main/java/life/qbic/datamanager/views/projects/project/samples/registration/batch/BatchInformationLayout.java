@@ -54,6 +54,8 @@ public class BatchInformationLayout extends VerticalLayout {
 
   private void initBatchLayout() {
     VerticalLayout batchLayout = new VerticalLayout();
+    experimentSelect.setItemLabelGenerator(Experiment::getName);
+    experimentSelect.setLabel("Experiment");
     batchLayout.add(experimentSelect);
     batchLayout.add(batchNameField);
     add(batchLayout);
