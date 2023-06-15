@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -22,14 +23,22 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.Display;
+import com.vaadin.flow.theme.lumo.LumoUtility.FlexWrap;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Right;
 import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -45,15 +54,20 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
+import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
@@ -97,18 +111,21 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleRegistrationService sampleRegistrationService,
-      @Autowired BatchRegistrationService batchRegistrationService) {
+      @Autowired BatchRegistrationService batchRegistrationService,
+      @Autowired BatchInformationService batchInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(sampleInformationService);
+    Objects.requireNonNull(sampleRegistrationService);
     Objects.requireNonNull(batchRegistrationService);
+    Objects.requireNonNull(batchInformationService);
     addTitle(TITLE);
     initEmptyView();
     initSampleView();
     setSizeFull();
     this.sampleOverviewComponentHandler = new SampleOverviewComponentHandler(
         projectInformationService, experimentInformationService, sampleInformationService,
-        sampleRegistrationService, batchRegistrationService);
+        sampleRegistrationService, batchRegistrationService, batchInformationService);
   }
 
   public void projectId(ProjectId projectId) {
@@ -161,36 +178,57 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     buttonAndFieldBar.setWidthFull();
   }
 
-  private Grid<Sample> createSampleGrid() {
-    Grid<Sample> sampleGrid = new Grid<>(Sample.class, false);
+  private Grid<SamplePreview> createSampleGrid() {
+    Grid<SamplePreview> sampleGrid = new Grid<>();
     sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id");
-    sampleGrid.addColumn(Sample::label).setHeader("Sample Label");
-    sampleGrid.addColumn(sample -> sample.assignedBatch().value()).setHeader("Batch");
-    sampleGrid.addColumn(sample -> sample.getBiologicalReplicateId().id())
+    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
+    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
+    sampleGrid.addColumn(SamplePreview::sampleSource)
         .setHeader("Sample Source");
-    sampleGrid.addColumn(sample -> sample.sampleOrigin().getSpecies().value()).setHeader("Species");
-    sampleGrid.addColumn(sample -> sample.sampleOrigin().getSpecimen().value())
+    sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
+    sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
+    sampleGrid.addColumn(SamplePreview::specimen)
         .setHeader("Specimen");
-    sampleGrid.addColumn(sample -> sample.sampleOrigin().getAnalyte().value()).setHeader("Analyte");
-    //ToDo Replace with Experimental Group information
-    sampleGrid.addColumn(Sample::getExperimentalGroupId).setHeader("Experimental Group Id");
-    //ToDo make this virtual list with data Providers and implement lazy loading?
+    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
     return sampleGrid;
   }
 
-  private static ComponentRenderer<Anchor, Sample> createSampleIdComponentRenderer() {
+  private static ComponentRenderer<Anchor, SamplePreview> createSampleIdComponentRenderer() {
     return new ComponentRenderer<>(Anchor::new, styleSampleIdAnchor);
   }
 
-  private static final SerializableBiConsumer<Anchor, Sample> styleSampleIdAnchor = (anchor, sample) -> {
+  private static final SerializableBiConsumer<Anchor, SamplePreview> styleSampleIdAnchor = (anchor, samplePreview) -> {
     String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(),
-        sample.sampleId().value());
+        samplePreview.sampleId);
     anchor.setHref(anchorURL);
-    anchor.setText(sample.sampleCode().code());
+    anchor.setText(samplePreview.sampleCode);
   };
+
+  private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
+    return new ComponentRenderer<>(Div::new, styleConditionValue);
+  }
+
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.condition.forEach(
+      (key, value) -> {
+        String experimentalVariable = key + ": " + value;
+        Span tag = new Span(experimentalVariable);
+        tag.setTitle(experimentalVariable);
+        tag.getElement().getThemeList().add("badge");
+        tag.addClassName(Right.SMALL);
+        div.addClassName(FlexWrap.WRAP);
+        div.addClassName(Display.INLINE_FLEX);
+        div.add(tag);
+      });
 
   public void setStyles(String... componentStyles) {
     addClassNames(componentStyles);
+  }
+
+  private record SamplePreview(String sampleCode, String sampleId, String batchLabel,
+                               String sampleSource, String sampleLabel,
+                               Map<String, String> condition,
+                               String species, String specimen, String analyte) {
+
   }
 
   private final class SampleOverviewComponentHandler {
@@ -200,18 +238,21 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private final SampleInformationService sampleInformationService;
     private final SampleRegistrationService sampleRegistrationService;
     private final BatchRegistrationService batchRegistrationService;
+    private final BatchInformationService batchInformationService;
     private ProjectId projectId;
 
     public SampleOverviewComponentHandler(ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService,
         SampleInformationService sampleInformationService,
         SampleRegistrationService sampleRegistrationService,
-        BatchRegistrationService batchRegistrationService) {
+        BatchRegistrationService batchRegistrationService,
+        BatchInformationService batchInformationService) {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       this.sampleInformationService = sampleInformationService;
       this.sampleRegistrationService = sampleRegistrationService;
       this.batchRegistrationService = batchRegistrationService;
+      this.batchInformationService = batchInformationService;
       registerSamplesListener();
       addEventListeners();
     }
@@ -269,12 +310,12 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private void generateExperimentTab(Experiment experiment) {
-      Collection<Sample> samples = retrieveSamplesForExperiment(
-          experiment.experimentId());
+      Collection<SamplePreview> samplePreviews = retrieveSamplesForExperiment(
+          experiment);
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
-          samples.size());
-      Grid<Sample> sampleGrid = createSampleGrid();
-      GridListDataView<Sample> sampleGridDataView = sampleGrid.setItems(samples);
+          samplePreviews.size());
+      Grid<SamplePreview> sampleGrid = createSampleGrid();
+      GridListDataView<SamplePreview> sampleGridDataView = sampleGrid.setItems(samplePreviews);
       sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
           sampleGridDataView);
       sampleExperimentTabSheet.add(experimentTab, sampleGrid);
@@ -298,11 +339,70 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
                   .getValue().isEmpty());
     }
 
-    private Collection<Sample> retrieveSamplesForExperiment(ExperimentId experimentId) {
-      return sampleInformationService.retrieveSamplesForExperiment(experimentId)
+    private Collection<SamplePreview> retrieveSamplesForExperiment(Experiment experiment) {
+      List<SamplePreview> samplePreviews = new ArrayList<>();
+      sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
           .onError(responseCode -> {
             //ToDo Show Error
-          }).getValue();
+          }).onValue(samples -> {
+            for (Sample sample : samples) {
+              String batchLabel = getBatchLabel(sample);
+              String biologicalReplicateLabel = getSampleReplicateLabelInExperiment(experiment, sample);
+              Map<String, String> conditions = getConditionOfExperimentalGroup(experiment, sample);
+              samplePreviews.add(
+                  new SamplePreview(sample.sampleCode().code(), sample.sampleId().value(),
+                      batchLabel, biologicalReplicateLabel,
+                      sample.label(), conditions,
+                      sample.sampleOrigin().getSpecies().value(),
+                      sample.sampleOrigin().getSpecimen().value(),
+                      sample.sampleOrigin().getAnalyte().value()));
+            }
+          });
+      return samplePreviews;
+    }
+
+    private String getBatchLabel(Sample sample) {
+      Optional<Batch> foundBatch = batchInformationService.find(sample.assignedBatch());
+      if (foundBatch.isPresent()) {
+        return foundBatch.get().label();
+      } else {
+        return "---";
+      }
+    }
+
+    private String getSampleReplicateLabelInExperiment(Experiment experiment, Sample sample) {
+      Set<BiologicalReplicate> biologicalReplicateSet = new HashSet<>();
+      for (ExperimentalGroup experimentalGroup : experiment.getExperimentalGroups()) {
+        biologicalReplicateSet.addAll(experimentalGroup.biologicalReplicates());
+      }
+      Optional<BiologicalReplicate> foundReplicate = biologicalReplicateSet.stream().filter(
+              biologicalReplicate -> biologicalReplicate.id().equals(sample.getBiologicalReplicateId()))
+          .findFirst();
+      if (foundReplicate.isPresent()) {
+        return foundReplicate.get().label();
+      } else {
+        return "---";
+      }
+    }
+
+    private Map<String, String> getConditionOfExperimentalGroup(Experiment experiment,
+        Sample sample) {
+      Optional<ExperimentalGroup> foundExperimentalGroup = experiment.getExperimentalGroups()
+          .stream()
+          .filter(experimentalGroup -> experimentalGroup.id() == sample.getExperimentalGroupId())
+          .findFirst();
+      Map<String, String> conditionMap = new HashMap<>();
+      if (foundExperimentalGroup.isPresent()) {
+        for (VariableLevel variableLevel : foundExperimentalGroup.get().condition()
+            .getVariableLevels()) {
+          String variableName = variableLevel.variableName().value();
+          String experimentalValueUnit = variableLevel.experimentalValue().unit().orElse("");
+          String experimentalValueName = variableLevel.experimentalValue().value();
+          conditionMap.put(variableName,
+              String.join(" ", experimentalValueName, experimentalValueUnit).trim());
+        }
+      }
+      return conditionMap;
     }
 
     private void resetTabSelect() {
@@ -338,14 +438,14 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private void setupSearchFieldForExperimentTabs(String experimentName,
-        GridListDataView<Sample> sampleGridDataView) {
+        GridListDataView<SamplePreview> sampleGridDataView) {
       searchField.addValueChangeListener(e -> sampleGridDataView.refreshAll());
-      sampleGridDataView.addFilter(sample -> {
+      sampleGridDataView.addFilter(samplePreview -> {
         String searchTerm = searchField.getValue().trim();
         //Only filter grid if selected in filterSelect or if no filter was selected
         if (tabFilterSelect.getValue() == null || tabFilterSelect.getValue()
             .equals(experimentName)) {
-          return isInSample(sample, searchTerm);
+          return isInSample(samplePreview, searchTerm);
         } else {
           return true;
         }
@@ -403,12 +503,12 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
   }
 
-  private boolean isInSample(Sample sample, String searchTerm) {
+  private boolean isInSample(SamplePreview samplePreview, String searchTerm) {
     boolean result = false;
-    for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(Sample.class)) {
+    for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(SamplePreview.class)) {
       if (!descriptor.getName().equals("class")) {
         try {
-          String value = descriptor.getReadMethod().invoke(sample).toString();
+          String value = descriptor.getReadMethod().invoke(samplePreview).toString();
           result |= matchesTerm(value, searchTerm);
         } catch (IllegalAccessException | InvocationTargetException e) {
           log.info("Could not invoke " + descriptor.getName()

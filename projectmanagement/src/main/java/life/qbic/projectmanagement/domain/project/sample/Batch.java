@@ -82,6 +82,13 @@ public class Batch {
     return this.id;
   }
 
+  public String label() {
+    return label;
+  }
+
+  public boolean isPilot() {
+    return pilot;
+  }
 
   @Override
   public boolean equals(Object o) {
