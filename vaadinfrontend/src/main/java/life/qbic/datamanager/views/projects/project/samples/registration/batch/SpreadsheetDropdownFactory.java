@@ -5,9 +5,11 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -45,7 +47,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         spreadsheet.refreshCells(cell);
       }
 
-      if (!dropdownItems.contains(cell.getStringCellValue())) {
+      if (!dropdownItems.contains(SpreadsheetMethods.cellToStringOrNull(cell))) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }

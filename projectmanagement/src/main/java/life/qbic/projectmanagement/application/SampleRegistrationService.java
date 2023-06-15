@@ -60,7 +60,6 @@ public class SampleRegistrationService {
                 .onError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED)));
         var result = sampleDomainService.registerSamples(sampleCodesToRegistrationRequests);
         return result.onValue(Result::fromValue).flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
-
     }
 
     public enum ResponseCode {

@@ -111,6 +111,7 @@ public class BatchRegistrationDialog extends Dialog {
 
     @Serial
     private static final long serialVersionUID = -2692766151162405263L;
+
     private final List<ComponentEventListener<BatchRegistrationEvent>> batchRegistrationListeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
@@ -172,7 +173,6 @@ public class BatchRegistrationDialog extends Dialog {
     protected boolean isInputValid() {
       return batchInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
     }
-
 
     public void addBatchRegistrationEventListener(
         ComponentEventListener<BatchRegistrationEvent> listener) {

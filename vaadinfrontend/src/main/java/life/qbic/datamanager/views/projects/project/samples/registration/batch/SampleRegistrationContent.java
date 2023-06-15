@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
