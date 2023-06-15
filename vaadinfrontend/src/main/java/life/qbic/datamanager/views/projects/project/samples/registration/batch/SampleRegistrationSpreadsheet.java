@@ -545,14 +545,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
      */
     public String getInvalidationReason() {
       String message = switch (reason) {
-        case MISSING_INPUT -> {
-          message = "Mandatory information missing in row "+ invalidRow;
-        }
-        case DUPLICATE_ID -> {
-          message = "Biological replicate Id was used multiple times for the "
+        case MISSING_INPUT: yield "Mandatory information missing in row "+ invalidRow;
+        case DUPLICATE_ID: yield "Biological replicate Id was used multiple times for the "
               + "same condition in row "+invalidRow;
-        }
-      }
+      };
       if(!additionalInfo.isEmpty()) {
         message += ": "+additionalInfo;
       }
