@@ -113,6 +113,11 @@
   margin-bottom: 1em;
 }
 
+.experimental-group .tag-collection {
+  display: inline-flex;
+  flex-wrap: wrap;
+}
+
 .experimental-group .header {
   display: flex;
   justify-content: space-between;
@@ -182,22 +187,20 @@
 
 .experimental-variables .content {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  overflow: auto;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 1rem;
 }
 
 .experimental-variables-fact-sheet {
-  flex: auto;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 20%;
   font-size: var(--lumo-font-size-s);
-  min-width: 100px;
-  margin-right: 50px;
-  border-radius: var(--lumo-border-radius-m);
   border: 1px solid lightgray;
-}
-
-.experimental-variables-fact-sheet:last-child {
-  margin-right: 0;
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .experimental-variables-fact-sheet .variable-header {
