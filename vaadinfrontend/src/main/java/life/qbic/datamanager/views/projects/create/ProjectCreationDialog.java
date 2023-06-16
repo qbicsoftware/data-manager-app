@@ -27,7 +27,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -46,7 +45,7 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  */
 @SpringComponent
 @UIScope
-public class ProjectCreationDialog extends DialogWindow {
+public class ProjectCreationDialog extends Dialog {
 
   @Serial
   private static final long serialVersionUID = 6132538769263078943L;
@@ -69,7 +68,6 @@ public class ProjectCreationDialog extends DialogWindow {
   private final Handler handler;
 
   public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
-    addClassName("create-project-dialog");
 
     initCodeAndTitleLayout();
     projectObjective.setRequired(true);
@@ -160,24 +158,24 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void styleForm() {
-    formLayout.setClassName("form-layout");
+    formLayout.setClassName("create-project-form");
     styleSearchBox();
+    formLayout.setMaxWidth(60, Unit.VW);
   }
 
   private void styleSearchBox() {
-    offerSearchField.setClassName("search");
+    offerSearchField.setMaxWidth(30, Unit.VW);
     offerSearchField.setPlaceholder("Search");
     offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
   }
 
   private void initProjectContactsLayout() {
-    projectContactsLayout.setClassName("project-contacts");
-
     Span projectContactsTitle = new Span("Project Contacts");
-    projectContactsTitle.addClassName("title");
-
     Span projectContactsDescription = new Span("Important contact people of the project");
-
+    projectContactsTitle.addClassName("font-bold");
+    projectContactsLayout.setMargin(false);
+    projectContactsLayout.setPadding(false);
+    projectContactsLayout.addClassName("pt-m");
     projectContactsLayout.add(projectContactsTitle);
     projectContactsLayout.add(projectContactsDescription);
   }
@@ -356,4 +354,17 @@ public class ProjectCreationDialog extends DialogWindow {
     }
   }
 
+  static class Container<T> {
+
+    private T value;
+
+    T value() {
+      return this.value;
+    }
+
+    void setValue(T newValue) {
+      this.value = newValue;
+    }
+
+  }
 }
