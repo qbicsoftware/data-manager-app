@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -12,6 +11,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -88,12 +87,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class SampleOverviewComponent extends PageComponent implements Serializable {
+public class SampleOverviewComponent extends Div implements Serializable {
 
   private final String TITLE = "Samples";
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
-  private final VerticalLayout noBatchDefinedLayout = new VerticalLayout();
   private final Button registerBatchButton = new Button("Register Batch");
   private final VerticalLayout sampleContentLayout = new VerticalLayout();
   private final HorizontalLayout buttonAndFieldBar = new HorizontalLayout();
@@ -121,8 +119,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     Objects.requireNonNull(sampleRegistrationService);
     Objects.requireNonNull(batchRegistrationService);
     Objects.requireNonNull(batchInformationService);
-    addTitle(TITLE);
-    initEmptyView();
     initSampleView();
     setSizeFull();
     this.sampleOverviewComponentHandler = new SampleOverviewComponentHandler(
@@ -135,28 +131,13 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     this.sampleOverviewComponentHandler.setProjectId(projectId);
   }
 
-  private void initEmptyView() {
-    Span templateHeader = new Span("No Samples Registered");
-    templateHeader.addClassName("font-bold");
-    Span templateText = new Span("Start your project by registering the first sample batch");
-    registerBatchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    noBatchDefinedLayout.add(templateHeader, templateText, registerBatchButton);
-    noBatchDefinedLayout.setAlignItems(Alignment.CENTER);
-    noBatchDefinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
-    noBatchDefinedLayout.setSizeFull();
-    noBatchDefinedLayout.setMinWidth(100, Unit.PERCENTAGE);
-    noBatchDefinedLayout.setMinHeight(100, Unit.PERCENTAGE);
-    addContent(noBatchDefinedLayout);
-  }
-
   private void initSampleView() {
     sampleExperimentTabSheet.setSizeFull();
     initButtonAndFieldBar();
     sampleContentLayout.add(buttonAndFieldBar);
     sampleContentLayout.add(sampleExperimentTabSheet);
-    addContent(sampleContentLayout);
+    add(sampleContentLayout);
     sampleContentLayout.setSizeFull();
-    sampleContentLayout.setVisible(false);
   }
 
   private void initButtonAndFieldBar() {
@@ -278,7 +259,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           }));
       batchRegistrationDialog.setExperiments(foundExperiments);
       addExperimentsToTabSelect(foundExperiments);
-      displayDisclaimerOrSampleView();
     }
 
 
@@ -307,7 +287,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
-          displayDisclaimerOrSampleView();
         });
       });
       batchRegistrationDialog.addCancelEventListener(
@@ -425,24 +404,6 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     private void resetTabSheet() {
       sampleExperimentTabSheet.getChildren()
           .forEach(component -> component.getElement().removeAllChildren());
-    }
-
-    private void displayDisclaimerOrSampleView() {
-      if (areSamplesInProject(projectId)) {
-        displaySampleView();
-      } else {
-        displayEmptyView();
-      }
-    }
-
-    private void displayEmptyView() {
-      sampleContentLayout.setVisible(false);
-      noBatchDefinedLayout.setVisible(true);
-    }
-
-    private void displaySampleView() {
-      sampleContentLayout.setVisible(true);
-      noBatchDefinedLayout.setVisible(false);
     }
 
     private void addExperimentsToTabSelect(Collection<Experiment> experimentList) {

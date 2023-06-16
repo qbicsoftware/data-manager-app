@@ -38,21 +38,21 @@ public class SampleInformationPage extends Div {
 
   public SampleInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired SampleOverviewComponent sampleOverviewComponent) {
+      @Autowired SampleInformationContent sampleInformationContent) {
     Objects.requireNonNull(projectNavigationBarComponent);
-    Objects.requireNonNull(sampleOverviewComponent);
-    setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
+    Objects.requireNonNull(sampleInformationContent);
+    setupBoard(projectNavigationBarComponent, sampleInformationContent);
     stylePage();
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
-        sampleOverviewComponent);
+        sampleInformationContent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
-        System.identityHashCode(sampleOverviewComponent)));
+        System.identityHashCode(sampleInformationContent)));
   }
 
   private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
-      SampleOverviewComponent sampleOverviewComponent) {
+      SampleInformationContent sampleInformationContent) {
     Board board = new Board();
 
     Row topRow = new Row();
@@ -60,7 +60,7 @@ public class SampleInformationPage extends Div {
     topRow.add(new Div());
 
     Row secondRow = new Row();
-    secondRow.add(sampleOverviewComponent, 4);
+    secondRow.add(sampleInformationContent, 4);
     board.add(topRow, secondRow);
 
     board.setSizeFull();
@@ -83,17 +83,17 @@ public class SampleInformationPage extends Div {
   private final class SampleInformationPageHandler {
 
     ProjectNavigationBarComponent projectNavigationBarComponent;
-    SampleOverviewComponent sampleOverviewComponent;
+    SampleInformationContent sampleInformationContent;
 
     public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-        SampleOverviewComponent sampleOverviewComponent) {
-      this.sampleOverviewComponent = sampleOverviewComponent;
+        SampleInformationContent sampleInformationContent) {
+      this.sampleInformationContent = sampleInformationContent;
       this.projectNavigationBarComponent = projectNavigationBarComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
       projectNavigationBarComponent.projectId(projectId);
-      sampleOverviewComponent.projectId(projectId);
+      sampleInformationContent.projectId(projectId);
     }
   }
 
