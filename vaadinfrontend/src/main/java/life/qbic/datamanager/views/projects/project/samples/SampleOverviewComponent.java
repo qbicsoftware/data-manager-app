@@ -34,13 +34,13 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
@@ -182,16 +182,17 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
 
   private Grid<SamplePreview> createSampleGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>();
-    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id");
-    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
-    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
+    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id").setSortable(true)
+        .setComparator(SamplePreview::sampleCode);
+    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label").setSortable(true);
+    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch").setSortable(true);
     sampleGrid.addColumn(SamplePreview::sampleSource)
-        .setHeader("Sample Source");
+        .setHeader("Sample Source").setSortable(true);
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
-    sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
-    sampleGrid.addColumn(SamplePreview::specimen)
-        .setHeader("Specimen");
-    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
+    sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortable(true);
+    sampleGrid.addColumn(SamplePreview::specimen).setSortable(true)
+        .setHeader("Specimen").setSortable(true);
+    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortable(true);
     return sampleGrid;
   }
 
@@ -344,26 +345,34 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
     }
 
     private Collection<SamplePreview> retrieveSamplesForExperiment(Experiment experiment) {
-      List<SamplePreview> samplePreviews = new ArrayList<>();
-      sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .onError(responseCode -> {
-            //ToDo Show Error
-          }).onValue(samples -> {
-            for (Sample sample : samples) {
-              String batchLabel = getBatchLabel(sample);
-              String biologicalReplicateLabel = getSampleReplicateLabelInExperiment(experiment, sample);
-              Map<String, String> conditions = getConditionOfExperimentalGroup(experiment, sample);
-              samplePreviews.add(
-                  new SamplePreview(sample.sampleCode().code(), sample.sampleId().value(),
-                      batchLabel, biologicalReplicateLabel,
-                      sample.label(), conditions,
-                      sample.sampleOrigin().getSpecies().value(),
-                      sample.sampleOrigin().getSpecimen().value(),
-                      sample.sampleOrigin().getAnalyte().value()));
-            }
-          });
-      return samplePreviews;
+      return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+          .onError(error -> displaySampleRetrievalError(experiment.getName()))
+          .fold(
+              samples -> samples.stream()
+                  .map(sample -> mapSampleToSamplePreview(experiment, sample)).toList(),
+              error -> new ArrayList<>());
     }
+
+    private SamplePreview mapSampleToSamplePreview(Experiment experiment, Sample sample) {
+      String batchLabel = getBatchLabel(sample);
+      String biologicalReplicateLabel = getSampleReplicateLabelInExperiment(experiment, sample);
+      Map<String, String> conditions = getConditionOfExperimentalGroup(experiment, sample);
+      return new SamplePreview(sample.sampleCode().code(), sample.sampleId().value(), batchLabel,
+          biologicalReplicateLabel,
+          sample.label(), conditions,
+          sample.sampleOrigin().getSpecies().value(),
+          sample.sampleOrigin().getSpecimen().value(),
+          sample.sampleOrigin().getAnalyte().value());
+    }
+
+    private void displaySampleRetrievalError(String experimentName) {
+      ErrorMessage errorMessage = new ErrorMessage("Sample Retrieval Error",
+          "Samples for experiment: " + experimentName + "could not be retrieved."
+              + "Please try again by reloading this page");
+      StyledNotification notification = new StyledNotification(errorMessage);
+      notification.open();
+    }
+
 
     private String getBatchLabel(Sample sample) {
       Optional<Batch> foundBatch = batchInformationService.find(sample.assignedBatch());
@@ -395,7 +404,7 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           .stream()
           .filter(experimentalGroup -> experimentalGroup.id() == sample.getExperimentalGroupId())
           .findFirst();
-      Map<String, String> conditionMap = new HashMap<>();
+      TreeMap<String, String> conditionMap = new TreeMap<>();
       if (foundExperimentalGroup.isPresent()) {
         for (VariableLevel variableLevel : foundExperimentalGroup.get().condition()
             .getVariableLevels()) {
