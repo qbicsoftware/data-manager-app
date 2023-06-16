@@ -4,6 +4,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService.ResponseCode;
 
+import java.util.Collection;
+
 /**
  * Sample data storage interface
  * <p>
@@ -20,5 +22,7 @@ public interface SampleRepository {
    * @since 1.0.0
    */
   Result<Sample, ResponseCode> add(Sample sample);
+
+  Result<Collection<Sample>, ResponseCode> addAll(Collection<Sample> sample);
 
 }
