@@ -136,6 +136,7 @@ public class SampleInformationContent extends PageArea {
   public void projectId(ProjectId projectId) {
     this.projectId = projectId;
     sampleOverviewComponent.setProjectId(projectId);
+
     projectInformationService.find(projectId).ifPresentOrElse(project -> {
       loadExperimentInformation(project);
       displaySampleView(project);
@@ -143,11 +144,15 @@ public class SampleInformationContent extends PageArea {
   }
 
   public void loadExperimentInformation(Project project) {
+    project.experiments().forEach(this::propagateExperimentInformation);
+  }
+
+  private void propagateExperimentInformation(ExperimentId experimentId) {
     List<Experiment> foundExperiments = new ArrayList<>();
-    project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
-        .ifPresent(foundExperiments::add));
+    experimentInformationService.find(experimentId).ifPresent(foundExperiments::add);
     if (!foundExperiments.isEmpty()) {
       sampleOverviewComponent.setExperiments(foundExperiments);
+      batchRegistrationDialog.setExperiments(foundExperiments);
     } else {
       displayNoExperimentsFound();
     }
@@ -223,6 +228,7 @@ public class SampleInformationContent extends PageArea {
           batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
         batchRegistrationDialog.resetAndClose();
         displayRegistrationSuccess();
+        //ToDo reload Grid
       });
     });
     batchRegistrationDialog.addCancelEventListener(
