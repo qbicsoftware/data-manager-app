@@ -63,7 +63,7 @@ public class SampleInformationPage extends Div {
     this.setHeightFull();
   }
 
-  private final class SampleInformationPageHandler {
+  private final static class SampleInformationPageHandler {
 
     ProjectNavigationBarComponent projectNavigationBarComponent;
     SampleInformationContent sampleInformationContent;

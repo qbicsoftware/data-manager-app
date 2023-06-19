@@ -56,7 +56,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @PermitAll
 public class SampleInformationContent extends PageArea {
-
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
   private static final Logger log = LoggerFactory.logger(SampleInformationContent.class);
@@ -137,8 +136,10 @@ public class SampleInformationContent extends PageArea {
   public void projectId(ProjectId projectId) {
     this.projectId = projectId;
     sampleOverviewComponent.setProjectId(projectId);
-    projectInformationService.find(projectId).ifPresent(this::loadExperimentInformation);
-    displaySampleView();
+    projectInformationService.find(projectId).ifPresentOrElse(project -> {
+      loadExperimentInformation(project);
+      displaySampleView(project);
+    }, this::displayProjectNotFound);
   }
 
   public void loadExperimentInformation(Project project) {
@@ -152,24 +153,22 @@ public class SampleInformationContent extends PageArea {
     }
   }
 
-  private boolean areExperimentGroupsInProject(ProjectId projectId) {
-    Project project = projectInformationService.find(projectId).get();
+  private boolean areExperimentGroupsInProject(Project project) {
     return project.experiments().stream()
         .anyMatch(experimentInformationService::hasExperimentalGroup);
   }
 
-  private boolean areSamplesInProject(ProjectId projectId) {
-    Project project = projectInformationService.find(projectId).get();
+  private boolean areSamplesInProject(Project project) {
     return project.experiments().stream()
         .anyMatch(
             experimentId -> !sampleInformationService.retrieveSamplesForExperiment(experimentId)
                 .getValue().isEmpty());
   }
 
-  private void displaySampleView() {
-    if (!areExperimentGroupsInProject(projectId)) {
+  private void displaySampleView(Project project) {
+    if (!areExperimentGroupsInProject(project)) {
       displayComponentInContent(noExperimentalGroupsDefinedInProject);
-    } else if (!areSamplesInProject(projectId)) {
+    } else if (!areSamplesInProject(project)) {
       displayComponentInContent(noSamplesRegisteredInProject);
     } else {
       displayComponentInContent(sampleOverviewComponent);
@@ -203,6 +202,12 @@ public class SampleInformationContent extends PageArea {
     notification.open();
   }
 
+  private void displayProjectNotFound() {
+    ErrorMessage errorMessage = new ErrorMessage("The project could not be found",
+        "Please try to reload the page");
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
+  }
 
   private void openBatchRegistrationDialog(ComponentEvent<?> componentEvent) {
     if (componentEvent.isFromClient()) {
