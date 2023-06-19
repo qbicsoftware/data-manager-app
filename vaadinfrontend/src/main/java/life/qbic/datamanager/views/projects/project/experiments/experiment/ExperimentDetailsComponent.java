@@ -99,8 +99,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
     AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-    dialog.addExperimentalGroupSubmitListener(
-        groupSubmitted -> onGroupSubmitted(groupSubmitted));
+    dialog.addExperimentalGroupSubmitListener(this::onGroupSubmitted);
     return dialog;
   }
 

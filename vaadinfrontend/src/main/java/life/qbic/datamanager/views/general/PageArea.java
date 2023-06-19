@@ -18,7 +18,7 @@ public abstract class PageArea extends Component implements HasComponents {
   @Serial
   private static final long serialVersionUID = 4895835532001673549L;
 
-  public PageArea() {
+  protected PageArea() {
     this.addClassName("page-area");
   }
 
