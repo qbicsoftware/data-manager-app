@@ -483,10 +483,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         break;
       }
 
-      ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(conditionInput);
+      String conditionString = conditionInput.trim();
+      String replicateIDString = replicateIDInput.trim();
+
+      ExperimentalGroup experimentalGroup = experimentalGroupToConditionString.get(conditionString);
       Long experimentalGroupId = experimentalGroup.id();
-      BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(replicateIDInput,
-          conditionInput);
+      BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(replicateIDString,
+          conditionString);
       rows.add(new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(), biologicalReplicateId,
           experimentalGroupId, speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
           commentInput.trim()));
