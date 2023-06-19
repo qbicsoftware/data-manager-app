@@ -5,7 +5,7 @@
   width: 66vw;
 }
 
-.dialog .create-button {
+.dialog .confirm-button {
   background-color: var(--lumo-primary-color);
   color: var(--lumo-primary-contrast-color);
   font-weight: 600;

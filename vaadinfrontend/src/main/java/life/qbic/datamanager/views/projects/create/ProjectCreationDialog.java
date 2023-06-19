@@ -65,6 +65,7 @@ public class ProjectCreationDialog extends DialogWindow {
   private final Handler handler;
 
   public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
+    super("Create", "Cancel");
     addClassName("create-project-dialog");
     initCodeAndTitleLayout();
     projectObjective.setRequired(true);
@@ -115,7 +116,7 @@ public class ProjectCreationDialog extends DialogWindow {
   private void configureDialogLayout() {
     setHeaderTitle("Create Project");
     add(formLayout);
-    getFooter().add(cancelButton, createButton);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   private void initCodeAndTitleLayout() {
@@ -236,7 +237,7 @@ public class ProjectCreationDialog extends DialogWindow {
     }
 
     private void configureFormSubmission() {
-      createButton.addClickListener(event -> {
+      confirmButton.addClickListener(event -> {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
