@@ -244,7 +244,8 @@
 }
 
 .experiment-item:hover {
-  background-color: aqua;
+  background-color: #e7effa;
+  cursor: pointer;
 }
 
 .experiment-item .progress-tag{
@@ -283,6 +284,16 @@
   padding-left: 1rem;
 }
 
-.experiment-item .selected {
-  background-color: aquamarine;
+.experiment-item.selected {
+  background-color: white;
+  margin-left: 1rem;
+}
+
+.experiment-item.selected .content-section {
+  padding: 1rem 2rem 0 0;
+}
+
+.experiment-item.selected vaadin-icon{
+  color: var(--lumo-primary-color);
+
 }
