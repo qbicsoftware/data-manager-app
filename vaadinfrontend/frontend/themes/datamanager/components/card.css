@@ -226,3 +226,14 @@
   list-style-type: none;
   display: contents;
 }
+
+/* Support section formatting and components */
+
+/* Experiment item */
+
+.experiment-item .progress-tag{
+  rotate: 180deg;
+  writing-mode: vertical-lr;
+  text-align: center;
+  width: fit-content;
+}

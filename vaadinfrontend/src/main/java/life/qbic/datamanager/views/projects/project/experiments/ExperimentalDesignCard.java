@@ -28,6 +28,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.support.experiment.ExperimentListComponent;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**

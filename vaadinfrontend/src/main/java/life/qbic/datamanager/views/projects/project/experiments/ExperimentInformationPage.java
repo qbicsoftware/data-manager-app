@@ -15,11 +15,16 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
+import life.qbic.datamanager.views.support.experiment.ExperimentItem;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
+import life.qbic.datamanager.views.support.experiment.ExperimentListComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -40,20 +45,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class ExperimentInformationPage extends Div implements BeforeEnterObserver, RouterLayout {
 
+  private ExperimentItemCollection itemCollection;
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
+  private final ExperimentInformationService experimentInformationService;
 
   public ExperimentInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ExperimentDetailsComponent experimentDetailsComponent,
       @Autowired ExperimentListComponent experimentListComponent,
-      @Autowired ProjectInformationService projectInformationService) {
+      @Autowired ProjectInformationService projectInformationService,
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
     Objects.requireNonNull(experimentListComponent);
     Objects.requireNonNull(projectInformationService);
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     setupBoard(projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
     experimentInformationPageHandler = new ExperimentInformationPageHandler(
         projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent,
@@ -79,7 +88,9 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     mainComponents.add(projectNavigationBarComponent, experimentDetailsComponent);
 
     rootRow.add(mainComponents, 3);
-    rootRow.add(experimentListComponent, 1);
+    itemCollection = ExperimentItemCollection.create();
+    rootRow.add(itemCollection, 1);
+
 
     board.add(rootRow);
 
@@ -108,11 +119,11 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
 
   private final class ExperimentInformationPageHandler {
 
+    private ProjectId projectId;
     private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ExperimentDetailsComponent experimentDetailsComponent;
     private final ExperimentListComponent experimentListComponent;
     private final ProjectInformationService projectInformationService;
-    private ProjectId projectId;
 
     public ExperimentInformationPageHandler(
         ProjectNavigationBarComponent projectNavigationBarComponent,
@@ -129,10 +140,15 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       this.projectId = projectId;
       projectNavigationBarComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
-    }
-
-    public ExperimentId getActiveExperimentIdForProject() {
-      return projectInformationService.find(projectId).get().activeExperiment();
+      itemCollection.removeAll();
+      projectInformationService.find(projectId).ifPresent(project -> {
+        project.experiments().stream()
+            .map(experimentInformationService::find).filter(
+                Optional::isPresent).forEach(experiment -> {
+              ExperimentInformationPage.this.itemCollection.addExperimentItem(
+                  ExperimentItem.create(experiment.get()));
+            });
+      });
     }
 
     public void setExperimentId(ExperimentId experimentId) {
@@ -148,6 +164,10 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
       beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
+    }
+
+    public ExperimentId getActiveExperimentIdForProject() {
+      return projectInformationService.find(projectId).get().activeExperiment();
     }
   }
 

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.experiments;
+package life.qbic.datamanager.views.support.experiment;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
@@ -21,6 +21,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentalDesignAddCard;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentalDesignCard;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
