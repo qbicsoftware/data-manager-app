@@ -3,6 +3,7 @@
 /*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
 @import "page-area.css";
 @import "card.css";
+@import "tag-collection.css";
 
 .card-deck {
   display: flex;

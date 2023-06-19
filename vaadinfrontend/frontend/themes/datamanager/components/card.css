@@ -64,6 +64,11 @@
   max-width: 300px;
 }
 
+.experiment-group .content {
+  display: inline-flex;
+  flex-wrap: wrap;
+}
+
 .experimental-group-card-collection {
   display: flex;
   align-content: space-evenly;

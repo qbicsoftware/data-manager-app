@@ -52,10 +52,11 @@ public class ExperimentalGroupCard extends Card {
     cardHeader.add(controls);
     this.add(cardHeader);
 
-    Div container = new Div();
-    container.add(condition());
-    container.add(sampleSize());
-    this.add(container);
+    Div cardContent = new Div();
+    cardContent.add(condition());
+    cardContent.add(sampleSize());
+    cardContent.addClassName("content");
+    this.add(cardContent);
   }
 
   private MenuBar createMenuBar() {
