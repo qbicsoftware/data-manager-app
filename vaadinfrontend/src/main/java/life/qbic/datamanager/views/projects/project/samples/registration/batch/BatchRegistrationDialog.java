@@ -12,6 +12,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -103,7 +104,7 @@ public class BatchRegistrationDialog extends Dialog {
    * Defines the currently active {@link Experiment} within the project from which the information
    * will be derived in the {@link SampleRegistrationSpreadsheet}
    */
-  public void setExperiments(List<Experiment> experiments) {
+  public void setExperiments(Collection<Experiment> experiments) {
     batchInformationLayout.experimentSelect.setItems(experiments);
   }
 

@@ -36,3 +36,48 @@
   cursor: pointer;
   background-color: inherit;
 }
+
+.sample-content-area .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.sample-content-area .content {
+  display: flex;
+  flex-basis: 100%;
+}
+
+.sample-content-area .no-groups-defined {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+}
+
+.sample-content-area .no-groups-defined .title {
+  font-weight: bold;
+  color: #2d2d2d;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.sample-content-area .no-samples-defined {
+  align-items: center;
+  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+}
+
+.sample-content-area .no-samples-defined .title {
+  font-weight: bold;
+  color: #2d2d2d;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.sample-content-area .sample-overview-component {
+}
