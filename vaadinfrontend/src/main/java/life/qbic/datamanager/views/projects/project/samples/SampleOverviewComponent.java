@@ -3,16 +3,12 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -22,11 +18,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
-import com.vaadin.flow.theme.lumo.LumoUtility.FlexWrap;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Bottom;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Right;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
@@ -43,7 +34,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -70,11 +61,9 @@ public class SampleOverviewComponent extends Div implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
-  private final VerticalLayout sampleContentLayout = new VerticalLayout();
-  private final HorizontalLayout buttonAndFieldBar = new HorizontalLayout();
-  private final HorizontalLayout fieldBar = new HorizontalLayout();
-  private final HorizontalLayout buttonBar = new HorizontalLayout();
-  private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
+  private final Div buttonAndFieldBar = new Div();
+  private final Span fieldBar = new Span();
+  private final Span buttonBar = new Span();
   private final TextField searchField = new TextField();
   private final Select<String> tabFilterSelect = new Select<>();
   public final Button registerButton = new Button("Register");
@@ -94,14 +83,10 @@ public class SampleOverviewComponent extends Div implements Serializable {
   }
 
   private void initSampleView() {
-    this.setSizeFull();
     this.addClassName("sample-overview-component");
-    sampleExperimentTabSheet.setSizeFull();
     initButtonAndFieldBar();
-    sampleContentLayout.add(buttonAndFieldBar);
-    sampleContentLayout.add(sampleExperimentTabSheet);
-    add(sampleContentLayout);
-    sampleContentLayout.setSizeFull();
+    this.add(buttonAndFieldBar);
+    this.add(sampleExperimentTabSheet);
   }
 
   private void initButtonAndFieldBar() {
@@ -111,18 +96,15 @@ public class SampleOverviewComponent extends Div implements Serializable {
     tabFilterSelect.setLabel("Search in");
     tabFilterSelect.setEmptySelectionAllowed(true);
     tabFilterSelect.setEmptySelectionCaption("All tabs");
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     fieldBar.add(searchField, tabFilterSelect);
+    fieldBar.addClassName("search-bar");
     //Items in layout should be aligned at the end due to searchFieldLabel taking up space
+    registerButton.addClassName("primary");
     buttonBar.add(registerButton, metadataDownloadButton);
-    fieldBar.setAlignSelf(Alignment.START, buttonAndFieldBar);
-    buttonBar.setAlignSelf(Alignment.END, buttonAndFieldBar);
-    fieldBar.setAlignItems(Alignment.END);
-    buttonBar.setAlignItems(Alignment.END);
+    buttonBar.addClassName("button-bar");
     //Moves buttonbar to right side of sample grid
-    fieldBar.setWidthFull();
     buttonAndFieldBar.add(fieldBar, buttonBar);
-    buttonAndFieldBar.setWidthFull();
+    buttonAndFieldBar.addClassName("button-and-search-bar");
   }
 
   private Grid<SamplePreview> createSampleGrid() {
@@ -158,15 +140,10 @@ public class SampleOverviewComponent extends Div implements Serializable {
 
   private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.condition.forEach(
       (key, value) -> {
+        div.addClassName("tag-collection");
         String experimentalVariable = key + ": " + value;
-        Span tag = new Span(experimentalVariable);
+        Tag tag = new Tag(experimentalVariable);
         tag.setTitle(experimentalVariable);
-        tag.getElement().getThemeList().add("badge");
-        tag.addClassName(Right.XSMALL);
-        tag.addClassName(Bottom.XSMALL);
-        tag.addClassName(Top.XSMALL);
-        div.addClassName(FlexWrap.WRAP);
-        div.addClassName(Display.INLINE_FLEX);
         div.add(tag);
       });
 
@@ -180,7 +157,6 @@ public class SampleOverviewComponent extends Div implements Serializable {
 
   public void setExperiments(Collection<Experiment> experiments) {
     sampleOverviewComponentHandler.setExperiments(experiments);
-    batchRegistrationDialog.setExperiments(experiments);
   }
 
   private record SamplePreview(String sampleCode, String sampleId, String batchLabel,

@@ -1,15 +1,15 @@
 /* Styles recreated from vaadin lumo theme */
-.primary {
+vaadin-button.primary {
   background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
   color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
   font-weight: 600;
   min-width: calc(var(--lumo-button-size) * 2.5);
 }
 
-.primary .button::before {
+vaadin-button.primary .button::before {
   background-color: black;
 }
 
-.primary .button:hover::before {
+vaadin-button.primary .button:hover::before {
   opacity: 0.05;
 }
