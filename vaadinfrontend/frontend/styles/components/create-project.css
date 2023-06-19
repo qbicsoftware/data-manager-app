@@ -1,8 +1,0 @@
-.create-project-form vaadin-form-item::part(label) {
-  font-weight: bold;
-  color: black;
-}
-
-.create-project-form {
-  padding-bottom: 1em;
-}
