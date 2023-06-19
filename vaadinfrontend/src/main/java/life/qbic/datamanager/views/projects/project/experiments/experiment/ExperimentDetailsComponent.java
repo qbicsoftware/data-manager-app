@@ -69,7 +69,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final CardComponent blockingVariableCard = new CardComponent();
-  private final Button addBlockingVariableButton = new Button("Add");
+  private final Button addBlockingVariableButton;
   private final AddExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
@@ -80,6 +80,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+
+    addBlockingVariableButton = new Button("Add");
 
     this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
