@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.board.Board;
-import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -41,7 +38,7 @@ public class SampleInformationPage extends Div {
       @Autowired SampleInformationContent sampleInformationContent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleInformationContent);
-    setupBoard(projectNavigationBarComponent, sampleInformationContent);
+    setupPage(projectNavigationBarComponent, sampleInformationContent);
     stylePage();
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
         sampleInformationContent);
@@ -51,24 +48,10 @@ public class SampleInformationPage extends Div {
         System.identityHashCode(sampleInformationContent)));
   }
 
-  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
+  private void setupPage(ProjectNavigationBarComponent projectNavigationBarComponent,
       SampleInformationContent sampleInformationContent) {
-    Board board = new Board();
-
-    Row topRow = new Row();
-    topRow.add(projectNavigationBarComponent, 3);
-    topRow.add(new Div());
-
-    Row secondRow = new Row();
-    secondRow.add(sampleInformationContent, 4);
-    board.add(topRow, secondRow);
-
-    board.setSizeFull();
-    board.setMinHeight(100, Unit.PERCENTAGE);
-    board.setMinWidth(100, Unit.PERCENTAGE);
-    board.setMaxWidth(100, Unit.PERCENTAGE);
-    board.setMinWidth(100, Unit.PERCENTAGE);
-    add(board);
+    this.add(projectNavigationBarComponent);
+    this.add(sampleInformationContent);
   }
 
   public void projectId(ProjectId projectId) {
