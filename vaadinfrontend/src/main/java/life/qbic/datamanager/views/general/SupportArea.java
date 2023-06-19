@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.general;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Tag;
 import java.io.Serial;
 
