@@ -12,6 +12,10 @@
   min-width: calc(var(--lumo-button-size) * 2.5);
 }
 
+.dialog .confirm-button:hover::before {
+  opacity: 0.05;
+}
+
 .create-project-dialog {
 
 }
