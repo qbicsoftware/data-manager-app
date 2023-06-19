@@ -171,6 +171,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     }
 
     public void setExperimentId(ExperimentId experimentId) {
+      itemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsSelected);
       experimentDetailsComponent.setExperiment(experimentId);
       projectNavigationBarComponent.experimentId(experimentId);
     }
@@ -189,7 +190,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       RouteParam experimentIdParam = new RouteParam("experimentId", experimentId.value());
       RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
-      UI.getCurrent().navigate(ExperimentInformationPage.class, routeParameters);
+      UI.getCurrent().access(() -> UI.getCurrent().navigate(ExperimentInformationPage.class, routeParameters));
     }
 
     public ExperimentId getActiveExperimentIdForProject() {

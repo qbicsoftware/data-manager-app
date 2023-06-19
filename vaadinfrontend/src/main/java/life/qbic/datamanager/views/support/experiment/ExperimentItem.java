@@ -118,7 +118,7 @@ public class ExperimentItem extends Card {
   }
 
   public void setAsSelected() {
-
+    addClassNames("selected");
   }
 
   public void addSelectionListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {

@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.support.experiment;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +60,13 @@ public class ExperimentItemCollection extends Div {
 
   public void addClickEventListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
     listeners.add(listener);
+  }
+
+  @Override
+  public void removeAll() {
+    super.removeAll();
+    this.items.clear();
+    this.listeners.clear();
   }
 
 }
