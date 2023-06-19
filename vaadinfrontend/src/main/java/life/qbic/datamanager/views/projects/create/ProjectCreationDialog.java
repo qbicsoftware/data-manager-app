@@ -153,7 +153,6 @@ public class ProjectCreationDialog extends DialogWindow {
   private void styleForm() {
     formLayout.setClassName("project-form-layout");
     styleSearchBox();
-    Component c;
   }
 
   private void styleSearchBox() {
