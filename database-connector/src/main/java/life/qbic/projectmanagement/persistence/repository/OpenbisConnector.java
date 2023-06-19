@@ -18,7 +18,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
@@ -159,9 +159,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void handleOperations(IOperation operation) {
     IApplicationServerApi api = openBisClient.getV3();
-
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
-    List<IOperation> operationOptions = Arrays.asList(operation);
+    List<IOperation> operationOptions = Collections.singletonList(operation);
     try {
       api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions);
     } catch (Exception e) {
@@ -186,7 +185,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   // Convenience RTE to describe connection issues
-  class ConnectionException extends RuntimeException {
+  static class ConnectionException extends RuntimeException {
 
   }
 

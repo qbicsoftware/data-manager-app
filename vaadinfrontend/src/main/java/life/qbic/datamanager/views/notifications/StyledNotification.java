@@ -18,10 +18,4 @@ public class StyledNotification extends Notification {
     setDuration(DEFAULT_DURATION_MILLI_SECONDS);
     setPosition(Position.TOP_CENTER);
   }
-
-  public void open() {
-    super.open();
-  }
-
-
 }
