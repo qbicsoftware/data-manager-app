@@ -18,18 +18,13 @@
 
 .create-project-dialog .project-form-layout {
   max-width: 60vw;
-  display: block;
   padding-bottom: 1em;
-}
-
-.create-project-dialog .project-form-layout :host {
 }
 
 .create-project-dialog .code-and-title {
   align-items: baseline;
   width: 100%;
 }
-
 
 .create-project-dialog .code-and-title .code {
   max-width: 20vw;
