@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.notifications;
 
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 
 /**
  * <b>short description</b>
@@ -10,21 +9,18 @@ import com.vaadin.flow.component.notification.Notification.Position;
  *
  * @since <version tag>
  */
-public class StyledNotification {
+public class StyledNotification extends Notification {
 
   public static final int DEFAULT_DURATION_MILLI_SECONDS = 2000;
-  private final DisplayMessage displayMessage;
-
 
   public StyledNotification(DisplayMessage displayMessage) {
-    this.displayMessage = displayMessage;
+    super(displayMessage);
+    setDuration(DEFAULT_DURATION_MILLI_SECONDS);
+    setPosition(Position.TOP_CENTER);
   }
 
   public void open() {
-    Notification notification = new Notification(displayMessage);
-    notification.setDuration(DEFAULT_DURATION_MILLI_SECONDS);
-    notification.setPosition(Position.TOP_CENTER);
-    notification.open();
+    super.open();
   }
 
 

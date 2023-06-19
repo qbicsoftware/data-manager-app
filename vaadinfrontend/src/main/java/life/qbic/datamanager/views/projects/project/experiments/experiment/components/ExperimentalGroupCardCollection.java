@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import java.io.Serial;
 import java.util.Collection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard;
