@@ -66,7 +66,7 @@ public class ProjectRegistrationService {
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-      addExperimentToProjectService.addExperimentToProject(project.getId(), "Experiment 0",
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "First Experiment",
           speciesList, specimenList, analyteList).onError(e -> {
         projectRepository.deleteByProjectCode(project.getProjectCode());
         throw new ApplicationException(
