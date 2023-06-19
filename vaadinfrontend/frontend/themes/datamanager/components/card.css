@@ -27,23 +27,6 @@
   cursor: pointer;
 }
 
-/* Styles shamelessly stolen from the vaadin primary theme */
-
-.creation-card .button {
-  background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
-  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
-  font-weight: 600;
-  min-width: calc(var(--lumo-button-size) * 2.5);
-}
-
-.creation-card .button::before {
-  background-color: black;
-}
-
-.creation-card .button:hover::before {
-  opacity: 0.05;
-}
-
 .disclaimer-card {
   display: flex;
   justify-content: center;
@@ -70,23 +53,6 @@
   color: #2d2d2d;
   font-size: var(--lumo-font-size-m);
   margin-bottom: 0.5rem;
-}
-
-/* Styles shamelessly stolen from the vaadin primary theme */
-
-.disclaimer-card .button {
-  background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
-  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
-  font-weight: 600;
-  min-width: calc(var(--lumo-button-size) * 2.5);
-}
-
-.disclaimer-card .button::before {
-  background-color: black;
-}
-
-.disclaimer-card .button:hover::before {
-  opacity: 0.05;
 }
 
 .experimental-group {
