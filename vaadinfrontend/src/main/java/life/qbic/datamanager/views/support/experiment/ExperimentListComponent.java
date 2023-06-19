@@ -1,13 +1,11 @@
 package life.qbic.datamanager.views.support.experiment;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -22,7 +20,6 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentalDesignAddCard;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentalDesignCard;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -104,7 +101,6 @@ public class ExperimentListComponent extends Composite<PageComponent> {
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
       this.addExperimentToProjectService = addExperimentToProjectService;
-      experiments.setRenderer(renderExperimentsAsExperimentalDesignCards());
       openDialogUponClickingAddCard();
       configureExperimentCreationDialog();
     }
@@ -151,18 +147,6 @@ public class ExperimentListComponent extends Composite<PageComponent> {
             experiments.getDataProvider().refreshAll();
             routeToExperiment(experimentId);
           });
-    }
-
-    private ComponentRenderer<Component, Experiment> renderExperimentsAsExperimentalDesignCards() {
-      return new ComponentRenderer<>(experiment -> {
-        ExperimentalDesignCard experimentalDesignCard = new ExperimentalDesignCard(experiment);
-        experimentalDesignCard.setActive(isActiveExperiment(experiment.experimentId()));
-        experimentalDesignCard.getContent().addClickListener(clickEvent -> {
-          projectInformationService.setActiveExperiment(projectId, experiment.experimentId());
-          handler.routeToExperiment(experiment.experimentId());
-        });
-        return experimentalDesignCard;
-      });
     }
 
     private void routeToExperiment(ExperimentId experimentId) {
