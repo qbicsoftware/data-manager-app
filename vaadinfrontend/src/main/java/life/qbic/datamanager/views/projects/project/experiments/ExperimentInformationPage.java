@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
@@ -9,6 +11,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.Router;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -20,6 +23,7 @@ import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponen
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItem;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
 import life.qbic.datamanager.views.support.experiment.ExperimentListComponent;
 import life.qbic.logging.api.Logger;
@@ -91,7 +95,6 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     itemCollection = ExperimentItemCollection.create();
     rootRow.add(itemCollection, 1);
 
-
     board.add(rootRow);
 
     board.setSizeFull();
@@ -141,14 +144,30 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       projectNavigationBarComponent.projectId(projectId);
       experimentListComponent.projectId(projectId);
       itemCollection.removeAll();
-      projectInformationService.find(projectId).ifPresent(project -> {
-        project.experiments().stream()
-            .map(experimentInformationService::find).filter(
-                Optional::isPresent).forEach(experiment -> {
-              ExperimentInformationPage.this.itemCollection.addExperimentItem(
-                  ExperimentItem.create(experiment.get()));
-            });
+      var project = projectInformationService.find(projectId);
+      if (project.isEmpty()) {
+        return;
+      }
+      project.get().experiments().stream()
+          .map(experimentInformationService::find).filter(
+              Optional::isPresent).forEach(experiment -> {
+            ExperimentInformationPage.this.itemCollection.addExperimentItem(
+                ExperimentItem.create(experiment.get()));
+          });
+      var activeExperiment = project.get().activeExperiment();
+      itemCollection.findBy(activeExperiment).ifPresent(ExperimentItem::setAsActive);
+      enableActiveExperimentSelectionListener();
+    }
+
+    private void enableActiveExperimentSelectionListener() {
+      itemCollection.addClickEventListener((ComponentEventListener<ExperimentItemClickedEvent>) event -> {
+        var newActiveExperiment = event.getSource().experimentId();
+        routeToSelectedExperiment(projectId, newActiveExperiment);
       });
+    }
+    
+    private void setSelectedExperiment(ExperimentId newActiveExperiment) {
+      projectInformationService.setActiveExperiment(projectId, newActiveExperiment);
     }
 
     public void setExperimentId(ExperimentId experimentId) {
@@ -164,6 +183,13 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
       beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
+    }
+
+    public void routeToSelectedExperiment(ProjectId projectId, ExperimentId experimentId) {
+      RouteParam experimentIdParam = new RouteParam("experimentId", experimentId.value());
+      RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
+      RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
+      UI.getCurrent().navigate(ExperimentInformationPage.class, routeParameters);
     }
 
     public ExperimentId getActiveExperimentIdForProject() {

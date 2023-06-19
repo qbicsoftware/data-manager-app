@@ -229,11 +229,52 @@
 
 /* Support section formatting and components */
 
+.experiment-item-collection {
+  display: grid;
+  row-gap: 1rem;
+  grid-auto-rows: max-content;
+}
+
 /* Experiment item */
 
+.experiment-item {
+  display: block;
+  height: 100px;
+  width: 100%;
+}
+
 .experiment-item .progress-tag{
-  rotate: 180deg;
-  writing-mode: vertical-lr;
   text-align: center;
   width: fit-content;
+
+}
+
+.experiment-item .experiment-title {
+  font-weight: bold;
+  padding-left: 1rem;
+  color: #3f3f3f;
+}
+
+.experiment-item .content-section {
+  padding: 1rem 1rem 0 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.experiment-item .progress-section {
+  background-color: gainsboro;
+  font-size: smaller;
+  padding-left: 1rem;
+}
+
+.experiment-item .progress-section .incomplete{
+  background-color: gainsboro;
+}
+
+.experiment-item vaadin-icon {
+  color: #949494;
+}
+
+.experiment-item .selected-section {
+  padding-left: 1rem;
 }
