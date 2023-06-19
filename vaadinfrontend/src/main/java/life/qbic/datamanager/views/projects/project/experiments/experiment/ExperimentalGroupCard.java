@@ -78,14 +78,15 @@ public class ExperimentalGroupCard extends Card {
 
   private Div condition() {
     var variableLevels = experimentalGroup.condition().getVariableLevels();
-    Div layout = new Div();
+    Div tagLayout = new Div();
+    tagLayout.addClassName("tag-collection");
     String tagFormat = "%s %s"; // "<value> [<unit>]"
     List<Tag> tags = variableLevels.stream()
         .sorted(Comparator.comparing(variable -> variable.variableName().value()))
         .map(variableLevel -> new Tag(tagFormat.formatted(variableLevel.experimentalValue().value(),
             variableLevel.experimentalValue().unit().orElse("").trim()))).toList();
-    tags.forEach(layout::add);
-    return layout;
+    tags.forEach(tagLayout::add);
+    return tagLayout;
   }
 
   private Span sampleSize() {
