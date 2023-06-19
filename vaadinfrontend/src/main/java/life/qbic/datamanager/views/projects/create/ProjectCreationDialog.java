@@ -77,13 +77,13 @@ public class ProjectCreationDialog extends DialogWindow {
     principalInvestigator.setPlaceholder("Select a principal investigator");
     principalInvestigator.setRequired(true);
 
+    projectManager.setPlaceholder("Select a project manager");
+    projectManager.setRequired(true);
+
     responsiblePerson.setPlaceholder("Select Project Responsible");
     responsiblePerson.setHelperText("Should be contacted about project related questions");
     //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
     responsiblePerson.setClearButtonVisible(true);
-
-    projectManager.setPlaceholder("Select a project manager");
-    projectManager.setRequired(true);
 
     configureDialogLayout();
     initForm();
@@ -144,8 +144,8 @@ public class ProjectCreationDialog extends DialogWindow {
     formLayout.add(defineExperimentComponent);
     formLayout.add(projectContactsLayout);
     formLayout.add(principalInvestigator);
-    formLayout.add(responsiblePerson);
     formLayout.add(projectManager);
+    formLayout.add(responsiblePerson);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
