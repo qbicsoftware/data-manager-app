@@ -15,11 +15,12 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experiment Item</b>
+ * <p>
+ * A light weight display of experiment information to enable the user to quickly scan and select an
+ * experiment.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentItem extends Card {
 
@@ -50,15 +51,42 @@ public class ExperimentItem extends Card {
     configureComponent();
   }
 
+  private void layoutComponent() {
+    addClassName("experiment-item");
+    layoutProgressStatus();
+    layoutExperimentLabel();
+    layoutActiveSection();
+  }
+
   private void configureComponent() {
     loadProgressStatus();
     loadExperimentTitle();
     setStatusToInactive();
-    addListener(ExperimentItemClickedEvent.class, listener -> informListeners(new ExperimentItemClickedEvent(this, true)));
+    addListener(ExperimentItemClickedEvent.class,
+        listener -> informListeners(new ExperimentItemClickedEvent(this, true)));
   }
 
-  private void setStatusToInactive() {
-    activeTag.setVisible(false);
+  private void layoutProgressStatus() {
+    progressSection.addClassName("progress-section");
+    progressTag.addClassName("progress-tag");
+    progressSection.add(progressTag);
+    add(progressSection);
+  }
+
+  private void layoutExperimentLabel() {
+    experimentTitle.addClassName("experiment-title");
+    contentSection.addClassName("content-section");
+    contentSection.add(experimentTitle);
+    contentSection.add(flaskIcon);
+    add(contentSection);
+  }
+
+  private void layoutActiveSection() {
+    activeTag.getElement().getThemeList().add("badge success primary");
+    activeTag.addClassName(BorderRadius.MEDIUM);
+    activeSection.add(activeTag);
+    activeSection.addClassName("active-section");
+    add(activeSection);
   }
 
   private void loadProgressStatus() {
@@ -70,45 +98,44 @@ public class ExperimentItem extends Card {
     experimentTitle.setText(experiment.getName());
   }
 
-  private void layoutComponent() {
-    addClassName("experiment-item");
-    layoutProgressStatus();
-    layoutExperimentLabel();
-    layoutActiveSection();
+  private void setStatusToInactive() {
+    activeTag.setVisible(false);
   }
 
-  private void layoutActiveSection() {
-    activeTag.getElement().getThemeList().add("badge success primary");
-    activeTag.addClassName(BorderRadius.MEDIUM);
-    activeSection.add(activeTag);
-    activeSection.addClassName("active-section");
-    add(activeSection);
+  private void informListeners(ExperimentItemClickedEvent componentClickedEvent) {
+    selectionListeners.forEach(listener -> listener.onComponentEvent(componentClickedEvent));
   }
 
-  private void layoutExperimentLabel() {
-    experimentTitle.addClassName("experiment-title");
-    contentSection.addClassName("content-section");
-    contentSection.add(experimentTitle);
-    contentSection.add(flaskIcon);
-    add(contentSection);
-  }
-
-  private void layoutProgressStatus() {
-    progressSection.addClassName("progress-section");
-    progressTag.addClassName("progress-tag");
-    progressSection.add(progressTag);
-    add(progressSection);
-  }
-
+  /**
+   * Creates an {@link ExperimentItem} based on the information available in the provided
+   * {@link Experiment}.
+   *
+   * @param experiment the experiment the item should render its information from
+   * @return an {@link ExperimentItem} that displays concise information from the provided
+   * {@link Experiment}
+   * @since 1.0.0
+   */
   public static ExperimentItem create(Experiment experiment) {
     Objects.requireNonNull(experiment);
     return new ExperimentItem(experiment);
   }
 
+
+  /**
+   * Queries the {@link ExperimentId} of referenced {@link Experiment} the item displays.
+   *
+   * @return the experiment id
+   * @since 1.0.0
+   */
   public ExperimentId experimentId() {
     return experiment.experimentId();
   }
 
+  /**
+   * Sets the item in its "active" state.
+   *
+   * @since 1.0.0
+   */
   public void setAsActive() {
     activeTag.setVisible(true);
   }
@@ -117,16 +144,23 @@ public class ExperimentItem extends Card {
     activeTag.setVisible(false);
   }
 
+  /**
+   * Renders the item in its "selected" state.
+   *
+   * @since 1.0.0
+   */
   public void setAsSelected() {
     addClassNames("selected");
   }
 
+  /**
+   * Add a listener that will be called, if the experiment item has been clicked.
+   *
+   * @param listener the listener to be called upon
+   * @since 1.0.0
+   */
   public void addSelectionListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
     selectionListeners.add(listener);
-  }
-
-  private void informListeners(ExperimentItemClickedEvent componentClickedEvent) {
-    selectionListeners.forEach(listener -> listener.onComponentEvent(componentClickedEvent));
   }
 
 }
