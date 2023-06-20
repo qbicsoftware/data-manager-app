@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -48,14 +49,14 @@ public class ProjectCreationDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 6132538769263078943L;
   public final ComboBox<OfferPreview> offerSearchField = new ComboBox<>("Offer");
-  private HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
+  private Span codeAndTitleLayout = new Span();
   private final TextField codeField = new TextField("Code");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
   private final FormLayout formLayout = new FormLayout();
   private final TextField titleField = new TextField("Title");
   private final TextArea projectObjective = new TextArea("Objective");
   private final DefineExperimentComponent defineExperimentComponent;
-  private final VerticalLayout projectContactsLayout = new VerticalLayout();
+  private final Div projectContactsLayout = new Div();
   public final ComboBox<PersonReference> principalInvestigator = new ComboBox<>(
       "Principal Investigator");
   public final ComboBox<PersonReference> responsiblePerson = new ComboBox<>(
@@ -120,7 +121,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void initCodeAndTitleLayout() {
-    codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout = new Span();
     generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     defaultProjectCodeCreation();

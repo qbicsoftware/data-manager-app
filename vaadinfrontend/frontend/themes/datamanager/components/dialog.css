@@ -26,16 +26,18 @@
 }
 
 .create-project-dialog .code-and-title {
+  display: flex;
+  gap: 1em;
   align-items: baseline;
-  width: 100%;
 }
+
 
 .create-project-dialog .code-and-title .code {
-  max-width: 20vw;
-}
+    max-width: 20vw;
+  }
 
-.create-project-dialog .code-and-title .title {
-  width: 100%;
+  .create-project-dialog .code-and-title .title {
+    width: 100%;
 }
 
 .create-project-dialog .search-field {
@@ -43,15 +45,14 @@
 }
 
 .create-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
   margin: 0;
   padding: var(--lumo-space-m) 0 0;
 }
 
 .create-project-dialog .project-contacts .title {
   font-weight: bold;
-}
-
-.create-project-form vaadin-form-item::part(label) {
-  font-weight: bold;
-  color: black;
 }
