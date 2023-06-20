@@ -28,7 +28,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>openbis-client-lib</artifactId>
-      <version>1.5.0</version>
+      <version>1.6.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>

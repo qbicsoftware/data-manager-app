@@ -15,7 +15,6 @@
   display: flex;
   justify-content: center;
   padding: 1.5rem;
-  max-width: 300px;
   flex: auto;
 }
 
@@ -25,6 +24,27 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+.creation-card .disclaimer-area {
+  font-size: smaller;
+}
+
+/* Styles shamelessly stolen from the vaadin primary theme */
+
+.creation-card .button {
+  background-color: var(--lumo-button-primary-background-color, var(--lumo-primary-color));
+  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
+  font-weight: 600;
+  min-width: calc(var(--lumo-button-size) * 2.5);
+}
+
+.creation-card .button::before {
+  background-color: black;
+}
+
+.creation-card .button:hover::before {
+  opacity: 0.05;
 }
 
 .disclaimer-card {
@@ -84,7 +104,7 @@
   margin-bottom: 1em;
 }
 
-.experimental-group .content {
+.experimental-group .tag-collection {
   display: inline-flex;
   flex-wrap: wrap;
 }
@@ -175,7 +195,6 @@
 }
 
 .experimental-variables-fact-sheet .variable-header {
-  flex: auto;
   background-color: var(--lumo-primary-color-10pct);
   color: var(--lumo-primary-text-color);
   font-weight: bold;
@@ -197,4 +216,79 @@
 .experimental-variables-fact-sheet ul {
   list-style-type: none;
   display: contents;
+}
+
+/* Support section formatting and components */
+
+.experiment-item-collection {
+  display: grid;
+  row-gap: 1rem;
+  grid-auto-rows: max-content;
+}
+
+/* Experiment item */
+
+.experiment-item {
+  display: block;
+  min-height: 100px;
+  width: 100%;
+}
+
+.experiment-item:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.experiment-item .progress-tag{
+  text-align: center;
+  width: fit-content;
+
+}
+
+.experiment-item .experiment-title {
+  font-weight: bold;
+  padding-left: 1rem;
+  color: #3f3f3f;
+}
+
+.experiment-item .content-section {
+  padding: 1rem 1rem 0 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.experiment-item .progress-section {
+  background-color: gainsboro;
+  font-size: smaller;
+  padding-left: 1rem;
+}
+
+.experiment-item .progress-section .incomplete{
+  background-color: gainsboro;
+}
+
+.experiment-item vaadin-icon {
+  color: #949494;
+  min-width: var(--lumo-icon-size-m);
+  min-height: var(--lumo-icon-size-m);
+}
+
+.experiment-item .active-section {
+  padding-left: 1rem;
+  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--lumo-space-l);
+}
+
+.experiment-item.selected {
+  background-color: white;
+  margin-left: 1rem;
+}
+
+.experiment-item.selected .content-section {
+  padding: 1rem 2rem 0 0;
+}
+
+.experiment-item.selected vaadin-icon{
+  color: var(--lumo-primary-color);
+
 }
