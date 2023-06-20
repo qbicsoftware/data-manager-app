@@ -17,7 +17,7 @@ public class DialogWindow extends Dialog {
   protected final Button cancelButton = new Button();
 
   protected DialogWindow(String confirmLabel, String cancelLabel) {
-    this.addClassName("dialog");
+    this.addClassName("dialog-window");
     confirmButton.setText(confirmLabel);
     confirmButton.addClassName("confirm-button");
     cancelButton.setText(cancelLabel);
