@@ -1,12 +1,12 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment;
+package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import java.io.Serial;
 import java.util.Collection;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard;
 
 /**
  * <b>Experimental Group Collection</b>
@@ -22,8 +22,7 @@ public class ExperimentalGroupCardCollection extends Component implements HasCom
   private static final long serialVersionUID = -5835580091959912561L;
 
   public ExperimentalGroupCardCollection() {
-    addClassName(Gap.SMALL);
-    addClassName("card-deck");
+    addClassName("experimental-group-card-collection");
   }
 
   public void setComponents(Collection<ExperimentalGroupCard> experimentalGroupComponents) {

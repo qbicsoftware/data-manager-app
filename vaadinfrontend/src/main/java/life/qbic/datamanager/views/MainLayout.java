@@ -32,10 +32,8 @@ public class MainLayout extends DataManagerLayout {
   private HorizontalLayout createHeaderButtonLayout() {
     homeButton = new Button("Home");
     logout = new Button("Log out");
-    HorizontalLayout loggedInButtonLayout = new HorizontalLayout(homeButton, logout);
-    loggedInButtonLayout.addClassName("button-layout-spacing");
 
-    return loggedInButtonLayout;
+    return new HorizontalLayout(homeButton, logout);
   }
 
   public Button logout() { return logout; }

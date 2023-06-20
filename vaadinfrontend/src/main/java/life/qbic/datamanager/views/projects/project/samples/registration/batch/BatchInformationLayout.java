@@ -26,7 +26,7 @@ import java.util.List;
  * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-class BatchInformationLayout extends VerticalLayout {
+public class BatchInformationLayout extends VerticalLayout {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
@@ -76,13 +76,13 @@ class BatchInformationLayout extends VerticalLayout {
     dataTypeSelection.setItems(MetadataType.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(MetadataType -> {
-      Span metadataType = new Span(MetadataType.label);
+    dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
+      Span metadataTypeSpan = new Span(metadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
       infoIcon.addClassNames(IconSize.SMALL);
       infoIcon.setColor("#77828f");
-      infoIcon.setTooltipText(MetadataType.description);
-      return new HorizontalLayout(metadataType, infoIcon);
+      infoIcon.setTooltipText(metadataType.description);
+      return new HorizontalLayout(metadataTypeSpan, infoIcon);
     }));
   }
 
