@@ -1,6 +1,3 @@
-.dialog-window {
-}
-
 .dialog-window::part(overlay) {
   width: 66vw;
 }
@@ -14,10 +11,6 @@
 
 .dialog-window .confirm-button:hover::before {
   opacity: 0.05;
-}
-
-.create-project-dialog {
-
 }
 
 .create-project-dialog .content {
