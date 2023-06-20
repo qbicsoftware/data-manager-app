@@ -157,7 +157,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void styleSearchBox() {
-    offerSearchField.setClassName("search");
+    offerSearchField.setClassName("search-field");
     offerSearchField.setPlaceholder("Search");
     offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
   }
