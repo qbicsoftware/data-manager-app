@@ -62,7 +62,7 @@ public class ExperimentItem extends Card {
   }
 
   private void loadProgressStatus() {
-    progressSection.addClassName("incomplete-experiment");
+    progressSection.addClassName("incomplete");
     progressSection.setText("incomplete");
   }
 

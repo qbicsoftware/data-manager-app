@@ -278,10 +278,14 @@
 
 .experiment-item vaadin-icon {
   color: #949494;
+  min-width: var(--lumo-icon-size-m);
+  min-height: var(--lumo-icon-size-m);
 }
 
 .experiment-item .active-section {
   padding-left: 1rem;
+  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--lumo-space-l);
 }
 
 .experiment-item.selected {
