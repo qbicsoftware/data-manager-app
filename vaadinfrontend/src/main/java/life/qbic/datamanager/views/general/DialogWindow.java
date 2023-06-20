@@ -27,10 +27,18 @@ public class DialogWindow extends Dialog {
 
     private T value;
 
+    /**
+     * Returns the value stored in this container
+     * @return
+     */
     public T value() {
       return this.value;
     }
 
+    /**
+     * Sets the value stored in this container
+     * @return
+     */
     public void setValue(T newValue) {
       this.value = newValue;
     }
