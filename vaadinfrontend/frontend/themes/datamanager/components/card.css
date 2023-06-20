@@ -204,7 +204,6 @@
 }
 
 .experimental-variables-fact-sheet .variable-header {
-  flex: auto;
   background-color: var(--lumo-primary-color-10pct);
   color: var(--lumo-primary-text-color);
   font-weight: bold;
