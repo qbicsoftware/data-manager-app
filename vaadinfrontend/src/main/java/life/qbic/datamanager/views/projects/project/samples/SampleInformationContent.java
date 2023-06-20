@@ -11,6 +11,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -144,18 +145,19 @@ public class SampleInformationContent extends PageArea {
   }
 
   public void loadExperimentInformation(Project project) {
-    project.experiments().forEach(this::propagateExperimentInformation);
-  }
-
-  private void propagateExperimentInformation(ExperimentId experimentId) {
-    List<Experiment> foundExperiments = new ArrayList<>();
-    experimentInformationService.find(experimentId).ifPresent(foundExperiments::add);
+    Collection<Experiment> foundExperiments = new ArrayList<>();
+    project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
+        .ifPresent(foundExperiments::add));
     if (!foundExperiments.isEmpty()) {
-      sampleOverviewComponent.setExperiments(foundExperiments);
-      batchRegistrationDialog.setExperiments(foundExperiments);
+      propagateExperimentInformation(foundExperiments);
     } else {
       displayNoExperimentsFound();
     }
+  }
+
+  private void propagateExperimentInformation(Collection<Experiment> experiments) {
+    sampleOverviewComponent.setExperiments(experiments);
+    batchRegistrationDialog.setExperiments(experiments);
   }
 
   private boolean areExperimentGroupsInProject(Project project) {
