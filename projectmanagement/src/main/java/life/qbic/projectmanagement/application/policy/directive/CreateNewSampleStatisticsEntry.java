@@ -50,7 +50,7 @@ public class CreateNewSampleStatisticsEntry implements
     jobScheduler.enqueue(() -> createSampleStatisticsEntry(event.createdProject()));
   }
 
-  public void createSampleStatisticsEntry(String projectId) {
+  public void createSampleStatisticsEntry(String projectId) throws RuntimeException {
     var id = ProjectId.parse(projectId);
     if (sampleStatisticsEntryMissing(id)) {
       Optional<Project> searchResult = projectRepository.find(id).stream()
