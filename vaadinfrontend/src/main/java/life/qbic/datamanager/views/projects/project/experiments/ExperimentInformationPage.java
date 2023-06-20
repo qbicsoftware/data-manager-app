@@ -51,6 +51,8 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
   private final ExperimentInformationService experimentInformationService;
 
@@ -99,7 +101,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    beforeEnterEvent.getRouteParameters().get("experimentId").ifPresent(experimentIdParam -> {
+    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).ifPresent(experimentIdParam -> {
       try {
         ExperimentId experimentId = ExperimentId.parse(experimentIdParam);
         experimentInformationPageHandler.setExperimentId(experimentId);
@@ -171,15 +173,15 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject();
       log.debug(String.format("Rerouting to active experiment %s of project %s",
           activeExperimentId.value(), projectId.value()));
-      RouteParam experimentIdParam = new RouteParam("experimentId", activeExperimentId.value());
-      RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
+      RouteParam experimentIdParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, activeExperimentId.value());
+      RouteParam projectIdRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
       beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
     }
 
     public void routeToSelectedExperiment(ProjectId projectId, ExperimentId experimentId) {
-      RouteParam experimentIdParam = new RouteParam("experimentId", experimentId.value());
-      RouteParam projectIdRouteParam = new RouteParam("projectId", projectId.value());
+      RouteParam experimentIdParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId.value());
+      RouteParam projectIdRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
       UI.getCurrent().access(() -> UI.getCurrent().navigate(ExperimentInformationPage.class, routeParameters));
     }
