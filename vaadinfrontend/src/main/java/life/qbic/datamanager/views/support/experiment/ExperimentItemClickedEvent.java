@@ -5,11 +5,11 @@ import com.vaadin.flow.component.Component;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experiment Item Clicked Event</b>
+ * <p>
+ * An event that indicates that an experiment item has been clicked by a user.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentItemClickedEvent extends ClickEvent<ExperimentItem> {
 

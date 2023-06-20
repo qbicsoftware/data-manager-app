@@ -140,6 +140,11 @@ public class ExperimentItem extends Card {
     activeTag.setVisible(true);
   }
 
+  /**
+   * Sets the item in its "inactive" state
+   *
+   * @since 1.0.0
+   */
   public void setAsInactive() {
     activeTag.setVisible(false);
   }
