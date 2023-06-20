@@ -158,10 +158,6 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
         routeToSelectedExperiment(projectId, newActiveExperiment);
       });
     }
-    
-    private void setSelectedExperiment(ExperimentId newActiveExperiment) {
-      projectInformationService.setActiveExperiment(projectId, newActiveExperiment);
-    }
 
     public void setExperimentId(ExperimentId experimentId) {
       itemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsSelected);
