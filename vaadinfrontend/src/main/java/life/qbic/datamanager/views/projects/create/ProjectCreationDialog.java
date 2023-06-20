@@ -152,7 +152,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void styleForm() {
-    formLayout.setClassName("project-form-layout");
+    formLayout.setClassName("content");
     styleSearchBox();
   }
 
