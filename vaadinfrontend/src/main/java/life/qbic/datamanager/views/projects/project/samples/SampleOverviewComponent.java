@@ -427,8 +427,8 @@ public class SampleOverviewComponent extends PageComponent implements Serializab
           String value = descriptor.getReadMethod().invoke(sample).toString();
           result |= matchesTerm(value, searchTerm);
         } catch (IllegalAccessException | InvocationTargetException e) {
-          log.info("Could not invoke " + descriptor.getName()
-              + " getter when filtering samples. Ignoring property.");
+          log.info("Could not invoke %s getter when filtering samples. Ignoring property."
+              .formatted(descriptor.getName()));
         }
       }
     }
