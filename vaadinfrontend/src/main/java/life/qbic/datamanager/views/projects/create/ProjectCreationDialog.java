@@ -66,7 +66,9 @@ public class ProjectCreationDialog extends DialogWindow {
   private final Handler handler;
 
   public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
-    super("Create", "Cancel");
+    super();
+    setConfirmButtonLabel("Create");
+    setCancelButtonLabel("Cancel");
     addClassName("create-project-dialog");
     initCodeAndTitleLayout();
     projectObjective.setRequired(true);
