@@ -15,7 +15,6 @@
   display: flex;
   justify-content: center;
   padding: 1.5rem;
-  max-width: 300px;
   flex: auto;
 }
 
@@ -25,6 +24,10 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+.creation-card .disclaimer-area {
+  font-size: smaller;
 }
 
 /* Styles shamelessly stolen from the vaadin primary theme */
@@ -239,7 +242,7 @@
 
 .experiment-item {
   display: block;
-  height: 100px;
+  min-height: 100px;
   width: 100%;
 }
 

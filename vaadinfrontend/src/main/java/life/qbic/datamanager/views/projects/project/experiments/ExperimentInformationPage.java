@@ -11,7 +11,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.Router;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -25,7 +24,6 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.datamanager.views.support.experiment.ExperimentItem;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
-import life.qbic.datamanager.views.support.experiment.ExperimentListComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -59,28 +57,25 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
   public ExperimentInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ExperimentDetailsComponent experimentDetailsComponent,
-      @Autowired ExperimentListComponent experimentListComponent,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentDetailsComponent);
-    Objects.requireNonNull(experimentListComponent);
     Objects.requireNonNull(projectInformationService);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
-    setupBoard(projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent);
+    setupBoard(projectNavigationBarComponent, experimentDetailsComponent);
     experimentInformationPageHandler = new ExperimentInformationPageHandler(
-        projectNavigationBarComponent, experimentDetailsComponent, experimentListComponent,
+        projectNavigationBarComponent, experimentDetailsComponent,
         projectInformationService);
     log.debug(String.format(
-        "\"New instance for Experiment Information page (#%s) created with Project Navigation Bar Component (#%s) and Experiment Details Component (#%s) and Experiment List Component (#%s)",
+        "\"New instance for Experiment Information page (#%s) created with Project Navigation Bar Component (#%s) and Experiment Details Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
-        System.identityHashCode(experimentDetailsComponent),
-        System.identityHashCode(experimentListComponent)));
+        System.identityHashCode(experimentDetailsComponent)
+      ));
   }
 
   private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ExperimentDetailsComponent experimentDetailsComponent,
-      ExperimentListComponent experimentListComponent) {
+      ExperimentDetailsComponent experimentDetailsComponent) {
     Board board = new Board();
 
     Row rootRow = new Row();
@@ -92,7 +87,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     mainComponents.add(projectNavigationBarComponent, experimentDetailsComponent);
 
     rootRow.add(mainComponents, 3);
-    itemCollection = ExperimentItemCollection.create();
+    itemCollection = ExperimentItemCollection.create("Add a new experiment");
     rootRow.add(itemCollection, 1);
 
     board.add(rootRow);
@@ -125,24 +120,20 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     private ProjectId projectId;
     private final ProjectNavigationBarComponent projectNavigationBarComponent;
     private final ExperimentDetailsComponent experimentDetailsComponent;
-    private final ExperimentListComponent experimentListComponent;
     private final ProjectInformationService projectInformationService;
 
     public ExperimentInformationPageHandler(
         ProjectNavigationBarComponent projectNavigationBarComponent,
         ExperimentDetailsComponent experimentDetailsComponent,
-        ExperimentListComponent experimentListComponent,
         ProjectInformationService projectInformationService) {
       this.projectNavigationBarComponent = projectNavigationBarComponent;
       this.experimentDetailsComponent = experimentDetailsComponent;
-      this.experimentListComponent = experimentListComponent;
       this.projectInformationService = projectInformationService;
     }
 
     public void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
       projectNavigationBarComponent.projectId(projectId);
-      experimentListComponent.projectId(projectId);
       itemCollection.removeAll();
       var project = projectInformationService.find(projectId);
       if (project.isEmpty()) {
