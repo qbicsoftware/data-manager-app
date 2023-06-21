@@ -61,6 +61,9 @@ public class AddExperimentalGroupsDialog extends DialogWindow {
     setCloseOnEsc(false);
     setCloseOnOutsideClick(false);
     levels = Collections.emptySet();
+
+    confirmButton.addClickListener(event -> submit());
+    cancelButton.addClickListener(event -> close());
     getFooter().add(cancelButton, confirmButton);
   }
 
