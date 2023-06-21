@@ -571,7 +571,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   enum SpreadsheetInvalidationReason {
-    MISSING_INPUT, DUPLICATE_ID;
+    MISSING_INPUT, DUPLICATE_ID
   }
 
 }
