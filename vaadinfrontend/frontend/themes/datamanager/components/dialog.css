@@ -149,3 +149,25 @@
   gap: var(--lumo-space-m);
   display: flex;
 }
+
+.experiment-group-dialog::part(overlay) {
+  width: 66%;
+}
+
+.experiment-group-dialog .group-input {
+  width: 100%;
+}
+
+.experiment-group-dialog .group-input .layout {
+  display: flex;
+  flex-direction: row;
+  gap: var(--lumo-space-m);
+}
+
+.experiment-group-dialog .group-input .layout .combo-box {
+  width: 100%;
+}
+
+.experiment-group-dialog .group-input .layout .number-field {
+  width: 150px;
+}

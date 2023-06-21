@@ -1,11 +1,10 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.ItemLabelGenerator;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.combobox.dataview.ComboBoxListDataView;
 import com.vaadin.flow.component.customfield.CustomField;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.Min;
@@ -44,14 +43,15 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
 
   public ExperimentalGroupInput(Collection<VariableLevel> availableLevels) {
+    addClassName("group-input");
+
     variableLevelSelect = generateVariableLevelSelect();
     sampleSizeField = generateSampleSizeField();
 
-    HorizontalLayout horizontalLayout = new HorizontalLayout(variableLevelSelect, sampleSizeField);
-    add(horizontalLayout);
+    Span layout = new Span(variableLevelSelect, sampleSizeField);
+    layout.addClassName("layout");
+    add(layout);
     setLevels(availableLevels);
-    horizontalLayout.setWidth(null);
-    setWidth(null);
     addValidationForVariableCount();
     variableLevelSelect.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid()));
@@ -115,22 +115,22 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");
+    selectComboBox.addClassName("combo-box");
     selectComboBox.addClassName("chip-badge");
     selectComboBox.setAllowCustomValue(false);
     selectComboBox.setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
     overwriteSelectionOfSameVariable(selectComboBox);
-    selectComboBox.setWidthFull();
     return selectComboBox;
   }
 
   private NumberField generateSampleSizeField() {
     NumberField numberField = new NumberField();
+    numberField.addClassName("number-field");
     numberField.setLabel("Biological Replicates");
     numberField.setStepButtonsVisible(true);
     numberField.setStep(1);
     numberField.setMin(1);
     numberField.setValue(1.0);
-    numberField.setWidth(150, Unit.PIXELS);
     return numberField;
   }
 
