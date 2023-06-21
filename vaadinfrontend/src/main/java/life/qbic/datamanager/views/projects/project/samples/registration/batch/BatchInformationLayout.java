@@ -141,6 +141,7 @@ public class BatchInformationLayout extends VerticalLayout {
 
     private void resetChildValues() {
       dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+      experimentSelect.clear();
       batchNameField.clear();
     }
 

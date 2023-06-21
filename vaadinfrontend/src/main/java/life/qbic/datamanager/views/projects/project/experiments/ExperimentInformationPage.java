@@ -54,7 +54,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
-  private final ExperimentInformationService experimentInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
 
   public ExperimentInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,

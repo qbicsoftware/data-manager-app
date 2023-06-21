@@ -13,13 +13,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
-import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -408,11 +408,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
     Set<String> concatenatedSampleIDs = new HashSet<>();
-    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
-        if(name.isMandatory) {
+        if (name.isMandatory) {
           mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
               header.indexOf(name))));
         }

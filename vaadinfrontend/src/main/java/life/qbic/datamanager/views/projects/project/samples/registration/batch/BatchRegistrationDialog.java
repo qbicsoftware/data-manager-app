@@ -108,6 +108,14 @@ public class BatchRegistrationDialog extends Dialog {
     batchInformationLayout.experimentSelect.setItems(experiments);
   }
 
+  /**
+   * Sets the provided {@link Experiment} as preselected in the
+   * {@link com.vaadin.flow.component.select.Select} component
+   */
+  public void setSelectedExperiment(Experiment experiment) {
+    batchInformationLayout.experimentSelect.setValue(experiment);
+  }
+
   private class RegisterBatchDialogHandler implements Serializable {
 
     @Serial
