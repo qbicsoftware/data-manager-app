@@ -1,16 +1,13 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.create;
 
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.DefineExperimentComponent;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 
@@ -24,30 +21,22 @@ import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
  */
 @SpringComponent
 @UIScope
-public class ExperimentCreationDialog extends Dialog {
+public class ExperimentCreationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = -7493719543408177228L;
   private final String TITLE = "Experimental Design";
   private final DefineExperimentComponent defineExperimentComponent;
-  private final Button createButton = new Button("Create");
-  private final Button cancelButton = new Button("Cancel");
   private final ExperimentCreationDialogHandler experimentCreationDialogHandler;
 
 
   public ExperimentCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
+    addClassName("create-experiment-dialog");
     defineExperimentComponent = new DefineExperimentComponent(experimentalDesignSearchService);
     experimentCreationDialogHandler = new ExperimentCreationDialogHandler();
     setHeaderTitle(TITLE);
     add(defineExperimentComponent);
-    getFooter().add(cancelButton, createButton);
-    styleExperimentCreationDialog();
-  }
-
-  private void styleExperimentCreationDialog() {
-    this.setMinWidth(66, Unit.VW);
-    this.setMaxWidth(66, Unit.VW);
-    createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   public void resetAndClose() {
@@ -83,7 +72,7 @@ public class ExperimentCreationDialog extends Dialog {
     }
 
     private void configureExperimentCreation() {
-      createButton.addClickListener(event -> {
+      confirmButton.addClickListener(event -> {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(

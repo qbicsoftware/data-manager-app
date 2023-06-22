@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -28,9 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-public class DefineExperimentComponent extends Composite<VerticalLayout> {
+public class DefineExperimentComponent extends Div {
 
-  private final VerticalLayout contentLayout = getContent();
+  private final Div contentLayout = new Div();
   public final TextField experimentNameField = new TextField("Experiment Name");
   public final TextArea experimentalDesignDescription = new TextArea(
       "Experimental Design Description");
@@ -41,14 +42,15 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
 
   public DefineExperimentComponent(
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+    addClassName("content");
     Objects.requireNonNull(experimentalDesignSearchService);
     initExperimentDefinitionLayout();
-    styleExperimentCreationLayout();
     experimentDefinitionLayoutHandler = new ExperimentDefinitionLayoutHandler(
         experimentalDesignSearchService);
   }
 
   private void initExperimentDefinitionLayout() {
+    contentLayout.addClassName("inner-content");
     initHeaderAndDescription();
     styleMultiSelectComboBoxes();
     contentLayout.add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
@@ -59,8 +61,8 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
     Span experimentDescription = new Span(
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
-    experimentHeader.addClassName("font-bold");
-    experimentNameField.setWidthFull();
+    experimentHeader.addClassName("header");
+    experimentNameField.addClassName("full-width-input");
     contentLayout.add(experimentHeader, experimentDescription, experimentNameField,
         experimentDescription);
   }
@@ -72,17 +74,10 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
     speciesBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
-    speciesBox.setWidthFull();
-    specimenBox.setWidthFull();
-    analyteBox.setWidthFull();
-    experimentalDesignDescription.setWidthFull();
-  }
-
-  private void styleExperimentCreationLayout() {
-    contentLayout.setMargin(false);
-    contentLayout.setPadding(false);
-    contentLayout.addClassName("pt-m");
-    contentLayout.setSizeFull();
+    speciesBox.addClassName("full-width-input");
+    specimenBox.addClassName("full-width-input");
+    analyteBox.addClassName("full-width-input");
+    experimentalDesignDescription.addClassName("full-width-input");
   }
 
   public void hideNameField() {
