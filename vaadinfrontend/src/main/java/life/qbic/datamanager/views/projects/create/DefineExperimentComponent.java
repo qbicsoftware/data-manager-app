@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class DefineExperimentComponent extends Div {
 
-  private final Div contentLayout = new Div();
   public final TextField experimentNameField = new TextField("Experiment Name");
   public final TextArea experimentalDesignDescription = new TextArea(
       "Experimental Design Description");
@@ -50,10 +49,9 @@ public class DefineExperimentComponent extends Div {
   }
 
   private void initExperimentDefinitionLayout() {
-    contentLayout.addClassName("inner-content");
     initHeaderAndDescription();
     styleMultiSelectComboBoxes();
-    contentLayout.add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
+    add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
   }
 
   private void initHeaderAndDescription() {
@@ -63,7 +61,7 @@ public class DefineExperimentComponent extends Div {
             + "values are allowed!");
     experimentHeader.addClassName("header");
     experimentNameField.addClassName("full-width-input");
-    contentLayout.add(experimentHeader, experimentDescription, experimentNameField,
+    add(experimentHeader, experimentDescription, experimentNameField,
         experimentDescription);
   }
 
@@ -131,17 +129,17 @@ public class DefineExperimentComponent extends Div {
      * interfaces
      */
     private void reset() {
-      resetChildValues(contentLayout);
-      resetChildValidation(contentLayout);
+      resetChildValues();
+      resetChildValidation();
     }
 
-    private void resetChildValues(Component component) {
-      component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
+    private void resetChildValues() {
+      getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
           .forEach(comp -> ((HasValue<?, ?>) comp).clear());
     }
 
-    private void resetChildValidation(Component component) {
-      component.getChildren().filter(comp -> comp instanceof HasValidation)
+    private void resetChildValidation() {
+      getChildren().filter(comp -> comp instanceof HasValidation)
           .forEach(comp -> ((HasValidation) comp).setInvalid(false));
     }
 

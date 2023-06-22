@@ -52,37 +52,26 @@
 
 .create-experiment-dialog::part(overlay) {
   width: 66vw;
-  height: 66vw;
 }
 
 .create-experiment-dialog .content {
-  /*
-  max-width: 60vw;
-  padding-bottom: 1em;
-
-   */
-}
-
-.create-experiment-dialog .content .inner-content {
   padding-top: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
-
+  gap: var(--lumo-space-m);
   /*
       contentLayout.setMargin(false);
     contentLayout.setPadding(false);
-
-
-
    */
 }
-.create-experiment-dialog .content .inner-content .header {
+
+.create-experiment-dialog .content .header {
   font-weight: bold;
 }
 
-.create-experiment-dialog .content .inner-content .full-width-input {
+.create-experiment-dialog .content .full-width-input {
   width: 100%;
 }
 
