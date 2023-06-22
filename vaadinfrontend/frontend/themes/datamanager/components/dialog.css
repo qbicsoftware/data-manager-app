@@ -14,7 +14,7 @@
   width: 66vw;
 }
 
-.create-project-dialog .content {
+.create-project-dialog .form-content {
   max-width: 60vw;
   padding-bottom: 1em;
 }
@@ -54,7 +54,10 @@
   width: 66vw;
 }
 
-.create-experiment-dialog .content {
+/*
+Used by both project creation and experiment creation dialog, thus the unique name
+ */
+.create-experiment-content {
   padding-top: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
@@ -63,11 +66,11 @@
   gap: var(--lumo-space-m);
 }
 
-.create-experiment-dialog .content .header {
+.create-experiment-content .header {
   font-weight: bold;
 }
 
-.create-experiment-dialog .content .full-width-input {
+.create-experiment-content .full-width-input {
   width: 100%;
 }
 

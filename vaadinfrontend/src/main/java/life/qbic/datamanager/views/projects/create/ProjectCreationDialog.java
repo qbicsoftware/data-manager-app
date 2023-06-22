@@ -155,7 +155,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void styleForm() {
-    formLayout.setClassName("content");
+    formLayout.setClassName("form-content");
     styleSearchBox();
   }
 

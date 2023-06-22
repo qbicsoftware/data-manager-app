@@ -41,7 +41,7 @@ public class DefineExperimentComponent extends Div {
 
   public DefineExperimentComponent(
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
-    addClassName("content");
+    addClassName("create-experiment-content");
     Objects.requireNonNull(experimentalDesignSearchService);
     initExperimentDefinitionLayout();
     experimentDefinitionLayoutHandler = new ExperimentDefinitionLayoutHandler(
