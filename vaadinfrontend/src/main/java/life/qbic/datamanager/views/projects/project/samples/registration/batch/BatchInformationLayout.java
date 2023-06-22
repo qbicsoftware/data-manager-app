@@ -87,7 +87,6 @@ public class BatchInformationLayout extends Div {
     batchInformationButtons.addClassName("button-layout");
     nextButton.addClassName("confirm-button");
     batchInformationButtons.add(cancelButton, nextButton);
-    // todo? this.setAlignSelf(Alignment.END, batchInformationButtons);
     add(batchInformationButtons);
   }
 
