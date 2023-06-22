@@ -64,6 +64,7 @@ Used by both project creation and experiment creation dialog, thus the unique na
   height: 100%;
   width: 100%;
   gap: var(--lumo-space-m);
+  box-sizing: border-box;
 }
 
 .create-experiment-content .header {
