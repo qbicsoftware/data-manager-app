@@ -19,6 +19,8 @@ public class DialogWindow extends Dialog {
   protected DialogWindow() {
     this.addClassName("dialog-window");
     confirmButton.addClassName("confirm-button");
+    setCloseOnOutsideClick(false);
+    setCloseOnEsc(false);
   }
 
   /**

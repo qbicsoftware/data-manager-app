@@ -58,8 +58,6 @@ public class AddExperimentalGroupsDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     addClassName("experiment-group-dialog");
     setHeaderTitle("Please enter group information");
-    setCloseOnEsc(false);
-    setCloseOnOutsideClick(false);
     levels = Collections.emptySet();
 
     confirmButton.addClickListener(event -> submit());
