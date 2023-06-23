@@ -26,11 +26,16 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Experiment list component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * The list component is a {@link PageArea} component, which is responsible for showing the
+ * {@link Experiment} information for all experiments in its {@⁄nk }within the currently examined
+ * {@link life.qbic.projectmanagement.domain.project.Project}. Additionally it provides the
+ * possibility to create new experiments with the {@link ExperimentCreationDialog} handling the
+ * sidebar content within the {@link ExperimentInformationPage}. It propagates the experiment
+ * information provided in the {@link ExperimentListComponent} to the
+ * {@link ExperimentInformationPage} and vice versa and can be easily extended with additional
+ * components if necessary
  */
 @SpringComponent
 @UIScope
@@ -92,10 +97,22 @@ public class ExperimentListComponent extends PageArea {
         }).onError(error -> displayExperimentCreationFailure());
   }
 
+  /**
+   * Provides the {@link ProjectId} of the currently selected project to this component
+   * <p>
+   * This method provides the {@link ProjectId} necessary for experiment creation within the
+   * {@link AddExperimentToProjectService} in this component.
+   */
   public void setProject(ProjectId projectId) {
     this.projectId = projectId;
   }
 
+  /**
+   * Provides the collection of {@link Experiment} to the components within this container
+   * <p>
+   * This method should be used to provide the experiments within a
+   * {@link life.qbic.projectmanagement.domain.project.Project} to {@link ExperimentListComponent}
+   */
   public void setExperiments(Collection<Experiment> experiments) {
     experimentItemCollection.removeAll();
     addItemCollectionListeners();
@@ -103,19 +120,41 @@ public class ExperimentListComponent extends PageArea {
         ExperimentItem.create(experiment)));
   }
 
+  /**
+   * Provides the {@link ExperimentId} which annotates the currently active Experiment to this
+   * component
+   * <p>
+   * This informs the {@link ExperimentItemCollection} about which experiment is set as active via
+   * the provided {@link ExperimentId}
+   */
   public void setActiveExperiment(ExperimentId experimentId) {
     experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsActive);
   }
 
+  /**
+   * Provides the {@link ExperimentId} which annotates the currently selected Experiment to this
+   * component
+   * <p>
+   * This informs the {@link ExperimentItemCollection} about which experiment was selected by the
+   * user via the provided {@link ExperimentId}
+   */
   public void setSelectedExperiment(ExperimentId experimentId) {
     experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsSelected);
   }
 
+  /**
+   * Adds the provided {@link ExperimentSelectionListener} to the list of listeners which will
+   * retrieve notification if an {@link Experiment} was selected within this component
+   */
   public void addExperimentSelectionListener(
       ExperimentSelectionListener experimentSelectionListener) {
     this.selectionListeners.add(experimentSelectionListener);
   }
 
+  /**
+   * Adds the provided {@link ExperimentCreationListener} to the list of listeners which will
+   * retrieve notification if a new {@link Experiment} was created in this component
+   */
   public void addExperimentCreationListener(ExperimentCreationListener experimentCreationListener) {
     this.creationListener.add(experimentCreationListener);
   }
