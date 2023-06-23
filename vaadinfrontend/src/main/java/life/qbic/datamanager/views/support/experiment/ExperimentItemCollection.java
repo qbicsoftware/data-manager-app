@@ -80,7 +80,7 @@ public class ExperimentItemCollection extends Div {
   }
 
   private void fireCreationEvent(CreationClickedEvent event) {
-    createListeners.forEach(listeners -> listeners.onComponentEvent(event));
+    createListeners.forEach(createListener -> createListener.onComponentEvent(event));
   }
 
   private void fireClickEvent(ExperimentItemClickedEvent event) {

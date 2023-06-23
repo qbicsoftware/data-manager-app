@@ -59,7 +59,6 @@ public class ExperimentListComponent extends PageArea {
     Objects.requireNonNull(addExperimentToProjectService);
     Objects.requireNonNull(experimentalDesignSearchService);
     this.addExperimentToProjectService = addExperimentToProjectService;
-    //ToDo Extract service
     this.experimentCreationDialog = new ExperimentCreationDialog(experimentalDesignSearchService);
     this.addClassName("list-component");
     this.experimentItemCollection = ExperimentItemCollection.create(
