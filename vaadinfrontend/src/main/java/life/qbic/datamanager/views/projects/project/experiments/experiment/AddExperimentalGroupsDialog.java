@@ -14,12 +14,12 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
- * TODO!
- * <b>short description</b>
+ * <b>Dialog allowing the addition of experimental groups.</b>
  *
- * <p>detailed description</p>
+ * <p>Displays input/selection fields for the creation of a new experimental group and handles
+ * validation of said inputs.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class AddExperimentalGroupsDialog extends DialogWindow {
 
