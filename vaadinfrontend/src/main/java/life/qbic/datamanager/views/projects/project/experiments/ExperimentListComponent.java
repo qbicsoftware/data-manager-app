@@ -29,13 +29,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Experiment list component
  * <p>
  * The list component is a {@link PageArea} component, which is responsible for showing the
- * {@link Experiment} information for all experiments in its {@⁄nk }within the currently examined
- * {@link life.qbic.projectmanagement.domain.project.Project}. Additionally it provides the
- * possibility to create new experiments with the {@link ExperimentCreationDialog} handling the
- * sidebar content within the {@link ExperimentInformationPage}. It propagates the experiment
- * information provided in the {@link ExperimentListComponent} to the
- * {@link ExperimentInformationPage} and vice versa and can be easily extended with additional
- * components if necessary
+ * {@link Experiment} information for all experiments in its {@link ExperimentItemCollection }
+ * within the currently examined {@link life.qbic.projectmanagement.domain.project.Project}.
+ * Additionally, it provides the possibility to create new experiments with its
+ * {@link ExperimentCreationDialog} and enables the user to select an experiment of interest via
+ * clicking on the {@link ExperimentItem} associated with the experiment. Finally, it allows
+ * components to be informed about a new experiment creation or selection via the
+ * {@link ExperimentCreationListener} and {@link ExperimentSelectionListener} provided in this
+ * component.
  */
 @SpringComponent
 @UIScope

@@ -16,13 +16,14 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Experiment support component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * The support component is a {@link Div} container, which is responsible for hosting the components
+ * handling the sidebar content within the {@link ExperimentInformationPage}. It propagates the
+ * experiment information provided in the {@link ExperimentListComponent} to the
+ * {@link ExperimentInformationPage} and vice versa and can be easily extended with additional
+ * components if necessary
  */
-
 @SpringComponent
 @UIScope
 public class ExperimentSupportComponent extends Div {
@@ -40,28 +41,64 @@ public class ExperimentSupportComponent extends Div {
     this.addClassName("support");
   }
 
+  /**
+   * Provides the {@link ProjectId} to the components within this container
+   * <p>
+   * This method serves as an entry point providing the necessary {@link ProjectId} to components
+   * within this component, so they can retrieve the information associated with the
+   * {@link ProjectId}
+   */
   public void setProjectId(ProjectId projectId) {
     this.projectId = projectId;
     experimentListComponent.setProject(projectId);
   }
 
+  /**
+   * Provides the collection of {@link Experiment} to the components within this container
+   * <p>
+   * This method should be used to provide the experiments within a
+   * {@link life.qbic.projectmanagement.domain.project.Project} to {@link ExperimentListComponent}
+   */
   public void setExperiments(Collection<Experiment> experiments) {
     experimentListComponent.setExperiments(experiments);
   }
 
+  /**
+   * Provides the {@link ExperimentId} which annotates an active Experiment within the project to
+   * the components within this container
+   * <p>
+   * This method serves as an entry point providing the {@link ExperimentId} which was set as the
+   * active experiment within a {@link life.qbic.projectmanagement.domain.project.Project} to
+   * components within this container.
+   */
   public void setActiveExperiment(ExperimentId experimentId) {
     experimentListComponent.setActiveExperiment(experimentId);
   }
 
+  /**
+   * Provides the {@link ExperimentId} which annotates the currently selected Experiment the
+   * components within this container
+   * <p>
+   * This method serves as an entry point providing {@link ExperimentId} which was selected by the
+   * user to the components within this container.
+   */
   public void setSelectedExperiment(ExperimentId experimentId) {
     experimentListComponent.setSelectedExperiment(experimentId);
   }
 
-  public void addActiveExperimentSelectionListener(
+  /**
+   * Propagates the listener which will retrieve notification if an {@link Experiment} was selected
+   * to the {@link ExperimentListComponent} within this container
+   */
+  public void addExperimentSelectionListener(
       ExperimentSelectionListener experimentSelectionListener) {
     experimentListComponent.addExperimentSelectionListener(experimentSelectionListener);
   }
 
+  /**
+   * Propagates the listener which will retrieve notification if a new {@link Experiment} was
+   * created in the {@link ExperimentListComponent} within this container
+   */
   public void addExperimentCreationListener(ExperimentCreationListener experimentCreationListener) {
     experimentListComponent.addExperimentCreationListener(experimentCreationListener);
   }
