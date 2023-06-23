@@ -43,6 +43,7 @@ import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
 import life.qbic.projectmanagement.application.SampleInformationService;
 import life.qbic.projectmanagement.application.SampleRegistrationService;
@@ -71,8 +72,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Sample Overview Component
  * <p>
  * Component embedded within the {@link SampleInformationPage} in the {@link ProjectViewPage}. It
- * allows the user to see the information associated for all {@link Sample} for each
+ * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
+ * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
+ * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
+ * contained {@link BatchRegistrationDialog} and propagates the successful registration to the
+ * registered {@link BatchRegistrationListener} within this component.
  */
 
 @SpringComponent
@@ -170,21 +175,45 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         div.addClassName("tag-collection");
         String experimentalVariable = key + ": " + value;
         Tag tag = new Tag(experimentalVariable);
+        tag.addClassName("primary");
         tag.setTitle(experimentalVariable);
         div.add(tag);
       });
 
-  public void setStyles(String... componentStyles) {
-    addClassNames(componentStyles);
-  }
-
+  /**
+   * Provides the {@link ProjectId} of the currently selected project to this component
+   * <p>
+   * This method provides the {@link ProjectId} necessary for routing within this component.
+   *
+   * @param projectId ProjectId provided to this component
+   */
   public void setProject(ProjectId projectId) {
     SampleOverviewComponent.projectId = projectId;
   }
 
+  /**
+   * Provides the collection of {@link Experiment} to this component
+   * <p>
+   * This method should be used to provide the experiments within the
+   * {@link life.qbic.projectmanagement.domain.project.Project} to this component
+   *
+   * @param experiments collection of experiments to be shown as tabs in the {@link TabSheet} within
+   *                    this component
+   */
 
   public void setExperiments(Collection<Experiment> experiments) {
     sampleOverviewComponentHandler.setExperiments(experiments);
+  }
+
+  /**
+   * Adds the provided {@link BatchRegistrationListener} to the list of listeners which will
+   * retrieve notification if a new {@link Batch} was created in this component
+   *
+   * @param batchRegistrationListener listener to be notified if a batch was registered within this
+   *                                  component
+   */
+  public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
+    sampleOverviewComponentHandler.addBatchRegistrationListener(batchRegistrationListener);
   }
 
   private record SamplePreview(String sampleCode, String sampleId, String batchLabel,
@@ -200,6 +229,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     private final transient SampleInformationService sampleInformationService;
     private final transient BatchRegistrationService batchRegistrationService;
     private final transient SampleRegistrationService sampleRegistrationService;
+    private final List<BatchRegistrationListener> registrationListener = new ArrayList<>();
 
     public SampleOverviewComponentHandler(BatchInformationService batchInformationService,
         SampleInformationService sampleInformationService,
@@ -259,7 +289,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
-          //ToDo load new samples into dataProvider before reload
+          fireBatchCreatedEvent(batchRegistrationEvent);
         });
       });
       registerButton.addClickListener(event -> batchRegistrationDialog.open());
@@ -491,43 +521,78 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       notification.open();
     }
 
-    private class SampleExperimentTab extends Tab {
+    private void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
+      this.registrationListener.add(batchRegistrationListener);
+    }
 
-      private final Span sampleCountComponent;
-      private final Span experimentNameComponent;
+    private void fireBatchCreatedEvent(BatchRegistrationEvent event) {
+      registrationListener.forEach(it -> it.handle(event));
+    }
+  }
 
-      public SampleExperimentTab(String experimentName, int sampleCount) {
-        this.experimentNameComponent = new Span(experimentName);
-        this.sampleCountComponent = createBadge(sampleCount);
-        this.add(experimentNameComponent, sampleCountComponent);
-      }
+  @FunctionalInterface
+  public interface BatchRegistrationListener {
 
-      public String getExperimentName() {
-        return experimentNameComponent.getText();
-      }
+    void handle(BatchRegistrationEvent event);
+  }
 
-      public void setExperimentName(String experimentName) {
-        experimentNameComponent.setText(experimentName);
-      }
+  private class SampleExperimentTab extends Tab {
 
-      public int getSampleCount() {
-        return Integer.parseInt(sampleCountComponent.getText());
-      }
+    private final Span sampleCountComponent;
+    private final Span experimentNameComponent;
 
-      public void setSampleCount(int sampleCount) {
-        sampleCountComponent.setText(Integer.toString(sampleCount));
-      }
+    public SampleExperimentTab(String experimentName, int sampleCount) {
+      this.experimentNameComponent = new Span(experimentName);
+      this.sampleCountComponent = createBadge(sampleCount);
+      this.add(experimentNameComponent, sampleCountComponent);
+    }
 
-      /**
-       * Helper method for creating a badge.
-       */
-      private Span createBadge(int numberOfSamples) {
-        //ToDo Set styling in css
-        Span badge = new Span(String.valueOf(numberOfSamples));
-        badge.getElement().getThemeList().add("badge small contrast");
-        badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
-        return badge;
-      }
+    /**
+     * Getter method for retrieving the currently set name of the {@link Experiment} shown in this
+     * component
+     *
+     * @return String containing the experimentName shown in the Tab
+     */
+    public String getExperimentName() {
+      return experimentNameComponent.getText();
+    }
+
+    /**
+     * Setter method for specifying the name of the {@link Experiment} shown in this component
+     *
+     * @param experimentName name of the Experiment to be shown in this component
+     */
+    public void setExperimentName(String experimentName) {
+      experimentNameComponent.setText(experimentName);
+    }
+
+    /**
+     * Getter method for retrieving the currently set number of {@link Sample} associated with the
+     * {@link Experiment} shown in this component
+     *
+     * @return int containing the number of samples shown in the Tab
+     */
+    public int getSampleCount() {
+      return Integer.parseInt(sampleCountComponent.getText());
+    }
+
+    /**
+     * Setter method for specifying the number of {@link Sample} of the {@link Experiment} shown in
+     * this component
+     *
+     * @param sampleCount number of samples associated with the experiment shown in this component
+     */
+    public void setSampleCount(int sampleCount) {
+      sampleCountComponent.setText(Integer.toString(sampleCount));
+    }
+
+    /**
+     * Helper method for creating a badge.
+     */
+    private Span createBadge(int numberOfSamples) {
+      Tag tag = new Tag(String.valueOf(numberOfSamples));
+      tag.addClassName("contrast");
+      return tag;
     }
   }
 }

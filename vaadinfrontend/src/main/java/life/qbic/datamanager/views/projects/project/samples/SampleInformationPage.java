@@ -35,48 +35,51 @@ public class SampleInformationPage extends Div {
 
   public SampleInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired SampleInformationContent sampleInformationContent) {
+      @Autowired SampleMainComponent sampleMainComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
-    Objects.requireNonNull(sampleInformationContent);
-    setupPage(projectNavigationBarComponent, sampleInformationContent);
-    stylePage();
+    Objects.requireNonNull(sampleMainComponent);
+    this.addClassName("sample-page");
+    setupPage(projectNavigationBarComponent, sampleMainComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
-        sampleInformationContent);
+        sampleMainComponent);
     log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
+        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Main Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
-        System.identityHashCode(sampleInformationContent)));
+        System.identityHashCode(sampleMainComponent)));
   }
 
   private void setupPage(ProjectNavigationBarComponent projectNavigationBarComponent,
-      SampleInformationContent sampleInformationContent) {
+      SampleMainComponent sampleMainComponent) {
     this.add(projectNavigationBarComponent);
-    this.add(sampleInformationContent);
+    this.add(sampleMainComponent);
   }
 
+  /**
+   * Provides the {@link ProjectId} to the components within this page
+   * <p>
+   * This method serves as an entry point providing the necessary {@link ProjectId} to the
+   * components within this cage
+   *
+   * @param projectId projectId of the selected project
+   */
   public void projectId(ProjectId projectId) {
     sampleInformationPageHandler.setProjectId(projectId);
-  }
-
-  private void stylePage() {
-    this.setWidthFull();
-    this.setHeightFull();
   }
 
   private static final class SampleInformationPageHandler {
 
     ProjectNavigationBarComponent projectNavigationBarComponent;
-    SampleInformationContent sampleInformationContent;
+    SampleMainComponent sampleMainComponent;
 
     public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-        SampleInformationContent sampleInformationContent) {
-      this.sampleInformationContent = sampleInformationContent;
+        SampleMainComponent sampleMainComponent) {
+      this.sampleMainComponent = sampleMainComponent;
       this.projectNavigationBarComponent = projectNavigationBarComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
       projectNavigationBarComponent.projectId(projectId);
-      sampleInformationContent.projectId(projectId);
+      sampleMainComponent.projectId(projectId);
     }
   }
 
