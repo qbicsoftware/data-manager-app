@@ -98,11 +98,11 @@ public class Sample {
     return this.label;
   }
 
-  public Long getExperimentalGroupId() {
+  public Long experimentalGroupId() {
     return this.experimentalGroupId;
   }
 
-  public BiologicalReplicateId getBiologicalReplicateId() {
+  public BiologicalReplicateId biologicalReplicateId() {
     return this.biologicalReplicateId;
   }
 

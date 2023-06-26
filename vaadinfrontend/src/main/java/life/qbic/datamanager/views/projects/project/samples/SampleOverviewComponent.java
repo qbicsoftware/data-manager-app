@@ -403,7 +403,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         biologicalReplicateSet.addAll(experimentalGroup.biologicalReplicates());
       }
       Optional<BiologicalReplicate> foundReplicate = biologicalReplicateSet.stream().filter(
-              biologicalReplicate -> biologicalReplicate.id().equals(sample.getBiologicalReplicateId()))
+              biologicalReplicate -> biologicalReplicate.id().equals(sample.biologicalReplicateId()))
           .findFirst();
       if (foundReplicate.isPresent()) {
         return foundReplicate.get().label();
@@ -416,7 +416,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         Sample sample) {
       Optional<ExperimentalGroup> foundExperimentalGroup = experiment.getExperimentalGroups()
           .stream()
-          .filter(experimentalGroup -> experimentalGroup.id() == sample.getExperimentalGroupId())
+          .filter(experimentalGroup -> experimentalGroup.id() == sample.experimentalGroupId())
           .findFirst();
       TreeMap<String, String> conditionMap = new TreeMap<>();
       if (foundExperimentalGroup.isPresent()) {
