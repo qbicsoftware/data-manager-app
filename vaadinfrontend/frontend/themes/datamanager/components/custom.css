@@ -5,6 +5,7 @@
 @import "card.css";
 @import "dialog.css";
 @import "main.css";
+@import "project-collection.css";
 
 .card-deck {
   display: flex;

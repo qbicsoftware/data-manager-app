@@ -31,3 +31,9 @@
   cursor: pointer;
   background-color: inherit;
 }
+
+.page-area .title {
+  font-weight: bold;
+  font-size: larger;
+  color: #464646;
+}
