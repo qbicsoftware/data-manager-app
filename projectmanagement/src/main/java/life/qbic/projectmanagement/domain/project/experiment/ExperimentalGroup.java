@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,7 +23,6 @@ import java.util.Objects;
 
 @Entity(name = "experimental_group")
 public class ExperimentalGroup {
-
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private List<BiologicalReplicate> biologicalReplicates;
@@ -41,6 +41,11 @@ public class ExperimentalGroup {
 
   protected ExperimentalGroup() {
     // Please use the create method. This is needed for JPA
+  }
+
+  @PostLoad
+  private void loadReplicates() {
+    this.biologicalReplicates.size();
   }
 
   /**
@@ -78,6 +83,12 @@ public class ExperimentalGroup {
   public int sampleSize() {
     return this.sampleSize;
   }
+
+  public long id() {
+    return this.experimentalGroupId;
+  }
+
+  public List<BiologicalReplicate> biologicalReplicates() { return new ArrayList<>(biologicalReplicates); }
 
   @Override
   public int hashCode() {

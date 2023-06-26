@@ -1,0 +1,51 @@
+.dialog-window::part(overlay) {
+  width: 66vw;
+}
+
+.dialog-window .confirm-button {
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+  font-weight: 600;
+  min-width: calc(var(--lumo-button-size) * 2.5);
+}
+
+.dialog-window .confirm-button:hover::before {
+  opacity: 0.05;
+}
+
+.create-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.create-project-dialog .code-and-title {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+
+.create-project-dialog .code-and-title .code {
+    max-width: 20vw;
+  }
+
+  .create-project-dialog .code-and-title .title {
+    width: 100%;
+}
+
+.create-project-dialog .search-field {
+  max-width: 30vw;
+}
+
+.create-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--lumo-space-m) 0 0;
+}
+
+.create-project-dialog .project-contacts .title {
+  font-weight: bold;
+}

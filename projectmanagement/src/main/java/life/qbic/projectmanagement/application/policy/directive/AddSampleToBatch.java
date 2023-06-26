@@ -3,6 +3,8 @@ package life.qbic.projectmanagement.application.policy.directive;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import life.qbic.projectmanagement.domain.project.sample.SampleId;
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered;
 import org.jobrunr.scheduling.JobScheduler;
 
@@ -33,7 +35,14 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
 
   @Override
   public void handleEvent(SampleRegistered event) {
-    jobScheduler.enqueue(() -> batchRegistrationService.addSampleToBatch(event.registeredSample(),
-        event.assignedBatch()));
+    jobScheduler.enqueue(() -> addSampleToBatch(event.registeredSample(), event.assignedBatch()));
+  }
+
+  protected void addSampleToBatch(SampleId sample, BatchId batch) throws RuntimeException {
+    batchRegistrationService.addSampleToBatch(sample, batch).onError(responseCode -> {
+      throw new RuntimeException(
+          String.format("Adding sample %s to batch %s failed, response code was %s ", sample, batch,
+              responseCode));
+    });
   }
 }

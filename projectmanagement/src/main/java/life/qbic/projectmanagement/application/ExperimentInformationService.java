@@ -8,12 +8,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
@@ -60,18 +62,18 @@ public class ExperimentInformationService {
    * @param experimentId      the Id of the experiment for which to add the species
    * @param experimentalGroup the experimental groups to add
    */
-  public AddExperimentalGroupResponse addExperimentalGroupToExperiment(
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroupToExperiment(
       ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
     Experiment activeExperiment = loadExperimentById(experimentId);
-    AddExperimentalGroupResponse response = activeExperiment.addExperimentalGroup(
+    Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
         experimentalGroup.levels(), experimentalGroup.sampleSize());
-    if (response.responseCode() == ResponseCode.SUCCESS) {
+    if(result.isValue()) {
       experimentRepository.update(activeExperiment);
     }
-    return response;
+    return result;
   }
 
   /**
@@ -87,6 +89,18 @@ public class ExperimentInformationService {
         .map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize()))
         .toList();
   }
+
+  public List<ExperimentalGroup> experimentalGroupsFor(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream().toList();
+  }
+
+  public void deleteExperimentGroup(ExperimentId experimentId, long groupId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.removeExperimentGroup(groupId);
+    experimentRepository.update(experiment);
+  }
+
 
   public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
 

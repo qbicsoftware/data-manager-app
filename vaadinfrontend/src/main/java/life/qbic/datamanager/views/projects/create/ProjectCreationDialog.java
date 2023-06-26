@@ -4,17 +4,15 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -27,6 +25,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -45,30 +44,32 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  */
 @SpringComponent
 @UIScope
-public class ProjectCreationDialog extends Dialog {
+public class ProjectCreationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6132538769263078943L;
   public final ComboBox<OfferPreview> offerSearchField = new ComboBox<>("Offer");
-  private HorizontalLayout codeAndTitleLayout = new HorizontalLayout();
+  private Span codeAndTitleLayout = new Span();
   private final TextField codeField = new TextField("Code");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
   private final FormLayout formLayout = new FormLayout();
   private final TextField titleField = new TextField("Title");
   private final TextArea projectObjective = new TextArea("Objective");
   private final DefineExperimentComponent defineExperimentComponent;
-  private final VerticalLayout projectContactsLayout = new VerticalLayout();
+  private final Div projectContactsLayout = new Div();
   public final ComboBox<PersonReference> principalInvestigator = new ComboBox<>(
       "Principal Investigator");
   public final ComboBox<PersonReference> responsiblePerson = new ComboBox<>(
       "Project Responsible (optional)");
   public final ComboBox<PersonReference> projectManager = new ComboBox<>("Project Manager");
-  private final Button createButton = new Button("Create");
-  private final Button cancelButton = new Button("Cancel");
+
   private final Handler handler;
 
   public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService) {
-
+    super();
+    setConfirmButtonLabel("Create");
+    setCancelButtonLabel("Cancel");
+    addClassName("create-project-dialog");
     initCodeAndTitleLayout();
     projectObjective.setRequired(true);
 
@@ -80,13 +81,13 @@ public class ProjectCreationDialog extends Dialog {
     principalInvestigator.setPlaceholder("Select a principal investigator");
     principalInvestigator.setRequired(true);
 
+    projectManager.setPlaceholder("Select a project manager");
+    projectManager.setRequired(true);
+
     responsiblePerson.setPlaceholder("Select Project Responsible");
     responsiblePerson.setHelperText("Should be contacted about project related questions");
     //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
     responsiblePerson.setClearButtonVisible(true);
-
-    projectManager.setPlaceholder("Select a project manager");
-    projectManager.setRequired(true);
 
     configureDialogLayout();
     initForm();
@@ -116,21 +117,20 @@ public class ProjectCreationDialog extends Dialog {
   }
 
   private void configureDialogLayout() {
-    createButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     setHeaderTitle("Create Project");
     add(formLayout);
-    getFooter().add(cancelButton, createButton);
-    this.setMinWidth(66, Unit.VW);
-    this.setMaxWidth(66, Unit.VW);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   private void initCodeAndTitleLayout() {
-    codeAndTitleLayout = new HorizontalLayout();
+    codeAndTitleLayout = new Span();
     generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     defaultProjectCodeCreation();
+    codeAndTitleLayout.addClassName("code-and-title");
+    codeField.addClassName("code");
+    titleField.addClassName("title");
 
-    codeField.setMaxWidth(20, Unit.VW);
     codeField.setRequired(true);
     codeField.setHelperText("Q and 4 letters/numbers");
     titleField.setRequired(true);
@@ -138,9 +138,6 @@ public class ProjectCreationDialog extends Dialog {
     codeAndTitleLayout.add(codeField);
     codeAndTitleLayout.add(generateCodeButton);
     codeAndTitleLayout.add(titleField);
-    titleField.setWidthFull();
-    codeAndTitleLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-    codeAndTitleLayout.setWidthFull();
   }
 
   private void initForm() {
@@ -151,31 +148,31 @@ public class ProjectCreationDialog extends Dialog {
     formLayout.add(defineExperimentComponent);
     formLayout.add(projectContactsLayout);
     formLayout.add(principalInvestigator);
-    formLayout.add(responsiblePerson);
     formLayout.add(projectManager);
+    formLayout.add(responsiblePerson);
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
   }
 
   private void styleForm() {
-    formLayout.setClassName("create-project-form");
+    formLayout.setClassName("content");
     styleSearchBox();
-    formLayout.setMaxWidth(60, Unit.VW);
   }
 
   private void styleSearchBox() {
-    offerSearchField.setMaxWidth(30, Unit.VW);
+    offerSearchField.setClassName("search-field");
     offerSearchField.setPlaceholder("Search");
-    offerSearchField.setClassName("searchbox");
+    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
   }
 
   private void initProjectContactsLayout() {
+    projectContactsLayout.setClassName("project-contacts");
+
     Span projectContactsTitle = new Span("Project Contacts");
+    projectContactsTitle.addClassName("title");
+
     Span projectContactsDescription = new Span("Important contact people of the project");
-    projectContactsTitle.addClassName("font-bold");
-    projectContactsLayout.setMargin(false);
-    projectContactsLayout.setPadding(false);
-    projectContactsLayout.addClassName("pt-m");
+
     projectContactsLayout.add(projectContactsTitle);
     projectContactsLayout.add(projectContactsDescription);
   }
@@ -243,7 +240,7 @@ public class ProjectCreationDialog extends Dialog {
     }
 
     private void configureFormSubmission() {
-      createButton.addClickListener(event -> {
+      confirmButton.addClickListener(event -> {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
@@ -354,17 +351,4 @@ public class ProjectCreationDialog extends Dialog {
     }
   }
 
-  static class Container<T> {
-
-    private T value;
-
-    T value() {
-      return this.value;
-    }
-
-    void setValue(T newValue) {
-      this.value = newValue;
-    }
-
-  }
 }

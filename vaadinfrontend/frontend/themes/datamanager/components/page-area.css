@@ -1,0 +1,44 @@
+/* All custom css for components which extend the page-area component go in here! */
+
+.page-area {
+  background-color: var(--lumo-base-color);
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-m);
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  max-height: 100%;
+  margin: var(--lumo-space-s);
+  padding: var(--lumo-space-l);
+}
+
+.support-area {
+  gap: var(--lumo-space-m);
+  display: flex;
+}
+
+.attachments-area {
+  flex-direction: column;
+}
+
+.attachments-area .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.attachments-area .delete-button {
+  color: var(--lumo-error-text-color);
+  --lumo-button-size: var(--lumo-size-m);
+  cursor: pointer;
+  background-color: inherit;
+}
+
+.page-area .title {
+  font-weight: bold;
+  font-size: larger;
+  color: #464646;
+}
