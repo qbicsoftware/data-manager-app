@@ -4,18 +4,18 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Creation Clicked Event</b>
+ * <p>
+ * An event that indicates, that a user wants to add a new project.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class ProjectCreationClickedEvent extends ComponentEvent<ProjectsCollection> {
+public class ProjectCreationClickedEvent extends ComponentEvent<ProjectCollection> {
 
   @Serial
   private static final long serialVersionUID = 28673255958404464L;
 
-  public ProjectCreationClickedEvent(ProjectsCollection source, boolean fromClient) {
+  public ProjectCreationClickedEvent(ProjectCollection source, boolean fromClient) {
     super(source, fromClient);
   }
 }

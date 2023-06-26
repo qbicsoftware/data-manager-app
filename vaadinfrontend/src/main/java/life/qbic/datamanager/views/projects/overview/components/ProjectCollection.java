@@ -28,16 +28,22 @@ import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Collection</b>
+ * <p>
+ * A component that displays previews of accessible project previews.
+ * <p>
+ * The component also fires {@link ProjectCreationClickedEvent} to all registered listeners, if a
+ * user has the intend to add a new project.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class ProjectsCollection extends PageArea {
+public class ProjectCollection extends PageArea {
 
+  private Div controlSection = new Div();
+  private Div gridSection = new Div();
   private String projectPreviewFilter = "";
   private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
+  private Div titleSection = new Div();
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
@@ -48,13 +54,7 @@ public class ProjectsCollection extends PageArea {
   private final ProjectInformationService projectInformationService;
   private final List<ComponentEventListener<ProjectCreationClickedEvent>> projectCreationClickedListeners = new ArrayList<>();
 
-  private Div controlSection = new Div();
-
-  private Div gridSection = new Div();
-
-  private Div titleSection = new Div();
-
-  private ProjectsCollection(String title, ZoneId clientZoneId,
+  private ProjectCollection(String title, ZoneId clientZoneId,
       ProjectInformationService projectInformationService) {
     this.title = title;
     this.clientZoneId = clientZoneId;
@@ -82,19 +82,6 @@ public class ProjectsCollection extends PageArea {
     add(gridSection);
   }
 
-  private void layoutTitleSection() {
-    titleSection.addClassName("title");
-    titleSection.setText(title);
-  }
-
-  private void layoutGridSection() {
-    gridSection.addClassName("projects-grid");
-  }
-
-  private void layoutControlSection() {
-    controlSection.addClassName("controls");
-  }
-
   private void createLazyProjectView() {
     projectPreviewGridLazyDataView = projectGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -119,11 +106,6 @@ public class ProjectsCollection extends PageArea {
     createProjectButton.addClickListener(listener -> {
       fireClickEvent();
     });
-  }
-
-  private void fireClickEvent() {
-    var clickedEvent = new ProjectCreationClickedEvent(this, true);
-    projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
   }
 
   private void layoutSearchField() {
@@ -153,18 +135,53 @@ public class ProjectsCollection extends PageArea {
     projectGrid.setMultiSort(true);
   }
 
+  private void layoutTitleSection() {
+    titleSection.addClassName("title");
+    titleSection.setText(title);
+  }
+
+  private void layoutControlSection() {
+    controlSection.addClassName("controls");
+  }
+
+  private void layoutGridSection() {
+    gridSection.addClassName("projects-grid");
+  }
+
+  private void fireClickEvent() {
+    var clickedEvent = new ProjectCreationClickedEvent(this, true);
+    projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
+  }
+
   private LocalDateTime asClientLocalDateTime(Instant instant) {
     ZonedDateTime zonedDateTime = instant.atZone(this.clientZoneId);
     return zonedDateTime.toLocalDateTime();
   }
 
-  public static ProjectsCollection create(String title, ZoneId clientZoneId,
+  /**
+   * Create a new instance of a project collection.
+   *
+   * @param title                     the title to be displayed on top of the component
+   * @param clientZoneId              the client's zone id
+   * @param projectInformationService the project information service to enable lazy loading of
+   *                                  projects.
+   * @return
+   * @since 1.0.0
+   */
+  public static ProjectCollection create(String title, ZoneId clientZoneId,
       ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(clientZoneId);
-    return new ProjectsCollection(title, clientZoneId, projectInformationService);
+    return new ProjectCollection(title, clientZoneId, projectInformationService);
   }
 
+  /**
+   * Add a listener that is called, when a new {@link ProjectCreationClickedEvent event} is
+   * emitted.
+   *
+   * @param listener a listener that should be called
+   * @since 1.0.0
+   */
   public void addListener(ComponentEventListener<ProjectCreationClickedEvent> listener) {
     Objects.requireNonNull(listener);
     projectCreationClickedListeners.add(listener);
