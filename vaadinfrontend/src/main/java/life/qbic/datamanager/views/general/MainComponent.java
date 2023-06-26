@@ -15,7 +15,7 @@ public abstract class MainComponent extends Div {
   private Div content;
   private Div support;
 
-  public MainComponent(Div content, Div support) {
+  protected MainComponent(Div content, Div support) {
     this.content = content;
     this.support = content;
     content.addClassName("content");
