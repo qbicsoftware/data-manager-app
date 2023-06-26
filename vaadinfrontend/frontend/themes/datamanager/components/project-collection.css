@@ -1,10 +1,10 @@
-.projects-collection {
+.project-collection {
   display: grid;
   gap: 1rem;
 }
 
 
-.projects-collection .controls {
+.project-collection .controls {
   display: flex;
   align-content: space-between;
   gap: 1rem;

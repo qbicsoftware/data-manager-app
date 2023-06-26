@@ -66,7 +66,7 @@ public class ProjectCollection extends PageArea {
   }
 
   private void layoutComponent() {
-    addClassNames("projects-collection");
+    addClassNames("project-collection");
     layoutSearchField();
     layoutProjectCreationButton();
     layoutGrid();
