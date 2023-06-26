@@ -30,12 +30,7 @@ public class SampleInformationService {
   public Result<Collection<Sample>, ResponseCode> retrieveSamplesForExperiment(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
-    var result = sampleRepository.findSamplesByExperimentId(experimentId);
-    if (result.isError()) {
-      return Result.fromError(ResponseCode.SAMPLES_NOT_FOUND);
-    } else {
-      return Result.fromValue(result.getValue());
-    }
+    return sampleRepository.findSamplesByExperimentId(experimentId);
   }
 
   public enum ResponseCode {

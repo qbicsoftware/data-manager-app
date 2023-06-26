@@ -7,8 +7,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -34,17 +32,18 @@ public class BatchRegistrationDialog extends Dialog {
   private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
+    addClassName("batch-registration-dialog");
     setHeaderTitle(TITLE);
     initSampleRegistrationLayout();
     initTabStepper();
-    styleStepper();
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
-    this.setSizeFull();
   }
 
   private void initTabStepper() {
     tabStepper.add(batchInformationTab, batchInformationLayout);
     tabStepper.add(sampleInformationTab, sampleSpreadsheetLayout);
+    tabStepper.addClassName("minimal");
+    tabStepper.addClassName("stepper");
     add(tabStepper);
   }
 
@@ -52,16 +51,9 @@ public class BatchRegistrationDialog extends Dialog {
     Avatar stepAvatar = new Avatar(avatarLabel);
     stepAvatar.setColorIndex(2);
     Span tabLabelSpan = new Span(tabLabel);
-    tabLabelSpan.setClassName(Top.SMALL);
     Tab tabStep = new Tab(stepAvatar, tabLabelSpan);
     tabStep.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-    tabStep.setClassName(Left.MEDIUM);
     return tabStep;
-  }
-
-  private void styleStepper() {
-    tabStepper.setSizeFull();
-    tabStepper.setClassName("minimal");
   }
 
   private void initSampleRegistrationLayout() {

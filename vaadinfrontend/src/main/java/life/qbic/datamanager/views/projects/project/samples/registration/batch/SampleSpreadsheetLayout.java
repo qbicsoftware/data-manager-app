@@ -6,9 +6,9 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.io.Serial;
 import java.io.Serializable;
@@ -28,7 +28,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
  * associated for each sample will be provided>
  * </p>
  */
-class SampleSpreadsheetLayout extends VerticalLayout {
+class SampleSpreadsheetLayout extends Div {
 
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
@@ -42,6 +42,7 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   SampleSpreadsheetLayout() {
     initContent();
+    this.addClassName("sample-information");
     this.setSizeFull();
     sampleInformationLayoutHandler = new SampleInformationLayoutHandler();
   }
@@ -73,7 +74,6 @@ class SampleSpreadsheetLayout extends VerticalLayout {
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sampleInformationButtons.add(addRowButton, cancelButton, registerButton);
-    this.setAlignSelf(Alignment.END, sampleInformationButtons);
     add(sampleInformationButtons);
   }
 

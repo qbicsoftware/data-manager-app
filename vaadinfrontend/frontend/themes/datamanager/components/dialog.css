@@ -13,6 +13,61 @@
   opacity: 0.05;
 }
 
+.batch-registration-dialog {
+  width: 100%;
+  height: 100%;
+}
+
+.batch-registration-dialog .stepper vaadin-tabs {
+  display: inline-flex;
+}
+
+.batch-registration-dialog .stepper vaadin-tab {
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .batch-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.batch-registration-dialog .batch-content .batch-information {
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-registration-dialog .batch-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.batch-registration-dialog .batch-content .data-type-information {
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-registration-dialog .batch-content .data-type-information .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.batch-registration-dialog .batch-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .sample-information {
+
+}
+
+
 .create-project-dialog .content {
   max-width: 60vw;
   padding-bottom: 1em;
