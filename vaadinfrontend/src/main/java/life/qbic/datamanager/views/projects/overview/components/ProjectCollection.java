@@ -73,8 +73,8 @@ public class ProjectCollection extends PageArea {
     layoutTitleSection();
     layoutControlSection();
     layoutGridSection();
-    controlSection.add(new Div(projectSearchField));
-    controlSection.add(new Div(createProjectButton));
+    controlSection.add(projectSearchField);
+    controlSection.add(createProjectButton);
 
     gridSection.add(projectGrid);
     add(titleSection);
