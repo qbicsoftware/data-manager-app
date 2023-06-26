@@ -32,7 +32,6 @@ public class ProjectOverviewPage extends Div {
 
   public ProjectOverviewPage(@Autowired ProjectInformationService projectInformationService) {
     add(ProjectCollection.create("Projects", ZoneId.of("UTC"), projectInformationService));
-    //add(projectOverviewComponent);
     stylePage();
   }
 
