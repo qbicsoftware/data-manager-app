@@ -104,7 +104,7 @@ public class ProjectCollection extends PageArea {
 
   private void configureProjectCreationButton() {
     createProjectButton.addClickListener(listener -> {
-      fireClickEvent();
+      fireCreateClickedEvent();
     });
   }
 
@@ -148,7 +148,7 @@ public class ProjectCollection extends PageArea {
     gridSection.addClassName("projects-grid");
   }
 
-  private void fireClickEvent() {
+  private void fireCreateClickedEvent() {
     var clickedEvent = new ProjectCreationClickedEvent(this, true);
     projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
   }
