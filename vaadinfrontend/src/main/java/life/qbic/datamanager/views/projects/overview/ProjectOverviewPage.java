@@ -5,15 +5,15 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.time.ZoneId;
-import life.qbic.datamanager.ClientDetailsProvider;
-import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
+import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectRegistrationService;
+import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,19 +30,65 @@ public class ProjectOverviewPage extends Div {
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
 
-  private static final Logger log = LoggerFactory.logger(ProjectOverviewPage.class);
+  private final ProjectCollection projectCollection;
+  private final ProjectCreationDialog projectCreationDialog;
+  private final ProjectRegistrationService projectRegistrationService;
 
-  public ProjectOverviewPage(@Autowired ProjectInformationService projectInformationService,
-      ClientDetailsProvider clientDetailsProvider) {
-    add(ProjectCollection.create("Projects", ZoneId.of(clientDetailsProvider.latestDetails().map(
-        ClientDetails::timeZoneId).orElse("UTC")), projectInformationService));
+  public ProjectOverviewPage(@Autowired ProjectCollection projectCollection,
+      ProjectCreationDialog projectCreationDialog,
+      ProjectRegistrationService projectRegistrationService) {
+    this.projectCollection = projectCollection;
+    this.projectCreationDialog = projectCreationDialog;
+    this.projectRegistrationService = projectRegistrationService;
+    layoutPage();
+    configurePage();
+
     stylePage();
   }
 
+  private void layoutPage() {
+    add(projectCollection);
+  }
+
+  private void configurePage() {
+    projectCollection.addListener(projectCreationClickedEvent ->
+        projectCreationDialog.open()
+    );
+    projectCreationDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
+        projectCreationDialog.resetAndClose());
+    projectCreationDialog.addProjectCreationEventListener(projectCreationEvent -> {
+      createProject(projectCreationEvent.getSource().content());
+    });
+  }
 
   private void stylePage() {
     this.setWidthFull();
     this.setHeightFull();
+  }
+
+  private void createProject(ProjectCreationContent projectCreationContent) {
+    Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
+        projectCreationContent.offerId(), projectCreationContent.projectCode(),
+        projectCreationContent.title(), projectCreationContent.objective(),
+        projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
+        projectCreationContent.specimen(), projectCreationContent.analyte(),
+        projectCreationContent.principalInvestigator(),
+        projectCreationContent.projectResponsible(),
+        projectCreationContent.projectManager());
+
+    project
+        .onValue(result -> {
+          displaySuccessfulProjectCreationNotification();
+          projectCreationDialog.resetAndClose();
+          projectCollection.refresh();
+        })
+        .onError(e -> {
+          throw e;
+        });
+  }
+
+  private void displaySuccessfulProjectCreationNotification() {
+
   }
 
 }
