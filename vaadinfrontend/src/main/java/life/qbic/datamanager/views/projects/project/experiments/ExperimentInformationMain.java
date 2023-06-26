@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -16,21 +15,25 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Experiment Information page
+ * Experiment Information Main Component
  * <p>
- * This page hosts the components necessary to show and update the
+ * This component hosts the components necessary to show and update the
  * {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} information associated
  * with a {@link life.qbic.projectmanagement.domain.project.Project} via the provided
  * {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
@@ -40,7 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ProjectViewPage.class)
 @PermitAll
-public class ExperimentInformationPage extends Div implements BeforeEnterObserver, RouterLayout {
+public class ExperimentInformationMain extends MainComponent implements BeforeEnterObserver,
+    RouterLayout {
 
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
@@ -48,60 +52,52 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
+  private final ProjectNavigationBarComponent projectNavigationBarComponent;
 
-  public ExperimentInformationPage(
+  public ExperimentInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
+      @Autowired ExperimentContentComponent experimentContentComponent,
       @Autowired ExperimentSupportComponent experimentSupportComponent,
-      @Autowired ExperimentMainComponent experimentMainComponent,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
+    super(experimentContentComponent, experimentSupportComponent);
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(experimentSupportComponent);
-    Objects.requireNonNull(experimentMainComponent);
+    Objects.requireNonNull(experimentContentComponent);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    setupBoard(projectNavigationBarComponent, experimentMainComponent, experimentSupportComponent);
+    this.projectNavigationBarComponent = projectNavigationBarComponent;
+    layoutComponent();
     experimentInformationPageHandler = new ExperimentInformationPageHandler(
-        projectNavigationBarComponent, experimentMainComponent, experimentSupportComponent,
+        projectNavigationBarComponent, experimentContentComponent, experimentSupportComponent,
         projectInformationService, experimentInformationService);
     log.debug(String.format(
-        "\"New instance for ExperimentInformationPage (#%s) created with ProjectNavigationBar Component (#%s), ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
+        "\"New instance for ExperimentInformationMain (#%s) created with ProjectNavigationBar Component (#%s), ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
-        System.identityHashCode(experimentMainComponent),
+        System.identityHashCode(experimentContentComponent),
         System.identityHashCode(experimentSupportComponent))
     );
   }
 
-  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
-      ExperimentMainComponent experimentMainComponent,
-      ExperimentSupportComponent experimentSupportComponent) {
-    this.addClassName("experiment-page");
-    this.add(projectNavigationBarComponent);
-    this.add(experimentMainComponent);
-    this.add(experimentSupportComponent);
+  private void layoutComponent() {
+    addClassName("experiment-main");
+    addComponentAsFirst(projectNavigationBarComponent);
   }
 
   /**
    * Extracts {@link ExperimentId} from the provided URL before the user accesses the page
    * <p>
    * This method is responsible for checking if the provided {@link ExperimentId} is valid and
-   * triggering its propagation to the components within the {@link ExperimentInformationPage}
+   * triggering its propagation to the components within the {@link ExperimentInformationMain}
    */
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .ifPresent(experimentIdParam -> {
-          try {
-            ExperimentId experimentId = ExperimentId.parse(experimentIdParam);
-            experimentInformationPageHandler.setExperimentId(experimentId);
-          } catch (IllegalArgumentException e) {
-            log.debug(
-                String.format("Provided ExperimentId %s is invalid due to %s", experimentIdParam,
-                    e.getMessage()));
-            experimentInformationPageHandler.rerouteToActiveExperiment(beforeEnterEvent);
-          }
-        });
+        .ifPresentOrElse(
+            experimentIdParam -> experimentInformationPageHandler.propagateExperimentId(
+                experimentIdParam, beforeEnterEvent),
+            () -> experimentInformationPageHandler.rerouteToActiveExperiment(beforeEnterEvent));
   }
 
   /**
@@ -115,19 +111,19 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
 
     private ProjectId projectId;
     private final ProjectNavigationBarComponent projectNavigationBarComponent;
-    private final ExperimentMainComponent experimentMainComponent;
+    private final ExperimentContentComponent experimentContentComponent;
     private final ExperimentSupportComponent experimentSupportComponent;
     private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
 
     public ExperimentInformationPageHandler(
         ProjectNavigationBarComponent projectNavigationBarComponent,
-        ExperimentMainComponent experimentMainComponent,
+        ExperimentContentComponent experimentContentComponent,
         ExperimentSupportComponent experimentSupportComponent,
         ProjectInformationService projectInformationService,
         ExperimentInformationService experimentInformationService) {
       this.projectNavigationBarComponent = projectNavigationBarComponent;
-      this.experimentMainComponent = experimentMainComponent;
+      this.experimentContentComponent = experimentContentComponent;
       this.experimentSupportComponent = experimentSupportComponent;
       this.projectInformationService = projectInformationService;
       this.experimentInformationService = experimentInformationService;
@@ -141,13 +137,21 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
 
     private void setProjectId(ProjectId projectId) {
       this.projectId = projectId;
-      projectNavigationBarComponent.projectId(projectId);
-      experimentSupportComponent.setProjectId(projectId);
+      propagateProjectInformation();
+      propagateExperimentInformation();
+    }
+
+    private void propagateExperimentInformation() {
       Collection<Experiment> experiments = getExperimentsForProject(projectId);
       experimentSupportComponent.setExperiments(experiments);
-      var activeExperiment = getActiveExperimentIdForProject();
+      var activeExperiment = getActiveExperimentIdForProject(projectId);
       experimentSupportComponent.setActiveExperiment(activeExperiment);
-      experimentMainComponent.setExperiment(activeExperiment);
+      experimentContentComponent.setExperiment(activeExperiment);
+    }
+
+    private void propagateProjectInformation() {
+      projectNavigationBarComponent.projectId(projectId);
+      experimentSupportComponent.projectId(projectId);
     }
 
     private Collection<Experiment> getExperimentsForProject(ProjectId projectId) {
@@ -158,23 +162,61 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
     }
 
     private void setExperimentId(ExperimentId experimentId) {
-      experimentMainComponent.setExperiment(experimentId);
+      experimentContentComponent.setExperiment(experimentId);
       experimentSupportComponent.setSelectedExperiment(experimentId);
       projectNavigationBarComponent.experimentId(experimentId);
     }
 
     private void enableExperimentSelectionListener() {
       experimentSupportComponent.addExperimentSelectionListener(
-          event -> routeToSelectedExperiment(projectId, event.getSource().experimentId()));
+          event -> routeToExperiment(projectId, event.getSource().experimentId()));
     }
 
     private void enableCreateExperimentListener() {
       experimentSupportComponent.addExperimentCreationListener(event -> {
         experimentSupportComponent.setExperiments(getExperimentsForProject(projectId));
-        var activeExperiment = getActiveExperimentIdForProject();
+        var activeExperiment = getActiveExperimentIdForProject(projectId);
         experimentSupportComponent.setActiveExperiment(activeExperiment);
+        experimentContentComponent.setExperiment(retrieveNewlyCreatedExperiment(event));
       });
     }
+
+    private ExperimentId retrieveNewlyCreatedExperiment(
+        ExperimentCreationEvent experimentCreationEvent) {
+      Project project = projectInformationService.find(projectId).get();
+      return project.experiments().stream().map(experimentInformationService::find)
+          .filter(Optional::isPresent).map(Optional::get)
+          .filter(experiment -> isExperimentEqualToContent(experimentCreationEvent.getSource()
+              .content(), experiment)).findFirst().get().experimentId();
+    }
+
+    private boolean isExperimentEqualToContent(ExperimentCreationContent experimentCreationContent,
+        Experiment experiment) {
+      return experimentCreationContent.analytes().equals(experiment.getAnalytes())
+          && experimentCreationContent.species().equals(experiment.getSpecies())
+          && experimentCreationContent.specimen().equals(experiment.getSpecimens());
+
+    }
+
+    /**
+     * Reroutes to the ExperimentId provided in the URL
+     * <p>
+     * This method generates the URL and routes the user via {@link RouteParam} to the active
+     * experiment of a project
+     */
+
+    private void propagateExperimentId(String experimentParam, BeforeEnterEvent beforeEnterEvent) {
+      try {
+        ExperimentId experimentId = ExperimentId.parse(experimentParam);
+        experimentInformationPageHandler.setExperimentId(experimentId);
+      } catch (IllegalArgumentException e) {
+        log.debug(
+            String.format("Provided ExperimentId %s is invalid due to %s", experimentParam,
+                e.getMessage()));
+        rerouteToActiveExperiment(beforeEnterEvent);
+      }
+    }
+
 
     /**
      * Reroutes to the active experiment within a project if present
@@ -183,7 +225,8 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
      * experiment of a project
      */
     private void rerouteToActiveExperiment(BeforeEnterEvent beforeEnterEvent) {
-      ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject();
+      ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject(
+          projectId);
       log.debug(String.format("Rerouting to active experiment %s of project %s",
           activeExperimentId.value(), projectId.value()));
       RouteParam experimentIdParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
@@ -191,7 +234,7 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
       RouteParam projectIdRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
           projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
-      beforeEnterEvent.forwardTo(ExperimentInformationPage.class, routeParameters);
+      beforeEnterEvent.forwardTo(ExperimentInformationMain.class, routeParameters);
     }
 
     /**
@@ -201,17 +244,17 @@ public class ExperimentInformationPage extends Div implements BeforeEnterObserve
      * This method generates the URL and routes the user via {@link RouteParam} to the selected
      * experiment of a project
      */
-    private void routeToSelectedExperiment(ProjectId projectId, ExperimentId experimentId) {
+    private void routeToExperiment(ProjectId projectId, ExperimentId experimentId) {
       RouteParam experimentIdParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
           experimentId.value());
       RouteParam projectIdRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
           projectId.value());
       RouteParameters routeParameters = new RouteParameters(projectIdRouteParam, experimentIdParam);
       UI.getCurrent()
-          .access(() -> UI.getCurrent().navigate(ExperimentInformationPage.class, routeParameters));
+          .access(() -> UI.getCurrent().navigate(ExperimentInformationMain.class, routeParameters));
     }
 
-    private ExperimentId getActiveExperimentIdForProject() {
+    private ExperimentId getActiveExperimentIdForProject(ProjectId projectId) {
       return projectInformationService.find(projectId).get().activeExperiment();
     }
   }

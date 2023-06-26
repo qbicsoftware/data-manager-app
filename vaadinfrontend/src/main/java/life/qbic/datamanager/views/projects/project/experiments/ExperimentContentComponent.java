@@ -11,25 +11,31 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Experiment Content component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * The content component is a {@link Div} container, which is responsible for hosting the components
+ * handling the content within the {@link ExperimentInformationMain}. It is intended to propagate
+ * experiment information provided in the {@link ExperimentDetailsComponent} to the
+ * {@link ExperimentInformationMain} and vice versa and can be easily extended with additional
+ * components if necessary
  */
 
 @SpringComponent
 @UIScope
-public class ExperimentMainComponent extends Div {
+public class ExperimentContentComponent extends Div {
 
-  private static final Logger log = LoggerFactory.logger(ExperimentMainComponent.class);
+  private static final Logger log = LoggerFactory.logger(ExperimentContentComponent.class);
   @Serial
   private static final long serialVersionUID = 464171225772721108L;
   private final ExperimentDetailsComponent experimentDetailsComponent;
 
-  public ExperimentMainComponent(@Autowired ExperimentDetailsComponent experimentDetailsComponent) {
+  public ExperimentContentComponent(
+      @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
     this.experimentDetailsComponent = experimentDetailsComponent;
-    this.addClassName("main");
+    layoutComponent();
+  }
+
+  private void layoutComponent() {
     this.add(experimentDetailsComponent);
   }
 

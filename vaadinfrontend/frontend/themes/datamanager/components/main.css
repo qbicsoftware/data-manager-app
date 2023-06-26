@@ -1,21 +1,25 @@
-.experiment-page {
+.experiment-main {
   display: grid;
   grid-template-columns: minmax(250px, 0.8fr) minmax(250px, 0.2fr);
   grid-template-rows: minmax(150px, 0.1fr) minmax(250px, 1fr);
   gap: 1px 1px;
   grid-template-areas:
     "navbar support"
-    "main support";
+    "content support";
 }
 
-.experiment-page .main {
-  grid-area: main;
+.experiment-main .content {
+  grid-area: content;
 }
 
-.experiment-page .support {
+.experiment-main .support {
   grid-area: support;
 }
 
-.experiment-page .navbar {
+.experiment-main .navbar {
   grid-area: navbar;
+}
+
+.project-main {
+  flex-direction: column;
 }

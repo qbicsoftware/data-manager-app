@@ -4,7 +4,7 @@
 @import "page-area.css";
 @import "card.css";
 @import "dialog.css";
-@import "page.css";
+@import "main.css";
 
 .card-deck {
   display: flex;

@@ -19,9 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Experiment support component
  * <p>
  * The support component is a {@link Div} container, which is responsible for hosting the components
- * handling the sidebar content within the {@link ExperimentInformationPage}. It propagates the
+ * handling the sidebar content within the {@link ExperimentInformationMain}. It propagates the
  * experiment information provided in the {@link ExperimentListComponent} to the
- * {@link ExperimentInformationPage} and vice versa and can be easily extended with additional
+ * {@link ExperimentInformationMain} and vice versa and can be easily extended with additional
  * components if necessary
  */
 @SpringComponent
@@ -30,15 +30,17 @@ public class ExperimentSupportComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -6996282848714468102L;
-  private ProjectId projectId;
   private final ExperimentListComponent experimentListComponent;
   private static final Logger log = LoggerFactory.logger(ExperimentSupportComponent.class);
 
   public ExperimentSupportComponent(@Autowired ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(experimentListComponent);
     this.experimentListComponent = experimentListComponent;
+    layoutComponent();
+  }
+
+  private void layoutComponent() {
     this.add(experimentListComponent);
-    this.addClassName("support");
   }
 
   /**
@@ -48,8 +50,7 @@ public class ExperimentSupportComponent extends Div {
    * within this component, so they can retrieve the information associated with the
    * {@link ProjectId}
    */
-  public void setProjectId(ProjectId projectId) {
-    this.projectId = projectId;
+  public void projectId(ProjectId projectId) {
     experimentListComponent.setProject(projectId);
   }
 

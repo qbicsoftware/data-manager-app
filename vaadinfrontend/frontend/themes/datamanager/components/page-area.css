@@ -14,11 +14,6 @@
   padding: var(--lumo-space-l);
 }
 
-.support-area {
-  gap: var(--lumo-space-m);
-  display: flex;
-}
-
 .attachments-area {
   flex-direction: column;
 }
