@@ -4,6 +4,7 @@
 @import "page-area.css";
 @import "card.css";
 @import "dialog.css";
+@import "project-collection.css";
 
 .card-deck {
   display: flex;

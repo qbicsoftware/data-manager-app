@@ -5,11 +5,15 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.ZoneId;
+import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.projects.overview.components.ProjectOverviewComponent;
+import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -28,10 +32,13 @@ public class ProjectOverviewPage extends Div {
 
   private static final Logger log = LoggerFactory.logger(ProjectOverviewPage.class);
 
-  public ProjectOverviewPage(@Autowired ProjectOverviewComponent projectOverviewComponent) {
-    add(projectOverviewComponent);
+  public ProjectOverviewPage(@Autowired ProjectInformationService projectInformationService,
+      ClientDetailsProvider clientDetailsProvider) {
+    add(ProjectCollection.create("Projects", ZoneId.of(clientDetailsProvider.latestDetails().map(
+        ClientDetails::timeZoneId).orElse("UTC")), projectInformationService));
     stylePage();
   }
+
 
   private void stylePage() {
     this.setWidthFull();
