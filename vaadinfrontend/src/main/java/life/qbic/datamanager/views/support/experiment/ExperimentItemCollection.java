@@ -75,8 +75,7 @@ public class ExperimentItemCollection extends Div {
   }
 
   private void subscribeToCreateEvent() {
-    createExperiment.addListener(
-        (ComponentEventListener<CreationClickedEvent>) this::fireCreationEvent);
+    createExperiment.addListener(this::fireCreationEvent);
   }
 
   private void fireCreationEvent(CreationClickedEvent event) {
