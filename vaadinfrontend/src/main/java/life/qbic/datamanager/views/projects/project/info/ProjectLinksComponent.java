@@ -19,7 +19,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.SupportArea;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
@@ -33,16 +33,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-public class ProjectLinksComponent extends SupportArea {
+public class ProjectLinksComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8598696156022371367L;
-
   private static final String TITLE = "Attachments";
   private static final String OFFER_TYPE_NAME = "Offer";
   private OfferSearch offerSearch;
   private final Grid<ProjectLink> projectLinks = new Grid<>(ProjectLink.class);
-
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
