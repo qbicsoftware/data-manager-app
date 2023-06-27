@@ -50,7 +50,7 @@ public class DefineExperimentComponent extends Div {
 
   private void initExperimentDefinitionLayout() {
     initHeaderAndDescription();
-    styleMultiSelectComboBoxes();
+    styleFields();
     add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
   }
 
@@ -60,12 +60,11 @@ public class DefineExperimentComponent extends Div {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
     experimentHeader.addClassName("header");
-    experimentNameField.addClassName("full-width-input");
     add(experimentHeader, experimentDescription, experimentNameField,
         experimentDescription);
   }
 
-  private void styleMultiSelectComboBoxes() {
+  private void styleFields() {
     speciesBox.setRequired(true);
     specimenBox.setRequired(true);
     analyteBox.setRequired(true);
@@ -75,6 +74,7 @@ public class DefineExperimentComponent extends Div {
     speciesBox.addClassName("full-width-input");
     specimenBox.addClassName("full-width-input");
     analyteBox.addClassName("full-width-input");
+    experimentNameField.addClassName("full-width-input");
     experimentalDesignDescription.addClassName("full-width-input");
   }
 
