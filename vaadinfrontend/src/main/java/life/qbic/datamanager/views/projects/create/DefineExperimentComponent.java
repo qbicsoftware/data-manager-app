@@ -71,11 +71,12 @@ public class DefineExperimentComponent extends Div {
     speciesBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
-    speciesBox.addClassName("full-width-input");
-    specimenBox.addClassName("full-width-input");
-    analyteBox.addClassName("full-width-input");
-    experimentNameField.addClassName("full-width-input");
-    experimentalDesignDescription.addClassName("full-width-input");
+    String fullWidthClass = "full-width-input";
+    speciesBox.addClassName(fullWidthClass);
+    specimenBox.addClassName(fullWidthClass);
+    analyteBox.addClassName(fullWidthClass);
+    experimentNameField.addClassName(fullWidthClass);
+    experimentalDesignDescription.addClassName(fullWidthClass);
   }
 
   public void hideNameField() {
