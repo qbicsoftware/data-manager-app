@@ -71,12 +71,11 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
 
   @Serial
   private static final long serialVersionUID = 5435551053955979169L;
-
-  private final String TITLE = "Projects";
   final Button create = new Button("Create");
   final TextField projectSearchField = new TextField();
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final ProjectCreationDialog projectCreationDialog;
+  private final String TITLE = "Projects";
   private final ClientDetailsProvider clientDetailsProvider;
 
   public ProjectOverviewComponent(@Autowired ClientDetailsProvider clientDetailsProvider,
@@ -144,18 +143,18 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
 
   private class Handler {
 
+    private String projectPreviewFilter = "";
+    private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
     private static final Logger log = logger(Handler.class);
     private final OfferLookupService offerLookupService;
     private final ProjectRegistrationService projectRegistrationService;
     private final ProjectInformationService projectInformationService;
     private final PersonSearchService personSearchService;
 
-    private String projectPreviewFilter = "";
-    private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
-
     public Handler(OfferLookupService offerLookupService, ProjectRepository projectRepository,
         ProjectInformationService projectInformationService,
-        ProjectRegistrationService projectRegistrationService, PersonSearchService personSearchService) {
+        ProjectRegistrationService projectRegistrationService,
+        PersonSearchService personSearchService) {
 
       Objects.requireNonNull(offerLookupService);
       this.offerLookupService = offerLookupService;
@@ -181,27 +180,6 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
       setUpProjectManagerSearch();
     }
 
-    private void setupSearchBar() {
-      projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
-      projectSearchField.addValueChangeListener(event -> {
-        projectPreviewFilter = event.getValue().trim();
-        projectPreviewGridLazyDataView.refreshAll();
-      });
-    }
-
-
-    private void setProjectsToGrid() {
-      projectPreviewGridLazyDataView = projectGrid.setItems(query -> {
-        List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-                it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-            .collect(Collectors.toList());
-        // if no order is provided by the grid order by last modified (least priority)
-        sortOrders.add(SortOrder.of("lastModified").descending());
-        return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
-            query.getLimit(), List.copyOf(sortOrders)).stream();
-      });
-    }
-
     private void configurePageButtons() {
       create.addClickListener(e -> projectCreationDialog.open());
 
@@ -211,34 +189,6 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
       projectCreationDialog.addProjectCreationEventListener(
           event -> processProjectCreation(event.getSource().content()));
       projectCreationDialog.addCancelEventListener(event -> projectCreationDialog.resetAndClose());
-    }
-
-    private void processProjectCreation(ProjectCreationContent projectCreationContent) {
-
-      Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
-          projectCreationContent.offerId(), projectCreationContent.projectCode(),
-          projectCreationContent.title(), projectCreationContent.objective(),
-          projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
-          projectCreationContent.specimen(), projectCreationContent.analyte(),
-          projectCreationContent.principalInvestigator(),
-          projectCreationContent.projectResponsible(),
-          projectCreationContent.projectManager());
-
-      project
-          .onValue(result -> {
-            displaySuccessfulProjectCreationNotification();
-            projectCreationDialog.resetAndClose();
-            projectGrid.getDataProvider().refreshAll();
-          })
-          .onError(e -> {
-            throw e;
-          });
-    }
-
-    private void displaySuccessfulProjectCreationNotification() {
-      SuccessMessage successMessage = new SuccessMessage("Project creation succeeded.", "");
-      StyledNotification notification = new StyledNotification(successMessage);
-      notification.open();
     }
 
     private void loadOfferPreview() {
@@ -263,18 +213,24 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
       });
     }
 
-    private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
-      comboBox.setItems(
-          query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
-              query.getLimit()).stream());
-      comboBox.setRenderer(
-          new ComponentRenderer<>(personReference -> new Text(personReference.fullName())));
-      comboBox.setItemLabelGenerator(
-          (ItemLabelGenerator<PersonReference>) PersonReference::fullName);
+    private void setProjectsToGrid() {
+      projectPreviewGridLazyDataView = projectGrid.setItems(query -> {
+        List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+                it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+            .collect(Collectors.toList());
+        // if no order is provided by the grid order by last modified (least priority)
+        sortOrders.add(SortOrder.of("lastModified").descending());
+        return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
+            query.getLimit(), List.copyOf(sortOrders)).stream();
+      });
     }
 
-    private void setUpProjectManagerSearch() {
-      setUpPersonSearch(projectCreationDialog.projectManager);
+    private void setupSearchBar() {
+      projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
+      projectSearchField.addValueChangeListener(event -> {
+        projectPreviewFilter = event.getValue().trim();
+        projectPreviewGridLazyDataView.refreshAll();
+      });
     }
 
     private void setUpPrincipalInvestigatorSearch() {
@@ -285,12 +241,30 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
       setUpPersonSearch(projectCreationDialog.responsiblePerson);
     }
 
-    private void preloadContentFromOffer(String offerId) {
-      log.info("Receiving offerId " + offerId);
-      OfferId id = OfferId.from(offerId);
-      Optional<Offer> offer = offerLookupService.findOfferById(id);
-      offer.ifPresentOrElse(projectCreationDialog::setOffer,
-          () -> log.error("No offer found with id: " + offerId));
+    private void setUpProjectManagerSearch() {
+      setUpPersonSearch(projectCreationDialog.projectManager);
+    }
+
+    private void processProjectCreation(ProjectCreationContent projectCreationContent) {
+
+      Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
+          projectCreationContent.offerId(), projectCreationContent.projectCode(),
+          projectCreationContent.title(), projectCreationContent.objective(),
+          projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
+          projectCreationContent.specimen(), projectCreationContent.analyte(),
+          projectCreationContent.principalInvestigator(),
+          projectCreationContent.projectResponsible(),
+          projectCreationContent.projectManager());
+
+      project
+          .onValue(result -> {
+            displaySuccessfulProjectCreationNotification();
+            projectCreationDialog.resetAndClose();
+            projectGrid.getDataProvider().refreshAll();
+          })
+          .onError(e -> {
+            throw e;
+          });
     }
 
     /**
@@ -302,6 +276,30 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
      */
     private static String previewToString(OfferPreview offerPreview) {
       return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
+    }
+
+    private void preloadContentFromOffer(String offerId) {
+      log.info("Receiving offerId " + offerId);
+      OfferId id = OfferId.from(offerId);
+      Optional<Offer> offer = offerLookupService.findOfferById(id);
+      offer.ifPresentOrElse(projectCreationDialog::setOffer,
+          () -> log.error("No offer found with id: " + offerId));
+    }
+
+    private void setUpPersonSearch(ComboBox<PersonReference> comboBox) {
+      comboBox.setItems(
+          query -> personSearchService.find(query.getFilter().orElse(""), query.getOffset(),
+              query.getLimit()).stream());
+      comboBox.setRenderer(
+          new ComponentRenderer<>(personReference -> new Text(personReference.fullName())));
+      comboBox.setItemLabelGenerator(
+          (ItemLabelGenerator<PersonReference>) PersonReference::fullName);
+    }
+
+    private void displaySuccessfulProjectCreationNotification() {
+      SuccessMessage successMessage = new SuccessMessage("Project creation succeeded.", "");
+      StyledNotification notification = new StyledNotification(successMessage);
+      notification.open();
     }
   }
 }

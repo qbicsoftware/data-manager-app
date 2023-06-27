@@ -1,0 +1,11 @@
+.project-collection {
+  display: grid;
+  gap: 1rem;
+}
+
+
+.project-collection .controls {
+  display: flex;
+  align-content: space-between;
+  gap: 1rem;
+}
