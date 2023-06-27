@@ -90,7 +90,7 @@ public class ExperimentListComponent extends PageArea {
             experimentCreationContent.experimentName(), experimentCreationContent.species(),
             experimentCreationContent.specimen(), experimentCreationContent.analytes())
         .onValue(experimentId -> {
-          displaySuccessfulExperimentCreation();
+          displayExperimentCreationSuccess();
           fireExperimentCreatedEvent(experimentCreationEvent);
           experimentCreationDialog.resetAndClose();
           setSelectedExperiment(experimentId);
@@ -167,7 +167,7 @@ public class ExperimentListComponent extends PageArea {
     selectionListeners.forEach(it -> it.handle(event));
   }
 
-  private void displaySuccessfulExperimentCreation() {
+  private void displayExperimentCreationSuccess() {
     SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
     StyledNotification notification = new StyledNotification(successMessage);
     notification.open();
@@ -179,12 +179,32 @@ public class ExperimentListComponent extends PageArea {
     notification.open();
   }
 
+  /**
+   * Experiment Selection Interface
+   * <p>
+   * Represents a simple interface to handle {@link ExperimentItemClickedEvent} that can be invoked
+   * by the method {@link ExperimentSelectionListener#handle(ExperimentItemClickedEvent)}.
+   * <p>
+   * This interface is suitable for all components that want to be informed if an
+   * {@link ExperimentItemClickedEvent} occurred, and want to handle the information stored in the
+   * {@link ExperimentItemClickedEvent}
+   */
   @FunctionalInterface
   public interface ExperimentSelectionListener {
 
     void handle(ExperimentItemClickedEvent event);
   }
 
+  /**
+   * Experiment Creation Interface
+   * <p>
+   * Represents a simple interface to handle {@link ExperimentCreationEvent} that can be invoked by
+   * the method {@link ExperimentCreationListener#handle(ExperimentCreationEvent)}.
+   * <p>
+   * This interface is suitable for all components that want to be informed if an
+   * {@link ExperimentCreationEvent} occurred, and want to handle the information stored in the
+   * {@link ExperimentCreationEvent}
+   */
   @FunctionalInterface
   public interface ExperimentCreationListener {
 

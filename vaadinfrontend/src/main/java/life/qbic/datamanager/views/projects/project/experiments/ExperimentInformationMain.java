@@ -80,7 +80,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   }
 
   private void layoutComponent() {
-    addClassName("experiment-main");
+    addClassName("experiment");
     addComponentAsFirst(projectNavigationBarComponent);
   }
 
@@ -101,7 +101,10 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   }
 
   /**
-   * Triggers the propagation of the provided {@link ProjectId} to the components within this page
+   * Triggers the propagation of the provided {@link ProjectId} to the components within
+   * {@link ExperimentInformationMain}
+   *
+   * @param projectId The projectId to be propagated
    */
   public void projectId(ProjectId projectId) {
     experimentInformationPageHandler.setProjectId(projectId);

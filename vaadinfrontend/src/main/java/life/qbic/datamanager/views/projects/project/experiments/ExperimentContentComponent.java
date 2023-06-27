@@ -39,6 +39,11 @@ public class ExperimentContentComponent extends Div {
     this.add(experimentDetailsComponent);
   }
 
+  /**
+   * Triggers the propagation of the provided {@link ExperimentId} to internal components
+   *
+   * @param experimentId The experimentId to be propagated
+   */
   public void setExperiment(ExperimentId experimentId) {
     experimentDetailsComponent.setExperiment(experimentId);
   }

@@ -13,30 +13,38 @@ import com.vaadin.flow.component.html.Div;
 
 public abstract class MainComponent extends Div {
 
-  private Div content;
-  private Div support;
+  private final Div content;
+  private final Div support;
 
   protected MainComponent(Div content, Div support) {
     this.content = content;
     this.support = content;
+    this.addClassName("main");
     content.addClassName("content");
     support.addClassName("support");
     add(content);
     add(support);
   }
 
-  public void setContent(Div content) {
-    this.content = content;
-  }
-
-  public void setSupport(Div support) {
-    this.support = support;
-  }
-
+  /**
+   * <b>Getter for the {@link com.vaadin.flow.component.Component} functioning as Content component
+   * within this abstract component.</b>
+   *
+   * <p>The content {@link com.vaadin.flow.component.Component} is intended as the component
+   * showing the main information within the {@link MainComponent} </p>
+   */
   public Div getContent() {
     return content;
   }
 
+  /**
+   * <b>Getter for the {@link com.vaadin.flow.component.Component} stored functioning as support
+   * component within this abstract component.</b>
+   *
+   * <p>The content {@link com.vaadin.flow.component.Component} is intended as the component
+   * showing additional supporting information(e.g. as a sidebar) within the {@link MainComponent}
+   * </p>
+   */
   public Div getSupport() {
     return support;
   }
