@@ -13,7 +13,7 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
 import life.qbic.logging.api.Logger;
@@ -39,20 +39,20 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   private final transient Handler handler;
 
   public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
-      @Autowired ExperimentInformationPage experimentInformationPage,
+      @Autowired ExperimentInformationMain experimentInformationMain,
       @Autowired SampleInformationPage sampleInformationPage,
       @Autowired ProjectInformationService projectInformationService) {
     Objects.requireNonNull(projectInformationPage);
-    Objects.requireNonNull(experimentInformationPage);
+    Objects.requireNonNull(experimentInformationMain);
     Objects.requireNonNull(sampleInformationPage);
     stylePage();
     handler = new Handler(projectInformationPage,
-        experimentInformationPage, sampleInformationPage, projectInformationService);
+        experimentInformationMain, sampleInformationPage, projectInformationService);
     log.debug(String.format(
         "New instance for project view (#%s) created with a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
         System.identityHashCode(this),
         System.identityHashCode(projectInformationPage),
-        System.identityHashCode(experimentInformationPage),
+        System.identityHashCode(experimentInformationMain),
         System.identityHashCode(sampleInformationPage)));
   }
 
@@ -83,23 +83,23 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   static class Handler {
 
     private final ProjectInformationPage projectInformationPage;
-    private final ExperimentInformationPage experimentInformationPage;
+    private final ExperimentInformationMain experimentInformationMain;
     private final SampleInformationPage sampleInformationPage;
 
     private final ProjectInformationService projectInformationService;
 
 
     public Handler(ProjectInformationPage projectInformationPage,
-        ExperimentInformationPage experimentInformationPage,
+        ExperimentInformationMain experimentInformationMain,
         SampleInformationPage sampleInformationPage,
         ProjectInformationService projectInformationService) {
       Objects.requireNonNull(projectInformationPage);
-      Objects.requireNonNull(experimentInformationPage);
+      Objects.requireNonNull(experimentInformationMain);
       Objects.requireNonNull(sampleInformationPage);
       Objects.requireNonNull(projectInformationService);
 
       this.projectInformationPage = projectInformationPage;
-      this.experimentInformationPage = experimentInformationPage;
+      this.experimentInformationMain = experimentInformationMain;
       this.sampleInformationPage = sampleInformationPage;
       this.projectInformationService = projectInformationService;
     }
@@ -112,7 +112,7 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
      */
     public void setProjectId(ProjectId projectId) {
       this.projectInformationPage.projectId(projectId);
-      this.experimentInformationPage.projectId(projectId);
+      this.experimentInformationMain.projectId(projectId);
       this.sampleInformationPage.projectId(projectId);
     }
 

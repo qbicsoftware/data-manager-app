@@ -28,7 +28,7 @@ import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
@@ -51,7 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * <p>A PageComponent based Composite showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
- * a {@link Project} within the {@link ExperimentInformationPage}
+ * a {@link Project} within the {@link ExperimentInformationMain}
  */
 @UIScope
 @SpringComponent
