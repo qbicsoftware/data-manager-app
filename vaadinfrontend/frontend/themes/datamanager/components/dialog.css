@@ -1,5 +1,6 @@
 .dialog-window::part(overlay) {
   width: 66vw;
+  height: 66vh;
 }
 
 .dialog-window .confirm-button {
@@ -18,6 +19,11 @@
   height: 100%;
 }
 
+.batch-registration-dialog .stepper {
+  width: 100%;
+  height: 100%;
+}
+
 .batch-registration-dialog .stepper vaadin-tabs {
   display: inline-flex;
 }
@@ -30,6 +36,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-m);
+  height: 100%;
 }
 
 .batch-registration-dialog .batch-content .batch-information {
@@ -64,10 +71,33 @@
   gap: var(--lumo-space-s);
 }
 
-.batch-registration-dialog .sample-information {
-
+.batch-registration-dialog .sample-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
 }
 
+.batch-registration-dialog .sample-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.batch-registration-dialog .sample-content .batch-name {
+  font-weight: bold;
+}
+
+.batch-registration-dialog .sample-content .experiment-name {
+  font-weight: bold;
+}
+
+.batch-registration-dialog .sample-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
 
 .create-project-dialog .content {
   max-width: 60vw;

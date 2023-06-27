@@ -58,6 +58,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private transient Sheet sampleRegistrationSheet;
 
   public SampleRegistrationSpreadsheet() {
+    this.addClassName("sample-spreadsheet");
     // The SampleRegistrationSpreadsheet component only makes sense once information has been filled via the experiment information,
     // which can only happen once the experiment is loaded, therefore the setExperimentMetadata() method should be used.
   }
@@ -139,7 +140,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   public void addRow() {
     int lastRowIndex = 1 + sampleRegistrationSheet.getLastRowNum();
-    for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
+    for (int columnIndex = 0; columnIndex <= header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
         case SPECIES -> prefillCellsToRow(columnIndex, lastRowIndex, species);
@@ -221,6 +222,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       updatedCells.add(cell);
       columnIndex++;
     }
+    this.getColumns();
     this.refreshCells(updatedCells);
   }
 
@@ -295,7 +297,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       oldValue = cell.getStringCellValue();
       this.getCell(0, colIndex).setCellValue(spacingValue);
     }
-    this.autofitColumn(colIndex);
+    //Todo Find out why switching from a sheet with less columns to a sheet with more columns breaks the sheet(e.g. lipidomics to genomics)
+    try {
+      this.autofitColumn(colIndex);
+      this.getActiveSheet();
+    } catch (IndexOutOfBoundsException exception) {
+      System.out.println("WOW " + colIndex);
+    }
+
     this.getCell(0, colIndex).setCellValue(oldValue);
   }
 
@@ -321,6 +330,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private void addGenomicsSheet(List<SamplesheetHeaderName> header) {
     this.header = header;
     LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
+    setDefaultColumnCount(header.size());
     for (SamplesheetHeaderName head : header) {
       headerToPresets.put(head, new ArrayList<>());
     }
@@ -347,7 +357,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
     dropdownCellFactory.addDropdownColumn(analysisTypeColumn);
     setupCommonDropDownColumns();
-    setDefaultColumnCount(header.size());
+
   }
 
 

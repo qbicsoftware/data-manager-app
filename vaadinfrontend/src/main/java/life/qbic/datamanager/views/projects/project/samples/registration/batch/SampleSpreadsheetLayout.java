@@ -8,8 +8,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -42,8 +40,7 @@ class SampleSpreadsheetLayout extends Div {
 
   SampleSpreadsheetLayout() {
     initContent();
-    this.addClassName("sample-information");
-    this.setSizeFull();
+    this.addClassName("batch-content");
     sampleInformationLayoutHandler = new SampleInformationLayoutHandler();
   }
 
@@ -55,21 +52,22 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   private void initHeaderAndInstruction() {
-    sampleInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
+    sampleInformationHeader.setClassName("title");
     Span instructionSpan = new Span();
     instructionSpan.add("Please register your samples for experiment: ");
     instructionSpan.add(experimentName);
-    experimentName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
+    experimentName.setClassName("experiment-name");
     instructionSpan.add(" in batch: ");
     instructionSpan.add(batchName);
     batchRegistrationInstruction.add(instructionSpan);
-    batchName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
+    batchName.addClassName("batch-name");
     add(sampleInformationHeader);
     add(batchRegistrationInstruction);
   }
 
   private void initButtonLayout() {
-    HorizontalLayout sampleInformationButtons = new HorizontalLayout();
+    Span sampleInformationButtons = new Span();
+    sampleInformationButtons.addClassName("buttons");
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -78,7 +76,6 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   private void styleSampleRegistrationSpreadSheet() {
-    sampleRegistrationSpreadsheet.setSizeFull();
     sampleRegistrationSpreadsheet.setSheetSelectionBarVisible(false);
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
@@ -136,7 +133,8 @@ class SampleSpreadsheetLayout extends Div {
 
     private boolean isInputValid() {
       Result<Void, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.areInputsValid();
-      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason())).isValue();
+      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason()))
+          .isValue();
     }
 
     private void displayInputInvalidMessage(String invalidationReason) {
