@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
@@ -12,26 +9,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
- * TODO!
- * <b>short description</b>
+ * <b>Dialog allowing the addition of experimental groups.</b>
  *
- * <p>detailed description</p>
+ * <p>Displays input/selection fields for the creation of a new experimental group and handles
+ * validation of said inputs.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class AddExperimentalGroupsDialog extends Dialog {
+public class AddExperimentalGroupsDialog extends DialogWindow {
 
   private Collection<VariableLevel> levels;
 
   private ExperimentalGroupInput experimentalGroupInput;
-
-  private final Button submitButton;
-
-  private final Button cancelButton;
 
   private final List<Binder<?>> binders = new ArrayList<>();
 
@@ -59,16 +53,16 @@ public class AddExperimentalGroupsDialog extends Dialog {
 
 
   public AddExperimentalGroupsDialog() {
+    super();
+    setConfirmButtonLabel("Create");
+    setCancelButtonLabel("Cancel");
+    addClassName("experiment-group-dialog");
     setHeaderTitle("Please enter group information");
-    setCloseOnEsc(false);
-    setCloseOnOutsideClick(false);
     levels = Collections.emptySet();
-    submitButton = new Button("Create");
-    submitButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    submitButton.addClickListener(event -> submit());
-    cancelButton = new Button("Cancel");
+
+    confirmButton.addClickListener(event -> submit());
     cancelButton.addClickListener(event -> close());
-    getFooter().add(cancelButton, submitButton);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   private void submit() {
@@ -98,10 +92,8 @@ public class AddExperimentalGroupsDialog extends Dialog {
       remove(experimentalGroupInput);
     }
     experimentalGroupInput = new ExperimentalGroupInput(levels);
-    experimentalGroupInput.setWidthFull();
     experimentalGroupInput.setRequiredIndicatorVisible(true);
     add(experimentalGroupInput);
-    setWidth(66, Unit.PERCENTAGE);
     super.open();
   }
 

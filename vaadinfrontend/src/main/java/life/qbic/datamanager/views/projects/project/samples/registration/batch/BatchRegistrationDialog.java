@@ -2,18 +2,16 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Top;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
@@ -22,7 +20,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
  *
  * <p>Component to register {@link Sample} with their associated metadata information</p>
  */
-public class BatchRegistrationDialog extends Dialog {
+public class BatchRegistrationDialog extends DialogWindow {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
@@ -33,10 +31,11 @@ public class BatchRegistrationDialog extends Dialog {
   private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
+    addClassName("register-batch-dialog");
     setHeaderTitle(TITLE);
     initSampleRegistrationLayout();
     initTabStepper();
-    styleStepper();
+    tabStepper.addClassName("tab-sheet");
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
     this.setSizeFull();
   }
@@ -51,16 +50,13 @@ public class BatchRegistrationDialog extends Dialog {
     Avatar stepAvatar = new Avatar(avatarLabel);
     stepAvatar.setColorIndex(2);
     Span tabLabelSpan = new Span(tabLabel);
-    tabLabelSpan.setClassName(Top.SMALL);
+    tabLabelSpan.addClassName("label");
+
     Tab tabStep = new Tab(stepAvatar, tabLabelSpan);
     tabStep.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-    tabStep.setClassName(Left.MEDIUM);
-    return tabStep;
-  }
+    tabStep.addClassName("tab");
 
-  private void styleStepper() {
-    tabStepper.setSizeFull();
-    tabStepper.setClassName("minimal");
+    return tabStep;
   }
 
   private void initSampleRegistrationLayout() {
