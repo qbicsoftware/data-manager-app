@@ -3,11 +3,12 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>The main component</b>
  *
- * @since <version tag>
+ * <p>The main component function as an abstract class containing the content and support area for
+ * individual pages in the data-manager-application</p>
+ *
+ * @since <1.0.0>
  */
 
 public abstract class MainComponent extends Div {
