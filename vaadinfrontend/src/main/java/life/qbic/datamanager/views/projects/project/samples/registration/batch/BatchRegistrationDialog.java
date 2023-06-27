@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
@@ -21,7 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
  * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
  * their associated metadata information</p>
  */
-public class BatchRegistrationDialog extends Dialog {
+public class BatchRegistrationDialog extends DialogWindow {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();

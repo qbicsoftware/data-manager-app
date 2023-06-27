@@ -35,6 +35,7 @@
 .batch-registration-dialog .batch-content .batch-information {
   display: flex;
   flex-direction: column;
+  width: fit-content;
 }
 
 .batch-registration-dialog .batch-content .title {
