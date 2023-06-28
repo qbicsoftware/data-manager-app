@@ -53,8 +53,8 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  */
 @SpringComponent
 @UIScope
-public class ProjectCreationDialog extends DialogWindow {
-  private static final Logger log = logger(ProjectCreationDialog.class);
+public class AddProjectDialog extends DialogWindow {
+  private static final Logger log = logger(AddProjectDialog.class);
   private Span codeAndTitleLayout = new Span();
   @Serial
   private static final long serialVersionUID = 6132538769263078943L;
@@ -77,7 +77,7 @@ public class ProjectCreationDialog extends DialogWindow {
 
   private final PersonSearchService personSearchService;
 
-  public ProjectCreationDialog(ExperimentalDesignSearchService experimentalDesignSearchService,
+  public AddProjectDialog(ExperimentalDesignSearchService experimentalDesignSearchService,
       OfferLookupService offerLookupService, PersonSearchService personSearchService) {
     super();
     this.offerLookupService = Objects.requireNonNull(offerLookupService);
@@ -215,7 +215,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<ProjectCreationDialog>> listener) {
+      ComponentEventListener<UserCancelEvent<AddProjectDialog>> listener) {
     handler.addUserCancelEventListener(listener);
   }
 
@@ -315,7 +315,7 @@ public class ProjectCreationDialog extends DialogWindow {
   private class Handler {
 
     private final List<ComponentEventListener<ProjectAddEvent>> listeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<ProjectCreationDialog>>> cancelListeners = new ArrayList<>();
+    private final List<ComponentEventListener<UserCancelEvent<AddProjectDialog>>> cancelListeners = new ArrayList<>();
     List<Binder<?>> binders = new ArrayList<>();
 
     Handler() {
@@ -387,12 +387,12 @@ public class ProjectCreationDialog extends DialogWindow {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
-              new ProjectAddEvent(ProjectCreationDialog.this, true)));
+              new ProjectAddEvent(AddProjectDialog.this, true)));
         }
       });
       cancelButton.addClickListener(event -> cancelListeners.forEach(
           listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(ProjectCreationDialog.this))));
+              new UserCancelEvent<>(AddProjectDialog.this))));
     }
 
     private void addConsumedLengthHelper(TextField textField, String newValue) {
@@ -433,7 +433,7 @@ public class ProjectCreationDialog extends DialogWindow {
     }
 
     public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<ProjectCreationDialog>> listener) {
+        ComponentEventListener<UserCancelEvent<AddProjectDialog>> listener) {
       this.cancelListeners.add(listener);
     }
   }

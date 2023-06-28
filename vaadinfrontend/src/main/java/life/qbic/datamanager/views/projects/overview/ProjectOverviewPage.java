@@ -12,7 +12,7 @@ import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
-import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -33,14 +33,14 @@ public class ProjectOverviewPage extends Div {
   private static final long serialVersionUID = 4625607082710157069L;
 
   private final ProjectCollection projectCollection;
-  private final ProjectCreationDialog projectCreationDialog;
+  private final AddProjectDialog addProjectDialog;
   private final ProjectRegistrationService projectRegistrationService;
 
   public ProjectOverviewPage(@Autowired ProjectCollection projectCollection,
-      ProjectCreationDialog projectCreationDialog,
+      AddProjectDialog addProjectDialog,
       ProjectRegistrationService projectRegistrationService) {
     this.projectCollection = projectCollection;
-    this.projectCreationDialog = projectCreationDialog;
+    this.addProjectDialog = addProjectDialog;
     this.projectRegistrationService = projectRegistrationService;
     layoutPage();
     configurePage();
@@ -54,11 +54,11 @@ public class ProjectOverviewPage extends Div {
 
   private void configurePage() {
     projectCollection.addListener(projectCreationClickedEvent ->
-        projectCreationDialog.open()
+        addProjectDialog.open()
     );
-    projectCreationDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
-        projectCreationDialog.resetAndClose());
-    projectCreationDialog.addProjectAddEventListener(projectCreationEvent ->
+    addProjectDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
+        addProjectDialog.resetAndClose());
+    addProjectDialog.addProjectAddEventListener(projectCreationEvent ->
         createProject(projectCreationEvent.getSource().content())
     );
   }
@@ -81,7 +81,7 @@ public class ProjectOverviewPage extends Div {
     project
         .onValue(result -> {
           displaySuccessfulProjectCreationNotification();
-          projectCreationDialog.resetAndClose();
+          addProjectDialog.resetAndClose();
           projectCollection.refresh();
         })
         .onError(e -> {
