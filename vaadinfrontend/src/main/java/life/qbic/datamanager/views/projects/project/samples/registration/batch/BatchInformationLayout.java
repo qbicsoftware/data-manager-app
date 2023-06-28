@@ -1,19 +1,15 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,7 +22,7 @@ import java.util.List;
  * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-public class BatchInformationLayout extends VerticalLayout {
+public class BatchInformationLayout extends Div {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
@@ -35,6 +31,7 @@ public class BatchInformationLayout extends VerticalLayout {
   private final BatchInformationLayoutHandler batchInformationLayoutHandler;
 
   public BatchInformationLayout() {
+    addClassName("batch-information");
     initContent();
     this.setSizeFull();
     batchInformationLayoutHandler = new BatchInformationLayoutHandler();
@@ -42,7 +39,7 @@ public class BatchInformationLayout extends VerticalLayout {
 
   private void initContent() {
     Span batchInformationHeader = new Span("Batch Information");
-    batchInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
+    batchInformationHeader.addClassNames("header");
     add(batchInformationHeader);
     initBatchLayout();
     initDataTypeLayout();
@@ -50,47 +47,46 @@ public class BatchInformationLayout extends VerticalLayout {
   }
 
   private void initBatchLayout() {
-    HorizontalLayout batchLayout = new HorizontalLayout();
+    Span batchLayout = new Span();
     batchLayout.add(batchNameField);
     add(batchLayout);
   }
 
   private void initDataTypeLayout() {
-    VerticalLayout dataTypeLayout = new VerticalLayout();
-    dataTypeLayout.setMargin(false);
-    dataTypeLayout.setPadding(false);
+    Div dataTypeLayout = new Div();
+    dataTypeLayout.addClassName("data-type-layout");
     Span dataTypeHeader = new Span("Type of Data");
-    dataTypeHeader.addClassNames("text-l", "font-bold", "text-secondary");
+    dataTypeHeader.addClassName("header");
     dataTypeLayout.add(dataTypeHeader);
     Span dataTypeDescription = new Span(
         "There is a minimum amount of information required. All samples must conform the expected metadata values. The most suitable checklist for sample registration depends on the type of the sample.");
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
-    dataTypeSelection.setClassName(Left.MEDIUM);
-    dataTypeLayout.setSizeFull();
     add(dataTypeLayout);
   }
 
   private void initDataTypeSelection() {
+    dataTypeSelection.addClassName("radio-group");
     dataTypeSelection.setItems(MetadataType.values());
     dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
       Span metadataTypeSpan = new Span(metadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
-      infoIcon.addClassNames(IconSize.SMALL);
-      infoIcon.setColor("#77828f");
+      infoIcon.addClassName("info-icon");
       infoIcon.setTooltipText(metadataType.description);
-      return new HorizontalLayout(metadataTypeSpan, infoIcon);
+      Span optionRow = new Span(metadataTypeSpan, infoIcon);
+      optionRow.addClassName("option-row");
+      return optionRow;
     }));
   }
 
   private void initButtonLayout() {
-    HorizontalLayout batchInformationButtons = new HorizontalLayout();
-    nextButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    Span batchInformationButtons = new Span();
+    batchInformationButtons.addClassName("button-layout");
+    nextButton.addClassName("confirm-button");
     batchInformationButtons.add(cancelButton, nextButton);
-    this.setAlignSelf(Alignment.END, batchInformationButtons);
     add(batchInformationButtons);
   }
 

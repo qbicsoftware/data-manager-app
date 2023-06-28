@@ -48,6 +48,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
   public ProjectNavigationBarComponent() {
     this.handler = new Handler();
     initNavigationBar();
+    this.addClassName("navbar");
   }
 
   private void styleNavLabelLayout(VerticalLayout layout) {
