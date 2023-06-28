@@ -83,7 +83,7 @@ public class ProjectCreationDialog extends DialogWindow {
     this.offerLookupService = Objects.requireNonNull(offerLookupService);
     this.personSearchService = Objects.requireNonNull(personSearchService);
 
-    setConfirmButtonLabel("Create");
+    setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
     addClassName("create-project-dialog");
     initCodeAndTitleLayout();
@@ -176,7 +176,7 @@ public class ProjectCreationDialog extends DialogWindow {
   }
 
   private void configureDialogLayout() {
-    setHeaderTitle("Create Project");
+    setHeaderTitle("Add Project");
     add(formLayout);
     getFooter().add(cancelButton, confirmButton);
   }
@@ -212,11 +212,6 @@ public class ProjectCreationDialog extends DialogWindow {
     offerSearchField.setClassName("search-field");
     offerSearchField.setPlaceholder("Search");
     offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
-  }
-
-  public void addProjectCreationEventListener(
-      ComponentEventListener<ProjectCreationEvent> listener) {
-    handler.addProjectCreationEventListener(listener);
   }
 
   public void addCancelEventListener(
@@ -313,9 +308,13 @@ public class ProjectCreationDialog extends DialogWindow {
         () -> log.error("No offer found with id: " + offerId));
   }
 
+  public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {
+    handler.addProjectCreationEventListener(listener);
+  }
+
   private class Handler {
 
-    private final List<ComponentEventListener<ProjectCreationEvent>> listeners = new ArrayList<>();
+    private final List<ComponentEventListener<ProjectAddEvent>> listeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<ProjectCreationDialog>>> cancelListeners = new ArrayList<>();
     List<Binder<?>> binders = new ArrayList<>();
 
@@ -388,7 +387,7 @@ public class ProjectCreationDialog extends DialogWindow {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
-              new ProjectCreationEvent(ProjectCreationDialog.this, true)));
+              new ProjectAddEvent(ProjectCreationDialog.this, true)));
         }
       });
       cancelButton.addClickListener(event -> cancelListeners.forEach(
@@ -429,7 +428,7 @@ public class ProjectCreationDialog extends DialogWindow {
     }
 
     public void addProjectCreationEventListener(
-        ComponentEventListener<ProjectCreationEvent> listener) {
+        ComponentEventListener<ProjectAddEvent> listener) {
       this.listeners.add(listener);
     }
 

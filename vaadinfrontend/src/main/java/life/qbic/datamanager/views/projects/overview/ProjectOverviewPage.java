@@ -9,11 +9,12 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
 import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
-import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,9 +58,9 @@ public class ProjectOverviewPage extends Div {
     );
     projectCreationDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
         projectCreationDialog.resetAndClose());
-    projectCreationDialog.addProjectCreationEventListener(projectCreationEvent -> {
-      createProject(projectCreationEvent.getSource().content());
-    });
+    projectCreationDialog.addProjectAddEventListener(projectCreationEvent ->
+        createProject(projectCreationEvent.getSource().content())
+    );
   }
 
   private void stylePage() {
@@ -89,7 +90,9 @@ public class ProjectOverviewPage extends Div {
   }
 
   private void displaySuccessfulProjectCreationNotification() {
-
+    var successMessage = new SuccessMessage("Project creation succeeded.", "");
+    var notification = new StyledNotification(successMessage);
+    notification.open();
   }
 
 }

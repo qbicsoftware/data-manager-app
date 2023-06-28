@@ -186,7 +186,7 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
     }
 
     private void configureProjectCreationDialog() {
-      projectCreationDialog.addProjectCreationEventListener(
+      projectCreationDialog.addProjectAddEventListener(
           event -> processProjectCreation(event.getSource().content()));
       projectCreationDialog.addCancelEventListener(event -> projectCreationDialog.resetAndClose());
     }
