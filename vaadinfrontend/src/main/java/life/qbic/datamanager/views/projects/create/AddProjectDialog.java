@@ -219,8 +219,8 @@ public class AddProjectDialog extends DialogWindow {
     handler.addUserCancelEventListener(listener);
   }
 
-  public ProjectCreationContent content() {
-    return new ProjectCreationContent(offerSearchField.getPattern(),
+  public ProjectDraft content() {
+    return new ProjectDraft(offerSearchField.getPattern(),
         codeField.getValue(), titleField.getValue(), projectObjective.getValue(),
         defineExperimentComponent.experimentNameField.getValue(),
         defineExperimentComponent.speciesBox.getValue().stream().toList(),

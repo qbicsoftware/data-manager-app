@@ -11,7 +11,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
+import life.qbic.datamanager.views.projects.create.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
@@ -68,7 +68,7 @@ public class ProjectOverviewPage extends Div {
     this.setHeightFull();
   }
 
-  private void createProject(ProjectCreationContent projectCreationContent) {
+  private void createProject(ProjectDraft projectCreationContent) {
     Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
         projectCreationContent.offerId(), projectCreationContent.projectCode(),
         projectCreationContent.title(), projectCreationContent.objective(),
