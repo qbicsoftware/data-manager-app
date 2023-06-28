@@ -13,6 +13,7 @@ import life.qbic.datamanager.views.projects.create.ProjectCreationContent;
 import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
+import life.qbic.projectmanagement.application.finances.offer.OfferSearchService;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 

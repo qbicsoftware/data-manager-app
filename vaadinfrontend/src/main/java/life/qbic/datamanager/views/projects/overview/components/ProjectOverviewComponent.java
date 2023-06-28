@@ -86,7 +86,7 @@ public class ProjectOverviewComponent extends Composite<PageComponent> {
       @Autowired PersonSearchService personSearchService,
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.clientDetailsProvider = clientDetailsProvider;
-    this.projectCreationDialog = new ProjectCreationDialog(experimentalDesignSearchService);
+    this.projectCreationDialog = new ProjectCreationDialog(experimentalDesignSearchService, null, null);
     new Handler(offerLookupService, projectRepository, projectInformationService,
         projectRegistrationService, personSearchService);
     layoutComponents();
