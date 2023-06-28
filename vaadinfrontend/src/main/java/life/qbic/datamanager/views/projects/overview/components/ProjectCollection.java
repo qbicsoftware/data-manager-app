@@ -37,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * A component that displays previews of accessible project previews.
  * <p>
- * The component also fires {@link ProjectCreationClickedEvent} to all registered listeners, if a
+ * The component also fires {@link ProjectAddSubmitEvent} to all registered listeners, if a
  * user has the intend to add a new project.
  *
  * @since 1.0.0
@@ -59,7 +59,7 @@ public class ProjectCollection extends PageArea {
   private final String title;
   private final ClientDetailsProvider clientDetailsProvider;
   private final ProjectInformationService projectInformationService;
-  private final List<ComponentEventListener<ProjectCreationClickedEvent>> projectCreationClickedListeners = new ArrayList<>();
+  private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
 
   @Autowired
   public ProjectCollection(ClientDetailsProvider clientDetailsProvider,
@@ -157,7 +157,7 @@ public class ProjectCollection extends PageArea {
   }
 
   private void fireCreateClickedEvent() {
-    var clickedEvent = new ProjectCreationClickedEvent(this, true);
+    var clickedEvent = new ProjectAddSubmitEvent(this, true);
     projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
   }
 
@@ -168,13 +168,13 @@ public class ProjectCollection extends PageArea {
   }
 
   /**
-   * Add a listener that is called, when a new {@link ProjectCreationClickedEvent event} is
+   * Add a listener that is called, when a new {@link ProjectAddSubmitEvent event} is
    * emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
    */
-  public void addListener(ComponentEventListener<ProjectCreationClickedEvent> listener) {
+  public void addListener(ComponentEventListener<ProjectAddSubmitEvent> listener) {
     Objects.requireNonNull(listener);
     projectCreationClickedListeners.add(listener);
   }
