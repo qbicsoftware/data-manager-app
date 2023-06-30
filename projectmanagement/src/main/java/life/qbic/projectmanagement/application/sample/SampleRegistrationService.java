@@ -1,5 +1,9 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.sample;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -9,11 +13,6 @@ import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationReque
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * Sample Registration Service

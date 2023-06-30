@@ -43,3 +43,14 @@ vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip {
 vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip[slot="overflow"]::before, vaadin-multi-select-combo-box-chip[slot="overflow"]::after {
   border-color: var(--lumo-primary-color-10pct);
 }
+
+span.bold {
+  font-weight: bold;
+}
+
+span.title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}

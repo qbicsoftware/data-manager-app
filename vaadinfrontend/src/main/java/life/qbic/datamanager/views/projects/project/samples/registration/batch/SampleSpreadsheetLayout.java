@@ -46,7 +46,10 @@ class SampleSpreadsheetLayout extends Div {
 
   private void initContent() {
     initHeaderAndInstruction();
-    add(sampleRegistrationSpreadsheet);
+    Div sampleSpreadSheetContainer = new Div();
+    sampleSpreadSheetContainer.addClassName("sample-spreadsheet");
+    sampleSpreadSheetContainer.add(sampleRegistrationSpreadsheet);
+    add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
     initButtonLayout();
   }
@@ -56,11 +59,11 @@ class SampleSpreadsheetLayout extends Div {
     Span instructionSpan = new Span();
     instructionSpan.add("Please register your samples for experiment: ");
     instructionSpan.add(experimentName);
-    experimentName.setClassName("experiment-name");
+    experimentName.setClassName("bold");
     instructionSpan.add(" in batch: ");
     instructionSpan.add(batchName);
     batchRegistrationInstruction.add(instructionSpan);
-    batchName.addClassName("batch-name");
+    batchName.addClassName("bold");
     add(sampleInformationHeader);
     add(batchRegistrationInstruction);
   }

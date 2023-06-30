@@ -44,7 +44,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   @Serial
   private static final long serialVersionUID = 573778360298068552L;
-
   private SpreadsheetDropdownFactory dropdownCellFactory;
   private List<SamplesheetHeaderName> header;
   private static List<String> species;
@@ -140,7 +139,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   public void addRow() {
     int lastRowIndex = 1 + sampleRegistrationSheet.getLastRowNum();
-    for (int columnIndex = 0; columnIndex <= header.size(); columnIndex++) {
+    for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
         case SPECIES -> prefillCellsToRow(columnIndex, lastRowIndex, species);

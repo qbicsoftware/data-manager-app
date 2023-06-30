@@ -14,6 +14,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
@@ -25,12 +26,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -45,17 +41,16 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.B
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
-import life.qbic.projectmanagement.application.SampleInformationService;
-import life.qbic.projectmanagement.application.SampleRegistrationService;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -138,20 +133,17 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     buttonAndFieldBar.addClassName("button-and-search-bar");
   }
 
-  private Grid<SamplePreview> createSampleGrid(Collection<SamplePreview> samplePreviews) {
+  private Grid<SamplePreview> createSampleGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>();
-    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id").setSortable(true)
+    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id")
         .setComparator(SamplePreview::sampleCode);
-    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label").setSortable(true);
-    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch").setSortable(true);
-    sampleGrid.addColumn(SamplePreview::sampleSource)
-        .setHeader("Sample Source").setSortable(true);
+    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
+    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
+    sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
-    sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortable(true);
-    sampleGrid.addColumn(SamplePreview::specimen).setSortable(true)
-        .setHeader("Specimen").setSortable(true);
-    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortable(true);
-    sampleGrid.setItems(samplePreviews);
+    sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
+    sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
+    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
     return sampleGrid;
   }
 
@@ -161,24 +153,33 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
   private static final SerializableBiConsumer<Anchor, SamplePreview> styleSampleIdAnchor = (anchor, samplePreview) -> {
     String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(),
-        samplePreview.sampleId);
+        samplePreview.sampleId());
     anchor.setHref(anchorURL);
-    anchor.setText(samplePreview.sampleCode);
+    anchor.setText(samplePreview.sampleCode());
   };
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
   }
 
-  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.condition.forEach(
-      (key, value) -> {
-        div.addClassName("tag-collection");
-        String experimentalVariable = key + ": " + value;
-        Tag tag = new Tag(experimentalVariable);
-        tag.addClassName("primary");
-        tag.setTitle(experimentalVariable);
-        div.add(tag);
-      });
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
+    /*
+    condition.getVariableLevels().forEach(variableLevel -> {
+      div.addClassName("tag-collection");
+      String experimentalVariable =
+          variableLevel.variableName() + ": " + variableLevel.experimentalValue().value();
+      if (variableLevel.experimentalValue().unit().isPresent()) {
+        experimentalVariable =
+            experimentalVariable + variableLevel.experimentalValue().unit().get();
+      }
+      Tag tag = new Tag(experimentalVariable);
+      tag.addClassName("primary");
+      tag.setTitle(experimentalVariable);
+      div.add(tag);
+
+    });
+     */
+  };
 
   /**
    * Provides the {@link ProjectId} of the currently selected project to this component
@@ -214,13 +215,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
    */
   public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
     sampleOverviewComponentHandler.addBatchRegistrationListener(batchRegistrationListener);
-  }
-
-  private record SamplePreview(String sampleCode, String sampleId, String batchLabel,
-                               String sampleSource, String sampleLabel,
-                               Map<String, String> condition,
-                               String species, String specimen, String analyte) {
-
   }
 
   private final class SampleOverviewComponentHandler {
@@ -303,23 +297,40 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
           0);
       if (!isExperimentGroupInExperiment(experiment)) {
         experimentTabContent.add(createNoGroupsDefinedDisclaimer(experiment));
-      } else {
-        Collection<SamplePreview> samplePreviews = retrieveSamplesForExperiment(experiment);
-        if (samplePreviews.isEmpty()) {
-          experimentTabContent.add(createNoSamplesRegisteredDisclaimer(experiment));
-        } else {
-          Grid<SamplePreview> sampleGrid = createSampleGrid(samplePreviews);
-          experimentTab.setSampleCount(samplePreviews.size());
-          //Update Number count in tab if user searches for value
-          sampleGrid.getListDataView().addItemCountChangeListener(
-              event -> experimentTab.setSampleCount(event.getItemCount()));
-          //Make sampleGrid filterable via select component and searchbar
-          sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(),
-              sampleGrid.getListDataView());
-          experimentTabContent.add(sampleGrid);
-        }
+        sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+        return;
       }
+      if (!sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+          .isValue()) {
+        experimentTabContent.add(createNoSamplesRegisteredDisclaimer(experiment));
+        sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+        return;
+      }
+      //assumption: experimental groups exist, and samples exist for those groups; checked previously
+      Grid<SamplePreview> sampleGrid = createSampleGrid();
+      setSamplesToGrid(sampleGrid, experiment.experimentId());
+      sampleGrid.getLazyDataView()
+          .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
+      experimentTab.setSampleCount(
+          sampleInformationService.countPreviews(experiment.experimentId()));
+      //ToDo Add filtering
+      //Make sampleGrid filterable via select component and searchbar
+      //sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(), sampleGrid.getLazyDataView());
+      experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+    }
+
+    private void setSamplesToGrid(Grid<SamplePreview> sampleGrid, ExperimentId experimentId) {
+      sampleGrid.setItems(query -> {
+        List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+                it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+            .collect(Collectors.toList());
+        // if no order is provided by the grid order by last modified (least priority)
+        sortOrders.add(SortOrder.of("sampleCode").descending());
+        //Todo Wire Filtering dependent on selected experiment
+        return sampleInformationService.queryPreview(experimentId, query.getOffset(),
+            query.getLimit(), List.copyOf(sortOrders)).stream();
+      });
     }
 
     private boolean isExperimentGroupInExperiment(Experiment experiment) {
@@ -356,80 +367,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         batchRegistrationDialog.open();
       });
       return noSamplesDefinedCard;
-    }
-
-    private Collection<SamplePreview> retrieveSamplesForExperiment(Experiment experiment) {
-      return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .onError(error -> displaySampleRetrievalError(experiment.getName()))
-          .fold(
-              samples -> samples.stream()
-                  .map(sample -> mapSampleToSamplePreview(experiment, sample)).toList(),
-              error -> new ArrayList<>());
-    }
-
-    private SamplePreview mapSampleToSamplePreview(Experiment experiment, Sample sample) {
-      String batchLabel = getBatchLabel(sample);
-      String biologicalReplicateLabel = getSampleReplicateLabelInExperiment(experiment, sample);
-      Map<String, String> conditions = getConditionOfExperimentalGroup(experiment, sample);
-      return new SamplePreview(sample.sampleCode().code(), sample.sampleId().value(), batchLabel,
-          biologicalReplicateLabel,
-          sample.label(), conditions,
-          sample.sampleOrigin().getSpecies().value(),
-          sample.sampleOrigin().getSpecimen().value(),
-          sample.sampleOrigin().getAnalyte().value());
-    }
-
-    private void displaySampleRetrievalError(String experimentName) {
-      ErrorMessage errorMessage = new ErrorMessage("Sample Retrieval Error",
-          "Samples for experiment: " + experimentName + "could not be retrieved."
-              + "Please try again by reloading this page");
-      StyledNotification notification = new StyledNotification(errorMessage);
-      notification.open();
-    }
-
-
-    private String getBatchLabel(Sample sample) {
-      Optional<Batch> foundBatch = batchInformationService.find(sample.assignedBatch());
-      if (foundBatch.isPresent()) {
-        return foundBatch.get().label();
-      } else {
-        return "---";
-      }
-    }
-
-    private String getSampleReplicateLabelInExperiment(Experiment experiment, Sample sample) {
-      Set<BiologicalReplicate> biologicalReplicateSet = new HashSet<>();
-      for (ExperimentalGroup experimentalGroup : experiment.getExperimentalGroups()) {
-        biologicalReplicateSet.addAll(experimentalGroup.biologicalReplicates());
-      }
-      Optional<BiologicalReplicate> foundReplicate = biologicalReplicateSet.stream().filter(
-              biologicalReplicate -> biologicalReplicate.id().equals(sample.biologicalReplicateId()))
-          .findFirst();
-      if (foundReplicate.isPresent()) {
-        return foundReplicate.get().label();
-      } else {
-        return "---";
-      }
-    }
-
-    private Map<String, String> getConditionOfExperimentalGroup(Experiment experiment,
-        Sample sample) {
-      Optional<ExperimentalGroup> foundExperimentalGroup = experiment.getExperimentalGroups()
-          .stream()
-          .filter(experimentalGroup -> experimentalGroup.id() == sample.experimentalGroupId())
-          .findFirst();
-      TreeMap<String, String> conditionMap = new TreeMap<>();
-      if (foundExperimentalGroup.isPresent()) {
-        for (VariableLevel variableLevel : foundExperimentalGroup.get().condition()
-            .getVariableLevels()) {
-          String variableName = variableLevel.variableName().value();
-          String experimentalValueUnit = variableLevel.experimentalValue().unit().orElse("");
-          String experimentalValueName = variableLevel.experimentalValue().value();
-          conditionMap.put(variableName,
-              String.join(" ", experimentalValueName, experimentalValueUnit).trim());
-        }
-      }
-      return conditionMap;
     }
 
     private void setExperimentsInSelect(Collection<Experiment> experimentList) {

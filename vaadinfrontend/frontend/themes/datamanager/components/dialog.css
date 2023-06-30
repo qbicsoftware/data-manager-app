@@ -1,6 +1,6 @@
 .dialog-window::part(overlay) {
-  width: 66vw;
-  height: 66vh;
+  max-width: 66vw;
+  min-height: 66vh;
 }
 
 .dialog-window .confirm-button {
@@ -45,13 +45,6 @@
   width: fit-content;
 }
 
-.batch-registration-dialog .batch-content .title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-l);
-  margin-bottom: 0.5rem;
-}
-
 .batch-registration-dialog .batch-content .data-type-information {
   display: flex;
   flex-direction: column;
@@ -77,19 +70,8 @@
   gap: var(--lumo-space-m);
 }
 
-.batch-registration-dialog .sample-content .title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-l);
-  margin-bottom: 0.5rem;
-}
-
-.batch-registration-dialog .sample-content .batch-name {
-  font-weight: bold;
-}
-
-.batch-registration-dialog .sample-content .experiment-name {
-  font-weight: bold;
+.sample-spreadsheet {
+  min-height: 66vh;
 }
 
 .batch-registration-dialog .sample-content .buttons {
@@ -110,13 +92,12 @@
   align-items: baseline;
 }
 
-
 .create-project-dialog .code-and-title .code {
-    max-width: 20vw;
-  }
+  max-width: 20vw;
+}
 
-  .create-project-dialog .code-and-title .title {
-    width: 100%;
+.create-project-dialog .code-and-title .title {
+  width: 100%;
 }
 
 .create-project-dialog .search-field {

@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
