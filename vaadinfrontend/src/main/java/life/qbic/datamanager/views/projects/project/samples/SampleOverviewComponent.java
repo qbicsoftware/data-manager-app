@@ -5,7 +5,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.dataview.GridListDataView;
+import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -20,10 +20,8 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -59,7 +57,6 @@ import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
 import org.slf4j.Logger;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -77,7 +74,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class SampleOverviewComponent extends PageArea implements Serializable {
-
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private final Div content = new Div();
@@ -160,22 +156,20 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
   }
 
-  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
-    samplePreview.experimentalGroup().condition().getVariableLevels().forEach(variableLevel -> {
-      div.addClassName("tag-collection");
-      String experimentalVariable =
-          variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
-      if (variableLevel.experimentalValue().unit().isPresent()) {
-        experimentalVariable =
-            experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
-      }
-      Tag tag = new Tag(experimentalVariable);
-      tag.addClassName("primary");
-      tag.setTitle(experimentalVariable);
-      div.add(tag);
-    });
-
-  };
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.experimentalGroup()
+      .condition().getVariableLevels().forEach(variableLevel -> {
+        div.addClassName("tag-collection");
+        String experimentalVariable =
+            variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
+        if (variableLevel.experimentalValue().unit().isPresent()) {
+          experimentalVariable =
+              experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
+        }
+        Tag tag = new Tag(experimentalVariable);
+        tag.addClassName("primary");
+        tag.setTitle(experimentalVariable);
+        div.add(tag);
+      });
 
   /**
    * Provides the {@link ProjectId} of the currently selected project to this component
@@ -274,9 +268,9 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         BatchRegistrationDialog batchRegistrationSource = batchRegistrationEvent.getSource();
         registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
+          fireBatchCreatedEvent(batchRegistrationEvent);
           batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
-          fireBatchCreatedEvent(batchRegistrationEvent);
         });
       });
       registerButton.addClickListener(event -> batchRegistrationDialog.open());
@@ -301,14 +295,21 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       }
       //assumption: experimental groups exist, and samples exist for those groups; checked previously
       Grid<SamplePreview> sampleGrid = createSampleGrid();
+      //Initialize sampleCount before lazy loading is triggered by user
+      experimentTab.setSampleCount(getSampleCountForExperiment(experiment.experimentId()));
+      sampleGrid.getLazyDataView()
+          .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       setSamplesToGrid(sampleGrid, experiment.experimentId());
-      experimentTab.setSampleCount(
-          sampleInformationService.countPreviews(experiment.experimentId()));
+      sampleGrid.getDataProvider().refreshAll();
       //ToDo Add filtering
       //Make sampleGrid filterable via select component and searchbar
       //sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(), sampleGrid.getLazyDataView());
       experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+    }
+
+    private int getSampleCountForExperiment(ExperimentId experimentId) {
+      return sampleInformationService.countPreviews(experimentId);
     }
 
     private void setSamplesToGrid(Grid<SamplePreview> sampleGrid, ExperimentId experimentId) {
@@ -321,7 +322,17 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         //Todo Wire Filtering dependent on selected experiment
         return sampleInformationService.queryPreview(experimentId, query.getOffset(),
             query.getLimit(), List.copyOf(sortOrders)).stream();
-      });
+      }, query -> getSampleCountForExperiment(experimentId));
+    }
+
+    private void setupSearchFieldForExperimentTabs(String experimentName,
+        GridLazyDataView<SamplePreview> sampleGridDataView) {
+      searchField.setValueChangeMode(ValueChangeMode.LAZY);
+      searchField.addValueChangeListener(e -> filterGridsByValue(e.getValue().trim()));
+    }
+
+    private void filterGridsByValue(String value) {
+
     }
 
     private boolean isExperimentGroupInExperiment(Experiment experiment) {
@@ -363,41 +374,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     private void setExperimentsInSelect(Collection<Experiment> experimentList) {
       tabFilterSelect.removeAll();
       tabFilterSelect.setItems(experimentList.stream().map(Experiment::getName).toList());
-    }
-
-    private void setupSearchFieldForExperimentTabs(String experimentName,
-        GridListDataView<SamplePreview> sampleGridDataView) {
-      searchField.addValueChangeListener(e -> sampleGridDataView.refreshAll());
-      sampleGridDataView.addFilter(samplePreview -> {
-        String searchTerm = searchField.getValue().trim();
-        //Only filter grid if selected in filterSelect or if no filter was selected
-        if (tabFilterSelect.getValue() == null || tabFilterSelect.getValue()
-            .equals(experimentName)) {
-          return isInSample(samplePreview, searchTerm);
-        } else {
-          return true;
-        }
-      });
-    }
-
-    private boolean isInSample(SamplePreview samplePreview, String searchTerm) {
-      boolean result = false;
-      for (PropertyDescriptor descriptor : BeanUtils.getPropertyDescriptors(SamplePreview.class)) {
-        if (!descriptor.getName().equals("class")) {
-          try {
-            String value = descriptor.getReadMethod().invoke(samplePreview).toString();
-            result |= matchesTerm(value, searchTerm);
-          } catch (IllegalAccessException | InvocationTargetException e) {
-            log.info("Could not invoke " + descriptor.getName()
-                + " getter when filtering samples. Ignoring property.");
-          }
-        }
-      }
-      return result;
-    }
-
-    private boolean matchesTerm(String fieldValue, String searchTerm) {
-      return fieldValue.toLowerCase().contains(searchTerm.toLowerCase());
     }
 
     private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,

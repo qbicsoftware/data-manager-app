@@ -1,6 +1,6 @@
 .dialog-window::part(overlay) {
-  max-width: 66vw;
   min-height: 66vh;
+  width: 66vw;
 }
 
 .dialog-window .confirm-button {
@@ -68,6 +68,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-m);
+  /*ToDo Find solution so spreadsheet set its width according to filled columns*/
+  width: 66vw;
 }
 
 .sample-spreadsheet {

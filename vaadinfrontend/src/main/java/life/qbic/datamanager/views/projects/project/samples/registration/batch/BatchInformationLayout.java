@@ -80,7 +80,8 @@ public class BatchInformationLayout extends Div {
 
   private void initDataTypeSelection() {
     dataTypeSelection.setItems(MetadataType.values());
-    dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+    dataTypeSelection.setReadOnly(true);
+    dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
       Span metadataTypeSpan = new Span(metadataType.label);
@@ -140,13 +141,14 @@ public class BatchInformationLayout extends Div {
     }
 
     private void resetChildValues() {
-      dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+      dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
       experimentSelect.clear();
       batchNameField.clear();
     }
 
     private void resetChildValidation() {
       batchNameField.setInvalid(false);
+      experimentSelect.setInvalid(false);
     }
   }
 
