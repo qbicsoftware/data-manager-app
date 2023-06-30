@@ -16,7 +16,9 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface SamplePreviewRepository extends
     PagingAndSortingRepository<SamplePreview, SampleId> {
 
-  Page<SamplePreview> findSamplePreviewByExperimentId(
-      ExperimentId experimentId, Pageable pageable);
+  Page<SamplePreview> findSamplePreviewByExperimentId(ExperimentId experimentId, Pageable pageable);
+
+  int countSamplePreviewsByExperimentId(ExperimentId experimentId);
+
 
 }

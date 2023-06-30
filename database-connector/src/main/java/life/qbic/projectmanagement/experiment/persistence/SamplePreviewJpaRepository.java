@@ -8,7 +8,6 @@ import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SamplePreviewLookup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.context.annotation.Scope;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
@@ -30,11 +29,6 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
   }
 
   @Override
-  public List<SamplePreview> query(int offset, int limit) {
-    return samplePreviewRepository.findAll(new OffsetBasedRequest(offset, limit)).getContent();
-  }
-
-  @Override
   public List<SamplePreview> queryByExperimentId(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
@@ -51,15 +45,8 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
   }
 
   @Override
-  public int queryCount(int offset, int limit) {
-    return samplePreviewRepository.findAll(new OffsetBasedRequest(offset, limit)).getContent()
-        .size();
-  }
-
-  @Override
   public int queryCountByExperimentId(ExperimentId experimentId) {
-    return samplePreviewRepository.findSamplePreviewByExperimentId(experimentId,
-        Pageable.unpaged()).getContent().size();
+    return samplePreviewRepository.countSamplePreviewsByExperimentId(experimentId);
   }
 
 }

@@ -1,16 +1,18 @@
 package life.qbic.projectmanagement.application.sample;
 
 import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
 import org.hibernate.annotations.Formula;
@@ -18,11 +20,9 @@ import org.hibernate.annotations.Formula;
 /**
  * An amalgamation of information stored in {@link Experiment} and {@link Sample}
  */
-@Entity(name = "sample_preview")
+@Entity()
 @Table(name = "sample")
-
 public class SamplePreview {
-
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
   @Embedded
   private ExperimentId experimentId;
@@ -37,8 +37,9 @@ public class SamplePreview {
   private String bioReplicateLabel;
   @Column(name = "label")
   private String sampleLabel;
-  @Transient
-  private Condition condition;
+  @OneToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "experimentalGroupId")
+  private ExperimentalGroup experimentalGroup;
   private String species;
   private String specimen;
   private String analyte;
@@ -49,7 +50,7 @@ public class SamplePreview {
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String bio_replicate_id,
-      String sampleLabel, Condition condition, String species, String specimen,
+      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
       String analyte) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
@@ -57,7 +58,7 @@ public class SamplePreview {
     Objects.requireNonNull(batchLabel);
     Objects.requireNonNull(bio_replicate_id);
     Objects.requireNonNull(sampleLabel);
-    Objects.requireNonNull(condition);
+    Objects.requireNonNull(experimentalGroup);
     Objects.requireNonNull(species);
     Objects.requireNonNull(specimen);
     Objects.requireNonNull(analyte);
@@ -67,7 +68,7 @@ public class SamplePreview {
     this.batchLabel = batchLabel;
     this.bioReplicateLabel = bio_replicate_id;
     this.sampleLabel = sampleLabel;
-    this.condition = condition;
+    this.experimentalGroup = experimentalGroup;
     this.species = species;
     this.specimen = specimen;
     this.analyte = analyte;
@@ -109,8 +110,8 @@ public class SamplePreview {
     return analyte;
   }
 
-  public Condition condition() {
-    return condition;
+  public ExperimentalGroup experimentalGroup() {
+    return experimentalGroup;
   }
 
   @Override
@@ -129,14 +130,14 @@ public class SamplePreview {
         that.sampleLabel)
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
-        condition, that.condition);
+        experimentalGroup, that.experimentalGroup);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
         sampleLabel,
-        species, specimen, analyte, condition);
+        species, specimen, analyte, experimentalGroup);
   }
 
   @Override
@@ -151,7 +152,7 @@ public class SamplePreview {
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +
         ", analyte='" + analyte + '\'' +
-        ", conditions=" + condition +
+        ", conditions=" + experimentalGroup +
         '}';
   }
 }

@@ -9,16 +9,6 @@ public interface SamplePreviewLookup {
   /**
    * Queries previews with a provided offset and limit that supports pagination.
    *
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
-   * @return the results in the provided range
-   * @since 1.0.0
-   */
-  List<SamplePreview> query(int offset, int limit);
-
-  /**
-   * Queries previews with a provided offset and limit that supports pagination.
-   *
    * @param experimentId the {@link ExperimentId} for which the samplePreviews should be fetched
    * @param offset       the offset for the search result to start
    * @param limit        the maximum number of results that should be returned
@@ -28,17 +18,6 @@ public interface SamplePreviewLookup {
    */
   List<SamplePreview> queryByExperimentId(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders);
-
-  /**
-   * Queries the count of previews with a provided offset and limit that supports pagination.
-   *
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
-   * @return the count of found {@link SamplePreview} in the provided range
-   * @since 1.0.0
-   */
-  int queryCount(int offset, int limit);
-
 
   /**
    * Queries the count of previews associated with a provided {@link ExperimentId}

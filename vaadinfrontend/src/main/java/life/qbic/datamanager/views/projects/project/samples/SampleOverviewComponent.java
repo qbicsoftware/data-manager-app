@@ -42,7 +42,6 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.B
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -96,13 +95,12 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
   private static ProjectId projectId;
 
-  public SampleOverviewComponent(@Autowired BatchInformationService batchInformationService,
-      @Autowired SampleInformationService sampleInformationService,
+  public SampleOverviewComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired SampleRegistrationService sampleRegistrationService) {
     initSampleView();
     this.sampleOverviewComponentHandler = new SampleOverviewComponentHandler(
-        batchInformationService, sampleInformationService, batchRegistrationService,
+        sampleInformationService, batchRegistrationService,
         sampleRegistrationService);
   }
 
@@ -163,22 +161,20 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   }
 
   private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
-    /*
-    condition.getVariableLevels().forEach(variableLevel -> {
+    samplePreview.experimentalGroup().condition().getVariableLevels().forEach(variableLevel -> {
       div.addClassName("tag-collection");
       String experimentalVariable =
-          variableLevel.variableName() + ": " + variableLevel.experimentalValue().value();
+          variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
       if (variableLevel.experimentalValue().unit().isPresent()) {
         experimentalVariable =
-            experimentalVariable + variableLevel.experimentalValue().unit().get();
+            experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
       }
       Tag tag = new Tag(experimentalVariable);
       tag.addClassName("primary");
       tag.setTitle(experimentalVariable);
       div.add(tag);
-
     });
-     */
+
   };
 
   /**
@@ -219,17 +215,14 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
   private final class SampleOverviewComponentHandler {
 
-    private final transient BatchInformationService batchInformationService;
     private final transient SampleInformationService sampleInformationService;
     private final transient BatchRegistrationService batchRegistrationService;
     private final transient SampleRegistrationService sampleRegistrationService;
     private final List<BatchRegistrationListener> registrationListener = new ArrayList<>();
 
-    public SampleOverviewComponentHandler(BatchInformationService batchInformationService,
-        SampleInformationService sampleInformationService,
+    public SampleOverviewComponentHandler(SampleInformationService sampleInformationService,
         BatchRegistrationService batchRegistrationService,
         SampleRegistrationService sampleRegistrationService) {
-      this.batchInformationService = batchInformationService;
       this.sampleInformationService = sampleInformationService;
       this.batchRegistrationService = batchRegistrationService;
       this.sampleRegistrationService = sampleRegistrationService;
@@ -309,8 +302,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       //assumption: experimental groups exist, and samples exist for those groups; checked previously
       Grid<SamplePreview> sampleGrid = createSampleGrid();
       setSamplesToGrid(sampleGrid, experiment.experimentId());
-      sampleGrid.getLazyDataView()
-          .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       experimentTab.setSampleCount(
           sampleInformationService.countPreviews(experiment.experimentId()));
       //ToDo Add filtering
