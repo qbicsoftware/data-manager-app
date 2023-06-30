@@ -301,7 +301,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       this.autofitColumn(colIndex);
       this.getActiveSheet();
     } catch (IndexOutOfBoundsException exception) {
-      System.out.println("WOW " + colIndex);
     }
 
     this.getCell(0, colIndex).setCellValue(oldValue);
