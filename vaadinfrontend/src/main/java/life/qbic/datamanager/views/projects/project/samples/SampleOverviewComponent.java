@@ -5,7 +5,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -301,9 +300,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
           .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       setSamplesToGrid(sampleGrid, experiment.experimentId());
       sampleGrid.getDataProvider().refreshAll();
-      //ToDo Add filtering
-      //Make sampleGrid filterable via select component and searchbar
-      //sampleOverviewComponentHandler.setupSearchFieldForExperimentTabs(experiment.getName(), sampleGrid.getLazyDataView());
+      //ToDo sampleGrid should be filterable via Searchfield and selection;
       experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
     }
@@ -323,16 +320,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         return sampleInformationService.queryPreview(experimentId, query.getOffset(),
             query.getLimit(), List.copyOf(sortOrders)).stream();
       }, query -> getSampleCountForExperiment(experimentId));
-    }
-
-    private void setupSearchFieldForExperimentTabs(String experimentName,
-        GridLazyDataView<SamplePreview> sampleGridDataView) {
-      searchField.setValueChangeMode(ValueChangeMode.LAZY);
-      searchField.addValueChangeListener(e -> filterGridsByValue(e.getValue().trim()));
-    }
-
-    private void filterGridsByValue(String value) {
-
     }
 
     private boolean isExperimentGroupInExperiment(Experiment experiment) {
