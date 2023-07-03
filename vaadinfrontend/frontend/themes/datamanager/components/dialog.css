@@ -84,6 +84,10 @@
 }
 
 .create-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
 .create-project-dialog::part(overlay) {
   width: 66vw;
 }
