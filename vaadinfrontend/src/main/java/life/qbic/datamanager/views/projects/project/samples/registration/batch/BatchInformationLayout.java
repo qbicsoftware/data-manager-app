@@ -68,9 +68,7 @@ public class BatchInformationLayout extends Div {
     dataTypeLayout.add(dataTypeHeader);
     Div dataTypeDescription = new Div();
     dataTypeDescription.add(
-        "There is a minimum amount of information required. "
-            + "All samples must conform the expected metadata values."
-            + "The most suitable checklist for sample registration depends on the type of the sample.");
+        "There is a minimum amount of information required. All samples must conform the expected metadata values. The most suitable checklist for sample registration depends on the type of the sample.");
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
