@@ -1,0 +1,28 @@
+.main {
+  display: grid;
+  gap: 1px 1px;
+}
+
+.main.experiment {
+  grid-template-columns: minmax(250px, 0.8fr) minmax(250px, 0.2fr);
+  grid-template-rows: minmax(150px, 0.1fr) minmax(250px, 1fr);
+  grid-template-areas:
+    "navbar support"
+    "content support";
+}
+
+.main.experiment .content {
+  grid-area: content;
+}
+
+.main.experiment .support {
+  grid-area: support;
+}
+
+.main.experiment .navbar {
+  grid-area: navbar;
+}
+
+.main.project {
+  flex-direction: column;
+}

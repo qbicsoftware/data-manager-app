@@ -1,0 +1,189 @@
+.dialog-window .confirm-button:hover::before {
+  opacity: 0.05;
+}
+
+.batch-registration-dialog .stepper {
+  width: 100%;
+  height: 100%;
+}
+
+.batch-registration-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.batch-registration-dialog .stepper vaadin-tabs {
+  display: inline-flex;
+}
+
+.batch-registration-dialog .stepper vaadin-tab {
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .batch-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  height: 100%;
+}
+
+.batch-registration-dialog .batch-content .batch-information {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+}
+
+.batch-registration-dialog .batch-content .data-type-information {
+  display: flex;
+  height: inherit;
+  flex-direction: column;
+}
+
+.batch-registration-dialog .batch-content .data-type-information .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.batch-registration-dialog .batch-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .sample-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+
+}
+
+.batch-registration-dialog .sample-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .sample-spreadsheet {
+  /*Todo Find solution on how to let spreadsheet set its size*/
+  width: 100%;
+  height: 60vh;
+}
+
+.create-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.create-project-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.create-project-dialog .form-content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.create-project-dialog .code-and-title {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+.create-project-dialog .code-and-title .code {
+  max-width: 20vw;
+}
+
+.create-project-dialog .code-and-title .title {
+  width: 100%;
+}
+
+.create-project-dialog .search-field {
+  max-width: 30vw;
+}
+
+.create-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--lumo-space-m) 0 0;
+}
+
+.create-project-dialog .project-contacts .title {
+  font-weight: bold;
+}
+
+.create-experiment-dialog::part(overlay) {
+  width: 66vw;
+}
+
+/*
+Used by both project creation and experiment creation dialog, thus the unique name
+ */
+.create-experiment-content {
+  padding-top: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.create-experiment-content .header {
+  font-weight: bold;
+}
+
+.create-experiment-content .full-width-input {
+  width: 100%;
+}
+
+.experiment-group-dialog::part(overlay) {
+  width: 66%;
+}
+
+.experiment-group-dialog .group-input {
+  width: 100%;
+}
+
+.experiment-group-dialog .group-input .layout {
+  display: flex;
+  flex-direction: row;
+  gap: var(--lumo-space-m);
+}
+
+.experiment-group-dialog .group-input .layout .combo-box {
+  width: 100%;
+}
+
+.experiment-group-dialog .group-input .layout .number-field {
+  width: 150px;
+}
+
+.experiment-variable-dialog .content {
+  padding: var(--lumo-space-m);
+  gap: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-variable-dialog .content .variables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+}
+
+.experiment-variable-dialog .content .variables .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .content .row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}

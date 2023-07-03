@@ -12,10 +12,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
-import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
-import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
-import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +24,7 @@ import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
@@ -51,7 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * <p>A PageComponent based Composite showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
- * a {@link Project} within the {@link ExperimentInformationPage}
+ * a {@link Project} within the {@link ExperimentInformationMain}
  */
 @UIScope
 @SpringComponent
@@ -136,12 +132,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initTagAndNotesLayout() {
     VerticalLayout tagAndNotesLayout = new VerticalLayout();
-    tagLayout.setWidthFull();
-    tagLayout.addClassName("spacing-s");
-    tagLayout.addClassName(Overflow.HIDDEN);
-    tagLayout.addClassName(Whitespace.NOWRAP);
-    tagLayout.addClassName(TextOverflow.ELLIPSIS);
-    tagLayout.addClassName(Display.INLINE);
+    tagLayout.addClassName("tag-collection");
     Span noNotesDefined = new Span("Click to add Notes");
     ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
         Span::new, new TextField(), noNotesDefined);

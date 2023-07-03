@@ -9,7 +9,7 @@ import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.layouts.CardComponent;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationPage;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>A PageComponent based Component showing the information stored in the
  * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable} associated
  * with an experiment {@link life.qbic.projectmanagement.domain.project.experiment.Experiment} in
- * the {@link ExperimentDetailsComponent} of the {@link ExperimentInformationPage}
+ * the {@link ExperimentDetailsComponent} of the {@link ExperimentInformationMain}
  */
 
 

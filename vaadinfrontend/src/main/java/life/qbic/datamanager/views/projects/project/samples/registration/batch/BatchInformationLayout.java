@@ -2,22 +2,22 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 
 /**
@@ -26,71 +26,74 @@ import java.util.List;
  * Layout in which the user will provide the batch information necessary during sample registration
  * </p>
  */
-public class BatchInformationLayout extends VerticalLayout {
+public class BatchInformationLayout extends Div {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
+  public final Select<Experiment> experimentSelect = new Select<>();
   private final BatchInformationLayoutHandler batchInformationLayoutHandler;
 
   public BatchInformationLayout() {
     initContent();
-    this.setSizeFull();
+    this.addClassName("batch-content");
     batchInformationLayoutHandler = new BatchInformationLayoutHandler();
   }
 
   private void initContent() {
-    Span batchInformationHeader = new Span("Batch Information");
-    batchInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
-    add(batchInformationHeader);
     initBatchLayout();
     initDataTypeLayout();
     initButtonLayout();
   }
 
   private void initBatchLayout() {
-    HorizontalLayout batchLayout = new HorizontalLayout();
+    Div batchLayout = new Div();
+    Span batchInformationHeader = new Span("Batch Information");
+    batchInformationHeader.addClassName("title");
+    batchLayout.addClassName("batch-information");
+    experimentSelect.setItemLabelGenerator(Experiment::getName);
+    experimentSelect.setLabel("Experiment");
+    batchLayout.add(batchInformationHeader);
+    batchLayout.add(experimentSelect);
     batchLayout.add(batchNameField);
     add(batchLayout);
   }
 
   private void initDataTypeLayout() {
-    VerticalLayout dataTypeLayout = new VerticalLayout();
-    dataTypeLayout.setMargin(false);
-    dataTypeLayout.setPadding(false);
+    Div dataTypeLayout = new Div();
+    dataTypeLayout.addClassName("data-type-information");
     Span dataTypeHeader = new Span("Type of Data");
-    dataTypeHeader.addClassNames("text-l", "font-bold", "text-secondary");
+    dataTypeHeader.addClassName("title");
     dataTypeLayout.add(dataTypeHeader);
-    Span dataTypeDescription = new Span(
+    Div dataTypeDescription = new Div();
+    dataTypeDescription.add(
         "There is a minimum amount of information required. All samples must conform the expected metadata values. The most suitable checklist for sample registration depends on the type of the sample.");
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
-    dataTypeSelection.setClassName(Left.MEDIUM);
-    dataTypeLayout.setSizeFull();
     add(dataTypeLayout);
   }
 
   private void initDataTypeSelection() {
     dataTypeSelection.setItems(MetadataType.values());
-    dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+    dataTypeSelection.setReadOnly(true);
+    dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
     dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
       Span metadataTypeSpan = new Span(metadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
-      infoIcon.addClassNames(IconSize.SMALL);
-      infoIcon.setColor("#77828f");
+      infoIcon.addClassName("info-icon");
       infoIcon.setTooltipText(metadataType.description);
       return new HorizontalLayout(metadataTypeSpan, infoIcon);
     }));
   }
 
   private void initButtonLayout() {
-    HorizontalLayout batchInformationButtons = new HorizontalLayout();
+    Span batchInformationButtons = new Span();
+    batchInformationButtons.addClassName("buttons");
     nextButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     batchInformationButtons.add(cancelButton, nextButton);
-    this.setAlignSelf(Alignment.END, batchInformationButtons);
     add(batchInformationButtons);
   }
 
@@ -117,7 +120,11 @@ public class BatchInformationLayout extends VerticalLayout {
       binderBatchName.forField(batchNameField)
           .withValidator(value -> !value.isBlank(), "Please provide a valid batch name")
           .bind(Container::value, Container::setValue);
-      binders.add(binderBatchName);
+      Binder<Container<Experiment>> binderExperimentSelect = new Binder<>();
+      binderExperimentSelect.forField(experimentSelect)
+          .asRequired("Please select an experiment")
+          .bind(Container::value, Container::setValue);
+      binders.addAll(List.of(binderBatchName, binderExperimentSelect));
     }
 
     private boolean isInputValid() {
@@ -131,12 +138,14 @@ public class BatchInformationLayout extends VerticalLayout {
     }
 
     private void resetChildValues() {
-      dataTypeSelection.setValue(dataTypeSelection.getListDataView().getItem(0));
+      dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
+      experimentSelect.clear();
       batchNameField.clear();
     }
 
     private void resetChildValidation() {
       batchNameField.setInvalid(false);
+      experimentSelect.setInvalid(false);
     }
   }
 

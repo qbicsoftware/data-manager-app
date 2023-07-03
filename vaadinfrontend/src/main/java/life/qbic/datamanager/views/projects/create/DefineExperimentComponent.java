@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -28,9 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-public class DefineExperimentComponent extends Composite<VerticalLayout> {
+public class DefineExperimentComponent extends Div {
 
-  private final VerticalLayout contentLayout = getContent();
   public final TextField experimentNameField = new TextField("Experiment Name");
   public final TextArea experimentalDesignDescription = new TextArea(
       "Experimental Design Description");
@@ -41,17 +41,17 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
 
   public DefineExperimentComponent(
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+    addClassName("create-experiment-content");
     Objects.requireNonNull(experimentalDesignSearchService);
     initExperimentDefinitionLayout();
-    styleExperimentCreationLayout();
     experimentDefinitionLayoutHandler = new ExperimentDefinitionLayoutHandler(
         experimentalDesignSearchService);
   }
 
   private void initExperimentDefinitionLayout() {
     initHeaderAndDescription();
-    styleMultiSelectComboBoxes();
-    contentLayout.add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
+    styleFields();
+    add(speciesBox, specimenBox, analyteBox, experimentalDesignDescription);
   }
 
   private void initHeaderAndDescription() {
@@ -59,30 +59,24 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
     Span experimentDescription = new Span(
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
-    experimentHeader.addClassName("font-bold");
-    experimentNameField.setWidthFull();
-    contentLayout.add(experimentHeader, experimentDescription, experimentNameField,
+    experimentHeader.addClassName("header");
+    add(experimentHeader, experimentDescription, experimentNameField,
         experimentDescription);
   }
 
-  private void styleMultiSelectComboBoxes() {
+  private void styleFields() {
     speciesBox.setRequired(true);
     specimenBox.setRequired(true);
     analyteBox.setRequired(true);
     speciesBox.addClassName("chip-badge");
     specimenBox.addClassName("chip-badge");
     analyteBox.addClassName("chip-badge");
-    speciesBox.setWidthFull();
-    specimenBox.setWidthFull();
-    analyteBox.setWidthFull();
-    experimentalDesignDescription.setWidthFull();
-  }
-
-  private void styleExperimentCreationLayout() {
-    contentLayout.setMargin(false);
-    contentLayout.setPadding(false);
-    contentLayout.addClassName("pt-m");
-    contentLayout.setSizeFull();
+    String fullWidthClass = "full-width-input";
+    speciesBox.addClassName(fullWidthClass);
+    specimenBox.addClassName(fullWidthClass);
+    analyteBox.addClassName(fullWidthClass);
+    experimentNameField.addClassName(fullWidthClass);
+    experimentalDesignDescription.addClassName(fullWidthClass);
   }
 
   public void hideNameField() {
@@ -136,17 +130,17 @@ public class DefineExperimentComponent extends Composite<VerticalLayout> {
      * interfaces
      */
     private void reset() {
-      resetChildValues(contentLayout);
-      resetChildValidation(contentLayout);
+      resetChildValues();
+      resetChildValidation();
     }
 
-    private void resetChildValues(Component component) {
-      component.getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
+    private void resetChildValues() {
+      getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
           .forEach(comp -> ((HasValue<?, ?>) comp).clear());
     }
 
-    private void resetChildValidation(Component component) {
-      component.getChildren().filter(comp -> comp instanceof HasValidation)
+    private void resetChildValidation() {
+      getChildren().filter(comp -> comp instanceof HasValidation)
           .forEach(comp -> ((HasValidation) comp).setInvalid(false));
     }
 

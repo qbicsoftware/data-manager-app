@@ -58,7 +58,7 @@ public class DisclaimerCard extends Card {
     content.add(titleSpan);
     content.add(paragraph);
     content.add(confirmationElement);
-    confirmationElement.addClassName("button");
+    confirmationElement.addClassName("primary");
     add(content);
   }
 

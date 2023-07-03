@@ -1,0 +1,17 @@
+.sample-page {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.8fr) minmax(250px, 0.2fr);
+  grid-template-rows: minmax(150px, 0.1fr) minmax(250px, 1fr);
+  gap: 1px 1px;
+  grid-template-areas:
+    "navbar support"
+    "main main";
+}
+
+.sample-page .main {
+  grid-area: main;
+}
+
+.sample-page .support {
+  grid-area: main;
+}

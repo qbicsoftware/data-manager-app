@@ -1,10 +1,11 @@
 package life.qbic.projectmanagement.domain.project.repository;
 
+import java.util.Collection;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService.ResponseCode;
-
-import java.util.Collection;
 
 /**
  * Sample data storage interface
@@ -25,4 +26,6 @@ public interface SampleRepository {
 
   Result<Collection<Sample>, ResponseCode> addAll(Collection<Sample> sample);
 
+  Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
+      ExperimentId experimentId);
 }

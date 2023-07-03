@@ -1,200 +1,213 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.virtuallist.VirtualList;
-import com.vaadin.flow.data.provider.CallbackDataProvider;
-import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.PageComponent;
-import life.qbic.datamanager.views.projects.project.ProjectViewPage;
+import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationEvent;
+import life.qbic.datamanager.views.support.experiment.ExperimentItem;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemClickedEvent;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b>ExperimentListComponent</b>
+ * Experiment list component
  * <p>
- * This component lists the {@link life.qbic.projectmanagement.domain.project.experiment.Experiment}
- * associated with the selected {@link life.qbic.projectmanagement.domain.project.Project} within
- * the {@link ProjectViewPage}
+ * The list component is a {@link PageArea} component, which is responsible for showing the
+ * {@link Experiment} information for all experiments in its {@link ExperimentItemCollection }
+ * within the currently examined {@link life.qbic.projectmanagement.domain.project.Project}.
+ * Additionally, it provides the possibility to create new experiments with its
+ * {@link ExperimentCreationDialog} and enables the user to select an experiment of interest via
+ * clicking on the {@link ExperimentItem} associated with the experiment. Finally, it allows
+ * components to be informed about a new experiment creation or selection via the
+ * {@link ExperimentCreationListener} and {@link ExperimentSelectionListener} provided in this
+ * component.
  */
 @SpringComponent
 @UIScope
-@PermitAll
-public class ExperimentListComponent extends Composite<PageComponent> {
+public class ExperimentListComponent extends PageArea {
 
   @Serial
-  private static final long serialVersionUID = -2255999216830849632L;
-  private static final String TITLE = "Experiments";
-  private final transient Handler handler;
-  private final VirtualList<Experiment> experiments = new VirtualList<>();
-  private final ExperimentalDesignAddCard experimentalDesignAddCard = new ExperimentalDesignAddCard();
+  private static final long serialVersionUID = -2196400941684042549L;
+  private final ExperimentItemCollection experimentItemCollection;
+  private ProjectId projectId;
+  private final List<ExperimentSelectionListener> selectionListeners = new ArrayList<>();
+  private final List<ExperimentCreationListener> creationListener = new ArrayList<>();
   private final ExperimentCreationDialog experimentCreationDialog;
+  private final transient AddExperimentToProjectService addExperimentToProjectService;
 
-  public ExperimentListComponent(@Autowired ProjectInformationService projectInformationService,
+  public ExperimentListComponent(
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
-      @Autowired AddExperimentToProjectService addExperimentToProjectService) {
-    Objects.requireNonNull(projectInformationService);
+      @Autowired AddExperimentToProjectService addExperimentToProjectService,
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     Objects.requireNonNull(experimentInformationService);
-    VerticalLayout contentLayout = new VerticalLayout();
-    contentLayout.add(experiments);
-    contentLayout.add(experimentalDesignAddCard);
-    contentLayout.setPadding(false);
-    contentLayout.setMargin(false);
-    getContent().addTitle(TITLE);
-    getContent().addContent(contentLayout);
-    getContent().indentContent(false);
-    experiments.setWidthFull();
-    contentLayout.setMinWidth(100, Unit.PERCENTAGE);
-
-    experimentCreationDialog = new ExperimentCreationDialog(experimentalDesignSearchService);
-    this.handler = new Handler(projectInformationService, experimentInformationService,
-        addExperimentToProjectService);
+    Objects.requireNonNull(addExperimentToProjectService);
+    Objects.requireNonNull(experimentalDesignSearchService);
+    this.addExperimentToProjectService = addExperimentToProjectService;
+    this.experimentCreationDialog = new ExperimentCreationDialog(experimentalDesignSearchService);
+    this.addClassName("list-component");
+    this.experimentItemCollection = ExperimentItemCollection.create(
+        "Add a new experiment");
+    this.add(experimentItemCollection);
+    addListeners();
   }
 
-  public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
+  private void addListeners() {
+    addItemCollectionListeners();
+    addExperimentCreationDialogListener();
   }
 
-  public void projectId(ProjectId projectId) {
-    this.handler.setProjectId(projectId);
+  private void addItemCollectionListeners() {
+    experimentItemCollection.addClickEventListener(this::fireExperimentalItemSelectedEvent);
+    experimentItemCollection.addCreateEventListener(event -> experimentCreationDialog.open());
   }
 
+  private void addExperimentCreationDialogListener() {
+    experimentCreationDialog.addExperimentCreationEventListener(
+        event -> addExperimentToProject(event, event.getSource().content()));
+    experimentCreationDialog.addCancelEventListener(
+        event -> experimentCreationDialog.resetAndClose());
+  }
 
-  /**
-   * Component logic for the {@link ExperimentListComponent}
-   *
-   * @since 1.0.0
-   */
-  private final class Handler {
-
-    private final ProjectInformationService projectInformationService;
-    private final ExperimentInformationService experimentInformationService;
-    private final AddExperimentToProjectService addExperimentToProjectService;
-    private ProjectId projectId;
-
-    public Handler(ProjectInformationService projectInformationService,
-        ExperimentInformationService experimentInformationService,
-        AddExperimentToProjectService addExperimentToProjectService) {
-      this.projectInformationService = projectInformationService;
-      this.experimentInformationService = experimentInformationService;
-      this.addExperimentToProjectService = addExperimentToProjectService;
-      experiments.setRenderer(renderExperimentsAsExperimentalDesignCards());
-      openDialogUponClickingAddCard();
-      configureExperimentCreationDialog();
-    }
-
-    public void setProjectId(ProjectId projectId) {
-      this.projectId = projectId;
-      projectInformationService.find(projectId)
-          .ifPresent(this::setExperimentDataProviderFromProject);
-    }
-
-    private void setExperimentDataProviderFromProject(Project project) {
-      CallbackDataProvider<Experiment, Void> experimentsDataProvider = DataProvider.fromCallbacks(
-          query -> getExperimentsForProject(project).stream().skip(query.getOffset())
-              .limit(query.getLimit()).sorted(new ExperimentNameComparator()),
-          query -> getExperimentsForProject(project).size());
-      experiments.setDataProvider(experimentsDataProvider);
-    }
-
-    private Collection<Experiment> getExperimentsForProject(Project project) {
-      List<Experiment> experimentList = new ArrayList<>();
-      project.experiments().forEach(experimentId -> experimentInformationService.find(experimentId)
-          .ifPresent(experimentList::add));
-      return experimentList;
-    }
-
-    private void openDialogUponClickingAddCard() {
-      experimentalDesignAddCard.getContent()
-          .addClickListener(event -> experimentCreationDialog.open());
-    }
-
-    private void configureExperimentCreationDialog() {
-      experimentCreationDialog.addExperimentCreationEventListener(
-          event -> processExperimentCreation(event.getSource().content()));
-      experimentCreationDialog.addCancelEventListener(
-          event -> experimentCreationDialog.resetAndClose());
-    }
-
-    private void processExperimentCreation(ExperimentCreationContent experimentCreationContent) {
-      addExperimentToProjectService.addExperimentToProject(projectId,
-              experimentCreationContent.experimentName(), experimentCreationContent.species(),
-              experimentCreationContent.specimen(), experimentCreationContent.analytes())
-          .onValue(experimentId -> {
-            experimentCreationDialog.resetAndClose();
-            experiments.getDataProvider().refreshAll();
-            routeToExperiment(experimentId);
-          });
-    }
-
-    private ComponentRenderer<Component, Experiment> renderExperimentsAsExperimentalDesignCards() {
-      return new ComponentRenderer<>(experiment -> {
-        ExperimentalDesignCard experimentalDesignCard = new ExperimentalDesignCard(experiment);
-        experimentalDesignCard.setActive(isActiveExperiment(experiment.experimentId()));
-        experimentalDesignCard.getContent().addClickListener(clickEvent -> {
-          projectInformationService.setActiveExperiment(projectId, experiment.experimentId());
-          handler.routeToExperiment(experiment.experimentId());
-        });
-        return experimentalDesignCard;
-      });
-    }
-
-    private void routeToExperiment(ExperimentId experimentId) {
-      getUI().ifPresentOrElse(it -> it.navigate(
-              String.format(Projects.EXPERIMENT, handler.projectId.value(), experimentId.value())),
-          () -> {
-            throw new ApplicationException(
-                "Could not navigate to newly created Experiment " + experimentId.value()
-                    + "Information Page for " + handler.projectId.value());
-          });
-    }
-
-    private boolean isActiveExperiment(ExperimentId experimentId) {
-      //ToDo Should there be a separate check if the project can be retrieved?
-      return experimentId.equals(
-          projectInformationService.find(projectId).get().activeExperiment());
-    }
+  private void addExperimentToProject(ExperimentCreationEvent experimentCreationEvent,
+      ExperimentCreationContent experimentCreationContent) {
+    addExperimentToProjectService.addExperimentToProject(projectId,
+            experimentCreationContent.experimentName(), experimentCreationContent.species(),
+            experimentCreationContent.specimen(), experimentCreationContent.analytes())
+        .onValue(experimentId -> {
+          displayExperimentCreationSuccess();
+          fireExperimentCreatedEvent(experimentCreationEvent);
+          experimentCreationDialog.resetAndClose();
+          setSelectedExperiment(experimentId);
+        }).onError(error -> displayExperimentCreationFailure());
   }
 
   /**
-   * <b>ExperimentNameComparator</b>
+   * Provides the {@link ProjectId} of the currently selected project to this component
    * <p>
-   * Comparator used to sort {@link Experiment} alphabetically according to their name
-   * <p>
-   * Vaadins {@link VirtualList} currently does not support a native sort method, which means that
-   * the sorting has to happen during the query based data retrieval from the backend. This is done
-   * by providing the query with a custom {@link Comparator}, which in this case compares the
-   * {@link Experiment} within the list by their name.
+   * This method provides the {@link ProjectId} necessary for experiment creation within the
+   * {@link AddExperimentToProjectService} in this component.
    */
-  private static class ExperimentNameComparator implements Comparator<Experiment> {
+  public void setProject(ProjectId projectId) {
+    this.projectId = projectId;
+  }
 
-    @Override
-    public int compare(Experiment experiment1, Experiment experiment2) {
-      return experiment1.getName().compareToIgnoreCase(experiment2.getName());
-    }
+  /**
+   * Provides the collection of {@link Experiment} to the components within this container
+   * <p>
+   * This method should be used to provide the experiments within a
+   * {@link life.qbic.projectmanagement.domain.project.Project} to {@link ExperimentListComponent}
+   */
+  public void setExperiments(Collection<Experiment> experiments) {
+    experimentItemCollection.removeAll();
+    addItemCollectionListeners();
+    experiments.forEach(experiment -> experimentItemCollection.addExperimentItem(
+        ExperimentItem.create(experiment)));
+  }
+
+  /**
+   * Provides the {@link ExperimentId} which annotates the currently active Experiment to this
+   * component
+   * <p>
+   * This informs the {@link ExperimentItemCollection} about which experiment is set as active via
+   * the provided {@link ExperimentId}
+   */
+  public void setActiveExperiment(ExperimentId experimentId) {
+    experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsActive);
+  }
+
+  /**
+   * Provides the {@link ExperimentId} which annotates the currently selected Experiment to this
+   * component
+   * <p>
+   * This informs the {@link ExperimentItemCollection} about which experiment was selected by the
+   * user via the provided {@link ExperimentId}
+   */
+  public void setSelectedExperiment(ExperimentId experimentId) {
+    experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsSelected);
+  }
+
+  /**
+   * Adds the provided {@link ExperimentSelectionListener} to the list of listeners which will
+   * retrieve notification if an {@link Experiment} was selected within this component
+   */
+  public void addExperimentSelectionListener(
+      ExperimentSelectionListener experimentSelectionListener) {
+    this.selectionListeners.add(experimentSelectionListener);
+  }
+
+  /**
+   * Adds the provided {@link ExperimentCreationListener} to the list of listeners which will
+   * retrieve notification if a new {@link Experiment} was created in this component
+   */
+  public void addExperimentCreationListener(ExperimentCreationListener experimentCreationListener) {
+    this.creationListener.add(experimentCreationListener);
+  }
+
+  private void fireExperimentCreatedEvent(ExperimentCreationEvent event) {
+    creationListener.forEach(it -> it.handle(event));
+  }
+
+  private void fireExperimentalItemSelectedEvent(ExperimentItemClickedEvent event) {
+    selectionListeners.forEach(it -> it.handle(event));
+  }
+
+  private void displayExperimentCreationSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+  private void displayExperimentCreationFailure() {
+    ErrorMessage errorMessage = new ErrorMessage("Experiment Creation failed", "");
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
+  }
+
+  /**
+   * Experiment Selection Interface
+   * <p>
+   * Represents a simple interface to handle {@link ExperimentItemClickedEvent} that can be invoked
+   * by the method {@link ExperimentSelectionListener#handle(ExperimentItemClickedEvent)}.
+   * <p>
+   * This interface is suitable for all components that want to be informed if an
+   * {@link ExperimentItemClickedEvent} occurred, and want to handle the information stored in the
+   * {@link ExperimentItemClickedEvent}
+   */
+  @FunctionalInterface
+  public interface ExperimentSelectionListener {
+
+    void handle(ExperimentItemClickedEvent event);
+  }
+
+  /**
+   * Experiment Creation Interface
+   * <p>
+   * Represents a simple interface to handle {@link ExperimentCreationEvent} that can be invoked by
+   * the method {@link ExperimentCreationListener#handle(ExperimentCreationEvent)}.
+   * <p>
+   * This interface is suitable for all components that want to be informed if an
+   * {@link ExperimentCreationEvent} occurred, and want to handle the information stored in the
+   * {@link ExperimentCreationEvent}
+   */
+  @FunctionalInterface
+  public interface ExperimentCreationListener {
+
+    void handle(ExperimentCreationEvent event);
   }
 }

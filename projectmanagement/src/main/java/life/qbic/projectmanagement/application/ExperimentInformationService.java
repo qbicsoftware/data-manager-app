@@ -13,7 +13,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
@@ -70,7 +69,7 @@ public class ExperimentInformationService {
     Experiment activeExperiment = loadExperimentById(experimentId);
     Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
         experimentalGroup.levels(), experimentalGroup.sampleSize());
-    if(result.isValue()) {
+    if (result.isValue()) {
       experimentRepository.update(activeExperiment);
     }
     return result;
@@ -231,6 +230,18 @@ public class ExperimentInformationService {
   public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
     Experiment activeExperiment = loadExperimentById(experimentId);
     return activeExperiment.variables();
+  }
+
+  /**
+   * Checks if the provided ExperimentId contains an experimental Group
+   *
+   * @param experimentId the {@link ExperimentId} of the {@link Experiment} which should be checked
+   *                     if it contains an {@link ExperimentalGroup}
+   * @return a boolean indicating if the experiment contains an {@link ExperimentalGroup}
+   */
+  public boolean hasExperimentalGroup(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return !experiment.getExperimentalGroups().isEmpty();
   }
 
 }
