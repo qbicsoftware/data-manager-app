@@ -16,6 +16,7 @@
 
 .attachments-area {
   flex-direction: column;
+  display: flex;
 }
 
 .attachments-area .title {

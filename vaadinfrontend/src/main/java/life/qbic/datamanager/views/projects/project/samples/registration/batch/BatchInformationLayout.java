@@ -66,8 +66,11 @@ public class BatchInformationLayout extends Div {
     Span dataTypeHeader = new Span("Type of Data");
     dataTypeHeader.addClassName("title");
     dataTypeLayout.add(dataTypeHeader);
-    Span dataTypeDescription = new Span(
-        "There is a minimum amount of information required. All samples must conform the expected metadata values. The most suitable checklist for sample registration depends on the type of the sample.");
+    Div dataTypeDescription = new Div();
+    dataTypeDescription.add(
+        "There is a minimum amount of information required. "
+            + "All samples must conform the expected metadata values."
+            + "The most suitable checklist for sample registration depends on the type of the sample.");
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
@@ -121,6 +124,7 @@ public class BatchInformationLayout extends Div {
           .bind(Container::value, Container::setValue);
       Binder<Container<Experiment>> binderExperimentSelect = new Binder<>();
       binderExperimentSelect.forField(experimentSelect)
+          .asRequired("Please select an experiment")
           .bind(Container::value, Container::setValue);
       binders.addAll(List.of(binderBatchName, binderExperimentSelect));
     }

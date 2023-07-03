@@ -116,7 +116,7 @@ public class ProjectCollection extends PageArea {
   }
 
   private void layoutProjectCreationButton() {
-    createProjectButton.addClassName("add-project-button");
+    createProjectButton.addClassName("primary");
   }
 
   private void layoutGrid() {
