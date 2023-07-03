@@ -4,9 +4,9 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b>Project Creation Event</b>
+ * <b>Project Add Event</b>
  *
- * <p>Indicates that a user submitted a project creation request</p>
+ * <p>Indicates that a user submitted a project addition request</p>
  *
  * @since 1.0.0
  */
