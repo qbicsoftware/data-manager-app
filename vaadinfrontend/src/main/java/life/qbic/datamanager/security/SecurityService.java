@@ -8,6 +8,7 @@ import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.datamanager.views.AppRoutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,7 +43,6 @@ public class SecurityService implements Serializable {
   }
 
   public void logout() {
-    UI.getCurrent().getPage().setLocation(SecurityConfiguration.LOGOUT_URL);
     SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
     logoutHandler.logout(VaadinServletRequest.getCurrent().getHttpServletRequest(), null, null);
   }

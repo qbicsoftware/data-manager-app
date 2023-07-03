@@ -94,5 +94,12 @@ public class AppRoutes {
      */
     public static final String ATTACHMENT = "projects/%s/attachments";
 
+    /**
+     * Path to the logout endpoint.
+     * <p>
+     * Provide an empty string if you want to use the default route of a proxy setup
+     */
+    public static final String LOGOUT = "";
+
   }
 }
