@@ -6,11 +6,8 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.theme.lumo.LumoUtility.FontWeight;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,11 +26,12 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
  * associated for each sample will be provided>
  * </p>
  */
-class SampleSpreadsheetLayout extends VerticalLayout {
+class SampleSpreadsheetLayout extends Div {
 
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
-  private final Label batchName = new Label();
+  private final Span batchName = new Span();
+  private final Span experimentName = new Span();
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
@@ -42,38 +40,45 @@ class SampleSpreadsheetLayout extends VerticalLayout {
 
   SampleSpreadsheetLayout() {
     initContent();
-    this.setSizeFull();
+    this.addClassName("batch-content");
     sampleInformationLayoutHandler = new SampleInformationLayoutHandler();
   }
 
   private void initContent() {
     initHeaderAndInstruction();
-    add(sampleRegistrationSpreadsheet);
+    Div sampleSpreadSheetContainer = new Div();
+    sampleSpreadSheetContainer.addClassName("sample-spreadsheet");
+    sampleSpreadSheetContainer.add(sampleRegistrationSpreadsheet);
+    add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
     initButtonLayout();
   }
 
   private void initHeaderAndInstruction() {
-    sampleInformationHeader.addClassNames("text-xl", "font-bold", "text-secondary");
-    batchRegistrationInstruction.add("Please register your samples for Batch: ");
-    batchRegistrationInstruction.add(batchName);
-    batchName.addClassNames(FontWeight.BOLD, FontWeight.BLACK);
+    sampleInformationHeader.setClassName("title");
+    Span instructionSpan = new Span();
+    instructionSpan.add("Please register your samples for experiment: ");
+    instructionSpan.add(experimentName);
+    experimentName.setClassName("bold");
+    instructionSpan.add(" in batch: ");
+    instructionSpan.add(batchName);
+    batchRegistrationInstruction.add(instructionSpan);
+    batchName.addClassName("bold");
     add(sampleInformationHeader);
     add(batchRegistrationInstruction);
   }
 
   private void initButtonLayout() {
-    HorizontalLayout sampleInformationButtons = new HorizontalLayout();
+    Span sampleInformationButtons = new Span();
+    sampleInformationButtons.addClassName("buttons");
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sampleInformationButtons.add(addRowButton, cancelButton, registerButton);
-    this.setAlignSelf(Alignment.END, sampleInformationButtons);
     add(sampleInformationButtons);
   }
 
   private void styleSampleRegistrationSpreadSheet() {
-    sampleRegistrationSpreadsheet.setSizeFull();
     sampleRegistrationSpreadsheet.setSheetSelectionBarVisible(false);
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
@@ -96,8 +101,9 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     return sampleInformationLayoutHandler.isInputValid();
   }
 
-  public void setActiveExperiment(Experiment experiment) {
+  public void setExperiment(Experiment experiment) {
     SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
+    experimentName.setText(experiment.getName());
   }
 
   public List<SampleRegistrationContent> getContent() {
@@ -114,14 +120,24 @@ class SampleSpreadsheetLayout extends VerticalLayout {
     }
 
     private void resetChildValues() {
+      resetInstructions();
+      resetSpreadSheet();
+    }
+
+    private void resetInstructions() {
       batchName.setText("");
+      experimentName.setText("");
+    }
+
+    private void resetSpreadSheet() {
       sampleRegistrationSpreadsheet.reset();
       sampleRegistrationSpreadsheet.reload();
     }
 
     private boolean isInputValid() {
       Result<Void, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.areInputsValid();
-      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason())).isValue();
+      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason()))
+          .isValue();
     }
 
     private void displayInputInvalidMessage(String invalidationReason) {
@@ -149,7 +165,5 @@ class SampleSpreadsheetLayout extends VerticalLayout {
       });
       return samplesToRegister;
     }
-
-
   }
 }

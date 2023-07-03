@@ -36,6 +36,19 @@ public class SampleOrigin {
     return new SampleOrigin(species, specimen, analytes);
   }
 
+  public Species getSpecies() {
+    return species;
+  }
+
+  public Specimen getSpecimen() {
+    return specimen;
+  }
+
+  public Analyte getAnalyte() {
+    return analyte;
+  }
+
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.api.SampleCodeService
+import life.qbic.projectmanagement.application.sample.SampleRegistrationService
 import life.qbic.projectmanagement.domain.project.ProjectId
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId

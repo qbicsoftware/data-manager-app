@@ -14,15 +14,17 @@
   padding: var(--lumo-space-l);
 }
 
-.attachments-area {
-  flex-direction: column;
-}
-
-.attachments-area .title {
+.page-area .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
+}
+
+.attachments-area {
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-m);
 }
 
 .attachments-area .delete-button {
@@ -32,8 +34,27 @@
   background-color: inherit;
 }
 
-.page-area .title {
-  font-weight: bold;
-  font-size: larger;
-  color: #464646;
+.sample-overview-component .content {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--lumo-space-m);
+}
+
+.sample-overview-component .button-and-search-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lumo-space-s);
+  margin-bottom: var(--lumo-space-m);
+}
+
+.sample-overview-component .button-bar {
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+  align-items: end;
+}
+
+.sample-overview-component .search-bar {
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+  align-items: end;
 }

@@ -13,13 +13,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
-import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
@@ -44,7 +44,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   @Serial
   private static final long serialVersionUID = 573778360298068552L;
-
   private SpreadsheetDropdownFactory dropdownCellFactory;
   private List<SamplesheetHeaderName> header;
   private static List<String> species;
@@ -58,6 +57,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private transient Sheet sampleRegistrationSheet;
 
   public SampleRegistrationSpreadsheet() {
+    this.addClassName("sample-spreadsheet");
     // The SampleRegistrationSpreadsheet component only makes sense once information has been filled via the experiment information,
     // which can only happen once the experiment is loaded, therefore the setExperimentMetadata() method should be used.
   }
@@ -221,6 +221,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       updatedCells.add(cell);
       columnIndex++;
     }
+    this.getColumns();
     this.refreshCells(updatedCells);
   }
 
@@ -295,7 +296,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       oldValue = cell.getStringCellValue();
       this.getCell(0, colIndex).setCellValue(spacingValue);
     }
-    this.autofitColumn(colIndex);
+    //Todo Find out why switching from a sheet with less columns to a sheet with more columns breaks the sheet(e.g. lipidomics to genomics)
+    try {
+      this.autofitColumn(colIndex);
+      this.getActiveSheet();
+    } catch (IndexOutOfBoundsException exception) {
+    }
+
     this.getCell(0, colIndex).setCellValue(oldValue);
   }
 
@@ -321,6 +328,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private void addGenomicsSheet(List<SamplesheetHeaderName> header) {
     this.header = header;
     LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
+    setDefaultColumnCount(header.size());
     for (SamplesheetHeaderName head : header) {
       headerToPresets.put(head, new ArrayList<>());
     }
@@ -347,7 +355,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
     dropdownCellFactory.addDropdownColumn(analysisTypeColumn);
     setupCommonDropDownColumns();
-    setDefaultColumnCount(header.size());
+
   }
 
 
@@ -408,11 +416,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
     Set<String> concatenatedSampleIDs = new HashSet<>();
-    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
-        if(name.isMandatory) {
+        if (name.isMandatory) {
           mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
               header.indexOf(name))));
         }
@@ -571,7 +579,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   enum SpreadsheetInvalidationReason {
-    MISSING_INPUT, DUPLICATE_ID;
+    MISSING_INPUT, DUPLICATE_ID
   }
 
 }

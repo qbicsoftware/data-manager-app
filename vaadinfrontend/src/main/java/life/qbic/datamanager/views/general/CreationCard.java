@@ -42,7 +42,7 @@ public class CreationCard extends Card {
     disclaimerArea.addClassName("disclaimer-area");
     disclaimer.addClassName("disclaimer");
 
-    createButton.addClassName("button");
+    createButton.addClassName("primary");
 
     content.add(disclaimerArea);
     content.add(createButton);

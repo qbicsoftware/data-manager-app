@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -9,16 +10,17 @@ import com.vaadin.flow.component.tabs.TabVariant;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.SampleInformationService.Sample;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 
 /**
  * <b>Sample Registration Dialog</b>
  *
- * <p>Component to register {@link Sample} with their associated metadata information</p>
+ * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
+ * their associated metadata information</p>
  */
 public class BatchRegistrationDialog extends DialogWindow {
 
@@ -31,18 +33,18 @@ public class BatchRegistrationDialog extends DialogWindow {
   private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
-    addClassName("register-batch-dialog");
+    addClassName("batch-registration-dialog");
     setHeaderTitle(TITLE);
     initSampleRegistrationLayout();
     initTabStepper();
-    tabStepper.addClassName("tab-sheet");
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
-    this.setSizeFull();
   }
 
   private void initTabStepper() {
     tabStepper.add(batchInformationTab, batchInformationLayout);
     tabStepper.add(sampleInformationTab, sampleSpreadsheetLayout);
+    tabStepper.addClassName("minimal");
+    tabStepper.addClassName("stepper");
     add(tabStepper);
   }
 
@@ -50,12 +52,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     Avatar stepAvatar = new Avatar(avatarLabel);
     stepAvatar.setColorIndex(2);
     Span tabLabelSpan = new Span(tabLabel);
-    tabLabelSpan.addClassName("label");
-
     Tab tabStep = new Tab(stepAvatar, tabLabelSpan);
     tabStep.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-    tabStep.addClassName("tab");
-
     return tabStep;
   }
 
@@ -97,8 +95,16 @@ public class BatchRegistrationDialog extends DialogWindow {
    * Defines the currently active {@link Experiment} within the project from which the information
    * will be derived in the {@link SampleRegistrationSpreadsheet}
    */
-  public void setActiveExperiment(Experiment experiment) {
-    sampleSpreadsheetLayout.setActiveExperiment(experiment);
+  public void setExperiments(Collection<Experiment> experiments) {
+    batchInformationLayout.experimentSelect.setItems(experiments);
+  }
+
+  /**
+   * Sets the provided {@link Experiment} as preselected in the
+   * {@link com.vaadin.flow.component.select.Select} component
+   */
+  public void setSelectedExperiment(Experiment experiment) {
+    batchInformationLayout.experimentSelect.setValue(experiment);
   }
 
   private class RegisterBatchDialogHandler implements Serializable {
@@ -136,6 +142,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void generateSampleRegistrationLayout() {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
       sampleSpreadsheetLayout.generateSampleRegistrationSheet(
           batchInformationLayout.dataTypeSelection.getValue());
     }
@@ -196,7 +203,8 @@ public class BatchRegistrationDialog extends DialogWindow {
   }
 
   public BatchRegistrationContent batchRegistrationContent() {
-    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(), false);
+    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(),
+        batchInformationLayout.experimentSelect.getValue().experimentId(), false);
   }
 
   public List<SampleRegistrationContent> sampleRegistrationContent() {

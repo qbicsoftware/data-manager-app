@@ -1,13 +1,80 @@
-
-.dialog-window .confirm-button {
-  background-color: var(--lumo-primary-color);
-  color: var(--lumo-primary-contrast-color);
-  font-weight: 600;
-  min-width: calc(var(--lumo-button-size) * 2.5);
-}
-
 .dialog-window .confirm-button:hover::before {
   opacity: 0.05;
+}
+
+.batch-registration-dialog .stepper {
+  width: 100%;
+  height: 100%;
+}
+
+.batch-registration-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.batch-registration-dialog .stepper vaadin-tabs {
+  display: inline-flex;
+}
+
+.batch-registration-dialog .stepper vaadin-tab {
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .batch-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  height: 100%;
+}
+
+.batch-registration-dialog .batch-content .batch-information {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+}
+
+.batch-registration-dialog .batch-content .data-type-information {
+  display: flex;
+  height: inherit;
+  flex-direction: column;
+}
+
+.batch-registration-dialog .batch-content .data-type-information .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.batch-registration-dialog .batch-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .sample-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+
+}
+
+.batch-registration-dialog .sample-content .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .sample-spreadsheet {
+  /*Todo Find solution on how to let spreadsheet set its size*/
+  width: 100%;
+  height: 60vh;
+}
+
+.create-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
 }
 
 .create-project-dialog::part(overlay) {
@@ -26,11 +93,11 @@
 }
 
 .create-project-dialog .code-and-title .code {
-    max-width: 20vw;
-  }
+  max-width: 20vw;
+}
 
 .create-project-dialog .code-and-title .title {
-    width: 100%;
+  width: 100%;
 }
 
 .create-project-dialog .search-field {
@@ -75,100 +142,6 @@ Used by both project creation and experiment creation dialog, thus the unique na
   width: 100%;
 }
 
-.experiment-variable-dialog .content {
-  padding: var(--lumo-space-m);
-  gap: var(--lumo-space-m);
-  display: flex;
-  flex-direction: column;
-}
-
-.experiment-variable-dialog .content .variables {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-  padding:  var(--lumo-space-m);
-}
-
-.experiment-variable-dialog .content .variables .header {
-  font-weight: bold;
-}
-
-.experiment-variable-dialog .content .row {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-m);
-}
-
-.register-batch-dialog .tab-sheet {
-  height: 100%;
-  width: 100%;
-}
-
-.register-batch-dialog .tab-sheet .tab {
-  margin-left: var(--lumo-space-m);
-}
-
-.register-batch-dialog .tab-sheet .tab .label {
-  margin-top: var(--lumo-space-s);
-}
-
-.register-batch-dialog .tab-sheet .batch-information {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-  padding: var(--lumo-space-m);
-  /* Needed so padding doesn't push content out bottom-left */
-  box-sizing: border-box;
-}
-
-.register-batch-dialog .tab-sheet .batch-information .radio-group {
-  margin-left: var(--lumo-space-m);
-  padding: var(--lumo-space-xs) 0;
-}
-
-.register-batch-dialog .tab-sheet .batch-information .radio-group .option-row {
-  gap: var(--lumo-space-m);
-  display: flex;
-}
-
-.register-batch-dialog .tab-sheet .batch-information .radio-group .info-icon {
-  height: var(--lumo-icon-size-s);
-  width: var(--lumo-icon-size-s);
-  fill: rgb(119, 130, 143);
-}
-
-/*Removes underline from tabSheet*/
-.register-batch-dialog .tab-sheet::part(tabs-container) {
-  box-shadow: none;
-  --_lumo-tab-marker-display: none;
-}
-
-.register-batch-dialog .tab-sheet .batch-information .data-type-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-  height: 100%;
-  width: 100%;
-}
-
-.register-batch-dialog .tab-sheet .batch-information .data-type-layout .header {
-  font-size: large;
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-}
-
-.register-batch-dialog .tab-sheet .batch-information .header {
-  font-size: var(--lumo-font-size-xl);
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-}
-
-.register-batch-dialog .tab-sheet .batch-information .button-layout {
-  align-self: flex-end;
-  gap: var(--lumo-space-m);
-  display: flex;
-}
-
 .experiment-group-dialog::part(overlay) {
   width: 66%;
 }
@@ -189,4 +162,28 @@ Used by both project creation and experiment creation dialog, thus the unique na
 
 .experiment-group-dialog .group-input .layout .number-field {
   width: 150px;
+}
+
+.experiment-variable-dialog .content {
+  padding: var(--lumo-space-m);
+  gap: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-variable-dialog .content .variables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+}
+
+.experiment-variable-dialog .content .variables .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .content .row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
 }

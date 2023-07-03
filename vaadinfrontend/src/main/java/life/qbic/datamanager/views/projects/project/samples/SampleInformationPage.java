@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.board.Board;
-import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -38,62 +35,51 @@ public class SampleInformationPage extends Div {
 
   public SampleInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired SampleOverviewComponent sampleOverviewComponent) {
+      @Autowired SampleMainComponent sampleMainComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
-    Objects.requireNonNull(sampleOverviewComponent);
-    setupBoard(projectNavigationBarComponent, sampleOverviewComponent);
-    stylePage();
+    Objects.requireNonNull(sampleMainComponent);
+    this.addClassName("sample-page");
+    setupPage(projectNavigationBarComponent, sampleMainComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
-        sampleOverviewComponent);
+        sampleMainComponent);
     log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Overview Component (#%s)",
+        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s) and Sample Main Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
-        System.identityHashCode(sampleOverviewComponent)));
+        System.identityHashCode(sampleMainComponent)));
   }
 
-  private void setupBoard(ProjectNavigationBarComponent projectNavigationBarComponent,
-      SampleOverviewComponent sampleOverviewComponent) {
-    Board board = new Board();
-
-    Row topRow = new Row();
-    topRow.add(projectNavigationBarComponent, 3);
-    topRow.add(new Div());
-
-    Row secondRow = new Row();
-    secondRow.add(sampleOverviewComponent, 4);
-    board.add(topRow, secondRow);
-
-    board.setSizeFull();
-    board.setMinHeight(100, Unit.PERCENTAGE);
-    board.setMinWidth(100, Unit.PERCENTAGE);
-    board.setMaxWidth(100, Unit.PERCENTAGE);
-    board.setMinWidth(100, Unit.PERCENTAGE);
-    add(board);
+  private void setupPage(ProjectNavigationBarComponent projectNavigationBarComponent,
+      SampleMainComponent sampleMainComponent) {
+    this.add(projectNavigationBarComponent);
+    this.add(sampleMainComponent);
   }
 
+  /**
+   * Provides the {@link ProjectId} to the components within this page
+   * <p>
+   * This method serves as an entry point providing the necessary {@link ProjectId} to the
+   * components within this cage
+   *
+   * @param projectId projectId of the selected project
+   */
   public void projectId(ProjectId projectId) {
     sampleInformationPageHandler.setProjectId(projectId);
   }
 
-  private void stylePage() {
-    this.setWidthFull();
-    this.setHeightFull();
-  }
-
-  private final class SampleInformationPageHandler {
+  private static final class SampleInformationPageHandler {
 
     ProjectNavigationBarComponent projectNavigationBarComponent;
-    SampleOverviewComponent sampleOverviewComponent;
+    SampleMainComponent sampleMainComponent;
 
     public SampleInformationPageHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-        SampleOverviewComponent sampleOverviewComponent) {
-      this.sampleOverviewComponent = sampleOverviewComponent;
+        SampleMainComponent sampleMainComponent) {
+      this.sampleMainComponent = sampleMainComponent;
       this.projectNavigationBarComponent = projectNavigationBarComponent;
     }
 
     public void setProjectId(ProjectId projectId) {
       projectNavigationBarComponent.projectId(projectId);
-      sampleOverviewComponent.projectId(projectId);
+      sampleMainComponent.projectId(projectId);
     }
   }
 

@@ -1,3 +1,5 @@
+@import "vaadin-button.css";
+
 /* Adjust header and navbar section of data-manager-app */
 vaadin-app-layout::part(navbar) {
   padding-right: 1em;
@@ -40,4 +42,15 @@ vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip {
 /*Style overflow chip color within multi-select combobox as badges" */
 vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip[slot="overflow"]::before, vaadin-multi-select-combo-box-chip[slot="overflow"]::after {
   border-color: var(--lumo-primary-color-10pct);
+}
+
+span.bold {
+  font-weight: bold;
+}
+
+span.title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
 }

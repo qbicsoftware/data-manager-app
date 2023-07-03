@@ -12,10 +12,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
-import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
-import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
-import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -136,12 +132,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void initTagAndNotesLayout() {
     VerticalLayout tagAndNotesLayout = new VerticalLayout();
-    tagLayout.setWidthFull();
-    tagLayout.addClassName("spacing-s");
-    tagLayout.addClassName(Overflow.HIDDEN);
-    tagLayout.addClassName(Whitespace.NOWRAP);
-    tagLayout.addClassName(TextOverflow.ELLIPSIS);
-    tagLayout.addClassName(Display.INLINE);
+    tagLayout.addClassName("tag-collection");
     Span noNotesDefined = new Span("Click to add Notes");
     ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
         Span::new, new TextField(), noNotesDefined);
