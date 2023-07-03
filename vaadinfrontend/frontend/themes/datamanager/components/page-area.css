@@ -14,16 +14,17 @@
   padding: var(--lumo-space-l);
 }
 
-.attachments-area {
-  flex-direction: column;
-  display: flex;
-}
-
-.attachments-area .title {
+.page-area .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
+}
+
+.attachments-area {
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-m);
 }
 
 .attachments-area .delete-button {
@@ -31,13 +32,6 @@
   --lumo-button-size: var(--lumo-size-m);
   cursor: pointer;
   background-color: inherit;
-}
-
-.sample-overview-component .title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-xxl);
-  margin-bottom: 0.5rem;
 }
 
 .sample-overview-component .content {
@@ -63,11 +57,4 @@
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
-}
-
-
-.page-area .title {
-  font-weight: bold;
-  font-size: larger;
-  color: #464646;
 }
