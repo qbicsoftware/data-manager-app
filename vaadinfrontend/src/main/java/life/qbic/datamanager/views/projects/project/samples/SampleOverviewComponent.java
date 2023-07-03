@@ -73,6 +73,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class SampleOverviewComponent extends PageArea implements Serializable {
+
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private final Div content = new Div();
@@ -124,20 +125,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     //Moves buttonbar to right side of sample grid
     buttonAndFieldBar.add(fieldBar, buttonBar);
     buttonAndFieldBar.addClassName("button-and-search-bar");
-  }
-
-  private Grid<SamplePreview> createSampleGrid() {
-    Grid<SamplePreview> sampleGrid = new Grid<>();
-    sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id")
-        .setComparator(SamplePreview::sampleCode);
-    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
-    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
-    sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
-    sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
-    sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
-    sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
-    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
-    return sampleGrid;
   }
 
   private static ComponentRenderer<Anchor, SamplePreview> createSampleIdComponentRenderer() {
@@ -208,9 +195,9 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
   private final class SampleOverviewComponentHandler {
 
-    private final transient SampleInformationService sampleInformationService;
-    private final transient BatchRegistrationService batchRegistrationService;
-    private final transient SampleRegistrationService sampleRegistrationService;
+    private final SampleInformationService sampleInformationService;
+    private final BatchRegistrationService batchRegistrationService;
+    private final SampleRegistrationService sampleRegistrationService;
     private final List<BatchRegistrationListener> registrationListener = new ArrayList<>();
 
     public SampleOverviewComponentHandler(SampleInformationService sampleInformationService,
@@ -300,9 +287,22 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
           .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       setSamplesToGrid(sampleGrid, experiment.experimentId());
       sampleGrid.getDataProvider().refreshAll();
-      //ToDo sampleGrid should be filterable via Searchfield and selection;
       experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+    }
+
+    private Grid<SamplePreview> createSampleGrid() {
+      Grid<SamplePreview> sampleGrid = new Grid<>();
+      sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id")
+          .setComparator(SamplePreview::sampleCode);
+      sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
+      sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
+      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
+      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
+      sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
+      sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
+      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
+      return sampleGrid;
     }
 
     private int getSampleCountForExperiment(ExperimentId experimentId) {
@@ -316,7 +316,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
             .collect(Collectors.toList());
         // if no order is provided by the grid order by last modified (least priority)
         sortOrders.add(SortOrder.of("sampleCode").descending());
-        //Todo Wire Filtering dependent on selected experiment
         return sampleInformationService.queryPreview(experimentId, query.getOffset(),
             query.getLimit(), List.copyOf(sortOrders)).stream();
       }, query -> getSampleCountForExperiment(experimentId));

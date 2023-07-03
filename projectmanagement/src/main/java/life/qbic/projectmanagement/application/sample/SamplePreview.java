@@ -10,10 +10,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
+import life.qbic.projectmanagement.domain.project.sample.SampleCode;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
 import org.hibernate.annotations.Formula;
 
@@ -23,6 +29,7 @@ import org.hibernate.annotations.Formula;
 @Entity()
 @Table(name = "sample")
 public class SamplePreview {
+
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
   @Embedded
   private ExperimentId experimentId;
@@ -49,14 +56,14 @@ public class SamplePreview {
   }
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
-      String batchLabel, String bio_replicate_id,
+      String batchLabel, String bioReplicateLabel,
       String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
       String analyte) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
     Objects.requireNonNull(batchLabel);
-    Objects.requireNonNull(bio_replicate_id);
+    Objects.requireNonNull(bioReplicateLabel);
     Objects.requireNonNull(sampleLabel);
     Objects.requireNonNull(experimentalGroup);
     Objects.requireNonNull(species);
@@ -66,12 +73,42 @@ public class SamplePreview {
     this.sampleId = sampleId;
     this.sampleCode = sampleCode;
     this.batchLabel = batchLabel;
-    this.bioReplicateLabel = bio_replicate_id;
+    this.bioReplicateLabel = bioReplicateLabel;
     this.sampleLabel = sampleLabel;
     this.experimentalGroup = experimentalGroup;
     this.species = species;
     this.specimen = specimen;
     this.analyte = analyte;
+  }
+
+  /**
+   * Creates a new instance of a SamplePreview object.
+   *
+   * @param experimentId      the {@link ExperimentId} of the associated experiment
+   * @param sampleId          the {@link SampleId} from which this preview was created
+   * @param sampleCode        the {@link SampleCode} associated with this SamplePreview
+   * @param batchLabel        the label of the {@link Batch} which contains the {@link Sample}
+   *                          associated with this preview
+   * @param bioReplicateLabel the label of the {@link BiologicalReplicate} for the {@link Sample}
+   *                          associated with this preview
+   * @param sampleLabel       the label of the {@link Sample} associated with this preview
+   * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
+   *                          this preview
+   * @param species           the {@link Species} for the {@link Sample} associated with this
+   *                          preview
+   * @param specimen          the {@link Specimen} for the {@link Sample} associated with this
+   *                          preview
+   * @param analyte           the {@link Analyte} for the {@link Sample} associated with this
+   *                          preview
+   * @return the sample preview
+   */
+  public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
+      String sampleCode,
+      String batchLabel, String bioReplicateLabel,
+      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
+      String analyte) {
+    return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
+        sampleLabel, experimentalGroup, species, specimen, analyte);
   }
 
   public ExperimentId experimentId() {
