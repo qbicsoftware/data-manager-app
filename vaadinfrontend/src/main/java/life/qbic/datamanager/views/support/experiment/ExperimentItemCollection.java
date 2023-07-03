@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.support.experiment;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Div;
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,13 +25,8 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 @Tag(Tag.DIV)
 public class ExperimentItemCollection extends Div {
 
-  @Serial
-  private static final long serialVersionUID = -2196400941684042549L;
-
   private final List<ExperimentItem> items = new ArrayList<>();
-
   private final List<ComponentEventListener<ExperimentItemClickedEvent>> listeners = new ArrayList<>();
-
   private final List<ComponentEventListener<CreationClickedEvent>> createListeners = new ArrayList<>();
   private final CreationCard createExperiment;
 
@@ -48,6 +42,7 @@ public class ExperimentItemCollection extends Div {
 
   private void addCreationCard(CreationCard creationCard) {
     addComponentAsFirst(creationCard);
+    subscribeToCreateEvent();
   }
 
   /**
@@ -77,6 +72,14 @@ public class ExperimentItemCollection extends Div {
   private void subscribeToClickEvent(ExperimentItem item) {
     item.addSelectionListener(
         (ComponentEventListener<ExperimentItemClickedEvent>) this::fireClickEvent);
+  }
+
+  private void subscribeToCreateEvent() {
+    createExperiment.addListener(this::fireCreationEvent);
+  }
+
+  private void fireCreationEvent(CreationClickedEvent event) {
+    createListeners.forEach(createListener -> createListener.onComponentEvent(event));
   }
 
   private void fireClickEvent(ExperimentItemClickedEvent event) {

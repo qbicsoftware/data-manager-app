@@ -13,8 +13,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Left;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -73,8 +71,6 @@ public class BatchInformationLayout extends Div {
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
-    dataTypeSelection.setClassName(Left.MEDIUM);
-    dataTypeLayout.setSizeFull();
     add(dataTypeLayout);
   }
 
@@ -86,8 +82,7 @@ public class BatchInformationLayout extends Div {
     dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
       Span metadataTypeSpan = new Span(metadataType.label);
       Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
-      infoIcon.addClassNames(IconSize.SMALL);
-      infoIcon.setColor("#77828f");
+      infoIcon.addClassName("info-icon");
       infoIcon.setTooltipText(metadataType.description);
       return new HorizontalLayout(metadataTypeSpan, infoIcon);
     }));

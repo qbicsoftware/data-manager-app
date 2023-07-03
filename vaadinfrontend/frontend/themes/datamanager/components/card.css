@@ -16,6 +16,7 @@
   justify-content: center;
   padding: 1.5rem;
   flex: auto;
+  max-width: 300px;
 }
 
 .creation-card > div {
@@ -94,10 +95,6 @@
   align-content: space-evenly;
   flex-flow: row wrap;
   gap: 1rem;
-}
-
-.experimental-group .controls {
-
 }
 
 .experimental-group div {

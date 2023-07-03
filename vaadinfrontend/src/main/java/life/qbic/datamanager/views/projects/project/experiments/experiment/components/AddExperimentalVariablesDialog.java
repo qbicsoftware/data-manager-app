@@ -1,17 +1,12 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
@@ -22,6 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
+import life.qbic.datamanager.views.general.DialogWindow;
 
 /**
  * <b>Add Experimental Variables Dialog</b>
@@ -30,20 +26,22 @@ import life.qbic.datamanager.views.general.ConfirmEvent;
  *
  * @since 1.0.0
  */
-public class AddExperimentalVariablesDialog extends Dialog {
+public class AddExperimentalVariablesDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 5296014328282974007L;
   private final List<AddExperimentalVariablesDialog.ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
-  public final Button addVariablesButton = new Button("Add");
-  public final Button cancelButton = new Button("Cancel");
   private final List<ComponentEventListener<CancelEvent<AddExperimentalVariablesDialog>>> listenersCancellation = new ArrayList<>();
-  private final VerticalLayout dialogueContentLayout = new VerticalLayout();
-  private final VerticalLayout experimentalVariableRowsContainerLayout = new VerticalLayout();
-  private final HorizontalLayout addExperimentalVariableLayoutRow = new HorizontalLayout();
+  private final Div dialogueContentLayout = new Div();
+  private final Div experimentalVariableRowsContainerLayout = new Div();
+  private final Span addExperimentalVariableLayoutRow = new Span();
   private final List<ComponentEventListener<ConfirmEvent<AddExperimentalVariablesDialog>>> listenersConfirmation = new ArrayList<>();
 
   public AddExperimentalVariablesDialog() {
+    super();
+    setConfirmButtonLabel("Add");
+    setCancelButtonLabel("Cancel");
+    addClassName("experiment-variable-dialog");
     layoutComponent();
     initDialogueContent();
     configureComponent();
@@ -57,7 +55,7 @@ public class AddExperimentalVariablesDialog extends Dialog {
 
   private void configureConfirmation() {
     ConfirmEvent<AddExperimentalVariablesDialog> confirmEvent = new ConfirmEvent<>(this, true);
-    addVariablesButton.addClickListener(confirmListener -> listenersConfirmation.forEach(
+    confirmButton.addClickListener(confirmListener -> listenersConfirmation.forEach(
         listener -> listener.onComponentEvent(confirmEvent)));
   }
 
@@ -103,7 +101,7 @@ public class AddExperimentalVariablesDialog extends Dialog {
 
   private void initDefineExperimentalVariableLayout() {
     Span experimentalDesignHeader = new Span("Define Experimental Variable");
-    experimentalDesignHeader.addClassName("font-bold");
+    experimentalDesignHeader.addClassName("header");
     experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
     appendEmptyRow();
   }
@@ -126,14 +124,15 @@ public class AddExperimentalVariablesDialog extends Dialog {
   }
 
   private void layoutComponent() {
-    addVariablesButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     setHeaderTitle("Experimental Design");
-    getFooter().add(cancelButton, addVariablesButton);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   private void initDialogueContent() {
     initDefineExperimentalVariableLayout();
     initDesignVariableTemplate();
+    dialogueContentLayout.addClassName("content");
+    experimentalVariableRowsContainerLayout.addClassName("variables");
     dialogueContentLayout.add(experimentalVariableRowsContainerLayout);
     dialogueContentLayout.add(addExperimentalVariableLayoutRow);
     add(dialogueContentLayout);
@@ -151,8 +150,8 @@ public class AddExperimentalVariablesDialog extends Dialog {
     FormLayout experimentalVariableFieldsLayout = new FormLayout();
     experimentalVariableFieldsLayout.add(experimentalVariableField, unitField, levelField);
     experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
+    addExperimentalVariableLayoutRow.addClassName("row");
     addExperimentalVariableLayoutRow.add(plusIcon, experimentalVariableFieldsLayout);
-    addExperimentalVariableLayoutRow.setAlignItems(Alignment.CENTER);
   }
 
   private void dropEmptyRows() {
@@ -180,7 +179,7 @@ public class AddExperimentalVariablesDialog extends Dialog {
   }
 
 
-  static class ExperimentalVariableRowLayout extends HorizontalLayout {
+  static class ExperimentalVariableRowLayout extends Span {
 
     private Registration clickListener;
     @Serial
@@ -195,13 +194,13 @@ public class AddExperimentalVariablesDialog extends Dialog {
     }
 
     private void init() {
+      addClassName("row");
       FormLayout experimentalVariableFieldsLayout = new FormLayout();
       experimentalVariableFieldsLayout.add(nameField, unitField, levelArea);
       experimentalVariableFieldsLayout.setResponsiveSteps(new ResponsiveStep("0", 3));
       nameField.setRequired(true);
       levelArea.setRequired(true);
       add(experimentalVariableFieldsLayout, deleteIcon);
-      setAlignItems(Alignment.CENTER);
     }
 
     public String getVariableName() {

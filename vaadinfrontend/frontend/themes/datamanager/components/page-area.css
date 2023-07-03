@@ -14,11 +14,6 @@
   padding: var(--lumo-space-l);
 }
 
-.support-area {
-  gap: var(--lumo-space-m);
-  display: flex;
-}
-
 .attachments-area {
   flex-direction: column;
 }
@@ -67,4 +62,11 @@
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
+}
+
+
+.page-area .title {
+  font-weight: bold;
+  font-size: larger;
+  color: #464646;
 }
