@@ -16,8 +16,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration extends VaadinWebSecurity {
 
-  public static final String LOGOUT_URL = "/";
-
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new QBiCPasswordEncoder();
@@ -28,6 +26,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/images/*.png"))
         .permitAll();
     super.configure(http);
-    setLoginView(http, LoginLayout.class, LOGOUT_URL);
+    setLoginView(http, LoginLayout.class);
   }
 }
