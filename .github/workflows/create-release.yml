@@ -37,7 +37,7 @@ jobs:
         run: mvn versions:set -DnewVersion=${{ github.event.inputs.versionTag }}
 
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
 
       - name: Create Release Notes
         if: ${{ !startsWith(github.ref, 'refs/tags/')
@@ -69,7 +69,7 @@ jobs:
             });
 
       - name: Publish artefact to QBiC Nexus Repository
-        run: mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml deploy
+        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -Dvaadin.force.production.build=true deploy
         env:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}

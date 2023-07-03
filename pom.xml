@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>0.15.1</version>
+  <version>0.18.3</version>
   <modules>
     <module>vaadinfrontend</module>
     <module>authentication</module>
