@@ -12,6 +12,8 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -21,22 +23,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b>Project Collection</b>
  * <p>
  * A component that displays previews of accessible project previews.
  * <p>
- * The component also fires {@link ProjectCreationClickedEvent} to all registered listeners, if a
+ * The component also fires {@link ProjectAddSubmitEvent} to all registered listeners, if a
  * user has the intend to add a new project.
  *
  * @since 1.0.0
  */
+@SpringComponent
+@UIScope
 public class ProjectCollection extends PageArea {
 
   private Div controlSection = new Div();
@@ -50,14 +57,15 @@ public class ProjectCollection extends PageArea {
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final Button createProjectButton = new Button("Add");
   private final String title;
-  private final ZoneId clientZoneId;
+  private final ClientDetailsProvider clientDetailsProvider;
   private final ProjectInformationService projectInformationService;
-  private final List<ComponentEventListener<ProjectCreationClickedEvent>> projectCreationClickedListeners = new ArrayList<>();
+  private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
 
-  private ProjectCollection(String title, ZoneId clientZoneId,
+  @Autowired
+  public ProjectCollection(ClientDetailsProvider clientDetailsProvider,
       ProjectInformationService projectInformationService) {
-    this.title = title;
-    this.clientZoneId = clientZoneId;
+    this.title = "Projects";
+    this.clientDetailsProvider = clientDetailsProvider;
     this.projectInformationService = projectInformationService;
     layoutComponent();
     createLazyProjectView();
@@ -149,43 +157,30 @@ public class ProjectCollection extends PageArea {
   }
 
   private void fireCreateClickedEvent() {
-    var clickedEvent = new ProjectCreationClickedEvent(this, true);
+    var clickedEvent = new ProjectAddSubmitEvent(this, true);
     projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
-    ZonedDateTime zonedDateTime = instant.atZone(this.clientZoneId);
+    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
+        this.clientDetailsProvider.latestDetails().map(ClientDetails::timeZoneId).orElse("UTC")));
     return zonedDateTime.toLocalDateTime();
   }
 
   /**
-   * Create a new instance of a project collection.
-   *
-   * @param title                     the title to be displayed on top of the component
-   * @param clientZoneId              the client's zone id
-   * @param projectInformationService the project information service to enable lazy loading of
-   *                                  projects.
-   * @return
-   * @since 1.0.0
-   */
-  public static ProjectCollection create(String title, ZoneId clientZoneId,
-      ProjectInformationService projectInformationService) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(clientZoneId);
-    return new ProjectCollection(title, clientZoneId, projectInformationService);
-  }
-
-  /**
-   * Add a listener that is called, when a new {@link ProjectCreationClickedEvent event} is
+   * Add a listener that is called, when a new {@link ProjectAddSubmitEvent event} is
    * emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
    */
-  public void addListener(ComponentEventListener<ProjectCreationClickedEvent> listener) {
+  public void addListener(ComponentEventListener<ProjectAddSubmitEvent> listener) {
     Objects.requireNonNull(listener);
     projectCreationClickedListeners.add(listener);
   }
 
 
+  public void refresh() {
+    projectGrid.getDataProvider().refreshAll();
+  }
 }

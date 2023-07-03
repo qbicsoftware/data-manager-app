@@ -4,13 +4,13 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b>Project Creation Event</b>
+ * <b>Project Add Event</b>
  *
- * <p>Indicates that a user submitted a project creation request</p>
+ * <p>Indicates that a user submitted a project addition request</p>
  *
  * @since 1.0.0
  */
-public class ProjectCreationEvent extends ComponentEvent<ProjectCreationDialog> {
+public class ProjectAddEvent extends ComponentEvent<AddProjectDialog> {
 
   @Serial
   private static final long serialVersionUID = 1072173555312630829L;
@@ -23,7 +23,7 @@ public class ProjectCreationEvent extends ComponentEvent<ProjectCreationDialog> 
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ProjectCreationEvent(ProjectCreationDialog source, boolean fromClient) {
+  public ProjectAddEvent(AddProjectDialog source, boolean fromClient) {
     super(source, fromClient);
   }
 }
