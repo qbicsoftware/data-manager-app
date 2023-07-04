@@ -14,10 +14,6 @@ vaadin-button.primary .button:hover::before {
   opacity: 0.05;
 }
 
-vaadin-button.elevated {
-  box-shadow: var(--lumo-box-shadow-xs);
-}
-
 vaadin-button {
   cursor: pointer;
 }

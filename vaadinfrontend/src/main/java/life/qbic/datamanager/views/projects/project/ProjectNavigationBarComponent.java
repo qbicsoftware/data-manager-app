@@ -2,24 +2,18 @@ package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.layouts.PageComponent;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 
@@ -33,135 +27,80 @@ import org.springframework.context.annotation.Scope;
 @SpringComponent
 @UIScope
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class ProjectNavigationBarComponent extends Composite<PageComponent> {
+public class ProjectNavigationBarComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 2246439877362853798L;
-  private final transient Handler handler;
-  private HorizontalLayout navigationBarLayout;
-  private Button projectInformationButton;
-  private Button experimentsButton;
-  private Button samplesButton;
-  private Button rawDataButton;
-  private Button resultsButton;
+  private ProjectId projectId;
+  NavigationButton projectInformationButton = NavigationButton.create(
+      VaadinIcon.CLIPBOARD_CHECK.create(),
+      "Project Information");
+  NavigationButton experimentsButton = NavigationButton.create(VaadinIcon.SITEMAP.create(),
+      "Experiments");
+  NavigationButton samplesButton = NavigationButton.create(VaadinIcon.FILE_TABLE.create(),
+      "Samples");
+  NavigationButton dataButton = NavigationButton.create(VaadinIcon.CLOUD_DOWNLOAD.create(),
+      "Raw Data");
+  NavigationButton resultButton = NavigationButton.create(VaadinIcon.SEARCH.create(),
+      "Results");
 
   public ProjectNavigationBarComponent() {
-    this.handler = new Handler();
-    initNavigationBar();
     this.addClassName("navbar");
-  }
-
-  private void styleNavLabelLayout(VerticalLayout layout) {
-    layout.setAlignItems(Alignment.CENTER);
-    layout.setPadding(false);
-  }
-
-  private void initNavigationBar() {
-
-    navigationBarLayout = new HorizontalLayout();
-    //Todo Generate Custom Component containing Button, statusIndicator and label
-    VerticalLayout projectInformationLayout = new VerticalLayout();
-    Icon projectInformationIcon = VaadinIcon.CLIPBOARD_CHECK.create();
-    projectInformationIcon.setSize(IconSize.LARGE);
-    projectInformationButton = new Button(projectInformationIcon);
-    projectInformationButton.addClassName("elevated");
-    Label projectInformationLabel = new Label("Project Information");
-    projectInformationLayout.add(projectInformationButton, projectInformationLabel);
-    styleNavLabelLayout(projectInformationLayout);
-
-    VerticalLayout experimentalDesignLayout = new VerticalLayout();
-    Label experimentsLabel = new Label("Experiments");
-    Icon experimentsIcon = VaadinIcon.SITEMAP.create();
-    experimentsButton = new Button(experimentsIcon);
-    experimentsIcon.setSize(IconSize.LARGE);
-    experimentsButton.addClassName("elevated");
-    experimentalDesignLayout.add(experimentsButton, experimentsLabel);
-    styleNavLabelLayout(experimentalDesignLayout);
-
-    VerticalLayout samplesLayout = new VerticalLayout();
-    Icon sampleIcon = VaadinIcon.FILE_TABLE.create();
-    sampleIcon.setSize(IconSize.LARGE);
-    samplesButton = new Button(sampleIcon);
-    Label samplesLabel = new Label("Samples");
-    samplesButton.addClassName("elevated");
-    samplesLayout.add(samplesButton, samplesLabel);
-    styleNavLabelLayout(samplesLayout);
-
-    VerticalLayout rawDataLayout = new VerticalLayout();
-    Icon rawDataIcon = VaadinIcon.CLOUD_DOWNLOAD.create();
-    rawDataIcon.setSize(IconSize.LARGE);
-    rawDataButton = new Button(rawDataIcon);
-    rawDataButton.addClassName("elevated");
-    Label rawDataLabel = new Label("Raw Data");
-    rawDataLayout.add(rawDataButton, rawDataLabel);
-    styleNavLabelLayout(rawDataLayout);
-
-    VerticalLayout resultsLayout = new VerticalLayout();
-    Icon resultsIcon = VaadinIcon.SEARCH.create();
-    resultsIcon.setSize(IconSize.LARGE);
-    resultsButton = new Button(resultsIcon);
-    resultsButton.addClassName("elevated");
-    Label resultsLabel = new Label("Results");
-    resultsLayout.add(resultsButton, resultsLabel);
-    styleNavLabelLayout(resultsLayout);
-
-    navigationBarLayout.add(projectInformationLayout, experimentalDesignLayout, samplesLayout,
-        rawDataLayout, resultsLayout);
-    navigationBarLayout.setWidthFull();
-    navigationBarLayout.setJustifyContentMode(JustifyContentMode.EVENLY);
-    navigationBarLayout.setAlignItems(Alignment.CENTER);
-    getContent().addContent(navigationBarLayout);
-    getContent().removeTitle();
-    projectInformationButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(
-                String.format(Projects.PROJECT_INFO, handler.selectedProject.value())), () -> {
-              throw new ApplicationException(
-                  "Could not navigate to Project Information Page for "
-                      + handler.selectedProject.value());
-            })));
-    experimentsButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(String.format(Projects.EXPERIMENT, handler.selectedProject.value(),
-                handler.experimentId)),
-            () -> {
-              throw new ApplicationException(
-                  "Could not navigate to Experiment Information Page for "
-                      + handler.selectedProject.value());
-            })));
-    samplesButton.addClickListener(
-        ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
-            it -> it.navigate(String.format(Projects.SAMPLES, handler.selectedProject.value())),
-            () -> {
-              throw new ApplicationException(
-                  "Could not navigate to Sample Information Page for "
-                      + handler.selectedProject.value());
-            })));
+    this.add(projectInformationButton, experimentsButton, samplesButton, dataButton,
+        resultButton);
   }
 
   public void projectId(ProjectId projectId) {
-    this.handler.setProjectId(projectId);
+    this.projectId = projectId;
+    projectInformationButton.setButtonRoute(
+        String.format(Projects.PROJECT_INFO, this.projectId.value()));
+    samplesButton.setButtonRoute(String.format(Projects.SAMPLES, projectId.value()));
+    //The user will be routed to the active experiment of the project handled by the experimentInformationMainPage
+    experimentsButton.setButtonRoute(String.format(Projects.EXPERIMENT, projectId.value(), ""));
   }
 
-  public void experimentId(ExperimentId experimentId) {
-    this.handler.setExperimentId(experimentId);
-  }
+  private static class NavigationButton extends Div {
 
-  public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
-  }
+    private final Div labelDiv = new Div();
+    private final Icon icon;
+    private final Button button = new Button();
+    private String route = "";
 
-  private final class Handler {
-
-    private ProjectId selectedProject;
-    private ExperimentId experimentId;
-
-    public void setProjectId(ProjectId projectId) {
-      this.selectedProject = projectId;
+    private NavigationButton(Icon icon, String label) {
+      this.addClassName("navigation-button");
+      this.icon = icon;
+      labelDiv.add(label);
+      button.setIcon(icon);
+      button.addClassName("button");
+      routeOnButtonClick();
+      this.add(button, labelDiv);
     }
 
-    public void setExperimentId(ExperimentId experimentId) {
-      this.experimentId = experimentId;
+    public static NavigationButton create(Icon icon, String label) {
+      Objects.requireNonNull(icon);
+      Objects.requireNonNull(label);
+      return new NavigationButton(icon, label);
+    }
+
+    private void routeOnButtonClick() {
+      button.addClickListener(
+          ((ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> getUI().ifPresentOrElse(
+              it -> it.navigate(route),
+              () -> {
+                throw new ApplicationException(
+                    String.format("Could not navigate to the defined route %s",
+                        route));
+              })));
+      enableButtonForDefinedRoute(route);
+    }
+
+    public void setButtonRoute(String route) {
+      this.route = route;
+      enableButtonForDefinedRoute(route);
+    }
+
+    private void enableButtonForDefinedRoute(String route) {
+      button.setEnabled(!route.isEmpty());
     }
   }
 }
