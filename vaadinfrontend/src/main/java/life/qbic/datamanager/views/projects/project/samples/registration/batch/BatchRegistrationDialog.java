@@ -125,6 +125,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     private void setNavigationListeners() {
       batchInformationLayout.nextButton.addClickListener(
           event -> tabStepper.setSelectedTab(sampleInformationTab));
+      sampleSpreadsheetLayout.backButton.addClickListener(
+          event -> tabStepper.setSelectedTab(batchInformationTab));
       setTabSelectionListener();
     }
 
