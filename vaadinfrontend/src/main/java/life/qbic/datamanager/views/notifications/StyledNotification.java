@@ -11,7 +11,7 @@ import com.vaadin.flow.component.notification.Notification;
  */
 public class StyledNotification extends Notification {
 
-  public static final int DEFAULT_DURATION_MILLI_SECONDS = 2000;
+  public static final int DEFAULT_DURATION_MILLI_SECONDS = 3500;
 
   public StyledNotification(DisplayMessage displayMessage) {
     super(displayMessage);
