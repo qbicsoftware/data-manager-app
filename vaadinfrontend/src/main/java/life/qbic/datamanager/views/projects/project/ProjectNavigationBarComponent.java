@@ -64,6 +64,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
     Icon projectInformationIcon = VaadinIcon.CLIPBOARD_CHECK.create();
     projectInformationIcon.setSize(IconSize.LARGE);
     projectInformationButton = new Button(projectInformationIcon);
+    projectInformationButton.addClassName("elevated");
     Label projectInformationLabel = new Label("Project Information");
     projectInformationLayout.add(projectInformationButton, projectInformationLabel);
     styleNavLabelLayout(projectInformationLayout);
@@ -73,6 +74,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
     Icon experimentsIcon = VaadinIcon.SITEMAP.create();
     experimentsButton = new Button(experimentsIcon);
     experimentsIcon.setSize(IconSize.LARGE);
+    experimentsButton.addClassName("elevated");
     experimentalDesignLayout.add(experimentsButton, experimentsLabel);
     styleNavLabelLayout(experimentalDesignLayout);
 
@@ -81,6 +83,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
     sampleIcon.setSize(IconSize.LARGE);
     samplesButton = new Button(sampleIcon);
     Label samplesLabel = new Label("Samples");
+    samplesButton.addClassName("elevated");
     samplesLayout.add(samplesButton, samplesLabel);
     styleNavLabelLayout(samplesLayout);
 
@@ -88,6 +91,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
     Icon rawDataIcon = VaadinIcon.CLOUD_DOWNLOAD.create();
     rawDataIcon.setSize(IconSize.LARGE);
     rawDataButton = new Button(rawDataIcon);
+    rawDataButton.addClassName("elevated");
     Label rawDataLabel = new Label("Raw Data");
     rawDataLayout.add(rawDataButton, rawDataLabel);
     styleNavLabelLayout(rawDataLayout);
@@ -96,6 +100,7 @@ public class ProjectNavigationBarComponent extends Composite<PageComponent> {
     Icon resultsIcon = VaadinIcon.SEARCH.create();
     resultsIcon.setSize(IconSize.LARGE);
     resultsButton = new Button(resultsIcon);
+    resultsButton.addClassName("elevated");
     Label resultsLabel = new Label("Results");
     resultsLayout.add(resultsButton, resultsLabel);
     styleNavLabelLayout(resultsLayout);
