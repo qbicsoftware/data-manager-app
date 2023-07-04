@@ -42,22 +42,13 @@ public class EmailConfirmationLinkSupplier {
     }
 
     public String emailConfirmationUrl(String userId) {
-        String pathWithQuery =
-                "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
+        String pathWithQuery = contextPath + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
         try {
-            URL url = contextPath.isBlank() ? urlWithoutContextPath(protocol, host, port, pathWithQuery) : urlWithContextPath(protocol, host, port, contextPath, pathWithQuery);
+            URL url = new URL(protocol, host, port, pathWithQuery);
             return url.toExternalForm();
         } catch (MalformedURLException e) {
             throw new RuntimeException("Link creation failed.", e);
         }
 
-    }
-
-    private URL urlWithContextPath(String protocol, String host, int port, String proxyPath, String actionPath) throws MalformedURLException {
-        return new URL(protocol, host, port, "/" + proxyPath + actionPath);
-    }
-
-    private URL urlWithoutContextPath(String protocol, String host, int port, String actionPath) throws MalformedURLException {
-        return new URL(protocol, host, port, actionPath);
     }
 }
