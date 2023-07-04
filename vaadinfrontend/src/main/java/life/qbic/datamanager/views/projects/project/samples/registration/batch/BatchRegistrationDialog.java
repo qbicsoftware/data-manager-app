@@ -34,6 +34,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
   public BatchRegistrationDialog() {
     addClassName("batch-registration-dialog");
+    setResizable(true);
     setHeaderTitle(TITLE);
     initSampleRegistrationLayout();
     initTabStepper();
