@@ -1,9 +1,10 @@
 package life.qbic.authentication.application.user.policy;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * <b>Password Reset Link Supplier</b>
@@ -15,36 +16,40 @@ import org.springframework.stereotype.Service;
 @Service
 public class PasswordResetLinkSupplier {
 
-  private final String protocol;
+    private final String protocol;
 
-  private final String host;
+    private final String host;
 
-  private final int port;
+    private final int port;
 
-  private final String resetEndpoint;
+    private final String contextPath;
 
-  private final String passwordResetParameter;
+    private final String resetEndpoint;
 
-  public PasswordResetLinkSupplier(
-      @Value("${service.host.protocol}") String protocol,
-      @Value("${service.host.name}") String host,
-      @Value("${service.host.port}") int port,
-      @Value("${password-reset-endpoint}") String resetEndpoint,
-      @Value("${password-reset-parameter}") String passwordResetParameter) {
-    this.protocol = protocol;
-    this.host = host;
-    this.port = port;
-    this.resetEndpoint = resetEndpoint;
-    this.passwordResetParameter = passwordResetParameter;
-  }
+    private final String passwordResetParameter;
 
-  public String passwordResetUrl(String userId) {
-    String pathWithQuery = "/" + resetEndpoint + "?" + passwordResetParameter + "=" + userId;
-    try {
-      URL url = new URL(protocol, host, port, pathWithQuery);
-      return url.toExternalForm();
-    } catch (MalformedURLException e) {
-      throw new RuntimeException("Cannot create password reset link.", e);
+    public PasswordResetLinkSupplier(
+            @Value("${service.host.protocol}") String protocol,
+            @Value("${service.host.name}") String host,
+            @Value("${service.host.port}") int port,
+            @Value("${server.servlet.context-path}") String contextPath,
+            @Value("${password-reset-endpoint}") String resetEndpoint,
+            @Value("${password-reset-parameter}") String passwordResetParameter) {
+        this.protocol = protocol;
+        this.host = host;
+        this.port = port;
+        this.contextPath = contextPath;
+        this.resetEndpoint = resetEndpoint;
+        this.passwordResetParameter = passwordResetParameter;
     }
-  }
+
+    public String passwordResetUrl(String userId) {
+        String pathWithQuery = contextPath + resetEndpoint + "?" + passwordResetParameter + "=" + userId;
+        try {
+            URL url = new URL(protocol, host, port, pathWithQuery);
+            return url.toExternalForm();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Cannot create password reset link.", e);
+        }
+    }
 }
