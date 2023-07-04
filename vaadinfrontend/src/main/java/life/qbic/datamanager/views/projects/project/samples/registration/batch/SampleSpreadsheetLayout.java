@@ -35,6 +35,7 @@ class SampleSpreadsheetLayout extends Div {
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
+  public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
 
@@ -74,7 +75,7 @@ class SampleSpreadsheetLayout extends Div {
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sampleInformationButtons.add(addRowButton, cancelButton, registerButton);
+    sampleInformationButtons.add(backButton, addRowButton, cancelButton, registerButton);
     add(sampleInformationButtons);
   }
 
