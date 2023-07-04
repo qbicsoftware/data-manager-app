@@ -110,7 +110,7 @@ spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.port=${MAIL_PORT:587}
 ```
 
-For user email confirmation a specific endpoint is addressed. This endpoint can be configured using
+For user email confirmation a specific endpoint and context-path (for example if the app runs in a different context than the root path) is addressed. This endpoint can be configured using
 the following properties:
 
 | environment variable           | description                                                       |
@@ -118,6 +118,7 @@ the following properties:
 | `DM_SERVICE_HOST`              | The server address (if behind a proxy, the proxy domain name)     |
 | `DM_HOST_PROTOCOL`             | The server protocol (http or https)                               |
 | `DM_SERVICE_PORT`              | The server port (-1 for default)                                  |
+| `DM_SERVICE_CONTEXT_PATH`      | The service context path of the application (empty for default)   |
 | `EMAIL_CONFIRMATION_PARAMETER` | The name of the parameter to which to pass the confirmation token |
 | `EMAIL_CONFIRMATION_ENDPOINT`  | The endpoint for the email configuration entry                    |
 | `PASSWORD_RESET_ENDPOINT`      | The endpoint for the password reset entry                         |
@@ -132,6 +133,8 @@ default configuration.
 service.host.name=${DM_SERVICE_HOST:localhost}
 service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
+# Set the context path, for example if your app runs behind a proxy
+server.servlet.context-path=${DM_SERVICE_CONTEXT_PATH:}
 # route for mail confirmation consumption
 email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
@@ -187,6 +190,8 @@ spring.mail.port=${MAIL_PORT:587}
 service.host.name=${DM_SERVICE_HOST:localhost}
 service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
+# Set the context path, for example if your app runs behind a proxy
+server.servlet.context-path=${DM_SERVICE_CONTEXT_PATH:}
 # route for mail confirmation consumption
 email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
 email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
