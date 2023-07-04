@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetRow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
@@ -35,6 +35,7 @@ class SampleSpreadsheetLayout extends Div {
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
+  public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
 
@@ -74,7 +75,7 @@ class SampleSpreadsheetLayout extends Div {
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sampleInformationButtons.add(addRowButton, cancelButton, registerButton);
+    sampleInformationButtons.add(backButton, addRowButton, cancelButton, registerButton);
     add(sampleInformationButtons);
   }
 
@@ -141,7 +142,7 @@ class SampleSpreadsheetLayout extends Div {
     }
 
     private void displayInputInvalidMessage(String invalidationReason) {
-      InformationMessage infoMessage = new InformationMessage(
+      ErrorMessage infoMessage = new ErrorMessage(
           "Incomplete or erroneous metadata found",
           invalidationReason);
       StyledNotification notification = new StyledNotification(infoMessage);
