@@ -20,7 +20,7 @@ public class EmailConfirmationLinkSupplier {
 
     private final int port;
 
-    private final String proxyPath;
+    private final String contextPath;
 
     private final String emailConfirmationEndpoint;
 
@@ -30,13 +30,13 @@ public class EmailConfirmationLinkSupplier {
             @Value("${service.host.protocol}") String protocol,
             @Value("${service.host.name}") String host,
             @Value("${service.host.port}") int port,
-            @Value("${service.host.proxy-path}") String proxyPath,
+            @Value("${server.servlet.context-path}") String contextPath,
             @Value("${email-confirmation-endpoint}") String loginEndpoint,
             @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
-        this.proxyPath = proxyPath;
+        this.contextPath = contextPath;
         this.emailConfirmationEndpoint = loginEndpoint;
         this.emailConfirmationParameter = emailConfirmationParameter;
     }
@@ -45,7 +45,7 @@ public class EmailConfirmationLinkSupplier {
         String pathWithQuery =
                 "/" + emailConfirmationEndpoint + "?" + emailConfirmationParameter + "=" + userId;
         try {
-            URL url = proxyPath.isBlank() ? urlWithoutProxy(protocol, host, port, pathWithQuery) : urlWithProxy(protocol, host, port, proxyPath, pathWithQuery);
+            URL url = contextPath.isBlank() ? urlWithoutContextPath(protocol, host, port, pathWithQuery) : urlWithContextPath(protocol, host, port, contextPath, pathWithQuery);
             return url.toExternalForm();
         } catch (MalformedURLException e) {
             throw new RuntimeException("Link creation failed.", e);
@@ -53,11 +53,11 @@ public class EmailConfirmationLinkSupplier {
 
     }
 
-    private URL urlWithProxy(String protocol, String host, int port, String proxyPath, String actionPath) throws MalformedURLException {
+    private URL urlWithContextPath(String protocol, String host, int port, String proxyPath, String actionPath) throws MalformedURLException {
         return new URL(protocol, host, port, "/" + proxyPath + actionPath);
     }
 
-    private URL urlWithoutProxy(String protocol, String host, int port, String actionPath) throws MalformedURLException {
+    private URL urlWithoutContextPath(String protocol, String host, int port, String actionPath) throws MalformedURLException {
         return new URL(protocol, host, port, actionPath);
     }
 }
