@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -12,6 +11,7 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,6 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
-import life.qbic.datamanager.views.layouts.CardComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -64,8 +63,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final Div contentExperimentalGroupsTab = new Div();
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  private final CardComponent blockingVariableCard = new CardComponent();
-  private final Button addBlockingVariableButton = new Button("Add");
   private final AddExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
@@ -76,12 +73,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
-
     this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.experimentalGroupsDialog = createExperimentalGroupDialog();
-
+    this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
   }
@@ -145,6 +141,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void layoutTabSheet() {
     experimentSheet.add("Summary", experimentSummary);
+    experimentSummary.addClassName(Display.FLEX);
     experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     getContent().addContent(experimentSheet);
     experimentSheet.setSizeFull();
@@ -242,7 +239,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     getContent().addTitle(experiment.getName());
     loadTagInformation(experiment);
     loadExperimentInfo(experiment);
-    loadBlockingVariableInformation();
     fillExperimentalGroupDialog();
     loadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
@@ -275,10 +271,6 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
       ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariablesComponent);
     }
     factSheet.showMenu();
-  }
-
-  private void loadBlockingVariableInformation() {
-    //ToDo load information from backend once implemented
   }
 
   private void fillExperimentalGroupDialog() {

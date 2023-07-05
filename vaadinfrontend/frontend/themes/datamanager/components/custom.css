@@ -13,3 +13,19 @@
   align-content: space-evenly;
   flex-flow: row wrap;
 }
+
+.navigation-button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  align-items: center;
+  flex: 1 1;
+}
+
+.navigation-button .button {
+  box-shadow: var(--lumo-box-shadow-xs);
+}
+
+.navigation-button .label {
+  font-size: var(--lumo-font-size-s)
+}

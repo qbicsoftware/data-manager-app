@@ -8,7 +8,7 @@
 }
 
 .batch-registration-dialog::part(overlay) {
-  width: 66vw;
+  min-width: 66vw;
 }
 
 .batch-registration-dialog .stepper vaadin-tabs {

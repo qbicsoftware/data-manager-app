@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -15,6 +14,7 @@ import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
  * <b>Sample Registration Dialog</b>
@@ -34,6 +34,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
   public BatchRegistrationDialog() {
     addClassName("batch-registration-dialog");
+    setResizable(true);
     setHeaderTitle(TITLE);
     initSampleRegistrationLayout();
     initTabStepper();
@@ -124,6 +125,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     private void setNavigationListeners() {
       batchInformationLayout.nextButton.addClickListener(
           event -> tabStepper.setSelectedTab(sampleInformationTab));
+      sampleSpreadsheetLayout.backButton.addClickListener(
+          event -> tabStepper.setSelectedTab(batchInformationTab));
       setTabSelectionListener();
     }
 
@@ -142,9 +145,15 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void generateSampleRegistrationLayout() {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-          batchInformationLayout.dataTypeSelection.getValue());
+      ExperimentId selectedExperimentId = batchInformationLayout.experimentSelect.getValue()
+          .experimentId();
+      //We only reload the spreadsheet if the selected experiment was changed
+      if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
+          sampleSpreadsheetLayout.getExperiment())) {
+        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+            batchInformationLayout.dataTypeSelection.getValue());
+      }
     }
 
     private void setSubmissionListeners() {

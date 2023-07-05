@@ -167,7 +167,6 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     private void setExperimentId(ExperimentId experimentId) {
       experimentContentComponent.setExperiment(experimentId);
       experimentSupportComponent.setSelectedExperiment(experimentId);
-      projectNavigationBarComponent.experimentId(experimentId);
     }
 
     private void enableExperimentSelectionListener() {

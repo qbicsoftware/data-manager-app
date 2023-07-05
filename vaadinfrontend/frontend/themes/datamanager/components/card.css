@@ -85,12 +85,6 @@
   max-width: 300px;
 }
 
-.experiment-group .content {
-  display: inline-flex;
-  flex-wrap: wrap;
-
-}
-
 .experimental-group-card-collection {
   display: flex;
   align-content: space-evenly;
@@ -98,19 +92,11 @@
   gap: 1rem;
 }
 
-.experimental-group div {
-  margin-bottom: 1em;
-}
-
-.experimental-group .tag-collection {
-  display: inline-flex;
-  flex-wrap: wrap;
-}
-
 .experimental-group .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  margin-bottom: var(--lumo-space-m);
 }
 
 .experimental-group .title {
@@ -119,6 +105,13 @@
   font-weight: bold;
   white-space: nowrap;
   margin-bottom: 1em;
+}
+
+.experimental-group .content {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
 }
 
 .experimental-group vaadin-icon {
@@ -184,8 +177,6 @@
 .experimental-variables-fact-sheet {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 1;
   flex-basis: 20%;
   font-size: var(--lumo-font-size-s);
   border: 1px solid lightgray;
