@@ -42,8 +42,8 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   public Button registerButton;
 
-  public Span loginSpan;
-  public Span resetSpan;
+  private Span loginSpan;
+  private Span resetSpan;
 
   public VerticalLayout notificationLayout;
   private VerticalLayout fieldLayout;
