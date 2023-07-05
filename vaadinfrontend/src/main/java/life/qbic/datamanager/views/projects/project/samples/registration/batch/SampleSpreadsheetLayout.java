@@ -18,6 +18,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetRow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
  * <b>Sample Spreadsheet Layout</b>
@@ -38,7 +39,7 @@ class SampleSpreadsheetLayout extends Div {
   public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
-  private Experiment experiment;
+  private ExperimentId experiment;
 
   SampleSpreadsheetLayout() {
     initContent();
@@ -104,7 +105,7 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void setExperiment(Experiment experiment) {
-    this.experiment = experiment;
+    this.experiment = experiment.experimentId();
     experimentName.setText(experiment.getName());
     SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
   }
@@ -113,7 +114,7 @@ class SampleSpreadsheetLayout extends Div {
     return sampleInformationLayoutHandler.getContent();
   }
 
-  public Experiment getExperiment() {
+  public ExperimentId getExperiment() {
     return experiment;
   }
 

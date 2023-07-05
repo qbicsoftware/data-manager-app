@@ -14,6 +14,7 @@ import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
  * <b>Sample Registration Dialog</b>
@@ -144,9 +145,10 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void generateSampleRegistrationLayout() {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      Experiment selectedExperiment = batchInformationLayout.experimentSelect.getValue();
+      ExperimentId selectedExperimentId = batchInformationLayout.experimentSelect.getValue()
+          .experimentId();
       //We only reload the spreadsheet if the selected experiment was changed
-      if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperiment.equals(
+      if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
           sampleSpreadsheetLayout.getExperiment())) {
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
