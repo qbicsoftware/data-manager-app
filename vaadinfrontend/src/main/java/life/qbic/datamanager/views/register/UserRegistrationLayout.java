@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.login.LoginLayout;
+import life.qbic.datamanager.views.login.passwordreset.ResetPasswordLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -42,6 +43,7 @@ public class UserRegistrationLayout extends VerticalLayout {
   public Button registerButton;
 
   public Span loginSpan;
+  public Span resetSpan;
 
   public VerticalLayout notificationLayout;
   private VerticalLayout fieldLayout;
@@ -67,9 +69,9 @@ public class UserRegistrationLayout extends VerticalLayout {
     createNotificationLayout();
     createFieldLayout();
     createRegisterButton();
-    createSpan();
+    createSpans();
     add(contentLayout);
-    contentLayout.add(layoutTitle, notificationLayout, fieldLayout, registerButton, loginSpan);
+    contentLayout.add(layoutTitle, notificationLayout, fieldLayout, registerButton, loginSpan, resetSpan);
   }
 
   private void styleLayout() {
@@ -94,9 +96,12 @@ public class UserRegistrationLayout extends VerticalLayout {
     fieldLayout.add(fullName, email, password);
   }
 
-  private void createSpan() {
+  private void createSpans() {
     RouterLink link = new RouterLink("LOGIN", LoginLayout.class);
     loginSpan = new Span(new Text("Already have an account? "), link);
+
+    RouterLink resetLink = new RouterLink("RESET", ResetPasswordLayout.class);
+    resetSpan = new Span(new Text("Forgot your password? "), resetLink);
   }
 
   private void createRegisterButton() {
