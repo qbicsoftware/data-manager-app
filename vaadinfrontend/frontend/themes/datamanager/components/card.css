@@ -184,8 +184,6 @@
 .experimental-variables-fact-sheet {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 1;
   flex-basis: 20%;
   font-size: var(--lumo-font-size-s);
   border: 1px solid lightgray;
