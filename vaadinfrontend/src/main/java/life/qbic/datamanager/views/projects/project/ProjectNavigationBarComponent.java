@@ -62,14 +62,13 @@ public class ProjectNavigationBarComponent extends PageArea {
   private static class NavigationButton extends Div {
 
     private final Div labelDiv = new Div();
-    private final Icon icon;
     private final Button button = new Button();
     private String route = "";
 
     private NavigationButton(Icon icon, String label) {
       this.addClassName("navigation-button");
-      this.icon = icon;
       labelDiv.add(label);
+      labelDiv.addClassName("label");
       button.setIcon(icon);
       button.addClassName("button");
       routeOnButtonClick();
