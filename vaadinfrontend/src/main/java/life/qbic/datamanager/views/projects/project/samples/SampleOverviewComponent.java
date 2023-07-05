@@ -297,7 +297,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
           .setComparator(SamplePreview::sampleCode);
       sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
       sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
-      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
+      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate");
       sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
       sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
