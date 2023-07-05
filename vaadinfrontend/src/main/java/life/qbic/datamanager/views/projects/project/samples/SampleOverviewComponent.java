@@ -2,7 +2,9 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
@@ -82,6 +84,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   private final Span fieldBar = new Span();
   private final Span buttonBar = new Span();
   private final TextField searchField = new TextField();
+  private String samplePreviewFilter = "";
   private final Select<String> tabFilterSelect = new Select<>();
   public final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
@@ -89,6 +92,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
   private static final Logger log = getLogger(SampleOverviewComponent.class);
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
+  private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
   private static ProjectId projectId;
 
   public SampleOverviewComponent(@Autowired SampleInformationService sampleInformationService,
@@ -207,6 +211,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       this.batchRegistrationService = batchRegistrationService;
       this.sampleRegistrationService = sampleRegistrationService;
       addEventListeners();
+      configureSearch();
     }
 
     public void setExperiments(Collection<Experiment> experiments) {
@@ -230,6 +235,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     private void resetSampleOverview() {
       resetTabSheet();
       resetTabFilterSelect();
+      searchFieldListeners.clear();
     }
 
     private void resetTabFilterSelect() {
@@ -286,9 +292,32 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       sampleGrid.getLazyDataView()
           .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       setSamplesToGrid(sampleGrid, experiment.experimentId());
+      addSearchFieldListener(event -> sampleGrid.getDataProvider().refreshAll());
       sampleGrid.getDataProvider().refreshAll();
       experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+    }
+
+    private void configureSearch() {
+      searchField.setValueChangeMode(ValueChangeMode.LAZY);
+      searchField.addValueChangeListener(event -> {
+        samplePreviewFilter = event.getValue().trim();
+        fireSearchFieldValueChangeEvent(event);
+      });
+    }
+
+    /**
+     * Adds the provided {@link ValueChangeListener} to the list of listeners which will retrieve
+     * notification if the searchField value was updated
+     */
+    public void addSearchFieldListener(
+        ValueChangeListener<ComponentValueChangeEvent<TextField, String>> searchFieldListener) {
+      searchFieldListeners.add(searchFieldListener);
+    }
+
+    private void fireSearchFieldValueChangeEvent(
+        ComponentValueChangeEvent<TextField, String> event) {
+      searchFieldListeners.forEach(it -> fireEvent(event));
     }
 
     private Grid<SamplePreview> createSampleGrid() {
@@ -317,7 +346,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         // if no order is provided by the grid order by last modified (least priority)
         sortOrders.add(SortOrder.of("sampleCode").descending());
         return sampleInformationService.queryPreview(experimentId, query.getOffset(),
-            query.getLimit(), List.copyOf(sortOrders)).stream();
+            query.getLimit(), List.copyOf(sortOrders), samplePreviewFilter).stream();
       }, query -> getSampleCountForExperiment(experimentId));
     }
 
