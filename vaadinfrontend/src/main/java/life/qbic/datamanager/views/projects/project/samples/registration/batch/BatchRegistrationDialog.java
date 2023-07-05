@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -145,9 +144,14 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void generateSampleRegistrationLayout() {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-          batchInformationLayout.dataTypeSelection.getValue());
+      Experiment selectedExperiment = batchInformationLayout.experimentSelect.getValue();
+      //We only reload the spreadsheet if the selected experiment was changed
+      if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperiment.equals(
+          sampleSpreadsheetLayout.getExperiment())) {
+        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+            batchInformationLayout.dataTypeSelection.getValue());
+      }
     }
 
     private void setSubmissionListeners() {

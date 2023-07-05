@@ -38,6 +38,7 @@ class SampleSpreadsheetLayout extends Div {
   public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
+  private Experiment experiment;
 
   SampleSpreadsheetLayout() {
     initContent();
@@ -103,12 +104,17 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void setExperiment(Experiment experiment) {
-    SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
+    this.experiment = experiment;
     experimentName.setText(experiment.getName());
+    SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
   }
 
   public List<SampleRegistrationContent> getContent() {
     return sampleInformationLayoutHandler.getContent();
+  }
+
+  public Experiment getExperiment() {
+    return experiment;
   }
 
   private class SampleInformationLayoutHandler implements Serializable {
