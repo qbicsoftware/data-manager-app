@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -130,17 +129,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     buttonAndFieldBar.add(fieldBar, buttonBar);
     buttonAndFieldBar.addClassName("button-and-search-bar");
   }
-
-  private static ComponentRenderer<Anchor, SamplePreview> createSampleIdComponentRenderer() {
-    return new ComponentRenderer<>(Anchor::new, styleSampleIdAnchor);
-  }
-
-  private static final SerializableBiConsumer<Anchor, SamplePreview> styleSampleIdAnchor = (anchor, samplePreview) -> {
-    String anchorURL = String.format(Projects.MEASUREMENT, projectId.value(),
-        samplePreview.sampleId());
-    anchor.setHref(anchorURL);
-    anchor.setText(samplePreview.sampleCode());
-  };
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
@@ -322,11 +310,10 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
     private Grid<SamplePreview> createSampleGrid() {
       Grid<SamplePreview> sampleGrid = new Grid<>();
-      sampleGrid.addColumn(createSampleIdComponentRenderer()).setHeader("Sample Id")
-          .setComparator(SamplePreview::sampleCode);
+      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id");
       sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
       sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
-      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
+      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate");
       sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
       sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
