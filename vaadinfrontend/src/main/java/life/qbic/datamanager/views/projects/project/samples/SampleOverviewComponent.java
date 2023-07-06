@@ -281,7 +281,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
     private Grid<SamplePreview> createSampleGrid() {
       Grid<SamplePreview> sampleGrid = new Grid<>();
-      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Code");
+      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id");
       sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
       sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
       sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Sample Source");
