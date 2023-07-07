@@ -25,9 +25,10 @@ public interface SamplePreviewLookup {
    *
    * @param experimentId the {@link ExperimentId} for which the count of {@link SamplePreview}
    *                     should be found
+   * @param filter       the results fields will be checked for the value within this filter
    * @return the count of found {@link SamplePreview}
    * @since 1.0.0
    */
-  int queryCountByExperimentId(ExperimentId experimentId);
+  int queryCountByExperimentId(ExperimentId experimentId, String filter);
 
 }

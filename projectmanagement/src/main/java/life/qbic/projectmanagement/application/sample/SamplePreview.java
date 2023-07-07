@@ -6,14 +6,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -50,6 +55,9 @@ public class SamplePreview {
   private String species;
   private String specimen;
   private String analyte;
+  @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+  @JoinColumn(name = "experimentId", referencedColumnName = "experiment_id")
+  private final List<ExperimentalVariable> experimentalVariables = new ArrayList<>();
 
   protected SamplePreview() {
     //needed by JPA
@@ -149,6 +157,10 @@ public class SamplePreview {
 
   public ExperimentalGroup experimentalGroup() {
     return experimentalGroup;
+  }
+
+  public List<ExperimentalVariable> experimentalVariables() {
+    return experimentalVariables;
   }
 
   @Override

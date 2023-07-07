@@ -59,12 +59,14 @@ public class SampleInformationService {
         limit,
         sortOrders, filter);
     // the list must be modifiable for spring security to filter it
+    previewList.forEach(
+        samplePreview -> System.out.println(samplePreview.experimentalVariables().size()));
     return new ArrayList<>(previewList);
   }
 
-  public int countPreviews(ExperimentId experimentId) {
+  public int countPreviews(ExperimentId experimentId, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    return samplePreviewLookup.queryCountByExperimentId(experimentId);
+    return samplePreviewLookup.queryCountByExperimentId(experimentId, filter);
   }
 
   public enum ResponseCode {
