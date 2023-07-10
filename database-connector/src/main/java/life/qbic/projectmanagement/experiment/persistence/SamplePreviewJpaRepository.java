@@ -1,5 +1,9 @@
 package life.qbic.projectmanagement.experiment.persistence;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.persistence.OffsetBasedRequest;
@@ -65,17 +69,12 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
     Specification<SamplePreview> bioReplicateLabelSpec = SamplePreviewSpecs.BioReplicateLabelContains(
         filter);
-  /*
-    Specification<SamplePreview> experimentalGroupSpec = SamplePreviewSpecs.experimentalGroupContains(
-        filter);
-
-   */
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
     Specification<SamplePreview> specimenSpec = SamplePreviewSpecs.specimenContains(filter);
     Specification<SamplePreview> analyteSpec = SamplePreviewSpecs.analyteContains(filter);
-
+    Specification<SamplePreview> conditionSpec = SamplePreviewSpecs.conditionContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
-        sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, speciesSpec,
+        sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, conditionSpec, speciesSpec,
         specimenSpec,
         analyteSpec);
     return Specification.where(experimentIdSpec).and(containsFilterSpec);
@@ -119,14 +118,14 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
               builder.like(root.get("sampleLabel"), "%" + filter + "%");
     }
 
-    /*
-        public static Specification<SamplePreview> experimentalGroupContains(String filter) {
-          return (root, query, builder) ->
-              StringUtil.isBlank(filter) ?
-                  builder.conjunction() :
-                  builder.any(), "%" + filter + "%")
-        }
-    */
+
+    public static Specification<SamplePreview> conditionContains(String filter) {
+      return (root, query, builder) ->
+          StringUtil.isBlank(filter) ?
+              builder.conjunction() :
+              generateConditionPredicates(root, builder, filter);
+    }
+
     public static Specification<SamplePreview> speciesContains(String filter) {
       return (root, query, builder) ->
           StringUtil.isBlank(filter) ?
@@ -147,5 +146,23 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
               builder.conjunction() :
               builder.like(root.get("analyte"), "%" + filter + "%");
     }
+  }
+
+  private static Predicate generateConditionPredicates(Root<SamplePreview> root,
+      CriteriaBuilder builder, String filter) {
+    List<Predicate> predicates = new ArrayList<>();
+    Predicate experimentalVariableNamePredicate = builder.like(
+        root.get("experimentalGroup").get("condition").get("variableLevels").get("variableName")
+            .as(String.class), "%" + filter + "%");
+    predicates.add(experimentalVariableNamePredicate);
+    Predicate experimentalValueValuePredicate = builder.like(
+        root.get("experimentalGroup").get("condition").get("variableLevels")
+            .get("experimentalValue").get("value"), "%" + filter + "%");
+    predicates.add(experimentalValueValuePredicate);
+    Predicate experimentalValueUnitPredicate = builder.like(
+        root.get("experimentalGroup").get("condition").get("variableLevels")
+            .get("experimentalValue").get("unit"), "%" + filter + "%");
+    predicates.add(experimentalValueUnitPredicate);
+    return builder.or(predicates.toArray(new Predicate[0]));
   }
 }

@@ -59,8 +59,6 @@ public class SampleInformationService {
         limit,
         sortOrders, filter);
     // the list must be modifiable for spring security to filter it
-    previewList.forEach(
-        samplePreview -> System.out.println(samplePreview.experimentalVariables().size()));
     return new ArrayList<>(previewList);
   }
 
