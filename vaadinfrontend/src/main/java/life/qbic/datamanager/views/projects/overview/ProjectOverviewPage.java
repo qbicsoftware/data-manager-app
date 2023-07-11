@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
-import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
+import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,14 +32,14 @@ public class ProjectOverviewPage extends Div {
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
 
-  private final ProjectCollection projectCollection;
+  private final ProjectCollectionComponent projectCollectionComponent;
   private final AddProjectDialog addProjectDialog;
   private final ProjectRegistrationService projectRegistrationService;
 
-  public ProjectOverviewPage(@Autowired ProjectCollection projectCollection,
+  public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
       AddProjectDialog addProjectDialog,
       ProjectRegistrationService projectRegistrationService) {
-    this.projectCollection = projectCollection;
+    this.projectCollectionComponent = projectCollectionComponent;
     this.addProjectDialog = addProjectDialog;
     this.projectRegistrationService = projectRegistrationService;
     layoutPage();
@@ -49,11 +49,11 @@ public class ProjectOverviewPage extends Div {
   }
 
   private void layoutPage() {
-    add(projectCollection);
+    add(projectCollectionComponent);
   }
 
   private void configurePage() {
-    projectCollection.addListener(projectCreationClickedEvent ->
+    projectCollectionComponent.addListener(projectCreationClickedEvent ->
         addProjectDialog.open()
     );
     addProjectDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
@@ -82,7 +82,7 @@ public class ProjectOverviewPage extends Div {
         .onValue(result -> {
           displaySuccessfulProjectCreationNotification();
           addProjectDialog.resetAndClose();
-          projectCollection.refresh();
+          projectCollectionComponent.refresh();
         })
         .onError(e -> {
           throw e;
