@@ -4,8 +4,8 @@
 }
 
 .main.experiment {
-  grid-template-columns: minmax(250px, 0.8fr) minmax(250px, 0.2fr);
-  grid-template-rows: minmax(150px, 0.1fr) minmax(250px, 1fr);
+  grid-template-columns: minmax(600px, 80%) minmax(300px, 20%);
+  grid-template-rows: minmax(150px, 10%) minmax(250px, 100%);
   grid-template-areas:
     "navbar support"
     "content support";
@@ -25,4 +25,16 @@
 
 .main.project {
   flex-direction: column;
+}
+
+/*Large devices (large desktops, 1200px and up)*/
+@media only screen and (max-width: 1200px) {
+  .main.experiment {
+    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-areas:
+        "navbar"
+    "content"
+    "support";
+    grid-auto-rows: auto;
+  }
 }
