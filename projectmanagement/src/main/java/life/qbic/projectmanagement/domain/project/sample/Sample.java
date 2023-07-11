@@ -37,6 +37,9 @@ public class Sample {
   @AttributeOverride(name = "uuid", column = @Column(name = "sample_id"))
   private SampleId id;
   private String label;
+  private String comment;
+  @Column(name = "analysis_type")
+  private String analysisType;
   @Embedded
   private SampleCode sampleCode;
   @Embedded
@@ -44,7 +47,7 @@ public class Sample {
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
       ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
-      BiologicalReplicateId replicateReference
+      BiologicalReplicateId replicateReference, String analysisType, String comment
   ) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
@@ -54,6 +57,8 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
     this.biologicalReplicateId = replicateReference;
     this.assignedBatch = assignedBatch;
+    this.comment = comment;
+    this.analysisType = analysisType;
   }
 
   protected Sample() {
@@ -75,7 +80,8 @@ public class Sample {
         sampleRegistrationRequest.assignedBatch(),
         sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
         sampleRegistrationRequest.experimentalGroupId(),
-        sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference());
+        sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
+        sampleRegistrationRequest.analysisType(), sampleRegistrationRequest.comment());
   }
 
   public BatchId assignedBatch() {
