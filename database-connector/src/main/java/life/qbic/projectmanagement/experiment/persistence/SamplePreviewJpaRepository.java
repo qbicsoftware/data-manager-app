@@ -61,6 +61,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
 
   private Specification<SamplePreview> generateExperimentIdandFilterSpecification(
       ExperimentId experimentId, String filter) {
+    Specification<SamplePreview> isBlankSpec = SamplePreviewSpecs.isBlank(filter);
     Specification<SamplePreview> experimentIdSpec = SamplePreviewSpecs.experimentIdEquals(
         experimentId);
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
@@ -76,16 +77,28 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, conditionSpec, speciesSpec,
         specimenSpec,
         analyteSpec);
-    return Specification.where(experimentIdSpec).and(containsFilterSpec)
-        .and(SamplePreviewSpecs.distinct());
+    Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
+    return Specification.where(experimentIdSpec).and(isBlankSpec)
+        .and(containsFilterSpec)
+        .and(isDistinctSpec);
   }
 
   private static class SamplePreviewSpecs {
 
     //We need to ensure that we only count and retrieve unique samplePreviews
-    public static Specification<SamplePreview> distinct() {
-      return (root, query, cb) -> {
+    public static Specification<SamplePreview> isDistinct() {
+      return (root, query, builder) -> {
         query.distinct(true);
+        return null;
+      };
+    }
+
+    //If no filter was provided return all SamplePreviews
+    public static Specification<SamplePreview> isBlank(String filter) {
+      return (root, query, builder) -> {
+        if (StringUtil.isBlank(filter)) {
+          return builder.conjunction();
+        }
         return null;
       };
     }
@@ -99,38 +112,27 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
 
     public static Specification<SamplePreview> sampleCodeContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("sampleCode"), "%" + filter + "%");
+          builder.like(root.get("sampleCode"), "%" + filter + "%");
     }
 
 
     public static Specification<SamplePreview> batchLabelContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("batchLabel"), "%" + filter + "%");
+          builder.like(root.get("batchLabel"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> BioReplicateLabelContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("bioReplicateLabel"), "%" + filter + "%");
+          builder.like(root.get("bioReplicateLabel"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> sampleLabelContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("sampleLabel"), "%" + filter + "%");
+          builder.like(root.get("sampleLabel"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> conditionContains(String filter) {
       return (root, query, builder) -> {
-        if (StringUtil.isBlank(filter)) {
-          return builder.conjunction();
-        }
         Join<?, ?> expVariablesJoin = root.join("experimentalGroup").join("condition")
             .join("variableLevels");
         Expression<String> varNameExp = expVariablesJoin.get("variableName").as(String.class);
@@ -147,23 +149,17 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
 
     public static Specification<SamplePreview> speciesContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("species"), "%" + filter + "%");
+          builder.like(root.get("species"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> specimenContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("specimen"), "%" + filter + "%");
+          builder.like(root.get("specimen"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> analyteContains(String filter) {
       return (root, query, builder) ->
-          StringUtil.isBlank(filter) ?
-              builder.conjunction() :
-              builder.like(root.get("analyte"), "%" + filter + "%");
+          builder.like(root.get("analyte"), "%" + filter + "%");
     }
   }
 }
