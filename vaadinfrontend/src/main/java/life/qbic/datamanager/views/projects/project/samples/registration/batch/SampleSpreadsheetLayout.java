@@ -93,6 +93,8 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void reset() {
+    //this needs to be reset when dialog is closed, as the sheet will not be recreated for set experiments
+    experiment = null;
     sampleInformationLayoutHandler.reset();
   }
 
