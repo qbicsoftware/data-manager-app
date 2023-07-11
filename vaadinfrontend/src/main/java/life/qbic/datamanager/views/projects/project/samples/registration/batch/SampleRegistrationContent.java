@@ -15,12 +15,13 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
  * @param species               String representation of the {@link Species}
  * @param specimen              String representation of the {@link Specimen}
  * @param analyte               String representation of the {@link Analyte}
+ * @param analysisType          The analysis to be performed
  * @param comment               Sample specific comments
  */
 
 public record SampleRegistrationContent(String label, BiologicalReplicateId biologicalReplicateId,
                                         Long experimentalGroupId,
-                                        String species, String specimen, String analyte,
+                                        String species, String specimen, String analyte, String analysisType,
                                         String comment) {
 
 }
