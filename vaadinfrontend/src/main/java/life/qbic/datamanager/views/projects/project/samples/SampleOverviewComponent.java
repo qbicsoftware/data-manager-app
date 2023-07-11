@@ -318,6 +318,8 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
     private void setSamplesToGrid(Grid<SamplePreview> sampleGrid, ExperimentId experimentId) {
       sampleGrid.setItems(query -> {
+        sampleGrid.setPageSize(100);
+        sampleGrid.getDataProvider().refreshAll();
         List<SortOrder> sortOrders = query.getSortOrders().stream().map(
                 it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
             .collect(Collectors.toList());
