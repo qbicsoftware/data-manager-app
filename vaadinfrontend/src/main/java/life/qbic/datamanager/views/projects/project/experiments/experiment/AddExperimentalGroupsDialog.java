@@ -54,7 +54,7 @@ public class AddExperimentalGroupsDialog extends DialogWindow {
 
   public AddExperimentalGroupsDialog() {
     super();
-    setConfirmButtonLabel("Create");
+    setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
     addClassName("experiment-group-dialog");
     setHeaderTitle("Please enter group information");

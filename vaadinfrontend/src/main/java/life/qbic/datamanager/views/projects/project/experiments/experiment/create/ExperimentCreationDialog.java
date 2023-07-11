@@ -36,7 +36,7 @@ public class ExperimentCreationDialog extends DialogWindow {
     experimentCreationDialogHandler = new ExperimentCreationDialogHandler();
     setHeaderTitle(TITLE);
     add(defineExperimentComponent);
-    setConfirmButtonLabel("Create");
+    setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
     getFooter().add(cancelButton, confirmButton);
   }

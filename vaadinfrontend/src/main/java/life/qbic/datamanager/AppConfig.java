@@ -1,6 +1,5 @@
 package life.qbic.datamanager;
 
-import java.time.ZoneId;
 import life.qbic.authentication.application.notification.NotificationService;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
@@ -14,11 +13,8 @@ import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
-import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.views.projects.overview.components.ProjectCollection;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
@@ -30,8 +26,6 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
-import org.springframework.web.context.annotation.SessionScope;
 
 /**
  * <b>App bean configuration class</b>
