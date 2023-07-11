@@ -44,7 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-public class ProjectCollection extends PageArea {
+public class ProjectCollectionComponent extends PageArea {
 
   private Div controlSection = new Div();
   private Div gridSection = new Div();
@@ -62,8 +62,8 @@ public class ProjectCollection extends PageArea {
   private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
 
   @Autowired
-  public ProjectCollection(ClientDetailsProvider clientDetailsProvider,
-      ProjectInformationService projectInformationService) {
+  public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
+                                    ProjectInformationService projectInformationService) {
     this.title = "Projects";
     this.clientDetailsProvider = clientDetailsProvider;
     this.projectInformationService = projectInformationService;
