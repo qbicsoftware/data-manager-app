@@ -45,7 +45,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   @Serial
   private static final long serialVersionUID = 573778360298068552L;
   private SpreadsheetDropdownFactory dropdownCellFactory;
-  private List<SamplesheetHeaderName> header;
+  private List<SampleSheetHeaderName> header;
   private static List<String> species;
   private static List<String> specimens;
   private static List<String> analytes;
@@ -80,22 +80,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     prepareConditionItems(groups);
   }
 
-  public void addSheetToSpreadsheet(MetadataType metaDataType) {
+  public void addSheetToSpreadsheet() {
 
     dropdownCellFactory = new SpreadsheetDropdownFactory();
     this.createNewSheet("SampleRegistrationSheet", 1, 1);
     this.deleteSheet(0);
     sampleRegistrationSheet = this.getActiveSheet();
-    switch (metaDataType) {
-      case PROTEOMICS -> addProteomicsSheet(retrieveProteomics());
-      case LIGANDOMICS -> addLigandomicsSheet(retrieveLigandomics());
-      case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(retrieveGenomics());
-      case METABOLOMICS -> addMetabolomicsSheet(retrieveMetabolomics());
-    }
+    addSheet(retrieveSheetHeaders());
     this.setActiveSheetProtected("password-needed-to-lock");
     this.setSpreadsheetComponentFactory(dropdownCellFactory);
     //initialise first rows based on known sample size
     addRowsForInitialSamples(numberOfSamples);
+    sampleRegistrationSheet.createFreezePane(0, 1);
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
@@ -140,7 +136,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public void addRow() {
     int lastRowIndex = 1 + sampleRegistrationSheet.getLastRowNum();
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
-      SamplesheetHeaderName colHeader = header.get(columnIndex);
+      SampleSheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
         case SPECIES -> prefillCellsToRow(columnIndex, lastRowIndex, species);
         case SPECIMEN -> prefillCellsToRow(columnIndex, lastRowIndex, specimens);
@@ -185,12 +181,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void setupCommonDropDownColumns() {
-    initDropDownColumn(header.indexOf(SamplesheetHeaderName.SPECIES), species);
-    initDropDownColumn(header.indexOf(SamplesheetHeaderName.SPECIMEN), specimens);
-    initDropDownColumn(header.indexOf(SamplesheetHeaderName.ANALYTE), analytes);
-    initDropDownColumn(header.indexOf(SamplesheetHeaderName.CONDITION),
+    initDropDownColumn(header.indexOf(SampleSheetHeaderName.SPECIES), species);
+    initDropDownColumn(header.indexOf(SampleSheetHeaderName.SPECIMEN), specimens);
+    initDropDownColumn(header.indexOf(SampleSheetHeaderName.ANALYTE), analytes);
+    initDropDownColumn(header.indexOf(SampleSheetHeaderName.CONDITION),
         conditionsToReplicates.keySet().stream().toList());
-    initDropDownColumn(header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID),
+    initDropDownColumn(header.indexOf(SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID),
         getReplicateLabels());
   }
 
@@ -203,7 +199,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
-  private void prepareColumnHeaderAndWidth(LinkedHashMap<SamplesheetHeaderName,
+  private void prepareColumnHeaderAndWidth(LinkedHashMap<SampleSheetHeaderName,
       List<String>> headerToPresets) {
     CellStyle boldHeaderStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
@@ -211,7 +207,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     boldHeaderStyle.setFont(font);
     List<Cell> updatedCells = new ArrayList<>();
     int columnIndex = 0;
-    for (SamplesheetHeaderName columnHeader : headerToPresets.keySet()) {
+    for (SampleSheetHeaderName columnHeader : headerToPresets.keySet()) {
       List<String> presets = headerToPresets.get(columnHeader);
       String columnLabel = columnHeader.label;
       this.fixColumnWidth(columnIndex, columnLabel,
@@ -224,23 +220,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     this.getColumns();
     this.refreshCells(updatedCells);
   }
-
-  private void prepareCommonSheetTasks() {
-    LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
-    for (SamplesheetHeaderName label : header) {
-      headerToPresets.put(label, new ArrayList<>());
-    }
-    headerToPresets.put(SamplesheetHeaderName.SPECIES, species);
-    headerToPresets.put(SamplesheetHeaderName.SPECIMEN, specimens);
-    headerToPresets.put(SamplesheetHeaderName.ANALYTE, analytes);
-    headerToPresets.put(SamplesheetHeaderName.CONDITION,
-        conditionsToReplicates.keySet().stream().toList());
-    headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
-    prepareColumnHeaderAndWidth(headerToPresets);
-    this.reload();
-    setupCommonDropDownColumns();
-  }
-
 
   public int findLastRow() {
     int res = 0;
@@ -306,43 +285,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     this.getCell(0, colIndex).setCellValue(oldValue);
   }
 
-
-  private void addProteomicsSheet(List<SamplesheetHeaderName> header) {
+  private void addSheet(List<SampleSheetHeaderName> header) {
     this.header = header;
-    prepareCommonSheetTasks();
+    LinkedHashMap<SampleSheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
     setDefaultColumnCount(header.size());
-  }
-
-  private void addMetabolomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    prepareCommonSheetTasks();
-    setDefaultColumnCount(header.size());
-  }
-
-  private void addLigandomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    prepareCommonSheetTasks();
-    setDefaultColumnCount(header.size());
-  }
-
-  private void addGenomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
-    setDefaultColumnCount(header.size());
-    for (SamplesheetHeaderName head : header) {
+    for (SampleSheetHeaderName head : header) {
       headerToPresets.put(head, new ArrayList<>());
     }
-    headerToPresets.put(SamplesheetHeaderName.SPECIES, species);
-    headerToPresets.put(SamplesheetHeaderName.SPECIMEN, specimens);
-    headerToPresets.put(SamplesheetHeaderName.ANALYTE, analytes);
-    headerToPresets.put(SamplesheetHeaderName.CONDITION,
+    headerToPresets.put(SampleSheetHeaderName.SPECIES, species);
+    headerToPresets.put(SampleSheetHeaderName.SPECIMEN, specimens);
+    headerToPresets.put(SampleSheetHeaderName.ANALYTE, analytes);
+    headerToPresets.put(SampleSheetHeaderName.CONDITION,
         conditionsToReplicates.keySet().stream().toList());
-    headerToPresets.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
+    headerToPresets.put(SampleSheetHeaderName.SEQ_ANALYSIS_TYPE,
         Arrays.stream(SequenceAnalysisType
                 .values())
             .map(e -> e.label)
             .collect(Collectors.toList()));
-    headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
+    headerToPresets.put(SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
     prepareColumnHeaderAndWidth(headerToPresets);
     this.reload();
     DropdownColumn analysisTypeColumn = new DropdownColumn().withItems(
@@ -351,24 +311,22 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
             .map(e -> e.label)
             .collect(Collectors.toList()));
     analysisTypeColumn.toRowIndex(0)
-        .atColIndex(header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE));
-
+        .atColIndex(header.indexOf(SampleSheetHeaderName.SEQ_ANALYSIS_TYPE));
     dropdownCellFactory.addDropdownColumn(analysisTypeColumn);
     setupCommonDropDownColumns();
-
   }
 
 
   /**
-   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers
+   * The SampleSheetHeaderName enum contains the labels which are used to refer to the headers
    * employed during sample batch registration for different data technologies
    *
    * @since 1.0.0
    */
-  public enum SamplesheetHeaderName {
+  public enum SampleSheetHeaderName {
     SEQ_ANALYSIS_TYPE("Analysis to be performed", true), SAMPLE_LABEL(
         "Sample label", true), BIOLOGICAL_REPLICATE_ID(
-            "Biological replicate id", true), CONDITION("Condition",
+        "Biological replicate id", true), CONDITION("Condition",
         true), SPECIES("Species", true), SPECIMEN("Specimen",
         true), ANALYTE("Analyte", true), CUSTOMER_COMMENT(
         "Customer comment", false);
@@ -376,42 +334,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     public final String label;
     public final boolean isMandatory;
 
-    SamplesheetHeaderName(String label, boolean isMandatory) {
+    SampleSheetHeaderName(String label, boolean isMandatory) {
       this.label = label;
       this.isMandatory = isMandatory;
     }
   }
 
-  public List<SamplesheetHeaderName> retrieveProteomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
-        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
-        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.ANALYTE,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveLigandomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
-        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
-        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.ANALYTE,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveMetabolomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
-        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
-        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.ANALYTE,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
-  }
-
-  public List<SamplesheetHeaderName> retrieveGenomics() {
-    return List.of(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
-        SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
-        SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
-        SamplesheetHeaderName.ANALYTE,
-        SamplesheetHeaderName.CUSTOMER_COMMENT);
+  public List<SampleSheetHeaderName> retrieveSheetHeaders() {
+    return List.of(SampleSheetHeaderName.SEQ_ANALYSIS_TYPE, SampleSheetHeaderName.SAMPLE_LABEL,
+        SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID, SampleSheetHeaderName.CONDITION,
+        SampleSheetHeaderName.SPECIES, SampleSheetHeaderName.SPECIMEN,
+        SampleSheetHeaderName.ANALYTE,
+        SampleSheetHeaderName.CUSTOMER_COMMENT);
   }
 
   public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
@@ -419,7 +353,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       List<String> mandatoryInputs = new ArrayList<>();
-      for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
+      for (SampleSheetHeaderName name : SampleSheetHeaderName.values()) {
         if (name.isMandatory) {
           mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
               header.indexOf(name))));
@@ -437,7 +371,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
 
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
+          header.indexOf(SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
       // Sample uniqueness needs to be guaranteed by condition and replicate ID
       if (!isUniqueSampleRow(concatenatedSampleIDs, row)) {
         return Result.fromError(new InvalidSpreadsheetRow(
@@ -449,9 +383,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
     String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-        header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
+        header.indexOf(SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
     String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-        header.indexOf(SamplesheetHeaderName.CONDITION))).trim();
+        header.indexOf(SampleSheetHeaderName.CONDITION))).trim();
     // Sample uniqueness needs to be guaranteed by condition and replicate ID
     String concatenatedSampleID = replicateIDInput + conditionInput;
     if(knownIDs.contains(concatenatedSampleID)) {
@@ -469,21 +403,21 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       Row row = sampleRegistrationSheet.getRow(rowId);
 
       String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE)));
+          header.indexOf(SampleSheetHeaderName.SEQ_ANALYSIS_TYPE)));
       String sampleLabelInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL)));
+          header.indexOf(SampleSheetHeaderName.SAMPLE_LABEL)));
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID)));
+          header.indexOf(SampleSheetHeaderName.BIOLOGICAL_REPLICATE_ID)));
       String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.CONDITION)));
+          header.indexOf(SampleSheetHeaderName.CONDITION)));
       String speciesInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.SPECIES)));
+          header.indexOf(SampleSheetHeaderName.SPECIES)));
       String specimenInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.SPECIMEN)));
+          header.indexOf(SampleSheetHeaderName.SPECIMEN)));
       String analyteInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.ANALYTE)));
+          header.indexOf(SampleSheetHeaderName.ANALYTE)));
       String commentInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT)));
+          header.indexOf(SampleSheetHeaderName.CUSTOMER_COMMENT)));
 
       // break when cells in row are undefined
       if (Stream.of(analysisTypeInput, sampleLabelInput,

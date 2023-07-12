@@ -86,9 +86,9 @@ class SampleSpreadsheetLayout extends Div {
     sampleRegistrationSpreadsheet.setFunctionBarVisible(false);
   }
 
-  public void generateSampleRegistrationSheet(MetadataType metaDataType) {
+  public void generateSampleRegistrationSheet() {
     sampleRegistrationSpreadsheet.reset();
-    sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
+    sampleRegistrationSpreadsheet.addSheetToSpreadsheet();
     sampleRegistrationSpreadsheet.reload();
   }
 

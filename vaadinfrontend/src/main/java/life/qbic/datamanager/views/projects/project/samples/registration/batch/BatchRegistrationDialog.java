@@ -151,8 +151,7 @@ public class BatchRegistrationDialog extends DialogWindow {
       if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
           sampleSpreadsheetLayout.getExperiment())) {
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-            batchInformationLayout.dataTypeSelection.getValue());
+        sampleSpreadsheetLayout.generateSampleRegistrationSheet();
       }
     }
 

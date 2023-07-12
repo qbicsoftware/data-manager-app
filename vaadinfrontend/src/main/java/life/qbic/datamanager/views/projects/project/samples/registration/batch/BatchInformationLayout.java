@@ -4,15 +4,9 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
-import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,7 +23,6 @@ import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 public class BatchInformationLayout extends Div {
 
   public final TextField batchNameField = new TextField("Batch Name");
-  public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
   public final Select<Experiment> experimentSelect = new Select<>();
@@ -43,7 +36,6 @@ public class BatchInformationLayout extends Div {
 
   private void initContent() {
     initBatchLayout();
-    initDataTypeLayout();
     initButtonLayout();
   }
 
@@ -57,36 +49,8 @@ public class BatchInformationLayout extends Div {
     batchLayout.add(batchInformationHeader);
     batchLayout.add(experimentSelect);
     batchLayout.add(batchNameField);
+    batchNameField.setRequired(true);
     add(batchLayout);
-  }
-
-  private void initDataTypeLayout() {
-    Div dataTypeLayout = new Div();
-    dataTypeLayout.addClassName("data-type-information");
-    Span dataTypeHeader = new Span("Type of Data");
-    dataTypeHeader.addClassName("title");
-    dataTypeLayout.add(dataTypeHeader);
-    Div dataTypeDescription = new Div();
-    dataTypeDescription.add(
-        "There is a minimum amount of information required. All samples must conform the expected metadata values. The most suitable checklist for sample registration depends on the type of the sample.");
-    dataTypeLayout.add(dataTypeDescription);
-    initDataTypeSelection();
-    dataTypeLayout.add(dataTypeSelection);
-    add(dataTypeLayout);
-  }
-
-  private void initDataTypeSelection() {
-    dataTypeSelection.setItems(MetadataType.values());
-    dataTypeSelection.setReadOnly(true);
-    dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
-    dataTypeSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    dataTypeSelection.setRenderer(new ComponentRenderer<>(metadataType -> {
-      Span metadataTypeSpan = new Span(metadataType.label);
-      Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
-      infoIcon.addClassName("info-icon");
-      infoIcon.setTooltipText(metadataType.description);
-      return new HorizontalLayout(metadataTypeSpan, infoIcon);
-    }));
   }
 
   private void initButtonLayout() {
@@ -138,7 +102,6 @@ public class BatchInformationLayout extends Div {
     }
 
     private void resetChildValues() {
-      dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
       experimentSelect.clear();
       batchNameField.clear();
     }
