@@ -57,6 +57,10 @@
   gap: var(--lumo-space-s);
 }
 
+.page-area.project-details-component .details-content .placeholder {
+  color: var(--lumo-secondary-text-color);
+}
+
 .page-area.project-details-component vaadin-multi-select-combo-box {
   width: 75%
 }
