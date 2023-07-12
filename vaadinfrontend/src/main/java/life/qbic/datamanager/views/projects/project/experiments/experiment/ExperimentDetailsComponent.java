@@ -56,7 +56,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
-  private final ExperimentInformationService experimentInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
   private final Span title = new Span();
   private final Div tagCollection = new Div();
   private final TabSheet experimentSheet = new TabSheet();
