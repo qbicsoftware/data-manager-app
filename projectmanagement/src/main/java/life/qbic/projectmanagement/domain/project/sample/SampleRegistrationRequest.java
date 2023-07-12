@@ -33,7 +33,7 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.experimentalGroupId = Objects.requireNonNull(experimentalGroupId);
     this.replicateReference = Objects.requireNonNull(replicateReference);
     this.sampleOrigin = Objects.requireNonNull(sampleOrigin);
-    this.comment = comment == null ? "" : comment;
-    this.analysisType = analysisType == null ? "" : analysisType;
+    this.comment = comment;
+    this.analysisType = analysisType;
   }
 }
