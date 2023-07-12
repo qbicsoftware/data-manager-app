@@ -3,9 +3,7 @@ package life.qbic.datamanager.views.projects.project.info;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -18,15 +16,14 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
 import java.io.Serial;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ContactElement;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
-import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -53,14 +50,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends Div {
+public class ProjectDetailsComponent extends PageArea {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
-
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
   private static final String TITLE = "Project Information";
-  private final FormLayout formLayout;
+  private final Div content = new Div();
+  private final FormLayout formLayout = new FormLayout();
   private ToggleDisplayEditComponent<Span, TextField, String> titleToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> projectObjectiveToggleComponent;
   private ToggleDisplayEditComponent<Span, TextArea, String> experimentalDesignToggleComponent;
@@ -80,19 +77,25 @@ public class ProjectDetailsComponent extends Div {
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
     Objects.requireNonNull(experimentInformationService);
-    setTitle();
-    formLayout = new FormLayout();
-    initFormLayout();
-    setComponentStyles();
+    layoutComponent();
+
+    this.addClassName("project-details-component");
     this.handler = new Handler(projectInformationService, personSearchService,
         experimentalDesignSearchService, experimentInformationService);
   }
 
+  private void layoutComponent() {
+    this.add(content);
+    content.addClassName("details-content");
+    setTitle();
+    initFormLayout();
+  }
+
   private void setTitle() {
-    var title = new Div();
+    Div title = new Div();
     title.setText(TITLE);
     title.addClassName("title");
-    add(title);
+    addComponentAsFirst(title);
   }
 
   private ComboBox<PersonReference> initPersonReferenceCombobox(String personReferenceType) {
@@ -117,7 +120,8 @@ public class ProjectDetailsComponent extends Div {
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    add(formLayout);
+    content.add(formLayout);
+    setFormLayoutComponentStyles();
   }
 
   private void initFormFields() {
@@ -145,26 +149,11 @@ public class ProjectDetailsComponent extends Div {
 
   private Span createPlaceHolderSpan() {
     Span placeholderSpan = new Span("None");
-    placeholderSpan.addClassName(TextColor.SECONDARY);
+    placeholderSpan.addClassName("placeholder");
     return placeholderSpan;
   }
 
-  private void setComponentStyles() {
-    titleToggleComponent.getInputComponent().setSizeFull();
-    projectObjectiveToggleComponent.getInputComponent().setWidthFull();
-    experimentalDesignToggleComponent.getInputComponent().setWidthFull();
-    titleToggleComponent.setWidthFull();
-    projectObjectiveToggleComponent.setWidthFull();
-    experimentalDesignToggleComponent.setWidthFull();
-    formLayout.setClassName("create-project-form");
-    projectManagerToggleComponent.getInputComponent().getStyle()
-        .set("--vaadin-combo-box-overlay-width", "16em");
-    projectManagerToggleComponent.getInputComponent().getStyle()
-        .set("--vaadin-combo-box-width", "16em");
-    principalInvestigatorToggleComponent.getInputComponent().getStyle()
-        .set("--vaadin-combo-box-overlay-width", "16em");
-    responsiblePersonToggleComponent.getInputComponent().getStyle()
-        .set("--vaadin-combo-box-width", "16em");
+  private void setFormLayoutComponentStyles() {
     //Workaround since combobox does not allow empty selection https://github.com/vaadin/flow-components/issues/1998
     responsiblePersonToggleComponent.getInputComponent().setClearButtonVisible(true);
     titleToggleComponent.getInputComponent().setRequired(true);
@@ -177,10 +166,6 @@ public class ProjectDetailsComponent extends Div {
     experimentalDesignToggleComponent.setRequiredIndicatorVisible(true);
     projectManagerToggleComponent.setRequiredIndicatorVisible(true);
     principalInvestigatorToggleComponent.setRequiredIndicatorVisible(true);
-    speciesMultiSelectComboBox.setWidth(50, Unit.VW);
-    specimenMultiSelectComboBox.setWidth(50, Unit.VW);
-    analyteMultiSelectComboBox.setWidth(50, Unit.VW);
-    formLayout.setClassName("create-project-form");
     speciesMultiSelectComboBox.addClassName("chip-badge");
     specimenMultiSelectComboBox.addClassName("chip-badge");
     analyteMultiSelectComboBox.addClassName("chip-badge");

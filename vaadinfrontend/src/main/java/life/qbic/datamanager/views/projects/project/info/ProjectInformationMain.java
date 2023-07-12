@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain.PROJECT_ID_ROUTE_PARAMETER;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -41,6 +39,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final transient ProjectInformationMainHandler projectInformationMainHandler;
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
   public ProjectInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,

@@ -127,7 +127,14 @@
   max-width: 300px;
 }
 
-.experiment-info .content {
+.card.experiment-info .title {
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+}
+
+.card.experiment-info .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
