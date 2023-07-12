@@ -84,7 +84,7 @@ public class SamplePreview {
     this.analyte = analyte;
     // optional columns
     this.comment = comment;
-    this.analysisType = analysisType == null ? "" : analysisType;
+    this.analysisType = analysisType;
   }
 
   /**
