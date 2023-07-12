@@ -6,6 +6,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -47,7 +48,7 @@ public class Sample {
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
       ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
-      BiologicalReplicateId replicateReference, String analysisType, String comment
+      BiologicalReplicateId replicateReference, Optional<String> analysisType, Optional<String> comment
   ) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
@@ -57,8 +58,8 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
     this.biologicalReplicateId = replicateReference;
     this.assignedBatch = assignedBatch;
-    this.comment = comment;
-    this.analysisType = analysisType;
+    this.analysisType = analysisType.orElse("");
+    this.comment = comment.orElse("");
   }
 
   protected Sample() {
@@ -81,7 +82,7 @@ public class Sample {
         sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
         sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
-        sampleRegistrationRequest.analysisType(), sampleRegistrationRequest.comment());
+        sampleRegistrationRequest.getAnalysisType(), sampleRegistrationRequest.getComment());
   }
 
   public BatchId assignedBatch() {

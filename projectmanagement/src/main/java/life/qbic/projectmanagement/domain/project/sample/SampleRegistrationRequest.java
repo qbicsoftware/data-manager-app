@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -35,5 +36,12 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.sampleOrigin = Objects.requireNonNull(sampleOrigin);
     this.comment = comment;
     this.analysisType = analysisType;
+  }
+
+  public Optional<String> getAnalysisType() {
+    return Optional.ofNullable(analysisType);
+  }
+  public Optional<String> getComment() {
+    return Optional.ofNullable(comment);
   }
 }

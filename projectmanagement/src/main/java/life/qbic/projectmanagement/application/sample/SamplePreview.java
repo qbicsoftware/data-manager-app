@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -154,11 +155,11 @@ public class SamplePreview {
   public String analyte() {
     return analyte;
   }
-  public Optional<String> analysisType() {
-    return Optional.ofNullable(analysisType);
+  public String analysisType() {
+    return analysisType;
   }
-  public Optional<String> comment() {
-    return Optional.ofNullable(comment);
+  public String comment() {
+    return comment;
   }
 
   public ExperimentalGroup experimentalGroup() {
