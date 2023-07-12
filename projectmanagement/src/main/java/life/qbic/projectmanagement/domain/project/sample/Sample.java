@@ -48,7 +48,7 @@ public class Sample {
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
       ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
-      BiologicalReplicateId replicateReference, Optional<String> analysisType, Optional<String> comment
+      BiologicalReplicateId replicateReference, String analysisType, String comment
   ) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
@@ -58,8 +58,8 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
     this.biologicalReplicateId = replicateReference;
     this.assignedBatch = assignedBatch;
-    this.analysisType = analysisType.orElse("");
-    this.comment = comment.orElse("");
+    this.analysisType = analysisType;
+    this.comment = comment;
   }
 
   protected Sample() {
@@ -82,7 +82,7 @@ public class Sample {
         sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
         sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
-        sampleRegistrationRequest.getAnalysisType(), sampleRegistrationRequest.getComment());
+        sampleRegistrationRequest.analysisType(), sampleRegistrationRequest.comment());
   }
 
   public BatchId assignedBatch() {
@@ -103,6 +103,14 @@ public class Sample {
 
   public String label() {
     return this.label;
+  }
+
+  public Optional<String> analysisType() {
+    return Optional.ofNullable(analysisType);
+  }
+
+  public Optional<String> comment() {
+    return Optional.ofNullable(comment);
   }
 
   public Long experimentalGroupId() {

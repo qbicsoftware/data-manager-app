@@ -38,10 +38,4 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.analysisType = analysisType;
   }
 
-  public Optional<String> getAnalysisType() {
-    return Optional.ofNullable(analysisType);
-  }
-  public Optional<String> getComment() {
-    return Optional.ofNullable(comment);
-  }
 }
