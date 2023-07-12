@@ -154,11 +154,11 @@ public class SamplePreview {
   public String analyte() {
     return analyte;
   }
-  public String analysisType() {
-    return analysisType;
+  public Optional<String> analysisType() {
+    return Optional.ofNullable(analysisType);
   }
-  public String comment() {
-    return comment;
+  public Optional<String> comment() {
+    return Optional.ofNullable(comment);
   }
 
   public ExperimentalGroup experimentalGroup() {
