@@ -10,6 +10,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -52,7 +53,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends Composite<PageComponent> {
+public class ProjectDetailsComponent extends Div {
 
   private static final Logger log = logger(ProjectDetailsComponent.class);
 
@@ -79,11 +80,19 @@ public class ProjectDetailsComponent extends Composite<PageComponent> {
     Objects.requireNonNull(personSearchService);
     Objects.requireNonNull(experimentalDesignSearchService);
     Objects.requireNonNull(experimentInformationService);
+    setTitle();
     formLayout = new FormLayout();
     initFormLayout();
     setComponentStyles();
     this.handler = new Handler(projectInformationService, personSearchService,
         experimentalDesignSearchService, experimentInformationService);
+  }
+
+  private void setTitle() {
+    var title = new Div();
+    title.setText(TITLE);
+    title.addClassName("title");
+    add(title);
   }
 
   private ComboBox<PersonReference> initPersonReferenceCombobox(String personReferenceType) {
@@ -108,8 +117,7 @@ public class ProjectDetailsComponent extends Composite<PageComponent> {
     formLayout.addFormItem(projectManagerToggleComponent, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    getContent().addContent(formLayout);
-    getContent().addTitle(TITLE);
+    add(formLayout);
   }
 
   private void initFormFields() {
@@ -180,10 +188,6 @@ public class ProjectDetailsComponent extends Composite<PageComponent> {
 
   public void projectId(ProjectId projectId) {
     handler.setProjectId(projectId);
-  }
-
-  public void setStyles(String... componentStyles) {
-    getContent().addClassNames(componentStyles);
   }
 
   /**

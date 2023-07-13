@@ -62,7 +62,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Sample Overview Component
  * <p>
  * Component embedded within the {@link SampleInformationPage} in the {@link ProjectViewPage}. It
- * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
+ * allows the user to see the information associated for each {@link Batch} and {@link Sample} of
  * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
  * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
@@ -309,6 +309,8 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
       sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
+      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform");
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment");
       return sampleGrid;
     }
 
@@ -394,7 +396,8 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
             return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
                 experimentId,
                 sampleRegistrationContent.experimentalGroupId(),
-                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
+                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
+                sampleRegistrationContent.analysisType(), sampleRegistrationContent.comment());
           }).toList();
     }
 

@@ -10,12 +10,12 @@ import java.io.Serial;
  *
  * @since 1.0.0
  */
-public class ProjectAddSubmitEvent extends ComponentEvent<ProjectCollection> {
+public class ProjectAddSubmitEvent extends ComponentEvent<ProjectCollectionComponent> {
 
   @Serial
   private static final long serialVersionUID = 28673255958404464L;
 
-  public ProjectAddSubmitEvent(ProjectCollection source, boolean fromClient) {
+  public ProjectAddSubmitEvent(ProjectCollectionComponent source, boolean fromClient) {
     super(source, fromClient);
   }
 }
