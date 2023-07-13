@@ -80,7 +80,7 @@ public class DisclaimerCard extends Card {
    * @since 1.0.0
    */
   public static DisclaimerCard create(String disclaimer, String confirmationLabel) {
-    return new DisclaimerCard("", disclaimer, confirmationLabel);
+    return new DisclaimerCard(disclaimer, confirmationLabel, "");
   }
 
   /**
