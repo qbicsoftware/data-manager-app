@@ -34,6 +34,10 @@
   background-color: inherit;
 }
 
+.page-area.batch-details-component {
+  width: 30%;
+}
+
 .page-area.navbar {
   justify-content: space-evenly;
   display: flex;

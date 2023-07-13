@@ -35,11 +35,13 @@ public class SampleInformationPage extends Div {
 
   public SampleInformationPage(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired SampleMainComponent sampleMainComponent) {
+      @Autowired SampleMainComponent sampleMainComponent,
+      @Autowired BatchDetailsComponent batchDetailsComponent) {
     Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleMainComponent);
+    Objects.requireNonNull(batchDetailsComponent);
     this.addClassName("sample-page");
-    setupPage(projectNavigationBarComponent, sampleMainComponent);
+    setupPage(projectNavigationBarComponent, sampleMainComponent, batchDetailsComponent);
     sampleInformationPageHandler = new SampleInformationPageHandler(projectNavigationBarComponent,
         sampleMainComponent);
     log.debug(String.format(
@@ -49,9 +51,10 @@ public class SampleInformationPage extends Div {
   }
 
   private void setupPage(ProjectNavigationBarComponent projectNavigationBarComponent,
-      SampleMainComponent sampleMainComponent) {
+      SampleMainComponent sampleMainComponent, BatchDetailsComponent batchDetailsComponent) {
     this.add(projectNavigationBarComponent);
     this.add(sampleMainComponent);
+    this.add(batchDetailsComponent);
   }
 
   /**
