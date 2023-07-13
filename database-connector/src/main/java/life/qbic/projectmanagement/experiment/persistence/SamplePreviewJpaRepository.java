@@ -69,14 +69,15 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
     Specification<SamplePreview> bioReplicateLabelSpec = SamplePreviewSpecs.bioReplicateLabelContains(
         filter);
+    Specification<SamplePreview> conditionSpec = SamplePreviewSpecs.conditionContains(filter);
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
     Specification<SamplePreview> specimenSpec = SamplePreviewSpecs.specimenContains(filter);
     Specification<SamplePreview> analyteSpec = SamplePreviewSpecs.analyteContains(filter);
-    Specification<SamplePreview> conditionSpec = SamplePreviewSpecs.conditionContains(filter);
+    Specification<SamplePreview> analysisTypeSpec = SamplePreviewSpecs.analysisTypeContains(filter);
+    Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
         sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, conditionSpec, speciesSpec,
-        specimenSpec,
-        analyteSpec);
+        specimenSpec, analyteSpec, analysisTypeSpec, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
         .and(containsFilterSpec)
@@ -161,5 +162,16 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
       return (root, query, builder) ->
           builder.like(root.get("analyte"), "%" + filter + "%");
     }
+
+    public static Specification<SamplePreview> analysisTypeContains(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("analysisType"), "%" + filter + "%");
+    }
+
+    public static Specification<SamplePreview> commentContains(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("comment"), "%" + filter + "%");
+    }
+
   }
 }
