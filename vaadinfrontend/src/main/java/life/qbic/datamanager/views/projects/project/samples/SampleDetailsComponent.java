@@ -289,6 +289,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
       sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
+      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform");
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment");
       return sampleGrid;
     }
 
@@ -377,7 +379,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
             return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
                 experimentId,
                 sampleRegistrationContent.experimentalGroupId(),
-                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin);
+                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
+                sampleRegistrationContent.analysisType(), sampleRegistrationContent.comment());
           }).toList();
     }
 
