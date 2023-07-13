@@ -67,7 +67,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
     Specification<SamplePreview> sampleLabelSpec = SamplePreviewSpecs.sampleLabelContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
-    Specification<SamplePreview> bioReplicateLabelSpec = SamplePreviewSpecs.BioReplicateLabelContains(
+    Specification<SamplePreview> bioReplicateLabelSpec = SamplePreviewSpecs.bioReplicateLabelContains(
         filter);
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
     Specification<SamplePreview> specimenSpec = SamplePreviewSpecs.specimenContains(filter);
@@ -121,7 +121,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
           builder.like(root.get("batchLabel"), "%" + filter + "%");
     }
 
-    public static Specification<SamplePreview> BioReplicateLabelContains(String filter) {
+    public static Specification<SamplePreview> bioReplicateLabelContains(String filter) {
       return (root, query, builder) ->
           builder.like(root.get("bioReplicateLabel"), "%" + filter + "%");
     }
