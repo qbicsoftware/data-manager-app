@@ -235,11 +235,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void registerExperimentalVariables(
       AddExperimentalVariablesDialog experimentalVariablesDialog) {
-    experimentalVariablesDialog.definedVariables().forEach(experimentalVariableContent -> {
-      experimentInformationService.addVariableToExperiment(experimentId,
-          experimentalVariableContent.name(), experimentalVariableContent.unit(),
-          experimentalVariableContent.levels());
-    });
+    experimentalVariablesDialog.definedVariables().forEach(
+        experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
+            experimentId,
+            experimentalVariableContent.name(), experimentalVariableContent.unit(),
+            experimentalVariableContent.levels()));
   }
 
   /**
