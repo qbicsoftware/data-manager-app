@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class DisclaimerCard extends Card {
 
-  private List<ComponentEventListener<DisclaimerConfirmedEvent>> listeners;
+  private final List<ComponentEventListener<DisclaimerConfirmedEvent>> listeners;
   @Serial
   private static final long serialVersionUID = -6441310468106881703L;
   private final String disclaimerLabel;
