@@ -2,13 +2,12 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
@@ -19,7 +18,6 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
-import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.layouts.PageComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -66,6 +64,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final AddExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
+
+  private final Component sampleRegistrationPossible;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
@@ -77,11 +77,16 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.experimentalGroupsDialog = createExperimentalGroupDialog();
+    this.sampleRegistrationPossible = createSampleRegistrationPossibleInformation();
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
   }
 
+  private Component createSampleRegistrationPossibleInformation() {
+    return new InformationMessage("You can register sample batches.",
+        "Navigate to 'Samples' to register sample batches.");
+  }
   private DisclaimerCard createNoVariableDisclaimer() {
     var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
         "No experiment variables defined", "Add");
@@ -96,8 +101,14 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void layoutComponent() {
-    initTagAndNotesLayout();
+    initTags();
+    layoutRegisterSampleBatchInformation();
     layoutTabSheet();
+
+  }
+
+  private void layoutRegisterSampleBatchInformation() {
+    getContent().addContent(this.sampleRegistrationPossible);
   }
 
   private void configureComponent() {
@@ -126,19 +137,15 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     }
   }
 
-  private void initTagAndNotesLayout() {
-    VerticalLayout tagAndNotesLayout = new VerticalLayout();
+  private void initTags() {
+    VerticalLayout tagsLayout = new VerticalLayout();
     tagLayout.addClassName("tag-collection");
-    Span noNotesDefined = new Span("Click to add Notes");
-    ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
-        Span::new, new TextField(), noNotesDefined);
-    tagAndNotesLayout.setWidthFull();
-    tagAndNotesLayout.add(tagLayout, experimentNotes);
-    tagAndNotesLayout.setPadding(false);
-    tagAndNotesLayout.setMargin(false);
-    getContent().addContent(tagAndNotesLayout);
+    tagsLayout.setWidthFull();
+    tagsLayout.add(tagLayout);
+    tagsLayout.setPadding(false);
+    tagsLayout.setMargin(false);
+    getContent().addContent(tagsLayout);
   }
-
   private void layoutTabSheet() {
     experimentSheet.add("Summary", experimentSummary);
     experimentSummary.addClassName(Display.FLEX);
@@ -176,13 +183,28 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private void loadExperimentalGroups() {
     Objects.requireNonNull(experimentId, "Experiment id not set");
     // We load the experimental groups of the experiment and render them as cards
-    List<ExperimentalGroupCard> experimentalGroupsCards = experimentInformationService.experimentalGroupsFor(
-        experimentId).stream().map(ExperimentalGroupCard::new).toList();
+    List<ExperimentalGroup> experimentalGroups = experimentInformationService.experimentalGroupsFor(
+        experimentId);
+    if (!experimentalGroups.isEmpty()) {
+      showSampleBatchRegistrationHint();
+    } else {
+      hideSampleBatchRegistrationHint();
+    }
+    List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
+        .map(ExperimentalGroupCard::new).toList();
 
     // We register the experimental details component as listener for group deletion events
     experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
     experimentalGroupsCollection.setComponents(experimentalGroupsCards);
     addCreationCardToExperimentalGroupCollection();
+  }
+
+  private void hideSampleBatchRegistrationHint() {
+    this.sampleRegistrationPossible.setVisible(false);
+  }
+
+  private void showSampleBatchRegistrationHint() {
+    this.sampleRegistrationPossible.setVisible(true);
   }
 
   private void addCreationCardToExperimentalGroupCollection() {
