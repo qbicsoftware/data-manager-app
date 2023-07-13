@@ -88,7 +88,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
-  private static ProjectId projectId;
+  private ProjectId projectId;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
@@ -153,7 +153,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param projectId ProjectId provided to this component
    */
   public void setProject(ProjectId projectId) {
-    SampleDetailsComponent.projectId = projectId;
+    this.projectId = projectId;
   }
 
   /**

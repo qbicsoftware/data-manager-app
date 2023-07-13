@@ -25,6 +25,7 @@ public class SampleSupportComponent extends Div {
   private static final Logger log = LoggerFactory.logger(SampleSupportComponent.class);
 
   public SampleSupportComponent() {
+    //Will contain the BatchOverviewComponent
 
   }
 
@@ -37,6 +38,7 @@ public class SampleSupportComponent extends Div {
    */
   public void projectId(ProjectId projectId) {
 
+    //Will propagate the ProjectId to the future BatchOverviewComponent
   }
 
 }
