@@ -102,6 +102,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
+    setMaxRows(numberOfSamples);
   }
 
   private static void prepareConditionItems(List<ExperimentalGroup> groups) {
@@ -138,33 +139,55 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * free-text cells. The rows are added below the last row containing data.
    */
   public void addRow() {
-    int lastRowIndex = 1 + sampleRegistrationSheet.getLastRowNum();
+    int lastRowIndex = getRows() - 1; // zero-based index
+    int increasedRowIndex = lastRowIndex + 1;
+
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case SPECIES -> prefillCellsToRow(columnIndex, lastRowIndex, species);
-        case SPECIMEN -> prefillCellsToRow(columnIndex, lastRowIndex, specimens);
-        case ANALYTE -> prefillCellsToRow(columnIndex, lastRowIndex, analytes);
-        case CONDITION -> prefillCellsToRow(columnIndex, lastRowIndex,
+        case SPECIES -> prefillCellsToRow(columnIndex, increasedRowIndex, species);
+        case SPECIMEN -> prefillCellsToRow(columnIndex, increasedRowIndex, specimens);
+        case ANALYTE -> prefillCellsToRow(columnIndex, increasedRowIndex, analytes);
+        case CONDITION -> prefillCellsToRow(columnIndex, increasedRowIndex,
             conditionsToReplicates.keySet().stream().toList());
         case BIOLOGICAL_REPLICATE_ID ->
-            prefillCellsToRow(columnIndex, lastRowIndex, getReplicateLabels());
+            prefillCellsToRow(columnIndex, increasedRowIndex, getReplicateLabels());
         default -> {
           DropdownColumn column = dropdownCellFactory.getColumn(columnIndex);
           if (column != null) {
-            column.increaseToRow(lastRowIndex);
+            column.increaseToRow(increasedRowIndex);
           }
         }
       }
-
-      Cell newCell = this.getCell(lastRowIndex, columnIndex);
-      boolean hasData = !this.isCellUnused(newCell);
-      boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex) != null;
+      Cell addedCell = this.getCell(increasedRowIndex, columnIndex);
+      boolean hasData = !this.isCellUnused(addedCell);
+      boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex)
+          != null; //1 because we assume a header
       //cells need to be unlocked if they have no data/dropdown
       if (!hasData && !hasDropdown) {
-        this.unlockCellsToRow(this, lastRowIndex, columnIndex);
+        this.unlockCellsToRow(this, increasedRowIndex, columnIndex);
       }
     }
+    setMaxRows(increasedRowIndex + 1); // 1-based
+  }
+
+  /**
+   * Delete a row, remove it from visual representation by shifting following rows up.
+   *
+   * @param index 0-based row index of the row to remove
+   */
+  public void deleteRow(int index) {
+    if (getRows() == 1) {
+      // only one row remaining -> the header row
+      return;
+    }
+    //delete row
+    deleteRows(index, index);
+    //move other rows up
+    if (index + 1 < getRows()) {
+      shiftRows(index + 1, getRows() - 1, -1, true, true);
+    }
+    setMaxRows(getRows() - 1);
   }
 
 
@@ -237,25 +260,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         conditionsToReplicates.keySet().stream().toList());
     headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
     prepareColumnHeaderAndWidth(headerToPresets);
-    this.reload();
+    this.reloadVisibleCellContents();
     setupCommonDropDownColumns();
   }
 
-
-  public int findLastRow() {
-    int res = 0;
-    for (int row = 1; row <= Integer.MAX_VALUE; row++) {
-      List<Cell> thisRow = new ArrayList<>();
-      for (int col = 0; col <= header.size(); col++) {
-        thisRow.add(this.getCell(row, col));
-      }
-      if (thisRow.stream().allMatch(Objects::isNull)) {
-        break;
-      }
-      res = row;
-    }
-    return res;
-  }
 
   void unlockCellsToRow(Spreadsheet spreadsheet, int maxRow, int column) {
     List<Cell> cells = new ArrayList<>();
@@ -286,7 +294,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     List<String> stringList = new ArrayList<>(Collections.singletonList(colLabel));
     stringList.addAll(entries);
     String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
-        .get();
+        .orElseThrow();
     String spacingValue = longestString + COL_SPACER;
     Cell cell = this.getCell(0, colIndex);
     String oldValue = "";
@@ -301,6 +309,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       this.autofitColumn(colIndex);
       this.getActiveSheet();
     } catch (IndexOutOfBoundsException exception) {
+      throw new RuntimeException("Something went wrong when switching sheets.");
     }
 
     this.getCell(0, colIndex).setCellValue(oldValue);
@@ -344,7 +353,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
             .collect(Collectors.toList()));
     headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
     prepareColumnHeaderAndWidth(headerToPresets);
-    this.reload();
+    this.reloadVisibleCellContents();
     DropdownColumn analysisTypeColumn = new DropdownColumn().withItems(
         Arrays.stream(SequenceAnalysisType
                 .values())

@@ -36,6 +36,8 @@ class SampleSpreadsheetLayout extends Div {
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
+
+  public final Button deleteRowButton = new Button("Delete Row");
   public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
@@ -76,8 +78,11 @@ class SampleSpreadsheetLayout extends Div {
     sampleInformationButtons.addClassName("buttons");
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
+    deleteRowButton.addClickListener(
+        event -> sampleRegistrationSpreadsheet.deleteRow(sampleRegistrationSpreadsheet.getRows()));
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sampleInformationButtons.add(backButton, addRowButton, cancelButton, registerButton);
+    sampleInformationButtons.add(backButton, addRowButton, deleteRowButton, cancelButton,
+        registerButton);
     add(sampleInformationButtons);
   }
 
@@ -89,7 +94,7 @@ class SampleSpreadsheetLayout extends Div {
   public void generateSampleRegistrationSheet(MetadataType metaDataType) {
     sampleRegistrationSpreadsheet.reset();
     sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
-    sampleRegistrationSpreadsheet.reload();
+    sampleRegistrationSpreadsheet.reloadVisibleCellContents();
   }
 
   public void reset() {
