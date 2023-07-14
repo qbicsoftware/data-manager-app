@@ -41,8 +41,6 @@ public class ExperimentItem extends Card {
 
   private final Icon flaskIcon = VaadinIcon.FLASK.create();
 
-  private final Span progressTag = new Span("no progress set");
-
   private final List<ComponentEventListener<ExperimentItemClickedEvent>> selectionListeners = new ArrayList<>();
 
   private ExperimentItem(Experiment experiment) {
@@ -53,7 +51,6 @@ public class ExperimentItem extends Card {
 
   private void layoutComponent() {
     addClassName("experiment-item");
-    layoutProgressStatus();
     layoutExperimentLabel();
     layoutActiveSection();
   }
@@ -64,13 +61,6 @@ public class ExperimentItem extends Card {
     setStatusToInactive();
     addListener(ExperimentItemClickedEvent.class,
         listener -> informListeners(new ExperimentItemClickedEvent(this, true)));
-  }
-
-  private void layoutProgressStatus() {
-    progressSection.addClassName("progress-section");
-    progressTag.addClassName("progress-tag");
-    progressSection.add(progressTag);
-    add(progressSection);
   }
 
   private void layoutExperimentLabel() {
