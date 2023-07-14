@@ -235,12 +235,6 @@
   cursor: pointer;
 }
 
-.experiment-item .progress-tag{
-  text-align: center;
-  width: fit-content;
-
-}
-
 .experiment-item .experiment-title {
   font-weight: bold;
   padding-left: 1rem;
