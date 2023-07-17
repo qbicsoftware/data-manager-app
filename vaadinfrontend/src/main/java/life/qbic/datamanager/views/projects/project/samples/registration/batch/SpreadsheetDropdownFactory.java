@@ -22,7 +22,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private List<DropdownColumn> dropdownColumns = new ArrayList<>();
-  private Map<Cell, ComboBox> dropdownMap = new HashMap<>();
 
   /**
    * Initialises the dropdown factory to display a dropdown menu (ComboBox) in a specific column
@@ -49,23 +48,12 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       // if this cell contains a valid value, but no combobox (set via copying from other cells)
       // we create a dropdown with that value selected
       String value = cell.getStringCellValue();
-      if(!value.isEmpty() && dropDownColumn.getItems().contains(value)) {
-        ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
-            spreadsheet);
+      ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
+          spreadsheet);
+      if(dropDownColumn.getItems().contains(value)) {
         comboBox.setValue(value);
-        dropdownMap.put(cell, comboBox);
-        return comboBox;
-      } else {
-        // otherwise, we initialise the Combobox for this cell, or take it from a map, if it exists
-        if (dropdownMap.containsKey(cell)) {
-          return dropdownMap.get(cell);
-        } else {
-          ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
-              spreadsheet);
-          dropdownMap.put(cell, comboBox);
-          return comboBox;
-        }
       }
+      return comboBox;
     }
     return null;
   }
@@ -91,6 +79,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
       cell.setCellValue(e.getValue());
     });
+    // allows copying of Comboboxes before a selection was made
+    Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
+    cell.setCellValue("");
 
     return comboBox;
   }
