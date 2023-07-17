@@ -87,8 +87,11 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Component createSampleRegistrationPossibleInformation() {
-    return new InformationMessage("You can register sample batches.",
+    InformationMessage informationMessage = new InformationMessage(
+        "You can register sample batches.",
         "Navigate to 'Samples' to register sample batches.");
+    informationMessage.addClassName("sample-registration-possible");
+    return informationMessage;
   }
   private DisclaimerCard createNoVariableDisclaimer() {
     var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
@@ -107,13 +110,13 @@ public class ExperimentDetailsComponent extends PageArea {
     this.add(content);
     content.addClassName("details-content");
     setTitle();
-    initTags();
-    initEmptyNotes();
-    layoutRegisterSampleBatchInformation();
+    addSampleRegistrationPossibleInformation();
+    addTagCollectionToContent();
+    addExperimentNotesComponent();
     layoutTabSheet();
   }
 
-  private void layoutRegisterSampleBatchInformation() {
+  private void addSampleRegistrationPossibleInformation() {
     content.add(this.sampleRegistrationPossible);
   }
 
@@ -148,12 +151,12 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
-  private void initTags() {
+  private void addTagCollectionToContent() {
     tagCollection.addClassName("tag-collection");
     content.add(tagCollection);
   }
 
-  private void initEmptyNotes() {
+  private void addExperimentNotesComponent() {
     Span emptyNotes = new Span("Click to add Notes");
     ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
         Span::new, new TextField(), emptyNotes);
