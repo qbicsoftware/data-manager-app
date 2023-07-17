@@ -262,8 +262,7 @@ public class ExperimentDetailsComponent extends PageArea {
     experiment.getSpecies().forEach(species -> tags.add(species.value()));
     experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
     experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
-    tags.forEach(tag -> tagCollection.add(new Tag(tag)));
-    tagCollection.getElement().setAttribute("Title", String.join(" ", tags));
+    tags.stream().map(it -> new Tag(it)).forEach(tagCollection::add);
   }
 
   private void loadExperimentInfo(Experiment experiment) {
