@@ -35,9 +35,8 @@ public class ExperimentalVariablesComponent extends Card {
   private final MenuBar menuBar;
   private final Div controls = new Div();
   private final Div content = new Div();
+  private final CreationCard variableCreationCard;
 
-  private final CreationCard variableCreationCard = CreationCard.create(
-      "Add experimental variables");
 
   private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
 
@@ -46,6 +45,8 @@ public class ExperimentalVariablesComponent extends Card {
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
     this.experimentalVariables = experimentalVariables;
     this.menuBar = createMenuBar();
+    variableCreationCard = CreationCard.create("Add experimental variables");
+    variableCreationCard.addListener(event -> fireAddEvent());
     layoutComponent();
   }
 
