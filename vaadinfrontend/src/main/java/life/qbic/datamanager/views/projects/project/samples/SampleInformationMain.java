@@ -39,7 +39,8 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
-  private final transient SampleInformationMainHandler sampleInformationMainHandler;
+  private final SampleContentComponent sampleContentComponent;
+  private final SampleSupportComponent sampleSupportComponent;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
   public SampleInformationMain(
@@ -51,9 +52,9 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
     Objects.requireNonNull(sampleContentComponent);
     Objects.requireNonNull(sampleSupportComponent);
     this.projectNavigationBarComponent = projectNavigationBarComponent;
+    this.sampleContentComponent = sampleContentComponent;
+    this.sampleSupportComponent = sampleSupportComponent;
     layoutComponent();
-    sampleInformationMainHandler = new SampleInformationMainHandler(projectNavigationBarComponent,
-        sampleContentComponent, sampleSupportComponent);
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s), Sample Content Component (#%s) and Sample Support Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
@@ -75,7 +76,9 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
    * @param projectId projectId of the selected project
    */
   public void projectId(ProjectId projectId) {
-    sampleInformationMainHandler.setProjectId(projectId);
+    projectNavigationBarComponent.projectId(projectId);
+    sampleContentComponent.projectId(projectId);
+    sampleSupportComponent.projectId(projectId);
   }
 
   /**
@@ -86,46 +89,23 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .ifPresent(sampleInformationMainHandler::propagateProjectId);
+        .ifPresent(this::propagateProjectId);
   }
 
-  private final class SampleInformationMainHandler {
-
-    ProjectNavigationBarComponent projectNavigationBarComponent;
-    SampleContentComponent sampleContentComponent;
-    SampleSupportComponent sampleSupportComponent;
-
-    public SampleInformationMainHandler(ProjectNavigationBarComponent projectNavigationBarComponent,
-        SampleContentComponent sampleContentComponent,
-        SampleSupportComponent sampleSupportComponent) {
-      this.sampleContentComponent = sampleContentComponent;
-      this.projectNavigationBarComponent = projectNavigationBarComponent;
-      this.sampleSupportComponent = sampleSupportComponent;
+  /**
+   * Reroutes to the ProjectId provided in the URL
+   * <p>
+   * This method generates the URL and routes the user via {@link RouteParam} to the provided
+   * ProjectId
+   */
+  private void propagateProjectId(String projectParam) {
+    try {
+      ProjectId projectId = ProjectId.parse(projectParam);
+      projectId(projectId);
+    } catch (IllegalArgumentException e) {
+      log.debug(
+          String.format("Provided ProjectId %s is invalid due to %s", projectParam,
+              e.getMessage()));
     }
-
-    public void setProjectId(ProjectId projectId) {
-      projectNavigationBarComponent.projectId(projectId);
-      sampleContentComponent.projectId(projectId);
-      sampleSupportComponent.projectId(projectId);
-    }
-
-    /**
-     * Reroutes to the ProjectId provided in the URL
-     * <p>
-     * This method generates the URL and routes the user via {@link RouteParam} to the provided
-     * ProjectId
-     */
-    private void propagateProjectId(String projectParam) {
-      try {
-        ProjectId projectId = ProjectId.parse(projectParam);
-        sampleInformationMainHandler.setProjectId(projectId);
-      } catch (IllegalArgumentException e) {
-        log.debug(
-            String.format("Provided ProjectId %s is invalid due to %s", projectParam,
-                e.getMessage()));
-      }
-    }
-
   }
-
 }
