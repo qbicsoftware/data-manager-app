@@ -13,6 +13,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
@@ -75,10 +76,11 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private void createBatchGrid() {
     Editor<BatchPreview> editor = batchGrid.getEditor();
     Grid.Column<BatchPreview> nameColumn = batchGrid.addColumn(BatchPreview::batchLabel)
-        .setHeader("Name").setResizable(true).setSortable(true);
+        .setHeader("Name").setResizable(true).setSortable(true)
+        .setTooltipGenerator(BatchPreview::batchLabel);
     batchGrid.addColumn(
             batchPreview -> batchPreview.experimentLabel).setHeader("Experiment")
-        .setResizable(true).setSortable(true);
+        .setResizable(true).setSortable(true).setTooltipGenerator(BatchPreview::experimentLabel);
     Grid.Column<BatchPreview> editColumn = batchGrid.addComponentColumn(batchPreview -> {
       Icon editIcon = VaadinIcon.EDIT.create();
       editIcon.addClassName(IconSize.SMALL);
@@ -95,6 +97,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         }
         batchGrid.getEditor().editItem(batchPreview);
       });
+      editButton.setTooltipText("Edit Batch");
+      deleteButton.setTooltipText("Delete Batch");
       Span buttons = new Span();
       buttons.add(editButton, deleteButton);
       return buttons;
@@ -107,19 +111,21 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         .asRequired("Batch label must not be empty")
         .bind(BatchPreview::batchLabel, BatchPreview::setBatchLabel);
     nameColumn.setEditorComponent(batchLabelField);
-    Icon saveIcon = VaadinIcon.CHECK_CIRCLE.create();
+    Icon saveIcon = LumoIcon.CHECKMARK.create();
     saveIcon.addClassName(IconSize.SMALL);
     Button saveButton = new Button(saveIcon, event -> {
       this.updateBatch(editor.getItem().batchId(), batchLabelField.getValue());
       editor.save();
     });
+    saveButton.setTooltipText("Save Edit");
     saveButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
+    Button cancelButton = new Button(LumoIcon.CROSS.create(),
         e -> editor.cancel());
     cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
         ButtonVariant.LUMO_ERROR);
     cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     cancelButton.addClassName(IconSize.SMALL);
+    cancelButton.setTooltipText("Cancel Edit");
     Div editorButtons = new Div(saveButton, cancelButton);
     editColumn.setEditorComponent(editorButtons);
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
