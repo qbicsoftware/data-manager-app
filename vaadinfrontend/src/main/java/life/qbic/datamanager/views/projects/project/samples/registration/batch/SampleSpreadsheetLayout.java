@@ -79,7 +79,8 @@ class SampleSpreadsheetLayout extends Div {
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     deleteRowButton.addClickListener(
-        event -> sampleRegistrationSpreadsheet.deleteRow(sampleRegistrationSpreadsheet.getRows()));
+        event -> sampleRegistrationSpreadsheet.deleteRow(
+            sampleRegistrationSpreadsheet.getRows() - 1));
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sampleInformationButtons.add(backButton, addRowButton, deleteRowButton, cancelButton,
         registerButton);
