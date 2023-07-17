@@ -5,6 +5,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
+import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import life.qbic.projectmanagement.domain.project.sample.event.BatchDeleted;
 import life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,13 +43,25 @@ public class BatchDomainService {
    */
   public Result<Batch, ResponseCode> register(String label, boolean isPilot) {
     Batch batch = Batch.create(label, isPilot);
-
     var result = batchRepository.add(batch);
-
-    result.onValue(theBatch -> DomainEventDispatcher.instance()
-        .dispatch(BatchRegistered.create(theBatch.batchId())));
-
+    result.onValue(this::dispatchSuccessfulBatchRegistration).onError(Result::fromError);
     return result;
+  }
+
+  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
+    var result = batchRepository.deleteById(batchId);
+    result.onValue(this::dispatchSuccessfulBatchDeletion).onError(Result::fromError);
+    return result;
+  }
+
+  private void dispatchSuccessfulBatchRegistration(Batch batch) {
+    BatchRegistered batchRegistered = BatchRegistered.create(batch.batchId());
+    DomainEventDispatcher.instance().dispatch(batchRegistered);
+  }
+
+  private void dispatchSuccessfulBatchDeletion(BatchId batchId) {
+    BatchDeleted batchDeleted = BatchDeleted.create(batchId);
+    DomainEventDispatcher.instance().dispatch(batchDeleted);
   }
 
   /**
@@ -56,7 +70,8 @@ public class BatchDomainService {
    * @since 1.0.0
    */
   public enum ResponseCode {
-    BATCH_REGISTRATION_FAILED
+    BATCH_REGISTRATION_FAILED,
+    BATCH_DELETION_FAILED
   }
 
 

@@ -5,28 +5,31 @@ import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
+import life.qbic.projectmanagement.domain.project.service.BatchDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * Batch Registration Service
+ * <p>
+ * Application service handling the registration, deletion, update and retrieval of batch
+ * Information
  */
 @Service
 public class BatchRegistrationService {
 
   private final BatchRepository batchRepository;
+  private final BatchDomainService batchDomainService;
 
-  public BatchRegistrationService(@Autowired BatchRepository batchRepository) {
+  public BatchRegistrationService(@Autowired BatchRepository batchRepository,
+      @Autowired BatchDomainService batchDomainService) {
     this.batchRepository = batchRepository;
+    this.batchDomainService = batchDomainService;
   }
 
   public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot) {
     Batch batch = Batch.create(label, isPilot);
-    var result = batchRepository.add(batch);
+    var result = batchDomainService.register(label, isPilot);
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
@@ -48,11 +51,19 @@ public class BatchRegistrationService {
     }
   }
 
+  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
+    var result = batchDomainService.deleteBatch(batchId);
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+    }
+    return Result.fromValue(batchId);
+  }
+
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
     BATCH_NOT_FOUND,
-    BATCH_CREATION_FAILED
-
+    BATCH_CREATION_FAILED,
+    BATCH_DELETION_FAILED
   }
 
 }

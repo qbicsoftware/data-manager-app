@@ -28,4 +28,13 @@ public interface BatchRepository {
 
   Result<Batch, ResponseCode> update(Batch batch);
 
+  /**
+   * Deletes a {@link Batch} entity persistently.
+   *
+   * @param batchId the {@link BatchId} of the to be deleted sample batch
+   * @return a {@link Result} with the BatchId as value or an error response code
+   * {@link ResponseCode}.
+   */
+  Result<BatchId, ResponseCode> deleteById(BatchId batchId);
+
 }

@@ -24,8 +24,11 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchDeletionEvent;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
+import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Batch Details Component
@@ -46,10 +49,12 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 4047815658668024042L;
   private final Div content = new Div();
   Grid<BatchPreview> batchGrid = new Grid<>();
+  private final transient BatchRegistrationService batchRegistrationService;
 
-  public BatchDetailsComponent() {
+  public BatchDetailsComponent(@Autowired BatchRegistrationService batchRegistrationService) {
     this.addClassName("batch-details-component");
     layoutComponent();
+    this.batchRegistrationService = batchRegistrationService;
   }
 
   private void layoutComponent() {
@@ -64,12 +69,12 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
 
   private void createBatchGrid() {
     Editor<BatchPreview> editor = batchGrid.getEditor();
-    Grid.Column<BatchPreview> nameColumn = batchGrid.addColumn(BatchPreview::getName)
+    Grid.Column<BatchPreview> nameColumn = batchGrid.addColumn(BatchPreview::name)
         .setHeader("Name").setResizable(true);
     batchGrid.addColumn(
-            batchPreview -> batchPreview.experiment.getName()).setHeader("Experiment")
+            batchPreview -> batchPreview.experiment().getName()).setHeader("Experiment")
         .setResizable(true);
-    Grid.Column<BatchPreview> dateColumn = batchGrid.addColumn(BatchPreview::getDate)
+    Grid.Column<BatchPreview> dateColumn = batchGrid.addColumn(BatchPreview::date)
         .setHeader("Date")
         .setResizable(true);
     Grid.Column<BatchPreview> editColumn = batchGrid.addComponentColumn(batchPreview -> {
@@ -93,34 +98,41 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       return buttons;
     }).setFlexGrow(0);
     editor.setBuffered(true);
-
     Binder<BatchPreview> batchPreviewBinder = new Binder<>(BatchPreview.class);
     batchGrid.getEditor().setBinder(batchPreviewBinder);
     TextField nameField = new TextField();
     batchPreviewBinder.forField(nameField)
         .asRequired("First name must not be empty")
-        .bind(BatchPreview::getName, BatchPreview::setName);
+        .bind(BatchPreview::name, BatchPreview::setName);
     nameColumn.setEditorComponent(nameField);
     DatePicker datePicker = new DatePicker();
     batchPreviewBinder.forField(datePicker).asRequired("Last name must not be empty")
-        .bind(BatchPreview::getDate, BatchPreview::setDate);
+        .bind(BatchPreview::date, BatchPreview::setDate);
     dateColumn.setEditorComponent(datePicker);
     Button saveButton = new Button("Save", event -> editor.save());
     editColumn.setEditorComponent(saveButton);
   }
 
+  public void setExperiments(Collection<Experiment> experiments) {
+    experiments.forEach(this::loadBatchesForExperiment);
+  }
+
   private void removeBatch(BatchPreview batchPreview) {
-    //Todo Remove Batch
+    var result = batchRegistrationService.deleteBatch(batchPreview.batchId());
+  }
+
+  private void loadBatchesForExperiment(Experiment experiment) {
+    //ToDo Load Batch Information for Experiment
   }
 
   private Collection<BatchPreview> createDummyBatchPreviews() {
-    return List.of(new BatchPreview("Batch 1", LocalDate.parse("2023-05-16"),
+    return List.of(new BatchPreview(BatchId.create(), "Batch 1", LocalDate.parse("2023-05-16"),
             Experiment.create("Experiment 1")),
-        new BatchPreview("Batch 2", LocalDate.parse("2023-05-17"),
+        new BatchPreview(BatchId.create(), "Batch 2", LocalDate.parse("2023-05-17"),
             Experiment.create("Experiment 2")),
-        new BatchPreview("Batch 3", LocalDate.parse("2023-05-18"),
+        new BatchPreview(BatchId.create(), "Batch 3", LocalDate.parse("2023-05-18"),
             Experiment.create("Experiment 3")),
-        new BatchPreview("Batch 4", LocalDate.parse("2023-05-19"),
+        new BatchPreview(BatchId.create(), "Batch 4", LocalDate.parse("2023-05-19"),
             Experiment.create("Experiment 4")));
   }
 
@@ -130,20 +142,31 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
 
   private class BatchPreview {
 
+    private BatchId batchId;
     private String name;
     private LocalDate date;
     private Experiment experiment;
 
-    public BatchPreview(String name, LocalDate date, Experiment experiment) {
+    public BatchPreview(BatchId batchId, String name, LocalDate date, Experiment experiment) {
+      Objects.requireNonNull(batchId);
       Objects.requireNonNull(name);
       Objects.requireNonNull(date);
       Objects.requireNonNull(experiment);
+      this.batchId = batchId;
       this.name = name;
       this.date = date;
       this.experiment = experiment;
     }
 
-    public String getName() {
+    public BatchId batchId() {
+      return batchId;
+    }
+
+    public void setBatchId(BatchId batchId) {
+      this.batchId = batchId;
+    }
+
+    public String name() {
       return name;
     }
 
@@ -151,7 +174,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       this.name = name;
     }
 
-    public LocalDate getDate() {
+    public LocalDate date() {
       return date;
     }
 
@@ -159,7 +182,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       this.date = date;
     }
 
-    public Experiment getExperiment() {
+    public Experiment experiment() {
       return experiment;
     }
 
