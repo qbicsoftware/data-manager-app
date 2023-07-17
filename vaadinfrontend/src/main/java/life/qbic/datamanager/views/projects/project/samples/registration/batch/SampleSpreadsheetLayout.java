@@ -166,6 +166,7 @@ class SampleSpreadsheetLayout extends Div {
           (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
       notification.addDetachListener(
           (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
+
       notification.open();
     }
 
