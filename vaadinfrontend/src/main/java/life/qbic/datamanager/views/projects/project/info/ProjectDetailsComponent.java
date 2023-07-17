@@ -126,11 +126,11 @@ public class ProjectDetailsComponent extends PageArea {
 
   private void initFormFields() {
     titleToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextField(),
-        createPlaceHolderSpan());
+        createNoPersonAssignedSpan());
     projectObjectiveToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
-        createPlaceHolderSpan());
+        createNoPersonAssignedSpan());
     experimentalDesignToggleComponent = new ToggleDisplayEditComponent<>(Span::new, new TextArea(),
-        createPlaceHolderSpan());
+        createNoPersonAssignedSpan());
     speciesMultiSelectComboBox = new MultiSelectComboBox<>();
     speciesMultiSelectComboBox.setClearButtonVisible(false);
     specimenMultiSelectComboBox = new MultiSelectComboBox<>();
@@ -139,18 +139,18 @@ public class ProjectDetailsComponent extends PageArea {
     analyteMultiSelectComboBox.setClearButtonVisible(false);
 
     principalInvestigatorToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Principal Investigator"), createPlaceHolderSpan());
+        initPersonReferenceCombobox("Principal Investigator"), createNoPersonAssignedSpan());
     responsiblePersonToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Responsible Person"), createPlaceHolderSpan());
+        initPersonReferenceCombobox("Responsible Person"), createNoPersonAssignedSpan());
     projectManagerToggleComponent = new ToggleDisplayEditComponent<>(ContactElement::from,
-        initPersonReferenceCombobox("Project Manager"), createPlaceHolderSpan());
+        initPersonReferenceCombobox("Project Manager"), createNoPersonAssignedSpan());
 
   }
 
-  private Span createPlaceHolderSpan() {
-    Span placeholderSpan = new Span("None");
-    placeholderSpan.addClassName("placeholder");
-    return placeholderSpan;
+  private Span createNoPersonAssignedSpan() {
+    Span noPersonAssignedSpan = new Span("None");
+    noPersonAssignedSpan.addClassName("no-person-assigned");
+    return noPersonAssignedSpan;
   }
 
   private void setFormLayoutComponentStyles() {

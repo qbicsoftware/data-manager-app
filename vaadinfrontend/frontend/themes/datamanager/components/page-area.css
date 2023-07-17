@@ -57,7 +57,7 @@
   gap: var(--lumo-space-s);
 }
 
-.page-area.project-details-component .details-content .placeholder {
+.page-area.project-details-component .details-content .no-person-assigned {
   color: var(--lumo-secondary-text-color);
 }
 
