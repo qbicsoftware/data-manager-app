@@ -16,6 +16,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
@@ -25,7 +27,7 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
@@ -63,7 +65,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final Div contentExperimentalGroupsTab = new Div();
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  private final AddExperimentalVariablesDialog addExperimentalVariablesDialog;
+  private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
@@ -73,7 +75,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
-    this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
+    this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.experimentalGroupsDialog = createExperimentalGroupDialog();
@@ -105,6 +107,29 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
     addCancelListenerForAddVariableDialog();
     addConfirmListenerForAddVariableDialog();
     addListenerForNewVariableEvent();
+    addEditListenerForExperimentalVariables();
+  }
+
+  private void addEditListenerForExperimentalVariables() {
+    experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
+      var editDialog = ExperimentalVariablesDialog.prefilled(experimentInformationService.getVariablesOfExperiment(experimentId));
+      editDialog.subscribeToCancelEvent(experimentalVariablesDialogCancelEvent -> editDialog.close());
+      editDialog.subscribeToConfirmEvent(experimentalVariablesDialogConfirmEvent -> {
+        deleteExistingExperimentalVariables(experimentId);
+        registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
+        editDialog.close();
+        reloadExperimentalVariables();
+      });
+      editDialog.open();
+    });
+  }
+
+  private void reloadExperimentalVariables() {
+    loadExperiment(experimentId);
+  }
+
+  private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
+    experimentInformationService.deleteAllExperimentalVariables(experimentId);
   }
 
   private void addListenerForNewVariableEvent() {
@@ -212,7 +237,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void registerExperimentalVariables(
-      AddExperimentalVariablesDialog experimentalVariablesDialog) {
+      ExperimentalVariablesDialog experimentalVariablesDialog) {
     experimentalVariablesDialog.definedVariables().forEach(experimentalVariableContent -> {
       experimentInformationService.addVariableToExperiment(experimentId,
           experimentalVariableContent.name(), experimentalVariableContent.unit(),

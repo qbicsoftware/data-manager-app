@@ -196,7 +196,14 @@ public class ExperimentalDesign {
     }
   }
 
-  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+    public void removeAllExperimentalVariables() throws IllegalStateException {
+      if (experimentalGroups.size() > 0) {
+        throw new IllegalStateException("Cannot delete experimental variables when experimental groups are still referencing them.");
+      }
+      this.variables.clear();
+    }
+
+    public record AddExperimentalGroupResponse(ResponseCode responseCode) {
 
     public enum ResponseCode {
       SUCCESS,

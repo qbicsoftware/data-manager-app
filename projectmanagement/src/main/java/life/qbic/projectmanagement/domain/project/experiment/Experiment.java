@@ -159,6 +159,15 @@ public class Experiment {
     this.specimens.addAll(missingSpecimens);
   }
 
+  public void removeAllExperimentalVariables() {
+    removeAllExperimentalGroups();
+    experimentalDesign.removeAllExperimentalVariables();
+  }
+
+  public void removeAllExperimentalGroups() {
+    experimentalDesign.getExperimentalGroups().forEach(experimentalGroup -> experimentalDesign.removeExperimentalGroup(experimentalGroup.id()));
+  }
+
   /**
    * Adds {@link Analyte}s to the experiment.
    *
