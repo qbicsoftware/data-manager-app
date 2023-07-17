@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.samples.SampleOverviewComponent.BatchRegistrationListener;
+import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.BatchRegistrationListener;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -25,33 +25,31 @@ import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Sample main component
+ * Sample Content component
  * <p>
- * The main component is a {@link Div} container, which is responsible for hosting the components
- * handling the main content within the {@link SampleInformationPage}. It propagates the
- * {@link Project} and {@link Experiment} to the components within this container. Additionally, it
- * propagates the {@link Batch} and {@link Sample} information provided in the
- * {@link SampleOverviewComponent} to the {@link SampleInformationPage} and can be easily extended
- * with additional components.
+ * The content component is a {@link Div} container, which is responsible for hosting the components
+ * handling the content within the {@link SampleInformationMain}. It propagates the {@link Project}
+ * and {@link Experiment} to the components within this container. Additionally, it propagates the
+ * {@link Batch} and {@link Sample} information provided in the {@link SampleDetailsComponent} to
+ * the {@link SampleInformationMain} and can be easily extended with additional components.
  */
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleMainComponent extends Div {
+public class SampleContentComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
   private ProjectId projectId;
-  private static final Logger log = LoggerFactory.logger(SampleMainComponent.class);
-  private final SampleOverviewComponent sampleOverviewComponent;
+  private static final Logger log = LoggerFactory.logger(SampleContentComponent.class);
+  private final SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
 
-  public SampleMainComponent(@Autowired ProjectInformationService projectInformationService,
+  public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleOverviewComponent sampleOverviewComponent) {
-    this.addClassName("main");
-    this.sampleOverviewComponent = sampleOverviewComponent;
+      @Autowired SampleDetailsComponent sampleDetailsComponent) {
+    this.sampleDetailsComponent = sampleDetailsComponent;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     reloadOnBatchRegistration();
@@ -75,7 +73,7 @@ public class SampleMainComponent extends Div {
   }
 
   private void propagateProjectInformation(ProjectId projectId) {
-    sampleOverviewComponent.setProject(projectId);
+    sampleDetailsComponent.setProject(projectId);
   }
 
   private void propagateExperimentInformation(ProjectId projectId) {
@@ -83,8 +81,8 @@ public class SampleMainComponent extends Div {
     if (experiments.isEmpty()) {
       displayNoExperimentsFound();
     } else {
-      displayComponentInContent(sampleOverviewComponent);
-      sampleOverviewComponent.setExperiments(experiments);
+      displayComponentInContent(sampleDetailsComponent);
+      sampleDetailsComponent.setExperiments(experiments);
     }
   }
 
@@ -108,17 +106,17 @@ public class SampleMainComponent extends Div {
 
   /**
    * Propagates the listener which will retrieve notification if a new {@link Batch} was created in
-   * the {@link SampleOverviewComponent} within this container
+   * the {@link SampleDetailsComponent} within this container
    *
    * @param batchRegistrationListener listener to be notified if a batchRegistration happened in the
-   *                                  {@link SampleOverviewComponent}
+   *                                  {@link SampleDetailsComponent}
    */
   public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-    sampleOverviewComponent.addBatchRegistrationListener(batchRegistrationListener);
+    sampleDetailsComponent.addBatchRegistrationListener(batchRegistrationListener);
   }
 
   private void reloadOnBatchRegistration() {
-    sampleOverviewComponent.addBatchRegistrationListener(
+    sampleDetailsComponent.addBatchRegistrationListener(
         event -> propagateExperimentInformation(projectId));
   }
 

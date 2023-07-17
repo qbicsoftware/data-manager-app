@@ -14,8 +14,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.info.ProjectInformationPage;
-import life.qbic.datamanager.views.projects.project.samples.SampleInformationPage;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -38,22 +38,22 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   private final transient Handler handler;
 
-  public ProjectViewPage(@Autowired ProjectInformationPage projectInformationPage,
+  public ProjectViewPage(@Autowired ProjectInformationMain projectInformationMain,
       @Autowired ExperimentInformationMain experimentInformationMain,
-      @Autowired SampleInformationPage sampleInformationPage,
+      @Autowired SampleInformationMain sampleInformationMain,
       @Autowired ProjectInformationService projectInformationService) {
-    Objects.requireNonNull(projectInformationPage);
+    Objects.requireNonNull(projectInformationMain);
     Objects.requireNonNull(experimentInformationMain);
-    Objects.requireNonNull(sampleInformationPage);
+    Objects.requireNonNull(sampleInformationMain);
     stylePage();
-    handler = new Handler(projectInformationPage,
-        experimentInformationMain, sampleInformationPage, projectInformationService);
+    handler = new Handler(projectInformationMain,
+        experimentInformationMain, sampleInformationMain, projectInformationService);
     log.debug(String.format(
         "New instance for project view (#%s) created with a project information page (#%s), an experiment information page (#%s), and a sample information page (#%s)",
         System.identityHashCode(this),
-        System.identityHashCode(projectInformationPage),
+        System.identityHashCode(projectInformationMain),
         System.identityHashCode(experimentInformationMain),
-        System.identityHashCode(sampleInformationPage)));
+        System.identityHashCode(sampleInformationMain)));
   }
 
   @Override
@@ -82,25 +82,24 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
    */
   static class Handler {
 
-    private final ProjectInformationPage projectInformationPage;
+    private final ProjectInformationMain projectInformationMain;
     private final ExperimentInformationMain experimentInformationMain;
-    private final SampleInformationPage sampleInformationPage;
-
+    private final SampleInformationMain sampleInformationMain;
     private final ProjectInformationService projectInformationService;
 
 
-    public Handler(ProjectInformationPage projectInformationPage,
+    public Handler(ProjectInformationMain projectInformationMain,
         ExperimentInformationMain experimentInformationMain,
-        SampleInformationPage sampleInformationPage,
+        SampleInformationMain sampleInformationMain,
         ProjectInformationService projectInformationService) {
-      Objects.requireNonNull(projectInformationPage);
+      Objects.requireNonNull(projectInformationMain);
       Objects.requireNonNull(experimentInformationMain);
-      Objects.requireNonNull(sampleInformationPage);
+      Objects.requireNonNull(sampleInformationMain);
       Objects.requireNonNull(projectInformationService);
 
-      this.projectInformationPage = projectInformationPage;
+      this.projectInformationMain = projectInformationMain;
       this.experimentInformationMain = experimentInformationMain;
-      this.sampleInformationPage = sampleInformationPage;
+      this.sampleInformationMain = sampleInformationMain;
       this.projectInformationService = projectInformationService;
     }
 
@@ -111,9 +110,9 @@ public class ProjectViewPage extends Div implements BeforeEnterObserver, RouterL
      * @since 1.0.0
      */
     public void setProjectId(ProjectId projectId) {
-      this.projectInformationPage.projectId(projectId);
+      this.projectInformationMain.projectId(projectId);
       this.experimentInformationMain.projectId(projectId);
-      this.sampleInformationPage.projectId(projectId);
+      this.sampleInformationMain.projectId(projectId);
     }
 
     private Result<ProjectId, RuntimeException> validateProjectId(String projectIdParam) {
