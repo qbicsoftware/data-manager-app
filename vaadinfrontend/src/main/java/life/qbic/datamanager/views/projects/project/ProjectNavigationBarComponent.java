@@ -56,7 +56,7 @@ public class ProjectNavigationBarComponent extends PageArea {
         String.format(Projects.PROJECT_INFO, this.projectId.value()));
     samplesButton.setButtonRoute(String.format(Projects.SAMPLES, projectId.value()));
     //The user will be routed to the active experiment of the project handled by the experimentInformationMainPage
-    experimentsButton.setButtonRoute(String.format(Projects.EXPERIMENT, projectId.value(), ""));
+    experimentsButton.setButtonRoute(String.format(Projects.EXPERIMENTS, projectId.value()));
   }
 
   private static class NavigationButton extends Div {
