@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
@@ -86,8 +87,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Button metadataDownloadButton = new Button("Download Metadata");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
-  private static final Logger log = getLogger(SampleOverviewComponent.class);
-  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
+  private static final Logger log = getLogger(SampleDetailsComponent.class);
+  private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
   private static ProjectId projectId;
 
@@ -151,7 +152,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param projectId ProjectId provided to this component
    */
   public void setProject(ProjectId projectId) {
-    this.projectId = projectId;
+    SampleDetailsComponent.projectId = projectId;
   }
 
   /**
