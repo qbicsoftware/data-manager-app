@@ -8,14 +8,19 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.Min;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.VariableName;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * TODO!
@@ -36,10 +41,8 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField sampleSizeField;
-
-  private int variableCount = 0;
-
   private final List<Binder<?>> binders = new ArrayList<>();
+  private int variableCount = 0;
 
 
   public ExperimentalGroupInput(Collection<VariableLevel> availableLevels) {
@@ -57,6 +60,18 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
         event -> setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid()));
     sampleSizeField.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || sampleSizeField.isInvalid()));
+  }
+
+  private static void overwriteSelectionOfSameVariable(
+      MultiSelectComboBox<VariableLevel> selectComboBox) {
+    selectComboBox.addSelectionListener(event -> {
+      Set<VariableName> variableNamesInAddedSelection = event.getAddedSelection().stream()
+          .map(VariableLevel::variableName).collect(Collectors.toSet());
+      List<VariableLevel> previousSelectionOfSelectedVariable = event.getOldSelection().stream()
+          .filter(previouslySelected -> variableNamesInAddedSelection.contains(
+              previouslySelected.variableName())).toList();
+      selectComboBox.deselect(previousSelectionOfSelectedVariable);
+    });
   }
 
   private void addValidationForVariableCount() {
@@ -150,18 +165,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     boolean variableNameContainsFilterString = level.variableName().value().toLowerCase()
         .contains(filterString.toLowerCase());
     return variableNameContainsFilterString || levelValueContainsFilterString;
-  }
-
-  private static void overwriteSelectionOfSameVariable(
-      MultiSelectComboBox<VariableLevel> selectComboBox) {
-    selectComboBox.addSelectionListener(event -> {
-      Set<VariableName> variableNamesInAddedSelection = event.getAddedSelection().stream()
-          .map(VariableLevel::variableName).collect(Collectors.toSet());
-      List<VariableLevel> previousSelectionOfSelectedVariable = event.getOldSelection().stream()
-          .filter(previouslySelected -> variableNamesInAddedSelection.contains(
-              previouslySelected.variableName())).toList();
-      selectComboBox.deselect(previousSelectionOfSelectedVariable);
-    });
   }
 
   public static class ExperimentalGroupBean {
