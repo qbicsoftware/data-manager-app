@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
+import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 
 /**
@@ -35,6 +36,9 @@ public class ExperimentalVariablesComponent extends Card {
   private final Div controls = new Div();
   private final Div content = new Div();
 
+  private final CreationCard variableCreationCard = CreationCard.create(
+      "Add experimental variables");
+
   private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
 
   private final List<ComponentEventListener<AddNewExperimentalVariableEvent>> listenersNewVariable = new ArrayList<>();
@@ -55,6 +59,10 @@ public class ExperimentalVariablesComponent extends Card {
     return menu;
   }
 
+  private void addComponentAsLast(Component component) {
+    content.addComponentAtIndex(content.getComponentCount(), component);
+  }
+
   private void layoutComponent() {
     addClassName("experimental-variables");
     Div cardHeader = new Div();
@@ -67,11 +75,9 @@ public class ExperimentalVariablesComponent extends Card {
     cardHeader.add(controls);
     this.add(cardHeader);
 
-    variableFactSheets.addAll(generateFactSheets(experimentalVariables));
-    variableFactSheets.forEach(content::add);
+    setExperimentalVariables(experimentalVariables);
 
     content.addClassName("content");
-
     add(content);
   }
 
@@ -133,13 +139,18 @@ public class ExperimentalVariablesComponent extends Card {
    * @param variables the new experimental variables to display
    * @since 1.0.0
    */
-  public void setExperimentalVariables(List<ExperimentalVariable> variables) {
-    this.experimentalVariables.clear();
+  public void setExperimentalVariables(Collection<ExperimentalVariable> variables) {
+    resetContent();
     this.experimentalVariables.addAll(variables);
-    content.removeAll();
-    variableFactSheets.clear();
     variableFactSheets.addAll(generateFactSheets(experimentalVariables));
     variableFactSheets.forEach(content::add);
+    addComponentAsLast(variableCreationCard);
+  }
+
+  private void resetContent() {
+    this.experimentalVariables.clear();
+    this.variableFactSheets.clear();
+    content.removeAll();
   }
 
   /**
