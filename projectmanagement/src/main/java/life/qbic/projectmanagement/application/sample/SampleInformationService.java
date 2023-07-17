@@ -52,19 +52,19 @@ public class SampleInformationService {
    */
   @PostFilter("hasPermission(filterObject,'VIEW_SAMPLE')")
   public List<SamplePreview> queryPreview(ExperimentId experimentId, int offset, int limit,
-      List<SortOrder> sortOrders) {
+      List<SortOrder> sortOrders, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<SamplePreview> previewList = samplePreviewLookup.queryByExperimentId(experimentId,
         offset,
         limit,
-        sortOrders);
+        sortOrders, filter);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(previewList);
   }
 
-  public int countPreviews(ExperimentId experimentId) {
+  public int countPreviews(ExperimentId experimentId, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    return samplePreviewLookup.queryCountByExperimentId(experimentId);
+    return samplePreviewLookup.queryCountByExperimentId(experimentId, filter);
   }
 
   public enum ResponseCode {
