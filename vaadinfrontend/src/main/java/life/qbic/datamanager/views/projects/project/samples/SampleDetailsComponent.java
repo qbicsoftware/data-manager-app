@@ -59,10 +59,10 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Sample Overview Component
+ * Sample Details Component
  * <p>
- * Component embedded within the {@link SampleInformationPage} in the {@link ProjectViewPage}. It
- * allows the user to see the information associated for each {@link Batch} and {@link Sample} of
+ * Component embedded within the {@link SampleInformationMain} in the {@link ProjectViewPage}. It
+ * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
  * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
  * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
@@ -72,7 +72,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class SampleOverviewComponent extends PageArea implements Serializable {
+public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
@@ -87,26 +87,26 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   private final Button metadataDownloadButton = new Button("Download Metadata");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
-  private static final Logger log = getLogger(SampleOverviewComponent.class);
-  private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
+  private static final Logger log = getLogger(SampleDetailsComponent.class);
+  private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
-  private static ProjectId projectId;
+  private ProjectId projectId;
 
-  public SampleOverviewComponent(@Autowired SampleInformationService sampleInformationService,
+  public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired SampleRegistrationService sampleRegistrationService) {
     initSampleView();
-    this.sampleOverviewComponentHandler = new SampleOverviewComponentHandler(
+    this.sampleDetailsComponentHandler = new SampleDetailsComponentHandler(
         sampleInformationService, batchRegistrationService,
         sampleRegistrationService);
   }
 
   private void initSampleView() {
-    this.addClassName("sample-overview-component");
+    addClassName("sample-details-component");
     initButtonAndFieldBar();
-    this.add(title);
+    addComponentAsFirst(title);
     title.addClassName("title");
-    this.add(content);
+    add(content);
     content.addClassName("content");
   }
 
@@ -152,7 +152,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
    * @param projectId ProjectId provided to this component
    */
   public void setProject(ProjectId projectId) {
-    SampleOverviewComponent.projectId = projectId;
+    this.projectId = projectId;
   }
 
   /**
@@ -166,7 +166,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
    */
 
   public void setExperiments(Collection<Experiment> experiments) {
-    sampleOverviewComponentHandler.setExperiments(experiments);
+    sampleDetailsComponentHandler.setExperiments(experiments);
   }
 
   /**
@@ -177,17 +177,17 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
    *                                  component
    */
   public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-    sampleOverviewComponentHandler.addBatchRegistrationListener(batchRegistrationListener);
+    sampleDetailsComponentHandler.addBatchRegistrationListener(batchRegistrationListener);
   }
 
-  private final class SampleOverviewComponentHandler {
+  private final class SampleDetailsComponentHandler {
 
     private final SampleInformationService sampleInformationService;
     private final BatchRegistrationService batchRegistrationService;
     private final SampleRegistrationService sampleRegistrationService;
     private final List<BatchRegistrationListener> registrationListener = new ArrayList<>();
 
-    public SampleOverviewComponentHandler(SampleInformationService sampleInformationService,
+    public SampleDetailsComponentHandler(SampleInformationService sampleInformationService,
         BatchRegistrationService batchRegistrationService,
         SampleRegistrationService sampleRegistrationService) {
       this.sampleInformationService = sampleInformationService;

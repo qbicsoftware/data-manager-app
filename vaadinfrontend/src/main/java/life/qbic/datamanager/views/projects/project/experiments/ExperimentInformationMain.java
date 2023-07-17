@@ -51,7 +51,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final transient ExperimentInformationPageHandler experimentInformationPageHandler;
+  private final transient ExperimentInformationMainHandler experimentInformationMainHandler;
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
 
   public ExperimentInformationMain(
@@ -68,7 +68,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     Objects.requireNonNull(experimentInformationService);
     this.projectNavigationBarComponent = projectNavigationBarComponent;
     layoutComponent();
-    experimentInformationPageHandler = new ExperimentInformationPageHandler(
+    experimentInformationMainHandler = new ExperimentInformationMainHandler(
         projectNavigationBarComponent, experimentContentComponent, experimentSupportComponent,
         projectInformationService, experimentInformationService);
     log.debug(String.format(
@@ -95,9 +95,9 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .ifPresentOrElse(
-            experimentIdParam -> experimentInformationPageHandler.propagateExperimentId(
+            experimentIdParam -> experimentInformationMainHandler.propagateExperimentId(
                 experimentIdParam, beforeEnterEvent),
-            () -> experimentInformationPageHandler.rerouteToActiveExperiment(beforeEnterEvent));
+            () -> experimentInformationMainHandler.rerouteToActiveExperiment(beforeEnterEvent));
   }
 
   /**
@@ -107,10 +107,10 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
    * @param projectId The projectId to be propagated
    */
   public void projectId(ProjectId projectId) {
-    experimentInformationPageHandler.setProjectId(projectId);
+    experimentInformationMainHandler.setProjectId(projectId);
   }
 
-  private final class ExperimentInformationPageHandler {
+  private final class ExperimentInformationMainHandler {
 
     private ProjectId projectId;
     private final ProjectNavigationBarComponent projectNavigationBarComponent;
@@ -119,7 +119,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     private final ProjectInformationService projectInformationService;
     private final ExperimentInformationService experimentInformationService;
 
-    public ExperimentInformationPageHandler(
+    public ExperimentInformationMainHandler(
         ProjectNavigationBarComponent projectNavigationBarComponent,
         ExperimentContentComponent experimentContentComponent,
         ExperimentSupportComponent experimentSupportComponent,
@@ -210,7 +210,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     private void propagateExperimentId(String experimentParam, BeforeEnterEvent beforeEnterEvent) {
       try {
         ExperimentId experimentId = ExperimentId.parse(experimentParam);
-        experimentInformationPageHandler.setExperimentId(experimentId);
+        experimentInformationMainHandler.setExperimentId(experimentId);
       } catch (IllegalArgumentException e) {
         log.debug(
             String.format("Provided ExperimentId %s is invalid due to %s", experimentParam,
@@ -227,7 +227,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
      * experiment of a project
      */
     private void rerouteToActiveExperiment(BeforeEnterEvent beforeEnterEvent) {
-      ExperimentId activeExperimentId = experimentInformationPageHandler.getActiveExperimentIdForProject(
+      ExperimentId activeExperimentId = experimentInformationMainHandler.getActiveExperimentIdForProject(
           projectId);
       log.debug(String.format("Rerouting to active experiment %s of project %s",
           activeExperimentId.value(), projectId.value()));

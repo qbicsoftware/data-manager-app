@@ -5,9 +5,11 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
@@ -18,7 +20,8 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
-import life.qbic.datamanager.views.layouts.PageComponent;
+import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -48,15 +51,18 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ExperimentDetailsComponent extends Composite<PageComponent> {
+public class ExperimentDetailsComponent extends PageArea {
 
   private ExperimentId experimentId;
-  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(new ArrayList<>());
+  private final Div content = new Div();
+  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
+      new ArrayList<>());
   private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
-  private final ExperimentInformationService experimentInformationService;
-  private final HorizontalLayout tagLayout = new HorizontalLayout();
+  private final transient ExperimentInformationService experimentInformationService;
+  private final Span title = new Span();
+  private final Div tagCollection = new Div();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div contentExperimentalGroupsTab = new Div();
   private final Div experimentSummary = new Div();
@@ -101,14 +107,22 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void layoutComponent() {
+    this.add(content);
+    content.addClassName("details-content");
+    setTitle();
     initTags();
+    initEmptyNotes();
     layoutRegisterSampleBatchInformation();
     layoutTabSheet();
-
   }
 
   private void layoutRegisterSampleBatchInformation() {
-    getContent().addContent(this.sampleRegistrationPossible);
+    content.add(this.sampleRegistrationPossible);
+  }
+
+  private void setTitle() {
+    title.addClassName("title");
+    addComponentAsFirst(title);
   }
 
   private void configureComponent() {
@@ -138,19 +152,21 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void initTags() {
-    VerticalLayout tagsLayout = new VerticalLayout();
-    tagLayout.addClassName("tag-collection");
-    tagsLayout.setWidthFull();
-    tagsLayout.add(tagLayout);
-    tagsLayout.setPadding(false);
-    tagsLayout.setMargin(false);
-    getContent().addContent(tagsLayout);
+    tagCollection.addClassName("tag-collection");
+    content.add(tagCollection);
+  }
+
+  private void initEmptyNotes() {
+    Span emptyNotes = new Span("Click to add Notes");
+    ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
+        Span::new, new TextField(), emptyNotes);
+    content.add(experimentNotes);
   }
   private void layoutTabSheet() {
     experimentSheet.add("Summary", experimentSummary);
     experimentSummary.addClassName(Display.FLEX);
     experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
-    getContent().addContent(experimentSheet);
+    content.add(experimentSheet);
     experimentSheet.setSizeFull();
   }
 
@@ -258,7 +274,7 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void loadExperimentInformation(Experiment experiment) {
     this.experimentId = experiment.experimentId();
-    getContent().addTitle(experiment.getName());
+    title.setText(experiment.getName());
     loadTagInformation(experiment);
     loadExperimentInfo(experiment);
     fillExperimentalGroupDialog();
@@ -272,13 +288,12 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void loadTagInformation(Experiment experiment) {
-    tagLayout.removeAll();
+    tagCollection.removeAll();
     List<String> tags = new ArrayList<>();
     experiment.getSpecies().forEach(species -> tags.add(species.value()));
     experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
     experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
-    tags.forEach(tag -> tagLayout.add(new Tag(tag)));
-    tagLayout.getElement().setAttribute("Title", String.join(" ", tags));
+    tags.stream().map(Tag::new).forEach(tagCollection::add);
   }
 
   private void loadExperimentInfo(Experiment experiment) {

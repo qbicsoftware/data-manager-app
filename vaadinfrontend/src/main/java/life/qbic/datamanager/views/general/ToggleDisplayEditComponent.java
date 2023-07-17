@@ -31,9 +31,7 @@ import org.slf4j.Logger;
 @Tag("div")
 public class ToggleDisplayEditComponent<S extends Component, T extends Component & HasSize & HasValue<? extends HasValue.ValueChangeEvent<U>, U> & HasValidation & Focusable<T>, U> extends
     AbstractField<ToggleDisplayEditComponent<S, T, U>, U> implements HasSize {
-
   private static final Logger log = getLogger(ToggleDisplayEditComponent.class);
-
   private final Function<U, S> displayProvider;
   private final T inputComponent;
   private S displayComponent;
@@ -51,20 +49,22 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
   public ToggleDisplayEditComponent(Function<U, S> displayProvider, T inputComponent,
       S emptyDisplayComponent) {
     super(inputComponent.getEmptyValue());
+    this.addClassName("display-edit-component");
     requireNonNull(displayProvider, "Display provider must not be null");
     requireNonNull(inputComponent, "Input component must not be null");
     requireNonNull(emptyDisplayComponent, "empty display component must not be null");
     this.displayProvider = displayProvider;
     this.inputComponent = inputComponent;
+    inputComponent.addClassName("edit-component");
     this.emptyDisplayComponent = emptyDisplayComponent;
     this.displayComponent = emptyDisplayComponent;
+    displayComponent.addClassName("display-component");
     // attach input component as child to this element
     add(this.inputComponent);
     add(this.displayComponent);
     // initially update representation with input value
     setPresentationValue(this.inputComponent.getValue());
     setValue(this.inputComponent.getValue());
-
     switchToDisplay();
     registerClientExitActions();
     registerClientEnterActions();
@@ -180,6 +180,7 @@ public class ToggleDisplayEditComponent<S extends Component, T extends Component
     } else {
       updatedDisplayComponent = emptyDisplayComponent;
     }
+    updatedDisplayComponent.addClassName("display-component");
     return updatedDisplayComponent;
   }
 
