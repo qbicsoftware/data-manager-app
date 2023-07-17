@@ -16,8 +16,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
@@ -27,10 +25,10 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
@@ -54,11 +52,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
-  private ExperimentId experimentId;
-  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(new ArrayList<>());
   private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
+  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
+      new ArrayList<>());
   private final ExperimentInformationService experimentInformationService;
   private final HorizontalLayout tagLayout = new HorizontalLayout();
   private final TabSheet experimentSheet = new TabSheet();
@@ -71,9 +69,11 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
+  private ExperimentId experimentId;
 
 
-  public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
+  public ExperimentDetailsComponent(
+      @Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
@@ -112,8 +112,10 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
 
   private void addEditListenerForExperimentalVariables() {
     experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
-      var editDialog = ExperimentalVariablesDialog.prefilled(experimentInformationService.getVariablesOfExperiment(experimentId));
-      editDialog.subscribeToCancelEvent(experimentalVariablesDialogCancelEvent -> editDialog.close());
+      var editDialog = ExperimentalVariablesDialog.prefilled(
+          experimentInformationService.getVariablesOfExperiment(experimentId));
+      editDialog.subscribeToCancelEvent(
+          experimentalVariablesDialogCancelEvent -> editDialog.close());
       editDialog.subscribeToConfirmEvent(experimentalVariablesDialogConfirmEvent -> {
         deleteExistingExperimentalVariables(experimentId);
         registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
@@ -133,7 +135,8 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void addListenerForNewVariableEvent() {
-    this.experimentalVariablesComponent.subscribeToAddEvent(listener -> displayAddExperimentalVariablesDialog());
+    this.experimentalVariablesComponent.subscribeToAddEvent(
+        listener -> displayAddExperimentalVariablesDialog());
   }
 
   private void displayAddExperimentalVariablesDialog() {
@@ -215,10 +218,12 @@ public class ExperimentDetailsComponent extends Composite<PageComponent> {
   }
 
   private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
-    experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleCreationClickedEvent);
+    experimentalGroupCard.addDeletionEventListener(
+        ExperimentDetailsComponent.this::handleCreationClickedEvent);
   }
 
-  private void handleCreationClickedEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
+  private void handleCreationClickedEvent(
+      ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
     experimentInformationService.deleteExperimentGroup(experimentId,
         experimentalGroupDeletionEvent.getSource().groupId());
     experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
