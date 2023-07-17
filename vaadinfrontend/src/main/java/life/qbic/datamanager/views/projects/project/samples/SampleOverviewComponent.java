@@ -2,13 +2,14 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
@@ -81,13 +82,14 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
   private final Span fieldBar = new Span();
   private final Span buttonBar = new Span();
   private final TextField searchField = new TextField();
-  private final Select<String> tabFilterSelect = new Select<>();
+  private String samplePreviewFilter = "";
   public final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
   private static final Logger log = getLogger(SampleOverviewComponent.class);
   private final transient SampleOverviewComponentHandler sampleOverviewComponentHandler;
+  private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
   private static ProjectId projectId;
 
   public SampleOverviewComponent(@Autowired SampleInformationService sampleInformationService,
@@ -112,10 +114,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     searchField.setPlaceholder("Search");
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.EAGER);
-    tabFilterSelect.setLabel("Search in");
-    tabFilterSelect.setEmptySelectionAllowed(true);
-    tabFilterSelect.setEmptySelectionCaption("All tabs");
-    fieldBar.add(searchField, tabFilterSelect);
+    fieldBar.add(searchField);
     fieldBar.addClassName("search-bar");
     //Items in layout should be aligned at the end due to searchFieldLabel taking up space
     registerButton.addClassName("primary");
@@ -195,6 +194,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       this.batchRegistrationService = batchRegistrationService;
       this.sampleRegistrationService = sampleRegistrationService;
       addEventListeners();
+      configureSearch();
     }
 
     public void setExperiments(Collection<Experiment> experiments) {
@@ -205,7 +205,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
     private void createSampleOverview(Collection<Experiment> experiments) {
       resetSampleOverview();
       experiments.forEach(this::addExperimentTabToTabSheet);
-      setExperimentsInSelect(experiments);
       setExperimentsInRegistrationDialog(experiments);
       content.add(buttonAndFieldBar);
       content.add(sampleExperimentTabSheet);
@@ -217,11 +216,7 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
 
     private void resetSampleOverview() {
       resetTabSheet();
-      resetTabFilterSelect();
-    }
-
-    private void resetTabFilterSelect() {
-      tabFilterSelect.removeAll();
+      searchFieldListeners.clear();
     }
 
     private void resetTabSheet() {
@@ -270,14 +265,39 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       //assumption: experimental groups exist, and samples exist for those groups; checked previously
       Grid<SamplePreview> sampleGrid = createSampleGrid();
       //Initialize sampleCount before lazy loading is triggered by user
-      experimentTab.setSampleCount(getSampleCountForExperiment(experiment.experimentId()));
+      experimentTab.setSampleCount(
+          getSampleCountForExperiment(experiment.experimentId(), samplePreviewFilter));
       sampleGrid.getLazyDataView()
           .addItemCountChangeListener(event -> experimentTab.setSampleCount(event.getItemCount()));
       setSamplesToGrid(sampleGrid, experiment.experimentId());
+      addSearchFieldListener(event -> sampleGrid.getDataProvider().refreshAll());
       sampleGrid.getDataProvider().refreshAll();
       experimentTabContent.add(sampleGrid);
       sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
     }
+
+    private void configureSearch() {
+      searchField.setValueChangeMode(ValueChangeMode.LAZY);
+      searchField.addValueChangeListener(event -> {
+        samplePreviewFilter = event.getValue().trim();
+        fireSearchFieldValueChangeEvent(event);
+      });
+    }
+
+    /**
+     * Adds the provided {@link ValueChangeListener} to the list of listeners which will retrieve
+     * notification if the searchField value was updated
+     */
+    public void addSearchFieldListener(
+        ValueChangeListener<ComponentValueChangeEvent<TextField, String>> searchFieldListener) {
+      searchFieldListeners.add(searchFieldListener);
+    }
+
+    private void fireSearchFieldValueChangeEvent(
+        ComponentValueChangeEvent<TextField, String> event) {
+      searchFieldListeners.forEach(listener -> listener.valueChanged(event));
+    }
+
 
     private Grid<SamplePreview> createSampleGrid() {
       Grid<SamplePreview> sampleGrid = new Grid<>();
@@ -294,20 +314,21 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
       return sampleGrid;
     }
 
-    private int getSampleCountForExperiment(ExperimentId experimentId) {
-      return sampleInformationService.countPreviews(experimentId);
+    private int getSampleCountForExperiment(ExperimentId experimentId, String filter) {
+      return sampleInformationService.countPreviews(experimentId, filter);
     }
 
     private void setSamplesToGrid(Grid<SamplePreview> sampleGrid, ExperimentId experimentId) {
       sampleGrid.setItems(query -> {
+        sampleGrid.getDataProvider().refreshAll();
         List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-                it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+                it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
             .collect(Collectors.toList());
         // if no order is provided by the grid order by last modified (least priority)
-        sortOrders.add(SortOrder.of("sampleCode").descending());
+        sortOrders.add(SortOrder.of("sampleCode").ascending());
         return sampleInformationService.queryPreview(experimentId, query.getOffset(),
-            query.getLimit(), List.copyOf(sortOrders)).stream();
-      }, query -> getSampleCountForExperiment(experimentId));
+            query.getLimit(), List.copyOf(sortOrders), samplePreviewFilter).stream();
+      }, query -> getSampleCountForExperiment(experimentId, samplePreviewFilter));
     }
 
     private boolean isExperimentGroupInExperiment(Experiment experiment) {
@@ -344,11 +365,6 @@ public class SampleOverviewComponent extends PageArea implements Serializable {
         batchRegistrationDialog.open();
       });
       return noSamplesDefinedCard;
-    }
-
-    private void setExperimentsInSelect(Collection<Experiment> experimentList) {
-      tabFilterSelect.removeAll();
-      tabFilterSelect.setItems(experimentList.stream().map(Experiment::getName).toList());
     }
 
     private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,

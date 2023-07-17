@@ -273,7 +273,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   //an unused cell is either null or empty (not blank)
   private boolean isCellUnused(Cell cell) {
-    return cell == null || cell.getStringCellValue().isEmpty();
+    return cell == null || SpreadsheetMethods.cellToStringOrNull(cell).isEmpty();
   }
 
 
@@ -293,7 +293,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     if (cell == null) {
       this.createCell(0, colIndex, spacingValue);
     } else {
-      oldValue = cell.getStringCellValue();
+      oldValue = SpreadsheetMethods.cellToStringOrNull(cell);
       this.getCell(0, colIndex).setCellValue(spacingValue);
     }
     //Todo Find out why switching from a sheet with less columns to a sheet with more columns breaks the sheet(e.g. lipidomics to genomics)
