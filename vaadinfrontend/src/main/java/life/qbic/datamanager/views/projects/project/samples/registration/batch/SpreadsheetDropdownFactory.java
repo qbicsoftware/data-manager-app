@@ -5,11 +5,11 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -22,6 +22,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private List<DropdownColumn> dropdownColumns = new ArrayList<>();
+  private Map<Cell, ComboBox> dropdownMap = new HashMap<>();
 
   /**
    * Initialises the dropdown factory to display a dropdown menu (ComboBox) in a specific column
@@ -36,49 +37,88 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Spreadsheet spreadsheet, Sheet sheet) {
     DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      List<String> dropdownItems = dropDownColumn.getItems();
       if (cell == null) {
+        System.err.println("null");
         cell = spreadsheet.createCell(rowIndex, columnIndex, "");
       }
       if (cell.getCellStyle().getLocked()) {
+        System.err.println("unlock");
         CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
         unLockedStyle.setLocked(false);
         cell.setCellStyle(unLockedStyle);
         spreadsheet.refreshCells(cell);
       }
+      // if this cell contains a valid value, but no combobox (set via copying from other cells)
+      // we create a dropdown with that value selected
+      String value = cell.getStringCellValue();
+      if(!value.isEmpty() && dropDownColumn.getItems().contains(value)) {
+        ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
+            spreadsheet);
+        comboBox.setValue(value);
+        dropdownMap.put(cell, comboBox);
+        return comboBox;
+      } else {
+        if (dropdownMap.containsKey(cell)) {
+          return dropdownMap.get(cell);
+        } else {
+          ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
+              spreadsheet);
+          dropdownMap.put(cell, comboBox);
+          return comboBox;
+        }
+      }
+    }
+    return null;
+  }
+
+  // note: we need to unlock cells that will have an editor, otherwise "getCustomEditorForCell" is
+  // not called
+  @Override
+  public Component getCustomEditorForCell(Cell cell,
+      int rowIndex, int columnIndex,
+      Spreadsheet spreadsheet, Sheet sheet) {
+/*
+    DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
+    if(spreadsheet.getActiveSheetIndex()==0) {
+      System.err.println("editor testing cell (" + rowIndex + ", " + columnIndex + ")");
+      System.err.println(dropDownColumn);
+    }
+    if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
+      System.err.println("dropdown expected");
+      List<String> dropdownItems = dropDownColumn.getItems();
 
       if (!dropdownItems.contains(SpreadsheetMethods.cellToStringOrNull(cell))) {
         return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
             spreadsheet);
       }
     }
+    */
+
     return null;
   }
 
-  @Override
-  public Component getCustomEditorForCell(Cell cell,
-      int rowIndex, int columnIndex,
-      Spreadsheet spreadsheet, Sheet sheet) {
-    return null;
-  }
-
-  private Component initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
+  private ComboBox<String> initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
     List<String> items = dropDownColumn.getItems();
-    ComboBox<String> analysisType = new ComboBox<>(dropDownColumn.getLabel(), items);
+    ComboBox<String> comboBox = new ComboBox<>(dropDownColumn.getLabel(), items);
 
-    analysisType.addValueChangeListener(e -> {
+    comboBox.addValueChangeListener(e -> {
       Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
-      cell.setCellValue(e.getValue());
-      spreadsheet.refreshCells(cell);
+      System.err.println("change in ("+rowIndex+", "+columnIndex+")");
+      System.err.println(e.getValue());
+      System.err.println(cell.getStringCellValue());
     });
-    return analysisType;
+
+    return comboBox;
   }
 
   @Override
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
+    if(editor instanceof ComboBox) {
+      System.err.println(((ComboBox) editor).getValue()+" selected.");
+    }
     /* not implemented since no custom editor is currently used */
   }
 
