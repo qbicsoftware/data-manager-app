@@ -4,8 +4,8 @@
 }
 
 .main.experiment {
-  grid-template-columns: minmax(600px, 80%) minmax(300px, 20%);
-  grid-template-rows: minmax(150px, 10%) minmax(250px, 100%);
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(130px, 5%) minmax(max-content, 90%);
   grid-template-areas:
     "navbar support"
     "content support";
@@ -19,17 +19,60 @@
   grid-area: support;
 }
 
-.main.experiment .navbar {
-  grid-area: navbar;
+.main.project {
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(130px, 5%) minmax(min-content, 90%);
+  grid-template-areas:
+    "navbar support"
+    "content support";
 }
 
-.main.project {
-  flex-direction: column;
+.main.project .content {
+  grid-area: content;
 }
+
+.main.project .support {
+  grid-area: support;
+}
+
+.main.sample {
+  grid-template-columns: minmax(max-content, 100%) minmax(min-content, 20%);
+  grid-template-rows: minmax(130px, 5%) minmax(min-content, 90%);
+  grid-template-areas:
+    "navbar support"
+    "content content";
+}
+
+.main.sample .content {
+  grid-area: content;
+}
+
+.sample-page .support {
+  grid-area: support;
+}
+
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
   .main.experiment {
+    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-areas:
+        "navbar"
+    "content"
+    "support";
+    grid-auto-rows: auto;
+  }
+
+  .main.project {
+    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-areas:
+        "navbar"
+    "content"
+    "support";
+    grid-auto-rows: auto;
+  }
+
+  .main.sample {
     grid-template-columns: minmax(1200px, 1fr);
     grid-template-areas:
         "navbar"

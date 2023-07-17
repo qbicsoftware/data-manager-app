@@ -127,7 +127,14 @@
   max-width: 300px;
 }
 
-.experiment-info .content {
+.card.experiment-info .title {
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+}
+
+.card.experiment-info .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -226,12 +233,6 @@
 .experiment-item:hover {
   background-color: #f5f5f5;
   cursor: pointer;
-}
-
-.experiment-item .progress-tag{
-  text-align: center;
-  width: fit-content;
-
 }
 
 .experiment-item .experiment-title {

@@ -46,26 +46,62 @@
   gap: var(--lumo-space-xs);
 }
 
-.page-area.sample-overview-component .content {
+.page-area.experiment-details-component .details-content {
+  padding: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  font-size: var(--lumo-font-size-s);
+}
+
+.page-area.project-details-component .details-content {
+  padding: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.page-area.project-details-component .details-content .no-person-assigned {
+  color: var(--lumo-secondary-text-color);
+}
+
+.page-area.project-details-component vaadin-multi-select-combo-box {
+  width: 75%
+}
+
+.page-area.project-details-component .display-edit-component {
+  width: 100%
+}
+
+.page-area.project-details-component .display-edit-component .edit-component {
+  width: 100%;
+}
+
+.page-area.project-details-component .display-edit-component .display-component {
+  width: 100%;
+  font-size: var(--lumo-font-size-s);
+}
+
+.page-area.sample-details-component .content {
   display: flex;
   flex-direction: column;
   margin-bottom: var(--lumo-space-m);
 }
 
-.page-area.sample-overview-component .button-and-search-bar {
+.page-area.sample-details-component .button-and-search-bar {
   display: flex;
   justify-content: space-between;
   gap: var(--lumo-space-s);
   margin-bottom: var(--lumo-space-m);
 }
 
-.page-area.sample-overview-component .button-bar {
+.page-area.sample-details-component .button-bar {
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
 }
 
-.page-area.sample-overview-component .search-bar {
+.page-area.sample-details-component .search-bar {
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
