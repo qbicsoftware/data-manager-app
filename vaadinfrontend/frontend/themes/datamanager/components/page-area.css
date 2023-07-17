@@ -34,16 +34,13 @@
   background-color: inherit;
 }
 
-.page-area.batch-details-component {
-  width: 30%;
-}
-
 .page-area.navbar {
   justify-content: space-evenly;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: var(--lumo-space-xs);
+  height: fit-content;
 }
 
 .page-area.experiment-details-component .details-content {

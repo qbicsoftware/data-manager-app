@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.domain.project.repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.service.BatchDomainService.ResponseCode;
@@ -36,5 +38,8 @@ public interface BatchRepository {
    * {@link ResponseCode}.
    */
   Result<BatchId, ResponseCode> deleteById(BatchId batchId);
+
+  Result<Collection<Batch>, life.qbic.projectmanagement.application.batch.BatchInformationService.ResponseCode> findBatchesByExperimentId(
+      ExperimentId experimentId);
 
 }

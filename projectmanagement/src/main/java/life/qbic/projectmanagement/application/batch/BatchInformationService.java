@@ -1,9 +1,12 @@
 package life.qbic.projectmanagement.application.batch;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
@@ -29,5 +32,15 @@ public class BatchInformationService {
     Objects.requireNonNull(batchId);
     log.debug("Search for batch with id: " + batchId.value());
     return batchRepository.find(batchId);
+  }
+
+  public Result<Collection<Batch>, ResponseCode> retrieveBatchesForExperiment(
+      ExperimentId experimentId) {
+    Objects.requireNonNull(experimentId, "Experiment id must not be null");
+    return batchRepository.findBatchesByExperimentId(experimentId);
+  }
+
+  public enum ResponseCode {
+    BATCHES_NOT_FOUND
   }
 }

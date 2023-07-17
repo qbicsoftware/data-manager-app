@@ -4,9 +4,16 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Sample support component
@@ -23,10 +30,21 @@ public class SampleSupportComponent extends Div {
   @Serial
   private static final long serialVersionUID = 6214605184545498061L;
   private static final Logger log = LoggerFactory.logger(SampleSupportComponent.class);
+  private final BatchDetailsComponent batchDetailsComponent;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
 
-  public SampleSupportComponent() {
-    //Will contain the BatchOverviewComponent
+  public SampleSupportComponent(@Autowired BatchDetailsComponent batchDetailsComponent,
+      @Autowired ProjectInformationService projectInformationService,
+      @Autowired ExperimentInformationService experimentInformationService) {
+    this.batchDetailsComponent = batchDetailsComponent;
+    this.projectInformationService = projectInformationService;
+    this.experimentInformationService = experimentInformationService;
+    layoutComponent();
+  }
 
+  private void layoutComponent() {
+    this.add(batchDetailsComponent);
   }
 
   /**
@@ -37,8 +55,20 @@ public class SampleSupportComponent extends Div {
    * {@link ProjectId}
    */
   public void projectId(ProjectId projectId) {
+    projectInformationService.find(projectId)
+        .ifPresent(project -> propagateExperimentInformation(projectId));
+  }
 
-    //Will propagate the ProjectId to the future BatchOverviewComponent
+  private void propagateExperimentInformation(ProjectId projectId) {
+    Collection<Experiment> experiments = getExperimentsForProject(projectId);
+    batchDetailsComponent.setExperiments(experiments);
+  }
+
+  private Collection<Experiment> getExperimentsForProject(ProjectId projectId) {
+    var project = projectInformationService.find(projectId);
+    return project.<Collection<Experiment>>map(value -> value.experiments().stream()
+        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
+        .toList()).orElseGet(ArrayList::new);
   }
 
 }

@@ -2,8 +2,8 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -17,13 +17,13 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchDeletionEvent;
+import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Batch Details Component
  * <p>
- * Component embedded within the {@link SampleMainComponent} in the {@link ProjectViewPage}. It
+ * Component embedded within the {@link SampleSupportComponent} in the {@link ProjectViewPage}. It
  * allows the user to see the information associated for each {@link Batch} of each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
  * Additionally it enables the user to edit and delete a {@link Batch} and propagates successful
@@ -50,11 +50,17 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private final Div content = new Div();
   Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchRegistrationService batchRegistrationService;
+  private final transient BatchInformationService batchInformationService;
+  private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
 
-  public BatchDetailsComponent(@Autowired BatchRegistrationService batchRegistrationService) {
+  public BatchDetailsComponent(@Autowired BatchRegistrationService batchRegistrationService,
+      @Autowired BatchInformationService batchInformationService) {
+    Objects.requireNonNull(batchRegistrationService);
+    Objects.requireNonNull(batchInformationService);
     this.addClassName("batch-details-component");
     layoutComponent();
     this.batchRegistrationService = batchRegistrationService;
+    this.batchInformationService = batchInformationService;
   }
 
   private void layoutComponent() {
@@ -64,19 +70,15 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     content.addClassName("content");
     createBatchGrid();
     content.add(batchGrid);
-    setGridItems();
   }
 
   private void createBatchGrid() {
     Editor<BatchPreview> editor = batchGrid.getEditor();
-    Grid.Column<BatchPreview> nameColumn = batchGrid.addColumn(BatchPreview::name)
-        .setHeader("Name").setResizable(true);
+    Grid.Column<BatchPreview> nameColumn = batchGrid.addColumn(BatchPreview::batchLabel)
+        .setHeader("Name").setResizable(true).setSortable(true);
     batchGrid.addColumn(
-            batchPreview -> batchPreview.experiment().getName()).setHeader("Experiment")
-        .setResizable(true);
-    Grid.Column<BatchPreview> dateColumn = batchGrid.addColumn(BatchPreview::date)
-        .setHeader("Date")
-        .setResizable(true);
+            batchPreview -> batchPreview.experimentLabel).setHeader("Experiment")
+        .setResizable(true).setSortable(true);
     Grid.Column<BatchPreview> editColumn = batchGrid.addComponentColumn(batchPreview -> {
       Icon editIcon = VaadinIcon.EDIT.create();
       editIcon.addClassName(IconSize.SMALL);
@@ -86,7 +88,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       Button deleteButton = new Button(deleteIcon);
       editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       deleteButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      deleteButton.addClickListener(e -> this.removeBatch(batchPreview));
+      deleteButton.addClickListener(e -> this.removeBatch(batchPreview.batchId()));
       editButton.addClickListener(e -> {
         if (editor.isOpen()) {
           editor.cancel();
@@ -96,66 +98,71 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       Span buttons = new Span();
       buttons.add(editButton, deleteButton);
       return buttons;
-    }).setFlexGrow(0);
+    }).setFlexGrow(0).setAutoWidth(true);
     editor.setBuffered(true);
     Binder<BatchPreview> batchPreviewBinder = new Binder<>(BatchPreview.class);
     batchGrid.getEditor().setBinder(batchPreviewBinder);
-    TextField nameField = new TextField();
-    batchPreviewBinder.forField(nameField)
-        .asRequired("First name must not be empty")
-        .bind(BatchPreview::name, BatchPreview::setName);
-    nameColumn.setEditorComponent(nameField);
-    DatePicker datePicker = new DatePicker();
-    batchPreviewBinder.forField(datePicker).asRequired("Last name must not be empty")
-        .bind(BatchPreview::date, BatchPreview::setDate);
-    dateColumn.setEditorComponent(datePicker);
-    Button saveButton = new Button("Save", event -> editor.save());
-    editColumn.setEditorComponent(saveButton);
+    TextField batchLabelField = new TextField();
+    batchPreviewBinder.forField(batchLabelField)
+        .asRequired("Batch label must not be empty")
+        .bind(BatchPreview::batchLabel, BatchPreview::setBatchLabel);
+    nameColumn.setEditorComponent(batchLabelField);
+    Icon saveIcon = VaadinIcon.CHECK_CIRCLE.create();
+    saveIcon.addClassName(IconSize.SMALL);
+    Button saveButton = new Button(saveIcon, event -> {
+      this.updateBatch(editor.getItem().batchId(), batchLabelField.getValue());
+      editor.save();
+    });
+    saveButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
+        e -> editor.cancel());
+    cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
+        ButtonVariant.LUMO_ERROR);
+    cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    cancelButton.addClassName(IconSize.SMALL);
+    Div editorButtons = new Div(saveButton, cancelButton);
+    editColumn.setEditorComponent(editorButtons);
+    batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
   }
 
   public void setExperiments(Collection<Experiment> experiments) {
+    batchPreviews.clear();
     experiments.forEach(this::loadBatchesForExperiment);
+    batchGrid.setItems(batchPreviews);
   }
 
-  private void removeBatch(BatchPreview batchPreview) {
-    var result = batchRegistrationService.deleteBatch(batchPreview.batchId());
+  private BatchPreview generatePreviewFromBatch(Batch batch, Experiment experiment) {
+    return new BatchPreview(batch.batchId(), batch.label(), experiment.getName());
+  }
+
+  private void removeBatch(BatchId batchId) {
+    var result = batchRegistrationService.deleteBatch(batchId);
+  }
+
+  private void updateBatch(BatchId batchId, String batchLabel) {
+    var result = batchRegistrationService.updateBatch(batchId, batchLabel);
   }
 
   private void loadBatchesForExperiment(Experiment experiment) {
-    //ToDo Load Batch Information for Experiment
-  }
-
-  private Collection<BatchPreview> createDummyBatchPreviews() {
-    return List.of(new BatchPreview(BatchId.create(), "Batch 1", LocalDate.parse("2023-05-16"),
-            Experiment.create("Experiment 1")),
-        new BatchPreview(BatchId.create(), "Batch 2", LocalDate.parse("2023-05-17"),
-            Experiment.create("Experiment 2")),
-        new BatchPreview(BatchId.create(), "Batch 3", LocalDate.parse("2023-05-18"),
-            Experiment.create("Experiment 3")),
-        new BatchPreview(BatchId.create(), "Batch 4", LocalDate.parse("2023-05-19"),
-            Experiment.create("Experiment 4")));
-  }
-
-  private void setGridItems() {
-    batchGrid.setItems(createDummyBatchPreviews());
+    batchInformationService.retrieveBatchesForExperiment(experiment.experimentId())
+        .onValue(batches -> batchPreviews.addAll(
+            batches.stream().map(batch -> generatePreviewFromBatch(batch, experiment)).toList()));
   }
 
   private class BatchPreview {
 
     private BatchId batchId;
-    private String name;
-    private LocalDate date;
-    private Experiment experiment;
+    private String batchLabel;
+    private String experimentLabel;
 
-    public BatchPreview(BatchId batchId, String name, LocalDate date, Experiment experiment) {
+    public BatchPreview(BatchId batchId, String batchLabel,
+        String experimentLabel) {
       Objects.requireNonNull(batchId);
-      Objects.requireNonNull(name);
-      Objects.requireNonNull(date);
-      Objects.requireNonNull(experiment);
+      Objects.requireNonNull(batchLabel);
+      Objects.requireNonNull(experimentLabel);
       this.batchId = batchId;
-      this.name = name;
-      this.date = date;
-      this.experiment = experiment;
+      this.batchLabel = batchLabel;
+      this.experimentLabel = experimentLabel;
     }
 
     public BatchId batchId() {
@@ -166,28 +173,20 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       this.batchId = batchId;
     }
 
-    public String name() {
-      return name;
+    public String batchLabel() {
+      return batchLabel;
     }
 
-    public void setName(String name) {
-      this.name = name;
+    public void setBatchLabel(String batchLabel) {
+      this.batchLabel = batchLabel;
     }
 
-    public LocalDate date() {
-      return date;
+    public String experimentLabel() {
+      return experimentLabel;
     }
 
-    public void setDate(LocalDate date) {
-      this.date = date;
-    }
-
-    public Experiment experiment() {
-      return experiment;
-    }
-
-    public void setExperiment(Experiment experiment) {
-      this.experiment = experiment;
+    public void setExperimentLabel(String experimentLabel) {
+      this.experimentLabel = experimentLabel;
     }
   }
 
