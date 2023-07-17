@@ -38,11 +38,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
       if (cell == null) {
-        System.err.println("null");
         cell = spreadsheet.createCell(rowIndex, columnIndex, "");
       }
       if (cell.getCellStyle().getLocked()) {
-        System.err.println("unlock");
         CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
         unLockedStyle.setLocked(false);
         cell.setCellStyle(unLockedStyle);
@@ -58,6 +56,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         dropdownMap.put(cell, comboBox);
         return comboBox;
       } else {
+        // otherwise, we initialise the Combobox for this cell, or take it from a map, if it exists
         if (dropdownMap.containsKey(cell)) {
           return dropdownMap.get(cell);
         } else {
@@ -71,28 +70,13 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return null;
   }
 
-  // note: we need to unlock cells that will have an editor, otherwise "getCustomEditorForCell" is
-  // not called
+  // note: we need to unlock cells in addition to returning null in getCustomComponentForCell,
+  // otherwise "getCustomEditorForCell" is not called
+  // this method is not used atm, as it only shows the component when the cell is selected
   @Override
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-/*
-    DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
-    if(spreadsheet.getActiveSheetIndex()==0) {
-      System.err.println("editor testing cell (" + rowIndex + ", " + columnIndex + ")");
-      System.err.println(dropDownColumn);
-    }
-    if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      System.err.println("dropdown expected");
-      List<String> dropdownItems = dropDownColumn.getItems();
-
-      if (!dropdownItems.contains(SpreadsheetMethods.cellToStringOrNull(cell))) {
-        return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
-            spreadsheet);
-      }
-    }
-    */
 
     return null;
   }
@@ -101,12 +85,11 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Spreadsheet spreadsheet) {
     List<String> items = dropDownColumn.getItems();
     ComboBox<String> comboBox = new ComboBox<>(dropDownColumn.getLabel(), items);
-
     comboBox.addValueChangeListener(e -> {
+      //when a selection is made, the value is set to the cell (in addition to the component)
+      //this is needed for copying of inputs to other cells works
       Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
-      System.err.println("change in ("+rowIndex+", "+columnIndex+")");
-      System.err.println(e.getValue());
-      System.err.println(cell.getStringCellValue());
+      cell.setCellValue(e.getValue());
     });
 
     return comboBox;
@@ -116,9 +99,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
-    if(editor instanceof ComboBox) {
-      System.err.println(((ComboBox) editor).getValue()+" selected.");
-    }
     /* not implemented since no custom editor is currently used */
   }
 
