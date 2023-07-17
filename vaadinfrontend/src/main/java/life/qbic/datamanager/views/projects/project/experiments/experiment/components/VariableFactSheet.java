@@ -10,12 +10,9 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
- * TODO!
- * <b>short description</b>
+ * A fact sheet displaying information on an experimental variable.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class VariableFactSheet extends Div {
 
@@ -29,8 +26,8 @@ public class VariableFactSheet extends Div {
     addClassName("experimental-variables-fact-sheet");
     initHeader();
     initContent();
-    fillHeader(variable);
-    fillContent(variable);
+    fillHeader();
+    fillContent();
     add(header, content);
   }
 
@@ -48,9 +45,9 @@ public class VariableFactSheet extends Div {
     this.header = header;
   }
 
-  private void fillContent(ExperimentalVariable variable) {
+  private void fillContent() {
     variableLevels.removeAll();
-    ListItem[] listItems = variable.levels().stream()
+    ListItem[] listItems = experimentalVariable.levels().stream()
         .map(VariableLevel::experimentalValue)
         .map(ExperimentalValue::value)
         .sorted(new StringOrNumberComparator())
@@ -59,12 +56,12 @@ public class VariableFactSheet extends Div {
     variableLevels.add(listItems);
   }
 
-  private void fillHeader(ExperimentalVariable variable) {
+  private void fillHeader() {
     header.removeAll();
-    header.add(new Span(formatHeaderText(variable)));
+    header.add(new Span(formatHeaderText()));
   }
 
-  private String formatHeaderText(ExperimentalVariable variable) {
+  private String formatHeaderText() {
     var unit = experimentalVariable.levels().get(0).experimentalValue().unit();
     return unit.map(s -> experimentalVariable.name().value() + " [" + s + "]")
         .orElseGet(() -> experimentalVariable.name().value());
