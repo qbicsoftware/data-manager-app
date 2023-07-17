@@ -18,13 +18,14 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Overflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextOverflow;
 import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
+import life.qbic.datamanager.views.general.PageArea;
 
 /**
  * <b>CardComponent, component hosting the content to be shown on a card within the
- * {@link PageComponent} in the data-manager-app</b>
+ * {@link PageArea} in the data-manager-app</b>
  *
  * <p>This component is styled as a card which will host the content of interest within a
- * {@link PageComponent}t in the data-manager-application</p>
+ * {@link PageArea}t in the data-manager-application</p>
  *
  * @since 1.0.0
  */
