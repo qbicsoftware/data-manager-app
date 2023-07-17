@@ -25,14 +25,13 @@ import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Sample main component
+ * Sample Content component
  * <p>
- * The main component is a {@link Div} container, which is responsible for hosting the components
- * handling the main content within the {@link SampleInformationMain}. It propagates the
- * {@link Project} and {@link Experiment} to the components within this container. Additionally, it
- * propagates the {@link Batch} and {@link Sample} information provided in the
- * {@link SampleDetailsComponent} to the {@link SampleInformationMain} and can be easily extended
- * with additional components.
+ * The content component is a {@link Div} container, which is responsible for hosting the components
+ * handling the content within the {@link SampleInformationMain}. It propagates the {@link Project}
+ * and {@link Experiment} to the components within this container. Additionally, it propagates the
+ * {@link Batch} and {@link Sample} information provided in the {@link SampleDetailsComponent} to
+ * the {@link SampleInformationMain} and can be easily extended with additional components.
  */
 @SpringComponent
 @UIScope
