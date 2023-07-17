@@ -28,7 +28,7 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
 public class ExperimentalVariablesComponent extends Card {
 
   private boolean controlsEnabled = true;
-  private List<Component> variableFactSheets = new ArrayList<>();
+  private final List<Component> variableFactSheets = new ArrayList<>();
   @Serial
   private static final long serialVersionUID = 7589385115005753849L;
   private final Collection<ExperimentalVariable> experimentalVariables;
