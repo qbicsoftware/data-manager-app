@@ -99,6 +99,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
+    setMaxRows(0);
     for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
