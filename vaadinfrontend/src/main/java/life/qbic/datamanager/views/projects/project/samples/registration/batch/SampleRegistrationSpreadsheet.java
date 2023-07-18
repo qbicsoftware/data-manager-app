@@ -27,6 +27,7 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -168,7 +169,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           != null; //1 because we assume a header
       //cells need to be unlocked if they have no data/dropdown
       if (!hasData && !hasDropdown) {
-        this.unlockCellsToRow(this, increasedRowIndex, columnIndex);
+        this.unlockCellsToRow(increasedRowIndex, columnIndex);
       }
     }
     setMaxRows(increasedRowIndex + 1); // 1-based
@@ -267,18 +268,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     setupCommonDropDownColumns();
   }
 
-  void unlockCellsToRow(Spreadsheet spreadsheet, int maxRow, int column) {
-    List<Cell> cells = new ArrayList<>();
-    CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-    unLockedStyle.setLocked(false);
+  void unlockCellsToRow(int maxRow, int column) {
+    Set<Cell> cells = new HashSet<>();
     for (int row = 1; row <= maxRow; row++) {
-      if (isCellUnused(spreadsheet.getCell(row, column))) {
-        Cell cell = spreadsheet.createCell(row, column, "");
-        cell.setCellStyle(unLockedStyle);
+      if (isCellUnused(this.getCell(row, column))) {
+        Cell cell = this.createCell(row, column, "");
         cells.add(cell);
       }
     }
-    spreadsheet.refreshCells(cells);
+    defaultStyleAndUnlockCells(cells);
+  }
+
+  void defaultStyleAndUnlockCells(Set<Cell> cells) {
+    CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
+    unLockedStyle.setLocked(false);
+    for(Cell cell : cells) {
+      cell.setCellStyle(unLockedStyle);
+    }
+    this.refreshCells(cells);
   }
 
   //an unused cell is either null or empty (not blank)
@@ -424,10 +431,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
-    Set<String> concatenatedSampleIDs = new HashSet<>();
-    boolean isValid = true;
-    for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+  public Result<Void, InvalidSpreadsheetInput> areInputsValid() {
+    Set<Cell> invalidCells = new HashSet<>();
+    Set<Cell> validCells = new HashSet<>();
+    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       // needed to highlight cells with missing values
       List<Integer> mandatoryInputCols = new ArrayList<>();
@@ -447,37 +454,45 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
       // mandatory not filled in --> invalid
       for(int colId : mandatoryInputCols) {
-        System.err.println(SpreadsheetMethods.cellToStringOrNull(row.getCell(colId)));
-        if(SpreadsheetMethods.cellToStringOrNull(row.getCell(colId)).isBlank()) {
-          highlightInvalidCell(row.getCell(colId));
-          isValid = false;
+        Cell cell = row.getCell(colId);
+        if(SpreadsheetMethods.cellToStringOrNull(cell).isBlank()) {
+          invalidCells.add(cell);
+        } else {
+          validCells.add(cell);
         }
       }
 
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
-      // Sample uniqueness needs to be guaranteed by condition and replicate ID
-      if (!isUniqueSampleRow(concatenatedSampleIDs, row)) {
-        return Result.fromError(new InvalidSpreadsheetRow(
-            SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
-      }
     }
-    if(!isValid) {
-      return Result.fromError(new InvalidSpreadsheetRow(
-          SpreadsheetInvalidationReason.MISSING_INPUT, -1));//TODO
+    defaultStyleAndUnlockCells(validCells);
+    if(!invalidCells.isEmpty()) {
+      highlightInvalidCells(invalidCells);
+
+      return Result.fromError(new InvalidSpreadsheetInput(
+          SpreadsheetInvalidationReason.MISSING_INPUT));
     }
     return Result.fromValue(null);
   }
 
-  private void highlightInvalidCell(Cell cell) {
-    System.err.println("highlighting");
+  private void highlightInvalidCells(Set<Cell> cells) {
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
-    invalidStyle.setBottomBorderColor(IndexedColors.RED.getIndex());
-    invalidStyle.setTopBorderColor(IndexedColors.RED.getIndex());
-    invalidStyle.setLeftBorderColor(IndexedColors.RED.getIndex());
-    invalidStyle.setRightBorderColor(IndexedColors.RED.getIndex());
-    cell.setCellStyle(invalidStyle);
-    this.refreshCells(cell);
+    invalidStyle.setLocked(false);
+    invalidStyle.setBorderTop(BorderStyle.THIN);
+    invalidStyle.setBorderLeft(BorderStyle.THIN);
+    invalidStyle.setBorderRight(BorderStyle.THIN);
+    invalidStyle.setBorderBottom(BorderStyle.THIN);
+
+    short redIndex = IndexedColors.RED.getIndex();
+    invalidStyle.setBottomBorderColor(redIndex);
+    invalidStyle.setTopBorderColor(redIndex);
+    invalidStyle.setLeftBorderColor(redIndex);
+    invalidStyle.setRightBorderColor(redIndex);
+
+    for(Cell cell : cells) {
+      cell.setCellStyle(invalidStyle);
+    }
+    this.refreshCells(cells);
   }
 
   private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
@@ -574,19 +589,23 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
-  public static class InvalidSpreadsheetRow {
+  public static class InvalidSpreadsheetInput {
 
     private final int invalidRow;
     private final SpreadsheetInvalidationReason reason;
     private final String additionalInfo;
 
-    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow, String additionalInfo) {
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason, int invalidRow, String additionalInfo) {
       this.reason = reason;
       this.invalidRow = invalidRow;
       this.additionalInfo = additionalInfo;
     }
 
-    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow) {
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason) {
+      this(reason, 0, "");
+    }
+
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason, int invalidRow) {
       this(reason, invalidRow, "");
     }
 
@@ -599,9 +618,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
      */
     public String getInvalidationReason() {
       String message = switch (reason) {
-        case MISSING_INPUT: yield "Mandatory information missing in row "+ invalidRow;
+        case MISSING_INPUT: yield "Please complete the missing mandatory information.";
         case DUPLICATE_ID: yield "Biological replicate Id was used multiple times for the "
-              + "same condition in row "+invalidRow;
+              + "same condition in row "+invalidRow+".";
       };
       if(!additionalInfo.isEmpty()) {
         message += ": "+additionalInfo;
