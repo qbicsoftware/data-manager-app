@@ -99,11 +99,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
-    setMaxRows(0);
+    // + 1 header row
+    setMaxRows(1);
     for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
-    setMaxRows(numberOfSamples);
+    setMaxRows(numberOfSamples+1);
   }
 
   private static void prepareConditionItems(List<ExperimentalGroup> groups) {
