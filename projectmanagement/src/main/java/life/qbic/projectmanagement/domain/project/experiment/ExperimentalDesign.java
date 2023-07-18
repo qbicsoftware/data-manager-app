@@ -248,8 +248,8 @@ public class ExperimentalDesign {
     return Result.fromValue(newExperimentalGroup);
   }
 
-  public Set<ExperimentalGroup> getExperimentalGroups() {
-    return Collections.unmodifiableSet(experimentalGroups);
+  public List<ExperimentalGroup> getExperimentalGroups() {
+    return experimentalGroups.stream().toList();
   }
 
   public void removeExperimentalGroup(long groupId) {

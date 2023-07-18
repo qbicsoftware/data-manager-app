@@ -70,7 +70,7 @@ public class SampleJpaRepository implements SampleRepository {
     } catch (Exception e) {
       log.error(
           "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e);
-      return Result.fromError(SampleInformationService.ResponseCode.SAMPLES_NOT_FOUND);
+      return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
     }
     return Result.fromValue(samples);
   }

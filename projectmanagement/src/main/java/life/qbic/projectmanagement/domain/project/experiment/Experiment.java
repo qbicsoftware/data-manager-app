@@ -172,8 +172,9 @@ public class Experiment {
    * @since 1.0.0
    */
   public void removeAllExperimentalGroups() {
-    experimentalDesign.getExperimentalGroups().forEach(
-        experimentalGroup -> experimentalDesign.removeExperimentalGroup(experimentalGroup.id()));
+    for (ExperimentalGroup experimentalGroup : experimentalDesign.getExperimentalGroups()) {
+      experimentalDesign.removeExperimentalGroup(experimentalGroup.id());
+    }
   }
 
   /**
@@ -251,7 +252,7 @@ public class Experiment {
     return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
 
-  public Set<ExperimentalGroup> getExperimentalGroups() {
+  public List<ExperimentalGroup> getExperimentalGroups() {
     return experimentalDesign.getExperimentalGroups();
   }
 

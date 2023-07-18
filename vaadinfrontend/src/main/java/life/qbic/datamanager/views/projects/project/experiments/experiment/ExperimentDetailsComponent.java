@@ -13,6 +13,9 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
@@ -27,6 +30,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -68,12 +72,15 @@ public class ExperimentDetailsComponent extends PageArea {
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
+  private final DeletionService deletionService;
   private ExperimentId experimentId;
 
 
   public ExperimentDetailsComponent(
-      @Autowired ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired DeletionService deletionService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+    this.deletionService = Objects.requireNonNull(deletionService);
     this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
@@ -138,7 +145,10 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
-    experimentInformationService.deleteAllExperimentalVariables(experimentId);
+    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    result.onError(responseCode -> {
+      throw new ApplicationException(ErrorCode.GENERAL, ErrorParameters.empty());
+    });
   }
 
   private void addListenerForNewVariableEvent() {
