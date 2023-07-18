@@ -5,11 +5,9 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
@@ -36,7 +34,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       Spreadsheet spreadsheet, Sheet sheet) {
     DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
     if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      List<String> dropdownItems = dropDownColumn.getItems();
       if (cell == null) {
         cell = spreadsheet.createCell(rowIndex, columnIndex, "");
       }
@@ -46,33 +43,45 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         cell.setCellStyle(unLockedStyle);
         spreadsheet.refreshCells(cell);
       }
-
-      if (!dropdownItems.contains(SpreadsheetMethods.cellToStringOrNull(cell))) {
-        return initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
-            spreadsheet);
+      // if this cell contains a valid value, but no combobox (set via copying from other cells)
+      // we create a dropdown with that value selected
+      String value = cell.getStringCellValue();
+      ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
+          spreadsheet);
+      if(dropDownColumn.getItems().contains(value)) {
+        comboBox.setValue(value);
       }
+      return comboBox;
     }
     return null;
   }
 
+  // note: we need to unlock cells in addition to returning null in getCustomComponentForCell,
+  // otherwise "getCustomEditorForCell" is not called
+  // this method is not used atm, as it only shows the component when the cell is selected
   @Override
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
+
     return null;
   }
 
-  private Component initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
+  private ComboBox<String> initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet) {
     List<String> items = dropDownColumn.getItems();
-    ComboBox<String> analysisType = new ComboBox<>(dropDownColumn.getLabel(), items);
-
-    analysisType.addValueChangeListener(e -> {
+    ComboBox<String> comboBox = new ComboBox<>(dropDownColumn.getLabel(), items);
+    comboBox.addValueChangeListener(e -> {
+      //when a selection is made, the value is set to the cell (in addition to the component)
+      //this is needed for copying of inputs to other cells works
       Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
       cell.setCellValue(e.getValue());
-      spreadsheet.refreshCells(cell);
     });
-    return analysisType;
+    // allows copying of Comboboxes before a selection was made
+    Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
+    cell.setCellValue("");
+
+    return comboBox;
   }
 
   @Override
