@@ -422,9 +422,9 @@ public class AddProjectDialog extends DialogWindow {
 
     public void loadOfferContent(Offer offer) {
       titleField.setValue(offer.projectTitle().title());
-      projectObjective.setValue(offer.projectObjective().objective());
+      projectObjective.setValue(offer.projectObjective().objective().replace("\n", " "));
       defineExperimentComponent.experimentalDesignDescription.setValue(
-          offer.experimentalDesignDescription().description());
+          offer.experimentalDesignDescription().description().replace("\n", " "));
     }
 
     public void addProjectCreationEventListener(
