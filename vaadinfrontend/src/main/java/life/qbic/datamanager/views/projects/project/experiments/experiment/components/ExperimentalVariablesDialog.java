@@ -38,7 +38,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   private final Div experimentalVariableRowsContainerLayout = new Div();
   private final Span addExperimentalVariableLayoutRow = new Span();
   private final List<ComponentEventListener<ConfirmEvent<ExperimentalVariablesDialog>>> listenersConfirmation = new ArrayList<>();
-  private MODE mode;
+  private final MODE mode;
 
   public ExperimentalVariablesDialog() {
     this(false);
@@ -86,7 +86,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   }
 
   private String confirmActionLabel() {
-    return mode.equals(MODE.EDIT) ? "Edit" : "Add";
+    return mode.equals(MODE.EDIT) ? "Save" : "Add";
   }
 
   private void configureComponent() {
