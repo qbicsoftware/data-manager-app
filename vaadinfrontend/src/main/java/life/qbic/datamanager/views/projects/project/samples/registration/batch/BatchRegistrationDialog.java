@@ -147,7 +147,7 @@ public class BatchRegistrationDialog extends DialogWindow {
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
       ExperimentId selectedExperimentId = batchInformationLayout.experimentSelect.getValue()
           .experimentId();
-      //We only reload the spreadsheet if the selected experiment was changed
+      //We only reload the spreadsheet if the selected experiment was changed (or dialog closed)
       if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
           sampleSpreadsheetLayout.getExperiment())) {
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());

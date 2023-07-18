@@ -1,21 +1,18 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.html.UnorderedList;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
  * <b>Experiment Variable Component</b>
@@ -33,53 +30,47 @@ public class ExperimentalVariablesComponent extends Card {
   private final Div controls = new Div();
   private final Div content = new Div();
   private final Button editButton;
+  private final CreationCard variableCreationCard;
+
+
   private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
   private final List<ComponentEventListener<AddNewExperimentalVariableEvent>> listenersNewVariable = new ArrayList<>();
-  private List<Div> variableFactSheets = new ArrayList<>();
+  private final List<Div> variableFactSheets = new ArrayList<>();
 
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
     this.experimentalVariables = experimentalVariables;
     this.editButton = createEditButton("Edit");
+    variableCreationCard = CreationCard.create("Add experimental variables");
+    variableCreationCard.addListener(event -> fireAddEvent());
     layoutComponent();
     configureComponent();
   }
 
   private static Button createEditButton(String label) {
     Button button = new Button(label);
-    //button.addClassName("");
     return button;
   }
+  private void addComponentAsLast(Component component) {
+    content.addComponentAtIndex(content.getComponentCount(), component);
+  }
 
-  private static List<Div> generateFactSheets(
+  private void fireAddEvent() {
+    AddNewExperimentalVariableEvent addNewExperimentalVariableEvent = new AddNewExperimentalVariableEvent(
+        this, true);
+    listenersNewVariable.forEach(
+        listener -> listener.onComponentEvent(addNewExperimentalVariableEvent));
+  }
+
+  private void fireEditEvent() {
+    var editEvent = new ExperimentalVariablesEditEvent(this, true);
+    listeners.forEach(listener -> listener.onComponentEvent(editEvent));
+  }
+
+  private static List<VariableFactSheet> generateFactSheets(
       Collection<ExperimentalVariable> experimentalVariables) {
-    return experimentalVariables.stream().map(ExperimentalVariablesComponent::generateFactSheet)
+    return experimentalVariables.stream()
+        .map(VariableFactSheet::new)
         .toList();
-  }
-
-  private static Div generateFactSheet(ExperimentalVariable experimentalVariable) {
-    Div variableFactSheet = new Div();
-    variableFactSheet.addClassName("experimental-variables-fact-sheet");
-    Div headerSection = new Div();
-    Span variableName = new Span(formatVariableName(experimentalVariable));
-    headerSection.addClassName("variable-header");
-    headerSection.add(variableName);
-
-    Div variableValues = new Div();
-    variableValues.addClassName("variable-values");
-    UnorderedList variableLevels = new UnorderedList(experimentalVariable.levels().stream().map(
-            VariableLevel::experimentalValue).map(ExperimentalValue::value)
-        .sorted(new StringOrNumberComparator()).map(ListItem::new)
-        .toArray(ListItem[]::new));
-    variableValues.add(variableLevels);
-    variableFactSheet.add(headerSection);
-    variableFactSheet.add(variableValues);
-    return variableFactSheet;
-  }
-
-  private static String formatVariableName(ExperimentalVariable experimentalVariable) {
-    var unit = experimentalVariable.levels().get(0).experimentalValue().unit();
-    return unit.map(s -> experimentalVariable.name().value() + " [" + s + "]")
-        .orElseGet(() -> experimentalVariable.name().value());
   }
 
   public static ExperimentalVariablesComponent create(
@@ -89,9 +80,7 @@ public class ExperimentalVariablesComponent extends Card {
   }
 
   private void configureComponent() {
-    ExperimentalVariablesEditEvent editEvent = new ExperimentalVariablesEditEvent(this, true);
-    editButton.addClickListener(
-        clickListener -> listeners.forEach(listener -> listener.onComponentEvent(editEvent)));
+    editButton.addClickListener(event -> fireEditEvent());
   }
 
   private void layoutComponent() {
@@ -106,11 +95,9 @@ public class ExperimentalVariablesComponent extends Card {
     cardHeader.add(controls);
     this.add(cardHeader);
 
-    variableFactSheets.addAll(generateFactSheets(experimentalVariables));
-    variableFactSheets.forEach(content::add);
+    setExperimentalVariables(experimentalVariables);
 
     content.addClassName("content");
-
     add(content);
   }
 
@@ -148,44 +135,24 @@ public class ExperimentalVariablesComponent extends Card {
    * @param variables the new experimental variables to display
    * @since 1.0.0
    */
-  public void setExperimentalVariables(List<ExperimentalVariable> variables) {
-    this.experimentalVariables.clear();
+  public void setExperimentalVariables(Collection<ExperimentalVariable> variables) {
+    resetContent();
     this.experimentalVariables.addAll(variables);
-    content.removeAll();
-    variableFactSheets = generateFactSheets(experimentalVariables);
+    variableFactSheets.addAll(generateFactSheets(experimentalVariables));
     variableFactSheets.forEach(content::add);
+    addComponentAsLast(variableCreationCard);
+  }
+
+  private void resetContent() {
+    this.experimentalVariables.clear();
+    this.variableFactSheets.clear();
+    content.removeAll();
   }
 
 
   /*
   Small helper class to nicely sort String or Numbers
    */
-  private static class StringOrNumberComparator implements Comparator<String> {
 
-    public StringOrNumberComparator() {
-    }
-
-    @Override
-    public int compare(String o1, String o2) {
-      if (bothAreNumbers(o1, o2)) {
-        return compareNumbers(Double.parseDouble(o1), Double.parseDouble(o2));
-      }
-      return o1.compareTo(o2);
-    }
-
-    public boolean bothAreNumbers(String o1, String o2) {
-      try {
-        Double.parseDouble(o1);
-        Double.parseDouble(o2);
-      } catch (NumberFormatException ignore) {
-        return false;
-      }
-      return true;
-    }
-
-    private int compareNumbers(Double o1, Double o2) {
-      return (int) (o1 - o2);
-    }
-  }
 
 }
