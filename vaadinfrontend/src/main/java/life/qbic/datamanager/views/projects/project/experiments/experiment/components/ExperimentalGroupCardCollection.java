@@ -34,4 +34,14 @@ public class ExperimentalGroupCardCollection extends Component implements HasCom
     experimentalGroupComponents.forEach(this::add);
   }
 
+  /**
+   * Add a component as the last child. If the component has a parent, it is removed from that
+   * parent first.
+   *
+   * @param component the component to add
+   */
+  public void addComponentAsLast(Component component) {
+    addComponentAtIndex(getElement().getChildCount(), component);
+  }
+
 }
