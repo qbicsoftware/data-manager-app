@@ -446,6 +446,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
       // mandatory not filled in --> invalid
       for(int colId : mandatoryInputCols) {
+        System.err.println(SpreadsheetMethods.cellToStringOrNull(row.getCell(colId)));
         if(SpreadsheetMethods.cellToStringOrNull(row.getCell(colId)).isBlank()) {
           highlightInvalidCell(row.getCell(colId));
           isValid = false;
@@ -468,6 +469,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void highlightInvalidCell(Cell cell) {
+    System.err.println("highlighting");
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
     invalidStyle.setBottomBorderColor(IndexedColors.RED.getIndex());
     invalidStyle.setTopBorderColor(IndexedColors.RED.getIndex());
