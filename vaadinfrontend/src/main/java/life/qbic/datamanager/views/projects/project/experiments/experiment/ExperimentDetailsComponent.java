@@ -212,7 +212,6 @@ public class ExperimentDetailsComponent extends PageArea {
     // We register the experimental details component as listener for group deletion events
     experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
     experimentalGroupsCollection.setComponents(experimentalGroupsCards);
-    addCreationCardToExperimentalGroupCollection();
   }
 
   private void hideSampleBatchRegistrationHint() {
@@ -224,7 +223,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addCreationCardToExperimentalGroupCollection() {
-    experimentalGroupsCollection.addComponentAsFirst(experimentalGroupCreationCard);
+    experimentalGroupsCollection.addComponentAsLast(experimentalGroupCreationCard);
   }
 
   private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
@@ -278,7 +277,7 @@ public class ExperimentDetailsComponent extends PageArea {
     loadTagInformation(experiment);
     loadExperimentInfo(experiment);
     fillExperimentalGroupDialog();
-    loadExperimentalGroups();
+    reloadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
       useCaseNoVariablesYet();
     } else {
