@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.support.experiment;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Div;
@@ -41,7 +42,7 @@ public class ExperimentItemCollection extends Div {
   }
 
   private void addCreationCard(CreationCard creationCard) {
-    addComponentAsFirst(creationCard);
+    add(creationCard);
     subscribeToCreateEvent();
   }
 
@@ -66,7 +67,18 @@ public class ExperimentItemCollection extends Div {
   public void addExperimentItem(ExperimentItem item) {
     items.add(item);
     add(item);
+    addComponentAsLast(createExperiment);
     subscribeToClickEvent(item);
+  }
+
+  /**
+   * Add the given component as the last component in the container. Removes the component from its
+   * previous parent.
+   *
+   * @param component the component to be added
+   */
+  private void addComponentAsLast(Component component) {
+    addComponentAtIndex(getComponentCount(), component);
   }
 
   private void subscribeToClickEvent(ExperimentItem item) {
