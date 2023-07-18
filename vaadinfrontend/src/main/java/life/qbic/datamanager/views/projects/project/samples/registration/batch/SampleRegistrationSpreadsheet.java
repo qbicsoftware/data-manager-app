@@ -30,6 +30,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -265,7 +266,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     setupCommonDropDownColumns();
   }
 
-
   void unlockCellsToRow(Spreadsheet spreadsheet, int maxRow, int column) {
     List<Cell> cells = new ArrayList<>();
     CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
@@ -284,7 +284,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private boolean isCellUnused(Cell cell) {
     return cell == null || SpreadsheetMethods.cellToStringOrNull(cell).isEmpty();
   }
-
 
   /*
    * Changes width of a spreadsheet column based on header element and potential known entries.
@@ -426,13 +425,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
     Set<String> concatenatedSampleIDs = new HashSet<>();
+    boolean isValid = true;
     for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
+      // needed to highlight cells with missing values
+      List<Integer> mandatoryInputCols = new ArrayList<>();
+      // needed to find which cells have missing values
       List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
         if (name.isMandatory) {
           mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
               header.indexOf(name))));
+          mandatoryInputCols.add(header.indexOf(name));
         }
       }
       // break when cells in row are undefined
@@ -441,9 +445,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
 
       // mandatory not filled in --> invalid
-      if (mandatoryInputs.stream().anyMatch(String::isBlank)) {
-        return Result.fromError(new InvalidSpreadsheetRow(
-            SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
+      for(int colId : mandatoryInputCols) {
+        if(SpreadsheetMethods.cellToStringOrNull(row.getCell(colId)).isBlank()) {
+          highlightInvalidCell(row.getCell(colId));
+          isValid = false;
+        }
       }
 
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
@@ -454,7 +460,21 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
             SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
       }
     }
+    if(!isValid) {
+      return Result.fromError(new InvalidSpreadsheetRow(
+          SpreadsheetInvalidationReason.MISSING_INPUT, -1));//TODO
+    }
     return Result.fromValue(null);
+  }
+
+  private void highlightInvalidCell(Cell cell) {
+    CellStyle invalidStyle = this.getWorkbook().createCellStyle();
+    invalidStyle.setBottomBorderColor(IndexedColors.RED.getIndex());
+    invalidStyle.setTopBorderColor(IndexedColors.RED.getIndex());
+    invalidStyle.setLeftBorderColor(IndexedColors.RED.getIndex());
+    invalidStyle.setRightBorderColor(IndexedColors.RED.getIndex());
+    cell.setCellStyle(invalidStyle);
+    this.refreshCells(cell);
   }
 
   private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
