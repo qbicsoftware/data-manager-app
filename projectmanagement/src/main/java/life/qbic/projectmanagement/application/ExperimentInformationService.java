@@ -101,7 +101,7 @@ public class ExperimentInformationService {
   }
 
   /**
-   * DISCLAIMER! This will remove all existing experimental variables and all defined experimental
+   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined experimental
    * groups in a give experiment!
    *
    * @param experimentId the experiment reference to delete the experimental variables from

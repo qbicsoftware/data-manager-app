@@ -198,7 +198,7 @@ public class ExperimentalDesign {
 
     public void removeAllExperimentalVariables() throws IllegalStateException {
       if (experimentalGroups.size() > 0) {
-        throw new IllegalStateException("Cannot delete experimental variables when experimental groups are still referencing them.");
+        throw new IllegalStateException("Cannot delete experimental variables referenced by an experimental group.");
       }
       this.variables.clear();
     }
