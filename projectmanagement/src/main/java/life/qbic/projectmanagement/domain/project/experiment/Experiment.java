@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ExperimentalVariableExistsException;
@@ -19,7 +18,6 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
 
 
 /**
@@ -57,20 +55,19 @@ public class Experiment {
     // Please use the create method. This is needed for JPA
   }
 
-  @PostLoad
-  private void loadCollections() {
-    int analyteCount = analytes.size();
-    int specimenCount = specimens.size();
-    int speciesCount = species.size();
-  }
-
-
   public static Experiment create(String name) {
     Experiment experiment = new Experiment();
     experiment.name = name;
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
     return experiment;
+  }
+
+  @PostLoad
+  private void loadCollections() {
+    int analyteCount = analytes.size();
+    int specimenCount = specimens.size();
+    int speciesCount = species.size();
   }
 
   /**
@@ -159,13 +156,24 @@ public class Experiment {
     this.specimens.addAll(missingSpecimens);
   }
 
+  /**
+   * Removes all experimental variables AND all experimental groups.
+   *
+   * @since 1.0.0
+   */
   public void removeAllExperimentalVariables() {
     removeAllExperimentalGroups();
     experimentalDesign.removeAllExperimentalVariables();
   }
 
+  /**
+   * Removes all experimental groups in an experiment.
+   *
+   * @since 1.0.0
+   */
   public void removeAllExperimentalGroups() {
-    experimentalDesign.getExperimentalGroups().forEach(experimentalGroup -> experimentalDesign.removeExperimentalGroup(experimentalGroup.id()));
+    experimentalDesign.getExperimentalGroups().forEach(
+        experimentalGroup -> experimentalDesign.removeExperimentalGroup(experimentalGroup.id()));
   }
 
   /**
@@ -237,7 +245,8 @@ public class Experiment {
    * @param sampleSize     the number of samples that are expected for this experimental group
    * @return
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(Collection<VariableLevel> variableLevels,
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(
+      Collection<VariableLevel> variableLevels,
       int sampleSize) {
     return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
   }
