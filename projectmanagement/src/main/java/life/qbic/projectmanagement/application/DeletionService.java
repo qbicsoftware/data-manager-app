@@ -8,11 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Deletion Service</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Service that orchestrates more deletion use cases in the application</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Service
 public class DeletionService {
@@ -28,6 +28,16 @@ public class DeletionService {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
   }
 
+  /**
+   * Deletes all experiment variables and groups in a given experiment.
+   * <p>
+   * Will contain an error, if samples are available and attached to the experiment. In this case,
+   * to variables and groups will be deleted.
+   *
+   * @param id the experiment id
+   * @return a result containing the experiment id on success or an error {@link ResponseCode}
+   * @since 1.0.0
+   */
   public Result<ExperimentId, ResponseCode> deleteAllExperimentalVariables(ExperimentId id) {
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
@@ -43,7 +53,6 @@ public class DeletionService {
   public enum ResponseCode {
     SAMPLES_STILL_ATTACHED_TO_EXPERIMENT, QUERY_FAILED
   }
-
 
 
 }
