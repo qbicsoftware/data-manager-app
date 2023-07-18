@@ -87,23 +87,51 @@ public class ApplicationException extends RuntimeException {
 
   private final ErrorParameters errorParameters;
 
+  /**
+   * Creates a new instance of the ApplicationException class with the default error code and error
+   * parameters.
+   */
   public ApplicationException() {
     this(ErrorCode.GENERAL, ErrorParameters.create());
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified error message, default error code, and default error parameters.
+   *
+   * @param message the error message associated with the exception. Meant to be used for debug purposes.
+   */
   public ApplicationException(String message) {
     this(message, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified error message, cause, default error code, and default error parameters.
+   *
+   * @param message the error message associated with the exception. Meant to be used for debug purposes.
+   * @param cause the cause of the exception.
+   */
   public ApplicationException(String message, Throwable cause) {
     this(message, cause, ErrorCode.GENERAL, ErrorParameters.create());
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified error code and error parameters.
+   *
+   * @param errorCode the error code associated with the exception.
+   * @param errorParameters the error parameters associated with the exception.
+   */
   public ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified message, error code, and error parameters.
+   *
+   * @param message the error message associated with the exception. Meant to be used for debug purposes.
+   * @param errorCode the error code associated with the exception.
+   * @param errorParameters the error parameters associated with the exception.
+   */
   public ApplicationException(String message, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message);
@@ -111,6 +139,14 @@ public class ApplicationException extends RuntimeException {
     this.errorParameters = errorParameters;
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified message, cause, error code, and error parameters.
+   *
+   * @param message the error message associated with the exception. Meant to be used for debug purposes.
+   * @param cause the cause of the exception.
+   * @param errorCode the error code associated with the exception.
+   * @param errorParameters the error parameters associated with the exception.
+   */
   public ApplicationException(String message, Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(message, cause);
@@ -118,6 +154,13 @@ public class ApplicationException extends RuntimeException {
     this.errorParameters = errorParameters;
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified cause, error code, and error parameters.
+   *
+   * @param cause the cause of the exception.
+   * @param errorCode the error code associated with the exception.
+   * @param errorParameters the error parameters associated with the exception.
+   */
   public ApplicationException(Throwable cause, ErrorCode errorCode,
       ErrorParameters errorParameters) {
     super(cause);
@@ -125,6 +168,16 @@ public class ApplicationException extends RuntimeException {
     this.errorParameters = errorParameters;
   }
 
+  /**
+   * Creates a new instance of the ApplicationException class with the specified parameters.
+   *
+   * @param message the error message associated with the exception. Meant to be used for debug purposes.
+   * @param cause the cause of the exception.
+   * @param enableSuppression whether suppression is enabled or disabled.
+   * @param writableStackTrace whether the stack trace should be writable or not.
+   * @param errorCode the error code associated with the exception.
+   * @param errorParameters the error parameters associated with the exception.
+   */
   public ApplicationException(String message, Throwable cause, boolean enableSuppression,
       boolean writableStackTrace, ErrorCode errorCode, ErrorParameters errorParameters) {
     super(message, cause, enableSuppression, writableStackTrace);
@@ -132,10 +185,20 @@ public class ApplicationException extends RuntimeException {
     this.errorParameters = errorParameters;
   }
 
+  /**
+   * Retrieves the error code associated with this exception.
+   *
+   * @return the error code associated with this exception.
+   */
   public ErrorCode errorCode() {
     return errorCode;
   }
 
+  /**
+   * Retrieves the error parameters associated with this exception.
+   *
+   * @return the error parameters associated with this exception.
+   */
   public ErrorParameters errorParameters() {
     return errorParameters;
   }
