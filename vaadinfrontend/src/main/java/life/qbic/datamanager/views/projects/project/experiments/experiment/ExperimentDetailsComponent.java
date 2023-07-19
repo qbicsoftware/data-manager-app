@@ -227,13 +227,15 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
-    experimentalGroupCard.addDeletionEventListener(ExperimentDetailsComponent.this::handleCreationClickedEvent);
+    experimentalGroupCard.addDeletionEventListener(
+        ExperimentDetailsComponent.this::handleDeletionClickedEvent);
   }
 
-  private void handleCreationClickedEvent(ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
+  private void handleDeletionClickedEvent(
+      ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
     experimentInformationService.deleteExperimentGroup(experimentId,
         experimentalGroupDeletionEvent.getSource().groupId());
-    experimentalGroupsCollection.remove(experimentalGroupDeletionEvent.getSource());
+    reloadExperimentalGroups();
   }
 
   private void addConfirmListenerForAddVariableDialog() {
