@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 /**
  * <b>Deletion Service</b>
  *
- * <p>Service that orchestrates more deletion use cases in the application</p>
+ * <p>Service that orchestrates deletion use cases in the application</p>
  *
  * @since 1.0.0
  */
@@ -24,15 +24,17 @@ public class DeletionService {
   @Autowired
   public DeletionService(ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService) {
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.experimentInformationService = requireNonNull(experimentInformationService,
+        "experimentInformationService must not be null");
+    this.sampleInformationService = requireNonNull(sampleInformationService,
+        "sampleInformationService must not be null");
   }
 
   /**
    * Deletes all experiment variables and groups in a given experiment.
    * <p>
    * Will contain an error, if samples are available and attached to the experiment. In this case,
-   * to variables and groups will be deleted.
+   * no variables and groups will be deleted.
    *
    * @param id the experiment id
    * @return a result containing the experiment id on success or an error {@link ResponseCode}
