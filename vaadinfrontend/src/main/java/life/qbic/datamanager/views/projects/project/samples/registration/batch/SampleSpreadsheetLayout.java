@@ -165,7 +165,7 @@ class SampleSpreadsheetLayout extends Div {
     private void displayErrorInstructions(String instructions) {
       errorInstructionSpan.removeAll();
       Span errorSpan = new Span();
-      errorSpan.add(invalidationReason);
+      errorSpan.add(instructions);
       errorSpan.addClassName("error-text");
       errorInstructionSpan.add(errorSpan);
     }
