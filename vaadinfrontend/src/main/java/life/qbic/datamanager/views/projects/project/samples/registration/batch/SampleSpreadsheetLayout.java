@@ -162,7 +162,7 @@ class SampleSpreadsheetLayout extends Div {
           .isValue();
     }
 
-    private void displayErrorInstructions(String invalidationReason) {
+    private void displayErrorInstructions(String instructions) {
       errorInstructionSpan.removeAll();
       Span errorSpan = new Span();
       errorSpan.add(invalidationReason);
