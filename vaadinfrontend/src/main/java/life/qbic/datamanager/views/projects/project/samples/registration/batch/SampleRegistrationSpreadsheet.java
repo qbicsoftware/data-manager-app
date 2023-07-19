@@ -475,7 +475,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return Result.fromValue(null);
   }
 
-  private void highlightInvalidCells(Set<Cell> cells) {
+  private void highlightInvalidCells(Collection<Cell> cells) {
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
     invalidStyle.setLocked(false);
     invalidStyle.setBorderTop(BorderStyle.THIN);
