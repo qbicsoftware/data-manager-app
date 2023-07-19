@@ -39,16 +39,15 @@ public class ExperimentalVariablesComponent extends Card {
 
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
     this.experimentalVariables = experimentalVariables;
-    this.editButton = createEditButton("Edit");
+    this.editButton = createEditButton();
     variableCreationCard = CreationCard.create("Add experimental variables");
     variableCreationCard.addListener(event -> fireAddEvent());
     layoutComponent();
     configureComponent();
   }
 
-  private static Button createEditButton(String label) {
-    Button button = new Button(label);
-    return button;
+  private static Button createEditButton() {
+    return new Button("Edit");
   }
   private void addComponentAsLast(Component component) {
     content.addComponentAtIndex(content.getComponentCount(), component);

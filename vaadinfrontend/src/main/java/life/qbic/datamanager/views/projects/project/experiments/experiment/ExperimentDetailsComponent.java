@@ -147,7 +147,9 @@ public class ExperimentDetailsComponent extends PageArea {
   private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
     var result = deletionService.deleteAllExperimentalVariables(experimentId);
     result.onError(responseCode -> {
-      throw new ApplicationException("variable deletion failed: " + responseCode, ErrorCode.GENERAL, ErrorParameters.empty());
+      throw new ApplicationException("variable deletion failed: " + responseCode, ErrorCode.GENERAL,
+          ErrorParameters.empty());
+    });
   }
 
   private void addListenerForNewVariableEvent() {

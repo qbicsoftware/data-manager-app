@@ -53,10 +53,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     layoutComponent();
     initDialogueContent();
     configureComponent();
-    // we remove the first empty row when we are in edit mode
-    if (editMode) {
-      experimentalVariableRowsContainerLayout.removeAll();
-    }
   }
 
   public static ExperimentalVariablesDialog prefilled(
@@ -145,7 +141,9 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     Span experimentalDesignHeader = new Span("Define Experimental Variable");
     experimentalDesignHeader.addClassName("header");
     experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
-    appendEmptyRow();
+    if (mode.equals(MODE.ADD)) {
+      appendEmptyRow();
+    }
   }
 
   private void appendEmptyRow() {

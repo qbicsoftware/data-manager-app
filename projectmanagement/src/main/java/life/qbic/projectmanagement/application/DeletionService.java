@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.Objects.*;
+
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
