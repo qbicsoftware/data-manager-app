@@ -29,7 +29,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 public class ExperimentInfoComponent extends Card {
 
   public static final String CARD_SECTION_TITLE = "title";
-  private boolean controlsEnabled = true;
   @Serial
   private static final long serialVersionUID = -4790635833822470484L;
   private final Collection<Species> species;
@@ -38,6 +37,7 @@ public class ExperimentInfoComponent extends Card {
   private final Div controls = new Div();
   private final MenuBar menuBar;
   private final List<ComponentEventListener<ExperimentInfoEditEvent>> editListeners = new ArrayList<>();
+  private boolean controlsEnabled = true;
 
   private ExperimentInfoComponent(Collection<Species> species, Collection<Specimen> specimen,
       Collection<Analyte> analytes) {
@@ -47,6 +47,14 @@ public class ExperimentInfoComponent extends Card {
     this.analytes = analytes;
     this.menuBar = createMenuBar();
     layoutComponent();
+  }
+
+  public static ExperimentInfoComponent create(Collection<Species> species,
+      Collection<Specimen> specimen, Collection<Analyte> analytes) {
+    Objects.requireNonNull(species);
+    Objects.requireNonNull(specimen);
+    Objects.requireNonNull(analytes);
+    return new ExperimentInfoComponent(species, specimen, analytes);
   }
 
   private MenuBar createMenuBar() {
@@ -97,25 +105,20 @@ public class ExperimentInfoComponent extends Card {
 
   private UnorderedList speciesList() {
     return new UnorderedList(
-        this.species.stream().map(thisSpecies -> new ListItem(thisSpecies.value())).toArray(ListItem[]::new));
+        this.species.stream().map(thisSpecies -> new ListItem(thisSpecies.value()))
+            .toArray(ListItem[]::new));
   }
 
   private UnorderedList specimenList() {
     return new UnorderedList(
-        this.specimen.stream().map(thisSpecimen -> new ListItem(thisSpecimen.value())).toArray(ListItem[]::new));
+        this.specimen.stream().map(thisSpecimen -> new ListItem(thisSpecimen.value()))
+            .toArray(ListItem[]::new));
   }
 
   private UnorderedList analytesList() {
     return new UnorderedList(
-        this.analytes.stream().map(thisAnalyte -> new ListItem(thisAnalyte.value())).toArray(ListItem[]::new));
-  }
-
-  public static ExperimentInfoComponent create(Collection<Species> species,
-      Collection<Specimen> specimen, Collection<Analyte> analytes) {
-    Objects.requireNonNull(species);
-    Objects.requireNonNull(specimen);
-    Objects.requireNonNull(analytes);
-    return new ExperimentInfoComponent(species, specimen, analytes);
+        this.analytes.stream().map(thisAnalyte -> new ListItem(thisAnalyte.value()))
+            .toArray(ListItem[]::new));
   }
 
   /**

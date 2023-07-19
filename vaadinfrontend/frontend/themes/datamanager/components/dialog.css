@@ -187,3 +187,7 @@ Used by both project creation and experiment creation dialog, thus the unique na
   align-items: center;
   gap: var(--lumo-space-m);
 }
+
+.experiment-variable-dialog .content .row vaadin-icon {
+  cursor: pointer;
+}

@@ -68,6 +68,6 @@ public class SampleInformationService {
   }
 
   public enum ResponseCode {
-    SAMPLES_NOT_FOUND
+    QUERY_FAILED
   }
 }
