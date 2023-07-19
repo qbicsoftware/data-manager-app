@@ -495,7 +495,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     this.refreshCells(cells);
   }
 
-  private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
+  private boolean isUniqueSampleRow(Collection<String> knownIDs, Row row) {
     String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
         header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
     String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
