@@ -58,7 +58,7 @@ public class ProjectCollectionComponent extends PageArea {
   final Button createProjectButton = new Button("Add");
   private final String title;
   private final ClientDetailsProvider clientDetailsProvider;
-  private final ProjectInformationService projectInformationService;
+  private final transient ProjectInformationService projectInformationService;
   private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
 
   @Autowired
@@ -111,9 +111,7 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void configureProjectCreationButton() {
-    createProjectButton.addClickListener(listener -> {
-      fireCreateClickedEvent();
-    });
+    createProjectButton.addClickListener(listener -> fireCreateClickedEvent());
   }
 
   private void layoutSearchField() {
