@@ -5,6 +5,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -27,9 +28,11 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -99,9 +102,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
+    // + 1 header row
+    setMaxRows(1);
     for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
+    setMaxRows(numberOfSamples+1);
   }
 
   private static void prepareConditionItems(List<ExperimentalGroup> groups) {
@@ -138,33 +144,55 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * free-text cells. The rows are added below the last row containing data.
    */
   public void addRow() {
-    int lastRowIndex = 1 + sampleRegistrationSheet.getLastRowNum();
+    int lastRowIndex = getRows() - 1; // zero-based index
+    int increasedRowIndex = lastRowIndex + 1;
+
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case SPECIES -> prefillCellsToRow(columnIndex, lastRowIndex, species);
-        case SPECIMEN -> prefillCellsToRow(columnIndex, lastRowIndex, specimens);
-        case ANALYTE -> prefillCellsToRow(columnIndex, lastRowIndex, analytes);
-        case CONDITION -> prefillCellsToRow(columnIndex, lastRowIndex,
+        case SPECIES -> prefillCellsToRow(columnIndex, increasedRowIndex, species);
+        case SPECIMEN -> prefillCellsToRow(columnIndex, increasedRowIndex, specimens);
+        case ANALYTE -> prefillCellsToRow(columnIndex, increasedRowIndex, analytes);
+        case CONDITION -> prefillCellsToRow(columnIndex, increasedRowIndex,
             conditionsToReplicates.keySet().stream().toList());
         case BIOLOGICAL_REPLICATE_ID ->
-            prefillCellsToRow(columnIndex, lastRowIndex, getReplicateLabels());
+            prefillCellsToRow(columnIndex, increasedRowIndex, getReplicateLabels());
         default -> {
           DropdownColumn column = dropdownCellFactory.getColumn(columnIndex);
           if (column != null) {
-            column.increaseToRow(lastRowIndex);
+            column.increaseToRow(increasedRowIndex);
           }
         }
       }
-
-      Cell newCell = this.getCell(lastRowIndex, columnIndex);
-      boolean hasData = !this.isCellUnused(newCell);
-      boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex) != null;
+      Cell addedCell = this.getCell(increasedRowIndex, columnIndex);
+      boolean hasData = !this.isCellUnused(addedCell);
+      boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex)
+          != null; //1 because we assume a header
       //cells need to be unlocked if they have no data/dropdown
       if (!hasData && !hasDropdown) {
-        this.unlockCellsToRow(this, lastRowIndex, columnIndex);
+        this.unlockCellsToRow(increasedRowIndex, columnIndex);
       }
     }
+    setMaxRows(increasedRowIndex + 1); // 1-based
+  }
+
+  /**
+   * Delete a row, remove it from visual representation by shifting following rows up.
+   *
+   * @param index 0-based row index of the row to remove
+   */
+  public void deleteRow(int index) {
+    if (getRows() == 1) {
+      // only one row remaining -> the header row
+      return;
+    }
+    //delete row
+    deleteRows(index, index);
+    //move other rows up
+    if (index + 1 < getRows()) {
+      shiftRows(index + 1, getRows() - 1, -1, true, true);
+    }
+    setMaxRows(getRows() - 1);
   }
 
 
@@ -237,45 +265,34 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         conditionsToReplicates.keySet().stream().toList());
     headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
     prepareColumnHeaderAndWidth(headerToPresets);
-    this.reload();
+    this.reloadVisibleCellContents();
     setupCommonDropDownColumns();
   }
 
-
-  public int findLastRow() {
-    int res = 0;
-    for (int row = 1; row <= Integer.MAX_VALUE; row++) {
-      List<Cell> thisRow = new ArrayList<>();
-      for (int col = 0; col <= header.size(); col++) {
-        thisRow.add(this.getCell(row, col));
-      }
-      if (thisRow.stream().allMatch(Objects::isNull)) {
-        break;
-      }
-      res = row;
-    }
-    return res;
-  }
-
-  void unlockCellsToRow(Spreadsheet spreadsheet, int maxRow, int column) {
-    List<Cell> cells = new ArrayList<>();
-    CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-    unLockedStyle.setLocked(false);
+  void unlockCellsToRow(int maxRow, int column) {
+    Set<Cell> cells = new HashSet<>();
     for (int row = 1; row <= maxRow; row++) {
-      if (isCellUnused(spreadsheet.getCell(row, column))) {
-        Cell cell = spreadsheet.createCell(row, column, "");
-        cell.setCellStyle(unLockedStyle);
+      if (isCellUnused(this.getCell(row, column))) {
+        Cell cell = this.createCell(row, column, "");
         cells.add(cell);
       }
     }
-    spreadsheet.refreshCells(cells);
+    defaultStyleAndUnlockCells(cells);
+  }
+
+  void defaultStyleAndUnlockCells(Set<Cell> cells) {
+    CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
+    unLockedStyle.setLocked(false);
+    for(Cell cell : cells) {
+      cell.setCellStyle(unLockedStyle);
+    }
+    this.refreshCells(cells);
   }
 
   //an unused cell is either null or empty (not blank)
   private boolean isCellUnused(Cell cell) {
     return cell == null || SpreadsheetMethods.cellToStringOrNull(cell).isEmpty();
   }
-
 
   /*
    * Changes width of a spreadsheet column based on header element and potential known entries.
@@ -286,7 +303,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     List<String> stringList = new ArrayList<>(Collections.singletonList(colLabel));
     stringList.addAll(entries);
     String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
-        .get();
+        .orElseThrow();
     String spacingValue = longestString + COL_SPACER;
     Cell cell = this.getCell(0, colIndex);
     String oldValue = "";
@@ -301,6 +318,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       this.autofitColumn(colIndex);
       this.getActiveSheet();
     } catch (IndexOutOfBoundsException exception) {
+      throw new RuntimeException("Something went wrong when switching sheets.");
     }
 
     this.getCell(0, colIndex).setCellValue(oldValue);
@@ -344,7 +362,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
             .collect(Collectors.toList()));
     headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
     prepareColumnHeaderAndWidth(headerToPresets);
-    this.reload();
+    this.reloadVisibleCellContents();
     DropdownColumn analysisTypeColumn = new DropdownColumn().withItems(
         Arrays.stream(SequenceAnalysisType
                 .values())
@@ -414,15 +432,20 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
-  public Result<Void, InvalidSpreadsheetRow> areInputsValid() {
-    Set<String> concatenatedSampleIDs = new HashSet<>();
-    for (int rowId = 2; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+  public Result<Void, InvalidSpreadsheetInput> areInputsValid() {
+    Set<Cell> invalidCells = new HashSet<>();
+    Set<Cell> validCells = new HashSet<>();
+    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
+      // needed to highlight cells with missing values
+      List<Integer> mandatoryInputCols = new ArrayList<>();
+      // needed to find which cells have missing values
       List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
         if (name.isMandatory) {
           mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
               header.indexOf(name))));
+          mandatoryInputCols.add(header.indexOf(name));
         }
       }
       // break when cells in row are undefined
@@ -431,23 +454,49 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
 
       // mandatory not filled in --> invalid
-      if (mandatoryInputs.stream().anyMatch(String::isBlank)) {
-        return Result.fromError(new InvalidSpreadsheetRow(
-            SpreadsheetInvalidationReason.MISSING_INPUT, rowId));
+      for(int colId : mandatoryInputCols) {
+        Cell cell = row.getCell(colId);
+        if(SpreadsheetMethods.cellToStringOrNull(cell).isBlank()) {
+          invalidCells.add(cell);
+        } else {
+          validCells.add(cell);
+        }
       }
 
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
-      // Sample uniqueness needs to be guaranteed by condition and replicate ID
-      if (!isUniqueSampleRow(concatenatedSampleIDs, row)) {
-        return Result.fromError(new InvalidSpreadsheetRow(
-            SpreadsheetInvalidationReason.DUPLICATE_ID, rowId, replicateIDInput));
-      }
+    }
+    defaultStyleAndUnlockCells(validCells);
+    if(!invalidCells.isEmpty()) {
+      highlightInvalidCells(invalidCells);
+
+      return Result.fromError(new InvalidSpreadsheetInput(
+          SpreadsheetInvalidationReason.MISSING_INPUT));
     }
     return Result.fromValue(null);
   }
 
-  private boolean isUniqueSampleRow(Set<String> knownIDs, Row row) {
+  private void highlightInvalidCells(Collection<Cell> cells) {
+    CellStyle invalidStyle = this.getWorkbook().createCellStyle();
+    invalidStyle.setLocked(false);
+    invalidStyle.setBorderTop(BorderStyle.THIN);
+    invalidStyle.setBorderLeft(BorderStyle.THIN);
+    invalidStyle.setBorderRight(BorderStyle.THIN);
+    invalidStyle.setBorderBottom(BorderStyle.THIN);
+
+    short redIndex = IndexedColors.RED.getIndex();
+    invalidStyle.setBottomBorderColor(redIndex);
+    invalidStyle.setTopBorderColor(redIndex);
+    invalidStyle.setLeftBorderColor(redIndex);
+    invalidStyle.setRightBorderColor(redIndex);
+
+    for(Cell cell : cells) {
+      cell.setCellStyle(invalidStyle);
+    }
+    this.refreshCells(cells);
+  }
+
+  private boolean isUniqueSampleRow(Collection<String> knownIDs, Row row) {
     String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
         header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
     String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
@@ -541,19 +590,23 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
-  public static class InvalidSpreadsheetRow {
+  public static class InvalidSpreadsheetInput {
 
     private final int invalidRow;
     private final SpreadsheetInvalidationReason reason;
     private final String additionalInfo;
 
-    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow, String additionalInfo) {
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason, int invalidRow, String additionalInfo) {
       this.reason = reason;
       this.invalidRow = invalidRow;
       this.additionalInfo = additionalInfo;
     }
 
-    InvalidSpreadsheetRow(SpreadsheetInvalidationReason reason, int invalidRow) {
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason) {
+      this(reason, 0, "");
+    }
+
+    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason, int invalidRow) {
       this(reason, invalidRow, "");
     }
 
@@ -566,9 +619,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
      */
     public String getInvalidationReason() {
       String message = switch (reason) {
-        case MISSING_INPUT: yield "Mandatory information missing in row "+ invalidRow;
+        case MISSING_INPUT: yield "Please complete the missing mandatory information.";
         case DUPLICATE_ID: yield "Biological replicate Id was used multiple times for the "
-              + "same condition in row "+invalidRow;
+              + "same condition in row "+invalidRow+".";
       };
       if(!additionalInfo.isEmpty()) {
         message += ": "+additionalInfo;

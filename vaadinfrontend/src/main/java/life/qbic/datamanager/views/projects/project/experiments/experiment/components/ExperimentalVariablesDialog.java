@@ -15,9 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 
 /**
  * <b>Add Experimental Variables Dialog</b>
@@ -26,25 +28,61 @@ import life.qbic.datamanager.views.general.DialogWindow;
  *
  * @since 1.0.0
  */
-public class AddExperimentalVariablesDialog extends DialogWindow {
+public class ExperimentalVariablesDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 5296014328282974007L;
-  private final List<AddExperimentalVariablesDialog.ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
-  private final List<ComponentEventListener<CancelEvent<AddExperimentalVariablesDialog>>> listenersCancellation = new ArrayList<>();
+  private final List<ExperimentalVariablesDialog.ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
+  private final List<ComponentEventListener<CancelEvent<ExperimentalVariablesDialog>>> listenersCancellation = new ArrayList<>();
   private final Div dialogueContentLayout = new Div();
   private final Div experimentalVariableRowsContainerLayout = new Div();
   private final Span addExperimentalVariableLayoutRow = new Span();
-  private final List<ComponentEventListener<ConfirmEvent<AddExperimentalVariablesDialog>>> listenersConfirmation = new ArrayList<>();
+  private final List<ComponentEventListener<ConfirmEvent<ExperimentalVariablesDialog>>> listenersConfirmation = new ArrayList<>();
+  private final MODE mode;
 
-  public AddExperimentalVariablesDialog() {
+  public ExperimentalVariablesDialog() {
+    this(false);
+  }
+
+  private ExperimentalVariablesDialog(boolean editMode) {
     super();
-    setConfirmButtonLabel("Add");
+    mode = editMode ? MODE.EDIT : MODE.ADD;
+    setConfirmButtonLabel(confirmActionLabel());
     setCancelButtonLabel("Cancel");
     addClassName("experiment-variable-dialog");
     layoutComponent();
     initDialogueContent();
     configureComponent();
+  }
+
+  public static ExperimentalVariablesDialog prefilled(
+      List<ExperimentalVariable> experimentalVariables) {
+    return editDialog(experimentalVariables);
+  }
+
+  private static ExperimentalVariablesDialog editDialog(
+      List<ExperimentalVariable> experimentalVariables) {
+    ExperimentalVariablesDialog experimentalVariablesDialog = new ExperimentalVariablesDialog(true);
+    var rowLayouts = experimentalVariablesDialog.convertVariables(experimentalVariables);
+    rowLayouts.forEach(experimentalVariablesDialog::prefill);
+    return experimentalVariablesDialog;
+  }
+
+  private void prefill(ExperimentalVariableRowLayout rowLayout) {
+    appendRow(rowLayout);
+  }
+
+  private List<ExperimentalVariableRowLayout> convertVariables(
+      List<ExperimentalVariable> variables) {
+    return variables.stream().map(this::convert).toList();
+  }
+
+  private ExperimentalVariableRowLayout convert(ExperimentalVariable experimentalVariable) {
+    return ExperimentalVariableRowLayout.from(experimentalVariable);
+  }
+
+  private String confirmActionLabel() {
+    return mode.equals(MODE.EDIT) ? "Save" : "Add";
   }
 
   private void configureComponent() {
@@ -54,13 +92,13 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
   }
 
   private void configureConfirmation() {
-    ConfirmEvent<AddExperimentalVariablesDialog> confirmEvent = new ConfirmEvent<>(this, true);
+    ConfirmEvent<ExperimentalVariablesDialog> confirmEvent = new ConfirmEvent<>(this, true);
     confirmButton.addClickListener(confirmListener -> listenersConfirmation.forEach(
         listener -> listener.onComponentEvent(confirmEvent)));
   }
 
   private void configureCancelling() {
-    CancelEvent<AddExperimentalVariablesDialog> cancelEvent = new CancelEvent<>(this, true);
+    CancelEvent<ExperimentalVariablesDialog> cancelEvent = new CancelEvent<>(this, true);
     cancelButton.addClickListener(cancelListener -> listenersCancellation.forEach(
         listener -> listener.onComponentEvent(cancelEvent)));
   }
@@ -71,12 +109,12 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
   }
 
   public void subscribeToConfirmEvent(
-      ComponentEventListener<ConfirmEvent<AddExperimentalVariablesDialog>> listener) {
+      ComponentEventListener<ConfirmEvent<ExperimentalVariablesDialog>> listener) {
     listenersConfirmation.add(listener);
   }
 
   public void subscribeToCancelEvent(
-      ComponentEventListener<CancelEvent<AddExperimentalVariablesDialog>> listener) {
+      ComponentEventListener<CancelEvent<ExperimentalVariablesDialog>> listener) {
     listenersCancellation.add(listener);
   }
 
@@ -103,20 +141,22 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
     Span experimentalDesignHeader = new Span("Define Experimental Variable");
     experimentalDesignHeader.addClassName("header");
     experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
-    appendEmptyRow();
+    if (mode.equals(MODE.ADD)) {
+      appendEmptyRow();
+    }
   }
 
   private void appendEmptyRow() {
-    appendRow(new AddExperimentalVariablesDialog.ExperimentalVariableRowLayout());
+    appendRow(new ExperimentalVariablesDialog.ExperimentalVariableRowLayout());
   }
 
-  private void appendRow(AddExperimentalVariablesDialog.ExperimentalVariableRowLayout component) {
+  private void appendRow(ExperimentalVariablesDialog.ExperimentalVariableRowLayout component) {
     component.setCloseListener(it -> removeRow(it.origin()));
     this.experimentalVariablesLayoutRows.add(component);
     experimentalVariableRowsContainerLayout.add(component);
   }
 
-  private void removeRow(AddExperimentalVariablesDialog.ExperimentalVariableRowLayout component) {
+  private void removeRow(ExperimentalVariablesDialog.ExperimentalVariableRowLayout component) {
     boolean wasRemoved = this.experimentalVariablesLayoutRows.remove(component);
     if (wasRemoved) {
       experimentalVariableRowsContainerLayout.remove(component);
@@ -156,12 +196,12 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
 
   private void dropEmptyRows() {
     experimentalVariablesLayoutRows.removeIf(
-        AddExperimentalVariablesDialog.ExperimentalVariableRowLayout::isEmpty);
+        ExperimentalVariablesDialog.ExperimentalVariableRowLayout::isEmpty);
   }
 
   private void closeDialogueIfValid() {
     if (experimentalVariablesLayoutRows.stream()
-        .allMatch(AddExperimentalVariablesDialog.ExperimentalVariableRowLayout::isValid)) {
+        .allMatch(ExperimentalVariablesDialog.ExperimentalVariableRowLayout::isValid)) {
       resetAndClose();
     }
     //ToDo what should happen if invalid information is provided in rows
@@ -174,6 +214,11 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
                 experimentalVariableRowLayout.getUnit(), experimentalVariableRowLayout.getLevels()))
         .toList();
   }
+
+  private enum MODE {
+    ADD, EDIT
+  }
+
   public record ExperimentalVariableContent(String name, String unit, List<String> levels) {
 
   }
@@ -181,16 +226,27 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
 
   static class ExperimentalVariableRowLayout extends Span {
 
-    private Registration clickListener;
     @Serial
     private static final long serialVersionUID = -1126299161780107501L;
     private final TextField nameField = new TextField("Experimental Variable");
     private final TextField unitField = new TextField("Unit");
     private final TextArea levelArea = new TextArea("Levels");
     private final Icon deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
+    private Registration clickListener;
 
     private ExperimentalVariableRowLayout() {
       init();
+    }
+
+    protected static ExperimentalVariableRowLayout from(ExperimentalVariable experimentalVariable) {
+      ExperimentalVariableRowLayout rowLayout = new ExperimentalVariableRowLayout();
+      rowLayout.nameField.setValue(experimentalVariable.name().value());
+      rowLayout.unitField.setValue(
+          experimentalVariable.levels().get(0).experimentalValue().unit().orElse(""));
+      rowLayout.levelArea.setValue(
+          experimentalVariable.levels().stream().map(it -> it.experimentalValue().value())
+              .collect(Collectors.joining("\n")));
+      return rowLayout;
     }
 
     private void init() {
@@ -216,12 +272,12 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
     }
 
     public void setCloseListener(
-        Consumer<AddExperimentalVariablesDialog.ExperimentalVariableRowLayout.CloseEvent> closeListener) {
+        Consumer<ExperimentalVariablesDialog.ExperimentalVariableRowLayout.CloseEvent> closeListener) {
       if (Objects.nonNull(clickListener)) {
         clickListener.remove();
       }
       clickListener = deleteIcon.addClickListener(it -> closeListener.accept(
-          new AddExperimentalVariablesDialog.ExperimentalVariableRowLayout.CloseEvent(this)));
+          new ExperimentalVariablesDialog.ExperimentalVariableRowLayout.CloseEvent(this)));
     }
 
     public boolean isValid() {
@@ -236,7 +292,7 @@ public class AddExperimentalVariablesDialog extends DialogWindow {
       return nameField.isEmpty() && unitField.isEmpty() && levelArea.isEmpty();
     }
 
-    private record CloseEvent(AddExperimentalVariablesDialog.ExperimentalVariableRowLayout origin) {
+    private record CloseEvent(ExperimentalVariablesDialog.ExperimentalVariableRowLayout origin) {
 
     }
 
