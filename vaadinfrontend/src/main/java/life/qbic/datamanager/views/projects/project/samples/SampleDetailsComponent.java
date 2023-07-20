@@ -129,20 +129,28 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
   }
 
-  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.experimentalGroup()
-      .condition().getVariableLevels().forEach(variableLevel -> {
-        div.addClassName("tag-collection");
-        String experimentalVariable =
-            variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
-        if (variableLevel.experimentalValue().unit().isPresent()) {
-          experimentalVariable =
-              experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
-        }
-        Tag tag = new Tag(experimentalVariable);
-        tag.addClassName("primary");
-        tag.setTitle(experimentalVariable);
-        div.add(tag);
-      });
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
+    List<String> variableLevels = new ArrayList<>();
+    div.addClassName("tag-collection");
+    samplePreview.experimentalGroup()
+        .condition().getVariableLevels().forEach(variableLevel -> {
+          String experimentalVariable =
+              variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
+          if (variableLevel.experimentalValue().unit().isPresent()) {
+            experimentalVariable =
+                experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
+          }
+          variableLevels.add(experimentalVariable);
+        });
+    variableLevels.sort(null);
+    variableLevels.forEach(experimentalVariable -> {
+      Tag tag = new Tag(experimentalVariable);
+      tag.addClassName("primary");
+      tag.setTitle(experimentalVariable);
+      div.add(tag);
+    });
+  };
+
 
   /**
    * Provides the {@link ProjectId} of the currently selected project to this component
@@ -300,17 +308,28 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
 
     private Grid<SamplePreview> createSampleGrid() {
-      Grid<SamplePreview> sampleGrid = new Grid<>();
-      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id");
-      sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
-      sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
-      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate");
-      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
-      sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
-      sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
-      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
-      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform");
-      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment");
+      Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
+      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
+          .setSortProperty("sampleCode").setSortable(true);
+      sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
+          .setSortProperty("sampleLabel").setSortable(true);
+      sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
+          .setSortProperty("batchLabel").setSortable(true);
+      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
+          .setSortProperty("bioReplicateLabel").setSortable(true);
+      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true)
+          .setSortable(true).setSortProperty("experimentalGroup");
+      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species")
+          .setSortable(true);
+      sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
+          .setSortProperty("specimen").setSortable(true);
+      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
+          .setSortable(true);
+      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
+          .setSortProperty("analysisType").setSortable(true);
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
+          .setSortable(true);
+      sampleGrid.setMultiSort(true);
       return sampleGrid;
     }
 
