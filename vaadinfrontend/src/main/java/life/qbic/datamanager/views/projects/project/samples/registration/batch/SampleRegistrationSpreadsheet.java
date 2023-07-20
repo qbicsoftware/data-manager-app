@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -95,6 +96,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(retrieveGenomics());
       case METABOLOMICS -> addMetabolomicsSheet(retrieveMetabolomics());
     }
+    this.setRowColHeadingsVisible(false);
+
     this.setActiveSheetProtected("password-needed-to-lock");
     this.setSpreadsheetComponentFactory(dropdownCellFactory);
     //initialise first rows based on known sample size
@@ -150,13 +153,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case SPECIES -> prefillCellsToRow(columnIndex, increasedRowIndex, species);
-        case SPECIMEN -> prefillCellsToRow(columnIndex, increasedRowIndex, specimens);
-        case ANALYTE -> prefillCellsToRow(columnIndex, increasedRowIndex, analytes);
-        case CONDITION -> prefillCellsToRow(columnIndex, increasedRowIndex,
+        case SPECIES -> prefillCell(columnIndex, increasedRowIndex, species);
+        case SPECIMEN -> prefillCell(columnIndex, increasedRowIndex, specimens);
+        case ANALYTE -> prefillCell(columnIndex, increasedRowIndex, analytes);
+        case CONDITION -> prefillCell(columnIndex, increasedRowIndex,
             conditionsToReplicates.keySet().stream().toList());
         case BIOLOGICAL_REPLICATE_ID ->
-            prefillCellsToRow(columnIndex, increasedRowIndex, getReplicateLabels());
+            prefillCell(columnIndex, increasedRowIndex, getReplicateLabels());
+        case ROW -> fillEnumerationCell(columnIndex, increasedRowIndex);
         default -> {
           DropdownColumn column = dropdownCellFactory.getColumn(columnIndex);
           if (column != null) {
@@ -164,16 +168,32 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           }
         }
       }
-      Cell addedCell = this.getCell(increasedRowIndex, columnIndex);
-      boolean hasData = !this.isCellUnused(addedCell);
-      boolean hasDropdown = dropdownCellFactory.findColumnInRange(1, columnIndex)
-          != null; //1 because we assume a header
-      //cells need to be unlocked if they have no data/dropdown
-      if (!hasData && !hasDropdown) {
-        this.unlockCellsToRow(increasedRowIndex, columnIndex);
-      }
+      //cells need to be unlocked if they are not prefilled in any way
+      enableEditableCellsOfColumnUntilRow(increasedRowIndex, columnIndex);
     }
     setMaxRows(increasedRowIndex + 1); // 1-based
+  }
+
+  private boolean isPrefilledColumn(int columnIndex) {
+    SamplesheetHeaderName colHeader = header.get(columnIndex);
+    switch (colHeader) {
+      case ROW, SEQ_ANALYSIS_TYPE, BIOLOGICAL_REPLICATE_ID, SPECIES, SPECIMEN, ANALYTE, CONDITION:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private void fillEnumerationCell(int colIndex, int rowIndex) {
+    CellStyle boldStyle = this.getWorkbook().createCellStyle();
+    Font font = this.getWorkbook().createFont();
+    font.setBold(true);
+    boldStyle.setFont(font);
+    boldStyle.setLocked(true);
+    boldStyle.setAlignment(HorizontalAlignment.CENTER);
+    Cell cell = this.createCell(rowIndex, colIndex, rowIndex);
+    cell.setCellStyle(boldStyle);
+    this.refreshCells(cell);
   }
 
   /**
@@ -203,9 +223,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @param rowIndex
    * @param items
    */
-  private void prefillCellsToRow(int colIndex, int rowIndex, List<String> items) {
+  private void prefillCell(int colIndex, int rowIndex, List<String> items) {
     if (items.size() == 1) {
       Cell cell = this.createCell(rowIndex, colIndex, items.get(0));
+      CellStyle lockedStyle = this.getWorkbook().createCellStyle();
+      lockedStyle.setLocked(true);
+      cell.setCellStyle(lockedStyle);
       this.refreshCells(cell);
     } else {
       dropdownCellFactory.addDropDownCell(rowIndex, colIndex);
@@ -269,7 +292,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     setupCommonDropDownColumns();
   }
 
-  void unlockCellsToRow(int maxRow, int column) {
+  void enableEditableCellsOfColumnUntilRow(int maxRow, int column) {
     Set<Cell> cells = new HashSet<>();
     for (int row = 1; row <= maxRow; row++) {
       if (isCellUnused(this.getCell(row, column))) {
@@ -277,14 +300,16 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         cells.add(cell);
       }
     }
-    defaultStyleAndUnlockCells(cells);
+    defaultStyleAndUnlockEditableCells(cells);
   }
 
-  void defaultStyleAndUnlockCells(Set<Cell> cells) {
+  void defaultStyleAndUnlockEditableCells(Set<Cell> cells) {
     CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
     unLockedStyle.setLocked(false);
     for(Cell cell : cells) {
-      cell.setCellStyle(unLockedStyle);
+      if(!isPrefilledColumn(cell.getColumnIndex())) {
+        cell.setCellStyle(unLockedStyle);
+      }
     }
     this.refreshCells(cells);
   }
@@ -384,12 +409,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @since 1.0.0
    */
   public enum SamplesheetHeaderName {
-    SEQ_ANALYSIS_TYPE("Analysis to be performed", true), SAMPLE_LABEL(
-        "Sample label", true), BIOLOGICAL_REPLICATE_ID(
-            "Biological replicate id", true), CONDITION("Condition",
-        true), SPECIES("Species", true), SPECIMEN("Specimen",
-        true), ANALYTE("Analyte", true), CUSTOMER_COMMENT(
-        "Customer comment", false);
+    ROW("#", false), SEQ_ANALYSIS_TYPE("Analysis to be performed",
+        true), SAMPLE_LABEL("Sample label", true),
+    BIOLOGICAL_REPLICATE_ID("Biological replicate id", true),
+    CONDITION("Condition", true), SPECIES("Species", true),
+    SPECIMEN("Specimen",true), ANALYTE("Analyte", true),
+    CUSTOMER_COMMENT("Customer comment", false);
 
     public final String label;
     public final boolean isMandatory;
@@ -401,7 +426,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public List<SamplesheetHeaderName> retrieveProteomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
+    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SAMPLE_LABEL,
         SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
         SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
         SamplesheetHeaderName.ANALYTE,
@@ -409,7 +434,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public List<SamplesheetHeaderName> retrieveLigandomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
+    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SAMPLE_LABEL,
         SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
         SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
         SamplesheetHeaderName.ANALYTE,
@@ -417,7 +442,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public List<SamplesheetHeaderName> retrieveMetabolomics() {
-    return List.of(SamplesheetHeaderName.SAMPLE_LABEL,
+    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SAMPLE_LABEL,
         SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
         SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
         SamplesheetHeaderName.ANALYTE,
@@ -425,7 +450,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public List<SamplesheetHeaderName> retrieveGenomics() {
-    return List.of(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
+    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, SamplesheetHeaderName.SAMPLE_LABEL,
         SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
         SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
         SamplesheetHeaderName.ANALYTE,
@@ -466,7 +491,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
     }
-    defaultStyleAndUnlockCells(validCells);
+    defaultStyleAndUnlockEditableCells(validCells);
     if(!invalidCells.isEmpty()) {
       highlightInvalidCells(invalidCells);
 
