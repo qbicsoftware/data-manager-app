@@ -16,6 +16,7 @@ import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.service.BatchDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Batch JPA Repository</b>
@@ -62,11 +63,11 @@ public class BatchJpaRepository implements BatchRepository {
   }
 
   @Override
+  @Transactional
   public Result<BatchId, ResponseCode> deleteById(BatchId batchId) {
     try {
       qbicBatchRepo.deleteById(batchId);
-      //ToDo determine if samples should be deleted as well
-      //qbicSampleRepository.deleteSamplesByAssignedBatchEquals(batchId);
+      qbicSampleRepository.deleteSamplesByAssignedBatchEquals(batchId);
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
