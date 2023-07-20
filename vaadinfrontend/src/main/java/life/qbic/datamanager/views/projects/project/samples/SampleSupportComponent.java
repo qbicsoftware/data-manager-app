@@ -7,12 +7,15 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchDeletionListener;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchEditListener;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.projectmanagement.domain.project.sample.Batch;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -70,5 +73,22 @@ public class SampleSupportComponent extends Div {
         .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
         .toList()).orElseGet(ArrayList::new);
   }
+
+  /**
+   * Propagates the listener which will retrieve notification if a {@link Batch} was deleted in the
+   * {@link BatchDetailsComponent} within this container
+   */
+  public void addBatchDeletionListener(BatchDeletionListener batchDeletionListener) {
+    batchDetailsComponent.addBatchDeletionListener(batchDeletionListener);
+  }
+
+  /**
+   * Propagates the listener which will retrieve notification if a {@link Batch} was edited in the
+   * {@link BatchDetailsComponent} within this container
+   */
+  public void addBatchEditListener(BatchEditListener batchEditListener) {
+    batchDetailsComponent.addBatchEditEventListener(batchEditListener);
+  }
+
 
 }

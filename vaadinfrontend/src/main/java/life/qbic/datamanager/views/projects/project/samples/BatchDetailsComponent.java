@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -18,12 +19,15 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchDeletionEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchEditEvent;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -49,10 +53,12 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = 4047815658668024042L;
   private final Div content = new Div();
-  Grid<BatchPreview> batchGrid = new Grid<>();
+  private final Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchRegistrationService batchRegistrationService;
   private final transient BatchInformationService batchInformationService;
   private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
+  private final List<BatchDeletionListener> deletionListener = new ArrayList<>();
+  private final List<BatchEditListener> editListener = new ArrayList<>();
 
   public BatchDetailsComponent(@Autowired BatchRegistrationService batchRegistrationService,
       @Autowired BatchInformationService batchInformationService) {
@@ -143,16 +149,50 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
 
   private void removeBatch(BatchId batchId) {
     var result = batchRegistrationService.deleteBatch(batchId);
+    result.onValue(deletedBatchId -> fireBatchDeletionEvent(new BatchDeletionEvent(
+        this, true)));
   }
 
   private void updateBatch(BatchId batchId, String batchLabel) {
     var result = batchRegistrationService.updateBatch(batchId, batchLabel);
+    result.onValue(editedBatchId -> fireBatchEditEvent(new BatchEditEvent(
+        this, true)));
   }
 
   private void loadBatchesForExperiment(Experiment experiment) {
     batchInformationService.retrieveBatchesForExperiment(experiment.experimentId())
         .onValue(batches -> batchPreviews.addAll(
             batches.stream().map(batch -> generatePreviewFromBatch(batch, experiment)).toList()));
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that will get informed with an
+   * {@link BatchDeletionEvent}, as soon as a user wants to delete a {@link Batch}
+   *
+   * @param batchDeletionListener a listener for adding variables events
+   * @since 1.0.0
+   */
+  public void addBatchDeletionListener(BatchDeletionListener batchDeletionListener) {
+    deletionListener.add(batchDeletionListener);
+  }
+
+  private void fireBatchDeletionEvent(BatchDeletionEvent event) {
+    deletionListener.forEach(it -> it.handle(event));
+  }
+
+  /**
+   * Register an {@link ComponentEventListener} that will get informed with a
+   * {@link BatchEditEvent}, as soon as a user wants to edit batch Information.
+   *
+   * @param batchEditListener a listener for batch edit events
+   * @since 1.0.0
+   */
+  public void addBatchEditEventListener(BatchEditListener batchEditListener) {
+    editListener.add(batchEditListener);
+  }
+
+  private void fireBatchEditEvent(BatchEditEvent event) {
+    editListener.forEach(it -> it.handle(event));
   }
 
   private class BatchPreview {
@@ -202,4 +242,9 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     void handle(BatchDeletionEvent event);
   }
 
+  @FunctionalInterface
+  public interface BatchEditListener {
+
+    void handle(BatchEditEvent event);
+  }
 }

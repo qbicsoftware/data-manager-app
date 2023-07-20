@@ -42,6 +42,7 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   private final SampleContentComponent sampleContentComponent;
   private final SampleSupportComponent sampleSupportComponent;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  private ProjectId projectId;
 
   public SampleInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
@@ -55,6 +56,7 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
     this.sampleContentComponent = sampleContentComponent;
     this.sampleSupportComponent = sampleSupportComponent;
     layoutComponent();
+    addListeners();
     log.debug(String.format(
         "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s), Sample Content Component (#%s) and Sample Support Component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
@@ -67,6 +69,11 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
     addComponentAsFirst(projectNavigationBarComponent);
   }
 
+  private void addListeners() {
+    enableBatchDeletionListener();
+    enableBatchEditListener();
+  }
+
   /**
    * Provides the {@link ProjectId} to the components within this page
    * <p>
@@ -76,6 +83,7 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
    * @param projectId projectId of the selected project
    */
   public void projectId(ProjectId projectId) {
+    this.projectId = projectId;
     projectNavigationBarComponent.projectId(projectId);
     sampleContentComponent.projectId(projectId);
     sampleSupportComponent.projectId(projectId);
@@ -107,5 +115,19 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
           String.format("Provided ProjectId %s is invalid due to %s", projectParam,
               e.getMessage()));
     }
+  }
+
+  private void enableBatchEditListener() {
+    sampleSupportComponent.addBatchEditListener(event -> {
+      sampleSupportComponent.projectId(projectId);
+      sampleContentComponent.projectId(projectId);
+    });
+  }
+
+  private void enableBatchDeletionListener() {
+    sampleSupportComponent.addBatchDeletionListener(event -> {
+      sampleSupportComponent.projectId(projectId);
+      sampleContentComponent.projectId(projectId);
+    });
   }
 }
