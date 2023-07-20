@@ -128,7 +128,7 @@ public class ProjectCollectionComponent extends PageArea {
   private void layoutGrid() {
     projectGrid.addColumn(new ComponentRenderer<>(
             item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0).setSortable(true)
+                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0)
         .setSortProperty("projectCode");
 
     projectGrid.addColumn(new ComponentRenderer<>(
