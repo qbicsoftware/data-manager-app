@@ -37,8 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * A component that displays previews of accessible project previews.
  * <p>
- * The component also fires {@link ProjectAddSubmitEvent} to all registered listeners, if a
- * user has the intend to add a new project.
+ * The component also fires {@link ProjectAddSubmitEvent} to all registered listeners, if a user has
+ * the intend to add a new project.
  *
  * @since 1.0.0
  */
@@ -46,11 +46,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 public class ProjectCollectionComponent extends PageArea {
 
-  private Div controlSection = new Div();
-  private Div gridSection = new Div();
+  private final Div controlSection = new Div();
+  private final Div gridSection = new Div();
   private String projectPreviewFilter = "";
   private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
-  private Div titleSection = new Div();
+  private final Div titleSection = new Div();
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
@@ -63,7 +63,7 @@ public class ProjectCollectionComponent extends PageArea {
 
   @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
-                                    ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService) {
     this.title = "Projects";
     this.clientDetailsProvider = clientDetailsProvider;
     this.projectInformationService = projectInformationService;
@@ -129,16 +129,17 @@ public class ProjectCollectionComponent extends PageArea {
 
   private void layoutGrid() {
     projectGrid.addColumn(new ComponentRenderer<>(
-        item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-            item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0);
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
+                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0).setSortable(true)
+        .setSortProperty("projectCode");
 
     projectGrid.addColumn(new ComponentRenderer<>(
         item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-            item.projectTitle()))).setHeader("Title").setKey("projectTitle");
+            item.projectTitle()))).setHeader("Title").setKey("projectTitle").setSortable(true);
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
         projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-        "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified");
+        "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true);
 
     projectGrid.setMultiSort(true);
   }
@@ -168,8 +169,7 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
-   * Add a listener that is called, when a new {@link ProjectAddSubmitEvent event} is
-   * emitted.
+   * Add a listener that is called, when a new {@link ProjectAddSubmitEvent event} is emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
