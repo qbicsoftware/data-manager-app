@@ -27,6 +27,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentInform
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
@@ -189,7 +190,17 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void configureExperimentalGroupCreation() {
-    experimentalGroupCreationCard.addListener(event -> experimentalGroupsDialog.open());
+    //experimentalGroupCreationCard.addListener(event -> experimentalGroupsDialog.open());
+
+    experimentalGroupCreationCard.addListener(event -> {
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      List<VariableLevel> levels = variables.stream()
+          .flatMap(variable -> variable.levels().stream()).toList();
+      var dialog = ExperimentalGroupsDialog.empty(levels);
+      dialog.subscribeToCancelEvent(cancelEvent -> cancelEvent.getSource().close());
+      dialog.open();
+    });
   }
 
   private void addCancelListenerForAddVariableDialog() {
