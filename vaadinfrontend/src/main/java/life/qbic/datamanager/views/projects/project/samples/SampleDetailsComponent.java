@@ -310,25 +310,22 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private Grid<SamplePreview> createSampleGrid() {
       Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
       sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
-          .setSortProperty("sampleCode").setSortable(true);
+          .setSortProperty("sampleCode");
       sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
-          .setSortProperty("sampleLabel").setSortable(true);
+          .setSortProperty("sampleLabel");
       sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
-          .setSortProperty("batchLabel").setSortable(true);
+          .setSortProperty("batchLabel");
       sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
-          .setSortProperty("bioReplicateLabel").setSortable(true);
+          .setSortProperty("bioReplicateLabel");
       sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true)
-          .setSortable(true).setSortProperty("experimentalGroup");
-      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species")
-          .setSortable(true);
+          .setSortProperty("experimentalGroup");
+      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species");
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
-          .setSortProperty("specimen").setSortable(true);
-      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
-          .setSortable(true);
+          .setSortProperty("specimen");
+      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte");
       sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
-          .setSortProperty("analysisType").setSortable(true);
-      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
-          .setSortable(true);
+          .setSortProperty("analysisType");
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
       sampleGrid.setMultiSort(true);
       return sampleGrid;
     }
