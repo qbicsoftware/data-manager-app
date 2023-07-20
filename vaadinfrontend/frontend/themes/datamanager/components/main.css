@@ -36,18 +36,18 @@
 }
 
 .main.sample {
-  grid-template-columns: minmax(max-content, 100%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, 5%) minmax(min-content, 90%);
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(130px, 5%) minmax(max-content, 90%);
   grid-template-areas:
     "navbar support"
-    "content content";
+    "content support";
 }
 
 .main.sample .content {
   grid-area: content;
 }
 
-.sample-page .support {
+.main.sample .support {
   grid-area: support;
 }
 

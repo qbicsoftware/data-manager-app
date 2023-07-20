@@ -58,7 +58,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       @Autowired BatchInformationService batchInformationService) {
     Objects.requireNonNull(batchRegistrationService);
     Objects.requireNonNull(batchInformationService);
-    this.addClassName("batch-details-component");
+    addClassName("batch-details-component");
     layoutComponent();
     this.batchRegistrationService = batchRegistrationService;
     this.batchInformationService = batchInformationService;

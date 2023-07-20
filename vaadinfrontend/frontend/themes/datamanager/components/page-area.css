@@ -34,13 +34,10 @@
   background-color: inherit;
 }
 
-.page-area.navbar {
-  justify-content: space-evenly;
+.page-area.batch-details-component {
+  flex-direction: column;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--lumo-space-xs);
-  height: fit-content;
+  gap: var(--lumo-space-m);
 }
 
 .page-area.experiment-details-component .details-content {
@@ -49,6 +46,15 @@
   flex-direction: column;
   gap: var(--lumo-space-m);
   font-size: var(--lumo-font-size-s);
+}
+
+.page-area.navbar {
+  justify-content: space-evenly;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  height: fit-content;
 }
 
 .page-area.project-details-component .details-content {
