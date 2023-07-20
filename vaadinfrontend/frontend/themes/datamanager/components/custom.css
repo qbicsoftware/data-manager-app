@@ -7,6 +7,7 @@
 @import "main.css";
 @import "project-collection.css";
 @import "tag-collection.css";
+@import "notifications.css";
 
 .card-deck {
   display: flex;
