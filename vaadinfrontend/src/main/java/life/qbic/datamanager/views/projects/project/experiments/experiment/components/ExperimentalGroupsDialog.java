@@ -21,28 +21,24 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Experimental Groups Dialog</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A dialog window that enables the user to add new experimental groups to an experiment
+ * or edit existing ones.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ExperimentalGroupsDialog extends DialogWindow {
-
-  private final Collection<VariableLevel> experimentalVariables;
-
-  private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
-
-  private final ExperimentalGroupEntry experimentalGroupEntry = new ExperimentalGroupEntry();
-
-  private final Div experimentalGroupsCollection = new Div();
 
   private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
       "%s: %s", it.variableName().value(),
       ExperimentValueFormatter.format(it.experimentalValue()));
-
   @Serial
   private static final long serialVersionUID = 1657697182040756406L;
+  private final Collection<VariableLevel> experimentalVariables;
+  private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
+  private final ExperimentalGroupEntry experimentalGroupEntry = new ExperimentalGroupEntry();
+  private final Div experimentalGroupsCollection = new Div();
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables) {
     super();
@@ -51,16 +47,34 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     configureComponent();
   }
 
+  public static ExperimentalGroupsDialog empty(Collection<VariableLevel> experimentalVariables) {
+    return new ExperimentalGroupsDialog(experimentalVariables);
+  }
+
+  public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
+      Collection<ExperimentalGroup> experimentalGroups) {
+    //TODO
+    return null;
+  }
+
+  private static ExperimentalGroupContent convert(ExperimentalGroupEntry experimentalGroupEntry) {
+    return new ExperimentalGroupContent(experimentalGroupEntry.sampleSize.getValue().intValue(),
+        experimentalGroupEntry.variableComboBox.getSelectedItems());
+  }
+
   private void configureComponent() {
     cancelButton.addClickListener(event -> fireCancelEvent());
   }
 
   private void fireCancelEvent() {
     CancelEvent<ExperimentalGroupsDialog> cancelEvent = new CancelEvent<>(this, true);
-    cancelListeners.forEach(cancelEventComponentEventListener -> cancelEventComponentEventListener.onComponentEvent(cancelEvent));
+    cancelListeners.forEach(
+        cancelEventComponentEventListener -> cancelEventComponentEventListener.onComponentEvent(
+            cancelEvent));
   }
 
-  public void subscribeToCancelEvent(ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
+  public void subscribeToCancelEvent(
+      ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
     this.cancelListeners.add(listener);
   }
 
@@ -99,25 +113,33 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     }
   }
 
-  public static ExperimentalGroupsDialog empty(Collection<VariableLevel> experimentalVariables) {
-    return new ExperimentalGroupsDialog(experimentalVariables);
+  /**
+   * Provides the current experimental groups defined by the user.
+   *
+   * @return a collection of {@link ExperimentalGroupContent}, describing the group size (biological
+   * replicates) and the variable level combination.
+   * @since 1.0.0
+   */
+  public Collection<ExperimentalGroupContent> experimentalGroups() {
+    return this.experimentalGroupsCollection.getChildren()
+        .filter(component -> component.getClass().equals(ExperimentalGroupEntry.class))
+        .map(experimentalGroupEntry -> convert((ExperimentalGroupEntry) experimentalGroupEntry))
+        .toList();
   }
 
-  public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables, Collection<ExperimentalGroup> experimentalGroups) {
-    //TODO
-    return null;
+  public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {
+
   }
 
   private class ExperimentalGroupEntry extends Div {
 
     @Serial
     private static final long serialVersionUID = -1387021927263833261L;
-    private MultiSelectComboBox<VariableLevel> variableComboBox;
-
     private final List<ComponentEventListener<RemoveEvent>> removeEventListeners = new ArrayList<>();
-
+    private MultiSelectComboBox<VariableLevel> variableComboBox;
     @Min(1)
     private NumberField sampleSize;
+
     private ExperimentalGroupEntry() {
       super();
       variableComboBox = new MultiSelectComboBox<>();
@@ -152,7 +174,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       variableComboBox.setItems(availableVariableLevels);
     }
 
-    void registerForRemoveEvents(ComponentEventListener<RemoveEvent> listener){
+    void registerForRemoveEvents(ComponentEventListener<RemoveEvent> listener) {
       removeEventListeners.add(listener);
     }
 
@@ -168,8 +190,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     private static final long serialVersionUID = 2934203596212238997L;
 
     /**
-     * Creates a new event using the given source and indicator whether the event originated from the
-     * client side or the server side.
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
      *
      * @param source     the source component
      * @param fromClient <code>true</code> if the event originated from the client
