@@ -15,10 +15,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.CancelEvent;
+import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 
 /**
  * <b>Experimental Groups Dialog</b>
@@ -39,6 +41,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
   private final ExperimentalGroupEntry experimentalGroupEntry = new ExperimentalGroupEntry();
   private final Div experimentalGroupsCollection = new Div();
+  private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables) {
     super();
@@ -64,6 +67,17 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void configureComponent() {
     cancelButton.addClickListener(event -> fireCancelEvent());
+    confirmButton.addClickListener(event -> validateAndFireEvent());
+  }
+
+  private void validateAndFireEvent() {
+    validateIt();
+    var event = new ConfirmEvent<>(this, true);
+    confirmListeners.forEach(listener -> listener.onComponentEvent(event));
+  }
+
+  private void validateIt() {
+
   }
 
   private void fireCancelEvent() {
@@ -76,6 +90,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   public void subscribeToCancelEvent(
       ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
     this.cancelListeners.add(listener);
+  }
+  
+  public void subscribeToConfirmEvent(ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>> listener) {
+    this.confirmListeners.add(listener);
   }
 
   private void layoutComponent() {

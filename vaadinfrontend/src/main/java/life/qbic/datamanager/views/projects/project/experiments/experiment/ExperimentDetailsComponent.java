@@ -11,6 +11,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
@@ -28,6 +29,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.AddEx
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
@@ -199,8 +201,28 @@ public class ExperimentDetailsComponent extends PageArea {
           .flatMap(variable -> variable.levels().stream()).toList();
       var dialog = ExperimentalGroupsDialog.empty(levels);
       dialog.subscribeToCancelEvent(cancelEvent -> cancelEvent.getSource().close());
+      dialog.subscribeToConfirmEvent(
+          confirmEvent -> {
+            saveNewGroups(confirmEvent.getSource().experimentalGroups());
+            dialog.close();
+          });
       dialog.open();
     });
+  }
+
+  private void saveNewGroups(Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    experimentalGroupContents.stream()
+        .map(content -> new ExperimentalGroupDTO(content.variableLevels(), content.size()))
+        .map(this::registerNewGroup)
+        .filter(Result::isError).findAny().ifPresent(errorResult -> {
+          throw new ApplicationException("Could not save one or more groups.");
+        });
+  }
+
+  private Result<ExperimentalGroup, ResponseCode> registerNewGroup(
+      ExperimentalGroupDTO experimentalGroupDTO) {
+    return this.experimentInformationService.addExperimentalGroupToExperiment(experimentId,
+        experimentalGroupDTO);
   }
 
   private void addCancelListenerForAddVariableDialog() {

@@ -252,8 +252,7 @@ public class ExperimentInformationService {
     return !experiment.getExperimentalGroups().isEmpty();
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int sampleSize) {
 
   }
-
 }
