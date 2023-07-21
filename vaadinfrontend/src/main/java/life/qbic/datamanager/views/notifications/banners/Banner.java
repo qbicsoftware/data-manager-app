@@ -23,6 +23,10 @@ public class Banner extends Div {
     }
   }
 
+  public Banner(Icon icon) {
+    this(icon, null);
+  }
+
   protected void setContent(Component content) {
     if (nonNull(this.content)) {
       remove(this.content);

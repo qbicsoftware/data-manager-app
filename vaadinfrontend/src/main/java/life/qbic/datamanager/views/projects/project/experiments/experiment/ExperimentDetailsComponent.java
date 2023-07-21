@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.banners.InformationBanner;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
@@ -87,11 +88,11 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Component createSampleRegistrationPossibleInformation() {
-    InformationMessage informationMessage = new InformationMessage(
+    InformationBanner informationBanner = new InformationBanner(
         "You can register sample batches.",
-        "Navigate to 'Samples' to register sample batches.");
-    informationMessage.addClassName("sample-registration-possible");
-    return informationMessage;
+        new Span("Navigate to Samples to register sample batches."));
+    informationBanner.addClassName("sample-registration-possible");
+    return informationBanner;
   }
   private DisclaimerCard createNoVariableDisclaimer() {
     var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
@@ -133,7 +134,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addListenerForNewVariableEvent() {
-    this.experimentalVariablesComponent.subscribeToAddEvent(listener -> displayAddExperimentalVariablesDialog());
+    this.experimentalVariablesComponent.subscribeToAddEvent(
+        listener -> displayAddExperimentalVariablesDialog());
   }
 
   private void displayAddExperimentalVariablesDialog() {
