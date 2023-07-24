@@ -217,6 +217,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .filter(Result::isError).findAny().ifPresent(errorResult -> {
           throw new ApplicationException("Could not save one or more groups.");
         });
+    reloadExperimentalGroups();
   }
 
   private Result<ExperimentalGroup, ResponseCode> registerNewGroup(
