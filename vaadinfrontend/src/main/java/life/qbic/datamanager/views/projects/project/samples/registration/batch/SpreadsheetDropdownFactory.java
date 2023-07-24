@@ -19,11 +19,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private final HashMap<Integer, List<String>> colIndexToComboBoxItems = new HashMap<>();
-  ComboBox<String> editorComboBox;
-
-  //We store the indexes of the currently selected cell so the valueChangeListener knows where we are
-  private int selectedCellColumnIndex = 0;
-  private int selectedCellRowIndex = 0;
 
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
@@ -41,14 +36,28 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     if (isHeaderRow(rowIndex)) {
       return null;
     }
-    if (editorComboBox == null) {
-      initCustomEditor(spreadsheet);
-    }
     if (hasMoreThanOneValue(columnIndex)) {
-      return editorComboBox;
-    } else {
-      return null;
+      ComboBox<String> editorCombobox = createEditorCombobox(spreadsheet, cell.getColumnIndex(),
+          cell.getRowIndex());
+      editorCombobox.setValue(cell.getStringCellValue());
+      return editorCombobox;
     }
+    return null;
+  }
+
+  private ComboBox<String> createEditorCombobox(Spreadsheet spreadsheet,
+      int selectedCellColumnIndex, int selectedCellRowIndex) {
+    ComboBox<String> editorComboBox = new ComboBox<>();
+    List<String> editorItems = getColumnValues(selectedCellColumnIndex);
+    editorComboBox.setItems(editorItems);
+    editorComboBox.addValueChangeListener(e -> {
+      if (e.isFromClient()) {
+        Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
+            e.getValue());
+        spreadsheet.refreshCells(createdCell);
+      }
+    });
+    return editorComboBox;
   }
 
   private boolean isHeaderRow(int rowIndex) {
@@ -62,27 +71,11 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     return colIndexToComboBoxItems.get(columnIndex).size() > 1;
   }
 
-  private void initCustomEditor(Spreadsheet spreadsheet) {
-    editorComboBox = new ComboBox<>();
-    editorComboBox.addValueChangeListener(e -> {
-      Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
-          e.getValue());
-      spreadsheet.refreshCells(createdCell);
-    });
-  }
-
   @Override
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
-    if (cell == null) {
-      return;
-    }
-    selectedCellColumnIndex = columnIndex;
-    selectedCellRowIndex = rowIndex;
-    List<String> editorItems = getColumnValues(columnIndex);
-    editorComboBox.setItems(editorItems);
-    editorComboBox.setValue(cell.getStringCellValue());
+
   }
 
   private List<String> getColumnValues(int columnIndex) {
