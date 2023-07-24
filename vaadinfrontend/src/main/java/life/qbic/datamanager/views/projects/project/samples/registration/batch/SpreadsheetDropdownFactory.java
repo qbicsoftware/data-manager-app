@@ -20,15 +20,13 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private final HashMap<Integer, List<String>> colIndexToComboBoxItems = new HashMap<>();
 
+  // this method is not used atm, as we only want to show a component if a cell is selected for performance reasons
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
     return null;
   }
 
-  // note: we need to unlock cells in addition to returning null in getCustomComponentForCell,
-  // otherwise "getCustomEditorForCell" is not called
-  // this method is not used atm, as it only shows the component when the cell is selected
   @Override
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
@@ -52,16 +50,23 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     editorComboBox.setItems(editorItems);
     editorComboBox.addValueChangeListener(e -> {
       if (e.isFromClient()) {
+        //We add a whitespace so the value is not auto incremented when the user drags a value
         Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
-            e.getValue());
+            e.getValue() + " ");
         spreadsheet.refreshCells(createdCell);
       }
     });
     return editorComboBox;
   }
 
+  @Override
+  public void onCustomEditorDisplayed(Cell cell, int rowIndex,
+      int columnIndex, Spreadsheet spreadsheet,
+      Sheet sheet, Component editor) {
+  }
+
   private boolean isHeaderRow(int rowIndex) {
-    return rowIndex == 1;
+    return rowIndex == 0;
   }
 
   private boolean hasMoreThanOneValue(int columnIndex) {
@@ -69,13 +74,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       return false;
     }
     return colIndexToComboBoxItems.get(columnIndex).size() > 1;
-  }
-
-  @Override
-  public void onCustomEditorDisplayed(Cell cell, int rowIndex,
-      int columnIndex, Spreadsheet spreadsheet,
-      Sheet sheet, Component editor) {
-
   }
 
   private List<String> getColumnValues(int columnIndex) {
