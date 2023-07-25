@@ -326,7 +326,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
           .setSortProperty("analysisType");
       sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
-      sampleGrid.setMultiSort(true);
       return sampleGrid;
     }
 

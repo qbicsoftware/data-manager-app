@@ -132,14 +132,14 @@ public class ProjectCollectionComponent extends PageArea {
         .setSortProperty("projectCode");
 
     projectGrid.addColumn(new ComponentRenderer<>(
-        item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-            item.projectTitle()))).setHeader("Title").setKey("projectTitle").setSortable(true);
+            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
+                item.projectTitle()))).setHeader("Title").setKey("projectTitle").setSortable(true)
+        .setSortProperty("projectTitle");
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
-        projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-        "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true);
-
-    projectGrid.setMultiSort(true);
+            projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
+            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true)
+        .setSortProperty("lastModified");
   }
 
   private void layoutTitleSection() {
