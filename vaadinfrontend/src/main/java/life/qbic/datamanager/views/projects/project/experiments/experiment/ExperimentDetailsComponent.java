@@ -2,16 +2,15 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
@@ -116,8 +115,8 @@ public class ExperimentDetailsComponent extends PageArea {
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.addClickListener(event -> notification.close());
 
-    HorizontalLayout layout = new HorizontalLayout(text, closeButton);
-    layout.setAlignItems(Alignment.CENTER);
+    Component layout = new HorizontalLayout(text, closeButton);
+    layout.addClassName("content");
     notification.setPosition(Position.MIDDLE);
     notification.add(layout);
     return notification;
