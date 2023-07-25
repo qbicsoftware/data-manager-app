@@ -32,7 +32,6 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;

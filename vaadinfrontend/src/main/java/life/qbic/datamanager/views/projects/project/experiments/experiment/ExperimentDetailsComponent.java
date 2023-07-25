@@ -2,9 +2,17 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -14,14 +22,16 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.datamanager.views.general.DisclaimerCard;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.banners.InformationBanner;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
@@ -32,6 +42,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
@@ -69,31 +80,44 @@ public class ExperimentDetailsComponent extends PageArea {
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
 
-  private final Component sampleRegistrationPossible;
+  //  private final Component sampleRegistrationPossible;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
+  private Context context;
+  private boolean hasExperimentalGroups;
 
 
-  public ExperimentDetailsComponent(@Autowired ExperimentInformationService experimentInformationService) {
+  public ExperimentDetailsComponent(
+      @Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.experimentalGroupsDialog = createExperimentalGroupDialog();
-    this.sampleRegistrationPossible = createSampleRegistrationPossibleInformation();
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
   }
 
-  private Component createSampleRegistrationPossibleInformation() {
-    InformationBanner informationBanner = new InformationBanner(
-        "You can register sample batches.",
-        new Span("Navigate to Samples to register sample batches."));
-    informationBanner.addClassName("sample-registration-possible");
-    return informationBanner;
+  private Notification createSampleRegistrationPossibleNotification(String projectId) {
+    Notification notification = new Notification();
+
+    String samplesUrl = Projects.SAMPLES.formatted(projectId);
+    Div text = new Div(new Text("You can now register sample batches. "),
+        new Anchor(samplesUrl, new Button("Go to Samples", event -> notification.close())));
+
+    Button closeButton = new Button(new Icon("lumo", "cross"));
+    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeButton.addClickListener(event -> notification.close());
+
+    HorizontalLayout layout = new HorizontalLayout(text, closeButton);
+    layout.setAlignItems(Alignment.CENTER);
+    notification.setPosition(Position.MIDDLE);
+    notification.add(layout);
+    return notification;
   }
+
   private DisclaimerCard createNoVariableDisclaimer() {
     var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
         "No experiment variables defined", "Add");
@@ -111,15 +135,11 @@ public class ExperimentDetailsComponent extends PageArea {
     this.add(content);
     content.addClassName("details-content");
     setTitle();
-    addSampleRegistrationPossibleInformation();
     addTagCollectionToContent();
     addExperimentNotesComponent();
     layoutTabSheet();
   }
 
-  private void addSampleRegistrationPossibleInformation() {
-    content.add(this.sampleRegistrationPossible);
-  }
 
   private void setTitle() {
     title.addClassName("title");
@@ -164,6 +184,7 @@ public class ExperimentDetailsComponent extends PageArea {
         Span::new, new TextField(), emptyNotes);
     content.add(experimentNotes);
   }
+
   private void layoutTabSheet() {
     experimentSheet.add("Summary", experimentSummary);
     experimentSummary.addClassName(Display.FLEX);
@@ -182,7 +203,16 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void handleGroupSubmittedSuccess() {
     reloadExperimentalGroups();
+    if (hasExperimentalGroups) {
+      showSampleRegistrationPossibleNotification();
+    }
     experimentalGroupsDialog.close();
+  }
+
+  private void showSampleRegistrationPossibleNotification() {
+    String projectId = this.context.projectId().map(ProjectId::value).orElseThrow();
+    Notification notification = createSampleRegistrationPossibleNotification(projectId);
+    notification.open();
   }
 
   private void handleDuplicateConditionInput() {
@@ -203,25 +233,13 @@ public class ExperimentDetailsComponent extends PageArea {
     // We load the experimental groups of the experiment and render them as cards
     List<ExperimentalGroup> experimentalGroups = experimentInformationService.experimentalGroupsFor(
         experimentId);
-    if (!experimentalGroups.isEmpty()) {
-      showSampleBatchRegistrationHint();
-    } else {
-      hideSampleBatchRegistrationHint();
-    }
     List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
         .map(ExperimentalGroupCard::new).toList();
 
     // We register the experimental details component as listener for group deletion events
     experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
     experimentalGroupsCollection.setComponents(experimentalGroupsCards);
-  }
-
-  private void hideSampleBatchRegistrationHint() {
-    this.sampleRegistrationPossible.setVisible(false);
-  }
-
-  private void showSampleBatchRegistrationHint() {
-    this.sampleRegistrationPossible.setVisible(true);
+    this.hasExperimentalGroups = !experimentalGroupsCards.isEmpty();
   }
 
   private void addCreationCardToExperimentalGroupCollection() {
@@ -245,7 +263,10 @@ public class ExperimentDetailsComponent extends PageArea {
       try {
         registerExperimentalVariables(it.getSource());
         it.getSource().close();
-        loadExperiment(experimentId);
+        setContext(this.context);
+        if (hasExperimentalGroups) {
+          showSampleRegistrationPossibleNotification();
+        }
       } catch (Exception e) {
         log.error("Experimental variables registration failed.", e);
       }
@@ -268,7 +289,17 @@ public class ExperimentDetailsComponent extends PageArea {
    * @since 1.0.0
    */
   public void setExperiment(ExperimentId experimentId) {
-    this.loadExperiment(experimentId);
+    setContext(new Context().with(experimentId)
+        .with(ProjectId.parse("e8dcd526-6e77-4ce1-b516-b0e2ebc8171d"))); //FIX remove this line
+  }
+
+  public void setContext(Context context) {
+    ExperimentId experimentId = context.experimentId()
+        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
+    ProjectId projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    this.context = context;
+    loadExperiment(experimentId);
   }
 
   private void loadExperiment(ExperimentId experimentId) {

@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -10,11 +12,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
-import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,14 +30,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/info", layout = ProjectViewPage.class)
+@Route(value = "projects/:projectId?/info", layout = MainLayout.class)
 @PermitAll
 public class ProjectInformationMain extends MainComponent implements BeforeEnterObserver,
     RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
-  private static final Logger log = LoggerFactory.logger(ProjectViewPage.class);
+  private static final Logger log = logger(ProjectInformationMain.class);
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final transient ProjectInformationMainHandler projectInformationMainHandler;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";

@@ -4,6 +4,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -46,6 +47,15 @@ public class ExperimentContentComponent extends Div {
    */
   public void setExperiment(ExperimentId experimentId) {
     experimentDetailsComponent.setExperiment(experimentId);
+  }
+
+  /**
+   * Propagates the context to internal components.
+   *
+   * @param context the context in which the user is.
+   */
+  public void setContext(Context context) {
+    experimentDetailsComponent.setContext(context);
   }
 
 }
