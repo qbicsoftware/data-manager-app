@@ -16,87 +16,19 @@ import java.util.StringJoiner;
  */
 public class ApplicationException extends RuntimeException {
 
-  /**
-   * The error code of an ApplicationException. This code can be used to determine what kind of
-   * error occurred. This allows for the message of the ApplicationException to hold debug
-   * information and avoids string matching to search for the error message.
-   */
-  public enum ErrorCode {
-    GENERAL,
-    INVALID_EXPERIMENTAL_DESIGN,
-    INVALID_PROJECT_OBJECTIVE,
-    INVALID_PROJECT_TITLE,
-    INVALID_PROJECT_CODE,
-    DUPLICATE_PROJECT_CODE,
-    UNDEFINED_VARIABLE_LEVEL,
-    NO_SPECIES_DEFINED,
-    NO_SPECIMEN_DEFINED,
-    NO_ANALYTE_DEFINED,
-    ;
-
-    @Override
-    public String toString() {
-      return this.getClass().getSimpleName() + "." + this.name();
-    }
-
-  }
-
-  /**
-   * Error parameters to be used in error messages.
-   *
-   * @param value an ordered array of parameters
-   */
-  public record ErrorParameters(Object[] value) {
-
-    public static ErrorParameters create() {
-      return new ErrorParameters(new Object[]{});
-    }
-
-    public static ErrorParameters of(Object... parameters) {
-      return new ErrorParameters(parameters);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ErrorParameters that = (ErrorParameters) o;
-
-      return Arrays.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-      return Arrays.hashCode(value);
-    }
-
-    @Override
-    public String toString() {
-      return new StringJoiner(", ", ErrorParameters.class.getSimpleName() + "[", "]")
-          .add("value=" + Arrays.toString(value))
-          .toString();
-    }
-  }
-
   private final ErrorCode errorCode;
-
   private final ErrorParameters errorParameters;
 
   public ApplicationException() {
-    this(ErrorCode.GENERAL, ErrorParameters.create());
+    this(ErrorCode.GENERAL, ErrorParameters.empty());
   }
 
   public ApplicationException(String message) {
-    this(message, ErrorCode.GENERAL, ErrorParameters.create());
+    this(message, ErrorCode.GENERAL, ErrorParameters.empty());
   }
 
   public ApplicationException(String message, Throwable cause) {
-    this(message, cause, ErrorCode.GENERAL, ErrorParameters.create());
+    this(message, cause, ErrorCode.GENERAL, ErrorParameters.empty());
   }
 
   public ApplicationException(ErrorCode errorCode, ErrorParameters errorParameters) {
@@ -130,14 +62,6 @@ public class ApplicationException extends RuntimeException {
     super(message, cause, enableSuppression, writableStackTrace);
     this.errorCode = errorCode;
     this.errorParameters = errorParameters;
-  }
-
-  public ErrorCode errorCode() {
-    return errorCode;
-  }
-
-  public ErrorParameters errorParameters() {
-    return errorParameters;
   }
 
   /**
@@ -185,6 +109,14 @@ public class ApplicationException extends RuntimeException {
     }
   }
 
+  public ErrorCode errorCode() {
+    return errorCode;
+  }
+
+  public ErrorParameters errorParameters() {
+    return errorParameters;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ApplicationException.class.getSimpleName() + "[", "]")
@@ -192,5 +124,85 @@ public class ApplicationException extends RuntimeException {
         .add("errorCode=" + errorCode)
         .add("errorParameters=" + errorParameters)
         .toString();
+  }
+
+  /**
+   * The error code of an ApplicationException. This code can be used to determine what kind of
+   * error occurred. This allows for the message of the ApplicationException to hold debug
+   * information and avoids string matching to search for the error message.
+   */
+  public enum ErrorCode {
+    GENERAL,
+    INVALID_EXPERIMENTAL_DESIGN,
+    INVALID_PROJECT_OBJECTIVE,
+    INVALID_PROJECT_TITLE,
+    INVALID_PROJECT_CODE,
+    DUPLICATE_PROJECT_CODE,
+    UNDEFINED_VARIABLE_LEVEL,
+    NO_SPECIES_DEFINED,
+    NO_SPECIMEN_DEFINED,
+    NO_ANALYTE_DEFINED,
+    ;
+
+    @Override
+    public String toString() {
+      return this.getClass().getSimpleName() + "." + this.name();
+    }
+
+  }
+
+  /**
+   * Error parameters to be used in error messages.
+   *
+   * @param value an ordered array of parameters
+   */
+  public record ErrorParameters(Object[] value) {
+
+    /**
+     * Creates a new instance of an empty error parameter array
+     *
+     * @return
+     * @since 1.0.0
+     */
+    public static ErrorParameters empty() {
+      return new ErrorParameters(new Object[]{});
+    }
+
+    /**
+     * Creates a new instance with the provided error parameters
+     *
+     * @param parameters the error parameters
+     * @return
+     * @since 1.0.0
+     */
+    public static ErrorParameters of(Object... parameters) {
+      return new ErrorParameters(parameters);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ErrorParameters that = (ErrorParameters) o;
+
+      return Arrays.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", ErrorParameters.class.getSimpleName() + "[", "]")
+          .add("value=" + Arrays.toString(value))
+          .toString();
+    }
   }
 }

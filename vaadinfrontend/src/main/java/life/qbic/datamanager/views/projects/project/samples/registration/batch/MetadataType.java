@@ -8,7 +8,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
  *
  * @since 1.0.0
  */
-enum MetadataType {
+public enum MetadataType {
   LIGANDOMICS("Ligandomics", "Detailed Explanation for Ligandomics"), METABOLOMICS("Metabolomics",
       "Detailed Explanation for Metabolomics"), TRANSCRIPTOMICS_GENOMICS("Transcriptomics/Genomics",
       "Detailed Explanation for Transcriptomics/Genomics"), PROTEOMICS("Proteomics",

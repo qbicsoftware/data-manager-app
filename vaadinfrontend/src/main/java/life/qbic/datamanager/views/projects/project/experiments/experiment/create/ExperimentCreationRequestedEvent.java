@@ -1,19 +1,17 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.create;
 
-import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
 
 /**
- * <b>Experiment Creation Event</b>
- *
  * <p>Indicates that a user submitted an experiment creation request</p>
  *
  * @since 1.0.0
  */
-public class ExperimentCreationEvent extends ComponentEvent<ExperimentCreationDialog> {
+public class ExperimentCreationRequestedEvent extends
+    com.vaadin.flow.component.ComponentEvent<ExperimentCreationDialog> {
 
   @Serial
-  private static final long serialVersionUID = 7876350076650569558L;
+  private static final long serialVersionUID = 1009795849576160147L;
 
   /**
    * Creates a new event using the given source and indicator whether the event originated from the
@@ -23,7 +21,7 @@ public class ExperimentCreationEvent extends ComponentEvent<ExperimentCreationDi
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ExperimentCreationEvent(ExperimentCreationDialog source, boolean fromClient) {
+  public ExperimentCreationRequestedEvent(ExperimentCreationDialog source, boolean fromClient) {
     super(source, fromClient);
   }
 }
