@@ -43,7 +43,8 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
-  int variableCount;
+  int variableCount = 0;
+  private final List<Binder<?>> binders = new ArrayList<>();
 
   /**
    * ExperimentalGroupInput is a {@link CustomField} which contains a {@link MultiSelectComboBox}
@@ -67,6 +68,22 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
     replicateCountField.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
+  }
+
+  private static void overwriteSelectionOfSameVariable(
+      MultiSelectComboBox<VariableLevel> selectComboBox) {
+    selectComboBox.addSelectionListener(event -> {
+      Set<VariableName> variableNamesInAddedSelection = event
+          .getAddedSelection().stream()
+          .map(VariableLevel::variableName)
+          .collect(Collectors.toSet());
+      List<VariableLevel> previousSelectionOfSelectedVariable = event
+          .getOldSelection().stream()
+          .filter(previouslySelected -> variableNamesInAddedSelection.contains(
+              previouslySelected.variableName()))
+          .toList();
+      selectComboBox.deselect(previousSelectionOfSelectedVariable);
+    });
   }
 
   private void addValidationForVariableCount() {
@@ -153,18 +170,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     boolean variableNameContainsFilterString = level.variableName().value().toLowerCase()
         .contains(filterString.toLowerCase());
     return variableNameContainsFilterString || levelValueContainsFilterString;
-  }
-
-  private static void overwriteSelectionOfSameVariable(
-      MultiSelectComboBox<VariableLevel> selectComboBox) {
-    selectComboBox.addSelectionListener(event -> {
-      Set<VariableName> variableNamesInAddedSelection = event.getAddedSelection().stream()
-          .map(VariableLevel::variableName).collect(Collectors.toSet());
-      List<VariableLevel> previousSelectionOfSelectedVariable = event.getOldSelection().stream()
-          .filter(previouslySelected -> variableNamesInAddedSelection.contains(
-              previouslySelected.variableName())).toList();
-      selectComboBox.deselect(previousSelectionOfSelectedVariable);
-    });
   }
 
   public static class ExperimentalGroupBean {

@@ -196,7 +196,14 @@ public class ExperimentalDesign {
     }
   }
 
-  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+    public void removeAllExperimentalVariables() throws IllegalStateException {
+      if (experimentalGroups.size() > 0) {
+        throw new IllegalStateException("Cannot delete experimental variables referenced by an experimental group.");
+      }
+      this.variables.clear();
+    }
+
+    public record AddExperimentalGroupResponse(ResponseCode responseCode) {
 
     public enum ResponseCode {
       SUCCESS,
@@ -241,8 +248,8 @@ public class ExperimentalDesign {
     return Result.fromValue(newExperimentalGroup);
   }
 
-  public Set<ExperimentalGroup> getExperimentalGroups() {
-    return Collections.unmodifiableSet(experimentalGroups);
+  public List<ExperimentalGroup> getExperimentalGroups() {
+    return experimentalGroups.stream().toList();
   }
 
   public void removeExperimentalGroup(long groupId) {

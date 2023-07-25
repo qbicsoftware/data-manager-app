@@ -107,6 +107,19 @@ public class ExperimentInformationService {
   }
 
   /**
+   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined experimental
+   * groups in a give experiment!
+   *
+   * @param experimentId the experiment reference to delete the experimental variables from
+   * @since 1.0.0
+   */
+  public void deleteAllExperimentalVariables(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.removeAllExperimentalGroups();
+    experiment.removeAllExperimentalVariables();
+    experimentRepository.update(experiment);
+  }
+  /**
    * Returns a list of experiment for a given project.
    *
    * @param projectId the project the experiment is linked to
@@ -119,11 +132,6 @@ public class ExperimentInformationService {
         .map(experimentRepository::find)
         .map(Optional::orElseThrow)
         .toList();
-  }
-
-
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
-
   }
 
   /**
@@ -217,7 +225,6 @@ public class ExperimentInformationService {
     return experiment.getAnalytes();
   }
 
-
   /**
    * Retrieve all species of an experiment.
    *
@@ -263,6 +270,10 @@ public class ExperimentInformationService {
   public boolean hasExperimentalGroup(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return !experiment.getExperimentalGroups().isEmpty();
+  }
+
+  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
+
   }
 
 }

@@ -12,10 +12,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetRow;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetInput;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
@@ -31,6 +32,7 @@ class SampleSpreadsheetLayout extends Div {
 
   private final Span sampleInformationHeader = new Span("Sample Information");
   private final Span batchRegistrationInstruction = new Span();
+  private final Span errorInstructionSpan = new Span();
   private final Span batchName = new Span();
   private final Span experimentName = new Span();
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
@@ -71,6 +73,7 @@ class SampleSpreadsheetLayout extends Div {
     batchName.addClassName("bold");
     add(sampleInformationHeader);
     add(batchRegistrationInstruction);
+    add(errorInstructionSpan);
   }
 
   private void initButtonLayout() {
@@ -151,9 +154,24 @@ class SampleSpreadsheetLayout extends Div {
     }
 
     private boolean isInputValid() {
-      Result<Void, InvalidSpreadsheetRow> content = sampleRegistrationSpreadsheet.areInputsValid();
-      return content.onError(error -> displayInputInvalidMessage(error.getInvalidationReason()))
+      Result<Void, InvalidSpreadsheetInput> content = sampleRegistrationSpreadsheet.areInputsValid();
+      if(content.isValue()) {
+        hideErrorInstructions();
+      }
+      return content.onError(error -> displayErrorInstructions(error.getInvalidationReason()))
           .isValue();
+    }
+
+    private void displayErrorInstructions(String instructions) {
+      errorInstructionSpan.removeAll();
+      Span errorSpan = new Span();
+      errorSpan.add(instructions);
+      errorSpan.addClassName("error-text");
+      errorInstructionSpan.add(errorSpan);
+    }
+
+    private void hideErrorInstructions() {
+      errorInstructionSpan.removeAll();
     }
 
     private void displayInputInvalidMessage(String invalidationReason) {

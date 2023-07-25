@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
@@ -34,11 +36,12 @@ import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.AddExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -62,21 +65,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ExperimentDetailsComponent extends PageArea {
 
-  private ExperimentId experimentId;
-  private final Div content = new Div();
-  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
-      new ArrayList<>());
   private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
+  private final Div content = new Div();
   private final Span title = new Span();
   private final Div tagCollection = new Div();
   private final TabSheet experimentSheet = new TabSheet();
+  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
+      new ArrayList<>());
   private final Div contentExperimentalGroupsTab = new Div();
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  private final AddExperimentalVariablesDialog addExperimentalVariablesDialog;
+  private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
 
@@ -86,12 +88,15 @@ public class ExperimentDetailsComponent extends PageArea {
   private final DisclaimerCard addExperimentalVariablesNote;
   private Context context;
   private boolean hasExperimentalGroups;
+  private final DeletionService deletionService;
 
 
   public ExperimentDetailsComponent(
-      @Autowired ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired DeletionService deletionService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
-    this.addExperimentalVariablesDialog = new AddExperimentalVariablesDialog();
+    this.deletionService = Objects.requireNonNull(deletionService);
+    this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.experimentalGroupsDialog = createExperimentalGroupDialog();
@@ -151,6 +156,35 @@ public class ExperimentDetailsComponent extends PageArea {
     addCancelListenerForAddVariableDialog();
     addConfirmListenerForAddVariableDialog();
     addListenerForNewVariableEvent();
+    addEditListenerForExperimentalVariables();
+  }
+
+  private void addEditListenerForExperimentalVariables() {
+    experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
+      var editDialog = ExperimentalVariablesDialog.prefilled(
+          experimentInformationService.getVariablesOfExperiment(experimentId));
+      editDialog.subscribeToCancelEvent(
+          experimentalVariablesDialogCancelEvent -> editDialog.close());
+      editDialog.subscribeToConfirmEvent(experimentalVariablesDialogConfirmEvent -> {
+        deleteExistingExperimentalVariables(experimentId);
+        registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
+        editDialog.close();
+        reloadExperimentalVariables();
+      });
+      editDialog.open();
+    });
+  }
+
+  private void reloadExperimentalVariables() {
+    loadExperiment(experimentId);
+  }
+
+  private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
+    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    result.onError(responseCode -> {
+      throw new ApplicationException("variable deletion failed: " + responseCode, ErrorCode.GENERAL,
+          ErrorParameters.empty());
+    });
   }
 
   private void addListenerForNewVariableEvent() {
@@ -274,12 +308,12 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void registerExperimentalVariables(
-      AddExperimentalVariablesDialog experimentalVariablesDialog) {
+      ExperimentalVariablesDialog experimentalVariablesDialog) {
     experimentalVariablesDialog.definedVariables().forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
             experimentId,
-            experimentalVariableContent.name(), experimentalVariableContent.unit(),
-            experimentalVariableContent.levels()));
+        experimentalVariableContent.name(), experimentalVariableContent.unit(),
+        experimentalVariableContent.levels()));
   }
 
   /**
