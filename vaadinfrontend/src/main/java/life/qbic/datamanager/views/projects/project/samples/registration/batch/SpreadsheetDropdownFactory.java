@@ -6,6 +6,7 @@ import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import java.util.HashMap;
 import java.util.List;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SamplesheetHeaderName;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -18,7 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  private final HashMap<Integer, List<String>> colIndexToComboBoxItems = new HashMap<>();
+  private final HashMap<Integer, List<String>> sheetColumnIndexToCellOptions = new HashMap<>();
 
   // this method is not used atm, as we only want to show a component if a cell is selected for performance reasons
   @Override
@@ -37,7 +38,9 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     if (hasMoreThanOneValue(columnIndex)) {
       ComboBox<String> editorCombobox = createEditorCombobox(spreadsheet, cell.getColumnIndex(),
           cell.getRowIndex());
-      editorCombobox.setValue(cell.getStringCellValue());
+      if (!cell.getStringCellValue().isEmpty()) {
+        editorCombobox.setValue(cell.getStringCellValue());
+      }
       return editorCombobox;
     }
     return null;
@@ -70,17 +73,19 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   }
 
   private boolean hasMoreThanOneValue(int columnIndex) {
-    if (colIndexToComboBoxItems.get(columnIndex) == null) {
+    if (sheetColumnIndexToCellOptions.get(columnIndex) == null) {
       return false;
     }
-    return colIndexToComboBoxItems.get(columnIndex).size() > 1;
+    return sheetColumnIndexToCellOptions.get(columnIndex).size() > 1;
   }
 
   private List<String> getColumnValues(int columnIndex) {
-    return colIndexToComboBoxItems.get(columnIndex);
+    return sheetColumnIndexToCellOptions.get(columnIndex);
   }
 
-  public void setColumnValues(HashMap<Integer, List<String>> columnValues) {
-    colIndexToComboBoxItems.putAll(columnValues);
+  //We are only interested in the columnIndex to know which options should be shown in the editor component.
+  public void setColumnValues(HashMap<SamplesheetHeaderName, List<String>> columnValues) {
+    columnValues.forEach((samplesheetHeaderName, strings) -> sheetColumnIndexToCellOptions.put(
+        samplesheetHeaderName.ordinal(), strings));
   }
 }

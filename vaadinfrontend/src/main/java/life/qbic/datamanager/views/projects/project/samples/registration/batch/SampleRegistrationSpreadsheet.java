@@ -85,20 +85,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public void addSheetToSpreadsheet(MetadataType metaDataType) {
-    this.createNewSheet("SampleRegistrationSheet", 1, 1);
-    this.deleteSheet(0);
     sampleRegistrationSheet = this.getActiveSheet();
-    switch (metaDataType) {
-      case PROTEOMICS -> addProteomicsSheet(retrieveProteomics());
-      case LIGANDOMICS -> addLigandomicsSheet(retrieveLigandomics());
-      case TRANSCRIPTOMICS_GENOMICS -> addGenomicsSheet(retrieveGenomics());
-      case METABOLOMICS -> addMetabolomicsSheet(retrieveMetabolomics());
-    }
-    this.setRowColHeadingsVisible(false);
-    this.setActiveSheetProtected("password-needed-to-lock");
-    this.setSpreadsheetComponentFactory(dropdownCellFactory);
+    generateSheetDependentOnDataType(metaDataType);
+    setRowColHeadingsVisible(false);
+    setActiveSheetProtected("password-needed-to-lock");
+    setSpreadsheetComponentFactory(dropdownCellFactory);
     //initialise first rows based on known sample size
     addRowsForInitialSamples(numberOfSamples);
+    refreshAllCellValues();
+    reloadVisibleCellContents();
+  }
+
+  private void generateSheetDependentOnDataType(MetadataType metaDataType) {
+    switch (metaDataType) {
+      case PROTEOMICS -> generateProteomicsSheet();
+      case LIGANDOMICS -> generateLigandomicsSheet();
+      case TRANSCRIPTOMICS_GENOMICS -> generateGenomicsSheet();
+      case METABOLOMICS -> generateMetabolomicsSheet();
+    }
   }
 
   private void addRowsForInitialSamples(int numberOfSamples) {
@@ -146,21 +150,20 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public void addRow() {
     int lastRowIndex = getRows() - 1; // zero-based index
     int increasedRowIndex = lastRowIndex + 1;
-
+    ArrayList<Cell> updatedCells = new ArrayList<>();
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case SPECIES -> prefillCell(columnIndex, increasedRowIndex, species);
-        case SPECIMEN -> prefillCell(columnIndex, increasedRowIndex, specimens);
-        case ANALYTE -> prefillCell(columnIndex, increasedRowIndex, analytes);
-        case CONDITION -> prefillCell(columnIndex, increasedRowIndex,
-            conditionsToReplicates.keySet().stream().toList());
+        case SPECIES -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, species));
+        case SPECIMEN -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, specimens));
+        case ANALYTE -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analytes));
+        case CONDITION -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex,
+            conditionsToReplicates.keySet().stream().toList()));
         case BIOLOGICAL_REPLICATE_ID ->
-            prefillCell(columnIndex, increasedRowIndex, getReplicateLabels());
-        case ROW -> fillEnumerationCell(columnIndex, increasedRowIndex);
+            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, getReplicateLabels()));
+        case ROW -> updatedCells.add(fillEnumerationCell(columnIndex, increasedRowIndex));
       }
-      //cells need to be unlocked if they are not prefilled in any way
-      enableEditableCellsOfColumnUntilRow(increasedRowIndex, columnIndex);
+      styleRowCells(updatedCells);
     }
     setMaxRows(increasedRowIndex + 1); // 1-based
   }
@@ -174,7 +177,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     };
   }
 
-  private void fillEnumerationCell(int colIndex, int rowIndex) {
+  private Cell fillEnumerationCell(int colIndex, int rowIndex) {
     CellStyle boldStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
     font.setBold(true);
@@ -184,6 +187,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     Cell cell = this.createCell(rowIndex, colIndex, rowIndex);
     cell.setCellStyle(boldStyle);
     this.refreshCells(cell);
+    return cell;
   }
 
   /**
@@ -213,72 +217,58 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @param rowIndex
    * @param items
    */
-  private void prefillCell(int colIndex, int rowIndex, List<String> items) {
+  private Cell prefillCell(int colIndex, int rowIndex, List<String> items) {
+    Cell cell = this.createCell(rowIndex, colIndex, null);
     if (items.size() == 1) {
-      Cell cell = this.createCell(rowIndex, colIndex, items.get(0));
+      cell.setCellValue(items.stream().findFirst().orElseThrow());
       CellStyle lockedStyle = this.getWorkbook().createCellStyle();
       lockedStyle.setLocked(true);
       cell.setCellStyle(lockedStyle);
-      this.refreshCells(cell);
     }
+    return cell;
   }
 
-  private void prepareColumnHeaderAndWidth(LinkedHashMap<SamplesheetHeaderName,
-      List<String>> headerToPresets) {
+  private void generateColumnsHeaders(LinkedHashMap<SamplesheetHeaderName,
+      List<String>> cellValueOptionsMap) {
+    List<Cell> headerCells = new ArrayList<>();
+    for (SamplesheetHeaderName columnHeader : cellValueOptionsMap.keySet()) {
+      String columnLabel = columnHeader.label;
+      int currentColumnIndex = columnHeader.ordinal();
+      Cell cell = this.createCell(0, currentColumnIndex, columnLabel);
+      headerCells.add(cell);
+      List<String> cellValueOptions = cellValueOptionsMap.get(columnHeader);
+      fixColumnWidth(currentColumnIndex, columnLabel,
+          Objects.requireNonNullElseGet(cellValueOptions, ArrayList::new));
+    }
+    styleColumnHeaderCells(headerCells);
+    setMaxColumns(cellValueOptionsMap.size());
+    this.refreshCells(headerCells);
+  }
+
+  private void styleColumnHeaderCells(List<Cell> headerCells) {
     CellStyle boldHeaderStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
     font.setBold(true);
     boldHeaderStyle.setFont(font);
-    List<Cell> updatedCells = new ArrayList<>();
-    int columnIndex = 0;
-    for (SamplesheetHeaderName columnHeader : headerToPresets.keySet()) {
-      List<String> presets = headerToPresets.get(columnHeader);
-      String columnLabel = columnHeader.label;
-      this.fixColumnWidth(columnIndex, columnLabel,
-          Objects.requireNonNullElseGet(presets, ArrayList::new));
-      Cell cell = this.createCell(0, columnIndex, columnLabel);
-      cell.setCellStyle(boldHeaderStyle);
-      updatedCells.add(cell);
-      columnIndex++;
-    }
-    this.refreshCells(updatedCells);
+    headerCells.forEach(cell -> cell.setCellStyle(boldHeaderStyle));
   }
 
-  private void prepareCommonSheetTasks() {
-    LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
-    for (SamplesheetHeaderName label : header) {
-      headerToPresets.put(label, new ArrayList<>());
-    }
-    headerToPresets.put(SamplesheetHeaderName.SPECIES, species);
-    headerToPresets.put(SamplesheetHeaderName.SPECIMEN, specimens);
-    headerToPresets.put(SamplesheetHeaderName.ANALYTE, analytes);
-    headerToPresets.put(SamplesheetHeaderName.CONDITION,
-        conditionsToReplicates.keySet().stream().toList());
-    headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
-    prepareColumnHeaderAndWidth(headerToPresets);
-    this.reloadVisibleCellContents();
+  void styleRowCells(Collection<Cell> rowCells) {
+    //cells need to be unlocked if they are not prefilled in any way
+    enableEditableCellsOfColumnUntilRow(rowCells);
+    defaultStyleAndUnlockEditableCells(rowCells);
   }
 
-  void enableEditableCellsOfColumnUntilRow(int maxRow, int column) {
-    Set<Cell> cells = new HashSet<>();
-    for (int row = 1; row <= maxRow; row++) {
-      if (isCellUnused(this.getCell(row, column))) {
-        Cell cell = this.createCell(row, column, "");
-        cells.add(cell);
-      }
-    }
-    defaultStyleAndUnlockEditableCells(cells);
+  void enableEditableCellsOfColumnUntilRow(Collection<Cell> rowCells) {
+    rowCells.stream().filter(this::isCellUnused).forEach(cell -> cell.setCellValue(""));
+    defaultStyleAndUnlockEditableCells(rowCells);
   }
 
-  void defaultStyleAndUnlockEditableCells(Set<Cell> cells) {
+  void defaultStyleAndUnlockEditableCells(Collection<Cell> rowCells) {
     CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
     unLockedStyle.setLocked(false);
-    for (Cell cell : cells) {
-      if (!isPrefilledColumn(cell.getColumnIndex())) {
-        cell.setCellStyle(unLockedStyle);
-      }
-    }
-    this.refreshCells(cells);
+    rowCells.stream().filter(cell -> !isPrefilledColumn(cell.getColumnIndex()))
+        .forEach(cell -> cell.setCellStyle(unLockedStyle));
   }
 
   //an unused cell is either null or empty (not blank)
@@ -288,6 +278,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   /*
    * Changes width of a spreadsheet column based on header element and potential known entries.
+   * Note: The autofit() column method does not account for components within the cell
    */
   void fixColumnWidth(int colIndex, String colLabel,
       List<String> entries) {
@@ -317,49 +308,46 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
 
-  private void addProteomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    prepareCommonSheetTasks();
-    setDefaultColumnCount(header.size());
+  private void generateProteomicsSheet() {
+    this.header = retrieveProteomics();
   }
 
-  private void addMetabolomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    prepareCommonSheetTasks();
-    setDefaultColumnCount(header.size());
+  private void generateMetabolomicsSheet() {
+    this.header = retrieveMetabolomics();
   }
 
-  private void addLigandomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    prepareCommonSheetTasks();
-    setDefaultColumnCount(header.size());
+  private void generateLigandomicsSheet() {
+    this.header = retrieveLigandomics();
   }
 
-  private void addGenomicsSheet(List<SamplesheetHeaderName> header) {
-    this.header = header;
-    LinkedHashMap<SamplesheetHeaderName, List<String>> headerToPresets = new LinkedHashMap<>();
-    setDefaultColumnCount(header.size());
-    for (SamplesheetHeaderName head : header) {
-      headerToPresets.put(head, new ArrayList<>());
+  private void generateGenomicsSheet() {
+    this.header = retrieveGenomics();
+    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsMap = mapCellValueOptionsForColumns(
+        header);
+    generateColumnsHeaders(cellValueOptionsMap);
+    dropdownCellFactory.setColumnValues(cellValueOptionsMap);
+    reloadVisibleCellContents();
+  }
+
+  private LinkedHashMap<SamplesheetHeaderName, List<String>> mapCellValueOptionsForColumns(
+      List<SamplesheetHeaderName> headerNames) {
+    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForColumnMap = new LinkedHashMap<>();
+    for (SamplesheetHeaderName head : headerNames) {
+      cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
-    headerToPresets.put(SamplesheetHeaderName.SPECIES, species);
-    headerToPresets.put(SamplesheetHeaderName.SPECIMEN, specimens);
-    headerToPresets.put(SamplesheetHeaderName.ANALYTE, analytes);
-    headerToPresets.put(SamplesheetHeaderName.CONDITION,
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SPECIES, species);
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SPECIMEN, specimens);
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.ANALYTE, analytes);
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.CONDITION,
         conditionsToReplicates.keySet().stream().toList());
-    headerToPresets.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
         Arrays.stream(SequenceAnalysisType
                 .values())
             .map(e -> e.label)
             .collect(Collectors.toList()));
-    headerToPresets.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, getReplicateLabels());
-    HashMap<Integer, List<String>> columnValues = new HashMap<>();
-    headerToPresets.forEach(
-        (samplesheetHeaderName, strings) -> columnValues.put(samplesheetHeaderName.ordinal(),
-            strings));
-    dropdownCellFactory.setColumnValues(columnValues);
-    prepareColumnHeaderAndWidth(headerToPresets);
-    this.reloadVisibleCellContents();
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
+        getReplicateLabels());
+    return cellValueOptionsForColumnMap;
   }
 
 
@@ -481,21 +469,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       cell.setCellStyle(invalidStyle);
     }
     this.refreshCells(cells);
-  }
-
-  private boolean isUniqueSampleRow(Collection<String> knownIDs, Row row) {
-    String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-        header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
-    String conditionInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-        header.indexOf(SamplesheetHeaderName.CONDITION))).trim();
-    // Sample uniqueness needs to be guaranteed by condition and replicate ID
-    String concatenatedSampleID = replicateIDInput + conditionInput;
-    if (knownIDs.contains(concatenatedSampleID)) {
-      return false;
-    } else {
-      knownIDs.add(concatenatedSampleID);
-      return true;
-    }
   }
 
   public List<NGSRowDTO> getFilledRows() {

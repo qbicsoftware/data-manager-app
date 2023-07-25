@@ -150,6 +150,7 @@ public class BatchRegistrationDialog extends DialogWindow {
       //We only reload the spreadsheet if the selected experiment was changed (or dialog closed)
       if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
           sampleSpreadsheetLayout.getExperiment())) {
+        sampleSpreadsheetLayout.resetLayout();
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
             batchInformationLayout.dataTypeSelection.getValue());
@@ -200,7 +201,8 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void reset() {
       batchInformationLayout.reset();
-      sampleSpreadsheetLayout.reset();
+      sampleSpreadsheetLayout.resetSelectedExperiment();
+      sampleSpreadsheetLayout.resetLayout();
       tabStepper.setSelectedTab(batchInformationTab);
     }
 

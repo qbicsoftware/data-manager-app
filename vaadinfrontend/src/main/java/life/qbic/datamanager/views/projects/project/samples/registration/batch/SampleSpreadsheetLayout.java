@@ -12,7 +12,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -38,7 +37,6 @@ class SampleSpreadsheetLayout extends Div {
   public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
-
   public final Button deleteRowButton = new Button("Delete Row");
   public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
@@ -96,14 +94,15 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void generateSampleRegistrationSheet(MetadataType metaDataType) {
-    sampleRegistrationSpreadsheet.reset();
     sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
-    sampleRegistrationSpreadsheet.reloadVisibleCellContents();
   }
 
-  public void reset() {
+  public void resetSelectedExperiment() {
     //this needs to be reset when dialog is closed, as the sheet will not be recreated for set experiments
     experiment = null;
+  }
+
+  public void resetLayout() {
     sampleInformationLayoutHandler.reset();
   }
 
@@ -150,7 +149,6 @@ class SampleSpreadsheetLayout extends Div {
 
     private void resetSpreadSheet() {
       sampleRegistrationSpreadsheet.reset();
-      sampleRegistrationSpreadsheet.reload();
     }
 
     private boolean isInputValid() {
