@@ -315,17 +315,6 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentalVariableContent.levels()));
   }
 
-  /**
-   * Sets the experiment identifier for the component, the component does the rest.
-   *
-   * @param experimentId the experiment identifier
-   * @since 1.0.0
-   */
-  public void setExperiment(ExperimentId experimentId) {
-    setContext(new Context().with(experimentId)
-        .with(ProjectId.parse("e8dcd526-6e77-4ce1-b516-b0e2ebc8171d"))); //FIX remove this line
-  }
-
   public void setContext(Context context) {
     ExperimentId experimentId = context.experimentId()
         .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));

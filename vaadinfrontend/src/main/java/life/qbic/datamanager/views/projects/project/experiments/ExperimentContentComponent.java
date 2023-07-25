@@ -8,7 +8,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -38,15 +37,6 @@ public class ExperimentContentComponent extends Div {
 
   private void layoutComponent() {
     this.add(experimentDetailsComponent);
-  }
-
-  /**
-   * Triggers the propagation of the provided {@link ExperimentId} to internal components
-   *
-   * @param experimentId The experimentId to be propagated
-   */
-  public void setExperiment(ExperimentId experimentId) {
-    experimentDetailsComponent.setExperiment(experimentId);
   }
 
   /**
