@@ -60,7 +60,7 @@ public class ProjectCollectionComponent extends PageArea {
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
   private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
-  private static final String lastModified = "lastModified";
+  private static final String LAST_MODIFIED = "lastModified";
 
   @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
@@ -97,7 +97,7 @@ public class ProjectCollectionComponent extends PageArea {
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (the least priority)
-      sortOrders.add(SortOrder.of(lastModified).descending());
+      sortOrders.add(SortOrder.of(LAST_MODIFIED).descending());
       return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders)).stream();
     });
@@ -139,8 +139,8 @@ public class ProjectCollectionComponent extends PageArea {
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
             projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-            "yyyy-MM-dd HH:mm:ss")).setKey(lastModified).setHeader(lastModified).setSortable(true)
-        .setSortProperty(lastModified);
+            "yyyy-MM-dd HH:mm:ss")).setKey(LAST_MODIFIED).setHeader(LAST_MODIFIED).setSortable(true)
+        .setSortProperty(LAST_MODIFIED);
   }
 
   private void layoutTitleSection() {
