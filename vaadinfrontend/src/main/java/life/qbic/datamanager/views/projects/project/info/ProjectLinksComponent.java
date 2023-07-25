@@ -92,8 +92,8 @@ public class ProjectLinksComponent extends PageArea {
   }
 
   private void initProjectLinksGrid() {
-    projectLinks.addColumn(ProjectLink::type).setHeader("Type");
-    projectLinks.addColumn(ProjectLink::reference).setHeader("Reference");
+    projectLinks.addColumn(ProjectLink::type).setHeader("Type").setSortable(true);
+    projectLinks.addColumn(ProjectLink::reference).setHeader("Reference").setSortable(true);
     projectLinks.addColumn(new ComponentRenderer<>(Button::new, (deleteButton, projectLink) -> {
       deleteButton.addClassName("delete-button");
       deleteButton.setIcon(new Icon("lumo", "cross"));
