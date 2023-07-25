@@ -108,7 +108,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
 
     if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isEmpty()) {
       forwardToExperiment(activeExperiment(parsedProjectId), beforeEnterEvent);
-      return; // abort before the enter event and forward
+      return; // abort the before-enter event and forward
     }
 
     String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
