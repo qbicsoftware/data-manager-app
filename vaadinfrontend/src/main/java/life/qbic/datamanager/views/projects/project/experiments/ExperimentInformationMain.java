@@ -136,6 +136,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     experimentSupportComponent.setExperiments(
         experimentInformationService.findAllForProject(context.projectId().orElseThrow()));
     experimentSupportComponent.setSelectedExperiment(context.experimentId().orElseThrow());
+    projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
     this.context = context;
   }
 
