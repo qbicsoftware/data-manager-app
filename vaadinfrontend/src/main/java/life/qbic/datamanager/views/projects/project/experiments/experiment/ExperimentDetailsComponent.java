@@ -17,6 +17,7 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public class ExperimentDetailsComponent extends PageArea {
     Div text = new Div(new Text("You can now register sample batches. "),
         new Anchor(samplesUrl, new Button("Go to Samples", event -> notification.close())));
 
-    Button closeButton = new Button(new Icon("lumo", "cross"));
+    Button closeButton = new Button(LumoIcon.CROSS.create());
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.addClickListener(event -> notification.close());
 
