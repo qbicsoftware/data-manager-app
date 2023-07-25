@@ -60,7 +60,7 @@ public class ProjectCollectionComponent extends PageArea {
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
   private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
-  private final String lastModified = "lastModified";
+  private static final String lastModified = "lastModified";
 
   @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
