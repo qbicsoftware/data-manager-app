@@ -60,7 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Sample Details Component
  * <p>
- * Component embedded within the {@link SampleInformationMain} in the {@link ProjectViewPage}. It
+ * Component embedded within the {@link SampleInformationMain}. It
  * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
  * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}

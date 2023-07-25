@@ -82,7 +82,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
 
-  //  private final Component sampleRegistrationPossible;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
@@ -161,6 +160,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void addEditListenerForExperimentalVariables() {
     experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
+      ExperimentId experimentId = context.experimentId().orElseThrow();
       var editDialog = ExperimentalVariablesDialog.prefilled(
           experimentInformationService.getVariablesOfExperiment(experimentId));
       editDialog.subscribeToCancelEvent(
@@ -176,7 +176,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void reloadExperimentalVariables() {
-    loadExperiment(experimentId);
+    loadExperiment(context.experimentId().orElseThrow());
   }
 
   private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
@@ -198,7 +198,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
     Result<ExperimentalGroup, ResponseCode> response = experimentInformationService.addExperimentalGroupToExperiment(
-        experimentId,
+        context.experimentId().orElseThrow(),
         new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
     if (response.isValue()) {
       handleGroupSubmittedSuccess();
@@ -263,10 +263,9 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void loadExperimentalGroups() {
-    Objects.requireNonNull(experimentId, "Experiment id not set");
     // We load the experimental groups of the experiment and render them as cards
     List<ExperimentalGroup> experimentalGroups = experimentInformationService.experimentalGroupsFor(
-        experimentId);
+        context.experimentId().orElseThrow());
     List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
         .map(ExperimentalGroupCard::new).toList();
 
@@ -287,7 +286,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void handleDeletionClickedEvent(
       ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
-    experimentInformationService.deleteExperimentGroup(experimentId,
+    experimentInformationService.deleteExperimentGroup(context.experimentId().orElseThrow(),
         experimentalGroupDeletionEvent.getSource().groupId());
     reloadExperimentalGroups();
   }
@@ -311,7 +310,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentalVariablesDialog experimentalVariablesDialog) {
     experimentalVariablesDialog.definedVariables().forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
-            experimentId,
+            context.experimentId().orElseThrow(),
         experimentalVariableContent.name(), experimentalVariableContent.unit(),
         experimentalVariableContent.levels()));
   }
@@ -341,7 +340,6 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void loadExperimentInformation(Experiment experiment) {
-    this.experimentId = experiment.experimentId();
     title.setText(experiment.getName());
     loadTagInformation(experiment);
     loadExperimentInfo(experiment);
@@ -379,9 +377,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void fillExperimentalGroupDialog() {
-    Objects.requireNonNull(experimentId, "experiment id not set");
     List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-        experimentId);
+        context.experimentId().orElseThrow());
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream()).toList();
     experimentalGroupsDialog.setLevels(levels);
