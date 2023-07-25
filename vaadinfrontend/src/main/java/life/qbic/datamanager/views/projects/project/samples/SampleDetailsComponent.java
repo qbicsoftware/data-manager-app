@@ -32,7 +32,6 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -61,7 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Sample Details Component
  * <p>
- * Component embedded within the {@link SampleInformationMain} in the {@link ProjectViewPage}. It
+ * Component embedded within the {@link SampleInformationMain}. It
  * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
  * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}

@@ -11,6 +11,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
@@ -22,6 +24,7 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.Experime
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,9 +38,12 @@ public class ExperimentInformationService {
 
   private static final Logger log = LoggerFactory.logger(ExperimentInformationService.class);
   private final ExperimentRepository experimentRepository;
+  private final ProjectRepository projectRepository;
 
-  public ExperimentInformationService(@Autowired ExperimentRepository experimentRepository) {
+  public ExperimentInformationService(@Autowired ExperimentRepository experimentRepository,
+      @Autowired ProjectRepository projectRepository) {
     this.experimentRepository = experimentRepository;
+    this.projectRepository = projectRepository;
   }
 
   public Optional<Experiment> find(ExperimentId experimentId) {
@@ -112,6 +118,20 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalGroups();
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
+  }
+  /**
+   * Returns a list of experiment for a given project.
+   *
+   * @param projectId the project the experiment is linked to
+   * @return a list of experiments linked to the project
+   */
+  public List<Experiment> findAllForProject(ProjectId projectId) {
+    Project project = projectRepository.find(projectId).orElseThrow();
+    List<ExperimentId> experimentIds = project.experiments();
+    return experimentIds.stream()
+        .map(experimentRepository::find)
+        .map(Optional::orElseThrow)
+        .toList();
   }
 
   /**
