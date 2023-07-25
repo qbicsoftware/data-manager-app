@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
@@ -115,9 +116,14 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
         .orElseThrow();
 
     if (!ExperimentId.isValid(experimentId)) {
-      throw new ApplicationException("invalid experiment id " + experimentId);
+      beforeEnterEvent.rerouteToError(NotFoundException.class);
+      return;
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
+    if (experimentInformationService.find(parsedExperimentId).isEmpty()) {
+      beforeEnterEvent.rerouteToError(NotFoundException.class);
+      return;
+    }
     this.context = this.context
         .with(parsedExperimentId);
 
