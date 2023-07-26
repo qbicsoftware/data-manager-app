@@ -144,17 +144,22 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void generateSampleRegistrationLayout() {
-      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      ExperimentId selectedExperimentId = batchInformationLayout.experimentSelect.getValue()
-          .experimentId();
-      //We only reload the spreadsheet if the selected experiment was changed (or dialog closed)
-      if (sampleSpreadsheetLayout.getExperiment() == null || !selectedExperimentId.equals(
-          sampleSpreadsheetLayout.getExperiment())) {
+      //We only reload the spreadsheet if the user selects an experiment and switches back in the tabSheet to select a different one
+      if (hasExperimentInformationChanged()) {
         sampleSpreadsheetLayout.resetLayout();
-        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-            batchInformationLayout.dataTypeSelection.getValue());
       }
+      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+          batchInformationLayout.dataTypeSelection.getValue());
+    }
+
+    private boolean hasExperimentInformationChanged() {
+      ExperimentId previouslySelectedExperiment = sampleSpreadsheetLayout.getExperiment();
+      ExperimentId selectedExperiment = batchInformationLayout.experimentSelect.getValue()
+          .experimentId();
+      return previouslySelectedExperiment != null && !previouslySelectedExperiment.equals(
+          selectedExperiment);
     }
 
     private void setSubmissionListeners() {

@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
@@ -35,7 +35,6 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 
 /**
  * <class short description - One Line!>
@@ -59,7 +58,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static Map<String, ExperimentalGroup> experimentalGroupToConditionString;
   private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
   private static int numberOfSamples;
-  private transient Sheet sampleRegistrationSheet;
 
   public SampleRegistrationSpreadsheet() {
     this.addClassName("sample-spreadsheet");
@@ -86,7 +84,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public void addSheetToSpreadsheet(MetadataType metaDataType) {
-    sampleRegistrationSheet = this.getActiveSheet();
     generateSheetDependentOnDataType(metaDataType);
     setRowColHeadingsVisible(false);
     setActiveSheetProtected("password-needed-to-lock");
@@ -112,7 +109,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
       addRow();
     }
-    setMaxRows(numberOfSamples + 1);
   }
 
   private static void prepareConditionItems(List<ExperimentalGroup> groups) {
@@ -235,6 +231,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private void generateColumnsHeaders(LinkedHashMap<SamplesheetHeaderName,
       List<String>> cellValueOptionsMap) {
     List<Cell> headerCells = new ArrayList<>();
+    setMaxColumns(cellValueOptionsMap.size());
     for (SamplesheetHeaderName columnHeader : cellValueOptionsMap.keySet()) {
       String columnLabel = columnHeader.label;
       int currentColumnIndex = columnHeader.ordinal();
@@ -245,7 +242,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           Objects.requireNonNullElseGet(cellValueOptions, ArrayList::new));
     }
     styleColumnHeaderCells(headerCells);
-    setMaxColumns(cellValueOptionsMap.size());
     this.refreshCells(headerCells);
   }
 
@@ -257,24 +253,25 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     headerCells.forEach(cell -> cell.setCellStyle(boldHeaderStyle));
   }
 
-  void styleRowCells(Collection<Cell> rowCells) {
+  private void styleRowCells(Collection<Cell> rowCells) {
     //cells need to be unlocked if they are not prefilled in any way
     defaultStyleAndUnlockEditableCells(rowCells);
   }
 
-  void defaultStyleAndUnlockEditableCells(Collection<Cell> rowCells) {
+  private void defaultStyleAndUnlockEditableCells(Collection<Cell> rowCells) {
     CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
     unLockedStyle.setWrapText(true);
     unLockedStyle.setLocked(false);
     rowCells.stream().filter(cell -> !isPrefilledColumn(cell.getColumnIndex()))
         .forEach(cell -> cell.setCellStyle(unLockedStyle));
+    refreshCells(rowCells);
   }
 
-  /*
+  /**
    * Changes width of a spreadsheet column based on header element and potential known entries.
    * Note: The autofit() column method does not account for components within the cell
    */
-  void fixColumnWidth(int colIndex, String colLabel,
+  private void fixColumnWidth(int colIndex, String colLabel,
       List<String> entries) {
     final String COL_SPACER = "___";
     List<String> stringList = new ArrayList<>(Collections.singletonList(colLabel));
@@ -320,7 +317,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         header);
     generateColumnsHeaders(cellValueOptionsMap);
     dropdownCellFactory.setColumnValues(cellValueOptionsMap);
-    reloadVisibleCellContents();
   }
 
   private LinkedHashMap<SamplesheetHeaderName, List<String>> mapCellValueOptionsForColumns(
@@ -409,21 +405,17 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     Set<Cell> invalidCells = new HashSet<>();
     Set<Cell> validCells = new HashSet<>();
     for (int rowId = 1; rowId < getRows(); rowId++) {
-      Row row = sampleRegistrationSheet.getRow(rowId);
+      Row row = getActiveSheet().getRow(rowId);
       // needed to highlight cells with missing values
       List<Integer> mandatoryInputCols = new ArrayList<>();
-      // needed to find which cells have missing values
-      List<String> mandatoryInputs = new ArrayList<>();
       for (SamplesheetHeaderName name : SamplesheetHeaderName.values()) {
         if (name.isMandatory) {
-          mandatoryInputs.add(SpreadsheetMethods.cellToStringOrNull(row.getCell(
-              header.indexOf(name))));
           mandatoryInputCols.add(header.indexOf(name));
         }
       }
-      // break when cells in row are undefined
-      if (mandatoryInputs.stream().anyMatch(Objects::isNull)) {
-        break;
+      // Throw exception if null values in row.
+      if (areNullCellsInRow(row)) {
+        throw new IllegalArgumentException("null value provided in row" + row.getRowNum());
       }
       // mandatory not filled in --> invalid
       for (int colId : mandatoryInputCols) {
@@ -435,14 +427,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         }
       }
     }
+    //We need to reset the style for cells with valid content if they were previously invalid
     defaultStyleAndUnlockEditableCells(validCells);
     if (!invalidCells.isEmpty()) {
       highlightInvalidCells(invalidCells);
-
       return Result.fromError(new InvalidSpreadsheetInput(
           SpreadsheetInvalidationReason.MISSING_INPUT));
     }
     return Result.fromValue(null);
+  }
+
+  private boolean areNullCellsInRow(Row row) {
+    return StreamSupport.stream(row.spliterator(), false).anyMatch(Objects::isNull);
   }
 
   private void highlightInvalidCells(Collection<Cell> cells) {
@@ -469,7 +465,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     List<NGSRowDTO> rows = new ArrayList<>();
 
     for (int rowId = 1; rowId < getRows(); rowId++) {
-      Row row = sampleRegistrationSheet.getRow(rowId);
+      Row row = getActiveSheet().getRow(rowId);
 
       String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE)));
@@ -489,10 +485,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           header.indexOf(SamplesheetHeaderName.CUSTOMER_COMMENT)));
 
       // break when cells in row are undefined
-      if (Stream.of(analysisTypeInput, sampleLabelInput,
-              replicateIDInput, conditionInput, speciesInput, specimenInput, analyteInput)
-          .anyMatch(Objects::isNull)) {
-        break;
+      if (areNullCellsInRow(row)) {
+        throw new IllegalArgumentException("null value provided in row" + row.getRowNum());
       }
 
       String conditionString = conditionInput.trim();
