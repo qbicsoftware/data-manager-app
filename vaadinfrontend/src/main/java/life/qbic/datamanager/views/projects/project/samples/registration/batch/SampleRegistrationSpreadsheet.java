@@ -259,25 +259,15 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   void styleRowCells(Collection<Cell> rowCells) {
     //cells need to be unlocked if they are not prefilled in any way
-    enableEditableCellsOfColumnUntilRow(rowCells);
-    defaultStyleAndUnlockEditableCells(rowCells);
-  }
-
-  void enableEditableCellsOfColumnUntilRow(Collection<Cell> rowCells) {
-    rowCells.stream().filter(this::isCellUnused).forEach(cell -> cell.setCellValue(""));
     defaultStyleAndUnlockEditableCells(rowCells);
   }
 
   void defaultStyleAndUnlockEditableCells(Collection<Cell> rowCells) {
     CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
+    unLockedStyle.setWrapText(true);
     unLockedStyle.setLocked(false);
     rowCells.stream().filter(cell -> !isPrefilledColumn(cell.getColumnIndex()))
         .forEach(cell -> cell.setCellStyle(unLockedStyle));
-  }
-
-  //an unused cell is either null or empty (not blank)
-  private boolean isCellUnused(Cell cell) {
-    return cell == null || SpreadsheetMethods.cellToStringOrNull(cell).isEmpty();
   }
 
   /*
