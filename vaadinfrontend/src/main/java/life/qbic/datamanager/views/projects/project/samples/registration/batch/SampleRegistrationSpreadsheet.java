@@ -50,6 +50,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static final long serialVersionUID = 573778360298068552L;
   private final SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
   private List<SamplesheetHeaderName> header;
+  private static List<String> analysisTypes;
   private static List<String> species;
   private static List<String> specimens;
   private static List<String> analytes;
@@ -154,14 +155,18 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
+        case ROW -> updatedCells.add(fillEnumerationCell(columnIndex, increasedRowIndex));
+        case SEQ_ANALYSIS_TYPE ->
+            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analysisTypes));
+        case SAMPLE_LABEL, CUSTOMER_COMMENT ->
+            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, new ArrayList<>()));
+        case BIOLOGICAL_REPLICATE_ID ->
+            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, getReplicateLabels()));
         case SPECIES -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, species));
         case SPECIMEN -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, specimens));
         case ANALYTE -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analytes));
         case CONDITION -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex,
             conditionsToReplicates.keySet().stream().toList()));
-        case BIOLOGICAL_REPLICATE_ID ->
-            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, getReplicateLabels()));
-        case ROW -> updatedCells.add(fillEnumerationCell(columnIndex, increasedRowIndex));
       }
       styleRowCells(updatedCells);
     }
@@ -186,7 +191,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     boldStyle.setAlignment(HorizontalAlignment.CENTER);
     Cell cell = this.createCell(rowIndex, colIndex, rowIndex);
     cell.setCellStyle(boldStyle);
-    this.refreshCells(cell);
     return cell;
   }
 
@@ -218,7 +222,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @param items
    */
   private Cell prefillCell(int colIndex, int rowIndex, List<String> items) {
-    Cell cell = this.createCell(rowIndex, colIndex, null);
+    Cell cell = this.createCell(rowIndex, colIndex, "");
     if (items.size() == 1) {
       cell.setCellValue(items.stream().findFirst().orElseThrow());
       CellStyle lockedStyle = this.getWorkbook().createCellStyle();
@@ -332,6 +336,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private LinkedHashMap<SamplesheetHeaderName, List<String>> mapCellValueOptionsForColumns(
       List<SamplesheetHeaderName> headerNames) {
     LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForColumnMap = new LinkedHashMap<>();
+    analysisTypes = generateGenomicsAnalysisTypes();
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
@@ -340,14 +345,17 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.ANALYTE, analytes);
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.CONDITION,
         conditionsToReplicates.keySet().stream().toList());
-    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
-        Arrays.stream(SequenceAnalysisType
-                .values())
-            .map(e -> e.label)
-            .collect(Collectors.toList()));
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, analysisTypes);
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
         getReplicateLabels());
     return cellValueOptionsForColumnMap;
+  }
+
+  private List<String> generateGenomicsAnalysisTypes() {
+    return Arrays.stream(SequenceAnalysisType
+            .values())
+        .map(e -> e.label)
+        .collect(Collectors.toList());
   }
 
 
@@ -410,7 +418,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public Result<Void, InvalidSpreadsheetInput> areInputsValid() {
     Set<Cell> invalidCells = new HashSet<>();
     Set<Cell> validCells = new HashSet<>();
-    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 1; rowId < getRows(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
       // needed to highlight cells with missing values
       List<Integer> mandatoryInputCols = new ArrayList<>();
@@ -427,7 +435,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       if (mandatoryInputs.stream().anyMatch(Objects::isNull)) {
         break;
       }
-
       // mandatory not filled in --> invalid
       for (int colId : mandatoryInputCols) {
         Cell cell = row.getCell(colId);
@@ -437,9 +444,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           validCells.add(cell);
         }
       }
-
-      String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID))).trim();
     }
     defaultStyleAndUnlockEditableCells(validCells);
     if (!invalidCells.isEmpty()) {
@@ -474,7 +478,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public List<NGSRowDTO> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
 
-    for (int rowId = 1; rowId <= sampleRegistrationSheet.getLastRowNum(); rowId++) {
+    for (int rowId = 1; rowId < getRows(); rowId++) {
       Row row = sampleRegistrationSheet.getRow(rowId);
 
       String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
