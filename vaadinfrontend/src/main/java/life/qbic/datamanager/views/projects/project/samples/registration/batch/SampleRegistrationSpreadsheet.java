@@ -482,7 +482,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
     }
     //We need to reset the style for cells with valid content if they were previously invalid
-    validCells.forEach(cell -> cell.setCellStyle(getWorkbook().createCellStyle()));
+    CellStyle defaultStyle = getDefaultStyle();
+    validCells.forEach(cell -> cell.setCellStyle(defaultStyle));
     refreshCells(validCells);
     if (!invalidCells.isEmpty()) {
       highlightInvalidCells(invalidCells);
@@ -490,6 +491,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           SpreadsheetInvalidationReason.MISSING_INPUT));
     }
     return Result.fromValue(null);
+  }
+
+  private CellStyle getDefaultStyle() {
+    CellStyle defaultStyle = getWorkbook().createCellStyle();
+    defaultStyle.setLocked(false);
+    return defaultStyle;
   }
 
 
