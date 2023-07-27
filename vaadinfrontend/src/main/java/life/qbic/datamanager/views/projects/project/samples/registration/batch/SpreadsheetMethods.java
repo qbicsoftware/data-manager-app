@@ -1,8 +1,11 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import java.awt.Color;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.ExtendedColor;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 final class SpreadsheetMethods {
 
@@ -51,6 +54,35 @@ final class SpreadsheetMethods {
         return null;
       }
     }
+  }
+
+  /**
+   * Converts a color with alpha channel information to a color object usable in the Spreadsheet.
+   * Assumes white background.
+   * @param foreground - the foreground color as defined in Java awt
+   * @param alpha - the transparency as a double alpha value between 0 and 1
+   * @return an ExtendedColor object to be used in a Spreadsheet
+   */
+  public static ExtendedColor RGBToSpreadsheetColor(Color foreground, double alpha) {
+    return SpreadsheetMethods.RBGToSpreadsheetColor(foreground, alpha, Color.white);
+  }
+
+  /**
+   * Converts a color with alpha channel information to a color object usable in the Spreadsheet.
+   * The result is influenced by the background color
+   * @param foreground - the foreground color as defined in Java awt
+   * @param alpha - the transparency as a double alpha value between 0 and 1
+   * @param background - the background color as defined in Java awt
+   * @return an ExtendedColor object to be used in a Spreadsheet
+   */
+  public static ExtendedColor RBGToSpreadsheetColor(Color foreground, double alpha, Color background) {
+    double red = ((1 - alpha) * background.getRed()) + (alpha * foreground.getRed());
+    double green = ((1 - alpha) * background.getGreen()) + (alpha * foreground.getGreen());
+    double blue = ((1 - alpha) * background.getBlue()) + (alpha * foreground.getBlue());
+
+    Color awtColor = new Color((int) red, (int) green, (int) blue);
+
+    return new XSSFColor(awtColor, null);
   }
 
 }

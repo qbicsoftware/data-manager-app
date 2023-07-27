@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
+import java.awt.Color;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,12 +31,11 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ExtendedColor;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 
 /**
@@ -505,16 +505,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private void highlightInvalidCells(Collection<Cell> invalidCells) {
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
     invalidStyle.setLocked(false);
-    invalidStyle.setBorderTop(BorderStyle.THIN);
-    invalidStyle.setBorderLeft(BorderStyle.THIN);
-    invalidStyle.setBorderRight(BorderStyle.THIN);
-    invalidStyle.setBorderBottom(BorderStyle.THIN);
 
-    short redIndex = IndexedColors.RED.getIndex();
-    invalidStyle.setBottomBorderColor(redIndex);
-    invalidStyle.setTopBorderColor(redIndex);
-    invalidStyle.setLeftBorderColor(redIndex);
-    invalidStyle.setRightBorderColor(redIndex);
+    ExtendedColor redErrorHue = SpreadsheetMethods.RGBToSpreadsheetColor(Color.red, 0.1);
+
+    invalidStyle.setFillBackgroundColor(redErrorHue);
 
     for (Cell cell : invalidCells) {
       cell.setCellStyle(invalidStyle);
