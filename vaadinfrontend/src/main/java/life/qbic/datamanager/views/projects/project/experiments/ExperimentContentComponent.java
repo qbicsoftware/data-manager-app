@@ -4,10 +4,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -40,12 +40,12 @@ public class ExperimentContentComponent extends Div {
   }
 
   /**
-   * Triggers the propagation of the provided {@link ExperimentId} to internal components
+   * Propagates the context to internal components.
    *
-   * @param experimentId The experimentId to be propagated
+   * @param context the context in which the user is.
    */
-  public void setExperiment(ExperimentId experimentId) {
-    experimentDetailsComponent.setExperiment(experimentId);
+  public void setContext(Context context) {
+    experimentDetailsComponent.setContext(context);
   }
 
 }

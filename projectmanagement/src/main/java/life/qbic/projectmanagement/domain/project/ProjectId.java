@@ -46,6 +46,15 @@ public class ProjectId implements Serializable {
     return new ProjectId(id);
   }
 
+  public static boolean isValid(String projectID) {
+    try {
+      UUID.fromString(projectID);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
   public String value() {
     return projectId;
   }
