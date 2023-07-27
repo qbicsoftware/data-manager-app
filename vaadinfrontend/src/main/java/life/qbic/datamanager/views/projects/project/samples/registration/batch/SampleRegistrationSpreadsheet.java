@@ -22,9 +22,11 @@ import java.util.stream.StreamSupport;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
+import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -37,11 +39,11 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 
 /**
- * <class short description - One Line!>
+ * The SampleRegistrationSpreadSheet is a {@link Spreadsheet} based component which enables the
+ * registration of {@link MetadataType} specific Sample information.
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * The spreadsheet enables the user to provide and change the sample information of Samples for the
+ * provided {@link Experiment}
  */
 public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serializable {
 
@@ -83,6 +85,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     prepareConditionItems(groups);
   }
 
+  /**
+   * Fills in the default active sheet of the spreadsheet component dependent on the provided
+   * {@link MetadataType}
+   *
+   * @param metaDataType the data type dependent on the chosen facility for which a sheet should be
+   *                     generated
+   */
   public void addSheetToSpreadsheet(MetadataType metaDataType) {
     generateSheetDependentOnDataType(metaDataType);
     setRowColHeadingsVisible(false);
@@ -104,6 +113,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
+  /**
+   * Generates and adds Rows for the aggregated number of {@link BiologicalReplicate} within the
+   * {@link ExperimentalGroup} of an Experiment
+   *
+   * @param numberOfSamples the count of already defined samples within the setExperiment of this
+   *                        spreadsheet
+   */
   private void addRowsForInitialSamples(int numberOfSamples) {
     // + 1 header row
     setMaxRows(1);
@@ -112,6 +128,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
+  /**
+   * Extracts and aggregates the String values into the selectable CellValueOptions within the
+   * ConditionColumn of all {@link VariableName} and {@link VariableLevel} for each
+   * {@link Condition} of each {@link ExperimentalGroup} within the provided experiment
+   *
+   * @param groups List of all experimental groups defined within the set Experiment
+   */
   private void prepareConditionItems(List<ExperimentalGroup> groups) {
     // create condition items for dropdown and fix cell width. Remember replicates for each condition
     conditionsToReplicates = new HashMap<>();
@@ -133,6 +156,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
+  /**
+   * Extracts and aggregates the String based label values to the selectable CellValueOptions within
+   * the ConditionColumn for all {@link BiologicalReplicate} within the {@link ExperimentalGroup} of
+   * the provided experiment
+   */
   private List<String> getReplicateLabels() {
     Set<String> replicateLabels = new TreeSet<>();
     for (List<BiologicalReplicate> replicates : conditionsToReplicates.values()) {
@@ -148,38 +176,31 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public void addRow() {
     int lastRowIndex = getRows() - 1; // zero-based index
     int increasedRowIndex = lastRowIndex + 1;
-    ArrayList<Cell> updatedCells = new ArrayList<>();
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case ROW -> updatedCells.add(generateRowHeaderCell(columnIndex, increasedRowIndex));
-        case SPECIES -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, species));
+        case ROW -> generateRowHeaderCell(columnIndex, increasedRowIndex);
+        case SPECIES -> generatePrefilledCell(columnIndex, increasedRowIndex, species);
         case SEQ_ANALYSIS_TYPE ->
-            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analysisTypes));
+            generatePrefilledCell(columnIndex, increasedRowIndex, analysisTypes);
         case SAMPLE_LABEL, CUSTOMER_COMMENT ->
-            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, new ArrayList<>()));
+            generatePrefilledCell(columnIndex, increasedRowIndex, new ArrayList<>());
         case BIOLOGICAL_REPLICATE_ID ->
-            updatedCells.add(prefillCell(columnIndex, increasedRowIndex, getReplicateLabels()));
-        case SPECIMEN -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, specimens));
-        case ANALYTE -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analytes));
-        case CONDITION -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex,
-            conditionsToReplicates.keySet().stream().toList()));
+            generatePrefilledCell(columnIndex, increasedRowIndex, getReplicateLabels());
+        case SPECIMEN -> generatePrefilledCell(columnIndex, increasedRowIndex, specimens);
+        case ANALYTE -> generatePrefilledCell(columnIndex, increasedRowIndex, analytes);
+        case CONDITION -> generatePrefilledCell(columnIndex, increasedRowIndex,
+            conditionsToReplicates.keySet().stream().toList());
       }
-      styleRowCells(updatedCells);
     }
     setMaxRows(increasedRowIndex + 1); // 1-based
   }
 
-  private boolean isPrefilledColumn(int columnIndex) {
-    SamplesheetHeaderName colHeader = header.get(columnIndex);
-    return switch (colHeader) {
-      case ROW, SEQ_ANALYSIS_TYPE, BIOLOGICAL_REPLICATE_ID, SPECIES, SPECIMEN, ANALYTE, CONDITION ->
-          true;
-      default -> false;
-    };
-  }
-
-  private Cell generateRowHeaderCell(int colIndex, int rowIndex) {
+  /**
+   * Adds rows to the spreadsheet that contains prefilled data, selectable dropdowns and editable
+   * free-text cells. The rows are added below the last row containing data.
+   */
+  private void generateRowHeaderCell(int colIndex, int rowIndex) {
     CellStyle boldStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
     font.setBold(true);
@@ -190,7 +211,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     cell.setCellStyle(boldStyle);
     //ToDo this is a bottleneck which can impact performance but is necessary, because we allow users to add rows manually
     refreshCells(cell);
-    return cell;
   }
 
   /**
@@ -214,13 +234,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
 
   /**
-   * Generates and prefills the correct cell components dependent on already specified values.
+   * Generates a new cell with a prefilled value and style if only one value was provided, otherwise
+   * the cell is filled with an empty string.
    *
-   * @param colIndex
-   * @param rowIndex
-   * @param items
+   * @param colIndex columnIndex of the cell to be generated and prefilled
+   * @param rowIndex rowIndex of the cell to be generated and prefilled
+   * @param items    list of items which should be selectable within the cell
    */
-  private Cell prefillCell(int colIndex, int rowIndex, List<String> items) {
+  private void generatePrefilledCell(int colIndex, int rowIndex, List<String> items) {
     Cell cell = this.createCell(rowIndex, colIndex, "");
     if (items.size() == 1) {
       cell.setCellValue(items.stream().findFirst().orElseThrow());
@@ -228,76 +249,97 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       lockedStyle.setLocked(true);
       cell.setCellStyle(lockedStyle);
     }
-    return cell;
   }
 
+  /**
+   * Generates the columnHeaders from the options provided in the {@link SamplesheetHeaderName} and
+   * specifies the number of columns. Finally, it also specifies the width of a column dependent on
+   * the selectable items within the cells of the column
+   *
+   * @param cellValueOptionsMap maps the selectable Items within the cells of a column with the
+   *                            columnHeader
+   */
   private void generateColumnsHeaders(LinkedHashMap<SamplesheetHeaderName,
       List<String>> cellValueOptionsMap) {
     List<Cell> headerCells = new ArrayList<>();
-    setMaxColumns(cellValueOptionsMap.size());
-    for (SamplesheetHeaderName columnHeader : cellValueOptionsMap.keySet()) {
+    setMaxColumns(SamplesheetHeaderName.values().length);
+    for (SamplesheetHeaderName columnHeader : SamplesheetHeaderName.values()) {
       String columnLabel = columnHeader.label;
       int currentColumnIndex = columnHeader.ordinal();
       Cell cell = this.createCell(0, currentColumnIndex, columnLabel);
       headerCells.add(cell);
       List<String> cellValueOptions = cellValueOptionsMap.get(columnHeader);
-      fixColumnWidth(currentColumnIndex, columnLabel,
+      defineColumnWidthDependentOnLengthOfCellValueOptions(currentColumnIndex, columnLabel,
           Objects.requireNonNullElseGet(cellValueOptions, ArrayList::new));
     }
     styleColumnHeaderCells(headerCells);
   }
 
+
+  /**
+   * Updates the style of the header cells to be set to bold and locked.
+   *
+   * @param headerCells List containing the cells functioning as a header in the sheet which should
+   *                    be assigned a bold and locked style
+   */
   private void styleColumnHeaderCells(List<Cell> headerCells) {
     CellStyle boldHeaderStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
     font.setBold(true);
     boldHeaderStyle.setFont(font);
     headerCells.forEach(cell -> cell.setCellStyle(boldHeaderStyle));
+    //This has to be called separately since the reloadVisibleCellContent method starts the refresh at index 1
     refreshCells(headerCells);
   }
 
-  private void styleRowCells(Collection<Cell> rowCells) {
-    //cells need to be unlocked if they are not prefilled in any way
-    defaultStyleAndUnlockEditableCells(rowCells);
-  }
-
-  private void defaultStyleAndUnlockEditableCells(Collection<Cell> rowCells) {
-    CellStyle unLockedStyle = this.getWorkbook().createCellStyle();
-    unLockedStyle.setWrapText(true);
-    unLockedStyle.setLocked(false);
-    rowCells.stream().filter(cell -> !isPrefilledColumn(cell.getColumnIndex()))
-        .forEach(cell -> cell.setCellStyle(unLockedStyle));
-  }
-
   /**
-   * Changes width of a spreadsheet column based on header element and potential known entries.
-   * Note: The autofit() column method does not account for components within the cell
+   * Defines the allocated width of a column based on the length of its label and the possible
+   * cellValueOptions within a cell. Necessary since natively the spreadsheet.autofit() column
+   * method does not account for the width of items within components within a cell
+   *
+   * @param colIndex         columnIndex for which the columnWidth should be calculated
+   * @param colLabel         columnLabel equal to the one defined in the label of
+   *                         {@link SamplesheetHeaderName}
+   * @param cellValueOptions list of String values which are selectable within a cell.
    */
-  private void fixColumnWidth(int colIndex, String colLabel,
-      List<String> entries) {
-    final String COL_SPACER = "___";
-    List<String> stringList = new ArrayList<>(Collections.singletonList(colLabel));
-    stringList.addAll(entries);
-    String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
-        .orElseThrow();
-    String spacingValue = longestString + COL_SPACER;
+  private void defineColumnWidthDependentOnLengthOfCellValueOptions(int colIndex, String colLabel,
+      List<String> cellValueOptions) {
+    String longestColumnString = findLongestStringWithinColumn(colLabel, cellValueOptions);
+    //Since all cells within a column have the same set of items we only need to set the value for one cell to allow autofit to find the correct width.
     Cell cell = this.getCell(0, colIndex);
     String oldValue = "";
     if (cell == null) {
-      this.createCell(0, colIndex, spacingValue);
+      this.createCell(0, colIndex, longestColumnString);
     } else {
       oldValue = SpreadsheetMethods.cellToStringOrNull(cell);
-      this.getCell(0, colIndex).setCellValue(spacingValue);
+      this.getCell(0, colIndex).setCellValue(longestColumnString);
     }
-    //Todo Find out why switching from a sheet with less columns to a sheet with more columns breaks the sheet(e.g. lipidomics to genomics)
     try {
       this.autofitColumn(colIndex);
-      this.getActiveSheet();
     } catch (IndexOutOfBoundsException exception) {
-      throw new RuntimeException("Something went wrong when switching sheets.");
+      throw new RuntimeException("Can't autofit column width due to" + exception.getMessage());
     }
-
     this.getCell(0, colIndex).setCellValue(oldValue);
+  }
+
+
+  /**
+   * Finds and returns the longest String within the label and cellValueOptions within a column,
+   * concatenated with a minimum spacer
+   *
+   * @param colLabel         columnLabel equal to the one defined in the label of *
+   *                         {@link SamplesheetHeaderName}
+   * @param cellValueOptions list of String values which are selectable within a cell.
+   * @return Concatenation of the longest String within a column and a predefined spacer string.
+   */
+  private String findLongestStringWithinColumn(String colLabel, List<String> cellValueOptions) {
+    //We need to ensure that there is a minimum Width for columns without cellValueOptions
+    final String COL_SPACER = "___";
+    List<String> stringList = new ArrayList<>(Collections.singletonList(colLabel));
+    stringList.addAll(cellValueOptions);
+    String longestString = stringList.stream().max(Comparator.comparingInt(String::length))
+        .orElseThrow();
+    return longestString + COL_SPACER;
   }
 
 
@@ -313,15 +355,30 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     this.header = retrieveLigandomics();
   }
 
+
+  /**
+   * Triggers the generation of the columnHeaders and cellValueOptions with componentRendering
+   * specifically defined for the {@link MetadataType} of the genomics facility
+   */
   private void generateGenomicsSheet() {
     this.header = retrieveGenomics();
-    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsMap = mapCellValueOptionsForColumns(
+    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsMap = cellValueOptionsForCellWithinColumn(
         header);
     generateColumnsHeaders(cellValueOptionsMap);
     dropdownCellFactory.setColumnValues(cellValueOptionsMap);
   }
 
-  private LinkedHashMap<SamplesheetHeaderName, List<String>> mapCellValueOptionsForColumns(
+  /**
+   * Generates a LinkedHashMap containing an ordered collection of all possible cellValueOptions for
+   * each Column of the {@link MetadataType} specific sheet. Necessary so the
+   * {@link SpreadsheetDropdownFactory} knows which cells within a column should be rendered as
+   * dropdown components and which should be default cells
+   *
+   * @param headerNames List of headerNames dependent on the selected {@link MetadataType}
+   * @return cellValueOptionsForColumnMap map grouping the selectable cell values within the cells
+   * of a column with the {@link SamplesheetHeaderName} of the colum
+   */
+  private LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForCellWithinColumn(
       List<SamplesheetHeaderName> headerNames) {
     LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForColumnMap = new LinkedHashMap<>();
     analysisTypes = generateGenomicsAnalysisTypes();
@@ -339,35 +396,16 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return cellValueOptionsForColumnMap;
   }
 
+  /**
+   * Collects all {@link SequenceAnalysisType} specific for the genomic {@link MetadataType}
+   *
+   * @return List of String labels for all genomic analysis types.
+   */
   private List<String> generateGenomicsAnalysisTypes() {
     return Arrays.stream(SequenceAnalysisType
             .values())
         .map(e -> e.label)
         .collect(Collectors.toList());
-  }
-
-
-  /**
-   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers
-   * employed during sample batch registration for different data technologies
-   *
-   * @since 1.0.0
-   */
-  public enum SamplesheetHeaderName {
-    ROW("#", false), SEQ_ANALYSIS_TYPE("Analysis to be performed",
-        true), SAMPLE_LABEL("Sample label", true),
-    BIOLOGICAL_REPLICATE_ID("Biological replicate id", true),
-    CONDITION("Condition", true), SPECIES("Species", true),
-    SPECIMEN("Specimen", true), ANALYTE("Analyte", true),
-    CUSTOMER_COMMENT("Customer comment", false);
-
-    public final String label;
-    public final boolean isMandatory;
-
-    SamplesheetHeaderName(String label, boolean isMandatory) {
-      this.label = label;
-      this.isMandatory = isMandatory;
-    }
   }
 
   public List<SamplesheetHeaderName> retrieveProteomics() {
@@ -394,6 +432,11 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
+  /**
+   * Collects the {@link SamplesheetHeaderName} specifically for the genomic {@link MetadataType}
+   *
+   * @return List of header names for the genomic {@link MetadataType} specific sheet
+   */
   public List<SamplesheetHeaderName> retrieveGenomics() {
     return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
         SamplesheetHeaderName.SAMPLE_LABEL,
@@ -403,6 +446,15 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
         SamplesheetHeaderName.CUSTOMER_COMMENT);
   }
 
+  /**
+   * Validates if the provided Input for each cell within the spreadsheet is valid Validation is
+   * based on if the {@link SamplesheetHeaderName} mandatory attribute is set to true for the
+   * selected cell. If that is the case, then the validation will trigger an error if the cell was
+   * left blank
+   *
+   * @return {@link Result} containing nothing if the inputs are valid or
+   * {@link InvalidSpreadsheetInput} if invalid input was detected.
+   */
   public Result<Void, InvalidSpreadsheetInput> areInputsValid() {
     Set<Cell> invalidCells = new HashSet<>();
     Set<Cell> validCells = new HashSet<>();
@@ -430,7 +482,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       }
     }
     //We need to reset the style for cells with valid content if they were previously invalid
-    defaultStyleAndUnlockEditableCells(validCells);
+    validCells.forEach(cell -> cell.setCellStyle(getWorkbook().createCellStyle()));
+    refreshCells(validCells);
     if (!invalidCells.isEmpty()) {
       highlightInvalidCells(invalidCells);
       return Result.fromError(new InvalidSpreadsheetInput(
@@ -439,11 +492,17 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return Result.fromValue(null);
   }
 
+
   private boolean areNullCellsInRow(Row row) {
     return StreamSupport.stream(row.spliterator(), false).anyMatch(Objects::isNull);
   }
 
-  private void highlightInvalidCells(Collection<Cell> cells) {
+  /**
+   * Sets the cell Style of the provided cells to a predefined invalid style
+   *
+   * @param invalidCells cells in which the value provided did not pass the validation step
+   */
+  private void highlightInvalidCells(Collection<Cell> invalidCells) {
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
     invalidStyle.setLocked(false);
     invalidStyle.setBorderTop(BorderStyle.THIN);
@@ -457,12 +516,20 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     invalidStyle.setLeftBorderColor(redIndex);
     invalidStyle.setRightBorderColor(redIndex);
 
-    for (Cell cell : cells) {
+    for (Cell cell : invalidCells) {
       cell.setCellStyle(invalidStyle);
     }
-    this.refreshCells(cells);
+    //We need to refresh the cells so the style change takes effect.
+    this.refreshCells(invalidCells);
   }
 
+  /**
+   * Returns a List of {@link NGSRowDTO} for each row for which the least mandatory information was
+   * provided by the user
+   *
+   * @return {@link NGSRowDTO} containing the provided mandatory specific information for the
+   * genomic {@link MetadataType} sheet
+   */
   public List<NGSRowDTO> getFilledRows() {
     List<NGSRowDTO> rows = new ArrayList<>();
 
@@ -520,11 +587,39 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return biologicalReplicateId;
   }
 
+  /**
+   * Record containing the provided mandatory specific information for the genomic
+   * {@link MetadataType} sheet
+   */
+
   public record NGSRowDTO(String analysisType, String sampleLabel,
                           BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
                           String customerComment) {
 
+  }
+
+  /**
+   * The SamplesheetHeaderName enum contains the labels which are used to refer to the headers
+   * employed during sample batch registration for different data technologies
+   *
+   * @since 1.0.0
+   */
+  public enum SamplesheetHeaderName {
+    ROW("#", false), SEQ_ANALYSIS_TYPE("Analysis to be performed",
+        true), SAMPLE_LABEL("Sample label", true),
+    BIOLOGICAL_REPLICATE_ID("Biological replicate id", true),
+    CONDITION("Condition", true), SPECIES("Species", true),
+    SPECIMEN("Specimen", true), ANALYTE("Analyte", true),
+    CUSTOMER_COMMENT("Customer comment", false);
+
+    public final String label;
+    public final boolean isMandatory;
+
+    SamplesheetHeaderName(String label, boolean isMandatory) {
+      this.label = label;
+      this.isMandatory = isMandatory;
+    }
   }
 
   /**
@@ -541,6 +636,15 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       this.label = label;
     }
   }
+
+  /**
+   * The InvalidSpreadsheetInput class is employed within the spreadsheet validation and contains
+   * the information of the row for which the validation has failed
+   * {@link SpreadsheetInvalidationReason} outlining why the validation has failed and additional
+   * information if necessary
+   *
+   * @since 1.0.0
+   */
 
   public static class InvalidSpreadsheetInput {
 

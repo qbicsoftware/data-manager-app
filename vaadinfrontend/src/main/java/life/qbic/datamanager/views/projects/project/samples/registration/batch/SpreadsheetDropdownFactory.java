@@ -19,7 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  private final HashMap<Integer, List<String>> sheetColumnIndexToCellOptions = new HashMap<>();
+  private final HashMap<Integer, List<String>> columnIndexToCellValueOptions = new HashMap<>();
 
   // this method is not used atm, as we only want to show a component if a cell is selected for performance reasons
   @Override
@@ -32,9 +32,11 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
+    //We don't want to render a custom editor if it's the header row
     if (isHeaderRow(rowIndex)) {
       return null;
     }
+    //We only want to have a combobox if more than one value is selectable for the user.
     if (hasMoreThanOneValue(columnIndex)) {
       ComboBox<String> editorCombobox = createEditorCombobox(spreadsheet, cell.getColumnIndex(),
           cell.getRowIndex());
@@ -73,19 +75,19 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   }
 
   private boolean hasMoreThanOneValue(int columnIndex) {
-    if (sheetColumnIndexToCellOptions.get(columnIndex) == null) {
+    if (columnIndexToCellValueOptions.get(columnIndex) == null) {
       return false;
     }
-    return sheetColumnIndexToCellOptions.get(columnIndex).size() > 1;
+    return columnIndexToCellValueOptions.get(columnIndex).size() > 1;
   }
 
   private List<String> getColumnValues(int columnIndex) {
-    return sheetColumnIndexToCellOptions.get(columnIndex);
+    return columnIndexToCellValueOptions.get(columnIndex);
   }
 
   //We are only interested in the columnIndex to know which options should be shown in the editor component.
   public void setColumnValues(HashMap<SamplesheetHeaderName, List<String>> columnValues) {
-    columnValues.forEach((samplesheetHeaderName, strings) -> sheetColumnIndexToCellOptions.put(
+    columnValues.forEach((samplesheetHeaderName, strings) -> columnIndexToCellValueOptions.put(
         samplesheetHeaderName.ordinal(), strings));
   }
 }
