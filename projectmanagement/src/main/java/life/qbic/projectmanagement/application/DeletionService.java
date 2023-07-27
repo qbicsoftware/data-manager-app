@@ -46,7 +46,7 @@ public class DeletionService {
     if (queryResult.isError()) {
       return Result.fromError(ResponseCode.QUERY_FAILED);
     }
-    if (queryResult.isValue() && queryResult.getValue().size() > 0) {
+    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
       return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
     }
     experimentInformationService.deleteAllExperimentalVariables(id);
