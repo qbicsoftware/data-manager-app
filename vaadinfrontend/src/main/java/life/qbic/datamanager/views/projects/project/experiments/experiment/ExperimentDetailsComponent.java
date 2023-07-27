@@ -118,7 +118,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
     Component layout = new HorizontalLayout(text, closeButton);
     layout.addClassName("content");
-    notification.setPosition(Position.MIDDLE);
+    notification.setPosition(Position.BOTTOM_START);
+    notification.setDuration(3_000);
     notification.add(layout);
     return notification;
   }
