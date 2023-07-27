@@ -6,6 +6,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -154,16 +155,16 @@ public class ExperimentDetailsComponent extends PageArea {
     configureExperimentalGroupCreation();
     addCancelListenerForAddVariableDialog();
     addConfirmListenerForAddVariableDialog();
+    addConfirmListenerForEditVariableDialog();
     addListenerForNewVariableEvent();
-    addEditListenerForExperimentalVariables();
   }
 
-  private void addEditListenerForExperimentalVariables() {
+  private void addConfirmListenerForEditVariableDialog() {
     experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
       ExperimentId experimentId = context.experimentId().orElseThrow();
       var editDialog = ExperimentalVariablesDialog.prefilled(
           experimentInformationService.getVariablesOfExperiment(experimentId));
-      editDialog.subscribeToCancelEvent(
+      editDialog.addCancelEventListener(
           experimentalVariablesDialogCancelEvent -> editDialog.close());
       editDialog.subscribeToConfirmEvent(experimentalVariablesDialogConfirmEvent -> {
         deleteExistingExperimentalVariables(experimentId);
@@ -232,7 +233,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addCancelListenerForAddVariableDialog() {
-    addExperimentalVariablesDialog.subscribeToCancelEvent(it -> it.getSource().close());
+    addExperimentalVariablesDialog.addCancelEventListener(it -> it.getSource().close());
   }
 
   private void handleGroupSubmittedSuccess() {
@@ -292,7 +293,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addConfirmListenerForAddVariableDialog() {
-    addExperimentalVariablesDialog.subscribeToConfirmEvent(it -> {
+    addExperimentalVariablesDialog.addConfirmEventListener(it -> {
       try {
         registerExperimentalVariables(it.getSource());
         it.getSource().close();

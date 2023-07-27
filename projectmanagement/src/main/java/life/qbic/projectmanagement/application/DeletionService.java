@@ -1,8 +1,7 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 
-import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
