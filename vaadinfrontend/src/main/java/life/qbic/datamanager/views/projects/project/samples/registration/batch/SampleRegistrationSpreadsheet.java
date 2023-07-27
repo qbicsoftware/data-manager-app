@@ -197,8 +197,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   /**
-   * Adds rows to the spreadsheet that contains prefilled data, selectable dropdowns and editable
-   * free-text cells. The rows are added below the last row containing data.
+   * Generates and fills the cells in the first column with the current RowIndex and Header specific
+   * style functioning so the column functions a row header
    */
   private void generateRowHeaderCell(int colIndex, int rowIndex) {
     CellStyle boldStyle = this.getWorkbook().createCellStyle();
@@ -209,7 +209,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     boldStyle.setAlignment(HorizontalAlignment.CENTER);
     Cell cell = this.createCell(rowIndex, colIndex, rowIndex);
     cell.setCellStyle(boldStyle);
-    //ToDo this is a bottleneck which can impact performance but is necessary, because we allow users to add rows manually
+    //This is a bottleneck which can impact performance but is necessary, because we allow users to add rows manually
     refreshCells(cell);
   }
 
