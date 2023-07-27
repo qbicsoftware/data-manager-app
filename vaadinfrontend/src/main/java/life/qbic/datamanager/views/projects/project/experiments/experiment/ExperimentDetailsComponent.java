@@ -166,11 +166,22 @@ public class ExperimentDetailsComponent extends PageArea {
           experimentInformationService.getVariablesOfExperiment(experimentId));
       editDialog.addCancelEventListener(
           experimentalVariablesDialogCancelEvent -> editDialog.close());
-      editDialog.subscribeToConfirmEvent(experimentalVariablesDialogConfirmEvent -> {
-        deleteExistingExperimentalVariables(experimentId);
-        registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
-        editDialog.close();
-        reloadExperimentalVariables();
+      editDialog.addConfirmEventListener(experimentalVariablesDialogConfirmEvent -> {
+        var confirmDialog = new ConfirmDialog();
+        confirmDialog.setHeader("Your experimental groups will be deleted");
+        confirmDialog.setText(
+            "Editing experimental variables requires all experimental groups to be deleted. Are you sure you want to delete them?");
+        confirmDialog.setConfirmText("Delete experimental groups");
+        confirmDialog.setCancelable(true);
+        confirmDialog.setCancelText("Abort");
+        confirmDialog.setRejectable(false);
+        confirmDialog.addConfirmListener(confirmDeletionEvent -> {
+          deleteExistingExperimentalVariables(experimentId);
+          registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
+          editDialog.close();
+          reloadExperimentalVariables();
+        });
+        confirmDialog.open();
       });
       editDialog.open();
     });
