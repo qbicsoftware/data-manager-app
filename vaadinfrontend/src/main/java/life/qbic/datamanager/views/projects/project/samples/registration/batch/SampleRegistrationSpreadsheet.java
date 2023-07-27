@@ -559,10 +559,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       this(reason, 0, "");
     }
 
-    InvalidSpreadsheetInput(SpreadsheetInvalidationReason reason, int invalidRow) {
-      this(reason, invalidRow, "");
-    }
-
     /**
      * Returns a String mentioning the invalid row of the spreadsheet and the reason why it is
      * invalid. If this object was created with additional information on the reason, it is added.
