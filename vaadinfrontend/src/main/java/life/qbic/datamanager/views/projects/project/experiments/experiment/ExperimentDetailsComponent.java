@@ -167,14 +167,7 @@ public class ExperimentDetailsComponent extends PageArea {
       editDialog.addCancelEventListener(
           experimentalVariablesDialogCancelEvent -> editDialog.close());
       editDialog.addConfirmEventListener(experimentalVariablesDialogConfirmEvent -> {
-        var confirmDialog = new ConfirmDialog();
-        confirmDialog.setHeader("Your experimental groups will be deleted");
-        confirmDialog.setText(
-            "Editing experimental variables requires all experimental groups to be deleted. Are you sure you want to delete them?");
-        confirmDialog.setConfirmText("Delete experimental groups");
-        confirmDialog.setCancelable(true);
-        confirmDialog.setCancelText("Abort");
-        confirmDialog.setRejectable(false);
+        var confirmDialog = experimentalGroupDeletionConfirmDialog();
         confirmDialog.addConfirmListener(confirmDeletionEvent -> {
           deleteExistingExperimentalVariables(experimentId);
           registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
@@ -185,6 +178,18 @@ public class ExperimentDetailsComponent extends PageArea {
       });
       editDialog.open();
     });
+  }
+
+  private static ConfirmDialog experimentalGroupDeletionConfirmDialog() {
+    var confirmDialog = new ConfirmDialog();
+    confirmDialog.setHeader("Your experimental groups will be deleted");
+    confirmDialog.setText(
+        "Editing experimental variables requires all experimental groups to be deleted. Are you sure you want to delete them?");
+    confirmDialog.setConfirmText("Delete experimental groups");
+    confirmDialog.setCancelable(true);
+    confirmDialog.setCancelText("Abort");
+    confirmDialog.setRejectable(false);
+    return confirmDialog;
   }
 
   private void reloadExperimentalVariables() {
