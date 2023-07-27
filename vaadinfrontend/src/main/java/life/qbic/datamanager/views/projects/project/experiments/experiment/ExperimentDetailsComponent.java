@@ -121,6 +121,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void configureComponent() {
     configureExperimentalGroupCreation();
+    configureExperimentalGroupsEdit();
     addCancelListenerForAddVariableDialog();
     addConfirmListenerForAddVariableDialog();
     addListenerForNewVariableEvent();
@@ -192,9 +193,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void configureExperimentalGroupCreation() {
-    //experimentalGroupCreationCard.addListener(event -> experimentalGroupsDialog.open());
-
-    experimentalGroupCreationCard.addListener(event -> {
+    experimentalGroupsCollection.subscribeToAddEvents(listener -> {
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
       List<VariableLevel> levels = variables.stream()
@@ -208,6 +207,35 @@ public class ExperimentDetailsComponent extends PageArea {
           });
       dialog.open();
     });
+  }
+
+  private void configureExperimentalGroupsEdit() {
+    experimentalGroupsCollection.subscribeToEditEvents(listener -> {
+      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+          experimentId);
+      List<VariableLevel> levels = variables.stream()
+          .flatMap(variable -> variable.levels().stream()).toList();
+      var experimentalGroups = experimentInformationService.getExperimentalGroups(experimentId)
+          .stream().map(this::toContent).toList();
+      var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
+      dialog.subscribeToCancelEvent(cancelEvent -> cancelEvent.getSource().close());
+      dialog.subscribeToConfirmEvent(
+          confirmEvent -> {
+            editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
+            dialog.close();
+          });
+      dialog.open();
+    });
+  }
+
+  private void editExperimentalGroups(
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
+
+  }
+
+  private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
+    return new ExperimentalGroupContent(experimentalGroupDTO.sampleSize(),
+        experimentalGroupDTO.levels());
   }
 
   private void saveNewGroups(Collection<ExperimentalGroupContent> experimentalGroupContents) {
@@ -245,7 +273,6 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
-    addCreationCardToExperimentalGroupCollection();
   }
 
   private void loadExperimentalGroups() {
@@ -256,11 +283,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
     // We register the experimental details component as listener for group deletion events
     experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
-    experimentalGroupsCollection.setComponents(experimentalGroupsCards);
-  }
-
-  private void addCreationCardToExperimentalGroupCollection() {
-    experimentalGroupsCollection.addComponentAsLast(experimentalGroupCreationCard);
+    experimentalGroupsCollection.setContent(experimentalGroupsCards);
   }
 
   private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {

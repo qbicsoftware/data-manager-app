@@ -18,9 +18,7 @@ import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentValueFormatter;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository;
 
 /**
  * <b>Experimental Groups Dialog</b>
@@ -39,7 +37,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private static final long serialVersionUID = 1657697182040756406L;
   private final Collection<VariableLevel> experimentalVariables;
   private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
-  private final ExperimentalGroupEntry experimentalGroupEntry = new ExperimentalGroupEntry();
   private final Div experimentalGroupsCollection = new Div();
   private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
@@ -50,14 +47,24 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     configureComponent();
   }
 
+  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables, Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    this(experimentalVariables);
+    this.experimentalGroupsCollection.removeAll();
+    experimentalGroupContents.stream().map(group -> {
+      var groupEntry = new ExperimentalGroupEntry();
+      groupEntry.setAvailableVariableLevels(experimentalVariables);
+      groupEntry.setCondition(group.variableLevels());
+      groupEntry.setSampleSize(group.size());
+      return groupEntry;}).forEach(experimentalGroupsCollection::add);
+  }
+
   public static ExperimentalGroupsDialog empty(Collection<VariableLevel> experimentalVariables) {
     return new ExperimentalGroupsDialog(experimentalVariables);
   }
 
   public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
-      Collection<ExperimentalGroup> experimentalGroups) {
-    //TODO
-    return null;
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents);
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupEntry experimentalGroupEntry) {
@@ -110,8 +117,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void addNewGroupEntry() {
-    var groupEntry = experimentalGroupEntry.empty();
-    groupEntry.setItems(experimentalVariables);
+    var groupEntry = new ExperimentalGroupEntry();
+    groupEntry.setAvailableVariableLevels(experimentalVariables);
     experimentalGroupsCollection.add(groupEntry);
     groupEntry.registerForRemoveEvents(event -> removeExperimentalGroupEntry(event.getSource()));
   }
@@ -124,8 +131,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void refreshGroupEntries() {
     if (experimentalGroupsCollection.getChildren().toList().isEmpty()) {
-      var groupEntry = experimentalGroupEntry.empty();
-      groupEntry.setItems(experimentalVariables);
+      var groupEntry = new ExperimentalGroupEntry();
+      groupEntry.setAvailableVariableLevels(experimentalVariables);
       experimentalGroupsCollection.add(groupEntry);
       groupEntry.registerForRemoveEvents(event -> removeExperimentalGroupEntry(event.getSource()));
     }
@@ -169,7 +176,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       sampleSize.setMin(1);
       sampleSize.setValue(1.0);
       sampleSize.setErrorMessage("Please specify a valid number of replicates");
-      //variableComboBox.setItems(experimentalVariables);
+      variableComboBox.setItems(new ArrayList<>());
       variableComboBox.setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
       variableComboBox.setWidthFull();
       variableComboBox.setLabel("Condition");
@@ -184,12 +191,16 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       addClassName("experimental-group-entry");
     }
 
-    ExperimentalGroupEntry empty() {
-      return new ExperimentalGroupEntry();
+    void setAvailableVariableLevels(Collection<VariableLevel> availableVariableLevels) {
+      variableComboBox.setItems(availableVariableLevels);
     }
 
-    void setItems(Collection<VariableLevel> availableVariableLevels) {
-      variableComboBox.setItems(availableVariableLevels);
+    void setCondition(Collection<VariableLevel> condition) {
+      variableComboBox.setValue(condition);
+    }
+
+    void setSampleSize(int size) {
+      sampleSize.setValue((double) size);
     }
 
     void registerForRemoveEvents(ComponentEventListener<RemoveEvent> listener) {
