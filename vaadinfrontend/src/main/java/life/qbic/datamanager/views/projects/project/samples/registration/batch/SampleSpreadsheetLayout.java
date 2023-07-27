@@ -93,11 +93,6 @@ class SampleSpreadsheetLayout extends Div {
     sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
   }
 
-  public void resetSelectedExperiment() {
-    //this needs to be reset when dialog is closed, as the sheet will not be recreated for set experiments
-    experiment = null;
-  }
-
   public void resetLayout() {
     sampleInformationLayoutHandler.reset();
   }
