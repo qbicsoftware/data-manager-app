@@ -29,14 +29,13 @@ public class BatchRegistrationDialog extends DialogWindow {
   private final Tab batchInformationTab = createTabStep("1", "Batch Information");
   private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
   private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
-  private SampleSpreadsheetLayout sampleSpreadsheetLayout;
+  private final SampleSpreadsheetLayout sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
 
   public BatchRegistrationDialog() {
     addClassName("batch-registration-dialog");
     setResizable(true);
     setHeaderTitle(TITLE);
-    initSampleRegistrationLayout();
     initTabStepper();
     registerBatchDialogHandler = new RegisterBatchDialogHandler();
   }
@@ -56,10 +55,6 @@ public class BatchRegistrationDialog extends DialogWindow {
     Tab tabStep = new Tab(stepAvatar, tabLabelSpan);
     tabStep.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
     return tabStep;
-  }
-
-  private void initSampleRegistrationLayout() {
-    sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   }
 
   /**
@@ -206,7 +201,6 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     private void reset() {
       batchInformationLayout.reset();
-      sampleSpreadsheetLayout.resetSelectedExperiment();
       sampleSpreadsheetLayout.resetLayout();
       tabStepper.setSelectedTab(batchInformationTab);
     }

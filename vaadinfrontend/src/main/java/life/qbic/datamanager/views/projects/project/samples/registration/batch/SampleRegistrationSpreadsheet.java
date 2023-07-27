@@ -49,15 +49,15 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static final long serialVersionUID = 573778360298068552L;
   private final SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
   private List<SamplesheetHeaderName> header;
-  private static List<String> analysisTypes;
-  private static List<String> species;
-  private static List<String> specimens;
-  private static List<String> analytes;
+  private List<String> analysisTypes;
+  private List<String> species;
+  private List<String> specimens;
+  private List<String> analytes;
 
   //Spreadsheet component only allows retrieval of strings, so we have to store the experimentalGroupId separately
-  private static Map<String, ExperimentalGroup> experimentalGroupToConditionString;
-  private static Map<String, List<BiologicalReplicate>> conditionsToReplicates;
-  private static int numberOfSamples;
+  private Map<String, ExperimentalGroup> experimentalGroupToConditionString;
+  private Map<String, List<BiologicalReplicate>> conditionsToReplicates;
+  private int numberOfSamples;
 
   public SampleRegistrationSpreadsheet() {
     this.addClassName("sample-spreadsheet");
@@ -71,7 +71,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    *
    * @param experiment An Experiment object, most likely the active one
    */
-  public static void setExperimentMetadata(Experiment experiment) {
+  public void setExperimentMetadata(Experiment experiment) {
     species = experiment.getSpecies().stream().map(Species::label).toList();
     specimens = experiment.getSpecimens().stream()
         .map(Specimen::label).toList();
@@ -91,6 +91,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     //initialise first rows based on known sample size
     addRowsForInitialSamples(numberOfSamples);
     refreshAllCellValues();
+    //Only reloads based on first row and first column with index = 1, meaning row and column style has to be refreshed manually
     reloadVisibleCellContents();
   }
 
@@ -111,7 +112,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     }
   }
 
-  private static void prepareConditionItems(List<ExperimentalGroup> groups) {
+  private void prepareConditionItems(List<ExperimentalGroup> groups) {
     // create condition items for dropdown and fix cell width. Remember replicates for each condition
     conditionsToReplicates = new HashMap<>();
     experimentalGroupToConditionString = new HashMap<>();
@@ -151,14 +152,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int columnIndex = 0; columnIndex < header.size(); columnIndex++) {
       SamplesheetHeaderName colHeader = header.get(columnIndex);
       switch (colHeader) {
-        case ROW -> updatedCells.add(fillEnumerationCell(columnIndex, increasedRowIndex));
+        case ROW -> updatedCells.add(generateRowHeaderCell(columnIndex, increasedRowIndex));
+        case SPECIES -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, species));
         case SEQ_ANALYSIS_TYPE ->
             updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analysisTypes));
         case SAMPLE_LABEL, CUSTOMER_COMMENT ->
             updatedCells.add(prefillCell(columnIndex, increasedRowIndex, new ArrayList<>()));
         case BIOLOGICAL_REPLICATE_ID ->
             updatedCells.add(prefillCell(columnIndex, increasedRowIndex, getReplicateLabels()));
-        case SPECIES -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, species));
         case SPECIMEN -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, specimens));
         case ANALYTE -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex, analytes));
         case CONDITION -> updatedCells.add(prefillCell(columnIndex, increasedRowIndex,
@@ -178,7 +179,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     };
   }
 
-  private Cell fillEnumerationCell(int colIndex, int rowIndex) {
+  private Cell generateRowHeaderCell(int colIndex, int rowIndex) {
     CellStyle boldStyle = this.getWorkbook().createCellStyle();
     Font font = this.getWorkbook().createFont();
     font.setBold(true);
@@ -187,6 +188,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     boldStyle.setAlignment(HorizontalAlignment.CENTER);
     Cell cell = this.createCell(rowIndex, colIndex, rowIndex);
     cell.setCellStyle(boldStyle);
+    //ToDo this is a bottleneck which can impact performance but is necessary, because we allow users to add rows manually
+    refreshCells(cell);
     return cell;
   }
 
@@ -242,7 +245,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           Objects.requireNonNullElseGet(cellValueOptions, ArrayList::new));
     }
     styleColumnHeaderCells(headerCells);
-    this.refreshCells(headerCells);
   }
 
   private void styleColumnHeaderCells(List<Cell> headerCells) {
@@ -251,6 +253,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     font.setBold(true);
     boldHeaderStyle.setFont(font);
     headerCells.forEach(cell -> cell.setCellStyle(boldHeaderStyle));
+    refreshCells(headerCells);
   }
 
   private void styleRowCells(Collection<Cell> rowCells) {
@@ -264,7 +267,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     unLockedStyle.setLocked(false);
     rowCells.stream().filter(cell -> !isPrefilledColumn(cell.getColumnIndex()))
         .forEach(cell -> cell.setCellStyle(unLockedStyle));
-    refreshCells(rowCells);
   }
 
   /**
