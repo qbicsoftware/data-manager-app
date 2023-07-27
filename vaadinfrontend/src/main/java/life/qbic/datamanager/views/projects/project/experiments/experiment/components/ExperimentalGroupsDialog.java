@@ -38,33 +38,39 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private final Collection<VariableLevel> experimentalVariables;
   private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
   private final Div experimentalGroupsCollection = new Div();
+
+  private final boolean editMode;
   private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
-  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables) {
+  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables, boolean editMode) {
     super();
+    this.editMode = editMode;
     this.experimentalVariables = Objects.requireNonNull(experimentalVariables);
     layoutComponent();
     configureComponent();
   }
 
-  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables, Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    this(experimentalVariables);
+  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables,
+      Collection<ExperimentalGroupContent> experimentalGroupContents, boolean editMode) {
+    this(experimentalVariables, editMode);
     this.experimentalGroupsCollection.removeAll();
     experimentalGroupContents.stream().map(group -> {
       var groupEntry = new ExperimentalGroupEntry();
       groupEntry.setAvailableVariableLevels(experimentalVariables);
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setSampleSize(group.size());
-      return groupEntry;}).forEach(experimentalGroupsCollection::add);
+      groupEntry.registerForRemoveEvents(listener -> experimentalGroupsCollection.remove(groupEntry));
+      return groupEntry;
+    }).forEach(experimentalGroupsCollection::add);
   }
 
   public static ExperimentalGroupsDialog empty(Collection<VariableLevel> experimentalVariables) {
-    return new ExperimentalGroupsDialog(experimentalVariables);
+    return new ExperimentalGroupsDialog(experimentalVariables, false);
   }
 
   public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents);
+    return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, true);
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupEntry experimentalGroupEntry) {
@@ -98,8 +104,9 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
     this.cancelListeners.add(listener);
   }
-  
-  public void subscribeToConfirmEvent(ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>> listener) {
+
+  public void subscribeToConfirmEvent(
+      ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>> listener) {
     this.confirmListeners.add(listener);
   }
 
@@ -111,7 +118,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     add(addNewGroupIcon);
 
     addClassName("experiment-group-dialog");
-    setConfirmButtonLabel("Add");
+    setConfirmButtonLabel(editMode ? "Save" : "Add");
     setCancelButtonLabel("Cancel");
     getFooter().add(cancelButton, confirmButton);
   }

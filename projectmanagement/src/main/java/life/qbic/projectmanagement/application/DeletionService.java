@@ -54,6 +54,18 @@ public class DeletionService {
     return Result.fromValue(id);
   }
 
+  public Result<ExperimentId, ResponseCode> deleteAllExperimentalGroups(ExperimentId id) {
+    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
+    if (queryResult.isError()) {
+      return Result.fromError(ResponseCode.QUERY_FAILED);
+    }
+    if (queryResult.isValue() && queryResult.getValue().size() > 0) {
+      return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
+    }
+    experimentInformationService.deleteAllExperimentalGroups(id);
+    return Result.fromValue(id);
+  }
+
   public enum ResponseCode {
     SAMPLES_STILL_ATTACHED_TO_EXPERIMENT, QUERY_FAILED
   }

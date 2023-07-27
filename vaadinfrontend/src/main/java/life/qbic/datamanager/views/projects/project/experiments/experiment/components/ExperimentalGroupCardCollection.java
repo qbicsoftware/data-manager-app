@@ -37,12 +37,14 @@ public class ExperimentalGroupCardCollection extends Div {
   public ExperimentalGroupCardCollection() {
     addClassName("experimental-group-card-collection");
     title.setClassName("title");
-    title.setText("All your amazing groups");
+    title.setText("Groups");
     header.setClassName("header");
     controlItems.setClassName("controls");
     content.setClassName("content");
     header.add(title, controlItems);
-    controlItems.add(addButton, editButton);
+    controlItems.add(editButton, addButton);
+
+    addButton.addClassName("primary");
     add(header, content);
 
     addButton.addClickListener(this::emitAddEvent);

@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
@@ -101,8 +100,8 @@ public class ExperimentInformationService {
   }
 
   /**
-   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined experimental
-   * groups in a give experiment!
+   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined
+   * experimental groups in a give experiment!
    *
    * @param experimentId the experiment reference to delete the experimental variables from
    * @since 1.0.0
@@ -250,6 +249,21 @@ public class ExperimentInformationService {
   public boolean hasExperimentalGroup(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return !experiment.getExperimentalGroups().isEmpty();
+  }
+
+  /**
+   * Deletes all experimental groups in a given experiment.
+   * <p>
+   * This method does not check if samples are already.
+   *
+   * @param id the experiment identifier of the experiment the experimental groups are going to be
+   *           deleted.
+   * @since 1.0.0
+   */
+  public void deleteAllExperimentalGroups(ExperimentId id) {
+    Experiment experiment = loadExperimentById(id);
+    experiment.removeAllExperimentalGroups();
+    experimentRepository.update(experiment);
   }
 
   public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int sampleSize) {

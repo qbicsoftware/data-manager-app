@@ -203,6 +203,7 @@ public class ExperimentDetailsComponent extends PageArea {
       dialog.subscribeToConfirmEvent(
           confirmEvent -> {
             saveNewGroups(confirmEvent.getSource().experimentalGroups());
+            reloadExperimentalGroups();
             dialog.close();
           });
       dialog.open();
@@ -222,6 +223,7 @@ public class ExperimentDetailsComponent extends PageArea {
       dialog.subscribeToConfirmEvent(
           confirmEvent -> {
             editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
+            reloadExperimentalGroups();
             dialog.close();
           });
       dialog.open();
@@ -230,7 +232,21 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void editExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    deletionService.deleteAllExperimentalGroups(experimentId).onError(error -> {
+      throw new ApplicationException("Could not edit experiments because samples are already registered.");
+    });
+    experimentalGroupContents.stream().map(this::toExperimentalGroupDTO).map(
+            experimentalGroupDTO -> experimentInformationService.addExperimentalGroupToExperiment(
+                experimentId, experimentalGroupDTO)).filter(Result::isError).findAny()
+        .ifPresent(result -> {
+          throw new ApplicationException("Could not save one or more experimental groups.");
+        });
+  }
 
+  private ExperimentalGroupDTO toExperimentalGroupDTO(
+      ExperimentalGroupContent experimentalGroupContent) {
+    return new ExperimentalGroupDTO(experimentalGroupContent.variableLevels(),
+        experimentalGroupContent.size());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
@@ -245,7 +261,6 @@ public class ExperimentDetailsComponent extends PageArea {
         .filter(Result::isError).findAny().ifPresent(errorResult -> {
           throw new ApplicationException("Could not save one or more groups.");
         });
-    reloadExperimentalGroups();
   }
 
   private Result<ExperimentalGroup, ResponseCode> registerNewGroup(
@@ -281,15 +296,9 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalGroupCard> experimentalGroupsCards = experimentInformationService.experimentalGroupsFor(
         experimentId).stream().map(ExperimentalGroupCard::new).toList();
 
-    // We register the experimental details component as listener for group deletion events
-    experimentalGroupsCards.forEach(this::subscribeToDeletionClickEvent);
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
   }
 
-  private void subscribeToDeletionClickEvent(ExperimentalGroupCard experimentalGroupCard) {
-    experimentalGroupCard.addDeletionEventListener(
-        ExperimentDetailsComponent.this::handleCreationClickedEvent);
-  }
 
   private void handleCreationClickedEvent(
       ExperimentalGroupDeletionEvent experimentalGroupDeletionEvent) {
