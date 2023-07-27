@@ -5,6 +5,8 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -38,11 +40,14 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private final Collection<VariableLevel> experimentalVariables;
   private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
   private final Div experimentalGroupsCollection = new Div();
+  private final Div header = new Div();
 
+  private final Div addNewGroupContainer = new Div();
   private final boolean editMode;
   private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
-  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables, boolean editMode) {
+  private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables,
+      boolean editMode) {
     super();
     this.editMode = editMode;
     this.experimentalVariables = Objects.requireNonNull(experimentalVariables);
@@ -59,7 +64,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       groupEntry.setAvailableVariableLevels(experimentalVariables);
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setSampleSize(group.size());
-      groupEntry.registerForRemoveEvents(listener -> experimentalGroupsCollection.remove(groupEntry));
+      groupEntry.registerForRemoveEvents(
+          listener -> experimentalGroupsCollection.remove(groupEntry));
       return groupEntry;
     }).forEach(experimentalGroupsCollection::add);
   }
@@ -111,11 +117,18 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void layoutComponent() {
+    add(header);
+    header.addClassName("header");
+    header.add(new Span(editMode ? "Edit Experimental Groups" : "Add Experimental Groups"));
+    header.add(new Hr());
     addNewGroupEntry();
     var addNewGroupIcon = new Icon(VaadinIcon.PLUS);
-    addNewGroupIcon.addClickListener(listener -> addNewGroupEntry());
     add(experimentalGroupsCollection);
-    add(addNewGroupIcon);
+    Span addGroupHelperText = new Span("Add Experimental Group");
+    addGroupHelperText.addClickListener(listener -> addNewGroupEntry());
+    addNewGroupContainer.add(addNewGroupIcon, addGroupHelperText);
+    add(addNewGroupContainer);
+    addNewGroupContainer.addClickListener(listener -> addNewGroupEntry());
 
     addClassName("experiment-group-dialog");
     setConfirmButtonLabel(editMode ? "Save" : "Add");

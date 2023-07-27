@@ -175,6 +175,10 @@ Used by both project creation and experiment creation dialog, thus the unique na
   cursor: pointer;
 }
 
+.experiment-group-dialog .header{
+  font-weight: bold;
+}
+
 .experiment-variable-dialog .content {
   padding: var(--lumo-space-m);
   gap: var(--lumo-space-m);
