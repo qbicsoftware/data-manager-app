@@ -63,8 +63,8 @@ final class SpreadsheetMethods {
    * @param alpha - the transparency as a double alpha value between 0 and 1
    * @return an ExtendedColor object to be used in a Spreadsheet
    */
-  public static ExtendedColor RGBToSpreadsheetColor(Color foreground, double alpha) {
-    return SpreadsheetMethods.RBGToSpreadsheetColor(foreground, alpha, Color.white);
+  public static ExtendedColor convertRGBToSpreadsheetColor(Color foreground, double alpha) {
+    return SpreadsheetMethods.convertRBGToSpreadsheetColor(foreground, alpha, Color.white);
   }
 
   /**
@@ -75,7 +75,7 @@ final class SpreadsheetMethods {
    * @param background - the background color as defined in Java awt
    * @return an ExtendedColor object to be used in a Spreadsheet
    */
-  public static ExtendedColor RBGToSpreadsheetColor(Color foreground, double alpha, Color background) {
+  public static ExtendedColor convertRBGToSpreadsheetColor(Color foreground, double alpha, Color background) {
     double red = ((1 - alpha) * background.getRed()) + (alpha * foreground.getRed());
     double green = ((1 - alpha) * background.getGreen()) + (alpha * foreground.getGreen());
     double blue = ((1 - alpha) * background.getBlue()) + (alpha * foreground.getBlue());

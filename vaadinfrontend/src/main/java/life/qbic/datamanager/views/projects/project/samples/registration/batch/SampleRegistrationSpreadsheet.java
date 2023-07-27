@@ -506,7 +506,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     CellStyle invalidStyle = this.getWorkbook().createCellStyle();
     invalidStyle.setLocked(false);
 
-    ExtendedColor redErrorHue = SpreadsheetMethods.RGBToSpreadsheetColor(Color.red, 0.1);
+    ExtendedColor redErrorHue = SpreadsheetMethods.convertRGBToSpreadsheetColor(Color.red, 0.1);
 
     invalidStyle.setFillBackgroundColor(redErrorHue);
 
