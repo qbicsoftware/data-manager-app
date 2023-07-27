@@ -1,9 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -12,10 +10,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetInput;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -35,10 +30,9 @@ class SampleSpreadsheetLayout extends Div {
   private final Span errorInstructionSpan = new Span();
   private final Span batchName = new Span();
   private final Span experimentName = new Span();
-  public final transient SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
+  private final SampleRegistrationSpreadsheet sampleRegistrationSpreadsheet = new SampleRegistrationSpreadsheet();
   public final Button cancelButton = new Button("Cancel");
   public final Button addRowButton = new Button("Add Row");
-
   public final Button deleteRowButton = new Button("Delete Row");
   public final Button backButton = new Button("Back");
   public final Button registerButton = new Button("Register");
@@ -96,14 +90,10 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void generateSampleRegistrationSheet(MetadataType metaDataType) {
-    sampleRegistrationSpreadsheet.reset();
     sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
-    sampleRegistrationSpreadsheet.reloadVisibleCellContents();
   }
 
-  public void reset() {
-    //this needs to be reset when dialog is closed, as the sheet will not be recreated for set experiments
-    experiment = null;
+  public void resetLayout() {
     sampleInformationLayoutHandler.reset();
   }
 
@@ -118,7 +108,7 @@ class SampleSpreadsheetLayout extends Div {
   public void setExperiment(Experiment experiment) {
     this.experiment = experiment.experimentId();
     experimentName.setText(experiment.getName());
-    SampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
+    sampleRegistrationSpreadsheet.setExperimentMetadata(experiment);
   }
 
   public List<SampleRegistrationContent> getContent() {
@@ -150,12 +140,11 @@ class SampleSpreadsheetLayout extends Div {
 
     private void resetSpreadSheet() {
       sampleRegistrationSpreadsheet.reset();
-      sampleRegistrationSpreadsheet.reload();
     }
 
     private boolean isInputValid() {
       Result<Void, InvalidSpreadsheetInput> content = sampleRegistrationSpreadsheet.areInputsValid();
-      if(content.isValue()) {
+      if (content.isValue()) {
         hideErrorInstructions();
       }
       return content.onError(error -> displayErrorInstructions(error.getInvalidationReason()))
@@ -172,20 +161,6 @@ class SampleSpreadsheetLayout extends Div {
 
     private void hideErrorInstructions() {
       errorInstructionSpan.removeAll();
-    }
-
-    private void displayInputInvalidMessage(String invalidationReason) {
-      ErrorMessage infoMessage = new ErrorMessage(
-          "Incomplete or erroneous metadata found",
-          invalidationReason);
-      StyledNotification notification = new StyledNotification(infoMessage);
-      // we need to reload the sheet as the notification popup and removal destroys the spreadsheet UI for some reason...
-      notification.addAttachListener(
-          (ComponentEventListener<AttachEvent>) attachEvent -> sampleRegistrationSpreadsheet.reload());
-      notification.addDetachListener(
-          (ComponentEventListener<DetachEvent>) detachEvent -> sampleRegistrationSpreadsheet.reload());
-
-      notification.open();
     }
 
     private List<SampleRegistrationContent> getContent() {
