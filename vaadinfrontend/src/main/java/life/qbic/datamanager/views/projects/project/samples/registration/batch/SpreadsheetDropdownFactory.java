@@ -32,12 +32,8 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-    //We don't want to render a custom editor if it's the header row
-    if (isHeaderRow(rowIndex)) {
-      return null;
-    }
-    //We only want to have a combobox if more than one value is selectable for the user.
-    if (hasMoreThanOneValue(columnIndex)) {
+    //We only want to have a combobox if more than one value is selectable for the user and it's not the header row.
+    if (hasMoreThanOneValue(columnIndex) && !isHeaderRow(rowIndex)) {
       ComboBox<String> editorCombobox = createEditorCombobox(spreadsheet, cell.getColumnIndex(),
           cell.getRowIndex());
       if (!cell.getStringCellValue().isEmpty()) {
