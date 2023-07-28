@@ -4,136 +4,86 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SamplesheetHeaderName;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 
 /**
- * SpreadsheetDropdownFactory implements the SpreadsheetComponentFactory in order to style Spreadsheets to
- * contain cells with dropdown components. Information about dropdown values and which cells of the
- * spreadsheet should be styled that way must be provided.
+ * SpreadsheetDropdownFactory implements the SpreadsheetComponentFactory in order to style
+ * Spreadsheets to contain cells with dropdown components. Information about dropdown values and
+ * which cells of the spreadsheet should be styled that way must be provided.
  *
  * @since 1.0.0
  */
 public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
-  private List<DropdownColumn> dropdownColumns = new ArrayList<>();
+  private final HashMap<Integer, List<String>> columnIndexToCellValueOptions = new HashMap<>();
 
-  /**
-   * Initialises the dropdown factory to display a dropdown menu (ComboBox) in a specific column
-   * @param column a DropDownColumn object specifying column index and items to be displayed
-   */
-  public void addDropdownColumn(DropdownColumn column) {
-    this.dropdownColumns.add(column);
-  }
-
+  // this method is not used atm, as we only want to show a component if a cell is selected for performance reasons
   @Override
   public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-    DropdownColumn dropDownColumn = findColumnInRange(rowIndex, columnIndex);
-    if (spreadsheet.getActiveSheetIndex() == 0 && dropDownColumn!=null) {
-      if (cell == null) {
-        cell = spreadsheet.createCell(rowIndex, columnIndex, "");
-      }
-      if (cell.getCellStyle().getLocked()) {
-        CellStyle unLockedStyle = spreadsheet.getWorkbook().createCellStyle();
-        unLockedStyle.setLocked(false);
-        cell.setCellStyle(unLockedStyle);
-        spreadsheet.refreshCells(cell);
-      }
-      // if this cell contains a valid value, but no combobox (set via copying from other cells)
-      // we create a dropdown with that value selected
-      String value = cell.getStringCellValue();
-      ComboBox<String> comboBox = initCustomComboBox(dropDownColumn, rowIndex, columnIndex,
-          spreadsheet);
-      if(dropDownColumn.getItems().contains(value)) {
-        comboBox.setValue(value);
-      }
-      return comboBox;
-    }
     return null;
   }
 
-  // note: we need to unlock cells in addition to returning null in getCustomComponentForCell,
-  // otherwise "getCustomEditorForCell" is not called
-  // this method is not used atm, as it only shows the component when the cell is selected
   @Override
   public Component getCustomEditorForCell(Cell cell,
       int rowIndex, int columnIndex,
       Spreadsheet spreadsheet, Sheet sheet) {
-
+    //We only want to have a combobox if more than one value is selectable for the user and it's not the header row.
+    if (hasMoreThanOneValue(columnIndex) && !isHeaderRow(rowIndex)) {
+      ComboBox<String> editorCombobox = createEditorCombobox(spreadsheet, cell.getColumnIndex(),
+          cell.getRowIndex());
+      if (!cell.getStringCellValue().isEmpty()) {
+        editorCombobox.setValue(cell.getStringCellValue());
+      }
+      return editorCombobox;
+    }
     return null;
   }
 
-  private ComboBox<String> initCustomComboBox(DropdownColumn dropDownColumn, int rowIndex, int columnIndex,
-      Spreadsheet spreadsheet) {
-    List<String> items = dropDownColumn.getItems();
-    ComboBox<String> comboBox = new ComboBox<>(dropDownColumn.getLabel(), items);
-    comboBox.addValueChangeListener(e -> {
-      //when a selection is made, the value is set to the cell (in addition to the component)
-      //this is needed for copying of inputs to other cells works
-      Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
-      cell.setCellValue(e.getValue());
+  private ComboBox<String> createEditorCombobox(Spreadsheet spreadsheet,
+      int selectedCellColumnIndex, int selectedCellRowIndex) {
+    ComboBox<String> editorComboBox = new ComboBox<>();
+    List<String> editorItems = getColumnValues(selectedCellColumnIndex);
+    editorComboBox.setItems(editorItems);
+    editorComboBox.addValueChangeListener(e -> {
+      if (e.isFromClient()) {
+        //We add a whitespace so the value is not auto incremented when the user drags a value
+        Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
+            e.getValue() + " ");
+        spreadsheet.refreshCells(createdCell);
+      }
     });
-    // allows copying of Comboboxes before a selection was made
-    Cell cell = spreadsheet.getCell(rowIndex, columnIndex);
-    cell.setCellValue("");
-
-    return comboBox;
+    return editorComboBox;
   }
 
   @Override
   public void onCustomEditorDisplayed(Cell cell, int rowIndex,
       int columnIndex, Spreadsheet spreadsheet,
       Sheet sheet, Component editor) {
-    /* not implemented since no custom editor is currently used */
   }
 
-  /**
-   * Tests if a DropDownColumn has been defined for a provided column index and if it includes a
-   * provided row, that is, if a cell is to be rendered as a dropdown. If yes, the DropDownColumn
-   * object is returned, null otherwise.
-   * @param rowIndex the row index of the spreadsheet cell to test
-   * @param columnIndex the column index of the spreadsheet cell to test
-   * @return the DropDownColumn object if it has been defined for the cell, null otherwise
-   */
-  public DropdownColumn findColumnInRange(int rowIndex, int columnIndex) {
-    for(DropdownColumn dropDown : dropdownColumns) {
-      if(dropDown.isWithinRange(rowIndex, columnIndex)) {
-        return dropDown;
-      }
-    }
-    return null;
+  private boolean isHeaderRow(int rowIndex) {
+    return rowIndex == 0;
   }
 
-  /**
-   * Increases rendering of a DropDownColumn in the specified column to include the specified row
-   * Nothing happens if no DropDownColumn is defined for this column
-   * @param rowIndex the row index of the spreadsheet cell
-   * @param columnIndex the column index of the spreadsheet cell
-   */
-  public void addDropDownCell(int rowIndex, int columnIndex) {
-    for(DropdownColumn dropDown : dropdownColumns) {
-      if(dropDown.isInColumn(columnIndex)) {
-        dropDown.increaseToRow(rowIndex);
-      }
+  private boolean hasMoreThanOneValue(int columnIndex) {
+    if (columnIndexToCellValueOptions.get(columnIndex) == null) {
+      return false;
     }
+    return columnIndexToCellValueOptions.get(columnIndex).size() > 1;
   }
 
-  /**
-   * Returns a DropDownColumn defined for a specific column, irrespective of its row range. Returns
-   * null if no DropDownColumn was defined.
-   * @param columnIndex the spreadsheet column of the DropDownColumn
-   * @return the DropDownColumn object if it has been defined at this index, null otherwise
-   */
-  public DropdownColumn getColumn(int columnIndex) {
-    for(DropdownColumn dropDown : dropdownColumns) {
-      if(dropDown.isInColumn(columnIndex)) {
-        return dropDown;
-      }
-    }
-    return null;
+  private List<String> getColumnValues(int columnIndex) {
+    return columnIndexToCellValueOptions.get(columnIndex);
+  }
+
+  //We are only interested in the columnIndex to know which options should be shown in the editor component.
+  public void setColumnValues(HashMap<SamplesheetHeaderName, List<String>> columnValues) {
+    columnValues.forEach((samplesheetHeaderName, strings) -> columnIndexToCellValueOptions.put(
+        samplesheetHeaderName.ordinal(), strings));
   }
 }
