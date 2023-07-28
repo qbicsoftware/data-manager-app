@@ -33,3 +33,21 @@
 .error-text {
   color: var(--lumo-error-text-color);
 }
+
+vaadin-multi-select-combo-box::part(toggle-button)::before {
+  color: var(--lumo-primary-color);
+}
+
+vaadin-multi-select-combo-box::part(toggle-button)::before {
+  color: var(--lumo-primary-color);
+}
+
+vaadin-number-field::part(decrease-button) {
+  color: var(--lumo-primary-color);
+
+}
+
+vaadin-number-field::part(increase-button) {
+  color: var(--lumo-primary-color);
+}
+

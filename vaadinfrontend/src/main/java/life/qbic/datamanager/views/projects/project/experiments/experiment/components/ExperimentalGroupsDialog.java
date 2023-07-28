@@ -42,6 +42,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private final Div experimentalGroupsCollection = new Div();
   private final Div header = new Div();
 
+  private final Div content = new Div();
+
   private final Div addNewGroupContainer = new Div();
   private final boolean editMode;
   private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
@@ -117,18 +119,26 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void layoutComponent() {
-    add(header);
+    setHeaderTitle(editMode ? "Edit Experimental Groups" : "Add Experimental Groups");
+    add(content);
+
     header.addClassName("header");
     header.add(new Span(editMode ? "Edit Experimental Groups" : "Add Experimental Groups"));
-    header.add(new Hr());
+    //header.add(new Hr());
+
+    content.addClassName("content");
+    content.add(experimentalGroupsCollection);
+
+    experimentalGroupsCollection.addClassName("group-collection");
     addNewGroupEntry();
     var addNewGroupIcon = new Icon(VaadinIcon.PLUS);
-    add(experimentalGroupsCollection);
+    addNewGroupIcon.addClickListener(listener -> addNewGroupEntry());
+
     Span addGroupHelperText = new Span("Add Experimental Group");
     addGroupHelperText.addClickListener(listener -> addNewGroupEntry());
     addNewGroupContainer.add(addNewGroupIcon, addGroupHelperText);
-    add(addNewGroupContainer);
-    addNewGroupContainer.addClickListener(listener -> addNewGroupEntry());
+    content.add(addNewGroupContainer);
+    addNewGroupContainer.addClassName("add-new-group-action");
 
     addClassName("experiment-group-dialog");
     setConfirmButtonLabel(editMode ? "Save" : "Add");
