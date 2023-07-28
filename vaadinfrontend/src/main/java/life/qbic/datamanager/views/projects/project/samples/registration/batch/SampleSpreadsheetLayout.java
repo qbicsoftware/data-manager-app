@@ -44,7 +44,7 @@ class SampleSpreadsheetLayout extends Div {
   //The spreadsheet breaks if the Notification is generated via an ApplicationException
   private final StyledNotification lastRowDeletionNotification = new StyledNotification(
       new ErrorMessage("Can't delete last row",
-          "At least One row has to remain in the spreadsheet"));
+          "At least one row has to remain in the spreadsheet"));
 
   SampleSpreadsheetLayout() {
     initContent();
