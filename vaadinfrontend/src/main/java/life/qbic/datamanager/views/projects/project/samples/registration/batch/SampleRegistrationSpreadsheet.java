@@ -220,6 +220,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   public void deleteRow(int index) {
     //delete row
+    if (getRows() == 1) {
+      // only one row remaining -> the header row
+      return;
+    }
     deleteRows(index, index);
     //move other rows up
     if (index + 1 < getRows()) {

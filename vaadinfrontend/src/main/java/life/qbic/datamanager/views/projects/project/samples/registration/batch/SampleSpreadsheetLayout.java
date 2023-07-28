@@ -60,7 +60,7 @@ class SampleSpreadsheetLayout extends Div {
     add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
     initButtonLayout();
-    initNotifications();
+    addComponentAsFirst(lastRowDeletionNotification);
   }
 
   private void initHeaderAndInstruction() {
@@ -96,10 +96,6 @@ class SampleSpreadsheetLayout extends Div {
     sampleInformationButtons.add(backButton, addRowButton, deleteRowButton, cancelButton,
         registerButton);
     add(sampleInformationButtons);
-  }
-
-  private void initNotifications() {
-    addComponentAsFirst(lastRowDeletionNotification);
   }
 
   private boolean isLastRow() {
