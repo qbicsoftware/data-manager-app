@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -40,13 +39,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private final Collection<VariableLevel> experimentalVariables;
   private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
   private final Div experimentalGroupsCollection = new Div();
-  private final Div header = new Div();
-
   private final Div content = new Div();
-
   private final Div addNewGroupContainer = new Div();
   private final boolean editMode;
-  private List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
+  private final List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariables,
       boolean editMode) {
@@ -61,6 +57,11 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       Collection<ExperimentalGroupContent> experimentalGroupContents, boolean editMode) {
     this(experimentalVariables, editMode);
     this.experimentalGroupsCollection.removeAll();
+    addEntries(experimentalVariables, experimentalGroupContents);
+  }
+
+  private void addEntries(Collection<VariableLevel> experimentalVariables,
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream().map(group -> {
       var groupEntry = new ExperimentalGroupEntry();
       groupEntry.setAvailableVariableLevels(experimentalVariables);
@@ -83,7 +84,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private static ExperimentalGroupContent convert(ExperimentalGroupEntry experimentalGroupEntry) {
     return new ExperimentalGroupContent(experimentalGroupEntry.sampleSize.getValue().intValue(),
-        experimentalGroupEntry.variableComboBox.getSelectedItems());
+        experimentalGroupEntry.condition.getSelectedItems());
   }
 
   private void configureComponent() {
@@ -92,13 +93,8 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void validateAndFireEvent() {
-    validateIt();
     var event = new ConfirmEvent<>(this, true);
     confirmListeners.forEach(listener -> listener.onComponentEvent(event));
-  }
-
-  private void validateIt() {
-
   }
 
   private void fireCancelEvent() {
@@ -119,27 +115,26 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void layoutComponent() {
-    setHeaderTitle(editMode ? "Edit Experimental Groups" : "Add Experimental Groups");
-    add(content);
-
-    header.addClassName("header");
-    header.add(new Span(editMode ? "Edit Experimental Groups" : "Add Experimental Groups"));
-    //header.add(new Hr());
+    layoutHeaderAndFooter();
 
     content.addClassName("content");
     content.add(experimentalGroupsCollection);
+    content.add(addNewGroupContainer);
+    add(content);
 
     experimentalGroupsCollection.addClassName("group-collection");
+    addNewGroupContainer.addClassName("add-new-group-action");
     addNewGroupEntry();
+
     var addNewGroupIcon = new Icon(VaadinIcon.PLUS);
     addNewGroupIcon.addClickListener(listener -> addNewGroupEntry());
-
     Span addGroupHelperText = new Span("Add Experimental Group");
     addGroupHelperText.addClickListener(listener -> addNewGroupEntry());
     addNewGroupContainer.add(addNewGroupIcon, addGroupHelperText);
-    content.add(addNewGroupContainer);
-    addNewGroupContainer.addClassName("add-new-group-action");
+  }
 
+  private void layoutHeaderAndFooter() {
+    setHeaderTitle(editMode ? "Edit Experimental Groups" : "Add Experimental Groups");
     addClassName("experiment-group-dialog");
     setConfirmButtonLabel(editMode ? "Save" : "Add");
     setCancelButtonLabel("Cancel");
@@ -182,23 +177,41 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .toList();
   }
 
-  public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {
-
-  }
+  public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {}
 
   private class ExperimentalGroupEntry extends Div {
 
     @Serial
     private static final long serialVersionUID = -1387021927263833261L;
     private final List<ComponentEventListener<RemoveEvent>> removeEventListeners = new ArrayList<>();
-    private MultiSelectComboBox<VariableLevel> variableComboBox;
+    private final MultiSelectComboBox<VariableLevel> condition = new MultiSelectComboBox<>();
     @Min(1)
-    private NumberField sampleSize;
+    private NumberField sampleSize = new NumberField();
 
     private ExperimentalGroupEntry() {
       super();
-      variableComboBox = new MultiSelectComboBox<>();
-      sampleSize = new NumberField();
+      addClassName("experimental-group-entry");
+
+      configureNumberFied();
+      configureConditionField();
+
+      var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
+      deleteIcon.addClickListener(listener -> notifyListenersAboutRemove());
+
+      add(condition, sampleSize, deleteIcon);
+    }
+
+    private void configureConditionField() {
+      condition.setItems(new ArrayList<>());
+      condition.setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
+      condition.setWidthFull();
+      condition.setLabel("Condition");
+      condition.addClassName("combo-box");
+      condition.addClassName("chip-badge");
+      condition.setAllowCustomValue(false);
+    }
+
+    private void configureNumberFied() {
       sampleSize.addClassName("number-field");
       sampleSize.setLabel("Biological Replicates");
       sampleSize.setStepButtonsVisible(true);
@@ -206,27 +219,14 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       sampleSize.setMin(1);
       sampleSize.setValue(1.0);
       sampleSize.setErrorMessage("Please specify a valid number of replicates");
-      variableComboBox.setItems(new ArrayList<>());
-      variableComboBox.setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
-      variableComboBox.setWidthFull();
-      variableComboBox.setLabel("Condition");
-      variableComboBox.addClassName("combo-box");
-      variableComboBox.addClassName("chip-badge");
-      variableComboBox.setAllowCustomValue(false);
-      add(variableComboBox);
-      add(sampleSize);
-      var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
-      deleteIcon.addClickListener(listener -> notifyListenersAboutRemove());
-      add(deleteIcon);
-      addClassName("experimental-group-entry");
     }
 
     void setAvailableVariableLevels(Collection<VariableLevel> availableVariableLevels) {
-      variableComboBox.setItems(availableVariableLevels);
+      condition.setItems(availableVariableLevels);
     }
 
     void setCondition(Collection<VariableLevel> condition) {
-      variableComboBox.setValue(condition);
+      this.condition.setValue(condition);
     }
 
     void setSampleSize(int size) {
