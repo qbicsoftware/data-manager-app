@@ -25,7 +25,6 @@ import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.AddExperimentalGroupsDialog.ExperimentalGroupSubmitEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
@@ -70,7 +69,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div experimentSummary = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
-  private final AddExperimentalGroupsDialog experimentalGroupsDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
   private final CreationCard experimentalGroupCreationCard = CreationCard.create(
       "Add experimental groups");
@@ -87,7 +85,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
-    this.experimentalGroupsDialog = createExperimentalGroupDialog();
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
@@ -98,12 +95,6 @@ public class ExperimentDetailsComponent extends PageArea {
         "No experiment variables defined", "Add");
     disclaimer.subscribe(listener -> displayAddExperimentalVariablesDialog());
     return disclaimer;
-  }
-
-  private AddExperimentalGroupsDialog createExperimentalGroupDialog() {
-    AddExperimentalGroupsDialog dialog = new AddExperimentalGroupsDialog();
-    dialog.addExperimentalGroupSubmitListener(this::onGroupSubmitted);
-    return dialog;
   }
 
   private void layoutComponent() {
@@ -163,17 +154,6 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void displayAddExperimentalVariablesDialog() {
     this.addExperimentalVariablesDialog.open();
-  }
-
-  public void onGroupSubmitted(ExperimentalGroupSubmitEvent groupSubmitted) {
-    Result<ExperimentalGroup, ResponseCode> response = experimentInformationService.addExperimentalGroupToExperiment(
-        experimentId,
-        new ExperimentalGroupDTO(groupSubmitted.variableLevels(), groupSubmitted.sampleSize()));
-    if (response.isValue()) {
-      handleGroupSubmittedSuccess();
-    } else {
-      handleDuplicateConditionInput();
-    }
   }
 
   private void initTagAndNotesLayout() {
@@ -273,18 +253,6 @@ public class ExperimentDetailsComponent extends PageArea {
     addExperimentalVariablesDialog.subscribeToCancelEvent(it -> it.getSource().close());
   }
 
-  private void handleGroupSubmittedSuccess() {
-    reloadExperimentalGroups();
-    experimentalGroupsDialog.close();
-  }
-
-  private void handleDuplicateConditionInput() {
-    InformationMessage infoMessage = new InformationMessage(
-        "A group with the same condition exists already.", "");
-    StyledNotification notification = new StyledNotification(infoMessage);
-    notification.open();
-  }
-
 
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
@@ -347,7 +315,6 @@ public class ExperimentDetailsComponent extends PageArea {
     title.setText(experiment.getName());
     loadTagInformation(experiment);
     loadExperimentInfo(experiment);
-    fillExperimentalGroupDialog();
     reloadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
       useCaseNoVariablesYet();
@@ -378,15 +345,6 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentDetailsComponent.this.experimentSummary.add(experimentalVariablesComponent);
     }
     factSheet.showMenu();
-  }
-
-  private void fillExperimentalGroupDialog() {
-    Objects.requireNonNull(experimentId, "experiment id not set");
-    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-        experimentId);
-    List<VariableLevel> levels = variables.stream()
-        .flatMap(variable -> variable.levels().stream()).toList();
-    experimentalGroupsDialog.setLevels(levels);
   }
 
   private void useCaseNoVariablesYet() {
