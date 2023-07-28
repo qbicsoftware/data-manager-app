@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.InvalidSpreadsheetInput;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.NGSRowDTO;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -39,6 +41,11 @@ class SampleSpreadsheetLayout extends Div {
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
   private ExperimentId experiment;
 
+  //The spreadsheet breaks if the Notification is generated via an ApplicationException
+  private final StyledNotification lastRowDeletionNotification = new StyledNotification(
+      new ErrorMessage("Can't delete last row",
+          "At least one row has to remain in the spreadsheet"));
+
   SampleSpreadsheetLayout() {
     initContent();
     this.addClassName("batch-content");
@@ -53,6 +60,7 @@ class SampleSpreadsheetLayout extends Div {
     add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
     initButtonLayout();
+    addComponentAsFirst(lastRowDeletionNotification);
   }
 
   private void initHeaderAndInstruction() {
@@ -76,12 +84,22 @@ class SampleSpreadsheetLayout extends Div {
     addRowButton.addClickListener(
         (ComponentEventListener<ClickEvent<Button>>) buttonClickEvent -> sampleRegistrationSpreadsheet.addRow());
     deleteRowButton.addClickListener(
-        event -> sampleRegistrationSpreadsheet.deleteRow(
-            sampleRegistrationSpreadsheet.getRows() - 1));
+        event -> {
+          if (!isLastRow()) {
+            sampleRegistrationSpreadsheet.deleteRow(
+                sampleRegistrationSpreadsheet.getRows() - 1);
+          } else {
+            lastRowDeletionNotification.open();
+          }
+        });
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     sampleInformationButtons.add(backButton, addRowButton, deleteRowButton, cancelButton,
         registerButton);
     add(sampleInformationButtons);
+  }
+
+  private boolean isLastRow() {
+    return sampleRegistrationSpreadsheet.getRows() <= 2;
   }
 
   private void styleSampleRegistrationSpreadSheet() {
