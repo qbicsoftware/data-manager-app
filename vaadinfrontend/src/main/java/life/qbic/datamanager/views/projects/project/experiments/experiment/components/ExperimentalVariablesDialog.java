@@ -116,7 +116,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   }
 
   /**
-   * Adds a listener for {@link CancelEvent}s
+   * Adds a listener for {@link ConfirmEvent}s
    *
    * @param listener the listener to add
    */
@@ -126,7 +126,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   }
 
   /**
-   * Adds a listener for {@link ConfirmEvent}s
+   * Adds a listener for {@link CancelEvent}s
    *
    * @param listener the listener to add
    */
