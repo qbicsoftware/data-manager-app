@@ -139,14 +139,26 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void generateSampleRegistrationLayout() {
-      //We only reload the spreadsheet if the user selects an experiment and switches back in the tabSheet to select a different one
-      if (hasExperimentInformationChanged()) {
+      //we always set the batch name, as it can change without affecting the rest of the spreadsheet
+      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      //we need to reset the layout, if the experiment has changed
+      boolean experimentChanged = hasExperimentInformationChanged();
+      if (experimentChanged) {
+        System.err.println("reset it");
         sampleSpreadsheetLayout.resetLayout();
       }
-      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-          batchInformationLayout.dataTypeSelection.getValue());
+      //We need to build the spreadsheet upon initialization or if the user changed the experiment
+      if(sampleSpreadsheetLayout.getExperiment() == null || experimentChanged) {
+        System.err.println("set experiment, generate sheet");
+        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+            batchInformationLayout.dataTypeSelection.getValue());
+      }
+      //With the spreadsheet prepared, we can prefill information if the user checked that box
+      if(batchInformationLayout.prefillSelection.getValue()) {
+        System.err.println("prefill conditions");
+        sampleSpreadsheetLayout.prefillConditionsAndReplicates();
+      }
     }
 
     private boolean hasExperimentInformationChanged() {
@@ -200,6 +212,7 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void reset() {
+
       batchInformationLayout.reset();
       sampleSpreadsheetLayout.resetLayout();
       tabStepper.setSelectedTab(batchInformationTab);

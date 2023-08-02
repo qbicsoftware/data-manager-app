@@ -588,6 +588,24 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return biologicalReplicateId;
   }
 
+  public void prefillConditionsAndReplicates() {
+    int row = 0;
+    int conditionCol = header.indexOf(SamplesheetHeaderName.CONDITION);
+    int repliCol = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
+    for(String condition : conditionsToReplicates.keySet()) {
+      List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
+          .map(BiologicalReplicate::label).sorted().toList();
+      for(String label : sortedLabels) {
+        row++;
+        System.err.println("Filling row "+row+": "+label+" "+condition);
+        Cell cell = this.getCell(row, repliCol);
+        cell.setCellValue(label);
+        cell = this.getCell(row, conditionCol);
+        cell.setCellValue(condition);
+      }
+    }
+  }
+
   /**
    * Record containing the provided mandatory specific information for the genomic
    * {@link MetadataType} sheet

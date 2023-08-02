@@ -137,6 +137,10 @@ class SampleSpreadsheetLayout extends Div {
     return experiment;
   }
 
+  public void prefillConditionsAndReplicates() {
+    sampleRegistrationSpreadsheet.prefillConditionsAndReplicates();
+  }
+
   private class SampleInformationLayoutHandler implements Serializable {
 
     @Serial
