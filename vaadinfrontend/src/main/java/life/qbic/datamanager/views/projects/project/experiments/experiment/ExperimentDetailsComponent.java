@@ -40,6 +40,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.logging.api.Logger;
@@ -162,7 +163,8 @@ public class ExperimentDetailsComponent extends PageArea {
         var confirmDialog = experimentalGroupDeletionConfirmDialog();
         confirmDialog.addConfirmListener(confirmDeletionEvent -> {
           deleteExistingExperimentalVariables(experimentId);
-          registerExperimentalVariables(experimentalVariablesDialogConfirmEvent.getSource());
+          addExperimentalVariables(
+              experimentalVariablesDialogConfirmEvent.getSource().definedVariables());
           editDialog.close();
           reloadExperimentalVariables();
         });
@@ -346,7 +348,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void addConfirmListenerForAddVariableDialog() {
     addExperimentalVariablesDialog.addConfirmEventListener(it -> {
       try {
-        registerExperimentalVariables(it.getSource());
+        addExperimentalVariables(it.getSource().definedVariables());
         it.getSource().close();
         setContext(this.context);
         if (hasExperimentalGroups) {
@@ -358,13 +360,13 @@ public class ExperimentDetailsComponent extends PageArea {
     });
   }
 
-  private void registerExperimentalVariables(
-      ExperimentalVariablesDialog experimentalVariablesDialog) {
-    experimentalVariablesDialog.definedVariables().forEach(
+  private void addExperimentalVariables(
+      List<ExperimentalVariableContent> experimentalVariableContents) {
+    experimentalVariableContents.forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
             context.experimentId().orElseThrow(),
-        experimentalVariableContent.name(), experimentalVariableContent.unit(),
-        experimentalVariableContent.levels()));
+            experimentalVariableContent.name(), experimentalVariableContent.unit(),
+            experimentalVariableContent.levels()));
   }
 
   public void setContext(Context context) {
