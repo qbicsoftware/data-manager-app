@@ -144,19 +144,16 @@ public class BatchRegistrationDialog extends DialogWindow {
       //we need to reset the layout, if the experiment has changed
       boolean experimentChanged = hasExperimentInformationChanged();
       if (experimentChanged) {
-        System.err.println("reset it");
         sampleSpreadsheetLayout.resetLayout();
       }
       //We need to build the spreadsheet upon initialization or if the user changed the experiment
       if(sampleSpreadsheetLayout.getExperiment() == null || experimentChanged) {
-        System.err.println("set experiment, generate sheet");
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
             batchInformationLayout.dataTypeSelection.getValue());
       }
       //With the spreadsheet prepared, we can prefill information if the user checked that box
       if(batchInformationLayout.prefillSelection.getValue()) {
-        System.err.println("prefill conditions");
         sampleSpreadsheetLayout.prefillConditionsAndReplicates();
       }
     }
@@ -207,6 +204,7 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     public void resetAndClose() {
+      System.err.println("closed");
       close();
       reset();
     }

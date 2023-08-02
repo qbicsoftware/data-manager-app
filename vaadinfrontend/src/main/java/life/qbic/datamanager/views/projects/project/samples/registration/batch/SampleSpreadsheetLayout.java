@@ -113,6 +113,7 @@ class SampleSpreadsheetLayout extends Div {
 
   public void resetLayout() {
     sampleInformationLayoutHandler.reset();
+    experiment = null;
   }
 
   public void setBatchName(String text) {

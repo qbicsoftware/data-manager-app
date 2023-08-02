@@ -597,13 +597,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           .map(BiologicalReplicate::label).sorted().toList();
       for(String label : sortedLabels) {
         row++;
-        System.err.println("Filling row "+row+": "+label+" "+condition);
         Cell cell = this.getCell(row, repliCol);
         cell.setCellValue(label);
         cell = this.getCell(row, conditionCol);
         cell.setCellValue(condition);
       }
     }
+    // this is needed for some reason to make prefilling after using the back button work
+    reload();
   }
 
   /**
