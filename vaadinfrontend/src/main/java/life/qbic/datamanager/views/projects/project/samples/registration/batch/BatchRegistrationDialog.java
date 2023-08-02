@@ -204,7 +204,6 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     public void resetAndClose() {
-      System.err.println("closed");
       close();
       reset();
     }
