@@ -99,12 +99,6 @@ public class ExperimentInformationService {
     return experiment.getExperimentalGroups().stream().toList();
   }
 
-  public void deleteExperimentGroup(ExperimentId experimentId, long groupId) {
-    Experiment experiment = loadExperimentById(experimentId);
-    experiment.removeExperimentGroup(groupId);
-    experimentRepository.update(experiment);
-  }
-
   /**
    * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined
    * experimental groups in a give experiment!
@@ -260,18 +254,6 @@ public class ExperimentInformationService {
   }
 
   /**
-   * Checks if the provided ExperimentId contains an experimental Group
-   *
-   * @param experimentId the {@link ExperimentId} of the {@link Experiment} which should be checked
-   *                     if it contains an {@link ExperimentalGroup}
-   * @return a boolean indicating if the experiment contains an {@link ExperimentalGroup}
-   */
-  public boolean hasExperimentalGroup(ExperimentId experimentId) {
-    Experiment experiment = loadExperimentById(experimentId);
-    return !experiment.getExperimentalGroups().isEmpty();
-  }
-
-  /**
    * Deletes all experimental groups in a given experiment.
    * <p>
    * This method does not check if samples are already.
@@ -284,6 +266,24 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(id);
     experiment.removeAllExperimentalGroups();
     experimentRepository.update(experiment);
+  }
+
+  public Result<Collection<ExperimentalGroup>, ResponseCode> addExperimentalGroupsToExperiment(
+      ExperimentId experimentId, List<ExperimentalGroupDTO> experimentalGroupDTOS) {
+    Experiment experiment = loadExperimentById(experimentId);
+    List<ExperimentalGroup> addedGroups = new ArrayList<>();
+    for (ExperimentalGroupDTO experimentalGroupDTO : experimentalGroupDTOS) {
+      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+          experimentalGroupDTO.levels(),
+          experimentalGroupDTO.sampleSize());
+      if (result.isError()) {
+        return Result.fromError(result.getError());
+      } else {
+        addedGroups.add(result.getValue());
+      }
+    }
+    experimentRepository.update(experiment);
+    return Result.fromValue(addedGroups);
   }
 
   public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int sampleSize) {

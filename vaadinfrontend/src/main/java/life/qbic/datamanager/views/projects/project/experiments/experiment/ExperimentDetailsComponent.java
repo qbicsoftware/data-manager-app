@@ -21,6 +21,7 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -289,14 +290,17 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void addExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    experimentalGroupContents.stream()
-        .map(this::toExperimentalGroupDTO)
-        .map(this::registerNewGroup)
-        .filter(Result::isError)
-        .findAny()
-        .ifPresent(errorResult -> {
-          throw new ApplicationException("Could not save one or more experimental groups.");
-        });
+    List<ExperimentalGroupDTO> experimentalGroupDTOS = experimentalGroupContents.stream()
+        .map(this::toExperimentalGroupDTO).toList();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    Result<Collection<ExperimentalGroup>, ResponseCode> result = experimentInformationService.addExperimentalGroupsToExperiment(
+        experimentId, experimentalGroupDTOS);
+    result.onError(error -> {
+      throw new ApplicationException(
+          "Could not save one or more experimental groups %s %nReason: %s".formatted(
+              Arrays.toString(
+                  experimentalGroupContents.toArray()), error));
+    });
   }
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(
@@ -308,13 +312,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
     return new ExperimentalGroupContent(experimentalGroupDTO.sampleSize(),
         experimentalGroupDTO.levels());
-  }
-
-  private Result<ExperimentalGroup, ResponseCode> registerNewGroup( //TODO rename to add
-      ExperimentalGroupDTO experimentalGroupDTO) {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    return this.experimentInformationService.addExperimentalGroupToExperiment(experimentId,
-        experimentalGroupDTO);
   }
 
   private void addCancelListenerForAddVariableDialog() {
