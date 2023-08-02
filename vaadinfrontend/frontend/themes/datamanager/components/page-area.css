@@ -50,6 +50,10 @@
   font-size: var(--lumo-font-size-s);
 }
 
+.page-area.experiment-details-component .sample-registration-possible {
+  margin-bottom: var(--lumo-space-m);
+}
+
 .page-area.project-details-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;

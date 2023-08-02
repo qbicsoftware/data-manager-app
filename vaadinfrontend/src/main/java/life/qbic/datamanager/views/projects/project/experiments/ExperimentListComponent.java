@@ -11,9 +11,10 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreatedEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationRequestedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItem;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
@@ -84,14 +85,17 @@ public class ExperimentListComponent extends PageArea {
         event -> experimentCreationDialog.resetAndClose());
   }
 
-  private void addExperimentToProject(ExperimentCreationEvent experimentCreationEvent,
+  private void addExperimentToProject(
+      ExperimentCreationRequestedEvent experimentCreationRequestedEvent,
       ExperimentCreationContent experimentCreationContent) {
     addExperimentToProjectService.addExperimentToProject(projectId,
             experimentCreationContent.experimentName(), experimentCreationContent.species(),
             experimentCreationContent.specimen(), experimentCreationContent.analytes())
         .onValue(experimentId -> {
           displayExperimentCreationSuccess();
-          fireExperimentCreatedEvent(experimentCreationEvent);
+          fireExperimentCreatedEvent(
+              new ExperimentCreatedEvent(experimentCreationRequestedEvent.getSource(), experimentId,
+                  experimentCreationRequestedEvent.isFromClient()));
           experimentCreationDialog.resetAndClose();
           setSelectedExperiment(experimentId);
         }).onError(error -> displayExperimentCreationFailure());
@@ -159,7 +163,7 @@ public class ExperimentListComponent extends PageArea {
     this.creationListener.add(experimentCreationListener);
   }
 
-  private void fireExperimentCreatedEvent(ExperimentCreationEvent event) {
+  private void fireExperimentCreatedEvent(ExperimentCreatedEvent event) {
     creationListener.forEach(it -> it.handle(event));
   }
 
@@ -198,16 +202,16 @@ public class ExperimentListComponent extends PageArea {
   /**
    * Experiment Creation Interface
    * <p>
-   * Represents a simple interface to handle {@link ExperimentCreationEvent} that can be invoked by
-   * the method {@link ExperimentCreationListener#handle(ExperimentCreationEvent)}.
+   * Represents a simple interface to handle {@link ExperimentCreatedEvent} that can be invoked by
+   * the method {@link ExperimentCreationListener#handle(ExperimentCreatedEvent)}.
    * <p>
    * This interface is suitable for all components that want to be informed if an
-   * {@link ExperimentCreationEvent} occurred, and want to handle the information stored in the
-   * {@link ExperimentCreationEvent}
+   * {@link ExperimentCreatedEvent} occurred, and want to handle the information stored in the
+   * {@link ExperimentCreatedEvent}
    */
   @FunctionalInterface
   public interface ExperimentCreationListener {
 
-    void handle(ExperimentCreationEvent event);
+    void handle(ExperimentCreatedEvent event);
   }
 }
