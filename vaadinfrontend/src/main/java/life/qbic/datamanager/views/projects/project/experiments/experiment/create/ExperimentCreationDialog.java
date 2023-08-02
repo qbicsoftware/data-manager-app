@@ -46,7 +46,7 @@ public class ExperimentCreationDialog extends DialogWindow {
   }
 
   public void addExperimentCreationEventListener(
-      ComponentEventListener<ExperimentCreationEvent> listener) {
+      ComponentEventListener<ExperimentCreationRequestedEvent> listener) {
     experimentCreationDialogHandler.addExperimentCreationEventListener(listener);
   }
 
@@ -64,7 +64,7 @@ public class ExperimentCreationDialog extends DialogWindow {
 
   private class ExperimentCreationDialogHandler {
 
-    private final List<ComponentEventListener<ExperimentCreationEvent>> listeners = new ArrayList<>();
+    private final List<ComponentEventListener<ExperimentCreationRequestedEvent>> listeners = new ArrayList<>();
     private final List<ComponentEventListener<UserCancelEvent<ExperimentCreationDialog>>> cancelListeners = new ArrayList<>();
 
     public ExperimentCreationDialogHandler() {
@@ -78,7 +78,7 @@ public class ExperimentCreationDialog extends DialogWindow {
         validateInput();
         if (isInputValid()) {
           listeners.forEach(listener -> listener.onComponentEvent(
-              new ExperimentCreationEvent(ExperimentCreationDialog.this, true)));
+              new ExperimentCreationRequestedEvent(ExperimentCreationDialog.this, true)));
         }
       });
       cancelButton.addClickListener(event -> cancelListeners.forEach(
@@ -117,7 +117,7 @@ public class ExperimentCreationDialog extends DialogWindow {
     }
 
     public void addExperimentCreationEventListener(
-        ComponentEventListener<ExperimentCreationEvent> listener) {
+        ComponentEventListener<ExperimentCreationRequestedEvent> listener) {
       this.listeners.add(listener);
     }
 

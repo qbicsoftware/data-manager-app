@@ -9,12 +9,14 @@ import life.qbic.projectmanagement.domain.project.experiment.repository.Experime
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
+import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
 import spock.lang.Specification
 
 class ExperimentInformationServiceSpec extends Specification {
 
     ExperimentRepository experimentRepository = Mock()
-    ExperimentInformationService experimentInformationService = new ExperimentInformationService(experimentRepository)
+    ProjectRepository projectRepository = Mock()
+    ExperimentInformationService experimentInformationService = new ExperimentInformationService(experimentRepository, projectRepository)
 
     def experiment = setupExperiment()
 

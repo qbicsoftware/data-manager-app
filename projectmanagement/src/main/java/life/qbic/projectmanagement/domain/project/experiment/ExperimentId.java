@@ -44,6 +44,15 @@ public class ExperimentId implements Serializable {
     return new ExperimentId(id);
   }
 
+  public static boolean isValid(String str) {
+    try {
+      UUID.fromString(str);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
   public String value() {
     return uuid;
   }

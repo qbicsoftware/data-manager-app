@@ -32,7 +32,6 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.project.ProjectViewPage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -61,7 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Sample Details Component
  * <p>
- * Component embedded within the {@link SampleInformationMain} in the {@link ProjectViewPage}. It
+ * Component embedded within the {@link SampleInformationMain}. It
  * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
  * each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
@@ -129,20 +128,28 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
   }
 
-  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> samplePreview.experimentalGroup()
-      .condition().getVariableLevels().forEach(variableLevel -> {
-        div.addClassName("tag-collection");
-        String experimentalVariable =
-            variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
-        if (variableLevel.experimentalValue().unit().isPresent()) {
-          experimentalVariable =
-              experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
-        }
-        Tag tag = new Tag(experimentalVariable);
-        tag.addClassName("primary");
-        tag.setTitle(experimentalVariable);
-        div.add(tag);
-      });
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
+    List<String> variableLevels = new ArrayList<>();
+    div.addClassName("tag-collection");
+    samplePreview.experimentalGroup()
+        .condition().getVariableLevels().forEach(variableLevel -> {
+          String experimentalVariable =
+              variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
+          if (variableLevel.experimentalValue().unit().isPresent()) {
+            experimentalVariable =
+                experimentalVariable + " " + variableLevel.experimentalValue().unit().get();
+          }
+          variableLevels.add(experimentalVariable);
+        });
+    variableLevels.sort(null);
+    variableLevels.forEach(experimentalVariable -> {
+      Tag tag = new Tag(experimentalVariable);
+      tag.addClassName("primary");
+      tag.setTitle(experimentalVariable);
+      div.add(tag);
+    });
+  };
+
 
   /**
    * Provides the {@link ProjectId} of the currently selected project to this component
@@ -300,17 +307,24 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
 
     private Grid<SamplePreview> createSampleGrid() {
-      Grid<SamplePreview> sampleGrid = new Grid<>();
-      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id");
-      sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label");
-      sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch");
-      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate");
-      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true);
-      sampleGrid.addColumn(SamplePreview::species).setHeader("Species");
-      sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen");
-      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte");
-      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform");
-      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment");
+      Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
+      sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
+          .setSortProperty("sampleCode");
+      sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
+          .setSortProperty("sampleLabel");
+      sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
+          .setSortProperty("batchLabel");
+      sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
+          .setSortProperty("bioReplicateLabel");
+      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true)
+          .setSortProperty("experimentalGroup");
+      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species");
+      sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
+          .setSortProperty("specimen");
+      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte");
+      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
+          .setSortProperty("analysisType");
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
       return sampleGrid;
     }
 
