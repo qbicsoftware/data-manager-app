@@ -30,6 +30,7 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DisclaimerCard;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
@@ -80,9 +81,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final DisclaimerCard noExperimentalVariablesDefined;
-
-  //  private final CreationCard experimentalGroupCreationCard = CreationCard.create(
-//      "Add experimental groups");
   private final DisclaimerCard addExperimentalVariablesNote;
   private Context context;
   private boolean hasExperimentalGroups;
@@ -228,28 +226,39 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void configureExperimentalGroupCreation() {
-    //FIXME rename method
-    experimentalGroupsCollection.subscribeToAddEvents(listener -> {
-      //FIXME refactor method
-      ExperimentId experimentId = context.experimentId().orElseThrow();
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream()).toList();
-      var dialog = ExperimentalGroupsDialog.empty(levels);
-      dialog.subscribeToCancelEvent(cancelEvent -> cancelEvent.getSource().close());
-      dialog.subscribeToConfirmEvent(confirmEvent -> {
-            saveNewGroups(confirmEvent.getSource().experimentalGroups());
-            reloadExperimentalGroups();
-            dialog.close();
-          });
-      dialog.open();
-    });
+    experimentalGroupsCollection.addAddEventListener(listener -> openExperimentalGroupAddDialog());
+  }
+
+  private void openExperimentalGroupAddDialog() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+        experimentId);
+    List<VariableLevel> levels = variables.stream()
+        .flatMap(variable -> variable.levels().stream())
+        .toList();
+    var dialog = getExperimentalGroupsDialogForAdding(levels);
+    dialog.open();
+  }
+
+  private ExperimentalGroupsDialog getExperimentalGroupsDialogForAdding(
+      List<VariableLevel> levels) {
+    var dialog = ExperimentalGroupsDialog.empty(levels);
+    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmEventListener(this::onAddExperimentalGroupDialogConfirmed);
+    return dialog;
+  }
+
+  private void onAddExperimentalGroupDialogConfirmed(
+      ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
+    ExperimentalGroupsDialog dialog = confirmEvent.getSource();
+    addExperimentalGroups(dialog.experimentalGroups());
+    reloadExperimentalGroups();
+    dialog.close();
   }
 
 
   private void configureExperimentalGroupsEdit() {
-    experimentalGroupsCollection.subscribeToEditEvents(listener -> {
+    experimentalGroupsCollection.addEditEventListener(listener -> {
       ExperimentId experimentId = context.experimentId().orElseThrow();
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
@@ -258,8 +267,8 @@ public class ExperimentDetailsComponent extends PageArea {
       var experimentalGroups = experimentInformationService.getExperimentalGroups(experimentId)
           .stream().map(this::toContent).toList();
       var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
-      dialog.subscribeToCancelEvent(cancelEvent -> cancelEvent.getSource().close());
-      dialog.subscribeToConfirmEvent(
+      dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+      dialog.addConfirmEventListener(
           confirmEvent -> {
             editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
             reloadExperimentalGroups();
@@ -275,15 +284,17 @@ public class ExperimentDetailsComponent extends PageArea {
     deletionService.deleteAllExperimentalGroups(experimentId).onError(error -> {
       throw new ApplicationException("Could not edit experiments because samples are already registered.");
     });
+    addExperimentalGroups(experimentalGroupContents);
+  }
+
+  private void addExperimentalGroups(
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream()
         .map(this::toExperimentalGroupDTO)
-        .map(experimentalGroupDTO ->
-            experimentInformationService.addExperimentalGroupToExperiment(experimentId,
-                experimentalGroupDTO)) //FIXME move multiple group creation to service
-        // FIXME: .forEach(res -> res.onError(rollback(res)))
+        .map(this::registerNewGroup)
         .filter(Result::isError)
         .findAny()
-        .ifPresent(result -> {
+        .ifPresent(errorResult -> {
           throw new ApplicationException("Could not save one or more experimental groups.");
         });
   }
@@ -297,15 +308,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
     return new ExperimentalGroupContent(experimentalGroupDTO.sampleSize(),
         experimentalGroupDTO.levels());
-  }
-
-  private void saveNewGroups(Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    experimentalGroupContents.stream()
-        .map(content -> new ExperimentalGroupDTO(content.variableLevels(), content.size()))
-        .map(this::registerNewGroup)
-        .filter(Result::isError).findAny().ifPresent(errorResult -> {
-          throw new ApplicationException("Could not save one or more groups.");
-        });
   }
 
   private Result<ExperimentalGroup, ResponseCode> registerNewGroup( //TODO rename to add

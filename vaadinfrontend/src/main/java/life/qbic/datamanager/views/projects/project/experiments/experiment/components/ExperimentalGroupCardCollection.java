@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -26,22 +25,24 @@ public class ExperimentalGroupCardCollection extends Div {
   @Serial
   private static final long serialVersionUID = -5835580091959912561L;
 
-  private final Button addButton = new Button("Add");
-
-  private final Button editButton = new Button("Edit");
-
+  private final Div content = new Div();
   private final List<ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>>> addListeners = new ArrayList<>();
-
   private final List<ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>>> editListeners = new ArrayList<>();
+
 
   public ExperimentalGroupCardCollection() {
     addClassName("experimental-group-card-collection");
+    Div title = new Div();
     title.setClassName("title");
     title.setText("Groups");
+    Div header = new Div();
     header.setClassName("header");
+    Div controlItems = new Div();
     controlItems.setClassName("controls");
     content.setClassName("content");
     header.add(title, controlItems);
+    Button addButton = new Button("Add");
+    Button editButton = new Button("Edit");
     controlItems.add(editButton, addButton);
 
     addButton.addClassName("primary");
@@ -61,38 +62,18 @@ public class ExperimentalGroupCardCollection extends Div {
     fire(addEvent);
   }
 
-  private final Div header = new Div();
-
-  private final Div title = new Div();
-
-  private final Div controlItems = new Div();
-
-  private final Div content = new Div();
-
   public void setContent(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
     content.removeAll();
     experimentalGroupComponents.forEach(content::add);
   }
 
-  public void addComponents(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
-    experimentalGroupComponents.forEach(this::add);
-  }
-
-  /**
-   * Add a component as the last child. If the component has a parent, it is removed from that
-   * parent first.
-   *
-   * @param component the component to add
-   */
-  public void addComponentAsLast(Component component) {
-    content.addComponentAtIndex(getElement().getChildCount(), component);
-  }
-
-  public void subscribeToAddEvents(ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>> listener) {
+  public void addAddEventListener(
+      ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>> listener) {
     this.addListeners.add(listener);
   }
 
-  public void subscribeToEditEvents(ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>> listener) {
+  public void addEditEventListener(
+      ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>> listener) {
     this.editListeners.add(listener);
   }
 

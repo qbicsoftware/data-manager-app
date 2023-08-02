@@ -104,12 +104,12 @@ public class ExperimentalGroupsDialog extends DialogWindow {
             cancelEvent));
   }
 
-  public void subscribeToCancelEvent(
+  public void addCancelEventListener(
       ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
     this.cancelListeners.add(listener);
   }
 
-  public void subscribeToConfirmEvent(
+  public void addConfirmEventListener(
       ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>> listener) {
     this.confirmListeners.add(listener);
   }
@@ -179,14 +179,14 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {}
 
-  private class ExperimentalGroupEntry extends Div {
+  class ExperimentalGroupEntry extends Div {
 
     @Serial
     private static final long serialVersionUID = -1387021927263833261L;
     private final List<ComponentEventListener<RemoveEvent>> removeEventListeners = new ArrayList<>();
     private final MultiSelectComboBox<VariableLevel> condition = new MultiSelectComboBox<>();
     @Min(1)
-    private NumberField sampleSize = new NumberField();
+    private final NumberField sampleSize = new NumberField();
 
     private ExperimentalGroupEntry() {
       super();
