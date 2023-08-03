@@ -521,7 +521,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       cell.setCellStyle(invalidStyle);
     }
     //We need to refresh the cells so the style change takes effect.
-    this.refreshCells(invalidCells);
+    refreshCells(invalidCells);
   }
 
   /**
@@ -588,24 +588,36 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return biologicalReplicateId;
   }
 
-  public void prefillConditionsAndReplicates() {
-    int row = 0;
+  public void prefillConditionsAndReplicates(boolean isPrefilled) {
     List<Cell> prefilledConditionAndReplicateCells = new ArrayList<>();
     int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
     int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
-    for (String condition : conditionsToReplicates.keySet()) {
-      List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
-          .map(BiologicalReplicate::label).sorted().toList();
-      for (String label : sortedLabels) {
-        row++;
-        Cell replicateCell = this.getCell(row, replicateColIndex);
-        replicateCell.setCellValue(label);
+    if (isPrefilled) {
+      //Necessary since only final values can be changed in lambda
+      final int[] currentRowArray = {0};
+      experimentalGroupToConditionString.forEach(
+          (condition, experimentalGroup) -> experimentalGroup.biologicalReplicates()
+              .forEach(biologicalReplicate -> {
+                currentRowArray[0]++;
+                int currentRow = currentRowArray[0];
+                Cell replicateCell = this.getCell(currentRow, replicateColIndex);
+                replicateCell.setCellValue(biologicalReplicate.label());
+                prefilledConditionAndReplicateCells.add(replicateCell);
+                Cell conditionCell = this.getCell(currentRow, conditionColIndex);
+                conditionCell.setCellValue(condition);
+                prefilledConditionAndReplicateCells.add(conditionCell);
+              }));
+    } else {
+      for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
+        Cell replicateCell = this.getCell(currentRow, replicateColIndex);
+        replicateCell.setCellValue("");
         prefilledConditionAndReplicateCells.add(replicateCell);
-        Cell conditionCell = this.getCell(row, conditionColIndex);
-        conditionCell.setCellValue(condition);
+        Cell conditionCell = this.getCell(currentRow, conditionColIndex);
+        conditionCell.setCellValue("");
         prefilledConditionAndReplicateCells.add(conditionCell);
       }
     }
+    //We need to refresh the cells so we can see the set values
     refreshCells(prefilledConditionAndReplicateCells);
   }
 

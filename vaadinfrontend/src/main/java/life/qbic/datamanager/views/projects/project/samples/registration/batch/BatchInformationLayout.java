@@ -31,7 +31,6 @@ public class BatchInformationLayout extends Div {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
-
   public final Checkbox prefillSelection = new Checkbox("Prefill complete sample batch");
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
