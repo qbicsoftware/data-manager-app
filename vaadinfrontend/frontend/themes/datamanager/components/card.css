@@ -85,8 +85,27 @@
   max-width: 300px;
 }
 
-.experimental-group-card-collection {
+.experimental-group-card-collection .header {
+  justify-content: space-between;
   display: flex;
+}
+
+.experimental-group-card-collection .content {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 1rem;
+}
+
+.experimental-group-card-collection .controls {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 0.5rem;
+}
+
+.experimental-group-card-collection {
+  display: block;
   align-content: space-evenly;
   flex-flow: row wrap;
   gap: 1rem;

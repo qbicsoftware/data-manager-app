@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DeletionService {
 
+  private static final Logger log = logger(DeletionService.class);
   private final ExperimentInformationService experimentInformationService;
 
   private final SampleInformationService sampleInformationService;
@@ -50,6 +53,20 @@ public class DeletionService {
       return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
     }
     experimentInformationService.deleteAllExperimentalVariables(id);
+    return Result.fromValue(id);
+  }
+
+  public Result<ExperimentId, ResponseCode> deleteAllExperimentalGroups(ExperimentId id) {
+    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
+    if (queryResult.isError()) {
+      log.debug("experiment (%s) converting %s to %s".formatted(id, queryResult.getError(),
+          ResponseCode.QUERY_FAILED));
+      return Result.fromError(ResponseCode.QUERY_FAILED);
+    }
+    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
+      return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
+    }
+    experimentInformationService.deleteAllExperimentalGroups(id);
     return Result.fromValue(id);
   }
 
