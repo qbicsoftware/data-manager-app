@@ -27,29 +27,20 @@ public class ExperimentalGroupCard extends Card {
   @Serial
   private static final long serialVersionUID = -8400631799486647200L;
   private final transient ExperimentalGroup experimentalGroup;
-  private final List<ComponentEventListener<ExperimentalGroupDeletionEvent>> listenersDeletionEvent;
 
   public ExperimentalGroupCard(ExperimentalGroup experimentalGroup) {
     super();
     this.experimentalGroup = experimentalGroup;
-    this.listenersDeletionEvent = new ArrayList<>();
     layoutComponent();
   }
 
   private void layoutComponent() {
     addClassName("experimental-group");
 
-    MenuBar menuBar = createMenuBar();
-
     Div cardHeader = new Div();
     cardHeader.addClassName("header");
 
-    Div controls = new Div();
-    controls.addClassName("controls");
-    controls.add(menuBar);
-
     cardHeader.add(title("Experimental Group"));
-    cardHeader.add(controls);
     this.add(cardHeader);
 
     Div cardContent = new Div();
@@ -59,16 +50,6 @@ public class ExperimentalGroupCard extends Card {
     this.add(cardContent);
   }
 
-  private MenuBar createMenuBar() {
-    MenuBar menuBar = new MenuBar();
-    menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
-    MenuItem menuItem = menuBar.addItem("•••");
-    SubMenu subMenu = menuItem.getSubMenu();
-    subMenu.addItem("Edit", event -> {
-    });
-    subMenu.addItem("Delete", event -> fireDeletionEvent());
-    return menuBar;
-  }
 
   private Span title(String value) {
     Span cardTitle = new Span();
@@ -97,15 +78,6 @@ public class ExperimentalGroupCard extends Card {
     return span;
   }
 
-  public void fireDeletionEvent() {
-    var deletionEvent = new ExperimentalGroupDeletionEvent(ExperimentalGroupCard.this, true);
-    listenersDeletionEvent.forEach(listener -> listener.onComponentEvent(deletionEvent));
-  }
-
-  public void addDeletionEventListener(
-      ComponentEventListener<ExperimentalGroupDeletionEvent> listener) {
-    this.listenersDeletionEvent.add(listener);
-  }
 
   public long groupId() {
     return this.experimentalGroup.id();
@@ -113,11 +85,6 @@ public class ExperimentalGroupCard extends Card {
 
   public ExperimentalGroup experimentalGroup() {
     return this.experimentalGroup;
-  }
-
-  public void subscribeToDeletionEvent(
-      ComponentEventListener<ExperimentalGroupDeletionEvent> subscriber) {
-    this.listenersDeletionEvent.add(subscriber);
   }
 
 }
