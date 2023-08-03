@@ -162,26 +162,8 @@ Used by both project creation and experiment creation dialog, thus the unique na
   width: 66%;
 }
 
-.experiment-group-dialog .group-input {
-  width: 100%;
-}
-
-.experiment-group-dialog .group-input .layout {
-  display: flex;
-  flex-direction: row;
-  gap: var(--lumo-space-m);
-}
-
-.experiment-group-dialog .group-input .layout .combo-box {
-  width: 100%;
-}
-
 .experiment-group-dialog .number-field {
-  width: 175px;
-}
-
-.experiment-group-dialog .group-input .layout .number-field {
-  width: 150px;
+  min-width: 175px;
 }
 
 .experiment-group-dialog .experimental-group-entry {
