@@ -2,6 +2,22 @@
   opacity: 0.05;
 }
 
+vaadin-dialog-overlay::part(content) {
+  padding: 1rem 4rem 3rem 4rem;
+}
+
+vaadin-dialog-overlay::part(footer) {
+  padding: 1rem 4rem 1rem 0;
+}
+
+vaadin-dialog-overlay::part(header) {
+  padding: 2rem 1rem 1rem 4rem;
+}
+
+vaadin-dialog-overlay::part(title) {
+  margin-inline-start: 0;
+}
+
 .batch-registration-dialog .stepper {
   width: 100%;
   height: 100%;
@@ -146,36 +162,55 @@ Used by both project creation and experiment creation dialog, thus the unique na
   width: 66%;
 }
 
-.experiment-group-dialog .group-input {
-  width: 100%;
+.experiment-group-dialog .number-field {
+  min-width: 175px;
 }
 
-.experiment-group-dialog .group-input .layout {
-  display: flex;
-  flex-direction: row;
-  gap: var(--lumo-space-m);
+.experiment-group-dialog .experimental-group-entry {
+  display: grid;
+  grid: auto auto auto / 1fr 175px auto;
+  column-gap: 1rem;
+  align-items: baseline;
 }
 
-.experiment-group-dialog .group-input .layout .combo-box {
-  width: 100%;
+.experiment-group-dialog vaadin-icon{
+  cursor: pointer;
+  color: var(--lumo-primary-color);
 }
 
-.experiment-group-dialog .group-input .layout .number-field {
-  width: 150px;
+.experiment-group-dialog .header{
+  font-weight: bold;
 }
 
 .experiment-variable-dialog .content {
-  padding: var(--lumo-space-m);
-  gap: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
+}
+
+.experiment-group-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+
+.experiment-group-dialog .content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.experiment-group-dialog .content .group-collection {
+  display: grid;
+  gap: 1rem;
+}
+
+
+.experiment-group-dialog .add-new-group-action span{
+  cursor: pointer;
 }
 
 .experiment-variable-dialog .content .variables {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-m);
-  padding: var(--lumo-space-m);
 }
 
 .experiment-variable-dialog .content .variables .header {
@@ -185,9 +220,10 @@ Used by both project creation and experiment creation dialog, thus the unique na
 .experiment-variable-dialog .content .row {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-l);
 }
 
 .experiment-variable-dialog .content .row vaadin-icon {
   cursor: pointer;
+  color: var(--lumo-primary-color);
 }
