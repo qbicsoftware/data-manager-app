@@ -177,7 +177,7 @@ public class ExperimentalDesign {
   }
 
   Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
-    if (levels.size() < 1) {
+    if (levels.isEmpty()) {
       return Result.fromError(new IllegalArgumentException(
           "No levels were defined for " + variableName));
     }
@@ -197,7 +197,7 @@ public class ExperimentalDesign {
   }
 
     public void removeAllExperimentalVariables() throws IllegalStateException {
-      if (experimentalGroups.size() > 0) {
+      if (!experimentalGroups.isEmpty()) {
         throw new IllegalStateException("Cannot delete experimental variables referenced by an experimental group.");
       }
       this.variables.clear();
