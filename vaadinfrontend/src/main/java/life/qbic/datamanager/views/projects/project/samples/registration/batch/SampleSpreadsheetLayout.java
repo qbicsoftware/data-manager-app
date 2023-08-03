@@ -163,6 +163,7 @@ class SampleSpreadsheetLayout extends Div {
     private void resetChildValues() {
       resetInstructions();
       resetSpreadSheet();
+      hideErrorInstructions();
     }
 
     private void resetInstructions() {
