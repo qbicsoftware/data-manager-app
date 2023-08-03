@@ -69,10 +69,22 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     }).forEach(experimentalGroupsCollection::add);
   }
 
+  /**
+   * Creates an empty instance of the ExperimentalGroupsDialog.
+   *
+   * @param experimentalVariables the variable levels to choose from
+   * @return a new ExperimentalGroupsDialog
+   */
   public static ExperimentalGroupsDialog empty(Collection<VariableLevel> experimentalVariables) {
     return new ExperimentalGroupsDialog(experimentalVariables, false);
   }
 
+  /**
+   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided.
+   * @param experimentalVariables the variable levels to choose from
+   * @param experimentalGroupContents the experimental groups prefilled into the input fields
+   * @return a prefilled ExperimentalGroupDialog
+   */
   public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, true);
@@ -85,10 +97,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void configureComponent() {
     cancelButton.addClickListener(event -> fireCancelEvent());
-    confirmButton.addClickListener(event -> validateAndFireEvent());
+    confirmButton.addClickListener(event -> fireConfirmEvent());
   }
 
-  private void validateAndFireEvent() {
+  private void fireConfirmEvent() {
     var event = new ConfirmEvent<>(this, true);
     confirmListeners.forEach(listener -> listener.onComponentEvent(event));
   }
