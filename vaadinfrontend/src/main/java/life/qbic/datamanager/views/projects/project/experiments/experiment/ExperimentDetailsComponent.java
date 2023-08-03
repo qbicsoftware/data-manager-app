@@ -312,7 +312,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.sampleSize(),
+    return new ExperimentalGroupContent(experimentalGroupDTO.replicateCount(),
         experimentalGroupDTO.levels());
   }
 

@@ -73,7 +73,7 @@ public class ExperimentInformationService {
 
     Experiment activeExperiment = loadExperimentById(experimentId);
     Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
-        experimentalGroup.levels(), experimentalGroup.sampleSize());
+        experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
       experimentRepository.update(activeExperiment);
     }
@@ -282,7 +282,7 @@ public class ExperimentInformationService {
     for (ExperimentalGroupDTO experimentalGroupDTO : experimentalGroupDTOS) {
       Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
           experimentalGroupDTO.levels(),
-          experimentalGroupDTO.sampleSize());
+          experimentalGroupDTO.replicateCount());
       if (result.isError()) {
         return Result.fromError(result.getError());
       } else {
@@ -293,7 +293,13 @@ public class ExperimentInformationService {
     return Result.fromValue(addedGroups);
   }
 
-  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int sampleSize) {
+  /**
+   * Information about an experimental group
+   *
+   * @param levels         the levels in the condition of the group
+   * @param replicateCount the number of biological replicates
+   */
+  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int replicateCount) {
 
   }
 }
