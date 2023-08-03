@@ -151,7 +151,7 @@ public class BatchRegistrationDialog extends DialogWindow {
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
             batchInformationLayout.dataTypeSelection.getValue());
       }
-      //With the spreadsheet prepared, we can prefill information if the user checked that box
+      //With the spreadsheet prepared, we can fill the prefilled information in the spreadsheet
       if (hasPrefilledStatusChanged()) {
         sampleSpreadsheetLayout.prefillConditionsAndReplicates(
             batchInformationLayout.prefillSelection.getValue());
