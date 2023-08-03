@@ -608,6 +608,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
                 prefilledConditionAndReplicateCells.add(conditionCell);
               }));
     } else {
+      //Replace currently set Values with empty values in cells
       for (int currentRow = 1; currentRow <= numberOfSamples; currentRow++) {
         Cell replicateCell = this.getCell(currentRow, replicateColIndex);
         replicateCell.setCellValue("");
