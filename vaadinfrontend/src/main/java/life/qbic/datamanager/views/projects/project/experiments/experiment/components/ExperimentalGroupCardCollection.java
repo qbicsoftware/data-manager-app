@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -62,16 +63,29 @@ public class ExperimentalGroupCardCollection extends Div {
     fire(addEvent);
   }
 
-  public void setContent(Collection<ExperimentalGroupCard> experimentalGroupComponents) {
+  /**
+   * Removes all components from the content section and sets the provided components as content.
+   *
+   * @param components the components to set to the content section
+   */
+  public void setContent(Collection<? extends Component> components) {
     content.removeAll();
-    experimentalGroupComponents.forEach(content::add);
+    components.forEach(content::add);
   }
 
+  /**
+   * Adds a listener to the add event
+   * @param listener the listener to add
+   */
   public void addAddEventListener(
       ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>> listener) {
     this.addListeners.add(listener);
   }
 
+  /**
+   * Adds a listener to an EditEvent
+   * @param listener the listener to add
+   */
   public void addEditEventListener(
       ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>> listener) {
     this.editListeners.add(listener);

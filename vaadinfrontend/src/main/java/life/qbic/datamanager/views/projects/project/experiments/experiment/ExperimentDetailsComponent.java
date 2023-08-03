@@ -342,7 +342,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .map(ExperimentalGroupCard::new).toList();
 
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
-    this.hasExperimentalGroups = !experimentalGroupsCards.isEmpty(); // from dev
+    this.hasExperimentalGroups = !experimentalGroupsCards.isEmpty();
   }
 
   private void addConfirmListenerForAddVariableDialog() {
