@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,9 +33,8 @@ public class ExperimentalGroupCardCollection extends Div {
 
   public ExperimentalGroupCardCollection() {
     addClassName("experimental-group-card-collection");
-    Div title = new Div();
+    Span title = new Span("Groups");
     title.setClassName("title");
-    title.setText("Groups");
     Div header = new Div();
     header.setClassName("header");
     Div controlItems = new Div();
