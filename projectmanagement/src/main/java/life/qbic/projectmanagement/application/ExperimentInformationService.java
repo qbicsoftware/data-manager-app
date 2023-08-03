@@ -268,6 +268,13 @@ public class ExperimentInformationService {
     experimentRepository.update(experiment);
   }
 
+  /**
+   * Adds experimental groups to an experiment
+   *
+   * @param experimentId          the experiment to add the groups to
+   * @param experimentalGroupDTOS the group information
+   * @return either the collection of added groups or an appropriate response code
+   */
   public Result<Collection<ExperimentalGroup>, ResponseCode> addExperimentalGroupsToExperiment(
       ExperimentId experimentId, List<ExperimentalGroupDTO> experimentalGroupDTOS) {
     Experiment experiment = loadExperimentById(experimentId);
