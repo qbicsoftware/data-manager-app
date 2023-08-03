@@ -590,21 +590,23 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
 
   public void prefillConditionsAndReplicates() {
     int row = 0;
-    int conditionCol = header.indexOf(SamplesheetHeaderName.CONDITION);
-    int repliCol = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
-    for(String condition : conditionsToReplicates.keySet()) {
+    List<Cell> prefilledConditionAndReplicateCells = new ArrayList<>();
+    int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
+    int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
+    for (String condition : conditionsToReplicates.keySet()) {
       List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
           .map(BiologicalReplicate::label).sorted().toList();
-      for(String label : sortedLabels) {
+      for (String label : sortedLabels) {
         row++;
-        Cell cell = this.getCell(row, repliCol);
-        cell.setCellValue(label);
-        cell = this.getCell(row, conditionCol);
-        cell.setCellValue(condition);
+        Cell replicateCell = this.getCell(row, replicateColIndex);
+        replicateCell.setCellValue(label);
+        prefilledConditionAndReplicateCells.add(replicateCell);
+        Cell conditionCell = this.getCell(row, conditionColIndex);
+        conditionCell.setCellValue(condition);
+        prefilledConditionAndReplicateCells.add(conditionCell);
       }
     }
-    // this is needed for some reason to make prefilling after using the back button work
-    reload();
+    refreshCells(prefilledConditionAndReplicateCells);
   }
 
   /**

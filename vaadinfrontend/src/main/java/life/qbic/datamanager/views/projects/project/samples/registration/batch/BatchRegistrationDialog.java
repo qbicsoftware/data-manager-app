@@ -142,12 +142,11 @@ public class BatchRegistrationDialog extends DialogWindow {
       //we always set the batch name, as it can change without affecting the rest of the spreadsheet
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
       //we need to reset the layout, if the experiment has changed
-      boolean experimentChanged = hasExperimentInformationChanged();
-      if (experimentChanged) {
+      if (hasExperimentInformationChanged()) {
         sampleSpreadsheetLayout.resetLayout();
       }
       //We need to build the spreadsheet upon initialization or if the user changed the experiment
-      if(sampleSpreadsheetLayout.getExperiment() == null || experimentChanged) {
+      if (sampleSpreadsheetLayout.getExperiment() == null || hasExperimentInformationChanged()) {
         sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
             batchInformationLayout.dataTypeSelection.getValue());
