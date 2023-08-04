@@ -475,13 +475,14 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       // mandatory not filled in --> invalid
       for (int colId : mandatoryInputCols) {
         Cell cell = row.getCell(colId);
-        
+
         if (!isCellValueValid(cell)) {
           invalidCells.add(cell);
         } else {
           // if a background color was set, but the cell is valid, we need to change the style
-          if(cell.getCellStyle().getFillBackgroundColorColor()!=null) {
+          if (cell.getCellStyle().getFillBackgroundColorColor() != null) {
             validCells.add(cell);
+          }
         }
       }
     }
