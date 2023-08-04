@@ -117,6 +117,10 @@ class SampleSpreadsheetLayout extends Div {
     experiment = null;
   }
 
+  public void reloadSpreadsheet() {
+    sampleRegistrationSpreadsheet.reloadSpreadsheet();
+  }
+
   public void setBatchName(String text) {
     batchName.setText(text);
   }

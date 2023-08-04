@@ -99,8 +99,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     setSpreadsheetComponentFactory(dropdownCellFactory);
     //initialise first rows based on known sample size
     addRowsForInitialSamples(numberOfSamples);
+  }
+
+  public void reloadSpreadsheet() {
     refreshAllCellValues();
-    //Only reloads based on first row and first column with index = 1, meaning row and column style has to be refreshed manually
     reloadVisibleCellContents();
   }
 
@@ -592,7 +594,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public void prefillConditionsAndReplicates(boolean isPrefilled) {
-    List<Cell> prefilledConditionAndReplicateCells = new ArrayList<>();
     int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
     int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
     int rowIndex = 0;
@@ -618,12 +619,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           conditionCell.setCellValue(neutralValue);
           replicateCell.setCellValue("");
         }
-        prefilledConditionAndReplicateCells.add(conditionCell);
-        prefilledConditionAndReplicateCells.add(replicateCell);
       }
     }
-    //We need to refresh the cells so we can see the set values
-    refreshCells(prefilledConditionAndReplicateCells);
   }
 
   /**
