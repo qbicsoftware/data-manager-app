@@ -112,6 +112,7 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void resetLayout() {
+    sampleRegistrationSpreadsheet.getCellSelectionManager().clear();
     sampleInformationLayoutHandler.reset();
     experiment = null;
   }
