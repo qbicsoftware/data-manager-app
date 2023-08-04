@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate.LexicographicLabelComparator;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -100,8 +101,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     setSpreadsheetComponentFactory(dropdownCellFactory);
     //initialise first rows based on known sample size
     addRowsForInitialSamples(numberOfSamples);
+  }
+
+  public void reloadSpreadsheet() {
     refreshAllCellValues();
-    //Only reloads based on first row and first column with index = 1, meaning row and column style has to be refreshed manually
     reloadVisibleCellContents();
   }
 
@@ -472,12 +475,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       // mandatory not filled in --> invalid
       for (int colId : mandatoryInputCols) {
         Cell cell = row.getCell(colId);
-
-        if (isCellValueValid(cell)) {
-          validCells.add(cell);
-
-        } else {
+        
+        if (!isCellValueValid(cell)) {
           invalidCells.add(cell);
+        } else {
+          // if a background color was set, but the cell is valid, we need to change the style
+          if(cell.getCellStyle().getFillBackgroundColorColor()!=null) {
+            validCells.add(cell);
         }
       }
     }
@@ -552,7 +556,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       cell.setCellStyle(invalidStyle);
     }
     //We need to refresh the cells so the style change takes effect.
-    this.refreshCells(invalidCells);
+    refreshCells(invalidCells);
   }
 
   /**
@@ -617,6 +621,36 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       biologicalReplicateId = BiologicalReplicateId.create();
     }
     return biologicalReplicateId;
+  }
+
+  public void prefillConditionsAndReplicates(boolean isPrefilled) {
+    int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
+    int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
+    int rowIndex = 0;
+    Set<String> conditions = conditionsToReplicates.keySet();
+    for(String condition : conditions) {
+      List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
+          .sorted(new LexicographicLabelComparator()).map(BiologicalReplicate::label).toList();
+      for (String label : sortedLabels) {
+        rowIndex++;
+        Cell replicateCell = this.getCell(rowIndex, replicateColIndex);
+        Cell conditionCell = this.getCell(rowIndex, conditionColIndex);
+        if (isPrefilled) {
+          //prefill cells
+          replicateCell.setCellValue(label);
+          conditionCell.setCellValue(condition);
+        } else {
+          //remove prefilled info, except if there is only one condition
+          replicateCell.setCellValue("");
+          String neutralValue = "";
+          if (conditions.size() == 1) {
+            neutralValue = condition;
+          }
+          conditionCell.setCellValue(neutralValue);
+          replicateCell.setCellValue("");
+        }
+      }
+    }
   }
 
   /**
