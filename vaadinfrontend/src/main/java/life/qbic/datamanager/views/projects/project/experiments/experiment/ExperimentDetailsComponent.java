@@ -142,7 +142,8 @@ public class ExperimentDetailsComponent extends PageArea {
     this.add(header);
     header.addClassName("header");
     this.add(content);
-    content.addClassName("content");
+    //Necessary to avoid css collution
+    content.addClassName("details-content");
     initButtonBar();
     header.add(title, buttonBar);
     title.addClassName("title");

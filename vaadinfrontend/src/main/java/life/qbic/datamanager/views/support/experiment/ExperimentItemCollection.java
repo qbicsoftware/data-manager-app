@@ -38,12 +38,8 @@ public class ExperimentItemCollection extends Div {
 
   private void layoutComponent() {
     addClassName("experiment-item-collection");
-    addCreationCard(createExperiment);
-  }
-
-  private void addCreationCard(CreationCard creationCard) {
-    add(creationCard);
-    subscribeToCreateEvent();
+    add(createExperiment);
+    addCreationEventListener();
   }
 
   /**
@@ -66,9 +62,8 @@ public class ExperimentItemCollection extends Div {
    */
   public void addExperimentItem(ExperimentItem item) {
     items.add(item);
-    add(item);
-    addComponentAsLast(createExperiment);
-    subscribeToClickEvent(item);
+    addComponentAsFirst(item);
+    addSelectionEventListener(item);
   }
 
   /**
@@ -81,12 +76,12 @@ public class ExperimentItemCollection extends Div {
     addComponentAtIndex(getComponentCount(), component);
   }
 
-  private void subscribeToClickEvent(ExperimentItem item) {
+  private void addSelectionEventListener(ExperimentItem item) {
     item.addSelectionListener(
         (ComponentEventListener<ExperimentItemClickedEvent>) this::fireClickEvent);
   }
 
-  private void subscribeToCreateEvent() {
+  private void addCreationEventListener() {
     createExperiment.addListener(this::fireCreationEvent);
   }
 
@@ -136,10 +131,8 @@ public class ExperimentItemCollection extends Div {
   @Override
   public void removeAll() {
     super.removeAll();
-    addCreationCard(createExperiment);
+    addComponentAsLast(createExperiment);
     this.items.clear();
-    this.listeners.clear();
-    this.createListeners.clear();
   }
 
 }

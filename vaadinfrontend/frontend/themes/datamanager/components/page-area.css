@@ -48,7 +48,7 @@
   align-items: baseline;
 }
 
-.page-area.experiment-details-component .content {
+.page-area.experiment-details-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
