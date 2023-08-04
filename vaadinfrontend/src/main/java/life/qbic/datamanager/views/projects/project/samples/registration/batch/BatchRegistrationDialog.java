@@ -139,14 +139,22 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void generateSampleRegistrationLayout() {
-      //We only reload the spreadsheet if the user selects an experiment and switches back in the tabSheet to select a different one
+      //we always set the batch name, as it can change without affecting the rest of the spreadsheet
+      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+      //we need to reset the layout, if the experiment has changed
       if (hasExperimentInformationChanged()) {
         sampleSpreadsheetLayout.resetLayout();
       }
-      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-      sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-          batchInformationLayout.dataTypeSelection.getValue());
+      //We need to build the spreadsheet upon initialization or if the user changed the experiment
+      if (sampleSpreadsheetLayout.getExperiment() == null || hasExperimentInformationChanged()) {
+        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
+            batchInformationLayout.dataTypeSelection.getValue());
+      }
+      //With the spreadsheet prepared, we can fill the prefilled information in the spreadsheet
+      sampleSpreadsheetLayout.prefillConditionsAndReplicates(
+          batchInformationLayout.prefillSelection.getValue());
+      sampleSpreadsheetLayout.reloadSpreadsheet();
     }
 
     private boolean hasExperimentInformationChanged() {
@@ -200,6 +208,7 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void reset() {
+
       batchInformationLayout.reset();
       sampleSpreadsheetLayout.resetLayout();
       tabStepper.setSelectedTab(batchInformationTab);

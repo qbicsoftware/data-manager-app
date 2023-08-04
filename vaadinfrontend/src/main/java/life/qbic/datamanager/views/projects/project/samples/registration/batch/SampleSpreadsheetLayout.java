@@ -112,7 +112,13 @@ class SampleSpreadsheetLayout extends Div {
   }
 
   public void resetLayout() {
+    sampleRegistrationSpreadsheet.getCellSelectionManager().clear();
     sampleInformationLayoutHandler.reset();
+    experiment = null;
+  }
+
+  public void reloadSpreadsheet() {
+    sampleRegistrationSpreadsheet.reloadSpreadsheet();
   }
 
   public void setBatchName(String text) {
@@ -137,6 +143,10 @@ class SampleSpreadsheetLayout extends Div {
     return experiment;
   }
 
+  public void prefillConditionsAndReplicates(boolean isPrefilled) {
+    sampleRegistrationSpreadsheet.prefillConditionsAndReplicates(isPrefilled);
+  }
+
   private class SampleInformationLayoutHandler implements Serializable {
 
     @Serial
@@ -149,6 +159,7 @@ class SampleSpreadsheetLayout extends Div {
     private void resetChildValues() {
       resetInstructions();
       resetSpreadSheet();
+      hideErrorInstructions();
     }
 
     private void resetInstructions() {
