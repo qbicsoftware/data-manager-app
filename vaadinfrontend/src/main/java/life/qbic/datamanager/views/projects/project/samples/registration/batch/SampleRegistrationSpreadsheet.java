@@ -610,7 +610,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           //prefill cells
           replicateCell.setCellValue(label);
           conditionCell.setCellValue(condition);
-          System.err.println("set label "+label);
         } else {
           //remove prefilled info, except if there is only one condition
           replicateCell.setCellValue("");
