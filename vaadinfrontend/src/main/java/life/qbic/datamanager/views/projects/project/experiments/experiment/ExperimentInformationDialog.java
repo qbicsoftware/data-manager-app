@@ -28,7 +28,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
-  private final String TITLE = "Experimental Design";
+  private final static String TITLE = "Experimental Design";
   private final DefineExperimentComponent defineExperimentComponent;
   private final List<ComponentEventListener<CancelEvent<ExperimentInformationDialog>>> cancelEventListeners = new ArrayList<>();
   private final List<ComponentEventListener<ConfirmEvent<ExperimentInformationDialog>>> confirmEventListeners = new ArrayList<>();
