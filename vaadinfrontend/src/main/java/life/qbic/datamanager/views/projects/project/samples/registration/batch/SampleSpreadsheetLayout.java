@@ -40,7 +40,6 @@ class SampleSpreadsheetLayout extends Div {
   public final Button registerButton = new Button("Register");
   private final SampleInformationLayoutHandler sampleInformationLayoutHandler;
   private ExperimentId experiment;
-  private boolean isPrefilled = false;
 
   //The spreadsheet breaks if the Notification is generated via an ApplicationException
   private final StyledNotification lastRowDeletionNotification = new StyledNotification(
@@ -145,14 +144,6 @@ class SampleSpreadsheetLayout extends Div {
 
   public void prefillConditionsAndReplicates(boolean isPrefilled) {
     sampleRegistrationSpreadsheet.prefillConditionsAndReplicates(isPrefilled);
-  }
-
-  public boolean isPrefilled() {
-    return isPrefilled;
-  }
-
-  public void setPrefilled(boolean prefilled) {
-    isPrefilled = prefilled;
   }
 
   private class SampleInformationLayoutHandler implements Serializable {
