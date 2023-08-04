@@ -180,7 +180,7 @@ public class ExperimentDetailsComponent extends PageArea {
           editDialog.addConfirmEventListener(experimentInformationDialogConfirmEvent -> {
             ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
                 .content();
-            experimentInformationService.editExperiment(experimentId,
+            experimentInformationService.editExperimentInformation(experimentId,
                 experimentInformationContent.experimentName(), experimentInformationContent.species(),
                 experimentInformationContent.specimen(), experimentInformationContent.analytes());
             editDialog.close();

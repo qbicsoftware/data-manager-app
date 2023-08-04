@@ -294,7 +294,7 @@ public class ExperimentInformationService {
     return Result.fromValue(addedGroups);
   }
 
-  public void editExperiment(ExperimentId experimentId, String experimentName,
+  public void editExperimentInformation(ExperimentId experimentId, String experimentName,
       List<Species> species, List<Specimen> specimens, List<Analyte> analytes) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);
