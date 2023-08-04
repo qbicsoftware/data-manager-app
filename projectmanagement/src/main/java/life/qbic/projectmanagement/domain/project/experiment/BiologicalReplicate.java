@@ -5,6 +5,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -101,5 +102,16 @@ public class BiologicalReplicate implements Serializable {
   @Override
   public String toString() {
     return "BiologicalReplicate{" + "id=" + id + ", label='" + label + '\'' + '}';
+  }
+
+  public static class LexicographicLabelComparator implements Comparator<BiologicalReplicate> {
+
+    @Override
+    public int compare(BiologicalReplicate r1, BiologicalReplicate r2) {
+      if (r1.label.length() == r2.label.length()) {
+        return 0;
+      }
+      return 0;
+    }
   }
 }

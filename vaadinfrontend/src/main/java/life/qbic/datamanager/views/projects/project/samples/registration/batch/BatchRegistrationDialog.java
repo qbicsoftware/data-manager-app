@@ -152,11 +152,9 @@ public class BatchRegistrationDialog extends DialogWindow {
             batchInformationLayout.dataTypeSelection.getValue());
       }
       //With the spreadsheet prepared, we can fill the prefilled information in the spreadsheet
-      if (hasPrefilledStatusChanged()) {
         sampleSpreadsheetLayout.prefillConditionsAndReplicates(
             batchInformationLayout.prefillSelection.getValue());
         sampleSpreadsheetLayout.setPrefilled(batchInformationLayout.prefillSelection.getValue());
-      }
     }
 
     private boolean hasExperimentInformationChanged() {

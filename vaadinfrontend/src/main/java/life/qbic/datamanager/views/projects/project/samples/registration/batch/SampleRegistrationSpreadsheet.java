@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate.LexicographicLabelComparator;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -592,6 +593,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   public void prefillConditionsAndReplicates(boolean isPrefilled) {
+    System.err.println(isPrefilled);
     List<Cell> prefilledConditionAndReplicateCells = new ArrayList<>();
     int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
     int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
@@ -599,7 +601,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     Set<String> conditions = conditionsToReplicates.keySet();
     for(String condition : conditions) {
       List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
-          .map(BiologicalReplicate::label).sorted().toList();
+          .sorted(new LexicographicLabelComparator()).map(BiologicalReplicate::label).toList();
       for (String label : sortedLabels) {
         rowIndex++;
         Cell replicateCell = this.getCell(rowIndex, replicateColIndex);
@@ -608,6 +610,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           //prefill cells
           replicateCell.setCellValue(label);
           conditionCell.setCellValue(condition);
+          System.err.println("set label "+label);
         } else {
           //remove prefilled info, except if there is only one condition
           replicateCell.setCellValue("");
