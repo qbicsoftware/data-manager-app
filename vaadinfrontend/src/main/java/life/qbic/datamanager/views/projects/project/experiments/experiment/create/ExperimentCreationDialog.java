@@ -55,8 +55,9 @@ public class ExperimentCreationDialog extends DialogWindow {
     experimentCreationDialogHandler.addUserCancelEventListener(listener);
   }
 
-  public ExperimentCreationContent content() {
-    return new ExperimentCreationContent(defineExperimentComponent.experimentNameField.getValue(),
+  public ExperimentInformationContent content() {
+    return new ExperimentInformationContent(
+        defineExperimentComponent.experimentNameField.getValue(),
         defineExperimentComponent.speciesBox.getValue().stream().toList(),
         defineExperimentComponent.specimenBox.getValue().stream().toList(),
         defineExperimentComponent.analyteBox.getValue().stream().toList());

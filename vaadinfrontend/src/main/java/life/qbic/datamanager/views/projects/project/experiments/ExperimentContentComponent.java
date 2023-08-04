@@ -1,13 +1,16 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentEditEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -48,4 +51,12 @@ public class ExperimentContentComponent extends Div {
     experimentDetailsComponent.setContext(context);
   }
 
+  /**
+   * Propagates the listener which will retrieve notification if a an {@link Experiment} was edited
+   * in the {@link ExperimentDetailsComponent} within this container
+   */
+  public void addExperimentEditListener(
+      ComponentEventListener<ExperimentEditEvent> experimentEditListener) {
+    experimentDetailsComponent.addExperimentEditEventListener(experimentEditListener);
+  }
 }

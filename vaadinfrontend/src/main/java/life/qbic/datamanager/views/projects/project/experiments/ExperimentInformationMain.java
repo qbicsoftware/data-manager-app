@@ -54,7 +54,6 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private final ExperimentSupportComponent experimentSupportComponent;
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
-
   private Context context;
 
   public ExperimentInformationMain(
@@ -151,6 +150,8 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     experimentSupportComponent.addExperimentSelectionListener(
         event -> routeToExperiment(event.getSource().experimentId()));
     experimentSupportComponent.addExperimentCreationListener(
+        event -> routeToExperiment(event.experimentId()));
+    experimentContentComponent.addExperimentEditListener(
         event -> routeToExperiment(event.experimentId()));
   }
 

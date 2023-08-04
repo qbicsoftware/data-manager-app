@@ -112,6 +112,7 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
   }
+
   /**
    * Returns a list of experiment for a given project.
    *
@@ -291,6 +292,21 @@ public class ExperimentInformationService {
     }
     experimentRepository.update(experiment);
     return Result.fromValue(addedGroups);
+  }
+
+  public void editExperiment(ExperimentId experimentId, String experimentName,
+      List<Species> species, List<Specimen> specimens, List<Analyte> analytes) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.setName(experimentName);
+    experiment.setSpecies(species);
+    experiment.setAnalytes(analytes);
+    experiment.setSpecimens(specimens);
+    experimentRepository.update(experiment);
+  }
+
+  public void deleteExperiment(ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experimentRepository.delete(experimentId);
   }
 
   /**

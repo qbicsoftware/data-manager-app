@@ -133,7 +133,13 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bold;
 }
 
+
+/*FixMe Delete this once the Dialog has been adapted in all places*/
 .create-experiment-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.experiment-information-dialog::part(overlay) {
   width: 66vw;
 }
 

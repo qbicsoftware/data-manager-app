@@ -5,7 +5,7 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
-public record ExperimentCreationContent(String experimentName, List<Species> species,
-                                        List<Specimen> specimen, List<Analyte> analytes) {
+public record ExperimentInformationContent(String experimentName, List<Species> species,
+                                           List<Specimen> specimen, List<Analyte> analytes) {
 
 }

@@ -22,7 +22,6 @@ public class DeletionService {
 
   private static final Logger log = logger(DeletionService.class);
   private final ExperimentInformationService experimentInformationService;
-
   private final SampleInformationService sampleInformationService;
 
   @Autowired
@@ -67,6 +66,20 @@ public class DeletionService {
       return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
     }
     experimentInformationService.deleteAllExperimentalGroups(id);
+    return Result.fromValue(id);
+  }
+
+  public Result<ExperimentId, ResponseCode> deleteExperiment(ExperimentId id) {
+    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
+    if (queryResult.isError()) {
+      log.debug("experiment (%s) converting %s to %s".formatted(id, queryResult.getError(),
+          ResponseCode.QUERY_FAILED));
+      return Result.fromError(ResponseCode.QUERY_FAILED);
+    }
+    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
+      return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
+    }
+    experimentInformationService.deleteExperiment(id);
     return Result.fromValue(id);
   }
 

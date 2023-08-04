@@ -12,9 +12,9 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreatedEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentCreationRequestedEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItem;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
@@ -87,10 +87,10 @@ public class ExperimentListComponent extends PageArea {
 
   private void addExperimentToProject(
       ExperimentCreationRequestedEvent experimentCreationRequestedEvent,
-      ExperimentCreationContent experimentCreationContent) {
+      ExperimentInformationContent experimentInformationContent) {
     addExperimentToProjectService.addExperimentToProject(projectId,
-            experimentCreationContent.experimentName(), experimentCreationContent.species(),
-            experimentCreationContent.specimen(), experimentCreationContent.analytes())
+            experimentInformationContent.experimentName(), experimentInformationContent.species(),
+            experimentInformationContent.specimen(), experimentInformationContent.analytes())
         .onValue(experimentId -> {
           displayExperimentCreationSuccess();
           fireExperimentCreatedEvent(

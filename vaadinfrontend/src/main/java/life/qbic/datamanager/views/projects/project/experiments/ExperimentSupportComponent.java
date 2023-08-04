@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class ExperimentSupportComponent extends Div {
-
   @Serial
   private static final long serialVersionUID = -6996282848714468102L;
   private final ExperimentListComponent experimentListComponent;

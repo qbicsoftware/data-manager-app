@@ -9,7 +9,6 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
@@ -40,6 +39,7 @@ public class Experiment {
 
   @Embedded
   private ExperimentalDesign experimentalDesign;
+
   @ElementCollection(targetClass = Analyte.class)
   private List<Analyte> analytes = new ArrayList<>();
   @ElementCollection(targetClass = Species.class)
@@ -258,5 +258,24 @@ public class Experiment {
 
   public void removeExperimentGroup(long groupId) {
     experimentalDesign.removeExperimentalGroup(groupId);
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setAnalytes(
+      List<Analyte> analytes) {
+    this.analytes = analytes;
+  }
+
+  public void setSpecies(
+      List<Species> species) {
+    this.species = species;
+  }
+
+  public void setSpecimens(
+      List<Specimen> specimens) {
+    this.specimens = specimens;
   }
 }
