@@ -304,11 +304,6 @@ public class ExperimentInformationService {
     experimentRepository.update(experiment);
   }
 
-  public void deleteExperiment(ExperimentId experimentId) {
-    Experiment experiment = loadExperimentById(experimentId);
-    experimentRepository.delete(experimentId);
-  }
-
   /**
    * Information about an experimental group
    *
