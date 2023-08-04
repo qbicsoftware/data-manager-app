@@ -9,6 +9,9 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
@@ -17,6 +20,7 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import org.springframework.util.CollectionUtils;
 
 
 /**
@@ -260,22 +264,49 @@ public class Experiment {
     experimentalDesign.removeExperimentalGroup(groupId);
   }
 
+  /**
+   * Sets the name of the experiment.
+   */
   public void setName(String name) {
+    if (name.isEmpty()) {
+      throw new ApplicationException("An Experiment must have a name");
+    }
     this.name = name;
   }
 
-  public void setAnalytes(
-      List<Analyte> analytes) {
-    this.analytes = analytes;
-  }
-
+  /**
+   * Sets the list of {@link Species}for an experiment.
+   */
   public void setSpecies(
       List<Species> species) {
+    if (CollectionUtils.isEmpty(species)) {
+      throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
+          ErrorParameters.of(species));
+    }
     this.species = species;
   }
 
+  /**
+   * Sets the list of {@link Species} for an experiment.
+   */
   public void setSpecimens(
       List<Specimen> specimens) {
+    if (CollectionUtils.isEmpty(specimens)) {
+      throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
+          ErrorParameters.of(specimens));
+    }
     this.specimens = specimens;
+  }
+
+  /**
+   * Sets the list of {@link Analyte} for an experiment.
+   */
+  public void setAnalytes(
+      List<Analyte> analytes) {
+    if (CollectionUtils.isEmpty(analytes)) {
+      throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
+          ErrorParameters.of(analytes));
+    }
+    this.analytes = analytes;
   }
 }

@@ -68,6 +68,17 @@ public class ExperimentInformationDialog extends DialogWindow {
     configureConfirmation();
   }
 
+  /**
+   * Creates a new dialog prefilled with experiment information.
+   *
+   * @param experimentalDesignSearchService the service providing the selectable options for the
+   *                                        analyte, specimen and species within this dialog
+   * @param experimentName                  experimentName to be preset within the dialog
+   * @param species                         List of {@link Species} to be preset within the dialog
+   * @param specimen                        List of {@link Specimen} to be preset within the dialog
+   * @param analytes                        List of {@link Analyte} to be preset within the dialog
+   * @return a new instance of the dialog
+   */
   public static ExperimentInformationDialog prefilled(
       ExperimentalDesignSearchService experimentalDesignSearchService,
       String experimentName, Collection<Species> species, Collection<Specimen> specimen,
@@ -90,11 +101,7 @@ public class ExperimentInformationDialog extends DialogWindow {
     defineExperimentComponent.setExperimentInformation(experimentName, species, specimen, analytes);
   }
 
-  public boolean isInputValid() {
-    return validateInput();
-  }
-
-  protected boolean validateInput() {
+  private boolean isInputValid() {
     return defineExperimentComponent.isValid();
   }
 
@@ -139,6 +146,12 @@ public class ExperimentInformationDialog extends DialogWindow {
     this.cancelEventListeners.add(listener);
   }
 
+  /**
+   * Provides the content set in the fields of this dialog
+   *
+   * @return {@link ExperimentInformationContent} providing the information filled by the user
+   * within this dialog
+   */
   public ExperimentInformationContent content() {
     return new ExperimentInformationContent(
         defineExperimentComponent.experimentNameField.getValue(),
