@@ -4,12 +4,12 @@ import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+import org.springframework.lang.NonNull;
 
 /**
  * Unique sample identifier. Identifies a sample unambiguously in Tuebingen's
@@ -21,6 +21,7 @@ public class SampleId implements Serializable {
     @Serial
     private static final long serialVersionUID = 1841536150220843163L;
 
+    @NonNull
     @Column(name = "sample_id")
     private final String uuid;
 
