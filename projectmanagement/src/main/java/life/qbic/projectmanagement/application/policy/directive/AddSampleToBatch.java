@@ -1,13 +1,17 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
 import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
-
+import org.springframework.stereotype.Component;
 /**
  * <b>Directive: Add Sample to Batch</b>
  * <p>
@@ -16,8 +20,10 @@ import org.jobrunr.scheduling.JobScheduler;
  *
  * @since 1.0.0
  */
+@Component
 public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered> {
 
+  private static final Logger log = logger(AddSampleToBatch.class);
   private final BatchRegistrationService batchRegistrationService;
 
   private final JobScheduler jobScheduler;
@@ -38,7 +44,8 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
     jobScheduler.enqueue(() -> addSampleToBatch(event.registeredSample(), event.assignedBatch()));
   }
 
-  protected void addSampleToBatch(SampleId sample, BatchId batch) throws RuntimeException {
+  @Job(name = "Add Sample To Batch Job", retries = 2)
+  public void addSampleToBatch(SampleId sample, BatchId batch) throws RuntimeException {
     batchRegistrationService.addSampleToBatch(sample, batch).onError(responseCode -> {
       throw new RuntimeException(
           String.format("Adding sample %s to batch %s failed, response code was %s ", sample, batch,
