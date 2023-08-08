@@ -208,7 +208,7 @@ public class ExperimentDetailsComponent extends PageArea {
           addExperimentalVariables(
               experimentalVariablesDialogConfirmEvent.getSource().definedVariables());
           editDialog.close();
-          reloadExperimentInformation();
+          reloadExperimentalVariables();
         });
         confirmDialog.open();
       });
@@ -228,7 +228,7 @@ public class ExperimentDetailsComponent extends PageArea {
     return confirmDialog;
   }
 
-  private void reloadExperimentInformation() {
+  private void reloadExperimentalVariables() {
     experimentInformationService.find(context.experimentId().orElseThrow())
         .ifPresent(this::loadExperimentInformation);
   }
@@ -466,10 +466,10 @@ public class ExperimentDetailsComponent extends PageArea {
     this.experimentSummary.removeAll();
     this.experimentSummary.add(factSheet);
     factSheet.showMenu();
-    reloadExperimentInformation(experiment);
+    reloadExperimentalVariables(experiment);
   }
 
-  private void reloadExperimentInformation(Experiment experiment) {
+  private void reloadExperimentalVariables(Experiment experiment) {
     this.experimentalVariablesComponent.setExperimentalVariables(experiment.variables());
     if (experiment.variables().isEmpty()) {
       this.experimentSummary.add(addExperimentalVariablesNote);
