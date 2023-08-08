@@ -1,9 +1,12 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -21,6 +24,7 @@ import java.util.Objects;
 public class Batch {
 
   @EmbeddedId
+  @Column(name = "id")
   private BatchId id;
 
   @Column(name = "batchLabel")
@@ -29,7 +33,8 @@ public class Batch {
   @Column(name = "isPilot")
   private boolean pilot;
 
-  @ElementCollection(targetClass = SampleId.class)
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "sample_batches_sampleid", joinColumns = @JoinColumn(name = "batch_id"))
   private List<SampleId> sampleIds;
 
   protected Batch() {

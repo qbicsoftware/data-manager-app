@@ -378,8 +378,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * dropdown components and which should be default cells
    *
    * @param headerNames List of headerNames dependent on the selected {@link MetadataType}
-   * @return cellValueOptionsForColumnMap map grouping the selectable cell values within the cells
-   * of a column with the {@link SamplesheetHeaderName} of the colum
    */
   private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
@@ -641,14 +639,16 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           replicateCell.setCellValue(label);
           conditionCell.setCellValue(condition);
         } else {
-          //remove prefilled info, except if there is only one condition
-          replicateCell.setCellValue("");
+          //remove prefilled info, except if there is only one condition or replicate
           String neutralValue = "";
           if (conditions.size() == 1) {
             neutralValue = condition;
           }
           conditionCell.setCellValue(neutralValue);
-          replicateCell.setCellValue("");
+          if (sortedLabels.size() == 1) {
+            neutralValue = label;
+          }
+          replicateCell.setCellValue(neutralValue);
         }
       }
     }

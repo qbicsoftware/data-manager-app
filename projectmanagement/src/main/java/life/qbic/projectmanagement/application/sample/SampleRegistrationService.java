@@ -50,7 +50,7 @@ public class SampleRegistrationService {
             Collection<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
         Objects.requireNonNull(sampleRegistrationRequests);
         Objects.requireNonNull(projectId);
-        if (sampleRegistrationRequests.size() < 1) {
+        if (sampleRegistrationRequests.isEmpty()) {
             return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
         }
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>();
