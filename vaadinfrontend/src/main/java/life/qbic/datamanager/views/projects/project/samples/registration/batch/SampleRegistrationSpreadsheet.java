@@ -60,6 +60,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   //Spreadsheet component only allows retrieval of strings, so we have to store the experimentalGroupId separately
   private Map<String, ExperimentalGroup> experimentalGroupToConditionString;
   private Map<String, List<BiologicalReplicate>> conditionsToReplicates;
+  LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForColumnMap = new LinkedHashMap<>();
   private int numberOfSamples;
 
   public SampleRegistrationSpreadsheet() {
@@ -364,11 +365,10 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * specifically defined for the {@link MetadataType} of the genomics facility
    */
   private void generateGenomicsSheet() {
-    this.header = retrieveGenomics();
-    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsMap = cellValueOptionsForCellWithinColumn(
-        header);
-    generateColumnsHeaders(cellValueOptionsMap);
-    dropdownCellFactory.setColumnValues(cellValueOptionsMap);
+    header = retrieveGenomics();
+    generateCellValueOptionsMap(header);
+    generateColumnsHeaders(cellValueOptionsForColumnMap);
+    dropdownCellFactory.setColumnValues(cellValueOptionsForColumnMap);
   }
 
   /**
@@ -378,12 +378,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * dropdown components and which should be default cells
    *
    * @param headerNames List of headerNames dependent on the selected {@link MetadataType}
-   * @return cellValueOptionsForColumnMap map grouping the selectable cell values within the cells
-   * of a column with the {@link SamplesheetHeaderName} of the colum
    */
-  private LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForCellWithinColumn(
+  private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
-    LinkedHashMap<SamplesheetHeaderName, List<String>> cellValueOptionsForColumnMap = new LinkedHashMap<>();
     analysisTypes = generateGenomicsAnalysisTypes();
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
@@ -396,7 +393,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, analysisTypes);
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
         getReplicateLabels());
-    return cellValueOptionsForColumnMap;
   }
 
   /**
@@ -477,11 +473,12 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       // mandatory not filled in --> invalid
       for (int colId : mandatoryInputCols) {
         Cell cell = row.getCell(colId);
-        if (SpreadsheetMethods.cellToStringOrNull(cell).isBlank()) {
+
+        if (!isCellValueValid(cell)) {
           invalidCells.add(cell);
         } else {
           // if a background color was set, but the cell is valid, we need to change the style
-          if(cell.getCellStyle().getFillBackgroundColorColor()!=null) {
+          if (cell.getCellStyle().getFillBackgroundColorColor() != null) {
             validCells.add(cell);
           }
         }
@@ -497,6 +494,37 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           SpreadsheetInvalidationReason.MISSING_INPUT));
     }
     return Result.fromValue(null);
+  }
+
+  /**
+   * Validates if the provided cell is in a column which requires mandatory information based on the
+   * {@link SamplesheetHeaderName} mandatory attribute. If that is the case, then the validation
+   * will trigger an error if the cell was left blank or if a value outside the possible selectable
+   * values was provided
+   *
+   * @param cell to be investigated for validity
+   * @return boolean showing if the provided cell is valid or not
+   */
+  private boolean isCellValueValid(Cell cell) {
+    String cellValue = cell.getStringCellValue().trim();
+    //Check if there are columns which require mandatory information
+    List<SamplesheetHeaderName> mandatorySampleSheetHeaderNames = new ArrayList<>(
+        header.stream().filter(samplesheetHeaderName -> samplesheetHeaderName.isMandatory)
+            .toList());
+    Optional<SamplesheetHeaderName> mandatoryHeaderName = mandatorySampleSheetHeaderNames.stream().
+        filter(mandatorySampleSheetHeaderName -> mandatorySampleSheetHeaderName.ordinal()
+            == cell.getColumnIndex()).findFirst();
+    if (mandatoryHeaderName.isPresent()) {
+      List<String> cellValueOptions = cellValueOptionsForColumnMap.get(mandatoryHeaderName.get());
+      //If there are no options for the cell value the user has to provide some sort of information
+      if (cellValueOptions.isEmpty()) {
+        return !cellValue.isBlank();
+      } else {
+        //Otherwise the user should have selected one of the possible cell values
+        return cellValueOptions.contains(cellValue);
+      }
+    }
+    return true;
   }
 
   private CellStyle getDefaultStyle() {
@@ -611,14 +639,16 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
           replicateCell.setCellValue(label);
           conditionCell.setCellValue(condition);
         } else {
-          //remove prefilled info, except if there is only one condition
-          replicateCell.setCellValue("");
+          //remove prefilled info, except if there is only one condition or replicate
           String neutralValue = "";
           if (conditions.size() == 1) {
             neutralValue = condition;
           }
           conditionCell.setCellValue(neutralValue);
-          replicateCell.setCellValue("");
+          if (sortedLabels.size() == 1) {
+            neutralValue = label;
+          }
+          replicateCell.setCellValue(neutralValue);
         }
       }
     }

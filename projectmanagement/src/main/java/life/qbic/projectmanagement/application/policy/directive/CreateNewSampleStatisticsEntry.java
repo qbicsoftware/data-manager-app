@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.event.ProjectRegisteredEvent;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +51,7 @@ public class CreateNewSampleStatisticsEntry implements
     jobScheduler.enqueue(() -> createSampleStatisticsEntry(event.createdProject()));
   }
 
+  @Job(name = "Create_Sample_Statistics_Entry")
   public void createSampleStatisticsEntry(String projectId) throws RuntimeException {
     var id = ProjectId.parse(projectId);
     if (sampleStatisticsEntryMissing(id)) {
