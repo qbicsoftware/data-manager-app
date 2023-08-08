@@ -20,7 +20,6 @@ import life.qbic.projectmanagement.domain.project.experiment.exception.Experimen
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import org.springframework.util.CollectionUtils;
 
 
 /**
@@ -279,7 +278,7 @@ public class Experiment {
    */
   public void setSpecies(
       List<Species> species) {
-    if (CollectionUtils.isEmpty(species)) {
+    if (species == null || species.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
     }
@@ -291,7 +290,7 @@ public class Experiment {
    */
   public void setSpecimens(
       List<Specimen> specimens) {
-    if (CollectionUtils.isEmpty(specimens)) {
+    if (specimens == null || specimens.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
           ErrorParameters.of(specimens));
     }
@@ -303,7 +302,7 @@ public class Experiment {
    */
   public void setAnalytes(
       List<Analyte> analytes) {
-    if (CollectionUtils.isEmpty(analytes)) {
+    if (analytes == null || analytes.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
           ErrorParameters.of(analytes));
     }
