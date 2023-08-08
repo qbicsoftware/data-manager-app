@@ -1,17 +1,15 @@
 package life.qbic.datamanager.views.projects.create;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -93,6 +91,16 @@ public class DefineExperimentComponent extends Div {
 
   public void reset() {
     experimentDefinitionLayoutHandler.reset();
+  }
+
+  public void setExperimentInformation(String experimentName, Collection<Species> species,
+      Collection<Specimen> specimen,
+      Collection<Analyte> analytes) {
+    experimentNameField.setValue(experimentName);
+    speciesBox.setValue(species);
+    specimenBox.setValue(specimen);
+    analyteBox.setValue(analytes);
+
   }
 
   private final class ExperimentDefinitionLayoutHandler {

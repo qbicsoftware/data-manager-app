@@ -54,7 +54,6 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private final ExperimentSupportComponent experimentSupportComponent;
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
-
   private Context context;
 
   public ExperimentInformationMain(
@@ -75,7 +74,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     layoutComponent();
-
+    addListeners();
     log.debug(String.format(
         "New instance for ExperimentInformationMain (#%s) created with ProjectNavigationBar Component (#%s), ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
@@ -128,7 +127,6 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
         .with(parsedExperimentId);
 
     setContext(this.context);
-    addListeners();
   }
 
   private ExperimentId activeExperiment(ProjectId parsedProjectId) {
@@ -138,20 +136,21 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
 
   private void setContext(Context context) {
     experimentContentComponent.setContext(context);
-    experimentSupportComponent.projectId(context.projectId().orElseThrow());
-    experimentSupportComponent.setExperiments(
-        experimentInformationService.findAllForProject(context.projectId().orElseThrow()));
+    experimentSupportComponent.setContext(context);
     experimentSupportComponent.setSelectedExperiment(context.experimentId().orElseThrow());
     projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
     this.context = context;
   }
-
-
   private void addListeners() {
     experimentSupportComponent.addExperimentSelectionListener(
         event -> routeToExperiment(event.getSource().experimentId()));
     experimentSupportComponent.addExperimentCreationListener(
         event -> routeToExperiment(event.experimentId()));
+    experimentContentComponent.addExperimentEditListener(
+        event -> {
+          experimentSupportComponent.setContext(context);
+          experimentSupportComponent.setSelectedExperiment(event.experimentId());
+        });
   }
 
   private void forwardToExperiment(ExperimentId experimentId, BeforeEnterEvent beforeEnterEvent) {

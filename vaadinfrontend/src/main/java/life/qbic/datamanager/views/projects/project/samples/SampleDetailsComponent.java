@@ -85,6 +85,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   public final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
+
+  //This should be rebuilt from scratch to avoid reset issues if it was opened before
   private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;

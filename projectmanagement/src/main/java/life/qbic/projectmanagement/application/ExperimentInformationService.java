@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
@@ -74,7 +73,7 @@ public class ExperimentInformationService {
 
     Experiment activeExperiment = loadExperimentById(experimentId);
     Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
-        experimentalGroup.levels(), experimentalGroup.sampleSize());
+        experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
       experimentRepository.update(activeExperiment);
     }
@@ -100,15 +99,9 @@ public class ExperimentInformationService {
     return experiment.getExperimentalGroups().stream().toList();
   }
 
-  public void deleteExperimentGroup(ExperimentId experimentId, long groupId) {
-    Experiment experiment = loadExperimentById(experimentId);
-    experiment.removeExperimentGroup(groupId);
-    experimentRepository.update(experiment);
-  }
-
   /**
-   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined experimental
-   * groups in a give experiment!
+   * <b>ATTENTION!</b> This will remove all existing experimental variables and all defined
+   * experimental groups in a give experiment!
    *
    * @param experimentId the experiment reference to delete the experimental variables from
    * @since 1.0.0
@@ -119,6 +112,7 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
   }
+
   /**
    * Returns a list of experiment for a given project.
    *
@@ -261,19 +255,62 @@ public class ExperimentInformationService {
   }
 
   /**
-   * Checks if the provided ExperimentId contains an experimental Group
+   * Deletes all experimental groups in a given experiment.
+   * <p>
+   * This method does not check if samples are already.
    *
-   * @param experimentId the {@link ExperimentId} of the {@link Experiment} which should be checked
-   *                     if it contains an {@link ExperimentalGroup}
-   * @return a boolean indicating if the experiment contains an {@link ExperimentalGroup}
+   * @param id the experiment identifier of the experiment the experimental groups are going to be
+   *           deleted.
+   * @since 1.0.0
    */
-  public boolean hasExperimentalGroup(ExperimentId experimentId) {
+  public void deleteAllExperimentalGroups(ExperimentId id) {
+    Experiment experiment = loadExperimentById(id);
+    experiment.removeAllExperimentalGroups();
+    experimentRepository.update(experiment);
+  }
+
+  /**
+   * Adds experimental groups to an experiment
+   *
+   * @param experimentId          the experiment to add the groups to
+   * @param experimentalGroupDTOS the group information
+   * @return either the collection of added groups or an appropriate response code
+   */
+  public Result<Collection<ExperimentalGroup>, ResponseCode> addExperimentalGroupsToExperiment(
+      ExperimentId experimentId, List<ExperimentalGroupDTO> experimentalGroupDTOS) {
     Experiment experiment = loadExperimentById(experimentId);
-    return !experiment.getExperimentalGroups().isEmpty();
+    List<ExperimentalGroup> addedGroups = new ArrayList<>();
+    for (ExperimentalGroupDTO experimentalGroupDTO : experimentalGroupDTOS) {
+      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+          experimentalGroupDTO.levels(),
+          experimentalGroupDTO.replicateCount());
+      if (result.isError()) {
+        return Result.fromError(result.getError());
+      } else {
+        addedGroups.add(result.getValue());
+      }
+    }
+    experimentRepository.update(experiment);
+    return Result.fromValue(addedGroups);
   }
 
-  public record ExperimentalGroupDTO(Set<VariableLevel> levels, int sampleSize) {
-
+  public void editExperimentInformation(ExperimentId experimentId, String experimentName,
+      List<Species> species, List<Specimen> specimens, List<Analyte> analytes) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.setName(experimentName);
+    experiment.setSpecies(species);
+    experiment.setAnalytes(analytes);
+    experiment.setSpecimens(specimens);
+    experimentRepository.update(experiment);
   }
 
+  /**
+   * Information about an experimental group
+   *
+   * @param levels         the levels in the condition of the group
+   * @param replicateCount the number of biological replicates
+   */
+  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int replicateCount) {
+
+  }
 }

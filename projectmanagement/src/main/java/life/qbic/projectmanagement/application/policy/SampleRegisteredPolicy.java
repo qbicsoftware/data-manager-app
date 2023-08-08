@@ -22,7 +22,7 @@ public class SampleRegisteredPolicy {
   /**
    * Creates an instance of a {@link SampleRegisteredPolicy} object.
    * <p>
-   * All directives will be created an subscribed upon instantiation.
+   * All directives will be created and subscribed upon instantiation.
    *
    * @param addSampleToBatch directive to update the affected sample
    *                         {@link life.qbic.projectmanagement.domain.project.sample.Batch}

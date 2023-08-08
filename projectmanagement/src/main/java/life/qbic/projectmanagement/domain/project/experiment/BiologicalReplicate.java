@@ -5,6 +5,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -101,5 +102,23 @@ public class BiologicalReplicate implements Serializable {
   @Override
   public String toString() {
     return "BiologicalReplicate{" + "id=" + id + ", label='" + label + '\'' + '}';
+  }
+
+  /**
+   * Provides sorting functionality for labels ending in numbers, e.g. label1 < label2 < label10.
+   * This is based on label length and only works for labels starting with the same letters.
+   */
+  public static class LexicographicLabelComparator implements Comparator<BiologicalReplicate> {
+
+    @Override
+    public int compare(BiologicalReplicate r1, BiologicalReplicate r2) {
+      int l1 = r1.label.length();
+      int l2 = r2.label.length();
+      if (l1 == l2) {
+        return r1.label.compareTo(r2.label);
+      } else {
+        return l1-l2;
+      }
+    }
   }
 }

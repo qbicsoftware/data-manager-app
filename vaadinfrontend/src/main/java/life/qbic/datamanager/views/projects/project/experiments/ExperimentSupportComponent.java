@@ -4,13 +4,12 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.Collection;
 import java.util.Objects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentCreationListener;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentSelectionListener;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class ExperimentSupportComponent extends Div {
-
   @Serial
   private static final long serialVersionUID = -6996282848714468102L;
   private final ExperimentListComponent experimentListComponent;
@@ -44,24 +42,12 @@ public class ExperimentSupportComponent extends Div {
   }
 
   /**
-   * Provides the {@link ProjectId} to the components within this container
-   * <p>
-   * This method serves as an entry point providing the necessary {@link ProjectId} to components
-   * within this component, so they can retrieve the information associated with the
-   * {@link ProjectId}
+   * Propagates the context to internal components.
+   *
+   * @param context the context in which the user is.
    */
-  public void projectId(ProjectId projectId) {
-    experimentListComponent.setProject(projectId);
-  }
-
-  /**
-   * Provides the collection of {@link Experiment} to the components within this container
-   * <p>
-   * This method should be used to provide the experiments within a
-   * {@link life.qbic.projectmanagement.domain.project.Project} to {@link ExperimentListComponent}
-   */
-  public void setExperiments(Collection<Experiment> experiments) {
-    experimentListComponent.setExperiments(experiments);
+  public void setContext(Context context) {
+    experimentListComponent.setContext(context);
   }
 
   /**

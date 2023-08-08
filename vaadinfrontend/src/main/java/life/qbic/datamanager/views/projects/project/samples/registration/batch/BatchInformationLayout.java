@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -30,6 +31,7 @@ public class BatchInformationLayout extends Div {
 
   public final TextField batchNameField = new TextField("Batch Name");
   public final RadioButtonGroup<MetadataType> dataTypeSelection = new RadioButtonGroup<>();
+  public final Checkbox prefillSelection = new Checkbox("Prefill complete sample batch");
   public final Button cancelButton = new Button("Cancel");
   public final Button nextButton = new Button("Next");
   public final Select<Experiment> experimentSelect = new Select<>();
@@ -62,7 +64,7 @@ public class BatchInformationLayout extends Div {
 
   private void initDataTypeLayout() {
     Div dataTypeLayout = new Div();
-    dataTypeLayout.addClassName("data-type-information");
+    dataTypeLayout.addClassName("prefill-information");
     Span dataTypeHeader = new Span("Type of Data");
     dataTypeHeader.addClassName("title");
     dataTypeLayout.add(dataTypeHeader);
@@ -72,6 +74,12 @@ public class BatchInformationLayout extends Div {
     dataTypeLayout.add(dataTypeDescription);
     initDataTypeSelection();
     dataTypeLayout.add(dataTypeSelection);
+
+    Div prefillDescription = new Div();
+    prefillDescription.add(
+        "If you want to register a complete batch (all possible permutations of conditions and replicates), some information can be prefilled.");
+    dataTypeLayout.add(prefillDescription);
+    dataTypeLayout.add(prefillSelection);
     add(dataTypeLayout);
   }
 
@@ -139,6 +147,7 @@ public class BatchInformationLayout extends Div {
 
     private void resetChildValues() {
       dataTypeSelection.setValue(MetadataType.TRANSCRIPTOMICS_GENOMICS);
+      prefillSelection.setValue(false);
       experimentSelect.clear();
       batchNameField.clear();
     }
