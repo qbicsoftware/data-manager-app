@@ -72,6 +72,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @SpringComponent
 public class ExperimentDetailsComponent extends PageArea {
+
   private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
@@ -163,35 +164,47 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void initButtonBar() {
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> generateExperimentInformationDialog());
+    editButton.addClickListener(event -> openExperimentInformationDialog());
     buttonBar.add(editButton);
   }
 
-  private void generateExperimentInformationDialog() {
+  private void openExperimentInformationDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     Optional<Experiment> experiment = experimentInformationService.find(experimentId);
     experiment.ifPresentOrElse(exp -> {
-          var editDialog = ExperimentInformationDialog.prefilled(experimentalDesignSearchService,
-              exp.getName(), exp.getSpecies(),
-              exp.getSpecimens(), exp.getAnalytes());
-          editDialog.setConfirmButtonLabel("Save");
-          editDialog.addCancelEventListener(
-              experimentInformationDialogCancelEvent -> editDialog.close());
-          editDialog.addConfirmEventListener(experimentInformationDialogConfirmEvent -> {
-            ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
-                .content();
-            experimentInformationService.editExperimentInformation(experimentId,
-                experimentInformationContent.experimentName(), experimentInformationContent.species(),
-                experimentInformationContent.specimen(), experimentInformationContent.analytes());
-            editDialog.close();
-            fireEditEvent();
-          });
-          editDialog.open();
+          ExperimentInformationDialog experimentInformationDialog = openExperimentInformationDialog(
+              exp);
+          addExperimentInformationDialogListeners(experimentId, experimentInformationDialog);
+          experimentInformationDialog.open();
         }
         , () -> {
           throw new ApplicationException(
               "Experiment information could not be retrieved from service");
         });
+  }
+
+  private ExperimentInformationDialog openExperimentInformationDialog(Experiment experiment) {
+    ExperimentInformationDialog experimentInformationDialog = ExperimentInformationDialog.prefilled(
+        experimentalDesignSearchService,
+        experiment.getName(), experiment.getSpecies(),
+        experiment.getSpecimens(), experiment.getAnalytes());
+    experimentInformationDialog.setConfirmButtonLabel("Save");
+    return experimentInformationDialog;
+  }
+
+  private void addExperimentInformationDialogListeners(ExperimentId experimentId,
+      ExperimentInformationDialog experimentInformationDialog) {
+    experimentInformationDialog.addCancelEventListener(
+        experimentInformationDialogCancelEvent -> experimentInformationDialog.close());
+    experimentInformationDialog.addConfirmEventListener(experimentInformationDialogConfirmEvent -> {
+      ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
+          .content();
+      experimentInformationService.editExperimentInformation(experimentId,
+          experimentInformationContent.experimentName(), experimentInformationContent.species(),
+          experimentInformationContent.specimen(), experimentInformationContent.analytes());
+      experimentInformationDialog.close();
+      fireEditEvent();
+    });
   }
 
   private void addConfirmListenerForEditVariableDialog() {
