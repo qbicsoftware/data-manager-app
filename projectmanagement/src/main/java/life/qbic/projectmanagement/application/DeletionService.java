@@ -22,7 +22,6 @@ public class DeletionService {
 
   private static final Logger log = logger(DeletionService.class);
   private final ExperimentInformationService experimentInformationService;
-
   private final SampleInformationService sampleInformationService;
 
   @Autowired

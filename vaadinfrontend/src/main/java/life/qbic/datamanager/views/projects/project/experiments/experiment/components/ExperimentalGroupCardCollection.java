@@ -35,12 +35,12 @@ public class ExperimentalGroupCardCollection extends Div {
   public ExperimentalGroupCardCollection() {
     addClassName("experimental-group-card-collection");
     Span title = new Span("Groups");
-    title.setClassName("title");
+    title.addClassName("title");
     Div header = new Div();
-    header.setClassName("header");
+    header.addClassName("groups-header");
     Div controlItems = new Div();
-    controlItems.setClassName("controls");
-    content.setClassName("content");
+    controlItems.addClassName("groups-controls");
+    content.addClassName("groups-content");
     header.add(title, controlItems);
     Button addButton = new Button("Add");
     Button editButton = new Button("Edit");

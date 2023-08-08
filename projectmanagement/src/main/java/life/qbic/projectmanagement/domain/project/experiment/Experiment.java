@@ -9,7 +9,9 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.project.experiment.exception.ConditionExistsException;
@@ -40,6 +42,7 @@ public class Experiment {
 
   @Embedded
   private ExperimentalDesign experimentalDesign;
+
   @ElementCollection(targetClass = Analyte.class)
   private List<Analyte> analytes = new ArrayList<>();
   @ElementCollection(targetClass = Species.class)
@@ -258,5 +261,51 @@ public class Experiment {
 
   public void removeExperimentGroup(long groupId) {
     experimentalDesign.removeExperimentalGroup(groupId);
+  }
+
+  /**
+   * Sets the name of the experiment.
+   */
+  public void setName(String name) {
+    if (name.isEmpty()) {
+      throw new ApplicationException("An Experiment must have a name");
+    }
+    this.name = name;
+  }
+
+  /**
+   * Sets the list of {@link Species}for an experiment.
+   */
+  public void setSpecies(
+      List<Species> species) {
+    if (species == null || species.isEmpty()) {
+      throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
+          ErrorParameters.of(species));
+    }
+    this.species = species;
+  }
+
+  /**
+   * Sets the list of {@link Species} for an experiment.
+   */
+  public void setSpecimens(
+      List<Specimen> specimens) {
+    if (specimens == null || specimens.isEmpty()) {
+      throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
+          ErrorParameters.of(specimens));
+    }
+    this.specimens = specimens;
+  }
+
+  /**
+   * Sets the list of {@link Analyte} for an experiment.
+   */
+  public void setAnalytes(
+      List<Analyte> analytes) {
+    if (analytes == null || analytes.isEmpty()) {
+      throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
+          ErrorParameters.of(analytes));
+    }
+    this.analytes = analytes;
   }
 }
