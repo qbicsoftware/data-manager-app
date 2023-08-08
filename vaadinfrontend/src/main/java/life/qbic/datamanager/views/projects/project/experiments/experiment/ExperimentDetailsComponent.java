@@ -159,6 +159,7 @@ public class ExperimentDetailsComponent extends PageArea {
     addCancelListenerForAddVariableDialog();
     addConfirmListenerForAddVariableDialog();
     addConfirmListenerForEditVariableDialog();
+    addListenerForNewEditEvent();
     addListenerForNewVariableEvent();
   }
 
@@ -252,6 +253,11 @@ public class ExperimentDetailsComponent extends PageArea {
       throw new ApplicationException("variable deletion failed: " + responseCode, ErrorCode.GENERAL,
           ErrorParameters.empty());
     });
+  }
+
+  private void addListenerForNewEditEvent() {
+    this.editListeners.add(event -> experimentInformationService.find(event.experimentId())
+        .ifPresent(this::loadExperimentInformation));
   }
 
   private void addListenerForNewVariableEvent() {

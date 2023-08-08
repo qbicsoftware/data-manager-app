@@ -147,7 +147,10 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     experimentSupportComponent.addExperimentCreationListener(
         event -> routeToExperiment(event.experimentId()));
     experimentContentComponent.addExperimentEditListener(
-        event -> routeToExperiment(event.experimentId()));
+        event -> {
+          experimentSupportComponent.setContext(context);
+          experimentSupportComponent.setSelectedExperiment(event.experimentId());
+        });
   }
 
   private void forwardToExperiment(ExperimentId experimentId, BeforeEnterEvent beforeEnterEvent) {
