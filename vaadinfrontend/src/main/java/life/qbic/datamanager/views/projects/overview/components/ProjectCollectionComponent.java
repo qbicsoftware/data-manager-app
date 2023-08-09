@@ -140,6 +140,7 @@ public class ProjectCollectionComponent extends PageArea {
             projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
             "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("lastModified").setSortable(true)
         .setSortProperty("lastModified");
+    projectGrid.addClassName("projects-grid");
   }
 
   private void layoutTitleSection() {
@@ -152,7 +153,7 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void layoutGridSection() {
-    gridSection.addClassName("projects-grid");
+    gridSection.addClassName("projects-grid-section");
   }
 
   private void fireCreateClickedEvent() {
