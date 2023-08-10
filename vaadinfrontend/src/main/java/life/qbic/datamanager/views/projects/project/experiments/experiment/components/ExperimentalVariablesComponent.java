@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -11,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
-import life.qbic.datamanager.views.general.CreationCard;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 
 /**
@@ -23,16 +21,13 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
  * @since 1.0.0
  */
 public class ExperimentalVariablesComponent extends Card {
-
   @Serial
   private static final long serialVersionUID = 7589385115005753849L;
   private final Collection<ExperimentalVariable> experimentalVariables;
   private final Div controls = new Div();
   private final Div content = new Div();
   private final Button editButton;
-  private final CreationCard variableCreationCard;
-
-
+  private final Button addButton;
   private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
   private final List<ComponentEventListener<AddNewExperimentalVariableEvent>> listenersNewVariable = new ArrayList<>();
   private final List<Div> variableFactSheets = new ArrayList<>();
@@ -40,8 +35,8 @@ public class ExperimentalVariablesComponent extends Card {
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
     this.experimentalVariables = experimentalVariables;
     this.editButton = createEditButton();
-    variableCreationCard = CreationCard.create("Add experimental variables");
-    variableCreationCard.addListener(event -> fireAddEvent());
+    this.addButton = createAddButton();
+    addButton.addClassName("primary");
     layoutComponent();
     configureComponent();
   }
@@ -49,8 +44,9 @@ public class ExperimentalVariablesComponent extends Card {
   private static Button createEditButton() {
     return new Button("Edit");
   }
-  private void addComponentAsLast(Component component) {
-    content.addComponentAtIndex(content.getComponentCount(), component);
+
+  private static Button createAddButton() {
+    return new Button("Add");
   }
 
   private void fireAddEvent() {
@@ -80,6 +76,7 @@ public class ExperimentalVariablesComponent extends Card {
 
   private void configureComponent() {
     editButton.addClickListener(event -> fireEditEvent());
+    addButton.addClickListener(event -> fireAddEvent());
   }
 
   private void layoutComponent() {
@@ -88,7 +85,7 @@ public class ExperimentalVariablesComponent extends Card {
     cardHeader.addClassName("header");
 
     controls.addClassName("controls");
-    controls.add(editButton);
+    controls.add(editButton, addButton);
 
     cardHeader.add(new Span("Experimental Variables"));
     cardHeader.add(controls);
@@ -139,7 +136,6 @@ public class ExperimentalVariablesComponent extends Card {
     this.experimentalVariables.addAll(variables);
     variableFactSheets.addAll(generateFactSheets(experimentalVariables));
     variableFactSheets.forEach(content::add);
-    addComponentAsLast(variableCreationCard);
   }
 
   private void resetContent() {
