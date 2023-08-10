@@ -176,9 +176,10 @@ public class ProjectDetailsComponent extends PageArea {
   }
 
   private void initFormLayout() {
-    speciesField.addClassName("tag-collection");
-    specimensField.addClassName("tag-collection");
-    analytesField.addClassName("tag-collection");
+    String tagCollectionCssClass = "tag-collection";
+    speciesField.addClassName(tagCollectionCssClass);
+    specimensField.addClassName(tagCollectionCssClass);
+    analytesField.addClassName(tagCollectionCssClass);
     formLayout.addFormItem(projectTitleField, "Project Title");
     formLayout.addFormItem(projectObjectiveField, "Project Objective");
     formLayout.addFormItem(experimentalDesignField, "Experimental Design");
