@@ -42,20 +42,21 @@ public class ExperimentItemCollection extends Div {
   private void layoutComponent() {
     initHeader();
     content.addClassName("content");
-    this.add(content);
+    add(content);
   }
 
   private void initHeader() {
     Div controls = new Div();
     controls.addClassName("controls");
     Button addButton = new Button("Add");
+    addButton.addClassName("primary");
     controls.add(addButton);
     addButton.addClickListener(this::emitAddEvent);
     Span title = new Span("Experiments");
     title.addClassName("title");
     header.add(title, controls);
     header.addClassName("header");
-    this.addComponentAsFirst(header);
+    addComponentAsFirst(header);
   }
 
   private void emitAddEvent(ClickEvent<Button> buttonClickEvent) {
@@ -95,7 +96,7 @@ public class ExperimentItemCollection extends Div {
   }
 
   private void fireAddEvent(AddEvent<ExperimentItemCollection> addEvent) {
-    this.addListeners.forEach(listener -> listener.onComponentEvent(addEvent));
+    addListeners.forEach(listener -> listener.onComponentEvent(addEvent));
   }
 
   /**
@@ -131,13 +132,13 @@ public class ExperimentItemCollection extends Div {
    */
   public void addAddEventListener(
       ComponentEventListener<AddEvent<ExperimentItemCollection>> listener) {
-    this.addListeners.add(listener);
+    addListeners.add(listener);
   }
 
   @Override
   public void removeAll() {
     content.removeAll();
-    this.items.clear();
+    items.clear();
   }
 
 }
