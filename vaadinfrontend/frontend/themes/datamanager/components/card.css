@@ -243,13 +243,13 @@
 
 .experiment-item-collection {
   display: flex;
-  gap: 1rem;
+  gap: var(--lumo-space-s);
   flex-flow: column;
 }
 
 .experiment-item-collection .content {
   display: grid;
-  row-gap: 1rem;
+  gap: var(--lumo-space-m);
   grid-auto-rows: max-content;
 }
 

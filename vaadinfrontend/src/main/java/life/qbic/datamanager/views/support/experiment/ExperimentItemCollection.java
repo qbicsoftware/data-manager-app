@@ -123,7 +123,7 @@ public class ExperimentItemCollection extends Div {
   }
 
   /**
-   * Add a listener of type {@link ComponentEventListener<AddEvent<ExperimentItemCollection>} that will be
+   * Add the specified listener which will be
    * called, if the user intends to create a new experiment.
    *
    * @param listener the listener that will be informed
