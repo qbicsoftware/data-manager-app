@@ -49,19 +49,19 @@ public class ProjectDetailsComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
   private final Div header = new Div();
-  private final Span title = new Span();
+  private final Span titleField = new Span();
   private final Span buttonBar = new Span();
   private final Div content = new Div();
   private final FormLayout formLayout = new FormLayout();
-  private final Span projectTitle = new Span();
-  private final Span projectObjective = new Span();
-  private final Span experimentalDesign = new Span();
-  private final Div species = new Div();
-  private final Div specimens = new Div();
-  private final Div analytes = new Div();
-  private final Div projectManager = new Div();
-  private final Div principalInvestigator = new Div();
-  private final Div responsiblePerson = new Div();
+  private final Span projectTitleField = new Span();
+  private final Span projectObjectiveField = new Span();
+  private final Span experimentalDesignField = new Span();
+  private final Div speciesField = new Div();
+  private final Div specimensField = new Div();
+  private final Div analytesField = new Div();
+  private final Div projectManagerField = new Div();
+  private final Div principalInvestigatorField = new Div();
+  private final Div responsiblePersonField = new Div();
   private final List<ComponentEventListener<ProjectEditEvent>> editListeners = new ArrayList<>();
   private Context context;
   private final transient ProjectInformationService projectInformationService;
@@ -91,11 +91,11 @@ public class ProjectDetailsComponent extends PageArea {
 
   private void layoutComponent() {
     this.add(header);
-    title.setText("Project Information");
+    titleField.setText("Project Information");
     header.addClassName("header");
     initButtonBar();
-    header.add(title, buttonBar);
-    title.addClassName("title");
+    header.add(titleField, buttonBar);
+    titleField.addClassName("title");
     this.add(content);
     content.addClassName("details-content");
     initFormLayout();
@@ -176,18 +176,18 @@ public class ProjectDetailsComponent extends PageArea {
   }
 
   private void initFormLayout() {
-    species.addClassName("tag-collection");
-    specimens.addClassName("tag-collection");
-    analytes.addClassName("tag-collection");
-    formLayout.addFormItem(projectTitle, "Project Title");
-    formLayout.addFormItem(projectObjective, "Project Objective");
-    formLayout.addFormItem(experimentalDesign, "Experimental Design");
-    formLayout.addFormItem(species, "Species");
-    formLayout.addFormItem(specimens, "Specimen");
-    formLayout.addFormItem(analytes, "Analyte");
-    formLayout.addFormItem(principalInvestigator, "Principal Investigator");
-    formLayout.addFormItem(responsiblePerson, "Responsible Person");
-    formLayout.addFormItem(projectManager, "Project Manager");
+    speciesField.addClassName("tag-collection");
+    specimensField.addClassName("tag-collection");
+    analytesField.addClassName("tag-collection");
+    formLayout.addFormItem(projectTitleField, "Project Title");
+    formLayout.addFormItem(projectObjectiveField, "Project Objective");
+    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
+    formLayout.addFormItem(speciesField, "Species");
+    formLayout.addFormItem(specimensField, "Specimen");
+    formLayout.addFormItem(analytesField, "Analyte");
+    formLayout.addFormItem(principalInvestigatorField, "Principal Investigator");
+    formLayout.addFormItem(responsiblePersonField, "Responsible Person");
+    formLayout.addFormItem(projectManagerField, "Project Manager");
     // set form layout to only have one column (for any width)
     formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
     content.add(formLayout);
@@ -201,27 +201,27 @@ public class ProjectDetailsComponent extends PageArea {
 
   private void setProjectInformation(Project project) {
     resetProjectInformation();
-    projectTitle.setText(project.getProjectIntent().projectTitle().title());
-    projectObjective.setText(project.getProjectIntent().objective().value());
-    experimentalDesign.setText(project.getProjectIntent().experimentalDesign().value());
-    principalInvestigator.add(generatePersonReference(project.getPrincipalInvestigator()));
+    projectTitleField.setText(project.getProjectIntent().projectTitle().title());
+    projectObjectiveField.setText(project.getProjectIntent().objective().value());
+    experimentalDesignField.setText(project.getProjectIntent().experimentalDesign().value());
+    principalInvestigatorField.add(generatePersonReference(project.getPrincipalInvestigator()));
     project.getResponsiblePerson().ifPresentOrElse(
-        personReference -> responsiblePerson.add(generatePersonReference(personReference)),
-        () -> responsiblePerson.add(createNoPersonAssignedSpan()));
-    projectManager.add(generatePersonReference(project.getProjectManager()));
+        personReference -> responsiblePersonField.add(generatePersonReference(personReference)),
+        () -> responsiblePersonField.add(createNoPersonAssignedSpan()));
+    projectManagerField.add(generatePersonReference(project.getProjectManager()));
     setGroupedExperimentInformation(project.getId());
   }
 
   private void resetProjectInformation() {
-    projectTitle.removeAll();
-    projectObjective.removeAll();
-    experimentalDesign.removeAll();
-    species.removeAll();
-    specimens.removeAll();
-    analytes.removeAll();
-    projectManager.removeAll();
-    principalInvestigator.removeAll();
-    responsiblePerson.removeAll();
+    projectTitleField.removeAll();
+    projectObjectiveField.removeAll();
+    experimentalDesignField.removeAll();
+    speciesField.removeAll();
+    specimensField.removeAll();
+    analytesField.removeAll();
+    projectManagerField.removeAll();
+    principalInvestigatorField.removeAll();
+    responsiblePersonField.removeAll();
   }
 
   private void setGroupedExperimentInformation(ProjectId projectId) {
@@ -238,9 +238,9 @@ public class ProjectDetailsComponent extends PageArea {
       specimenSet.addAll(experiment.getSpecimens().stream().map(Specimen::value).toList());
       analysisSet.addAll(experiment.getAnalytes().stream().map(Analyte::value).toList());
     });
-    species.add(speciesSet.stream().map(Tag::new).collect(Collectors.toList()));
-    specimens.add(specimenSet.stream().map(Tag::new).collect(Collectors.toList()));
-    analytes.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
+    speciesField.add(speciesSet.stream().map(Tag::new).collect(Collectors.toList()));
+    specimensField.add(specimenSet.stream().map(Tag::new).collect(Collectors.toList()));
+    analytesField.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
   }
 
   private Div generatePersonReference(PersonReference personReference) {

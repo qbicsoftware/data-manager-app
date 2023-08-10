@@ -2,8 +2,6 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.HasValidation;
-import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -191,25 +189,6 @@ public class DefineProjectComponent extends Div {
     int maxLength = textArea.getMaxLength();
     int consumedLength = newValue.length();
     textArea.setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  /**
-   * Resets the values and validity of all components that implement value storing and validity
-   * interfaces
-   */
-  private void reset() {
-    resetChildValues();
-    resetChildValidation();
-  }
-
-  private void resetChildValues() {
-    getChildren().filter(comp -> comp instanceof HasValue<?, ?>)
-        .forEach(comp -> ((HasValue<?, ?>) comp).clear());
-  }
-
-  private void resetChildValidation() {
-    getChildren().filter(comp -> comp instanceof HasValidation)
-        .forEach(comp -> ((HasValidation) comp).setInvalid(false));
   }
 
   /**
