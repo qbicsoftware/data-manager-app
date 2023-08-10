@@ -173,12 +173,12 @@ Used by both project creation and experiment creation dialog, thus the unique na
   align-items: baseline;
 }
 
-.experiment-group-dialog vaadin-icon{
+.experiment-group-dialog vaadin-icon {
   cursor: pointer;
   color: var(--lumo-primary-color);
 }
 
-.experiment-group-dialog .header{
+.experiment-group-dialog .header {
   font-weight: bold;
 }
 
@@ -204,7 +204,7 @@ Used by both project creation and experiment creation dialog, thus the unique na
 }
 
 
-.experiment-group-dialog .add-new-group-action span{
+.experiment-group-dialog .add-new-group-action span {
   cursor: pointer;
 }
 
@@ -226,4 +226,26 @@ Used by both project creation and experiment creation dialog, thus the unique na
 .experiment-variable-dialog .content .row vaadin-icon {
   cursor: pointer;
   color: var(--lumo-primary-color);
+}
+
+.project-information-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.project-information-dialog .define-project-content {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-information-dialog .define-project-content .information {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-information-dialog .define-project-content .contacts {
+  display: flex;
+  flex-direction: column;
 }
