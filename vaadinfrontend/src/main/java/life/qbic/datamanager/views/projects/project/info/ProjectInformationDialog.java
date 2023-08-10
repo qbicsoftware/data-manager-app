@@ -65,9 +65,21 @@ public class ProjectInformationDialog extends DialogWindow {
   /**
    * Creates a new dialog prefilled with project information.
    *
-   * @param personSearchService
+   * @param personSearchService           {@link PersonSearchService} service to provide the selectable {@link PersonReference}
+   *                                                                  within the dialog
+   * @param projectTitle                  {@link ProjectTitle} of the project to be edited
+   * @param projectObjective              {@link ProjectObjective} of the project to be edited
+   * @param experimentalDesignDescription {@link ExperimentalDesignDescription} of the project to be
+   *                                      edited
+   * @param principalInvestigator         {@link PersonReference} of the principal investigator of
+   *                                      the project to be edited
+   * @param responsiblePerson             {@link PersonReference} of the responsible person to be
+   *                                      contacted of the project to be edited
+   * @param projectManager                {@link PersonReference} of the project manager of the
+   *                                      project to be edited
    * @return a new instance of the dialog
    */
+
   public static ProjectInformationDialog prefilled(
       PersonSearchService personSearchService,
       ProjectTitle projectTitle, ProjectObjective projectObjective,

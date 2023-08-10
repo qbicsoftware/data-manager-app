@@ -8,7 +8,6 @@ import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -40,12 +39,6 @@ public class ProjectContentComponent extends Div {
   private void layoutComponent() {
     this.add(projectDetailsComponent);
   }
-
-  /**
-   * Triggers the propagation of the provided {@link ProjectId} to internal components
-   *
-   * @param projectId The projectId to be propagated
-   */
 
   /**
    * Propagates the context to internal components.
