@@ -82,7 +82,7 @@ public class ExperimentalVariablesComponent extends Card {
   private void layoutComponent() {
     addClassName("experimental-variables");
     Div cardHeader = new Div();
-    cardHeader.addClassName("header");
+    cardHeader.addClassName("variables-header");
 
     controls.addClassName("controls");
     controls.add(editButton, addButton);
@@ -93,7 +93,7 @@ public class ExperimentalVariablesComponent extends Card {
 
     setExperimentalVariables(experimentalVariables);
 
-    content.addClassName("content");
+    content.addClassName("variables-content");
     add(content);
   }
 
