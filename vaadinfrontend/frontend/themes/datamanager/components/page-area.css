@@ -67,25 +67,23 @@
   gap: var(--lumo-space-s);
 }
 
+.page-area.project-details-component .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .page-area.project-details-component .details-content .no-person-assigned {
   color: var(--lumo-secondary-text-color);
 }
 
-.page-area.project-details-component vaadin-multi-select-combo-box {
-  width: 75%
+.page-area.project-details-component .details-content .person-reference {
+  display: flex;
+  flex-flow: column;
 }
 
-.page-area.project-details-component .display-edit-component {
-  width: 100%
-}
-
-.page-area.project-details-component .display-edit-component .edit-component {
-  width: 100%;
-}
-
-.page-area.project-details-component .display-edit-component .display-component {
-  width: 100%;
-  font-size: var(--lumo-font-size-s);
+.page-area.project-details-component .details-content .person-reference .email {
+  color: var(--lumo-secondary-text-color);
 }
 
 .page-area.sample-details-component .content {
