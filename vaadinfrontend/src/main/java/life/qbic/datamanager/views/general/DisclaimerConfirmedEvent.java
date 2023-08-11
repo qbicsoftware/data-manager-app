@@ -10,12 +10,12 @@ import java.io.Serial;
  *
  * @since 1.0.0
  */
-public class DisclaimerConfirmedEvent extends ComponentEvent<DisclaimerCard> {
+public class DisclaimerConfirmedEvent extends ComponentEvent<Disclaimer> {
 
   @Serial
   private static final long serialVersionUID = -7253095280300341597L;
 
-  public DisclaimerConfirmedEvent(DisclaimerCard source, boolean fromClient) {
+  public DisclaimerConfirmedEvent(Disclaimer source, boolean fromClient) {
     super(source, fromClient);
   }
 }
