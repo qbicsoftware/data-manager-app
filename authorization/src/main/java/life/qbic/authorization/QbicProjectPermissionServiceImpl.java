@@ -3,6 +3,7 @@ package life.qbic.authorization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,13 @@ public class QbicProjectPermissionServiceImpl implements ProjectPermissionServic
     List<GrantedAuthority> authorities = new ArrayList<>(permissions);
     authorities.add(optionalRole.get());
     return authorities;
+  }
+
+  @Override
+  public List<UserId> loadUsersWithProjectPermission(ProjectId projectId) {
+    return projectRoleRepository.findAllByProjectId(projectId.value()).stream()
+        .map(ProjectRole::userId).map(UserId::from).collect(
+            Collectors.toList());
   }
 
 }

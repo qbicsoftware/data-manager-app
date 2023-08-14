@@ -20,4 +20,12 @@ public interface ProjectPermissionService {
    * @return a list of authorities granted to the user for the project
    */
   List<? extends GrantedAuthority> loadUserPermissions(UserId userId, ProjectId projectId);
+
+  /**
+   * Lists all users which have a permission within the specific project
+   *
+   * @param projectId the identifier of the project
+   * @return a list of UserIds which are associated with the project
+   */
+  List<UserId> loadUsersWithProjectPermission(ProjectId projectId);
 }
