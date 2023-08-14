@@ -2,7 +2,8 @@
   opacity: 0.05;
 }
 
-vaadin-dialog-overlay::part(content) {
+/* way to general*/
+/*vaadin-dialog-overlay::part(content) {
   padding: 1rem 4rem 3rem 4rem;
 }
 
@@ -16,6 +17,30 @@ vaadin-dialog-overlay::part(header) {
 
 vaadin-dialog-overlay::part(title) {
   margin-inline-start: 0;
+}*/
+
+vaadin-dialog-overlay.experimental-groups-exist-dialog > [slot="header-content"] {
+  margin-left: 1.5rem;
+  margin-right: 1.5rem;
+}
+
+vaadin-dialog-overlay.experimental-groups-exist-dialog > [slot="header-content"] .title {
+  font-family: var(--lumo-font-family);
+  line-height: var(--lumo-line-height-m);
+  font-size: var(--lumo-font-size-xl);
+  margin: 0;
+}
+
+vaadin-dialog-overlay.experimental-groups-exist-dialog > [slot="header-content"] .error-icon {
+  width: 1.83rem;
+  height: 1.83rem;
+  margin: 0.46rem;
+  fill: var(--lumo-error-color);
+  margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
+}
+
+vaadin-dialog-overlay.experimental-groups-exist-dialog::part("content") .content {
+
 }
 
 .batch-registration-dialog .stepper {

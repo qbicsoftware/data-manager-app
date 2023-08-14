@@ -14,6 +14,12 @@ vaadin-button.primary .button:hover::before {
   opacity: 0.05;
 }
 
+vaadin-button.tertiary {
+  padding: 0 calc(var(--lumo-button-size) / 6);
+  background-color: transparent !important;
+  min-width: 0;
+}
+
 vaadin-button {
   cursor: pointer;
 }

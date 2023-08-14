@@ -44,9 +44,10 @@ vaadin-number-field::part(decrease-button), vaadin-number-field::part(increase-b
 
 .experimental-groups-exist-dialog .content {
   display: flex;
+  flex-direction: column;
   width: 36.75rem;
-  height: 16.5rem;
+  height: 6.5rem;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex-shrink: 0;
 }
