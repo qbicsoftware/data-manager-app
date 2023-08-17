@@ -12,7 +12,6 @@ import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.stereotype.Service;
 
 /**
  * <b>QBiC's implementation of the Spring PermissionEvaluator interface</b>
@@ -20,7 +19,7 @@ import org.springframework.stereotype.Service;
  * This class shall be used to check if the current user has the permission to have access to the
  * targetDomainObject of interest in the context of user authorization
  */
-@Service
+//@Service
 public class QbicPermissionEvaluator implements PermissionEvaluator {
 
   private final QbicProjectPermissionEvaluator qbicProjectPermissionEvaluator;
