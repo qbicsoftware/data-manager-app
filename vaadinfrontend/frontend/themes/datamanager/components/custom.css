@@ -1,43 +1,11 @@
 /* This file defines the styling and layout for all custom components. The components are sorted alphabetically */
 
 /*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
-@import "page-area.css";
+@import "button.css";
 @import "card.css";
 @import "dialog.css";
+@import "div.css";
 @import "main.css";
-@import "project-collection.css";
-@import "tag-collection.css";
-
-.card-deck {
-  display: flex;
-  align-content: space-evenly;
-  flex-flow: row wrap;
-}
-
-.navigation-button {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-  align-items: center;
-  flex: 1 1;
-}
-
-.navigation-button .button {
-  box-shadow: var(--lumo-box-shadow-xs);
-}
-
-.navigation-button .label {
-  font-size: var(--lumo-font-size-s)
-}
-
-.error-text {
-  color: var(--lumo-error-text-color);
-}
-
-vaadin-multi-select-combo-box::part(toggle-button)::before {
-  color: var(--lumo-primary-color);
-}
-
-vaadin-number-field::part(decrease-button), vaadin-number-field::part(increase-button) {
-  color: var(--lumo-primary-color);
-}
+@import "page-area.css";
+@import "span.css";
+@import "vaadin-custom.css";

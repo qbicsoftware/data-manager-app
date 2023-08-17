@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.general.DisclaimerCard;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -351,8 +351,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       return !experiment.getExperimentalGroups().isEmpty();
     }
 
-    private DisclaimerCard createNoGroupsDefinedDisclaimer(Experiment experiment) {
-      DisclaimerCard noGroupsDefinedCard = DisclaimerCard.createWithTitle(
+    private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
+      Disclaimer noGroupsDefinedCard = Disclaimer.createWithTitle(
           "No experimental groups defined",
           "Start the sample registration process by registering the first experimental group",
           "Add Experimental Group");
@@ -373,8 +373,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       }
     }
 
-    private DisclaimerCard createNoSamplesRegisteredDisclaimer(Experiment experiment) {
-      DisclaimerCard noSamplesDefinedCard = DisclaimerCard.createWithTitle("No samples registered",
+    private Disclaimer createNoSamplesRegisteredDisclaimer(Experiment experiment) {
+      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle("No samples registered",
           "Register your first samples for this experiment", "Register Samples");
       noSamplesDefinedCard.subscribe(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);

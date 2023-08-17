@@ -1,13 +1,15 @@
 package life.qbic.datamanager.views.support.experiment;
 
-import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.CreationCard;
+import life.qbic.datamanager.views.general.AddEvent;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -26,32 +28,50 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 @Tag(Tag.DIV)
 public class ExperimentItemCollection extends Div {
 
+  private final Div header = new Div();
+  private final Div content = new Div();
   private final List<ExperimentItem> items = new ArrayList<>();
   private final List<ComponentEventListener<ExperimentItemClickedEvent>> listeners = new ArrayList<>();
-  private final List<ComponentEventListener<CreationClickedEvent>> createListeners = new ArrayList<>();
-  private final CreationCard createExperiment;
+  private final List<ComponentEventListener<AddEvent<ExperimentItemCollection>>> addListeners = new ArrayList<>();
 
-  private ExperimentItemCollection(String labelCreationCard) {
-    createExperiment = CreationCard.create(labelCreationCard);
+  private ExperimentItemCollection() {
+    addClassName("experiment-item-collection");
     layoutComponent();
   }
 
   private void layoutComponent() {
-    addClassName("experiment-item-collection");
-    add(createExperiment);
-    addCreationEventListener();
+    initHeader();
+    content.addClassName("content");
+    add(content);
+  }
+
+  private void initHeader() {
+    Div controls = new Div();
+    controls.addClassName("controls");
+    Button addButton = new Button("Add");
+    addButton.addClassName("primary");
+    controls.add(addButton);
+    addButton.addClickListener(this::emitAddEvent);
+    Span title = new Span("Experiments");
+    title.addClassName("title");
+    header.add(title, controls);
+    header.addClassName("header");
+    addComponentAsFirst(header);
+  }
+
+  private void emitAddEvent(ClickEvent<Button> buttonClickEvent) {
+    var addEvent = new AddEvent<>(this, true);
+    fireAddEvent(addEvent);
   }
 
   /**
-   * Creates a new {@link ExperimentItemCollection} instance, with a {@link CreationCard}
-   * automatically displayed in order to create a new experiment.
+   * Creates a new {@link ExperimentItemCollection} instance
    *
-   * @param labelCreationCard an intention label that will be shown on the creation card
    * @return a new instance of an {@link ExperimentItemCollection}
    * @since 1.0.0
    */
-  public static ExperimentItemCollection create(String labelCreationCard) {
-    return new ExperimentItemCollection(labelCreationCard);
+  public static ExperimentItemCollection create() {
+    return new ExperimentItemCollection();
   }
 
   /**
@@ -62,18 +82,8 @@ public class ExperimentItemCollection extends Div {
    */
   public void addExperimentItem(ExperimentItem item) {
     items.add(item);
-    addComponentAsFirst(item);
+    content.addComponentAsFirst(item);
     addSelectionEventListener(item);
-  }
-
-  /**
-   * Add the given component as the last component in the container. Removes the component from its
-   * previous parent.
-   *
-   * @param component the component to be added
-   */
-  private void addComponentAsLast(Component component) {
-    addComponentAtIndex(getComponentCount(), component);
   }
 
   private void addSelectionEventListener(ExperimentItem item) {
@@ -81,16 +91,12 @@ public class ExperimentItemCollection extends Div {
         (ComponentEventListener<ExperimentItemClickedEvent>) this::fireClickEvent);
   }
 
-  private void addCreationEventListener() {
-    createExperiment.addListener(this::fireCreationEvent);
-  }
-
-  private void fireCreationEvent(CreationClickedEvent event) {
-    createListeners.forEach(createListener -> createListener.onComponentEvent(event));
-  }
-
   private void fireClickEvent(ExperimentItemClickedEvent event) {
     listeners.forEach(listener -> listener.onComponentEvent(event));
+  }
+
+  private void fireAddEvent(AddEvent<ExperimentItemCollection> addEvent) {
+    addListeners.forEach(listener -> listener.onComponentEvent(addEvent));
   }
 
   /**
@@ -118,21 +124,21 @@ public class ExperimentItemCollection extends Div {
   }
 
   /**
-   * Add a listener of type {@link ComponentEventListener<CreationClickedEvent>} that will be
+   * Add the specified listener which will be
    * called, if the user intends to create a new experiment.
    *
    * @param listener the listener that will be informed
    * @since 1.0.0
    */
-  public void addCreateEventListener(ComponentEventListener<CreationClickedEvent> listener) {
-    createListeners.add(listener);
+  public void addAddEventListener(
+      ComponentEventListener<AddEvent<ExperimentItemCollection>> listener) {
+    addListeners.add(listener);
   }
 
   @Override
   public void removeAll() {
-    super.removeAll();
-    addComponentAsLast(createExperiment);
-    this.items.clear();
+    content.removeAll();
+    items.clear();
   }
 
 }
