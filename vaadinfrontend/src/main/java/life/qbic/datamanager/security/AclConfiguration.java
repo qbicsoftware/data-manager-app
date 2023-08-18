@@ -1,10 +1,10 @@
 package life.qbic.datamanager.security;
 
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -20,10 +20,9 @@ import org.springframework.security.acls.jdbc.BasicLookupStrategy;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.jdbc.LookupStrategy;
 import org.springframework.security.acls.model.AclCache;
-import org.springframework.security.acls.model.AclService;
+import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 /**
  * <class short description - One Line!>
@@ -35,9 +34,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Configuration
 @EnableCaching
 @EnableMethodSecurity
-@EnableWebSecurity
 public class AclConfiguration {
-
 
   @Value("${spring.datasource.url}")
   String url;
@@ -45,9 +42,6 @@ public class AclConfiguration {
   String name;
   @Value("${spring.datasource.password}")
   String password;
-
-  @Autowired
-  CacheManager cacheManager;
 
   @Bean
   public DataSource dataSource() {
@@ -59,13 +53,14 @@ public class AclConfiguration {
   }
 
   @Bean
-  public AclService aclService() {
+  public MutableAclService mutableAclService() {
     return new JdbcMutableAclService(dataSource(), lookupStrategy(), aclCache());
   }
 
 
   @Bean
   protected AclCache aclCache() {
+    CacheManager cacheManager = new ConcurrentMapCacheManager();
     return new SpringCacheBasedAclCache(
         cacheManager.getCache("acl_cache"),
         permissionGrantingStrategy(),
@@ -96,7 +91,7 @@ public class AclConfiguration {
   @Bean
   public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler() {
     var expressionHandler = new DefaultMethodSecurityExpressionHandler();
-    var permissionEvaluator = new AclPermissionEvaluator(aclService());
+    var permissionEvaluator = new AclPermissionEvaluator(mutableAclService());
     expressionHandler.setPermissionEvaluator(permissionEvaluator);
     return expressionHandler;
   }
