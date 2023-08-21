@@ -5,8 +5,9 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Service;
 
-//@Service
+@Service
 public class QbicProjectPermissionEvaluator {
 
   private final ProjectPermissionService projectPermissionService;

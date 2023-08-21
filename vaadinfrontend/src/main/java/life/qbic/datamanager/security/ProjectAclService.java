@@ -3,6 +3,7 @@ package life.qbic.datamanager.security;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.IntStream;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +13,9 @@ import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.ObjectIdentity;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@Component
+//@Component
 public class ProjectAclService implements Serializable {
 
   @Serial
@@ -59,7 +59,7 @@ public class ProjectAclService implements Serializable {
     }
 
     ObjectIdentity oi = new ObjectIdentityImpl(Project.class, projectId);
-    MutableAcl acl = null;
+    MutableAcl acl;
 
     try {
       acl = (MutableAcl) aclService.readAclById(oi);
@@ -71,6 +71,7 @@ public class ProjectAclService implements Serializable {
     }
 
     for (var setting : permissions) {
+      //FixMe what should happen here
     }
     aclService.updateAcl(acl);
     return true;
@@ -79,11 +80,9 @@ public class ProjectAclService implements Serializable {
   private void clearACEs(MutableAcl acl) {
     try {
       int count = acl.getEntries().size();
-      for (int index = count - 1; index >= 0; index++) {
-        acl.deleteAce(index);
-      }
+      IntStream.iterate(count - 1, index -> index >= 0, index -> index + 1).forEach(acl::deleteAce);
     } catch (NotFoundException ex) {
-      return;
+      //ToDo What should happen here
     }
   }
 

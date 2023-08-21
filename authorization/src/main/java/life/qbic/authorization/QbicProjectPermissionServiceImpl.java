@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,8 @@ public class QbicProjectPermissionServiceImpl implements ProjectPermissionServic
   }
 
   @Override
+  //FixME What permission should allow the user to see all users of a project?
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','VIEW_PROJECT')")
   public List<UserId> loadUsersWithProjectPermission(ProjectId projectId) {
     return projectRoleRepository.findAllByProjectId(projectId.value()).stream()
         .map(ProjectRole::userId).map(UserId::from).collect(

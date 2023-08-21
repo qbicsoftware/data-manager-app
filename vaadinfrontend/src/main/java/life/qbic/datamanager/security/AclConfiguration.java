@@ -3,10 +3,7 @@ package life.qbic.datamanager.security;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
@@ -22,7 +19,6 @@ import org.springframework.security.acls.jdbc.LookupStrategy;
 import org.springframework.security.acls.model.AclCache;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 /**
  * <class short description - One Line!>
@@ -31,9 +27,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
  *
  * @since <version tag>
  */
-@Configuration
-@EnableCaching
-@EnableMethodSecurity
+//@Configuration
+//@EnableCaching
+//@EnableMethodSecurity
 public class AclConfiguration {
 
   @Value("${spring.datasource.url}")
@@ -43,7 +39,7 @@ public class AclConfiguration {
   @Value("${spring.datasource.password}")
   String password;
 
-  @Bean
+  //@Bean
   public DataSource dataSource() {
     var ds = new DriverManagerDataSource();
     ds.setUrl(url);
@@ -52,13 +48,13 @@ public class AclConfiguration {
     return ds;
   }
 
-  @Bean
+  //@Bean
   public MutableAclService mutableAclService() {
     return new JdbcMutableAclService(dataSource(), lookupStrategy(), aclCache());
   }
 
 
-  @Bean
+  //@Bean
   protected AclCache aclCache() {
     CacheManager cacheManager = new ConcurrentMapCacheManager();
     return new SpringCacheBasedAclCache(
@@ -68,17 +64,17 @@ public class AclConfiguration {
   }
 
 
-  @Bean
+  //@Bean
   public AclAuthorizationStrategy aclAuthorizationStrategy() {
     return new AclAuthorizationStrategyImpl(() -> "read");
   }
 
-  @Bean
+  //@Bean
   public PermissionGrantingStrategy permissionGrantingStrategy() {
     return new DefaultPermissionGrantingStrategy(new ConsoleAuditLogger());
   }
 
-  @Bean
+  //@Bean
   public LookupStrategy lookupStrategy() {
     return new BasicLookupStrategy(
         dataSource(),
@@ -88,7 +84,7 @@ public class AclConfiguration {
     );
   }
 
-  @Bean
+  //@Bean
   public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler() {
     var expressionHandler = new DefaultMethodSecurityExpressionHandler();
     var permissionEvaluator = new AclPermissionEvaluator(mutableAclService());
