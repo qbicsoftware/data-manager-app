@@ -21,9 +21,17 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/images/*.png"))
+    http.authorizeHttpRequests()
+        .requestMatchers(new AntPathRequestMatcher("/images/*.png"))
         .permitAll();
     super.configure(http);
+    //TODO figure global configuration out with path parameter and permission
+/*    http.authorizeHttpRequests()
+        .requestMatchers("/projects/{projectId}/**")
+        .access(new WebExpressionAuthorizationManager(
+            "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.project.Project', 'READ')"));*/
     setLoginView(http, LoginLayout.class);
   }
+
+
 }
