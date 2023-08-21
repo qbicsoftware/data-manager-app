@@ -30,7 +30,7 @@ import org.springframework.security.acls.model.PermissionGrantingStrategy;
 //@Configuration
 //@EnableCaching
 //@EnableMethodSecurity
-public class AclConfiguration {
+public class AclSecurityConfiguration {
 
   @Value("${spring.datasource.url}")
   String url;
