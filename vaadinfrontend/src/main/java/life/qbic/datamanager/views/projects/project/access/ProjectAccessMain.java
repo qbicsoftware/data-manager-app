@@ -6,7 +6,6 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +16,6 @@ import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.authorization.ProjectPermissionService;
 import life.qbic.authorization.security.QbicUserDetails;
-import life.qbic.datamanager.views.MainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +31,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * @since <version tag>
  */
 
-@Route(value = "projects/:projectId?/access", layout = MainLayout.class)
 @AnonymousAllowed
 public class ProjectAccessMain extends Div implements BeforeEnterObserver {
 
