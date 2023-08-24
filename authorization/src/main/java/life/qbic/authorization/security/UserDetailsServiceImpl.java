@@ -4,7 +4,7 @@ import java.util.List;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.authorization.UserAuthorityProvider;
+import life.qbic.authorization.authorities.UserAuthorityProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

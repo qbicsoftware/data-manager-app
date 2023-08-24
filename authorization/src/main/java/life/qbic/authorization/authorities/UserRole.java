@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

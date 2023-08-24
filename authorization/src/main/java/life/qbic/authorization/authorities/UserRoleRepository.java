@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

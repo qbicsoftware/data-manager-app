@@ -8,21 +8,18 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+import jakarta.annotation.security.RolesAllowed;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.authorization.ProjectAccessService;
+import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
@@ -34,7 +31,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  */
 
 @Route(value = "projects/:projectId?/access", layout = MainLayout.class)
-@AnonymousAllowed
+@RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class ProjectAccessMain extends Div implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
@@ -78,11 +75,7 @@ public class ProjectAccessMain extends Div implements BeforeEnterObserver {
   public void beforeEnter(BeforeEnterEvent event) {
     ProjectId projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
         .map(ProjectId::parse).orElseThrow();
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication.getPrincipal() instanceof QbicUserDetails) {
-      UserId userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
-      loadInformationForProjectIdUserId(projectId);
-    }
+    loadInformationForProjectIdUserId(projectId);
   }
 
   private void loadInformationForProjectIdUserId(ProjectId projectId) {

@@ -4,7 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
-import life.qbic.authorization.permissionevaluators.QbicPermissionEvaluator;
+import life.qbic.authorization.acl.QbicPermissionEvaluator;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
@@ -30,6 +30,7 @@ import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.util.Assert;
 
 /**
@@ -41,7 +42,7 @@ import org.springframework.util.Assert;
  */
 @Configuration
 @EnableCaching
-@EnableMethodSecurity(jsr250Enabled = true)
+@EnableMethodSecurity
 public class AclSecurityConfiguration {
 
   private static final Logger log = logger(AclSecurityConfiguration.class);
@@ -68,8 +69,7 @@ public class AclSecurityConfiguration {
         lookupStrategy(), aclCache());
     // allow for non-long type ids
     jdbcMutableAclService.setAclClassIdSupported(true);
-    jdbcMutableAclService.setSecurityContextHolderStrategy(
-        new VaadinAwareSecurityContextHolderStrategy()); // the ever-increasing cost of Vaadin
+    jdbcMutableAclService.setSecurityContextHolderStrategy(securityContextHolderStrategy());
 
     return jdbcMutableAclService;
   }
@@ -107,9 +107,12 @@ public class AclSecurityConfiguration {
         //give this to ROLE_ADMIN, ROLE_PROJECT_MANAGER
     );
 
-    aclAuthorizationStrategy.setSecurityContextHolderStrategy(
-        new VaadinAwareSecurityContextHolderStrategy()); // the ever-increasing cost of vaadin
+    aclAuthorizationStrategy.setSecurityContextHolderStrategy(securityContextHolderStrategy());
     return aclAuthorizationStrategy;
+  }
+
+  protected SecurityContextHolderStrategy securityContextHolderStrategy() {
+    return new VaadinAwareSecurityContextHolderStrategy();
   }
 
   @Bean

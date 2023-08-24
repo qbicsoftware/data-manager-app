@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.acl;
 
 import java.util.List;
 import java.util.function.Predicate;

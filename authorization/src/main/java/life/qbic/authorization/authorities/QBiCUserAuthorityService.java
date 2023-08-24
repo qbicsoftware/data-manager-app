@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import java.util.ArrayList;
 import java.util.List;

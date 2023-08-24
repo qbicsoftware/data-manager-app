@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import static java.util.Objects.requireNonNull;
 

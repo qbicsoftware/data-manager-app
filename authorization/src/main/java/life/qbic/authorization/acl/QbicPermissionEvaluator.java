@@ -1,4 +1,4 @@
-package life.qbic.authorization.permissionevaluators;
+package life.qbic.authorization.acl;
 
 import java.io.Serializable;
 import java.util.Optional;
