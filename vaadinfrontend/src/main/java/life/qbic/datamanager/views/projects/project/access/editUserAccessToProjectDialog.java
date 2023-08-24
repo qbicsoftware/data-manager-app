@@ -8,15 +8,22 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
+import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.authentication.persistence.SidRepository;
+import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -26,21 +33,33 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since <version tag>
  */
-public class AddUserToProjectDialog extends DialogWindow {
+public class editUserAccessToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = -7896582476882842608L;
-  private static final String TITLE = "Add Users to Project";
+  private static final String TITLE = "Edit User Access to Project";
   private final Grid<User> userGrid = new Grid<>();
   private final TextField searchField = new TextField();
-  private final List<ComponentEventListener<CancelEvent<AddUserToProjectDialog>>> cancelEventListeners = new ArrayList<>();
-  private final List<ComponentEventListener<ConfirmEvent<AddUserToProjectDialog>>> confirmEventListeners = new ArrayList<>();
+  private final List<ComponentEventListener<CancelEvent<editUserAccessToProjectDialog>>> cancelEventListeners = new ArrayList<>();
+  private final List<ComponentEventListener<ConfirmEvent<editUserAccessToProjectDialog>>> confirmEventListeners = new ArrayList<>();
   private final transient SidRepository sidRepository;
   private final transient UserRepository userRepository;
+  private final transient ProjectAccessService projectAccessService;
+  private final ProjectId projectId;
+  private UserSelectionContent userSelectionContent;
+  private Set<User> originalUsersInProject;
 
-  public AddUserToProjectDialog(@Autowired SidRepository sidRepository,
+  public editUserAccessToProjectDialog(@Autowired ProjectAccessService projectAccessService,
+      @Autowired ProjectId projectId,
+      @Autowired SidRepository sidRepository,
       @Autowired UserRepository userRepository) {
     super();
+    Objects.requireNonNull(projectAccessService);
+    Objects.requireNonNull(projectId);
+    Objects.requireNonNull(sidRepository);
+    Objects.requireNonNull(userRepository);
+    this.projectAccessService = projectAccessService;
+    this.projectId = projectId;
     this.sidRepository = sidRepository;
     this.userRepository = userRepository;
     addClassName("add-user-to-project-dialog");
@@ -53,7 +72,8 @@ public class AddUserToProjectDialog extends DialogWindow {
     initSearchField();
     layoutGrid();
     addUsersToGrid();
-    setConfirmButtonLabel("Add");
+    setPreselectedUsers();
+    setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     final DialogFooter footer = getFooter();
     footer.add(this.cancelButton, this.confirmButton);
@@ -65,6 +85,15 @@ public class AddUserToProjectDialog extends DialogWindow {
     userGrid.setSelectionMode(SelectionMode.MULTI);
     add(userGrid);
   }
+
+  private void setPreselectedUsers() {
+    userGrid.deselectAll();
+    List<UserId> addedUserIdsInProject = projectAccessService.listUsers(projectId);
+    originalUsersInProject = addedUserIdsInProject.stream().map(userRepository::findById)
+        .filter(Optional::isPresent).map(Optional::get).collect(Collectors.toUnmodifiableSet());
+    originalUsersInProject.forEach(userGrid::select);
+  }
+
 
   private void initSearchField() {
     searchField.setClassName("search-field");
@@ -81,6 +110,7 @@ public class AddUserToProjectDialog extends DialogWindow {
     sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
     userSids.forEach(sId -> users.add(userRepository.findByEmail(EmailAddress.from(sId)).get()));
     userGrid.setItems(users);
+
   }
 
   private boolean matchesTerm(String value, String searchTerm) {
@@ -135,7 +165,7 @@ public class AddUserToProjectDialog extends DialogWindow {
    * @param listener the listener to add
    */
   public void addConfirmEventListener(
-      final ComponentEventListener<ConfirmEvent<AddUserToProjectDialog>> listener) {
+      final ComponentEventListener<ConfirmEvent<editUserAccessToProjectDialog>> listener) {
     this.confirmEventListeners.add(listener);
   }
 
@@ -145,16 +175,29 @@ public class AddUserToProjectDialog extends DialogWindow {
    * @param listener the listener to add
    */
   public void addCancelEventListener(
-      final ComponentEventListener<CancelEvent<AddUserToProjectDialog>> listener) {
+      final ComponentEventListener<CancelEvent<editUserAccessToProjectDialog>> listener) {
     this.cancelEventListeners.add(listener);
   }
 
   /**
-   * Provides set of users selected in the Dialog
+   * Provides set of users selected and deselected in the Dialog
    *
-   * @return set of {@link User} which were selected within this dialog
+   * @return set of {@link User} which were selected or deselected within this dialog
    */
-  public Set<User> getSelectedUsers() {
-    return userGrid.getSelectedItems();
+  public UserSelectionContent getUserSelectionContent() {
+    determineChangedUsers();
+    return userSelectionContent;
+  }
+
+  private void determineChangedUsers() {
+    Set<User> selectedUsers = new HashSet<>(userGrid.getSelectedItems());
+    Set<User> preSelectedUsers = new HashSet<>(originalUsersInProject);
+    preSelectedUsers.removeAll(userGrid.getSelectedItems());
+    selectedUsers.removeAll(originalUsersInProject);
+    userSelectionContent = new UserSelectionContent(selectedUsers, preSelectedUsers);
+  }
+
+  public record UserSelectionContent(Set<User> addedUsers, Set<User> removedUsers) {
+
   }
 }

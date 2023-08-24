@@ -88,10 +88,9 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   }
 
   private void initButtonBar() {
-    Button addButton = new Button("Add");
-    addButton.addClickListener(event -> openAddUserToProjectDialog());
-    addButton.addClassName("primary");
-    buttonBar.add(addButton);
+    Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> openEditUserAccessToProjectDialog());
+    buttonBar.add(editButton);
   }
 
   private void initContent() {
@@ -141,29 +140,46 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     projectRoleGrid.setItems(userProjectRoles);
   }
 
-  private void openAddUserToProjectDialog() {
-    AddUserToProjectDialog addUserToProjectDialog = new AddUserToProjectDialog(
+  private void openEditUserAccessToProjectDialog() {
+    editUserAccessToProjectDialog editUserAccessToProjecTDialog = new editUserAccessToProjectDialog(
+        projectAccessService,
+        projectId,
         sidRepository, userRepository);
-    addAddUserToProjectDialogListeners(addUserToProjectDialog);
-    addUserToProjectDialog.open();
+    addEditUserAccessToProjectDialogListeners(editUserAccessToProjecTDialog);
+    editUserAccessToProjecTDialog.open();
   }
 
-  private void addAddUserToProjectDialogListeners(AddUserToProjectDialog addUserToProjectDialog) {
-    addUserToProjectDialog.addCancelEventListener(
-        addUserToProjectDialogCancelEvent -> addUserToProjectDialog.close());
-    addUserToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
-      List<User> selectedUsers = addUserToProjectDialog.getSelectedUsers().stream().toList();
-      if (!selectedUsers.isEmpty()) {
-        addUsersToProject(addUserToProjectDialog.getSelectedUsers().stream().toList());
-        loadInformationForProject(projectId);
+  private void addEditUserAccessToProjectDialogListeners(
+      editUserAccessToProjectDialog editUserAccessToProjectDialog) {
+    editUserAccessToProjectDialog.addCancelEventListener(
+        addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
+    editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
+      List<User> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
+          .stream()
+          .toList();
+      List<User> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
+          .removedUsers()
+          .stream().toList();
+      if (!addedUsers.isEmpty()) {
+        addUsersToProject(addedUsers);
       }
-      addUserToProjectDialog.close();
+      if (!removedUsers.isEmpty()) {
+        removeUsersFromProject(removedUsers);
+      }
+      loadInformationForProject(projectId);
+      editUserAccessToProjectDialog.close();
     });
   }
 
   private void addUsersToProject(List<User> users) {
     for (User user : users) {
       projectAccessService.grant(user.emailAddress().get(), projectId, BasePermission.READ);
+    }
+  }
+
+  private void removeUsersFromProject(List<User> users) {
+    for (User user : users) {
+      projectAccessService.deny(user.emailAddress().get(), projectId, BasePermission.READ);
     }
   }
 
