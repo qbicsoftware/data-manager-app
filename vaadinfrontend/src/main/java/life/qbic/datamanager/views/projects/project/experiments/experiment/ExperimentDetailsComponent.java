@@ -90,6 +90,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final Disclaimer noExperimentalVariablesDefined;
+  private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
   private Context context;
   private boolean hasExperimentalGroups;
@@ -106,6 +107,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.experimentalDesignSearchService = Objects.requireNonNull(experimentalDesignSearchService);
     this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
+    this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.addClassName("experiment-details-component");
     layoutComponent();
@@ -132,9 +134,16 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Disclaimer createNoVariableDisclaimer() {
-    var disclaimer = Disclaimer.createWithTitle("Missing variables",
-        "No experiment variables defined", "Add");
-    disclaimer.subscribe(listener -> displayAddExperimentalVariablesDialog());
+    var disclaimer = Disclaimer.createWithTitle("Design your experiment",
+        "Get started by adding experimental variables", "Add variables");
+    disclaimer.subscribe(listener -> openAddExperimentalVariablesDialog());
+    return disclaimer;
+  }
+
+  private Disclaimer createNoGroupsDisclaimer() {
+    var disclaimer = Disclaimer.createWithTitle("Design your experiment",
+        "Create conditions for your samples by adding experimental groups", "Add groups");
+    disclaimer.subscribe(listener -> openExperimentalGroupAddDialog());
     return disclaimer;
   }
 
@@ -261,10 +270,10 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void addListenerForNewVariableEvent() {
     this.experimentalVariablesComponent.subscribeToAddEvent(
-        listener -> displayAddExperimentalVariablesDialog());
+        listener -> openAddExperimentalVariablesDialog());
   }
 
-  private void displayAddExperimentalVariablesDialog() {
+  private void openAddExperimentalVariablesDialog() {
     this.addExperimentalVariablesDialog.open();
   }
 
@@ -407,7 +416,10 @@ public class ExperimentDetailsComponent extends PageArea {
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
     if (hasExperimentalGroups) {
+      onGroupsDefined();
       showSampleRegistrationPossibleNotification();
+    } else {
+      onNoGroupsDefined();
     }
   }
 
@@ -417,7 +429,6 @@ public class ExperimentDetailsComponent extends PageArea {
         context.experimentId().orElseThrow());
     List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
         .map(ExperimentalGroupCard::new).toList();
-
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
     this.hasExperimentalGroups = !experimentalGroupsCards.isEmpty();
   }
@@ -462,12 +473,14 @@ public class ExperimentDetailsComponent extends PageArea {
     loadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
       onNoVariablesDefined();
+      return;
+    }
+    if (experiment.getExperimentalGroups().isEmpty()) {
+      onNoGroupsDefined();
     } else {
-      removeNoExperimentalVariablesDefinedDisclaimer();
-      contentExperimentalGroupsTab.add(experimentalGroupsCollection);
+      onGroupsDefined();
     }
   }
-
 
   private void loadTagInformation(Experiment experiment) {
     tagCollection.removeAll();
@@ -489,11 +502,18 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void onNoVariablesDefined() {
+    contentExperimentalGroupsTab.removeAll();
     contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
-    contentExperimentalGroupsTab.remove(experimentalGroupsCollection);
+
   }
 
-  private void removeNoExperimentalVariablesDefinedDisclaimer() {
-    contentExperimentalGroupsTab.remove(noExperimentalVariablesDefined);
+  private void onNoGroupsDefined() {
+    contentExperimentalGroupsTab.removeAll();
+    contentExperimentalGroupsTab.add(noExperimentalGroupsDefined);
+  }
+
+  private void onGroupsDefined() {
+    contentExperimentalGroupsTab.removeAll();
+    contentExperimentalGroupsTab.add(experimentalGroupsCollection);
   }
 }
