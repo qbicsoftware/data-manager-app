@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.repository.UserInformationService;
+import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.authentication.persistence.SidRepository;
 import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.datamanager.views.MainLayout;
@@ -40,9 +41,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 public class ProjectAccessComponent extends PageArea implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final transient UserInformationService userInformationService;
   private final ProjectAccessService projectAccessService;
   private final UserDetailsService userDetailsService;
+  private final SidRepository sidRepository;
+  private final UserRepository userRepository;
   private static final Logger log = logger(ProjectAccessComponent.class);
   private final Div content = new Div();
   private final Div header = new Div();
@@ -52,16 +54,18 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private ProjectId projectId;
 
   protected ProjectAccessComponent(
-      @Autowired UserInformationService userInformationService,
       @Autowired ProjectAccessService projectAccessService,
-      @Autowired UserDetailsService userDetailsService) {
+      @Autowired UserDetailsService userDetailsService,
+      @Autowired UserRepository userRepository,
+      @Autowired SidRepository sidRepository) {
     this.projectAccessService = projectAccessService;
     this.userDetailsService = userDetailsService;
-    requireNonNull(
-        userInformationService); //FIXME why another information service; remove user information service
+    this.userRepository = userRepository;
+    this.sidRepository = sidRepository;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userDetailsService, "userDetailsService must not be null");
-    this.userInformationService = userInformationService;
+    requireNonNull(userRepository, "userRepository must not be null");
+    requireNonNull(sidRepository, "sidRepository must not be null");
     layoutComponent();
     this.addClassName("project-access-component");
     log.debug(String.format(
@@ -139,7 +143,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
 
   private void openAddUserToProjectDialog() {
     AddUserToProjectDialog addUserToProjectDialog = new AddUserToProjectDialog(
-        userInformationService);
+        sidRepository, userRepository);
     addAddUserToProjectDialogListeners(addUserToProjectDialog);
     addUserToProjectDialog.open();
   }
@@ -151,6 +155,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
       List<User> selectedUsers = addUserToProjectDialog.getSelectedUsers().stream().toList();
       if (!selectedUsers.isEmpty()) {
         addUsersToProject(addUserToProjectDialog.getSelectedUsers().stream().toList());
+        loadInformationForProject(projectId);
       }
       addUserToProjectDialog.close();
     });

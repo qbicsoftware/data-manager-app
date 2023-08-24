@@ -25,6 +25,7 @@ public class QBiCSid {
   protected long id;
   @Column(name = "principal")
   protected boolean principal;
+
   @Column(name = "sid")
   protected String sid;
 
@@ -35,6 +36,10 @@ public class QBiCSid {
 
   protected QBiCSid() {
 
+  }
+
+  public String getSid() {
+    return sid;
   }
 
   @Override

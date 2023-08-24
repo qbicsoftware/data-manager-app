@@ -9,13 +9,15 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.repository.UserInformationService;
+import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.authentication.persistence.SidRepository;
 import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <class short description - One Line!>
@@ -33,11 +35,14 @@ public class AddUserToProjectDialog extends DialogWindow {
   private final TextField searchField = new TextField();
   private final List<ComponentEventListener<CancelEvent<AddUserToProjectDialog>>> cancelEventListeners = new ArrayList<>();
   private final List<ComponentEventListener<ConfirmEvent<AddUserToProjectDialog>>> confirmEventListeners = new ArrayList<>();
-  private final transient UserInformationService userInformationService;
+  private final transient SidRepository sidRepository;
+  private final transient UserRepository userRepository;
 
-  public AddUserToProjectDialog(UserInformationService userInformationService) {
+  public AddUserToProjectDialog(@Autowired SidRepository sidRepository,
+      @Autowired UserRepository userRepository) {
     super();
-    this.userInformationService = Objects.requireNonNull(userInformationService);
+    this.sidRepository = sidRepository;
+    this.userRepository = userRepository;
     addClassName("add-user-to-project-dialog");
     layoutComponent();
     configureComponent();
@@ -71,7 +76,12 @@ public class AddUserToProjectDialog extends DialogWindow {
   }
 
   private void addUsersToGrid() {
-    userGrid.setItems(userInformationService.findAllActiveUsers());
+    List<String> userSids = new ArrayList<>();
+    List<User> users = new ArrayList<>();
+    sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
+    userSids.forEach(System.out::println);
+    userSids.forEach(sId -> users.add(userRepository.findByEmail(EmailAddress.from(sId)).get()));
+    userGrid.setItems(users);
   }
 
   private boolean matchesTerm(String value, String searchTerm) {

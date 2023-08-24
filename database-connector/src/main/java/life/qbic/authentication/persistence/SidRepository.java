@@ -1,5 +1,6 @@
 package life.qbic.authentication.persistence;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 /**
@@ -8,5 +9,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface SidRepository extends CrudRepository<QBiCSid, Long> {
 
   boolean existsBySidEqualsIgnoreCaseAndPrincipalEquals(String sid, boolean principal);
+
+  List<QBiCSid> findAllByPrincipalIsTrue();
 
 }
