@@ -67,7 +67,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
       Permission permission) {
     GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
     MutableAcl acl = getAclForProject(projectId, List.of(grantedAuthoritySid));
-    acl.insertAce(acl.getEntries().size(), permission, grantedAuthoritySid, false);
+    acl.insertAce(acl.getEntries().size(), permission, grantedAuthoritySid, true);
     aclService.updateAcl(acl);
   }
 
