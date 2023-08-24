@@ -7,7 +7,6 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,6 @@ import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
-import life.qbic.datamanager.views.MainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +28,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  * @since <version tag>
  */
 
-@Route(value = "projects/:projectId?/access", layout = MainLayout.class)
+//@Route(value = "projects/:projectId?/access", layout = MainLayout.class)
 @RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class ProjectAccessMain extends Div implements BeforeEnterObserver {
 

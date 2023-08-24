@@ -17,7 +17,7 @@ class UserRepositorySpec extends Specification {
         UserDataStorage storage = Mock(UserDataStorage.class)
         storage.findUsersByEmailAddress(_ as EmailAddress) >> [createDummyUser(), createDummyUser()]
 
-        UserRepository repository = new UserRepository(storage)
+        UserRepository repository = new UserRepository(storage, sidRepository)
 
         when:
         repository.findByEmail(EmailAddress.from("my.example@example.com"))
@@ -31,7 +31,7 @@ class UserRepositorySpec extends Specification {
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
         storage.findUsersByEmailAddress(_ as EmailAddress) >> [user]
-        UserRepository repository = new UserRepository(storage)
+        UserRepository repository = new UserRepository(storage, sidRepository)
 
         when:
         def matchingUser = repository.findByEmail(EmailAddress.from("my.example@example.com"))
@@ -45,7 +45,7 @@ class UserRepositorySpec extends Specification {
         UserDataStorage storage = Mock(UserDataStorage.class)
         def user = createDummyUser()
         storage.findUsersByEmailAddress(_ as EmailAddress) >> []
-        UserRepository repository = new UserRepository(storage)
+        UserRepository repository = new UserRepository(storage, sidRepository)
 
         when:
         def matchingUser = repository.findByEmail(EmailAddress.from("not.existing@example.com"))
@@ -58,7 +58,7 @@ class UserRepositorySpec extends Specification {
         given:
         UserDataStorage storage = Mock(UserDataStorage.class)
         storage.findUserById(_ as UserId) >> Optional.of(createDummyUser())
-        UserRepository repository = new UserRepository(storage)
+        UserRepository repository = new UserRepository(storage, sidRepository)
 
         when:
         var result = repository.findById(UserId.create())

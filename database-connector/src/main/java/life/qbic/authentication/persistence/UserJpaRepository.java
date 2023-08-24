@@ -5,6 +5,7 @@ import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
+import life.qbic.authentication.domain.user.repository.SidDataStorage;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,13 +27,15 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class UserJpaRepository implements UserDataStorage {
+public class UserJpaRepository implements UserDataStorage, SidDataStorage {
 
   private final QbicUserRepo userRepo;
+  private final SidRepository sidRepository;
 
   @Autowired
-  public UserJpaRepository(QbicUserRepo userRepo) {
+  public UserJpaRepository(QbicUserRepo userRepo, SidRepository sidRepository) {
     this.userRepo = userRepo;
+    this.sidRepository = sidRepository;
   }
 
   @Override
@@ -43,6 +46,10 @@ public class UserJpaRepository implements UserDataStorage {
   @Override
   public void save(User user) {
     userRepo.save(user);
+    if (!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(user.emailAddress().get(),
+        true)) {
+      addSid(user.emailAddress().get(), true);
+    }
   }
 
   @Override
@@ -53,5 +60,10 @@ public class UserJpaRepository implements UserDataStorage {
   @Override
   public List<User> findAllActiveUsers() {
     return userRepo.findUsersByActiveTrue();
+  }
+
+  @Override
+  public void addSid(String sid, boolean principal) {
+    sidRepository.save(new QBiCSid(principal, sid));
   }
 }

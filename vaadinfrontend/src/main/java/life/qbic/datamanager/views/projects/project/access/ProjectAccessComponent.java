@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.access;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.button.Button;
@@ -9,24 +10,20 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.authentication.domain.user.repository.UserInformationService;
-import life.qbic.authorization.ProjectPermissionService;
+import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  * <class short description - One Line!>
@@ -37,12 +34,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 
 @Route(value = "projects/:projectId?/access", layout = MainLayout.class)
-@AnonymousAllowed
 public class ProjectAccessComponent extends PageArea implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final ProjectPermissionService projectPermissionService;
   private final transient UserInformationService userInformationService;
+  private final ProjectAccessService projectAccessService;
+  private final UserDetailsService userDetailsService;
+
   private static final Logger log = logger(ProjectAccessComponent.class);
   private final Div content = new Div();
   private final Div header = new Div();
@@ -51,11 +49,16 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private final Grid<UserProjectRole> projectRoleGrid = new Grid<>(UserProjectRole.class);
 
 
-  protected ProjectAccessComponent(@Autowired ProjectPermissionService projectPermissionService,
-      @Autowired UserInformationService userInformationService) {
-    Objects.requireNonNull(projectPermissionService);
-    Objects.requireNonNull(userInformationService);
-    this.projectPermissionService = projectPermissionService;
+  protected ProjectAccessComponent(
+      @Autowired UserInformationService userInformationService,
+      @Autowired ProjectAccessService projectAccessService,
+      @Autowired UserDetailsService userDetailsService) {
+    this.projectAccessService = projectAccessService;
+    this.userDetailsService = userDetailsService;
+    requireNonNull(
+        userInformationService); //FIXME why another information service; remove user information service
+    requireNonNull(projectAccessService, "projectAccessService must not be null");
+    requireNonNull(userDetailsService, "userDetailsService must not be null");
     this.userInformationService = userInformationService;
     layoutComponent();
     this.addClassName("project-access-component");
@@ -106,33 +109,26 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   public void beforeEnter(BeforeEnterEvent event) {
     ProjectId projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
         .map(ProjectId::parse).orElseThrow();
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication.getPrincipal() instanceof QbicUserDetails) {
-      UserId userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
-      loadInformationForProjectIdUserId(projectId, userId);
-    }
+    loadInformationForProject(projectId);
   }
 
-  private void loadInformationForProjectIdUserId(ProjectId projectId, UserId userId) {
-    List<UserProjectRole> userProjectRoleList = new ArrayList<>();
-    projectPermissionService.loadUsersWithProjectPermission(projectId)
-        .forEach(uId -> userProjectRoleList.add(
-            new UserProjectRole(loadUserName(uId), loadUserRole(projectId, uId))));
-    setGridData(userProjectRoleList);
-  }
-
-  private String loadUserName(UserId userId) {
-    //FixMe This should be handled by UserInformationService
-    User user = userInformationService.findById(userId).orElseThrow();
-    return user.fullName().get();
-  }
-
-  private String loadUserRole(ProjectId projectId, UserId userId) {
-    //ToDo Clean up String extraction
-    return projectPermissionService.loadUserPermissions(userId, projectId).stream().map(
-            GrantedAuthority::getAuthority).filter(it -> it.startsWith("ROLE_"))
-        .map(s -> s.substring(5))
-        .collect(Collectors.joining());
+  private void loadInformationForProject(ProjectId projectId) {
+    List<String> usernames = projectAccessService.listUsernames(projectId);
+    List<QbicUserDetails> users = usernames.stream()
+        .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it)).toList();
+    List<QbicUserDetails> projectManagers = users.stream()
+        .filter(it -> it.hasAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER")))
+        .toList();
+    List<QbicUserDetails> otherUsers = users.stream()
+        .filter(it -> !projectManagers.contains(it))
+        .toList();
+    List<UserProjectRole> userProjectRoleList = new ArrayList<>(
+        projectManagers.stream().map(it -> new UserProjectRole(it.getUsername(), "Project Manager"))
+            .toList());
+    userProjectRoleList.addAll(
+        otherUsers.stream().map(it -> new UserProjectRole(it.getUsername(), "Viewer"))
+            .toList());
+    setGridData(userProjectRoleList.stream().distinct().collect(Collectors.toList()));
   }
 
   private void setGridData(List<UserProjectRole> userProjectRoles) {
@@ -158,9 +154,11 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     });
   }
 
-  // FixMe add users to project
+  // FIXME: provide project
   private void addUsersToProject(List<User> users) {
-    users.forEach(user -> System.out.println(user.fullName().get()));
+    for (User user : users) {
+//      projectAccessService.grant(user.emailAddress(), /* enter project id here */, BasePermission.READ);
+    }
   }
 
   private record UserProjectRole(String userName, String projectRole) {
