@@ -49,4 +49,9 @@ public class UserJpaRepository implements UserDataStorage {
   public Optional<User> findUserById(UserId id) {
     return Optional.ofNullable(userRepo.findUserById(id));
   }
+
+  @Override
+  public List<User> findAllActiveUsers() {
+    return userRepo.findUsersByActiveTrue();
+  }
 }

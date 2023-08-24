@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class ExperimentListComponent extends PageArea {
-
   @Serial
   private static final long serialVersionUID = -2196400941684042549L;
   private final ExperimentItemCollection experimentItemCollection;
@@ -65,8 +64,7 @@ public class ExperimentListComponent extends PageArea {
     this.experimentInformationService = experimentInformationService;
     this.experimentalDesignSearchService = experimentalDesignSearchService;
     this.addClassName("list-component");
-    this.experimentItemCollection = ExperimentItemCollection.create(
-        "Add a new experiment");
+    this.experimentItemCollection = ExperimentItemCollection.create();
     this.add(experimentItemCollection);
     addItemCollectionListeners();
   }
@@ -89,7 +87,7 @@ public class ExperimentListComponent extends PageArea {
 
   private void addItemCollectionListeners() {
     experimentItemCollection.addClickEventListener(this::fireExperimentalItemSelectedEvent);
-    experimentItemCollection.addCreateEventListener(event -> generateExperimentInformationDialog());
+    experimentItemCollection.addAddEventListener(event -> generateExperimentInformationDialog());
   }
 
   private void generateExperimentInformationDialog() {

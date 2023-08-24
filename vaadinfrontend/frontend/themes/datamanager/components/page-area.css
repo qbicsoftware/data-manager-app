@@ -60,6 +60,31 @@
   margin-bottom: var(--lumo-space-m);
 }
 
+.page-area.project-access-component {
+  width: 100%;
+  height: 100%;
+}
+
+.page-area.project-access-component .access-content {
+  padding: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  height: 90%;
+  width: 100%;
+}
+
+.page-area.project-access-component .access-content vaadin-grid {
+  height: 100%;
+  width: 100%;
+}
+
+.page-area.project-access-component .access-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .page-area.project-details-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;

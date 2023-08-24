@@ -75,10 +75,10 @@ public class ProjectAccessMain extends Div implements BeforeEnterObserver {
   public void beforeEnter(BeforeEnterEvent event) {
     ProjectId projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
         .map(ProjectId::parse).orElseThrow();
-    loadInformationForProjectIdUserId(projectId);
+    loadInformationForProject(projectId);
   }
 
-  private void loadInformationForProjectIdUserId(ProjectId projectId) {
+  private void loadInformationForProject(ProjectId projectId) {
     List<String> usernames = projectAccessService.listUsernames(projectId);
     List<QbicUserDetails> users = usernames.stream()
         .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it)).toList();
