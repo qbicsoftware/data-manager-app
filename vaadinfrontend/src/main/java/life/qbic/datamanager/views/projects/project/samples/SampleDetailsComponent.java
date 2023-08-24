@@ -260,13 +260,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       Div experimentTabContent = new Div();
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
           0);
-      if (!isExperimentGroupInExperiment(experiment)) {
+      if (noExperimentGroupsInExperiment(experiment)) {
         experimentTabContent.add(createNoGroupsDefinedDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
       }
-      if (!sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .isValue()) {
+      if (noSamplesRegisteredInExperiment(experiment)) {
         experimentTabContent.add(createNoSamplesRegisteredDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
@@ -347,8 +346,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       }, query -> getSampleCountForExperiment(experimentId, samplePreviewFilter));
     }
 
-    private boolean isExperimentGroupInExperiment(Experiment experiment) {
-      return !experiment.getExperimentalGroups().isEmpty();
+    private boolean noExperimentGroupsInExperiment(Experiment experiment) {
+      return experiment.getExperimentalGroups().isEmpty();
+    }
+
+    private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
+      return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+          .getValue().isEmpty();
     }
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
@@ -374,8 +378,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     private Disclaimer createNoSamplesRegisteredDisclaimer(Experiment experiment) {
-      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle("No samples registered",
-          "Register your first samples for this experiment", "Register Samples");
+      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
+          "Manage your samples in one place",
+          "Start your project by registering the first sample batch", "Register batch");
       noSamplesDefinedCard.subscribe(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);
         batchRegistrationDialog.open();
