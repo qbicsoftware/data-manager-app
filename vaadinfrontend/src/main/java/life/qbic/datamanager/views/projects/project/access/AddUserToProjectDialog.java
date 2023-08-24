@@ -79,7 +79,6 @@ public class AddUserToProjectDialog extends DialogWindow {
     List<String> userSids = new ArrayList<>();
     List<User> users = new ArrayList<>();
     sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
-    userSids.forEach(System.out::println);
     userSids.forEach(sId -> users.add(userRepository.findByEmail(EmailAddress.from(sId)).get()));
     userGrid.setItems(users);
   }
