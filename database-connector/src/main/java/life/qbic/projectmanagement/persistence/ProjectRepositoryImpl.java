@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,16 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.READ);
     projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.WRITE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.READ);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.WRITE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.ADMINISTRATION);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.CREATE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.DELETE);
     try {
       projectDataRepo.add(project.getProjectCode());
     } catch (Exception e) {

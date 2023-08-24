@@ -4,6 +4,7 @@ import java.util.List;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.security.acls.model.Permission;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * <b>ProjectPermission Service</b>
@@ -36,6 +37,15 @@ public interface ProjectAccessService {
    * @param permission the permission to grant
    */
   void grant(String username, ProjectId projectId, Permission permission);
+
+  /**
+   * Grant a specific permission on a project for a user
+   *
+   * @param authority  the authorityfor which to grant the permission
+   * @param projectId  the project for which the permission shall be granted
+   * @param permission the permission to grant
+   */
+  void grantToAuthority(GrantedAuthority authority, ProjectId projectId, Permission permission);
 
   /**
    * Deny a specific permission o a project for a user

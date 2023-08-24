@@ -7,6 +7,7 @@ import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.AccessControlEntry;
@@ -16,6 +17,7 @@ import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
@@ -57,6 +59,15 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     PrincipalSid principalSid = new PrincipalSid(username);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     acl.insertAce(acl.getEntries().size(), permission, principalSid, true);
+    aclService.updateAcl(acl);
+  }
+
+  @Override
+  public void grantToAuthority(GrantedAuthority authority, ProjectId projectId,
+      Permission permission) {
+    GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
+    MutableAcl acl = getAclForProject(projectId, List.of(grantedAuthoritySid));
+    acl.insertAce(acl.getEntries().size(), permission, grantedAuthoritySid, false);
     aclService.updateAcl(acl);
   }
 
