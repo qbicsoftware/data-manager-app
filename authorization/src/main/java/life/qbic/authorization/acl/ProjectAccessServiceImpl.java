@@ -20,6 +20,7 @@ import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProjectAccessServiceImpl implements ProjectAccessService {
@@ -33,6 +34,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     this.userDetailsService = userDetailsService;
   }
 
+  @Transactional
   @Override
   public List<UserId> listUsers(ProjectId projectId) {
     List<String> userNames = listUsernames(projectId);
@@ -43,6 +45,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .toList();
   }
 
+  @Transactional
   @Override
   public List<String> listUsernames(ProjectId projectId) {
     Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
@@ -54,6 +57,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .toList();
   }
 
+  @Transactional
   @Override
   public void grant(String username, ProjectId projectId, Permission permission) {
     PrincipalSid principalSid = new PrincipalSid(username);
@@ -62,6 +66,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     aclService.updateAcl(acl);
   }
 
+  @Transactional
   @Override
   public void grantToAuthority(GrantedAuthority authority, ProjectId projectId,
       Permission permission) {
@@ -71,6 +76,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     aclService.updateAcl(acl);
   }
 
+  @Transactional
   @Override
   public void deny(String username, ProjectId projectId, Permission permission) {
     PrincipalSid principalSid = new PrincipalSid(username);
@@ -92,6 +98,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     aclService.updateAcl(mutableAcl);
   }
 
+  @Transactional
   @Override
   public void denyAll(String username, ProjectId projectId) {
     PrincipalSid principalSid = new PrincipalSid(username);

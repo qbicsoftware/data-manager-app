@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -34,20 +36,20 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  */
 
 @Route(value = "projects/:projectId?/access", layout = MainLayout.class)
+@PermitAll
 public class ProjectAccessComponent extends PageArea implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final transient UserInformationService userInformationService;
   private final ProjectAccessService projectAccessService;
   private final UserDetailsService userDetailsService;
-
   private static final Logger log = logger(ProjectAccessComponent.class);
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span buttonBar = new Span();
   private final Span titleField = new Span();
   private final Grid<UserProjectRole> projectRoleGrid = new Grid<>(UserProjectRole.class);
-
+  private ProjectId projectId;
 
   protected ProjectAccessComponent(
       @Autowired UserInformationService userInformationService,
@@ -107,7 +109,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
    */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    ProjectId projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
+    projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
         .map(ProjectId::parse).orElseThrow();
     loadInformationForProject(projectId);
   }
@@ -154,10 +156,9 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     });
   }
 
-  // FIXME: provide project
   private void addUsersToProject(List<User> users) {
     for (User user : users) {
-//      projectAccessService.grant(user.emailAddress(), /* enter project id here */, BasePermission.READ);
+      projectAccessService.grant(user.emailAddress().get(), projectId, BasePermission.READ);
     }
   }
 
