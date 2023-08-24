@@ -4,7 +4,7 @@ import java.util.List;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.EmailAddress.EmailValidationException;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.authorization.SystemPermissionService;
+import life.qbic.authorization.UserAuthorityProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,13 +17,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   private final UserRepository userRepository;
 
-  private final SystemPermissionService systemPermissionService;
+  private final UserAuthorityProvider userAuthorityProvider;
 
   @Autowired
   UserDetailsServiceImpl(UserRepository userRepository,
-      SystemPermissionService systemPermissionService) {
+      UserAuthorityProvider userAuthorityProvider) {
     this.userRepository = userRepository;
-    this.systemPermissionService = systemPermissionService;
+    this.userAuthorityProvider = userAuthorityProvider;
   }
 
   @Override
@@ -38,7 +38,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     // Then search for a user with the provided mail address
     var user = userRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
-    List<GrantedAuthority> authorities = systemPermissionService.loadUserPermissions(user.id());
+    List<GrantedAuthority> authorities = userAuthorityProvider.getAuthoritiesByUserId(user.id());
     return new QbicUserDetails(user, authorities);
   }
 }

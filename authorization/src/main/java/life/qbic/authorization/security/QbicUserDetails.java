@@ -83,4 +83,9 @@ public class QbicUserDetails implements UserDetails {
   public boolean isEnabled() {
     return active;
   }
+
+  public boolean hasAuthority(GrantedAuthority authority) {
+    return getAuthorities().stream()
+        .anyMatch(it -> it.getAuthority().equals(authority.getAuthority()));
+  }
 }

@@ -3,24 +3,31 @@ package life.qbic.authorization;
 import static java.util.Objects.requireNonNull;
 
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.StringJoiner;
 import org.springframework.security.core.GrantedAuthority;
 
 /**
- * Represents a permission to do something
+ * Represents a role of a user. A user role can provides a granted authority and can provide
+ * additional authorities when assigned permissions.
  *
  * @since 1.0.0
  */
 @Entity
-@Table(name = "permissions")
-public class Permission implements GrantedAuthority {
+@Table(name = "roles")
+public class Role implements GrantedAuthority {
 
   @Id
   @GeneratedValue
@@ -35,17 +42,24 @@ public class Permission implements GrantedAuthority {
   @Column(name = "description")
   private String description;
 
-  protected Permission() {
+  @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+  @JoinTable(name = "role_permission",
+      joinColumns = @JoinColumn(name = "userRoleId"),
+      inverseJoinColumns = @JoinColumn(name = "permissionId"))
+  private List<Permission> permissions = new ArrayList<>();
+
+
+  protected Role() {
   }
 
-  protected Permission(long id, String name, String description) {
+  protected Role(long id, String name, String description) {
     this.id = id;
     this.name = name;
     this.description = description;
   }
 
   public String name() {
-    requireNonNull(name);
+    requireNonNull(this.name);
     return name;
   }
 
@@ -53,17 +67,29 @@ public class Permission implements GrantedAuthority {
     return Optional.ofNullable(description);
   }
 
-  @Transient
-  @Override
-  public String getAuthority() {
-    return name();
+
+  public List<Permission> permissions() {
+    return permissions;
   }
 
   @Override
   public String toString() {
-    return name();
+    return new StringJoiner(", ", Role.class.getSimpleName() + "[", "]")
+        .add("id='" + id + "'")
+        .add("name='" + name + "'")
+        .add("description='" + description + "'")
+        .add("permissions=" + permissions)
+        .toString();
   }
 
+  @Override
+  public String getAuthority() {
+    return "ROLE_" + name();
+  }
+
+  public long getId() {
+    return id;
+  }
 
   @Override
   public boolean equals(Object obj) {

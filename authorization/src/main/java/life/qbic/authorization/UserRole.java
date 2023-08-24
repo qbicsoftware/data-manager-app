@@ -1,100 +1,45 @@
 package life.qbic.authorization;
 
-import static java.util.Objects.requireNonNull;
-
-import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringJoiner;
-import org.springframework.security.core.GrantedAuthority;
+import java.io.Serializable;
 
 /**
- * Represents a role of a user. A user role can provides a granted authority and can provide
- * additional authorities when assigned permissions.
- *
- * @since 1.0.0
+ * <b>System Role class</b>
+ * <p>
+ * Defines a role of a user in the context of the system
  */
 @Entity
-@Table(name = "user_roles")
-public class UserRole implements GrantedAuthority {
+@Table(name = "user_role")
+public class UserRole implements Serializable {
 
+
+  /**
+   * The database id of the link. Please do not touch.
+   */
   @Id
   @Column(name = "id")
-  private String id;
+  @GeneratedValue
+  private long id;
 
-  @Basic(fetch = FetchType.EAGER)
-  @Column(name = "roleDescription")
-  private String description;
+  @Column(name = "userId")
+  private String userId;
 
-  @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-  @JoinTable(name = "user_roles_permissions",
-      joinColumns = @JoinColumn(name = "userRoleId"),
-      inverseJoinColumns = @JoinColumn(name = "permissionId"))
-  private List<Permission> permissions = new ArrayList<>();
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
+  @JoinColumn(name = "roleId")
+  private Role userRole;
 
-
-  protected UserRole() {
+  public String userId() {
+    return userId;
   }
 
-  protected UserRole(String id, String description) {
-    this.id = id;
-    this.description = description;
-  }
-
-  public static UserRole with(String id, String description) {
-    return new UserRole(id, description);
-  }
-
-  public String id() {
-    requireNonNull(id);
-    return id;
-  }
-
-  public Optional<String> description() {
-    return Optional.ofNullable(description);
-  }
-
-
-  public List<Permission> permissions() {
-    return permissions;
-  }
-
-  @Override
-  public String toString() {
-    return new StringJoiner(", ", UserRole.class.getSimpleName() + "[", "]")
-        .add("id='" + id + "'")
-        .add("description='" + description + "'")
-        .add("permissions=" + permissions)
-        .toString();
-  }
-
-  @Override
-  public String getAuthority() {
-    return "ROLE_" + id();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    } else {
-      return obj instanceof GrantedAuthority && this.getAuthority()
-          .equals(((GrantedAuthority) obj).getAuthority());
-    }
-  }
-
-  @Override
-  public int hashCode() {
-    return getAuthority().hashCode();
+  public Role role() {
+    return userRole;
   }
 }

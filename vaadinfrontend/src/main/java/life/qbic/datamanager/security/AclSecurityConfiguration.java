@@ -1,24 +1,36 @@
 package life.qbic.datamanager.security;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
+import life.qbic.authorization.permissionevaluators.QbicPermissionEvaluator;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.acls.AclPermissionEvaluator;
 import org.springframework.security.acls.domain.AclAuthorizationStrategy;
 import org.springframework.security.acls.domain.AclAuthorizationStrategyImpl;
-import org.springframework.security.acls.domain.ConsoleAuditLogger;
+import org.springframework.security.acls.domain.AuditLogger;
 import org.springframework.security.acls.domain.DefaultPermissionGrantingStrategy;
 import org.springframework.security.acls.domain.SpringCacheBasedAclCache;
 import org.springframework.security.acls.jdbc.BasicLookupStrategy;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.jdbc.LookupStrategy;
 import org.springframework.security.acls.model.AclCache;
+import org.springframework.security.acls.model.AuditableAccessControlEntry;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.util.Assert;
 
 /**
  * <class short description - One Line!>
@@ -27,10 +39,12 @@ import org.springframework.security.acls.model.PermissionGrantingStrategy;
  *
  * @since <version tag>
  */
-//@Configuration
-//@EnableCaching
-//@EnableMethodSecurity
+@Configuration
+@EnableCaching
+@EnableMethodSecurity(jsr250Enabled = true)
 public class AclSecurityConfiguration {
+
+  private static final Logger log = logger(AclSecurityConfiguration.class);
 
   @Value("${spring.datasource.url}")
   String url;
@@ -39,7 +53,7 @@ public class AclSecurityConfiguration {
   @Value("${spring.datasource.password}")
   String password;
 
-  //@Bean
+  @Bean
   public DataSource dataSource() {
     var ds = new DriverManagerDataSource();
     ds.setUrl(url);
@@ -48,13 +62,19 @@ public class AclSecurityConfiguration {
     return ds;
   }
 
-  //@Bean
+  @Bean
   public MutableAclService mutableAclService() {
-    return new JdbcMutableAclService(dataSource(), lookupStrategy(), aclCache());
+    JdbcMutableAclService jdbcMutableAclService = new JdbcMutableAclService(dataSource(),
+        lookupStrategy(), aclCache());
+    // allow for non-long type ids
+    jdbcMutableAclService.setAclClassIdSupported(true);
+    jdbcMutableAclService.setSecurityContextHolderStrategy(
+        new VaadinAwareSecurityContextHolderStrategy()); // the ever-increasing cost of Vaadin
+
+    return jdbcMutableAclService;
   }
 
-
-  //@Bean
+  @Bean
   protected AclCache aclCache() {
     CacheManager cacheManager = new ConcurrentMapCacheManager();
     return new SpringCacheBasedAclCache(
@@ -63,32 +83,61 @@ public class AclSecurityConfiguration {
         aclAuthorizationStrategy());
   }
 
+  @Bean
+  public AuditLogger auditLogger() {
+    return (granted, ace) -> {
+      Assert.notNull(ace, "AccessControlEntry required");
+      if (ace instanceof AuditableAccessControlEntry auditableAce) {
+        if (granted && auditableAce.isAuditSuccess()) {
+          log.info("GRANTED due to ACE: " + ace);
+        } else if (!granted && auditableAce.isAuditFailure()) {
+          log.info("DENIED due to ACE: " + ace);
+        }
+      }
+    };
+  }
 
-  //@Bean
+
+  @Bean
   public AclAuthorizationStrategy aclAuthorizationStrategy() {
-    return new AclAuthorizationStrategyImpl(() -> "read");
+    AclAuthorizationStrategyImpl aclAuthorizationStrategy = new AclAuthorizationStrategyImpl(
+        new SimpleGrantedAuthority("acl:change-owner"), //give this to ROLE_ADMIN
+        new SimpleGrantedAuthority("acl:change-audit"), // give this to ROLE_ADMIN
+        new SimpleGrantedAuthority("acl:change-access")
+        //give this to ROLE_ADMIN, ROLE_PROJECT_MANAGER
+    );
+
+    aclAuthorizationStrategy.setSecurityContextHolderStrategy(
+        new VaadinAwareSecurityContextHolderStrategy()); // the ever-increasing cost of vaadin
+    return aclAuthorizationStrategy;
   }
 
-  //@Bean
+  @Bean
   public PermissionGrantingStrategy permissionGrantingStrategy() {
-    return new DefaultPermissionGrantingStrategy(new ConsoleAuditLogger());
+    return new DefaultPermissionGrantingStrategy(auditLogger());
   }
 
-  //@Bean
+  @Bean
   public LookupStrategy lookupStrategy() {
-    return new BasicLookupStrategy(
+    BasicLookupStrategy basicLookupStrategy = new BasicLookupStrategy(
         dataSource(),
         aclCache(),
         aclAuthorizationStrategy(),
-        new ConsoleAuditLogger()
+        auditLogger()
     );
+    basicLookupStrategy.setAclClassIdSupported(true);
+    return basicLookupStrategy;
   }
 
-  //@Bean
+  @Bean(name = "qbicPermissionEvaluator")
+  AclPermissionEvaluator permissionEvaluator() {
+    return new QbicPermissionEvaluator(mutableAclService());
+  }
+
+  @Bean
   public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler() {
     var expressionHandler = new DefaultMethodSecurityExpressionHandler();
-    var permissionEvaluator = new AclPermissionEvaluator(mutableAclService());
-    expressionHandler.setPermissionEvaluator(permissionEvaluator);
+    expressionHandler.setPermissionEvaluator(permissionEvaluator());
     return expressionHandler;
   }
 }

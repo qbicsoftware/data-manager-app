@@ -50,7 +50,7 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PostFilter("hasPermission(filterObject.projectId(),'life.qbic.projectmanagement.domain.project.Project','VIEW_PROJECT')")
+  @PostFilter("hasPermission(filterObject.projectId(),'life.qbic.projectmanagement.domain.project.Project','READ')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
@@ -60,18 +60,18 @@ public class ProjectInformationService {
     return new ArrayList<>(previewList);
   }
 
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','READ')")
   public Optional<Project> find(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     return projectRepository.find(projectId);
   }
 
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','READ')")
   public Optional<Project> find(String projectId) throws IllegalArgumentException{
     return find(ProjectId.parse(projectId));
   }
 
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.project.Project','VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.project.Project','READ')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());

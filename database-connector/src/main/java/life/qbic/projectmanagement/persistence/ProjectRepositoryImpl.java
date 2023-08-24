@@ -4,13 +4,20 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
 import java.util.Optional;
+import life.qbic.authorization.ProjectAccessService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.security.access.prepost.PostFilter;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -28,27 +35,35 @@ import org.springframework.stereotype.Component;
  *
  * @since 1.0.0
  */
-@Component
+@Service
 public class ProjectRepositoryImpl implements ProjectRepository {
 
   private static final Logger log = logger(ProjectRepositoryImpl.class);
   private final QbicProjectRepo projectRepo;
   private final QbicProjectDataRepo projectDataRepo;
 
+  private final ProjectAccessService projectAccessService;
+
   @Autowired
-  public ProjectRepositoryImpl(QbicProjectRepo projectRepo, QbicProjectDataRepo projectDataRepo) {
+  public ProjectRepositoryImpl(QbicProjectRepo projectRepo,
+      QbicProjectDataRepo projectDataRepo, ProjectAccessService projectAccessService) {
     this.projectRepo = projectRepo;
     this.projectDataRepo = projectDataRepo;
+    this.projectAccessService = projectAccessService;
   }
 
   @Override
+  @PreAuthorize("hasAuthority('project:create')")
+  @Transactional
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);
-
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.READ);
+    projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.WRITE);
     try {
       projectDataRepo.add(project.getProjectCode());
     } catch (Exception e) {
@@ -59,6 +74,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
+  @PreAuthorize("hasPermission(#project.id, 'life.qbic.projectmanagement.domain.project.Project', 'WRITE')")
   public void update(Project project) {
     if (!doesProjectExistWithId(project.getId())) {
       throw new ProjectNotFoundException();
@@ -67,6 +83,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
+  @PostFilter("hasPermission(filterObject, 'READ')")
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
   }
