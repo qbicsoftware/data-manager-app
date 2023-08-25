@@ -36,7 +36,7 @@ CREATE TABLE acl_entry
     sid                 BIGINT UNSIGNED  NOT NULL,
     mask                INTEGER UNSIGNED NOT NULL,
     granting            BOOLEAN          NOT NULL,
-    audit_success       BOOLEAN          NOT NULL,
+    audit_success BOOLEAN NOT NULL DEFAULT true,
     audit_failure       BOOLEAN          NOT NULL,
     UNIQUE KEY unique_acl_entry (acl_object_identity, ace_order),
     CONSTRAINT fk_acl_entry_object FOREIGN KEY (acl_object_identity) REFERENCES acl_object_identity (id),
