@@ -66,4 +66,6 @@ public interface ProjectAccessService {
   void denyAll(String username, ProjectId projectId);
 
   List<String> listAuthorities(ProjectId projectId);
+
+  List<String> listAuthoritiesForPermission(ProjectId projectId, Permission permission);
 }

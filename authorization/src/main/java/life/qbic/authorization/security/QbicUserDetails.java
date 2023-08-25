@@ -20,15 +20,12 @@ import org.springframework.security.core.userdetails.UserDetails;
  * @since 1.0.0
  */
 public class QbicUserDetails implements UserDetails {
-
   @Serial
   private static final long serialVersionUID = 5812210012669790933L;
   private final UserId userId;
   private final String username;
   private final String password;
-
   private final boolean active;
-
   private final List<GrantedAuthority> grantedAuthorities;
 
   /**

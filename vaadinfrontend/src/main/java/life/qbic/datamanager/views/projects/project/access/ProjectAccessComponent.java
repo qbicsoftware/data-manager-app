@@ -49,7 +49,8 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private final Div header = new Div();
   private final Span buttonBar = new Span();
   private final Span titleField = new Span();
-  private final Grid<UserProjectRole> projectRoleGrid = new Grid<>(UserProjectRole.class);
+  private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
+  private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
   private ProjectId projectId;
 
   protected ProjectAccessComponent(
@@ -94,14 +95,25 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
 
   private void initContent() {
     content.addClassName("access-content");
-    layoutProjectUserRoleGrid();
-    content.add(projectRoleGrid);
+    layoutUserProjectAccessGrid();
+    layoutRoleProjectAccessGrid();
     add(content);
   }
 
-  private void layoutProjectUserRoleGrid() {
-    projectRoleGrid.addColumn(UserProjectRole::userName).setHeader("User Name");
-    projectRoleGrid.addColumn(UserProjectRole::projectRole).setHeader("User Role");
+  private void layoutUserProjectAccessGrid() {
+    Span userProjectAccessDescription = new Span("Users with access to this project");
+    content.add(userProjectAccessDescription);
+    userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
+    userProjectAccessGrid.addColumn(UserProjectAccess::userName).setHeader("Email Address");
+    userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
+    content.add(userProjectAccessGrid);
+  }
+
+  private void layoutRoleProjectAccessGrid() {
+    Span roleProjectAccessDescription = new Span("Roles with access to this project");
+    content.add(roleProjectAccessDescription);
+    roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
+    content.add(roleProjectAccessGrid);
   }
 
   /**
@@ -127,6 +139,11 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   }
 
   private void loadInformationForProject(ProjectId projectId) {
+    loadProjectAccessibleUsers(projectId);
+    loadProjectAccessibleRoles(projectId);
+  }
+
+  private void loadProjectAccessibleUsers(ProjectId projectId) {
     List<String> usernames = projectAccessService.listUsernames(projectId);
     List<QbicUserDetails> users = usernames.stream()
         .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it))
@@ -139,26 +156,39 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
         .map(user -> {
           var roles = getProjectRoles(authorities, user);
           roles = roles.stream()
-              .map(it -> it.replaceFirst("ROLE_", "")
-                  .replaceAll("_", " ")
-                  .toLowerCase())
+              .map(this::formatAuthorityForGrid)
               .toList();
-          return new UserProjectRole(user.getUsername(), String.join(", ", roles));
+          String fullName = userRepository.findById(user.getUserId()).get().fullName().get();
+          return new UserProjectAccess(fullName, user.getUsername(), String.join(", ", roles));
         })
         .toList();
-    List<UserProjectRole> userProjectRoles = new ArrayList<>(entries);
-    /*
-    ToDo
-    andere:
-      * Admin                 (v, w, c, d, a)
-      * Platform manager NGS  (v, w, c, d, a)
-      * Team lead BioPm       (v, w, c, d, a)
-     */
-    setGridData(userProjectRoles.stream().distinct().collect(Collectors.toList()));
+    List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
+    setUserProjectAccessGridData(
+        userProjectAccesses.stream().distinct().collect(Collectors.toList()));
   }
 
-  private void setGridData(List<UserProjectRole> userProjectRoles) {
-    projectRoleGrid.setItems(userProjectRoles);
+  private String formatAuthorityForGrid(String authority) {
+    return authority.replaceFirst("ROLE_", "")
+        .replaceAll("_", " ")
+        .toLowerCase();
+  }
+
+  private void setUserProjectAccessGridData(List<UserProjectAccess> userProjectAccesses) {
+    userProjectAccessGrid.setItems(userProjectAccesses);
+  }
+
+  private void loadProjectAccessibleRoles(ProjectId projectId) {
+    List<String> authorities = projectAccessService.listAuthoritiesForPermission(projectId,
+            BasePermission.READ).stream()
+        .distinct()
+        .toList();
+    List<RoleProjectAccess> roleProjectAccesses = authorities.stream()
+        .map(this::formatAuthorityForGrid).map(RoleProjectAccess::new).toList();
+    setRoleProjectAccessGridData(roleProjectAccesses);
+  }
+
+  private void setRoleProjectAccessGridData(List<RoleProjectAccess> roleProjectAccesses) {
+    roleProjectAccessGrid.setItems(roleProjectAccesses);
   }
 
   private void openEditUserAccessToProjectDialog() {
@@ -204,7 +234,11 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     }
   }
 
-  private record UserProjectRole(String userName, String projectRole) {
+  private record UserProjectAccess(String fullName, String userName, String projectRole) {
+
+  }
+
+  private record RoleProjectAccess(String projectRole) {
 
   }
 

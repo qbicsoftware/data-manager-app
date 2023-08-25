@@ -117,6 +117,18 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .toList();
   }
 
+  @Override
+  public List<String> listAuthoritiesForPermission(ProjectId projectId, Permission permission) {
+    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
+    return acl.getEntries().stream()
+        .filter(accessControlEntry -> accessControlEntry.getPermission().equals(permission))
+        .map(AccessControlEntry::getSid)
+        .filter(sid -> sid instanceof GrantedAuthoritySid)
+        .map(sid -> (GrantedAuthoritySid) sid)
+        .map(GrantedAuthoritySid::getGrantedAuthority)
+        .toList();
+  }
+
   private MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids) {
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     MutableAcl acl;
