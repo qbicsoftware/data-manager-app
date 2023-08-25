@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.authorization.acl.ProjectAccessService;
+import life.qbic.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -54,7 +55,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  @PreAuthorize("hasAuthority('project:create')")
+  @CanCreateProject
   @Transactional
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
