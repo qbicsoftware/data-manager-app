@@ -65,16 +65,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.READ);
     projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.WRITE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.READ);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.WRITE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.ADMINISTRATION);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.CREATE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.DELETE);
+    addAdminRoleToProject(project);
+    addProjectManagerRoleToProject(project);
     try {
       projectDataRepo.add(project.getProjectCode());
     } catch (Exception e) {
@@ -82,6 +74,31 @@ public class ProjectRepositoryImpl implements ProjectRepository {
       projectRepo.delete(project);
       throw e;
     }
+  }
+
+  private void addProjectManagerRoleToProject(Project project) {
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
+        project.getId(),
+        BasePermission.WRITE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
+        project.getId(),
+        BasePermission.CREATE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
+        project.getId(),
+        BasePermission.DELETE);
+  }
+
+  private void addAdminRoleToProject(Project project) {
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.READ);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.WRITE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.CREATE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.DELETE);
+    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
+        BasePermission.ADMINISTRATION);
   }
 
   @Override
