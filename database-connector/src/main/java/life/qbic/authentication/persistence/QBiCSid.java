@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * TODO!
  * <b>short description</b>
  *
  * <p>detailed description</p>
