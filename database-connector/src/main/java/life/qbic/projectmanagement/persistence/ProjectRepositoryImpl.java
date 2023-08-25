@@ -1,6 +1,13 @@
 package life.qbic.projectmanagement.persistence;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.projectmanagement.persistence.ProjectRepositoryImpl.ProjectRole.ADMIN;
+import static life.qbic.projectmanagement.persistence.ProjectRepositoryImpl.ProjectRole.PROJECT_MANAGER;
+import static org.springframework.security.acls.domain.BasePermission.ADMINISTRATION;
+import static org.springframework.security.acls.domain.BasePermission.CREATE;
+import static org.springframework.security.acls.domain.BasePermission.DELETE;
+import static org.springframework.security.acls.domain.BasePermission.READ;
+import static org.springframework.security.acls.domain.BasePermission.WRITE;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,9 +21,9 @@ import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -65,10 +72,11 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     }
     projectRepo.save(project);
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.READ);
-    projectAccessService.grant(authentication.getName(), project.getId(), BasePermission.WRITE);
-    addAdminRoleToProject(project);
-    addProjectManagerRoleToProject(project);
+    projectAccessService.grant(authentication.getName(), project.getId(),
+        List.of(READ, WRITE));
+    projectAccessService.grantToAuthority(ADMIN.auth(), project.getId(), ADMIN.permissions());
+    projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
+        PROJECT_MANAGER.permissions());
     try {
       projectDataRepo.add(project.getProjectCode());
     } catch (Exception e) {
@@ -76,17 +84,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
       projectRepo.delete(project);
       throw e;
     }
-  }
-  private void addProjectManagerRoleToProject(Project project) {
-    ProjectRole.PROJECT_MANAGER.allowedPermissions.forEach(
-        permission -> projectAccessService.grantToAuthority(
-            new SimpleGrantedAuthority(ProjectRole.PROJECT_MANAGER.roleName), project.getId(),
-            permission));
-  }
-  private void addAdminRoleToProject(Project project) {
-    ProjectRole.ADMIN.allowedPermissions.forEach(
-        permission -> projectAccessService.grantToAuthority(
-            new SimpleGrantedAuthority(ProjectRole.ADMIN.roleName), project.getId(), permission));
   }
 
   @Override
@@ -121,14 +118,22 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   public enum ProjectRole {
-    ADMIN("ROLE_ADMIN", List.of(BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
-        BasePermission.DELETE, BasePermission.ADMINISTRATION)),
+    ADMIN("ROLE_ADMIN", List.of(READ, WRITE, CREATE,
+        DELETE, ADMINISTRATION)),
     PROJECT_MANAGER("ROLE_PROJECT_MANAGER",
-        List.of(BasePermission.WRITE, BasePermission.CREATE,
-            BasePermission.DELETE));
+        List.of(WRITE, CREATE,
+            DELETE));
 
-    final String roleName;
-    final List<Permission> allowedPermissions;
+    private final String roleName;
+    private final List<Permission> allowedPermissions;
+
+    public GrantedAuthority auth() {
+      return new SimpleGrantedAuthority(roleName);
+    }
+
+    public List<Permission> permissions() {
+      return allowedPermissions;
+    }
 
     ProjectRole(String roleName,
         List<Permission> allowedPermissions) {

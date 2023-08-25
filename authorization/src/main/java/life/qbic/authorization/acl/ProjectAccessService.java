@@ -5,6 +5,7 @@ import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>ProjectPermission Service</b>
@@ -38,6 +39,9 @@ public interface ProjectAccessService {
    */
   void grant(String username, ProjectId projectId, Permission permission);
 
+  @Transactional
+  void grant(String username, ProjectId projectId, List<Permission> permissions);
+
   /**
    * Grant a specific permission on a project for a user
    *
@@ -47,6 +51,10 @@ public interface ProjectAccessService {
    */
   void grantToAuthority(GrantedAuthority authority, ProjectId projectId, Permission permission);
 
+  @Transactional
+  void grantToAuthority(GrantedAuthority authority, ProjectId projectId,
+      List<Permission> permissions);
+
   /**
    * Deny a specific permission o a project for a user
    *
@@ -55,6 +63,9 @@ public interface ProjectAccessService {
    * @param permission the permission to deny
    */
   void deny(String username, ProjectId projectId, Permission permission);
+
+  @Transactional
+  void deny(String username, ProjectId projectId, List<Permission> permissions);
 
   /**
    * Deny all permissions to a project for a specific user. This effectively removes a user from a

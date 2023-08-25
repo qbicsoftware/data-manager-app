@@ -1,5 +1,7 @@
 package life.qbic.authorization.acl;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 import java.util.function.Predicate;
 import life.qbic.authentication.domain.user.concept.UserId;
@@ -60,9 +62,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @Transactional
   @Override
   public void grant(String username, ProjectId projectId, Permission permission) {
+    grant(username, projectId, List.of(permission));
+  }
+
+  @Transactional
+  @Override
+  public void grant(String username, ProjectId projectId, List<Permission> permissions) {
     PrincipalSid principalSid = new PrincipalSid(username);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
-    acl.insertAce(acl.getEntries().size(), permission, principalSid, true);
+    for (Permission permission : permissions) {
+      acl.insertAce(acl.getEntries().size(), permission, principalSid, true);
+    }
     aclService.updateAcl(acl);
   }
 
@@ -70,37 +80,52 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @Override
   public void grantToAuthority(GrantedAuthority authority, ProjectId projectId,
       Permission permission) {
+    grantToAuthority(authority, projectId, List.of(permission));
+  }
+
+  @Transactional
+  @Override
+  public void grantToAuthority(GrantedAuthority authority, ProjectId projectId,
+      List<Permission> permissions) {
     GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
     MutableAcl acl = getAclForProject(projectId, List.of(grantedAuthoritySid));
-    acl.insertAce(acl.getEntries().size(), permission, grantedAuthoritySid, true);
+    for (Permission permission : permissions) {
+      acl.insertAce(acl.getEntries().size(), permission, grantedAuthoritySid, true);
+    }
     aclService.updateAcl(acl);
   }
 
   @Transactional
   @Override
   public void deny(String username, ProjectId projectId, Permission permission) {
+//    PrincipalSid principalSid = new PrincipalSid(username);
+//    MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
+//    Predicate<AccessControlEntry> accessControlEntryPredicate = accessControlEntry ->
+//        accessControlEntry.getSid().equals(principalSid)
+//            && accessControlEntry.getPermission().equals(permission);
+//    deleteAces(acl, accessControlEntryPredicate);
+    deny(username, projectId, List.of(permission));
+  }
+
+  @Transactional
+  @Override
+  public void deny(String username, ProjectId projectId, List<Permission> permissions) {
+    requireNonNull(username, "username must not be null");
+    requireNonNull(projectId, "projectId must not be null");
+    requireNonNull(permissions, "permissions must not be null");
     PrincipalSid principalSid = new PrincipalSid(username);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     Predicate<AccessControlEntry> accessControlEntryPredicate = accessControlEntry ->
         accessControlEntry.getSid().equals(principalSid)
-            && accessControlEntry.getPermission().equals(permission);
+            && permissions.contains(accessControlEntry.getPermission());
     deleteAces(acl, accessControlEntryPredicate);
-  }
-
-  private void deleteAces(MutableAcl mutableAcl,
-      Predicate<AccessControlEntry> accessControlEntryPredicate) {
-    List<AccessControlEntry> aclEntries = mutableAcl.getEntries();
-    for (int i = 0; i < aclEntries.size(); i++) {
-      if (accessControlEntryPredicate.test(aclEntries.get(i))) {
-        mutableAcl.deleteAce(i);
-      }
-    }
-    aclService.updateAcl(mutableAcl);
   }
 
   @Transactional
   @Override
   public void denyAll(String username, ProjectId projectId) {
+    requireNonNull(username, "username must not be null");
+    requireNonNull(projectId, "projectId must not be null");
     PrincipalSid principalSid = new PrincipalSid(username);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     deleteAces(acl, accessControlEntry -> accessControlEntry.getSid().equals(principalSid));
@@ -127,6 +152,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .map(sid -> (GrantedAuthoritySid) sid)
         .map(GrantedAuthoritySid::getGrantedAuthority)
         .toList();
+  }
+
+  private void deleteAces(MutableAcl mutableAcl,
+      Predicate<AccessControlEntry> accessControlEntryPredicate) {
+    List<AccessControlEntry> aclEntries = mutableAcl.getEntries();
+    for (int i = 0; i < aclEntries.size(); i++) {
+      if (accessControlEntryPredicate.test(aclEntries.get(i))) {
+        mutableAcl.deleteAce(i);
+      }
+    }
+    aclService.updateAcl(mutableAcl);
   }
 
   private MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids) {
