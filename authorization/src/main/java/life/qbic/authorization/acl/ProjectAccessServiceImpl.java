@@ -106,6 +106,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     deleteAces(acl, accessControlEntry -> accessControlEntry.getSid().equals(principalSid));
   }
 
+  @Override
+  public List<String> listAuthorities(ProjectId projectId) {
+    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
+    return acl.getEntries().stream()
+        .map(AccessControlEntry::getSid)
+        .filter(sid -> sid instanceof GrantedAuthoritySid)
+        .map(sid -> (GrantedAuthoritySid) sid)
+        .map(GrantedAuthoritySid::getGrantedAuthority)
+        .toList();
+  }
+
   private MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids) {
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     MutableAcl acl;

@@ -6,10 +6,12 @@
     <key-type>java.io.Serializable</key-type>
     <value-type>org.springframework.security.acls.model.MutableAcl</value-type>
     <expiry>
-      <ttl unit="seconds">3600</ttl>
+      <!-- cache expires after 10 minutes-->
+      <ttl>600</ttl>
     </expiry>
     <resources>
-      <heap unit="entries">200</heap>
+      <!-- heap allows for caching of up to 200 entries-->
+      <heap>200</heap>
       <offheap unit="MB">10</offheap>
     </resources>
   </cache>

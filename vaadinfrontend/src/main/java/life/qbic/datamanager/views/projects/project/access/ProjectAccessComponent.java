@@ -25,7 +25,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.BasePermission;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
@@ -117,23 +116,45 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     loadInformationForProject(projectId);
   }
 
+  private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
+    List<String> roles = new ArrayList<>();
+    for (String projectRole : projectRoles) {
+      if (userDetails.hasAuthority(projectRole)) {
+        roles.add(projectRole);
+      }
+    }
+    return roles.stream().sorted().toList();
+  }
+
   private void loadInformationForProject(ProjectId projectId) {
     List<String> usernames = projectAccessService.listUsernames(projectId);
     List<QbicUserDetails> users = usernames.stream()
-        .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it)).toList();
-    List<QbicUserDetails> projectManagers = users.stream()
-        .filter(it -> it.hasAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER")))
+        .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it))
+        .distinct()
         .toList();
-    List<QbicUserDetails> otherUsers = users.stream()
-        .filter(it -> !projectManagers.contains(it))
+    List<String> authorities = projectAccessService.listAuthorities(projectId).stream()
+        .distinct()
         .toList();
-    List<UserProjectRole> userProjectRoleList = new ArrayList<>(
-        projectManagers.stream().map(it -> new UserProjectRole(it.getUsername(), "Project Manager"))
-            .toList());
-    userProjectRoleList.addAll(
-        otherUsers.stream().map(it -> new UserProjectRole(it.getUsername(), "Viewer"))
-            .toList());
-    setGridData(userProjectRoleList.stream().distinct().collect(Collectors.toList()));
+    var entries = users.stream()
+        .map(user -> {
+          var roles = getProjectRoles(authorities, user);
+          roles = roles.stream()
+              .map(it -> it.replaceFirst("ROLE_", "")
+                  .replaceAll("_", " ")
+                  .toLowerCase())
+              .toList();
+          return new UserProjectRole(user.getUsername(), String.join(", ", roles));
+        })
+        .toList();
+    List<UserProjectRole> userProjectRoles = new ArrayList<>(entries);
+    /*
+    ToDo
+    andere:
+      * Admin                 (v, w, c, d, a)
+      * Platform manager NGS  (v, w, c, d, a)
+      * Team lead BioPm       (v, w, c, d, a)
+     */
+    setGridData(userProjectRoles.stream().distinct().collect(Collectors.toList()));
   }
 
   private void setGridData(List<UserProjectRole> userProjectRoles) {
@@ -179,7 +200,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
 
   private void removeUsersFromProject(List<User> users) {
     for (User user : users) {
-      projectAccessService.deny(user.emailAddress().get(), projectId, BasePermission.READ);
+      projectAccessService.denyAll(user.emailAddress().get(), projectId);
     }
   }
 

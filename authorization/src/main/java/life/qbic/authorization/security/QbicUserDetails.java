@@ -85,7 +85,11 @@ public class QbicUserDetails implements UserDetails {
   }
 
   public boolean hasAuthority(GrantedAuthority authority) {
+    return hasAuthority(authority.getAuthority());
+  }
+
+  public boolean hasAuthority(String authority) {
     return getAuthorities().stream()
-        .anyMatch(it -> it.getAuthority().equals(authority.getAuthority()));
+        .anyMatch(it -> it.getAuthority().equals(authority));
   }
 }
