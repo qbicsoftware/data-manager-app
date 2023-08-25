@@ -156,7 +156,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
         .map(user -> {
           var roles = getProjectRoles(authorities, user);
           roles = roles.stream()
-              .map(this::formatAuthorityForGrid)
+              .map(this::formatAuthorityToReadableString)
               .toList();
           String fullName = userRepository.findById(user.getUserId()).get().fullName().get();
           return new UserProjectAccess(fullName, user.getUsername(), String.join(", ", roles));
@@ -167,7 +167,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
         userProjectAccesses.stream().distinct().collect(Collectors.toList()));
   }
 
-  private String formatAuthorityForGrid(String authority) {
+  private String formatAuthorityToReadableString(String authority) {
     return authority.replaceFirst("ROLE_", "")
         .replaceAll("_", " ")
         .toLowerCase();
@@ -183,7 +183,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
         .distinct()
         .toList();
     List<RoleProjectAccess> roleProjectAccesses = authorities.stream()
-        .map(this::formatAuthorityForGrid).map(RoleProjectAccess::new).toList();
+        .map(this::formatAuthorityToReadableString).map(RoleProjectAccess::new).toList();
     setRoleProjectAccessGridData(roleProjectAccesses);
   }
 

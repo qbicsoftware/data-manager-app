@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -76,30 +77,16 @@ public class ProjectRepositoryImpl implements ProjectRepository {
       throw e;
     }
   }
-
   private void addProjectManagerRoleToProject(Project project) {
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
-        project.getId(),
-        BasePermission.WRITE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
-        project.getId(),
-        BasePermission.CREATE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER"),
-        project.getId(),
-        BasePermission.DELETE);
+    ProjectRole.PROJECT_MANAGER.allowedPermissions.forEach(
+        permission -> projectAccessService.grantToAuthority(
+            new SimpleGrantedAuthority(ProjectRole.PROJECT_MANAGER.roleName), project.getId(),
+            permission));
   }
-
   private void addAdminRoleToProject(Project project) {
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.READ);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.WRITE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.CREATE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.DELETE);
-    projectAccessService.grantToAuthority(new SimpleGrantedAuthority("ROLE_ADMIN"), project.getId(),
-        BasePermission.ADMINISTRATION);
+    ProjectRole.ADMIN.allowedPermissions.forEach(
+        permission -> projectAccessService.grantToAuthority(
+            new SimpleGrantedAuthority(ProjectRole.ADMIN.roleName), project.getId(), permission));
   }
 
   @Override
@@ -131,5 +118,22 @@ public class ProjectRepositoryImpl implements ProjectRepository {
 
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
+  }
+
+  public enum ProjectRole {
+    ADMIN("ROLE_ADMIN", List.of(BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
+        BasePermission.DELETE, BasePermission.ADMINISTRATION)),
+    PROJECT_MANAGER("ROLE_PROJECT_MANAGER",
+        List.of(BasePermission.WRITE, BasePermission.CREATE,
+            BasePermission.DELETE));
+
+    final String roleName;
+    final List<Permission> allowedPermissions;
+
+    ProjectRole(String roleName,
+        List<Permission> allowedPermissions) {
+      this.roleName = roleName;
+      this.allowedPermissions = allowedPermissions;
+    }
   }
 }

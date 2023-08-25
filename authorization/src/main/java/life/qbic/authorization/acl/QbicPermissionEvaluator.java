@@ -1,6 +1,5 @@
 package life.qbic.authorization.acl;
 
-import java.io.Serializable;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.AclPermissionEvaluator;
@@ -33,11 +32,5 @@ public class QbicPermissionEvaluator extends AclPermissionEvaluator {
       return true;
     }
     return super.hasPermission(authentication, targetDomainObject, permission);
-  }
-
-  @Override
-  public boolean hasPermission(Authentication authentication, Serializable targetId,
-      String targetType, Object permission) {
-    return super.hasPermission(authentication, targetId, targetType, permission);
   }
 }

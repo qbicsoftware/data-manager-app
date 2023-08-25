@@ -34,13 +34,13 @@ public class UserRole implements Serializable {
 
   @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "roleId")
-  private Role userRole;
+  private Role role;
 
   public String userId() {
     return userId;
   }
 
   public Role role() {
-    return userRole;
+    return role;
   }
 }

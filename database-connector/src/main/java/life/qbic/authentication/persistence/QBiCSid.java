@@ -51,15 +51,15 @@ public class QBiCSid {
       return false;
     }
 
-    QBiCSid QBiCSid1 = (QBiCSid) object;
+    QBiCSid qBiCSid = (QBiCSid) object;
 
-    if (id != QBiCSid1.id) {
+    if (id != qBiCSid.id) {
       return false;
     }
-    if (principal != QBiCSid1.principal) {
+    if (principal != qBiCSid.principal) {
       return false;
     }
-    return sid.equals(QBiCSid1.sid);
+    return sid.equals(qBiCSid.sid);
   }
 
   @Override
