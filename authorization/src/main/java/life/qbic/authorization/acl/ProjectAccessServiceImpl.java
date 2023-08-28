@@ -98,12 +98,6 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @Transactional
   @Override
   public void deny(String username, ProjectId projectId, Permission permission) {
-//    PrincipalSid principalSid = new PrincipalSid(username);
-//    MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
-//    Predicate<AccessControlEntry> accessControlEntryPredicate = accessControlEntry ->
-//        accessControlEntry.getSid().equals(principalSid)
-//            && accessControlEntry.getPermission().equals(permission);
-//    deleteAces(acl, accessControlEntryPredicate);
     deny(username, projectId, List.of(permission));
   }
 
