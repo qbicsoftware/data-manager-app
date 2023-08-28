@@ -27,11 +27,10 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Edit User Access To Project Dialog</b>
  *
- * @since <version tag>
+ * <p>A dialog window that enables the user to add or remove the access to a project for other users
+ *
  */
 public class EditUserAccessToProjectDialog extends DialogWindow {
 
