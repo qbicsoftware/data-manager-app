@@ -198,16 +198,16 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   }
 
   private void openEditUserAccessToProjectDialog() {
-    editUserAccessToProjectDialog editUserAccessToProjecTDialog = new editUserAccessToProjectDialog(
+    EditUserAccessToProjectDialog editUserAccessToProjectDialog = new EditUserAccessToProjectDialog(
         projectAccessService,
         projectId,
         sidRepository, userRepository);
-    addEditUserAccessToProjectDialogListeners(editUserAccessToProjecTDialog);
-    editUserAccessToProjecTDialog.open();
+    addEditUserAccessToProjectDialogListeners(editUserAccessToProjectDialog);
+    editUserAccessToProjectDialog.open();
   }
 
   private void addEditUserAccessToProjectDialogListeners(
-      editUserAccessToProjectDialog editUserAccessToProjectDialog) {
+      EditUserAccessToProjectDialog editUserAccessToProjectDialog) {
     editUserAccessToProjectDialog.addCancelEventListener(
         addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
     editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
