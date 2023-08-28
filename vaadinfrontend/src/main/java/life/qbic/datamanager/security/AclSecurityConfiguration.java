@@ -34,11 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.util.Assert;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Security configuration setting up access control list beans
  */
 @Configuration
 @EnableCaching
