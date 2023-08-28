@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.authentication.persistence.SidRepository;
 import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
@@ -44,6 +46,8 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private final UserDetailsService userDetailsService;
   private final SidRepository sidRepository;
   private final UserRepository userRepository;
+
+  private final UserPermissions userPermissions;
   private static final Logger log = logger(ProjectAccessComponent.class);
   private final Div content = new Div();
   private final Div header = new Div();
@@ -57,11 +61,13 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserDetailsService userDetailsService,
       @Autowired UserRepository userRepository,
-      @Autowired SidRepository sidRepository) {
+      @Autowired SidRepository sidRepository,
+      @Autowired UserPermissions userPermissions) {
     this.projectAccessService = projectAccessService;
     this.userDetailsService = userDetailsService;
     this.userRepository = userRepository;
     this.sidRepository = sidRepository;
+    this.userPermissions = userPermissions;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userDetailsService, "userDetailsService must not be null");
     requireNonNull(userRepository, "userRepository must not be null");
@@ -124,8 +130,12 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .map(ProjectId::parse).orElseThrow();
-    loadInformationForProject(projectId);
+        .map(life.qbic.projectmanagement.domain.project.ProjectId::parse).orElseThrow();
+    if (userPermissions.changeProjectAccess(projectId)) {
+      loadInformationForProject(projectId);
+    } else {
+      event.rerouteToError(NotFoundException.class);
+    }
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {

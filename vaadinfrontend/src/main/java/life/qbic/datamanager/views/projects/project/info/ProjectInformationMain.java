@@ -1,17 +1,19 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.MainComponent;
@@ -44,20 +46,24 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectContentComponent projectContentComponent;
   private final ProjectSupportComponent projectSupportComponent;
+  private final UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private Context context;
 
   public ProjectInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectContentComponent projectContentComponent,
-      @Autowired ProjectSupportComponent projectSupportComponent) {
+      @Autowired ProjectSupportComponent projectSupportComponent,
+      @Autowired UserPermissions userPermissions) {
     super(projectContentComponent, projectSupportComponent);
-    Objects.requireNonNull(projectNavigationBarComponent);
-    Objects.requireNonNull(projectContentComponent);
-    Objects.requireNonNull(projectSupportComponent);
+    requireNonNull(userPermissions, "userPermissions must not be null");
+    requireNonNull(projectNavigationBarComponent);
+    requireNonNull(projectContentComponent);
+    requireNonNull(projectSupportComponent);
     this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectContentComponent = projectContentComponent;
     this.projectSupportComponent = projectSupportComponent;
+    this.userPermissions = userPermissions;
     layoutComponent();
     log.debug(String.format(
         "New instance for project Information Page (#%s) created with Project Navigation Bar Component (#%s) and Project Content Component (#%s) and Project Support Component (#%s)",
@@ -86,8 +92,12 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
       throw new ApplicationException("invalid project id " + projectID);
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
-    this.context = new Context().with(parsedProjectId);
-    setContext(context);
+    if (userPermissions.readProject(parsedProjectId)) {
+      this.context = new Context().with(parsedProjectId);
+      setContext(context);
+    } else {
+      beforeEnterEvent.rerouteToError(NotFoundException.class);
+    }
   }
 
   private void setContext(Context context) {
