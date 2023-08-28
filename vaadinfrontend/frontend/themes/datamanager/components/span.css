@@ -1,0 +1,14 @@
+span.bold {
+  font-weight: bold;
+}
+
+span.title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  margin-bottom: 0.5rem;
+}
+
+.error-text {
+  color: var(--lumo-error-text-color);
+}

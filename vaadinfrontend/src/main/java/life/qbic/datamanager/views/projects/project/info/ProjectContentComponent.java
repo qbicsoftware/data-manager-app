@@ -5,9 +5,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -41,12 +41,12 @@ public class ProjectContentComponent extends Div {
   }
 
   /**
-   * Triggers the propagation of the provided {@link ProjectId} to internal components
+   * Propagates the context to internal components.
    *
-   * @param projectId The projectId to be propagated
+   * @param context the context in which the user is.
    */
-  public void projectId(ProjectId projectId) {
-    projectDetailsComponent.projectId(projectId);
+  public void setContext(Context context) {
+    projectDetailsComponent.setContext(context);
   }
 
 }

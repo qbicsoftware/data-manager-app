@@ -55,8 +55,6 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
     if (resetParam.isPresent()) {
       currentUserId = params.get(passwordResetQueryParameter).get(0);
     } else {
-      // unknown query
-      // TODO show error
       throw new NotImplementedException();
     }
   }
