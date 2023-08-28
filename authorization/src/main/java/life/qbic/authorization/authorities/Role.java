@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import static java.util.Objects.requireNonNull;
 
@@ -7,6 +7,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -25,39 +27,41 @@ import org.springframework.security.core.GrantedAuthority;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "user_roles")
-public class UserRole implements GrantedAuthority {
+@Table(name = "roles")
+public class Role implements GrantedAuthority {
 
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  private String id;
+  private long id;
 
   @Basic(fetch = FetchType.EAGER)
-  @Column(name = "roleDescription")
+  @Column(name = "name")
+  private String name;
+
+  @Basic(fetch = FetchType.EAGER)
+  @Column(name = "description")
   private String description;
 
   @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-  @JoinTable(name = "user_roles_permissions",
+  @JoinTable(name = "role_permission",
       joinColumns = @JoinColumn(name = "userRoleId"),
       inverseJoinColumns = @JoinColumn(name = "permissionId"))
   private List<Permission> permissions = new ArrayList<>();
 
 
-  protected UserRole() {
+  protected Role() {
   }
 
-  protected UserRole(String id, String description) {
+  protected Role(long id, String name, String description) {
     this.id = id;
+    this.name = name;
     this.description = description;
   }
 
-  public static UserRole with(String id, String description) {
-    return new UserRole(id, description);
-  }
-
-  public String id() {
-    requireNonNull(id);
-    return id;
+  public String name() {
+    requireNonNull(this.name);
+    return name;
   }
 
   public Optional<String> description() {
@@ -71,8 +75,9 @@ public class UserRole implements GrantedAuthority {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", UserRole.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", Role.class.getSimpleName() + "[", "]")
         .add("id='" + id + "'")
+        .add("name='" + name + "'")
         .add("description='" + description + "'")
         .add("permissions=" + permissions)
         .toString();
@@ -80,7 +85,11 @@ public class UserRole implements GrantedAuthority {
 
   @Override
   public String getAuthority() {
-    return "ROLE_" + id();
+    return "ROLE_" + name();
+  }
+
+  public long getId() {
+    return id;
   }
 
   @Override

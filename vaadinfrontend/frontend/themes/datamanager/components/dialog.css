@@ -18,9 +18,13 @@ vaadin-dialog-overlay::part(title) {
   margin-inline-start: 0;
 }
 
-.batch-registration-dialog .stepper {
-  width: 100%;
+.add-user-to-project-dialog::part(overlay) {
   height: 100%;
+  min-width: 66vw;
+}
+
+.add-user-to-project-dialog vaadin-grid {
+  height: 100%
 }
 
 .batch-registration-dialog::part(overlay) {

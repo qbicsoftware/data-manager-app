@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import static java.util.Objects.requireNonNull;
 
@@ -6,6 +6,8 @@ import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -22,29 +24,30 @@ import org.springframework.security.core.GrantedAuthority;
 public class Permission implements GrantedAuthority {
 
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  private String id;
+  private long id;
 
   @Basic(fetch = FetchType.EAGER)
-  @Column(name = "permissionDescription")
+  @Column(name = "name")
+  private String name;
+
+  @Basic(fetch = FetchType.EAGER)
+  @Column(name = "description")
   private String description;
 
-  public static Permission with(String id, String description) {
-    return new Permission(id, description);
-  }
-
   protected Permission() {
-
   }
 
-  protected Permission(String id, String description) {
+  protected Permission(long id, String name, String description) {
     this.id = id;
+    this.name = name;
     this.description = description;
   }
 
-  public String id() {
-    requireNonNull(id);
-    return id;
+  public String name() {
+    requireNonNull(name);
+    return name;
   }
 
   public Optional<String> description() {
@@ -54,12 +57,12 @@ public class Permission implements GrantedAuthority {
   @Transient
   @Override
   public String getAuthority() {
-    return id();
+    return name();
   }
 
   @Override
   public String toString() {
-    return id();
+    return name();
   }
 
 

@@ -1,16 +1,33 @@
 package life.qbic.projectmanagement.persistence;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.projectmanagement.persistence.ProjectRepositoryImpl.ProjectRole.ADMIN;
+import static life.qbic.projectmanagement.persistence.ProjectRepositoryImpl.ProjectRole.PROJECT_MANAGER;
+import static org.springframework.security.acls.domain.BasePermission.ADMINISTRATION;
+import static org.springframework.security.acls.domain.BasePermission.CREATE;
+import static org.springframework.security.acls.domain.BasePermission.DELETE;
+import static org.springframework.security.acls.domain.BasePermission.READ;
+import static org.springframework.security.acls.domain.BasePermission.WRITE;
 
 import java.util.List;
 import java.util.Optional;
+import life.qbic.authorization.acl.ProjectAccessService;
+import life.qbic.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.security.access.prepost.PostFilter;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.acls.model.Permission;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -28,27 +45,38 @@ import org.springframework.stereotype.Component;
  *
  * @since 1.0.0
  */
-@Component
+@Service
 public class ProjectRepositoryImpl implements ProjectRepository {
 
   private static final Logger log = logger(ProjectRepositoryImpl.class);
   private final QbicProjectRepo projectRepo;
   private final QbicProjectDataRepo projectDataRepo;
 
+  private final ProjectAccessService projectAccessService;
+
   @Autowired
-  public ProjectRepositoryImpl(QbicProjectRepo projectRepo, QbicProjectDataRepo projectDataRepo) {
+  public ProjectRepositoryImpl(QbicProjectRepo projectRepo,
+      QbicProjectDataRepo projectDataRepo, ProjectAccessService projectAccessService) {
     this.projectRepo = projectRepo;
     this.projectDataRepo = projectDataRepo;
+    this.projectAccessService = projectAccessService;
   }
 
   @Override
+  @CanCreateProject
+  @Transactional
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
       throw new ProjectExistsException();
     }
     projectRepo.save(project);
-
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    projectAccessService.grant(authentication.getName(), project.getId(),
+        List.of(READ, WRITE));
+    projectAccessService.grantToAuthority(ADMIN.auth(), project.getId(), ADMIN.permissions());
+    projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
+        PROJECT_MANAGER.permissions());
     try {
       projectDataRepo.add(project.getProjectCode());
     } catch (Exception e) {
@@ -59,6 +87,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
+  @PreAuthorize("hasPermission(#project.id, 'life.qbic.projectmanagement.domain.project.Project', 'WRITE')")
   public void update(Project project) {
     if (!doesProjectExistWithId(project.getId())) {
       throw new ProjectNotFoundException();
@@ -67,6 +96,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
+  @PostFilter("hasPermission(filterObject, 'READ')")
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
   }
@@ -85,5 +115,30 @@ public class ProjectRepositoryImpl implements ProjectRepository {
 
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
+  }
+
+  public enum ProjectRole {
+    ADMIN("ROLE_ADMIN", List.of(READ, WRITE, CREATE,
+        DELETE, ADMINISTRATION)),
+    PROJECT_MANAGER("ROLE_PROJECT_MANAGER",
+        List.of(WRITE, CREATE,
+            DELETE));
+
+    private final String roleName;
+    private final List<Permission> allowedPermissions;
+
+    public GrantedAuthority auth() {
+      return new SimpleGrantedAuthority(roleName);
+    }
+
+    public List<Permission> permissions() {
+      return allowedPermissions;
+    }
+
+    ProjectRole(String roleName,
+        List<Permission> allowedPermissions) {
+      this.roleName = roleName;
+      this.allowedPermissions = allowedPermissions;
+    }
   }
 }

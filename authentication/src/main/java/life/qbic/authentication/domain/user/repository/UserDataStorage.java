@@ -46,4 +46,14 @@ public interface UserDataStorage {
    * @since 1.0.0
    */
   Optional<User> findUserById(UserId id);
+
+  /**
+   * Searches for all user entities which are set to active.
+   *
+   * @return a list of matching {@link User} entries. Is empty, if the user did not active its
+   * account
+   */
+  List<User> findAllActiveUsers();
+
+
 }

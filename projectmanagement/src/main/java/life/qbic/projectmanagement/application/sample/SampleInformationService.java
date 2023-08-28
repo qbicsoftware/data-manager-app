@@ -50,7 +50,7 @@ public class SampleInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PostFilter("hasPermission(filterObject,'VIEW_SAMPLE')")
+  @PostFilter("hasPermission(filterObject.sampleId(),'life.qbic.projectmanagement.domain.project.sample.Sample','READ')")
   public List<SamplePreview> queryPreview(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
