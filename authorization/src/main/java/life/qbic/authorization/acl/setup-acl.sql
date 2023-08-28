@@ -40,7 +40,7 @@ CREATE TABLE acl_entry
     audit_failure       BOOLEAN          NOT NULL,
     UNIQUE KEY unique_acl_entry (acl_object_identity, ace_order),
     CONSTRAINT fk_acl_entry_object FOREIGN KEY (acl_object_identity) REFERENCES acl_object_identity (id),
-    CONSTRAINT fk_acl_entry_acl FOREIGN KEY (sid) REFERENCES acl_sid (id)
+    CONSTRAINT fk_acl_entry_acl FOREIGN KEY (sid) REFERENCES acl_sid (id) ON DELETE SET NULL
 ) ENGINE = InnoDB;
 
 INSERT INTO acl_class(id, class, class_id_type)
