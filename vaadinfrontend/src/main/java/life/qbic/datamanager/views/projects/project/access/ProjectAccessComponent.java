@@ -30,11 +30,7 @@ import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * A component that allows to manage project access
  */
 
 @Route(value = "projects/:projectId?/access", layout = MainLayout.class)
