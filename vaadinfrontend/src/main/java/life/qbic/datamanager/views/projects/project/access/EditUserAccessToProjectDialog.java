@@ -33,15 +33,15 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since <version tag>
  */
-public class editUserAccessToProjectDialog extends DialogWindow {
+public class EditUserAccessToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = -7896582476882842608L;
   private static final String TITLE = "Edit User Access to Project";
   private final Grid<User> userGrid = new Grid<>();
   private final TextField searchField = new TextField();
-  private final List<ComponentEventListener<CancelEvent<editUserAccessToProjectDialog>>> cancelEventListeners = new ArrayList<>();
-  private final List<ComponentEventListener<ConfirmEvent<editUserAccessToProjectDialog>>> confirmEventListeners = new ArrayList<>();
+  private final List<ComponentEventListener<CancelEvent<EditUserAccessToProjectDialog>>> cancelEventListeners = new ArrayList<>();
+  private final List<ComponentEventListener<ConfirmEvent<EditUserAccessToProjectDialog>>> confirmEventListeners = new ArrayList<>();
   private final transient SidRepository sidRepository;
   private final transient UserRepository userRepository;
   private final transient ProjectAccessService projectAccessService;
@@ -49,7 +49,7 @@ public class editUserAccessToProjectDialog extends DialogWindow {
   private UserSelectionContent userSelectionContent;
   private Set<User> originalUsersInProject;
 
-  public editUserAccessToProjectDialog(@Autowired ProjectAccessService projectAccessService,
+  public EditUserAccessToProjectDialog(@Autowired ProjectAccessService projectAccessService,
       @Autowired ProjectId projectId,
       @Autowired SidRepository sidRepository,
       @Autowired UserRepository userRepository) {
@@ -165,7 +165,7 @@ public class editUserAccessToProjectDialog extends DialogWindow {
    * @param listener the listener to add
    */
   public void addConfirmEventListener(
-      final ComponentEventListener<ConfirmEvent<editUserAccessToProjectDialog>> listener) {
+      final ComponentEventListener<ConfirmEvent<EditUserAccessToProjectDialog>> listener) {
     this.confirmEventListeners.add(listener);
   }
 
@@ -175,7 +175,7 @@ public class editUserAccessToProjectDialog extends DialogWindow {
    * @param listener the listener to add
    */
   public void addCancelEventListener(
-      final ComponentEventListener<CancelEvent<editUserAccessToProjectDialog>> listener) {
+      final ComponentEventListener<CancelEvent<EditUserAccessToProjectDialog>> listener) {
     this.cancelEventListeners.add(listener);
   }
 
