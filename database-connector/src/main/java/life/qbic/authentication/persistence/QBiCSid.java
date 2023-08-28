@@ -8,11 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Sid entity to work with the database using JPA
  */
 @Entity
 @Table(name = "acl_sid")
