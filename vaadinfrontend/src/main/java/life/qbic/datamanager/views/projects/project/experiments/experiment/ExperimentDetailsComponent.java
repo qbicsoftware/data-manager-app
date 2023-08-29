@@ -85,7 +85,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final TabSheet experimentSheet = new TabSheet();
   private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
       new ArrayList<>());
-  private final Div contentExperimentalGroupsTab = new Div();
+  private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
@@ -152,7 +152,7 @@ public class ExperimentDetailsComponent extends PageArea {
     header.addClassName("header");
     this.add(content);
     //Necessary to avoid css collution
-    content.addClassName("content");
+    content.addClassName("details-content");
     initButtonBar();
     header.add(title, buttonBar);
     title.addClassName("title");
@@ -292,9 +292,10 @@ public class ExperimentDetailsComponent extends PageArea {
   private void layoutTabSheet() {
     experimentSheet.add("Experimental Variables", experimentalVariables);
     experimentalVariables.addClassName(Display.FLEX);
-    experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
+    experimentalVariables.addClassName("experimental-variables-container");
+    experimentSheet.add("Experimental Groups", experimentalGroups);
+    experimentalGroups.addClassName("experimental-groups-container");
     content.add(experimentSheet);
-    experimentSheet.setSizeFull();
   }
 
   private void configureExperimentalGroupCreation() {
