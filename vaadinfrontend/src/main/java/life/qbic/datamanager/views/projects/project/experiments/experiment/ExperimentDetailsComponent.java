@@ -252,8 +252,7 @@ public class ExperimentDetailsComponent extends PageArea {
           experimentSheet.setSelectedIndex(1);
           confirmEvent.getSource().close();
         });
-    experimentalGroupsExistDialog.addCancelListener(
-        cancelEvent -> cancelEvent.getSource().close());
+    experimentalGroupsExistDialog.addRejectListener(rejectEvent -> rejectEvent.getSource().close());
     experimentalGroupsExistDialog.open();
   }
 

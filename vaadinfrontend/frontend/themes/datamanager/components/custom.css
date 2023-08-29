@@ -44,12 +44,12 @@ vaadin-number-field::part(decrease-button), vaadin-number-field::part(increase-b
   color: var(--lumo-primary-color);
 }
 
-.experimental-groups-exist-dialog .content {
-  display: flex;
-  flex-direction: column;
-  width: 36.75rem;
-  height: 6.5rem;
-  justify-content: center;
-  align-items: flex-start;
-  flex-shrink: 0;
-}
+/*.experimental-groups-exist-dialog .content {*/
+/*  display: flex;*/
+/*  flex-direction: column;*/
+/*  width: 36.75rem;*/
+/*  height: 6.5rem;*/
+/*  justify-content: center;*/
+/*  align-items: flex-start;*/
+/*  flex-shrink: 0;*/
+/*}*/
