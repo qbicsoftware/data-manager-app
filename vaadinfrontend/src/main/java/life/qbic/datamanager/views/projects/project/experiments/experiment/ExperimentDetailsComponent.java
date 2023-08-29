@@ -491,12 +491,12 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadExperimentalVariables(Experiment experiment) {
     // We load the experimental variables of the experiment and render them as cards
-    List<ExperimentalVariable> experimentalVariables = experiment.variables();
-    List<ExperimentalVariableCard> experimentalVariableCards = experimentalVariables.stream()
+    List<ExperimentalVariable> variables = experiment.variables();
+    List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
         .map(ExperimentalVariableCard::new).toList();
     experimentalVariableCollection.setContent(experimentalVariableCards);
 
-    if (experimentalVariables.isEmpty()) {
+    if (variables.isEmpty()) {
       this.experimentalVariables.add(addExperimentalVariablesNote);
     } else {
       this.experimentalVariables.add(experimentalVariableCollection);
