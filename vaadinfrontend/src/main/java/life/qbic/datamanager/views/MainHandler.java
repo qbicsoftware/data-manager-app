@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.UI;
-import life.qbic.datamanager.security.SecurityService;
+import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Component;
 public class MainHandler implements MainHandlerInterface {
 
   private MainLayout registeredMainLayout;
-  private final SecurityService securityService;
+  private final LogoutService logoutService;
 
-  public MainHandler(@Autowired SecurityService securityService) {
-    this.securityService = securityService;
+  public MainHandler(@Autowired LogoutService logoutService) {
+    this.logoutService = logoutService;
   }
 
   @Override
@@ -34,6 +34,6 @@ public class MainHandler implements MainHandlerInterface {
   private void addClickListeners() {
     registeredMainLayout.homeButton().addClickListener(event -> UI.getCurrent().getPage().setLocation(
         Projects.PROJECTS));
-    registeredMainLayout.logout().addClickListener(event -> securityService.logout());
+    registeredMainLayout.logout().addClickListener(event -> logoutService.logout());
   }
 }

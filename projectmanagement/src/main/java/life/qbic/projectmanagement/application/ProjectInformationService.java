@@ -17,8 +17,8 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PostFilter;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -50,7 +50,7 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PostFilter("hasPermission(filterObject,'VIEW_PROJECT')")
+  @PostFilter("hasPermission(filterObject.projectId(),'life.qbic.projectmanagement.domain.project.Project','READ')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
@@ -60,18 +60,18 @@ public class ProjectInformationService {
     return new ArrayList<>(previewList);
   }
 
-  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','READ')")
   public Optional<Project> find(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     return projectRepository.find(projectId);
   }
 
-  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.project.Project','READ')")
   public Optional<Project> find(String projectId) throws IllegalArgumentException{
     return find(ProjectId.parse(projectId));
   }
 
-  @PostAuthorize("hasPermission(returnObject,'VIEW_PROJECT')")
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.project.Project','READ')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());
