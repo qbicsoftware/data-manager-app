@@ -26,10 +26,12 @@ public class ExperimentalGroupsExistDialog extends ConfirmDialog {
     addClassName("experimental-groups-exist-dialog");
 
     Div content = new Div();
+    Span experimentalGroupCount = new Span(String.valueOf(numberOfExperimentalGroups));
+    experimentalGroupCount.addClassName("experimental-group-count");
     content.add(
         new Div(new Text(
             "Editing experimental variables requires all experimental groups to be deleted.")),
-        new Div(new Text("You have "), new Span(String.valueOf(numberOfExperimentalGroups)),
+        new Div(new Text("You have "), experimentalGroupCount,
             new Text(
                 " experimental group%s.".formatted(numberOfExperimentalGroups > 1 ? "s" : ""))),
         new Div(new Text("Please delete the group%s to edit the variables.".formatted(

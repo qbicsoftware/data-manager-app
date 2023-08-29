@@ -19,21 +19,21 @@ vaadin-dialog-overlay::part(title) {
   margin-inline-start: 0;
 }
 
-vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog > [slot="header"] {
+.experimental-groups-exist-dialog > [slot="header"] {
   display: flex;
   align-items: center;
   justify-items: flex-start;
   gap: var(--lumo-space-s);
 }
 
-vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog > [slot="header"] .title {
+.experimental-groups-exist-dialog .title {
   font-family: var(--lumo-font-family);
   line-height: var(--lumo-line-height-m);
   font-size: var(--lumo-font-size-xl);
   margin: 0;
 }
 
-vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog > [slot="header"] .error-icon {
+.experimental-groups-exist-dialog .error-icon {
   width: 1.83rem;
   height: 1.83rem;
   margin: 0.46rem;
@@ -41,12 +41,16 @@ vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog > [slot="header"]
   margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
 }
 
-vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog::part(overlay) {
+.experimental-groups-exist-dialog::part(overlay) {
   width: 36.75rem;
 }
 
-vaadin-confirm-dialog-overlay.experimental-groups-exist-dialog::part(content) .content {
+.experimental-groups-exist-dialog .content {
   width: 100%;
+}
+
+.experimental-groups-exist-dialog .content .experimental-group-count {
+  font-weight: bold;
 }
 
 .add-user-to-project-dialog::part(overlay) {
