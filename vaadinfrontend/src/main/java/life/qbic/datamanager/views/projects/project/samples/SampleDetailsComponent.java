@@ -360,9 +360,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
       Disclaimer noGroupsDefinedCard = Disclaimer.createWithTitle(
-          "No experimental groups defined",
-          "Start the sample registration process by registering the first experimental group",
-          "Add Experimental Group");
+          "Design your experiment first",
+          "Start the sample registration process by defining experimental groups",
+          "Add groups");
       String experimentId = experiment.experimentId().value();
       noGroupsDefinedCard.subscribe(event -> routeToExperimentalGroupCreation(event, experimentId));
       return noGroupsDefinedCard;
