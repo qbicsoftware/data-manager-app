@@ -5,10 +5,11 @@
 
 .main.experiment {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, 5%) minmax(max-content, 90%);
+  grid-template-rows: minmax(130px, auto) 1fr;
   grid-template-areas:
     "navbar support"
     "content support";
+  height: 100%;
 }
 
 .main.experiment .content {
@@ -21,14 +22,16 @@
 
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, 5%) minmax(min-content, 90%);
+  grid-template-rows: minmax(130px, auto) 1fr;
   grid-template-areas:
     "navbar support"
     "content support";
+  height: 100%;
 }
 
 .main.project .content {
   grid-area: content;
+  height: 100%;
 }
 
 .main.project .support {
@@ -37,10 +40,11 @@
 
 .main.sample {
   grid-template-columns: minmax(max-content, 100%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, 5%) minmax(min-content, 90%);
+  grid-template-rows: minmax(130px, auto) 1fr;
   grid-template-areas:
     "navbar support"
     "content content";
+  height: 100%;
 }
 
 .main.sample .content {

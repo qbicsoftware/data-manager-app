@@ -12,7 +12,6 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
 
 /**
@@ -50,7 +49,7 @@ public class SampleInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PostFilter("hasPermission(filterObject.sampleId(),'life.qbic.projectmanagement.domain.project.sample.Sample','READ')")
+
   public List<SamplePreview> queryPreview(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
