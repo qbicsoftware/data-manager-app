@@ -48,34 +48,6 @@
   opacity: 0.05;
 }
 
-.disclaimer-card {
-  display: flex;
-  justify-content: center;
-  padding: 1.0rem;
-  max-width: 300px;
-  flex: auto;
-}
-
-.disclaimer-card > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
-}
-
-.disclaimer-card .label {
-  font-weight: normal;
-  color: #2d2d2d;
-  font-size: var(--lumo-font-size-s);
-}
-
-.disclaimer-card .title {
-  font-weight: bold;
-  color: #2d2d2d;
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: 0.5rem;
-}
-
 .experimental-group {
   display: flex;
   flex-direction: column;
@@ -185,20 +157,25 @@
   padding: var(--lumo-space-l);
 }
 
-.card.experimental-variables .header {
+.card.experimental-variables .variables-content {
+  display: flex;
+  align-content: space-evenly;
+  flex-flow: row wrap;
+  gap: 1rem;
+}
+
+.card.experimental-variables .controls {
+  display: flex;
+  gap: var(--lumo-space-s);
+}
+
+.card.experimental-variables .variables-header {
   color: var(--lumo-header-text-color);
   font-size: var(--lumo-font-size-m);
   font-weight: bold;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-}
-
-.card.experimental-variables .content {
-  display: flex;
-  align-content: space-evenly;
-  flex-flow: row wrap;
-  gap: 1rem;
 }
 
 .experimental-variables-fact-sheet {
@@ -237,9 +214,21 @@
 /* Support section formatting and components */
 
 .experiment-item-collection {
+  display: flex;
+  gap: var(--lumo-space-s);
+  flex-flow: column;
+}
+
+.experiment-item-collection .content {
   display: grid;
-  row-gap: 1rem;
+  gap: var(--lumo-space-m);
   grid-auto-rows: max-content;
+}
+
+.experiment-item-collection .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* Experiment item */

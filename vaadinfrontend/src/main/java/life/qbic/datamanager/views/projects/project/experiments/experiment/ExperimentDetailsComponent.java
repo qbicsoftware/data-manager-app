@@ -34,12 +34,11 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
-import life.qbic.datamanager.views.general.DisclaimerCard;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentEditEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentInfoComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
@@ -87,11 +86,11 @@ public class ExperimentDetailsComponent extends PageArea {
   private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
       new ArrayList<>());
   private final Div contentExperimentalGroupsTab = new Div();
-  private final Div experimentSummary = new Div();
+  private final Div experimentalVariables = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
-  private final DisclaimerCard noExperimentalVariablesDefined;
-  private final DisclaimerCard addExperimentalVariablesNote;
+  private final Disclaimer noExperimentalVariablesDefined;
+  private final Disclaimer addExperimentalVariablesNote;
   private Context context;
   private boolean hasExperimentalGroups;
   private final DeletionService deletionService;
@@ -132,8 +131,8 @@ public class ExperimentDetailsComponent extends PageArea {
     return notification;
   }
 
-  private DisclaimerCard createNoVariableDisclaimer() {
-    var disclaimer = DisclaimerCard.createWithTitle("Missing variables",
+  private Disclaimer createNoVariableDisclaimer() {
+    var disclaimer = Disclaimer.createWithTitle("Missing variables",
         "No experiment variables defined", "Add");
     disclaimer.subscribe(listener -> displayAddExperimentalVariablesDialog());
     return disclaimer;
@@ -282,8 +281,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void layoutTabSheet() {
-    experimentSheet.add("Summary", experimentSummary);
-    experimentSummary.addClassName(Display.FLEX);
+    experimentSheet.add("Experimental Variables", experimentalVariables);
+    experimentalVariables.addClassName(Display.FLEX);
     experimentSheet.add("Experimental Groups", contentExperimentalGroupsTab);
     content.add(experimentSheet);
     experimentSheet.setSizeFull();
@@ -459,7 +458,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void loadExperimentInformation(Experiment experiment) {
     title.setText(experiment.getName());
     loadTagInformation(experiment);
-    loadExperimentInfo(experiment);
+    loadExperimentalVariables(experiment);
     loadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
       onNoVariablesDefined();
@@ -479,21 +478,13 @@ public class ExperimentDetailsComponent extends PageArea {
     tags.stream().map(Tag::new).forEach(tagCollection::add);
   }
 
-  private void loadExperimentInfo(Experiment experiment) {
-    ExperimentInfoComponent factSheet = ExperimentInfoComponent.create(experiment.getSpecies(),
-        experiment.getSpecimens(), experiment.getAnalytes());
-    this.experimentSummary.removeAll();
-    this.experimentSummary.add(factSheet);
-    factSheet.showMenu();
-    reloadExperimentalVariables(experiment);
-  }
-
-  private void reloadExperimentalVariables(Experiment experiment) {
+  private void loadExperimentalVariables(Experiment experiment) {
+    this.experimentalVariables.removeAll();
     this.experimentalVariablesComponent.setExperimentalVariables(experiment.variables());
     if (experiment.variables().isEmpty()) {
-      this.experimentSummary.add(addExperimentalVariablesNote);
+      this.experimentalVariables.add(addExperimentalVariablesNote);
     } else {
-      this.experimentSummary.add(experimentalVariablesComponent);
+      this.experimentalVariables.add(experimentalVariablesComponent);
     }
   }
 

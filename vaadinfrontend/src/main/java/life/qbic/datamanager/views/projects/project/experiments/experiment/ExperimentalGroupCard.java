@@ -1,14 +1,9 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.contextmenu.SubMenu;
+
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.menubar.MenuBarVariant;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
