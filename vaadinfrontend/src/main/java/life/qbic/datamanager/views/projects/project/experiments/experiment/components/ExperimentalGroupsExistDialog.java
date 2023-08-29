@@ -32,8 +32,10 @@ public class ExperimentalGroupsExistDialog extends DialogWindow {
         new Div(new Text(
             "Editing experimental variables requires all experimental groups to be deleted.")),
         new Div(new Text("You have "), new Span(String.valueOf(numberOfExperimentalGroups)),
-            new Text(" experimental groups.")),
-        new Div(new Text("Please delete them to edit the variables.")));
+            new Text(
+                " experimental group%s.".formatted(numberOfExperimentalGroups > 1 ? "s" : ""))),
+        new Div(new Text("Please delete the group%s to edit the variables.".formatted(
+            numberOfExperimentalGroups > 1 ? "s" : ""))));
     content.addClassName("content");
 
     H2 title = new H2("Cannot edit variables");
