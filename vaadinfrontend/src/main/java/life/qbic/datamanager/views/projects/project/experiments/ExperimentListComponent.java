@@ -63,7 +63,7 @@ public class ExperimentListComponent extends PageArea {
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.experimentInformationService = experimentInformationService;
     this.experimentalDesignSearchService = experimentalDesignSearchService;
-    this.addClassName("list-component");
+    this.addClassName("experiment-list-component");
     this.experimentItemCollection = ExperimentItemCollection.create();
     this.add(experimentItemCollection);
     addItemCollectionListeners();

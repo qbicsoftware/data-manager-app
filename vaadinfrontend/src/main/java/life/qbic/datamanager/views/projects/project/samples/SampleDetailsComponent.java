@@ -108,7 +108,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addComponentAsFirst(title);
     title.addClassName("title");
     add(content);
-    content.addClassName("content");
+    content.addClassName("sample-details-content");
   }
 
   private void initButtonAndFieldBar() {
@@ -258,8 +258,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     private void addExperimentTabToTabSheet(Experiment experiment) {
       Div experimentTabContent = new Div();
+      experimentTabContent.addClassName("sample-tab-content");
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
           0);
+      sampleExperimentTabSheet.setHeightFull();
       if (noExperimentGroupsInExperiment(experiment)) {
         experimentTabContent.add(createNoGroupsDefinedDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
@@ -326,6 +328,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
           .setSortProperty("analysisType");
       sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
+      sampleGrid.addClassName("sample-grid");
       return sampleGrid;
     }
 
