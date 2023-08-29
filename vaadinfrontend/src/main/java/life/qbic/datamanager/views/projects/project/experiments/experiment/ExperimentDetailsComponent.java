@@ -208,36 +208,44 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addConfirmListenerForEditVariableDialog() {
-    experimentalVariablesComponent.addEditListener(experimentalVariablesEditEvent -> {
+    experimentalVariablesComponent.addEditListener(editButtonClickedEvent -> {
       int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
           context.experimentId().orElseThrow()).size();
       if (numOfExperimentalGroups > 0) {
-        ExperimentalGroupsExistDialog experimentalGroupsExistDialog = new ExperimentalGroupsExistDialog(
-            numOfExperimentalGroups);
-        experimentalGroupsExistDialog.addConfirmListener(
-            confirmEvent -> {
-              experimentSheet.setSelectedIndex(1);
-              confirmEvent.getSource().close();
-            });
-        experimentalGroupsExistDialog.addCancelListener(
-            cancelEvent -> cancelEvent.getSource().close());
-        experimentalGroupsExistDialog.open();
+        showExperimentalGroupExistsDialog(numOfExperimentalGroups);
       } else {
-        ExperimentId experimentId = context.experimentId().orElseThrow();
-        var editDialog = ExperimentalVariablesDialog.prefilled(
-            experimentInformationService.getVariablesOfExperiment(experimentId));
-        editDialog.addCancelEventListener(
-            experimentalVariablesDialogCancelEvent -> editDialog.close());
-        editDialog.addConfirmEventListener(confirmEvent -> {
-          deleteExistingExperimentalVariables(experimentId);
-          addExperimentalVariables(
-              confirmEvent.getSource().definedVariables());
-          editDialog.close();
-          reloadExperimentalVariables();
-        });
-        editDialog.open();
+        showExperimentalVariableDialog();
       }
     });
+  }
+
+  private void showExperimentalVariableDialog() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    var editDialog = ExperimentalVariablesDialog.prefilled(
+        experimentInformationService.getVariablesOfExperiment(experimentId));
+    editDialog.addCancelEventListener(
+        experimentalVariablesDialogCancelEvent -> editDialog.close());
+    editDialog.addConfirmEventListener(confirmEvent -> {
+      deleteExistingExperimentalVariables(experimentId);
+      addExperimentalVariables(
+          confirmEvent.getSource().definedVariables());
+      editDialog.close();
+      reloadExperimentalVariables();
+    });
+    editDialog.open();
+  }
+
+  private void showExperimentalGroupExistsDialog(int numOfExperimentalGroups) {
+    ExperimentalGroupsExistDialog experimentalGroupsExistDialog = new ExperimentalGroupsExistDialog(
+        numOfExperimentalGroups);
+    experimentalGroupsExistDialog.addConfirmListener(
+        confirmEvent -> {
+          experimentSheet.setSelectedIndex(1);
+          confirmEvent.getSource().close();
+        });
+    experimentalGroupsExistDialog.addCancelListener(
+        cancelEvent -> cancelEvent.getSource().close());
+    experimentalGroupsExistDialog.open();
   }
 
   private void reloadExperimentalVariables() {
