@@ -503,18 +503,18 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void onNoVariablesDefined() {
-    contentExperimentalGroupsTab.removeAll();
-    contentExperimentalGroupsTab.add(noExperimentalVariablesDefined);
+    experimentalGroups.removeAll();
+    experimentalGroups.add(noExperimentalVariablesDefined);
 
   }
 
   private void onNoGroupsDefined() {
-    contentExperimentalGroupsTab.removeAll();
-    contentExperimentalGroupsTab.add(noExperimentalGroupsDefined);
+    experimentalGroups.removeAll();
+    experimentalGroups.add(noExperimentalGroupsDefined);
   }
 
   private void onGroupsDefined() {
-    contentExperimentalGroupsTab.removeAll();
-    contentExperimentalGroupsTab.add(experimentalGroupsCollection);
+    experimentalGroups.removeAll();
+    experimentalGroups.add(experimentalGroupsCollection);
   }
 }
