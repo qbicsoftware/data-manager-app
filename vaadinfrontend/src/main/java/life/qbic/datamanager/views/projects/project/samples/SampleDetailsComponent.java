@@ -262,13 +262,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
           0);
       sampleExperimentTabSheet.setHeightFull();
-      if (!isExperimentGroupInExperiment(experiment)) {
+      if (noExperimentGroupsInExperiment(experiment)) {
         experimentTabContent.add(createNoGroupsDefinedDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
       }
-      if (!sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .isValue()) {
+      if (noSamplesRegisteredInExperiment(experiment)) {
         experimentTabContent.add(createNoSamplesRegisteredDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
@@ -350,8 +349,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       }, query -> getSampleCountForExperiment(experimentId, samplePreviewFilter));
     }
 
-    private boolean isExperimentGroupInExperiment(Experiment experiment) {
-      return !experiment.getExperimentalGroups().isEmpty();
+    private boolean noExperimentGroupsInExperiment(Experiment experiment) {
+      return experiment.getExperimentalGroups().isEmpty();
+    }
+
+    private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
+      return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+          .getValue().isEmpty();
     }
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
