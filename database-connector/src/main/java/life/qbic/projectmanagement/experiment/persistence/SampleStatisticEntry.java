@@ -5,7 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
@@ -28,7 +27,7 @@ import life.qbic.projectmanagement.domain.project.ProjectId;
 public class SampleStatisticEntry {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue
   private long id;
   @Embedded
   @AttributeOverride(name = "value", column = @Column(name = "projectCode"))
