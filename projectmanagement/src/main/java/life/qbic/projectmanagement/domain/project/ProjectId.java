@@ -5,7 +5,6 @@ import jakarta.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.UUID;
 
 
@@ -61,9 +60,7 @@ public class ProjectId implements Serializable {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", ProjectId.class.getSimpleName() + "[", "]")
-        .add("uuid=" + projectId)
-        .toString();
+    return projectId; //IMPORTANT: This method is used by spring security {@link org.springframework.security.acls.jdbc.BasicLookupStrategy.class} to compare ACL entries.
   }
 
   @Override
@@ -71,7 +68,14 @@ public class ProjectId implements Serializable {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (o == null) {
+      return false;
+    }
+    // a project ID equals the string of its uuid
+    if (o.getClass().equals(String.class)) {
+      return this.projectId.equals(o);
+    }
+    if (getClass() != o.getClass()) {
       return false;
     }
 

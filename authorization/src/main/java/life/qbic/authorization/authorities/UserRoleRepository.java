@@ -1,4 +1,4 @@
-package life.qbic.authorization;
+package life.qbic.authorization.authorities;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * <p>
  * Provides access to persistent system roles.
  */
-public interface SystemRoleRepository extends JpaRepository<SystemRole, Integer> {
+public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
 
   /**
    * Find a user role in the system context.
@@ -16,6 +16,6 @@ public interface SystemRoleRepository extends JpaRepository<SystemRole, Integer>
    * @param userId the user for which to search the project role
    * @return the role of a user
    */
-  List<SystemRole> findAllByUserId(String userId);
+  List<UserRole> findAllByUserId(String userId);
 
 }

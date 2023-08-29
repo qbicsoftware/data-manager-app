@@ -11,9 +11,11 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 
@@ -31,7 +33,8 @@ public class ProjectNavigationBarComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 2246439877362853798L;
-  private ProjectId projectId;
+  final UserPermissions userPermissions;
+
   NavigationButton projectInformationButton = NavigationButton.create(
       VaadinIcon.CLIPBOARD_CHECK.create(),
       "Project Information");
@@ -43,20 +46,30 @@ public class ProjectNavigationBarComponent extends PageArea {
       "Raw Data");
   NavigationButton resultButton = NavigationButton.create(VaadinIcon.SEARCH.create(),
       "Results");
+  NavigationButton accessButton = NavigationButton.create(VaadinIcon.GROUP.create(),
+      "Access");
 
-  public ProjectNavigationBarComponent() {
+
+  public ProjectNavigationBarComponent(@Autowired UserPermissions userPermissions) {
     this.addClassName("navbar");
     this.add(projectInformationButton, experimentsButton, samplesButton, dataButton,
         resultButton);
+    this.userPermissions = userPermissions;
   }
 
   public void projectId(ProjectId projectId) {
-    this.projectId = projectId;
     projectInformationButton.setButtonRoute(
-        String.format(Projects.PROJECT_INFO, this.projectId.value()));
+        String.format(Projects.PROJECT_INFO, projectId.value()));
     samplesButton.setButtonRoute(String.format(Projects.SAMPLES, projectId.value()));
     //The user will be routed to the active experiment of the project handled by the experimentInformationMainPage
     experimentsButton.setButtonRoute(String.format(Projects.EXPERIMENTS, projectId.value()));
+
+    if (userPermissions.changeProjectAccess(projectId)) {
+      accessButton.setButtonRoute(String.format(Projects.ACCESS, projectId.value()));
+      add(accessButton);
+    } else {
+      accessButton.removeFromParent();
+    }
   }
 
   private static class NavigationButton extends Div {

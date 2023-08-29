@@ -37,4 +37,11 @@ public interface QbicUserRepo extends CrudRepository<User, UserId> {
    * @since 1.0.0
    */
   User findUserById(UserId id);
+
+  /**
+   * Gets all active Users in the data manager application
+   *
+   * @return a list of matching users which are set to active in the data manager application
+   */
+  List<User> findUsersByActiveTrue();
 }
