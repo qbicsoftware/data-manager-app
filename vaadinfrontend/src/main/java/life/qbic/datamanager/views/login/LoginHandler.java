@@ -82,16 +82,17 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
   }
 
   private void addListener() {
-    registeredLoginView.addLoginListener(it -> onLoginSucceeded());
+    registeredLoginView.addLoginListener(it ->
+        onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(
         it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(AppRoutes.RESET_PASSWORD)));
   }
 
   private void onLoginSucceeded() {
     clearNotifications();
-    registeredLoginView.getUI().ifPresentOrElse(ui -> {
-      ui.navigate(Projects.PROJECTS);
-    }, () -> logger.error("No UI found!"));
+    registeredLoginView.getUI().ifPresentOrElse(
+        ui -> ui.navigate(Projects.PROJECTS),
+        () -> logger.error("No UI found!"));
   }
 
   @Override

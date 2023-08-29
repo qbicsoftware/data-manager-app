@@ -2,6 +2,7 @@ package life.qbic.authentication.domain.user.repository;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Optional;
 import life.qbic.authentication.domain.user.concept.EmailAddress;
 import life.qbic.authentication.domain.user.concept.User;
@@ -51,7 +52,7 @@ public class UserRepository implements Serializable {
    *
    * <p>
    *
-   * @param email the mail to find a matching user entry for
+   * @param emailAddress the mail to find a matching user entry for
    * @return the user object wrapped in an {@link Optional} if found, otherwise returns
    * {@link Optional#empty()}
    * @throws RuntimeException if there is more than one user matching the mail address
@@ -78,6 +79,15 @@ public class UserRepository implements Serializable {
    */
   public Optional<User> findById(UserId userId) {
     return dataStorage.findUserById(userId);
+  }
+
+  /**
+   * Retrieves all active users within the data manager application
+   *
+   * @return List of {@link User} objects with their active field set to true
+   */
+  public List<User> findAllActiveUsers() {
+    return dataStorage.findAllActiveUsers();
   }
 
   /**

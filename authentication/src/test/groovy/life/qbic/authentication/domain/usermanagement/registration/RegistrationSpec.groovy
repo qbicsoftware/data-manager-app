@@ -105,6 +105,11 @@ class RegistrationSpec extends Specification {
         Optional<User> findUserById(UserId id) {
             return users.stream().filter(user -> user.id() == id).findAny()
         }
+
+        @Override
+        List<User> findAllActiveUsers() {
+            return users.findAll { it.active }
+        }
     }
 
 }

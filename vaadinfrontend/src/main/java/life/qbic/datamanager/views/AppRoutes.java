@@ -94,5 +94,6 @@ public class AppRoutes {
      */
     public static final String ATTACHMENT = "projects/%s/attachments";
 
+    public static final String ACCESS = "projects/%s/access";
   }
 }
