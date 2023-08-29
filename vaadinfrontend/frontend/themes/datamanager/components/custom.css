@@ -9,8 +9,6 @@
 @import "page-area.css";
 @import "span.css";
 @import "vaadin-custom.css";
-@import "project-collection.css";
-@import "tag-collection.css";
 
 .card-deck {
   display: flex;

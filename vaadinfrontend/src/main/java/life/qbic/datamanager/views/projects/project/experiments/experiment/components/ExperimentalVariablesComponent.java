@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariabl
  * @since 1.0.0
  */
 public class ExperimentalVariablesComponent extends Card {
+
   @Serial
   private static final long serialVersionUID = 7589385115005753849L;
   private final Collection<ExperimentalVariable> experimentalVariables;
@@ -28,8 +30,6 @@ public class ExperimentalVariablesComponent extends Card {
   private final Div content = new Div();
   private final Button editButton;
   private final Button addButton;
-  private final List<ComponentEventListener<ExperimentalVariablesEditEvent>> listeners = new ArrayList<>();
-  private final List<ComponentEventListener<AddNewExperimentalVariableEvent>> listenersNewVariable = new ArrayList<>();
   private final List<Div> variableFactSheets = new ArrayList<>();
 
   private ExperimentalVariablesComponent(Collection<ExperimentalVariable> experimentalVariables) {
@@ -49,18 +49,6 @@ public class ExperimentalVariablesComponent extends Card {
     return new Button("Add");
   }
 
-  private void fireAddEvent() {
-    AddNewExperimentalVariableEvent addNewExperimentalVariableEvent = new AddNewExperimentalVariableEvent(
-        this, true);
-    listenersNewVariable.forEach(
-        listener -> listener.onComponentEvent(addNewExperimentalVariableEvent));
-  }
-
-  private void fireEditEvent() {
-    var editEvent = new ExperimentalVariablesEditEvent(this, true);
-    listeners.forEach(listener -> listener.onComponentEvent(editEvent));
-  }
-
   private static List<VariableFactSheet> generateFactSheets(
       Collection<ExperimentalVariable> experimentalVariables) {
     return experimentalVariables.stream()
@@ -75,8 +63,10 @@ public class ExperimentalVariablesComponent extends Card {
   }
 
   private void configureComponent() {
-    editButton.addClickListener(event -> fireEditEvent());
-    addButton.addClickListener(event -> fireAddEvent());
+    editButton.addClickListener(
+        event -> fireEvent(new ExperimentalVariablesEditEvent(this, event.isFromClient())));
+    addButton.addClickListener(
+        event -> fireEvent(new ExperimentalVariablesAddEvent(this, event.isFromClient())));
   }
 
   private void layoutComponent() {
@@ -99,15 +89,15 @@ public class ExperimentalVariablesComponent extends Card {
 
   /**
    * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link AddNewExperimentalVariableEvent}, as soon as a user wants to add new experimental
+   * {@link ExperimentalVariablesAddEvent}, as soon as a user wants to add new experimental
    * variables.
    *
    * @param listener a listener for adding variables events
    * @since 1.0.0
    */
-  public void subscribeToAddEvent(
-      ComponentEventListener<AddNewExperimentalVariableEvent> listener) {
-    this.listenersNewVariable.add(listener);
+  public Registration addAddListener(
+      ComponentEventListener<ExperimentalVariablesAddEvent> listener) {
+    return addListener(ExperimentalVariablesAddEvent.class, listener);
   }
 
   /**
@@ -118,9 +108,9 @@ public class ExperimentalVariablesComponent extends Card {
    * @param listener a listener for adding variables events
    * @since 1.0.0
    */
-  public void subscribeToEditEvent(
+  public Registration addEditListener(
       ComponentEventListener<ExperimentalVariablesEditEvent> listener) {
-    this.listeners.add(listener);
+    return addListener(ExperimentalVariablesEditEvent.class, listener);
   }
 
   /**

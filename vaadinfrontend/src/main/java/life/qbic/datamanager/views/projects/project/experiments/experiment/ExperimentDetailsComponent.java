@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -42,6 +41,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsExistDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
@@ -208,37 +208,36 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addConfirmListenerForEditVariableDialog() {
-    experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
-      ExperimentId experimentId = context.experimentId().orElseThrow();
-      var editDialog = ExperimentalVariablesDialog.prefilled(
-          experimentInformationService.getVariablesOfExperiment(experimentId));
-      editDialog.addCancelEventListener(
-          experimentalVariablesDialogCancelEvent -> editDialog.close());
-      editDialog.addConfirmEventListener(experimentalVariablesDialogConfirmEvent -> {
-        var confirmDialog = experimentalGroupDeletionConfirmDialog();
-        confirmDialog.addConfirmListener(confirmDeletionEvent -> {
+    experimentalVariablesComponent.addEditListener(experimentalVariablesEditEvent -> {
+      int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
+          context.experimentId().orElseThrow()).size();
+      if (numOfExperimentalGroups > 0) {
+        ExperimentalGroupsExistDialog experimentalGroupsExistDialog = new ExperimentalGroupsExistDialog(
+            numOfExperimentalGroups);
+        experimentalGroupsExistDialog.addConfirmListener(
+            confirmEvent -> {
+              experimentSheet.setSelectedIndex(1);
+              confirmEvent.getSource().close();
+            });
+        experimentalGroupsExistDialog.addCancelListener(
+            cancelEvent -> cancelEvent.getSource().close());
+        experimentalGroupsExistDialog.open();
+      } else {
+        ExperimentId experimentId = context.experimentId().orElseThrow();
+        var editDialog = ExperimentalVariablesDialog.prefilled(
+            experimentInformationService.getVariablesOfExperiment(experimentId));
+        editDialog.addCancelEventListener(
+            experimentalVariablesDialogCancelEvent -> editDialog.close());
+        editDialog.addConfirmEventListener(confirmEvent -> {
           deleteExistingExperimentalVariables(experimentId);
           addExperimentalVariables(
-              experimentalVariablesDialogConfirmEvent.getSource().definedVariables());
+              confirmEvent.getSource().definedVariables());
           editDialog.close();
           reloadExperimentalVariables();
         });
-        confirmDialog.open();
-      });
-      editDialog.open();
+        editDialog.open();
+      }
     });
-  }
-
-  private static ConfirmDialog experimentalGroupDeletionConfirmDialog() {
-    var confirmDialog = new ConfirmDialog();
-    confirmDialog.setHeader("Your experimental groups will be deleted");
-    confirmDialog.setText(
-        "Editing experimental variables requires all experimental groups to be deleted. Are you sure you want to delete them?");
-    confirmDialog.setConfirmText("Delete experimental groups");
-    confirmDialog.setCancelable(true);
-    confirmDialog.setCancelText("Abort");
-    confirmDialog.setRejectable(false);
-    return confirmDialog;
   }
 
   private void reloadExperimentalVariables() {
@@ -260,7 +259,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addListenerForNewVariableEvent() {
-    this.experimentalVariablesComponent.subscribeToAddEvent(
+    this.experimentalVariablesComponent.addAddListener(
         listener -> displayAddExperimentalVariablesDialog());
   }
 
