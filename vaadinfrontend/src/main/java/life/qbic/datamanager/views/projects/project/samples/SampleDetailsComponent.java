@@ -356,9 +356,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
       Disclaimer noGroupsDefinedCard = Disclaimer.createWithTitle(
-          "No experimental groups defined",
-          "Start the sample registration process by registering the first experimental group",
-          "Add Experimental Group");
+          "Design your experiment first",
+          "Start the sample registration process by defining experimental groups",
+          "Add groups");
       String experimentId = experiment.experimentId().value();
       noGroupsDefinedCard.subscribe(event -> routeToExperimentalGroupCreation(event, experimentId));
       return noGroupsDefinedCard;
@@ -377,8 +377,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     private Disclaimer createNoSamplesRegisteredDisclaimer(Experiment experiment) {
-      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle("No samples registered",
-          "Register your first samples for this experiment", "Register Samples");
+      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
+          "Manage your samples in one place",
+          "Start your project by registering the first sample batch", "Register batch");
       noSamplesDefinedCard.subscribe(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);
         batchRegistrationDialog.open();
