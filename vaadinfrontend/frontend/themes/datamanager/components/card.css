@@ -151,66 +151,6 @@
   font-weight: bold;
 }
 
-.card.experimental-variables {
-  flex: auto;
-  font-size: var(--lumo-font-size-s);
-  padding: var(--lumo-space-l);
-}
-
-.card.experimental-variables .variables-content {
-  display: flex;
-  align-content: space-evenly;
-  flex-flow: row wrap;
-  gap: 1rem;
-}
-
-.card.experimental-variables .controls {
-  display: flex;
-  gap: var(--lumo-space-s);
-}
-
-.card.experimental-variables .variables-header {
-  color: var(--lumo-header-text-color);
-  font-size: var(--lumo-font-size-m);
-  font-weight: bold;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.experimental-variables-fact-sheet {
-  display: flex;
-  flex-direction: column;
-  flex-basis: 20%;
-  font-size: var(--lumo-font-size-s);
-  border: 1px solid lightgray;
-  border-radius: var(--lumo-border-radius-m);
-}
-
-.experimental-variables-fact-sheet .variable-header {
-  background-color: var(--lumo-primary-color-10pct);
-  color: var(--lumo-primary-text-color);
-  font-weight: bold;
-  font-size: var(--lumo-font-size-s);
-  padding: 0.25rem 0.5rem 0.1rem 0.25rem;
-}
-
-
-.experimental-variables-fact-sheet .variable-name {
-  font-weight: bold;
-  font-size: var(--lumo-font-size-s);
-}
-
-.experimental-variables-fact-sheet .variable-values {
-  font-size: var(--lumo-font-size-s);
-  padding: 0.25rem 0.5rem 0.1rem 0.25rem;
-}
-
-.experimental-variables-fact-sheet ul {
-  list-style-type: none;
-  display: contents;
-}
-
 /* Support section formatting and components */
 
 .experiment-item-collection {

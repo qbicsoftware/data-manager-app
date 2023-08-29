@@ -19,7 +19,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,8 +41,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
 import life.qbic.logging.api.Logger;
@@ -83,11 +82,10 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Span buttonBar = new Span();
   private final Div tagCollection = new Div();
   private final TabSheet experimentSheet = new TabSheet();
-  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
-      new ArrayList<>());
   private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
+  private final ExperimentalVariableCardCollection experimentalVariableCollection = new ExperimentalVariableCardCollection();
   private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
@@ -217,7 +215,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addConfirmListenerForEditVariableDialog() {
-    experimentalVariablesComponent.subscribeToEditEvent(experimentalVariablesEditEvent -> {
+    experimentalVariableCollection.subscribeToEditEvent(experimentalVariablesEditEvent -> {
       ExperimentId experimentId = context.experimentId().orElseThrow();
       var editDialog = ExperimentalVariablesDialog.prefilled(
           experimentInformationService.getVariablesOfExperiment(experimentId));
@@ -269,7 +267,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void addListenerForNewVariableEvent() {
-    this.experimentalVariablesComponent.subscribeToAddEvent(
+    this.experimentalVariableCollection.subscribeToAddEvent(
         listener -> openAddExperimentalVariablesDialog());
   }
 
@@ -291,8 +289,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void layoutTabSheet() {
     experimentSheet.add("Experimental Variables", experimentalVariables);
-    experimentalVariables.addClassName(Display.FLEX);
-    experimentalVariables.addClassName("experimental-variables-container");
+    experimentalVariables.addClassName("experimental-groups-container");
     experimentSheet.add("Experimental Groups", experimentalGroups);
     experimentalGroups.addClassName("experimental-groups-container");
     content.add(experimentSheet);
@@ -493,12 +490,16 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void loadExperimentalVariables(Experiment experiment) {
-    this.experimentalVariables.removeAll();
-    this.experimentalVariablesComponent.setExperimentalVariables(experiment.variables());
-    if (experiment.variables().isEmpty()) {
+    // We load the experimental variables of the experiment and render them as cards
+    List<ExperimentalVariable> experimentalVariables = experiment.variables();
+    List<ExperimentalVariableCard> experimentalVariableCards = experimentalVariables.stream()
+        .map(ExperimentalVariableCard::new).toList();
+    experimentalVariableCollection.setContent(experimentalVariableCards);
+
+    if (experimentalVariables.isEmpty()) {
       this.experimentalVariables.add(addExperimentalVariablesNote);
     } else {
-      this.experimentalVariables.add(experimentalVariablesComponent);
+      this.experimentalVariables.add(experimentalVariableCollection);
     }
   }
 
