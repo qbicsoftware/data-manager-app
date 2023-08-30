@@ -161,7 +161,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private void configureComponent() {
     listenForExperimentCollectionComponentEvents();
     listenForExperimentalVariablesComponentEvents();
-    reloadExperimentInfoOnExperimentEditEvent();
   }
 
   private void initButtonBar() {
@@ -176,7 +175,7 @@ public class ExperimentDetailsComponent extends PageArea {
     experiment.ifPresentOrElse(exp -> {
           ExperimentInformationDialog experimentInformationDialog = openExperimentInformationDialog(
               exp);
-          addExperimentInformationDialogListeners(experimentId, experimentInformationDialog);
+          addExperimentInformationDialogListeners(experimentInformationDialog);
           experimentInformationDialog.open();
         }
         , () -> {
@@ -194,19 +193,40 @@ public class ExperimentDetailsComponent extends PageArea {
     return experimentInformationDialog;
   }
 
-  private void addExperimentInformationDialogListeners(ExperimentId experimentId,
+  private void addExperimentInformationDialogListeners(
       ExperimentInformationDialog experimentInformationDialog) {
     experimentInformationDialog.addCancelEventListener(
-        experimentInformationDialogCancelEvent -> experimentInformationDialog.close());
-    experimentInformationDialog.addConfirmEventListener(experimentInformationDialogConfirmEvent -> {
-      ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
-          .content();
-      experimentInformationService.editExperimentInformation(experimentId,
-          experimentInformationContent.experimentName(), experimentInformationContent.species(),
-          experimentInformationContent.specimen(), experimentInformationContent.analytes());
-      experimentInformationDialog.close();
-      fireEditEvent();
-    });
+        experimentInformationDialogCancelEvent -> experimentInformationDialogCancelEvent.getSource()
+            .close());
+    experimentInformationDialog.addConfirmEventListener(
+        this::onExperimentInformationDialogConfirmEvent);
+  }
+
+  private void onExperimentInformationDialogConfirmEvent(
+      ConfirmEvent<ExperimentInformationDialog> experimentInformationDialogConfirmEvent) {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+
+    ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
+        .content();
+    String oldExperimentName = experimentInformationService.find(experimentId)
+        .map(Experiment::getName)
+        .orElseThrow();
+    String newExperimentName = experimentInformationContent.experimentName();
+    experimentInformationService.editExperimentInformation(experimentId,
+        newExperimentName, experimentInformationContent.species(),
+        experimentInformationContent.specimen(), experimentInformationContent.analytes());
+    experimentInformationDialogConfirmEvent.getSource().close();
+    reloadExperimentInfo(context.experimentId().orElseThrow());
+    if (!oldExperimentName.equals(newExperimentName)) {
+      fireExperimentNameChangedEvent(oldExperimentName, newExperimentName);
+    }
+  }
+
+  private void fireExperimentNameChangedEvent(String oldExperimentName, String newExperimentName) {
+    ExperimentNameChangedEvent event = new ExperimentNameChangedEvent(context.experimentId()
+        .orElseThrow(), oldExperimentName,
+        newExperimentName, this, false);
+    fireEvent(event);
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
@@ -221,10 +241,6 @@ public class ExperimentDetailsComponent extends PageArea {
     result.onError(responseCode -> {
       throw new ApplicationException("variable deletion failed: " + responseCode);
     });
-  }
-
-  private void reloadExperimentInfoOnExperimentEditEvent() {
-    addListener(ExperimentEditEvent.class, event -> reloadExperimentInfo(event.experimentId()));
   }
 
   private void reloadExperimentInfo(ExperimentId experimentId) {
@@ -246,7 +262,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
     confirmEvent.getSource().close();
-    setContext(this.context); //reload
+    reloadExperimentInfo(context.experimentId().orElseThrow());
     if (hasExperimentalGroups()) {
       showSampleRegistrationPossibleNotification();
     }
@@ -351,19 +367,13 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   /**
-   * Adds a listener for an {@link ExperimentEditEvent}
+   * Adds a listener for an {@link ExperimentDetailsComponent.ExperimentNameChangedEvent}
    *
    * @param listener the listener to add
    */
-  public void addExperimentEditEventListener(
-      ComponentEventListener<ExperimentEditEvent> listener) {
-    this.addListener(ExperimentEditEvent.class, listener);
-  }
-
-  private void fireEditEvent() {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    var editEvent = new ExperimentEditEvent(this, experimentId, true);
-    fireEvent(editEvent);
+  public void addExperimentNameChangedListener(
+      ComponentEventListener<ExperimentNameChangedEvent> listener) {
+    this.addListener(ExperimentNameChangedEvent.class, listener);
   }
 
   private void openExperimentalGroupAddDialog() {
@@ -550,35 +560,20 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalGroups.add(experimentalGroupsCollection);
   }
 
-  /**
-   * <b>Experiment Edit Event</b>
-   * <p>
-   * Event that indicates that the user wants to edit an experiment via the
-   * {@link ExperimentDetailsComponent}
-   *
-   * @since 1.0.0
-   */
-  public static class ExperimentEditEvent extends ComponentEvent<ExperimentDetailsComponent> {
+  public static class ExperimentNameChangedEvent extends
+      ComponentEvent<ExperimentDetailsComponent> {
 
-    @Serial
-    private static final long serialVersionUID = -5383275108609304372L;
     private final ExperimentId experimentId;
+    public final String oldValue;
+    public final String newValue;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source       the source component
-     * @param experimentId the {@link ExperimentId} of the edited experiment
-     * @param fromClient   <code>true</code> if the event originated from the client
-     *                     side, <code>false</code> otherwise
-     */
-    public ExperimentEditEvent(ExperimentDetailsComponent source, ExperimentId experimentId,
-        boolean fromClient) {
+    public ExperimentNameChangedEvent(ExperimentId experimentId, String oldValue, String newValue,
+        ExperimentDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
+      this.oldValue = oldValue;
+      this.newValue = newValue;
       this.experimentId = experimentId;
     }
-
     public ExperimentId experimentId() {
       return experimentId;
     }
