@@ -2,31 +2,36 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Notifies the user that experimental groups exist in the experiment.
+ * <p>
+ * This dialog is to be shown when editing variables is impossible as experimental groups are
+ * present.
  */
-public class ExperimentalGroupsExistDialog extends ConfirmDialog {
-
-  protected final Button cancelButton = new Button("Cancel");
+public final class ExperimentalGroupsExistDialog extends NotificationDialog {
 
   public ExperimentalGroupsExistDialog(int numberOfExperimentalGroups) {
-    cancelButton.setThemeName("tertiary");
     addClassName("experimental-groups-exist-dialog");
-    addClassName("notification-dialog");
+    customizeContent(numberOfExperimentalGroups);
+    customizeHeader();
+    setConfirmText("Go to Experimental Groups");
+    customizeRejection();
+  }
 
-    Div content = new Div();
+  private void customizeRejection() {
+    setRejectable(true);
+    Button cancelButton = new Button("Cancel");
+    cancelButton.setThemeName("tertiary");
+    setRejectButton(cancelButton);
+  }
+
+  private void customizeContent(int numberOfExperimentalGroups) {
     Span experimentalGroupCount = new Span(String.valueOf(numberOfExperimentalGroups));
     experimentalGroupCount.addClassName("experimental-group-count");
     content.add(
@@ -37,19 +42,12 @@ public class ExperimentalGroupsExistDialog extends ConfirmDialog {
                 " experimental group%s.".formatted(numberOfExperimentalGroups > 1 ? "s" : ""))),
         new Div(new Text("Please delete the group%s to edit the variables.".formatted(
             numberOfExperimentalGroups > 1 ? "s" : ""))));
-    content.addClassName("content");
+  }
 
-    H2 title = new H2("Cannot edit variables");
-    title.addClassName("title");
+  private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
     errorIcon.setClassName("error-icon");
-    setHeader(new Span(errorIcon, title));
-
-    setConfirmText("Go to Experimental Groups");
-    setRejectable(true);
-    setRejectButton(cancelButton);
-
-    add(content);
-
+    setTitle("Cannot edit variables");
+    setHeaderIcon(errorIcon);
   }
 }
