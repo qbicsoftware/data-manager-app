@@ -31,7 +31,7 @@ public class NotificationDialog extends ConfirmDialog {
 
   public NotificationDialog() {
     addClassName("notification-dialog");
-    title = new H2("");
+    title = new H2("Please note");
     title.addClassName("title");
     headerIcon = VaadinIcon.INFO_CIRCLE.create();
     headerIcon.addClassName("info-icon");
@@ -39,6 +39,7 @@ public class NotificationDialog extends ConfirmDialog {
     Div content = new Div();
     content.addClassName("content");
     add(content);
+    setConfirmText("Okay");
     this.content = content;
   }
 

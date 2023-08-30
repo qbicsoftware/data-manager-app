@@ -45,6 +45,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.SamplesExistDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DeletionService;
@@ -254,6 +255,7 @@ public class ExperimentDetailsComponent extends PageArea {
         });
     experimentalGroupsExistDialog.addRejectListener(rejectEvent -> rejectEvent.getSource().close());
     experimentalGroupsExistDialog.open();
+    new SamplesExistDialog().open();
   }
 
   private void reloadExperimentalVariables() {
