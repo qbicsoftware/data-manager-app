@@ -133,7 +133,7 @@ public class ExperimentDetailsComponent extends PageArea {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
     disclaimer.addDisclaimerConfirmeListener(
-        confirmedEvent -> openAddExperimentalVariablesDialog());
+        confirmedEvent -> openExperimentalVariablesAddDialog());
     return disclaimer;
   }
 
@@ -211,9 +211,9 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
-    experimentalVariablesComponent.addAddListener(addEvent -> openAddExperimentalVariablesDialog());
+    experimentalVariablesComponent.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
     experimentalVariablesComponent.addEditListener(
-        editEvent -> openEditExperimentalVariablesDialog());
+        editEvent -> openExperimentalVariablesEditDialog());
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -233,17 +233,17 @@ public class ExperimentDetailsComponent extends PageArea {
         .ifPresent(this::loadExperimentInformation);
   }
 
-  private void openAddExperimentalVariablesDialog() {
+  private void openExperimentalVariablesAddDialog() {
     if (editVariablesNotAllowed()) {
       return;
     }
     var addDialog = new ExperimentalVariablesDialog();
     addDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-    addDialog.addConfirmEventListener(this::onAddExperimentalVariablesConfirmed);
+    addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
     addDialog.open();
   }
 
-  private void onAddExperimentalVariablesConfirmed(
+  private void onExperimentalVariablesAddConfirmed(
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
     confirmEvent.getSource().close();
@@ -253,7 +253,7 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
-  private void openEditExperimentalVariablesDialog() {
+  private void openExperimentalVariablesEditDialog() {
     if (editVariablesNotAllowed()) {
       return;
     }
@@ -261,11 +261,11 @@ public class ExperimentDetailsComponent extends PageArea {
     var editDialog = ExperimentalVariablesDialog.prefilled(
         experimentInformationService.getVariablesOfExperiment(experimentId));
     editDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-    editDialog.addConfirmEventListener(this::onEditExperimentalVariablesConfirmed);
+    editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
     editDialog.open();
   }
 
-  private void onEditExperimentalVariablesConfirmed(
+  private void onExperimentalVariablesEditConfirmed(
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     deleteExistingExperimentalVariables();
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
