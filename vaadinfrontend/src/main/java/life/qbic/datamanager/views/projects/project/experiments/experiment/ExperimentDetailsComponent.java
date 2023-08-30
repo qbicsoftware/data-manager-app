@@ -159,8 +159,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void configureComponent() {
-    configureExperimentalGroupCreation();
-    configureExperimentalGroupsEdit();
+    listenForExperimentCollectionComponentEvents();
     listenForExperimentalVariablesComponentEvents();
     reloadExperimentInfoOnExperimentEditEvent();
   }
@@ -345,8 +344,10 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(experimentSheet);
   }
 
-  private void configureExperimentalGroupCreation() {
+  private void listenForExperimentCollectionComponentEvents() {
     experimentalGroupsCollection.addAddEventListener(listener -> openExperimentalGroupAddDialog());
+    experimentalGroupsCollection.addEditEventListener(
+        editEvent -> openExperimentalGroupEditDialog());
   }
 
   /**
@@ -374,11 +375,11 @@ public class ExperimentDetailsComponent extends PageArea {
         .toList();
     var dialog = ExperimentalGroupsDialog.empty(levels);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmEventListener(this::onExperimentalGroupAddDialogConfirmed);
+    dialog.addConfirmEventListener(this::onExperimentalGroupAddConfirmed);
     dialog.open();
   }
 
-  private void onExperimentalGroupAddDialogConfirmed(
+  private void onExperimentalGroupAddConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
     addExperimentalGroups(dialog.experimentalGroups());
@@ -387,16 +388,10 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
 
-  private void configureExperimentalGroupsEdit() {
-    experimentalGroupsCollection.addEditEventListener(editEvent -> {
-      if (editGroupsNotAllowed()) {
-        return;
-      }
-      openEditExperimentalGroups();
-    });
-  }
-
-  private void openEditExperimentalGroups() {
+  private void openExperimentalGroupEditDialog() {
+    if (editGroupsNotAllowed()) {
+      return;
+    }
     ExperimentId experimentId = context.experimentId().orElseThrow();
     List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
         experimentId);
@@ -406,11 +401,11 @@ public class ExperimentDetailsComponent extends PageArea {
         .stream().map(this::toContent).toList();
     var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmEventListener(this::onEditExperimentalGroupsConfirmed);
+    dialog.addConfirmEventListener(this::onExperimentalGroupEditConfirmed);
     dialog.open();
   }
 
-  private void onEditExperimentalGroupsConfirmed(
+  private void onExperimentalGroupEditConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
     reloadExperimentalGroups();
