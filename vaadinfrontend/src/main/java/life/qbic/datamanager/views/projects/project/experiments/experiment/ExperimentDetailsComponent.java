@@ -85,7 +85,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  //  private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
@@ -103,7 +102,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
     this.experimentalDesignSearchService = Objects.requireNonNull(experimentalDesignSearchService);
-//    this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
