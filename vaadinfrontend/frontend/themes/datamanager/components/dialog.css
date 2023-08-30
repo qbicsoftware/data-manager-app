@@ -87,8 +87,14 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
+.batch-registration-dialog vaadin-tabsheet {
+  height: 100%;
+  width: 100%;
+}
+
 .batch-registration-dialog::part(overlay) {
   min-width: 66vw;
+  height: 100%;
 }
 
 .batch-registration-dialog .stepper vaadin-tabs {
@@ -114,7 +120,6 @@ vaadin-dialog-overlay::part(title) {
 
 .batch-registration-dialog .batch-content .data-type-information {
   display: flex;
-  height: inherit;
   flex-direction: column;
 }
 
@@ -146,10 +151,14 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-s);
 }
 
-.batch-registration-dialog .sample-spreadsheet {
-  /*Todo Find solution on how to let spreadsheet set its size*/
+.batch-registration-dialog .sample-spreadsheet-container {
   width: 100%;
-  height: 60vh;
+  height: 100%;
+}
+
+.batch-registration-dialog .sample-spreadsheet {
+  width: 100%;
+  height: 100%;
 }
 
 .create-project-dialog .content {
