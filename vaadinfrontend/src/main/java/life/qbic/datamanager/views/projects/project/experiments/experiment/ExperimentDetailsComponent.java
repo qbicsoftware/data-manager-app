@@ -1,8 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -27,8 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
@@ -37,21 +34,20 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentEditEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsExistDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.SamplesExistDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -73,10 +69,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ExperimentDetailsComponent extends PageArea {
 
-  private static final Logger log = logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
+  private final SampleInformationService sampleInformationService;
   private final transient ExperimentalDesignSearchService experimentalDesignSearchService;
   private final Div content = new Div();
   private final Div header = new Div();
@@ -89,24 +85,25 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
   private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
-  private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
+  //  private final ExperimentalVariablesDialog addExperimentalVariablesDialog;
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
   private Context context;
-  private boolean hasExperimentalGroups;
   private final DeletionService deletionService;
-  private final List<ComponentEventListener<ExperimentEditEvent>> editListeners = new ArrayList<>();
+  private int experimentalGroupCount;
 
 
   public ExperimentDetailsComponent(
       @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+    this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
     this.experimentalDesignSearchService = Objects.requireNonNull(experimentalDesignSearchService);
-    this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
+//    this.addExperimentalVariablesDialog = new ExperimentalVariablesDialog();
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
@@ -137,14 +134,15 @@ public class ExperimentDetailsComponent extends PageArea {
   private Disclaimer createNoVariableDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
-    disclaimer.subscribe(listener -> openAddExperimentalVariablesDialog());
+    disclaimer.addDisclaimerConfirmeListener(
+        confirmedEvent -> openAddExperimentalVariablesDialog());
     return disclaimer;
   }
 
   private Disclaimer createNoGroupsDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Create conditions for your samples by adding experimental groups", "Add groups");
-    disclaimer.subscribe(listener -> openExperimentalGroupAddDialog());
+    disclaimer.addDisclaimerConfirmeListener(confirmedEvent -> openExperimentalGroupAddDialog());
     return disclaimer;
   }
 
@@ -165,11 +163,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private void configureComponent() {
     configureExperimentalGroupCreation();
     configureExperimentalGroupsEdit();
-    addCancelListenerForAddVariableDialog();
-    addConfirmListenerForAddVariableDialog();
-    addConfirmListenerForEditVariableDialog();
-    addListenerForNewEditEvent();
-    addListenerForNewVariableEvent();
+    listenForExperimentalVariablesComponentEvents();
+    reloadExperimentInfoOnExperimentEditEvent();
   }
 
   private void initButtonBar() {
@@ -217,72 +212,118 @@ public class ExperimentDetailsComponent extends PageArea {
     });
   }
 
-  private void addConfirmListenerForEditVariableDialog() {
-    experimentalVariablesComponent.addEditListener(editButtonClickedEvent -> {
-      int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
-          context.experimentId().orElseThrow()).size();
-      if (numOfExperimentalGroups > 0) {
-        showExperimentalGroupExistsDialog(numOfExperimentalGroups);
-      } else {
-        showExperimentalVariableDialog();
-      }
+  private void listenForExperimentalVariablesComponentEvents() {
+    experimentalVariablesComponent.addAddListener(addEvent -> openAddExperimentalVariablesDialog());
+    experimentalVariablesComponent.addEditListener(
+        editEvent -> openEditExperimentalVariablesDialog());
+  }
+
+  private void deleteExistingExperimentalVariables() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    result.onError(responseCode -> {
+      throw new ApplicationException("variable deletion failed: " + responseCode);
     });
   }
 
-  private void showExperimentalVariableDialog() {
+  private void reloadExperimentInfoOnExperimentEditEvent() {
+    addListener(ExperimentEditEvent.class, event -> reloadExperimentInfo(event.experimentId()));
+  }
+
+  private void reloadExperimentInfo(ExperimentId experimentId) {
+    experimentInformationService.find(experimentId)
+        .ifPresent(this::loadExperimentInformation);
+  }
+
+  private void openAddExperimentalVariablesDialog() {
+    if (editVariablesNotAllowed()) {
+      return;
+    }
+    var addDialog = new ExperimentalVariablesDialog();
+    addDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    addDialog.addConfirmEventListener(this::onAddExperimentalVariablesConfirmed);
+    addDialog.open();
+  }
+
+  private void onAddExperimentalVariablesConfirmed(
+      ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
+    addExperimentalVariables(confirmEvent.getSource().definedVariables());
+    confirmEvent.getSource().close();
+    setContext(this.context); //reload
+    if (hasExperimentalGroups()) {
+      showSampleRegistrationPossibleNotification();
+    }
+  }
+
+  private void openEditExperimentalVariablesDialog() {
+    if (editVariablesNotAllowed()) {
+      return;
+    }
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var editDialog = ExperimentalVariablesDialog.prefilled(
         experimentInformationService.getVariablesOfExperiment(experimentId));
-    editDialog.addCancelEventListener(
-        experimentalVariablesDialogCancelEvent -> editDialog.close());
-    editDialog.addConfirmEventListener(confirmEvent -> {
-      deleteExistingExperimentalVariables(experimentId);
-      addExperimentalVariables(
-          confirmEvent.getSource().definedVariables());
-      editDialog.close();
-      reloadExperimentalVariables();
-    });
+    editDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    editDialog.addConfirmEventListener(this::onEditExperimentalVariablesConfirmed);
     editDialog.open();
   }
 
-  private void showExperimentalGroupExistsDialog(int numOfExperimentalGroups) {
-    ExperimentalGroupsExistDialog experimentalGroupsExistDialog = new ExperimentalGroupsExistDialog(
+  private void onEditExperimentalVariablesConfirmed(
+      ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
+    deleteExistingExperimentalVariables();
+    addExperimentalVariables(confirmEvent.getSource().definedVariables());
+    confirmEvent.getSource().close();
+    reloadExperimentInfo(context.experimentId().orElseThrow());
+  }
+
+  private boolean editVariablesNotAllowed() {
+    int numberOfRegisteredSamples = sampleInformationService.countPreviews(
+        context.experimentId().orElseThrow(), "");
+    if (numberOfRegisteredSamples > 0) {
+      showExistingSamplesPreventVariableEdit(numberOfRegisteredSamples);
+      return true;
+    }
+    int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
+        context.experimentId().orElseThrow()).size();
+    if (numOfExperimentalGroups > 0) {
+      showExistingGroupsPreventVariableEdit(numOfExperimentalGroups);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean editGroupsNotAllowed() {
+    int numberOfRegisteredSamples = sampleInformationService.countPreviews(
+        context.experimentId().orElseThrow(), "");
+    if (numberOfRegisteredSamples > 0) {
+      showExistingSamplesPreventGroupEdit(numberOfRegisteredSamples);
+      return true;
+    }
+    return false;
+  }
+
+  private void showExistingSamplesPreventGroupEdit(int numberOfRegisteredSamples) {
+    ExistingSamplesPreventGroupEdit existingSamplesPreventGroupEdit = new ExistingSamplesPreventGroupEdit(
+        numberOfRegisteredSamples);
+    existingSamplesPreventGroupEdit.open();
+  }
+
+  private void showExistingSamplesPreventVariableEdit(int sampleCount) {
+    ExistingSamplesPreventVariableEdit existingSamplesPreventVariableEdit = new ExistingSamplesPreventVariableEdit(
+        sampleCount);
+    existingSamplesPreventVariableEdit.open();
+  }
+
+  private void showExistingGroupsPreventVariableEdit(int numOfExperimentalGroups) {
+    ExistingGroupsPreventVariableEdit existingGroupsPreventVariableEdit = new ExistingGroupsPreventVariableEdit(
         numOfExperimentalGroups);
-    experimentalGroupsExistDialog.addConfirmListener(
+    existingGroupsPreventVariableEdit.addConfirmListener(
         confirmEvent -> {
           experimentSheet.setSelectedIndex(1);
           confirmEvent.getSource().close();
         });
-    experimentalGroupsExistDialog.addRejectListener(rejectEvent -> rejectEvent.getSource().close());
-    experimentalGroupsExistDialog.open();
-    new SamplesExistDialog().open();
-  }
-
-  private void reloadExperimentalVariables() {
-    experimentInformationService.find(context.experimentId().orElseThrow())
-        .ifPresent(this::loadExperimentInformation);
-  }
-
-  private void deleteExistingExperimentalVariables(ExperimentId experimentId) {
-    var result = deletionService.deleteAllExperimentalVariables(experimentId);
-    result.onError(responseCode -> {
-      throw new ApplicationException("variable deletion failed: " + responseCode, ErrorCode.GENERAL,
-          ErrorParameters.empty());
-    });
-  }
-
-  private void addListenerForNewEditEvent() {
-    this.editListeners.add(event -> experimentInformationService.find(event.experimentId())
-        .ifPresent(this::loadExperimentInformation));
-  }
-
-  private void addListenerForNewVariableEvent() {
-    this.experimentalVariablesComponent.addAddListener(
-        listener -> openAddExperimentalVariablesDialog());
-  }
-
-  private void openAddExperimentalVariablesDialog() {
-    this.addExperimentalVariablesDialog.open();
+    existingGroupsPreventVariableEdit.addRejectListener(
+        rejectEvent -> rejectEvent.getSource().close());
+    existingGroupsPreventVariableEdit.open();
   }
 
   private void addTagCollectionToContent() {
@@ -317,13 +358,13 @@ public class ExperimentDetailsComponent extends PageArea {
    */
   public void addExperimentEditEventListener(
       ComponentEventListener<ExperimentEditEvent> listener) {
-    this.editListeners.add(listener);
+    this.addListener(ExperimentEditEvent.class, listener);
   }
 
   private void fireEditEvent() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var editEvent = new ExperimentEditEvent(this, experimentId, true);
-    editListeners.forEach(listener -> listener.onComponentEvent(editEvent));
+    fireEvent(editEvent);
   }
 
   private void openExperimentalGroupAddDialog() {
@@ -356,23 +397,32 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void configureExperimentalGroupsEdit() {
     experimentalGroupsCollection.addEditEventListener(listener -> {
-      ExperimentId experimentId = context.experimentId().orElseThrow();
-      List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
-          experimentId);
-      List<VariableLevel> levels = variables.stream()
-          .flatMap(variable -> variable.levels().stream()).toList();
-      var experimentalGroups = experimentInformationService.getExperimentalGroups(experimentId)
-          .stream().map(this::toContent).toList();
-      var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
-      dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-      dialog.addConfirmEventListener(
-          confirmEvent -> {
-            editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
-            reloadExperimentalGroups();
-            dialog.close();
-          });
-      dialog.open();
+      if (editGroupsNotAllowed()) {
+        return;
+      }
+      openEditExperimentalGroups();
     });
+  }
+
+  private void openEditExperimentalGroups() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+        experimentId);
+    List<VariableLevel> levels = variables.stream()
+        .flatMap(variable -> variable.levels().stream()).toList();
+    var experimentalGroups = experimentInformationService.getExperimentalGroups(experimentId)
+        .stream().map(this::toContent).toList();
+    var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
+    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmEventListener(this::onEditExperimentalGroupsConfirmed);
+    dialog.open();
+  }
+
+  private void onEditExperimentalGroupsConfirmed(
+      ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
+    editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
+    reloadExperimentalGroups();
+    confirmEvent.getSource().close();
   }
 
   private void editExperimentalGroups(
@@ -411,10 +461,6 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentalGroupDTO.levels());
   }
 
-  private void addCancelListenerForAddVariableDialog() {
-    addExperimentalVariablesDialog.addCancelEventListener(it -> it.getSource().close());
-  }
-
   private void showSampleRegistrationPossibleNotification() {
     String projectId = this.context.projectId().map(ProjectId::value).orElseThrow();
     Notification notification = createSampleRegistrationPossibleNotification(projectId);
@@ -424,12 +470,16 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
-    if (hasExperimentalGroups) {
+    if (hasExperimentalGroups()) {
       onGroupsDefined();
       showSampleRegistrationPossibleNotification();
     } else {
       onNoGroupsDefined();
     }
+  }
+
+  private boolean hasExperimentalGroups() {
+    return this.experimentalGroupCount > 0;
   }
 
   private void loadExperimentalGroups() {
@@ -439,23 +489,10 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
         .map(ExperimentalGroupCard::new).toList();
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
-    this.hasExperimentalGroups = !experimentalGroupsCards.isEmpty();
+    this.experimentalGroupCount = experimentalGroupsCards.size();
   }
 
-  private void addConfirmListenerForAddVariableDialog() {
-    addExperimentalVariablesDialog.addConfirmEventListener(it -> {
-      try {
-        addExperimentalVariables(it.getSource().definedVariables());
-        it.getSource().close();
-        setContext(this.context);
-        if (hasExperimentalGroups) {
-          showSampleRegistrationPossibleNotification();
-        }
-      } catch (Exception e) {
-        log.error("Experimental variables registration failed.", e);
-      }
-    });
-  }
+
 
   private void addExperimentalVariables(
       List<ExperimentalVariableContent> experimentalVariableContents) {
@@ -472,7 +509,7 @@ public class ExperimentDetailsComponent extends PageArea {
     context.projectId()
         .orElseThrow(() -> new ApplicationException("no project id in context " + context));
     this.context = context;
-    experimentInformationService.find(experimentId).ifPresent(this::loadExperimentInformation);
+    reloadExperimentInfo(experimentId);
   }
 
   private void loadExperimentInformation(Experiment experiment) {
@@ -524,5 +561,39 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onGroupsDefined() {
     experimentalGroups.removeAll();
     experimentalGroups.add(experimentalGroupsCollection);
+  }
+
+  /**
+   * <b>Experiment Edit Event</b>
+   * <p>
+   * Event that indicates that the user wants to edit an experiment via the
+   * {@link ExperimentDetailsComponent}
+   *
+   * @since 1.0.0
+   */
+  public static class ExperimentEditEvent extends ComponentEvent<ExperimentDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = -5383275108609304372L;
+    private final ExperimentId experimentId;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source       the source component
+     * @param experimentId the {@link ExperimentId} of the edited experiment
+     * @param fromClient   <code>true</code> if the event originated from the client
+     *                     side, <code>false</code> otherwise
+     */
+    public ExperimentEditEvent(ExperimentDetailsComponent source, ExperimentId experimentId,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.experimentId = experimentId;
+    }
+
+    public ExperimentId experimentId() {
+      return experimentId;
+    }
   }
 }

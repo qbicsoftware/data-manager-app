@@ -14,14 +14,14 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
  * This dialog is to be shown when editing variables is impossible as experimental groups are
  * present.
  */
-public final class ExperimentalGroupsExistDialog extends NotificationDialog {
+public final class ExistingGroupsPreventVariableEdit extends NotificationDialog {
 
-  public ExperimentalGroupsExistDialog(int numberOfExperimentalGroups) {
-    addClassName("experimental-groups-exist-dialog");
-    customizeContent(numberOfExperimentalGroups);
+  public ExistingGroupsPreventVariableEdit(int numberOfExperimentalGroups) {
+    addClassName("existing-groups-prevent-variable-edit");
     customizeHeader();
-    setConfirmText("Go to Experimental Groups");
+    customizeContent(numberOfExperimentalGroups);
     customizeRejection();
+    setConfirmText("Go to Experimental Groups");
   }
 
   private void customizeRejection() {

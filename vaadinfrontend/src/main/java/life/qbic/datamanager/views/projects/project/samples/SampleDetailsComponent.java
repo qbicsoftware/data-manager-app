@@ -364,7 +364,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           "Start the sample registration process by defining experimental groups",
           "Add groups");
       String experimentId = experiment.experimentId().value();
-      noGroupsDefinedCard.subscribe(event -> routeToExperimentalGroupCreation(event, experimentId));
+      noGroupsDefinedCard.addDisclaimerConfirmeListener(
+          event -> routeToExperimentalGroupCreation(event, experimentId));
       return noGroupsDefinedCard;
     }
 
@@ -384,7 +385,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
           "Manage your samples in one place",
           "Start your project by registering the first sample batch", "Register batch");
-      noSamplesDefinedCard.subscribe(event -> {
+      noSamplesDefinedCard.addDisclaimerConfirmeListener(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);
         batchRegistrationDialog.open();
       });
@@ -456,44 +457,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     void handle(BatchRegistrationEvent event);
   }
 
-  private class SampleExperimentTab extends Tab {
+  private static class SampleExperimentTab extends Tab {
 
     private final Span sampleCountComponent;
-    private final Span experimentNameComponent;
 
     public SampleExperimentTab(String experimentName, int sampleCount) {
-      this.experimentNameComponent = new Span(experimentName);
+      Span experimentNameComponent = new Span(experimentName);
       this.sampleCountComponent = createBadge(sampleCount);
       this.add(experimentNameComponent, sampleCountComponent);
-    }
-
-    /**
-     * Getter method for retrieving the currently set name of the {@link Experiment} shown in this
-     * component
-     *
-     * @return String containing the experimentName shown in the Tab
-     */
-    public String getExperimentName() {
-      return experimentNameComponent.getText();
-    }
-
-    /**
-     * Setter method for specifying the name of the {@link Experiment} shown in this component
-     *
-     * @param experimentName name of the Experiment to be shown in this component
-     */
-    public void setExperimentName(String experimentName) {
-      experimentNameComponent.setText(experimentName);
-    }
-
-    /**
-     * Getter method for retrieving the currently set number of {@link Sample} associated with the
-     * {@link Experiment} shown in this component
-     *
-     * @return int containing the number of samples shown in the Tab
-     */
-    public int getSampleCount() {
-      return Integer.parseInt(sampleCountComponent.getText());
     }
 
     /**

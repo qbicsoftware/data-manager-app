@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.DomEvent;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -12,8 +13,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import life.qbic.datamanager.views.general.CancelEvent;
-import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 
@@ -29,11 +28,9 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 5296014328282974007L;
   private final List<ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
-  private final List<ComponentEventListener<CancelEvent<ExperimentalVariablesDialog>>> cancelEventListeners = new ArrayList<>();
   private final Div dialogueContentLayout = new Div();
   private final Div experimentalVariableRowsContainerLayout = new Div();
   private final Span addExperimentalVariableLayoutRow = new Span();
-  private final List<ComponentEventListener<ConfirmEvent<ExperimentalVariablesDialog>>> confirmEventListeners = new ArrayList<>();
   private final MODE mode;
 
   public ExperimentalVariablesDialog() {
@@ -93,21 +90,13 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   }
 
   private void configureConfirmation() {
-    this.confirmButton.addClickListener(event -> fireConfirmEvent());
+    this.confirmButton.addClickListener(
+        clickEvent -> fireEvent(new ConfirmEvent(this, clickEvent.isFromClient())));
   }
 
   private void configureCancelling() {
-    this.cancelButton.addClickListener(cancelListener -> fireCancelEvent());
-  }
-
-  private void fireConfirmEvent() {
-    this.confirmEventListeners.forEach(
-        listener -> listener.onComponentEvent(new ConfirmEvent<>(this, true)));
-  }
-
-  private void fireCancelEvent() {
-    this.cancelEventListeners.forEach(
-        listener -> listener.onComponentEvent(new CancelEvent<>(this, true)));
+    this.cancelButton.addClickListener(
+        clickEvent -> fireEvent(new CancelEvent(this, clickEvent.isFromClient())));
   }
 
   private void resetDialogUponClosure() {
@@ -120,9 +109,8 @@ public class ExperimentalVariablesDialog extends DialogWindow {
    *
    * @param listener the listener to add
    */
-  public void addConfirmEventListener(
-      final ComponentEventListener<ConfirmEvent<ExperimentalVariablesDialog>> listener) {
-    this.confirmEventListeners.add(listener);
+  public void addConfirmEventListener(final ComponentEventListener<ConfirmEvent> listener) {
+    addListener(ConfirmEvent.class, listener);
   }
 
   /**
@@ -130,9 +118,8 @@ public class ExperimentalVariablesDialog extends DialogWindow {
    *
    * @param listener the listener to add
    */
-  public void addCancelEventListener(
-      final ComponentEventListener<CancelEvent<ExperimentalVariablesDialog>> listener) {
-    this.cancelEventListeners.add(listener);
+  public void addCancelEventListener(final ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
   }
 
   /**
@@ -230,9 +217,28 @@ public class ExperimentalVariablesDialog extends DialogWindow {
         .toList();
   }
 
-  private enum MODE {
-    ADD, EDIT
+
+  @DomEvent("confirm")
+  public static class ConfirmEvent extends
+      life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalVariablesDialog> {
+
+    public ConfirmEvent(ExperimentalVariablesDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
+  @DomEvent("cancel")
+  public static class CancelEvent extends
+      life.qbic.datamanager.views.general.CancelEvent<ExperimentalVariablesDialog> {
+
+    public CancelEvent(ExperimentalVariablesDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  private enum MODE {
+    ADD, EDIT
+
+  }
 
 }

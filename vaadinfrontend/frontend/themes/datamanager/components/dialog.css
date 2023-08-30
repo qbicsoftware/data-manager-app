@@ -63,11 +63,20 @@ vaadin-dialog-overlay::part(title) {
   fill: var(--lumo-primary-color);
 }
 
-/* experimental groups exist dialog */
-.experimental-groups-exist-dialog .content .experimental-group-count {
+/* experimental groups exist dialog on variable edit */
+.existing-groups-prevent-variable-edit .content .experimental-group-count {
   font-weight: bold;
 }
 
+/* samples exist on variable edit */
+.existing-samples-prevent-variable-edit .content .sample-count {
+  font-weight: bold;
+}
+
+/* samples exist on group edit */
+.existing-samples-prevent-group-edit .content .sample-count {
+  font-weight: bold;
+}
 
 
 .add-user-to-project-dialog::part(overlay) {
