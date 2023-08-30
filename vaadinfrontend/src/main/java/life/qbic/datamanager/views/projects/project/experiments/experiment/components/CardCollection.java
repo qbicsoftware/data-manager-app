@@ -11,37 +11,37 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.general.AddEvent;
+import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.EditEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard;
 
 /**
- * <b>Experimental Group Collection</b>
+ * <b>Collection of elements (cards) for which more than one should usually be shown</b>
  * <p>
- * Container of one or more {@link ExperimentalGroupCard}
+ * Container of one or more {@link Card}
  *
  * @since 1.0.0
  */
 
-public class ExperimentalGroupCardCollection extends Div {
+public class CardCollection extends Div {
 
   @Serial
-  private static final long serialVersionUID = -5835580091959912561L;
+  private static final long serialVersionUID = -9123769128332512326L;
 
   private final Div content = new Div();
-  private final List<ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>>> addListeners = new ArrayList<>();
-  private final List<ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>>> editListeners = new ArrayList<>();
+  private final List<ComponentEventListener<AddEvent<CardCollection>>> addListeners = new ArrayList<>();
+  private final List<ComponentEventListener<EditEvent<CardCollection>>> editListeners = new ArrayList<>();
 
 
-  public ExperimentalGroupCardCollection() {
-    addClassName("experimental-group-card-collection");
-    Span title = new Span("Groups");
-    title.addClassName("title");
+  public CardCollection(String title) {
+    addClassName("card-collection");
+    Span titleSpan = new Span(title);
+    titleSpan.addClassName("collection-title");
     Div header = new Div();
-    header.addClassName("groups-header");
+    header.addClassName("collection-header");
     Div controlItems = new Div();
-    controlItems.addClassName("groups-controls");
-    content.addClassName("groups-content");
-    header.add(title, controlItems);
+    controlItems.addClassName("collection-controls");
+    content.addClassName("collection-content");
+    header.add(titleSpan, controlItems);
     Button addButton = new Button("Add");
     Button editButton = new Button("Edit");
     controlItems.add(editButton, addButton);
@@ -78,7 +78,7 @@ public class ExperimentalGroupCardCollection extends Div {
    * @param listener the listener to add
    */
   public void addAddEventListener(
-      ComponentEventListener<AddEvent<ExperimentalGroupCardCollection>> listener) {
+      ComponentEventListener<AddEvent<CardCollection>> listener) {
     this.addListeners.add(listener);
   }
 
@@ -87,16 +87,42 @@ public class ExperimentalGroupCardCollection extends Div {
    * @param listener the listener to add
    */
   public void addEditEventListener(
-      ComponentEventListener<EditEvent<ExperimentalGroupCardCollection>> listener) {
+      ComponentEventListener<EditEvent<CardCollection>> listener) {
     this.editListeners.add(listener);
   }
 
-  private void fire(EditEvent<ExperimentalGroupCardCollection> editEvent) {
+  private void fire(EditEvent<CardCollection> editEvent) {
     this.editListeners.forEach(listener -> listener.onComponentEvent(editEvent));
   }
 
-  private void fire(AddEvent<ExperimentalGroupCardCollection> addEvent) {
+  private void fire(AddEvent<CardCollection> addEvent) {
     this.addListeners.forEach(listener -> listener.onComponentEvent(addEvent));
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that will get informed with an
+   * {@link AddEvent< CardCollection >}, as soon as a user wants to add new experimental
+   * variables.
+   *
+   * @param listener a listener for adding variables events
+   * @since 1.0.0
+   */
+  public void subscribeToAddEvent(
+      ComponentEventListener<AddEvent<CardCollection>> listener) {
+    this.addListeners.add(listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that will get informed with an
+   * {@link EditEvent< CardCollection >}, as soon as a user wants to edit experimental
+   * variables.
+   *
+   * @param listener a listener for adding variables events
+   * @since 1.0.0
+   */
+  public void subscribeToEditEvent(
+      ComponentEventListener<EditEvent<CardCollection>> listener) {
+    this.editListeners.add(listener);
   }
 
 }

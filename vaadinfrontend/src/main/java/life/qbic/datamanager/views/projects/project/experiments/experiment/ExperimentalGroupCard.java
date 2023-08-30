@@ -49,7 +49,7 @@ public class ExperimentalGroupCard extends Card {
   private Span title(String value) {
     Span cardTitle = new Span();
     cardTitle.setText(value);
-    cardTitle.addClassName("title");
+    cardTitle.addClassName("card-title");
     return cardTitle;
   }
 

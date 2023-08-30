@@ -57,19 +57,28 @@
   max-width: 300px;
 }
 
-.experimental-group-card-collection {
+.card-collection {
   display: flex;
   align-content: space-evenly;
   flex-flow: column;
   gap: 1rem;
+  margin-left: 1.5rem;
+  margin-top: 1.5rem;
 }
 
-.experimental-group-card-collection .groups-header {
+.card-collection .collection-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.card-collection .collection-header {
   justify-content: space-between;
   display: flex;
 }
 
-.experimental-group-card-collection .groups-content {
+.card-collection .collection-content {
   display: flex;
   align-content: space-evenly;
   flex-flow: row wrap;
@@ -77,7 +86,7 @@
   flex-direction: row;
 }
 
-.experimental-group-card-collection .groups-controls {
+.card-collection .collection-controls {
   display: flex;
   align-content: space-evenly;
   flex-flow: row wrap;
@@ -91,12 +100,12 @@
   margin-bottom: var(--lumo-space-m);
 }
 
-.experimental-group .title {
-  color: var(--lumo-header-text-color);
+.experimental-group .card-title {
+  color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-m);
   font-weight: bold;
   white-space: nowrap;
-  margin-bottom: 1em;
+  margin-bottom: 0.5rem;
 }
 
 .experimental-group .content {
