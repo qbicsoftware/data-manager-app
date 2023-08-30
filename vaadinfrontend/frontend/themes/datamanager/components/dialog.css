@@ -2,7 +2,6 @@
   opacity: 0.05;
 }
 
-/* way to general*/
 vaadin-dialog-overlay::part(content) {
   padding: 1rem 4rem 3rem 4rem;
 }
