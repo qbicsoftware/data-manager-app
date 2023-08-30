@@ -24,6 +24,7 @@ public class ExperimentalGroupsExistDialog extends ConfirmDialog {
   public ExperimentalGroupsExistDialog(int numberOfExperimentalGroups) {
     cancelButton.setThemeName("tertiary");
     addClassName("experimental-groups-exist-dialog");
+    addClassName("notification-dialog");
 
     Div content = new Div();
     Span experimentalGroupCount = new Span(String.valueOf(numberOfExperimentalGroups));
