@@ -622,34 +622,20 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     return biologicalReplicateId;
   }
 
-  public void prefillConditionsAndReplicates(boolean isPrefilled) {
+  public void prefillConditionsAndReplicates() {
     int conditionColIndex = header.indexOf(SamplesheetHeaderName.CONDITION);
     int replicateColIndex = header.indexOf(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID);
     int rowIndex = 0;
     Set<String> conditions = conditionsToReplicates.keySet();
-    for(String condition : conditions) {
+    for (String condition : conditions) {
       List<String> sortedLabels = conditionsToReplicates.get(condition).stream()
           .sorted(new LexicographicLabelComparator()).map(BiologicalReplicate::label).toList();
       for (String label : sortedLabels) {
         rowIndex++;
         Cell replicateCell = this.getCell(rowIndex, replicateColIndex);
         Cell conditionCell = this.getCell(rowIndex, conditionColIndex);
-        if (isPrefilled) {
-          //prefill cells
-          replicateCell.setCellValue(label);
-          conditionCell.setCellValue(condition);
-        } else {
-          //remove prefilled info, except if there is only one condition or replicate
-          String neutralValue = "";
-          if (conditions.size() == 1) {
-            neutralValue = condition;
-          }
-          conditionCell.setCellValue(neutralValue);
-          if (sortedLabels.size() == 1) {
-            neutralValue = label;
-          }
-          replicateCell.setCellValue(neutralValue);
-        }
+        replicateCell.setCellValue(label);
+        conditionCell.setCellValue(condition);
       }
     }
   }
