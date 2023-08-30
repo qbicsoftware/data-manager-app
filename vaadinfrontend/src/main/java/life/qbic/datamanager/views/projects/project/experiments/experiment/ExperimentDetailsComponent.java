@@ -372,19 +372,13 @@ public class ExperimentDetailsComponent extends PageArea {
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream())
         .toList();
-    var dialog = getExperimentalGroupsDialogForAdding(levels);
+    var dialog = ExperimentalGroupsDialog.empty(levels);
+    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmEventListener(this::onExperimentalGroupAddDialogConfirmed);
     dialog.open();
   }
 
-  private ExperimentalGroupsDialog getExperimentalGroupsDialogForAdding(
-      List<VariableLevel> levels) {
-    var dialog = ExperimentalGroupsDialog.empty(levels);
-    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmEventListener(this::onAddExperimentalGroupDialogConfirmed);
-    return dialog;
-  }
-
-  private void onAddExperimentalGroupDialogConfirmed(
+  private void onExperimentalGroupAddDialogConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
     addExperimentalGroups(dialog.experimentalGroups());
@@ -394,7 +388,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
 
   private void configureExperimentalGroupsEdit() {
-    experimentalGroupsCollection.addEditEventListener(listener -> {
+    experimentalGroupsCollection.addEditEventListener(editEvent -> {
       if (editGroupsNotAllowed()) {
         return;
       }
