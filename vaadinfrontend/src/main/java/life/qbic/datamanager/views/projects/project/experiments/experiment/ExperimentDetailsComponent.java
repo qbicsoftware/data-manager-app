@@ -132,7 +132,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private Disclaimer createNoVariableDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
-    disclaimer.addDisclaimerConfirmeListener(
+    disclaimer.addDisclaimerConfirmedListener(
         confirmedEvent -> openExperimentalVariablesAddDialog());
     return disclaimer;
   }
@@ -140,7 +140,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private Disclaimer createNoGroupsDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Create conditions for your samples by adding experimental groups", "Add groups");
-    disclaimer.addDisclaimerConfirmeListener(confirmedEvent -> openExperimentalGroupAddDialog());
+    disclaimer.addDisclaimerConfirmedListener(confirmedEvent -> openExperimentalGroupAddDialog());
     return disclaimer;
   }
 

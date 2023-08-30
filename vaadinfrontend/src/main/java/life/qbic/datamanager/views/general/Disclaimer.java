@@ -89,7 +89,7 @@ public class Disclaimer extends Div {
     return new Disclaimer(disclaimer, confirmationLabel, title);
   }
 
-  public void addDisclaimerConfirmeListener(
+  public void addDisclaimerConfirmedListener(
       ComponentEventListener<DisclaimerConfirmedEvent> listener) {
     addListener(DisclaimerConfirmedEvent.class, listener);
   }

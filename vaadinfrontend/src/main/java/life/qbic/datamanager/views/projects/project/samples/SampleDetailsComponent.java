@@ -364,7 +364,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           "Start the sample registration process by defining experimental groups",
           "Add groups");
       String experimentId = experiment.experimentId().value();
-      noGroupsDefinedCard.addDisclaimerConfirmeListener(
+      noGroupsDefinedCard.addDisclaimerConfirmedListener(
           event -> routeToExperimentalGroupCreation(event, experimentId));
       return noGroupsDefinedCard;
     }
@@ -385,7 +385,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
           "Manage your samples in one place",
           "Start your project by registering the first sample batch", "Register batch");
-      noSamplesDefinedCard.addDisclaimerConfirmeListener(event -> {
+      noSamplesDefinedCard.addDisclaimerConfirmedListener(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);
         batchRegistrationDialog.open();
       });
