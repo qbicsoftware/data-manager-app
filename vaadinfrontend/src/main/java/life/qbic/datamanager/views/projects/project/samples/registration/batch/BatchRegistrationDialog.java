@@ -31,6 +31,7 @@ public class BatchRegistrationDialog extends DialogWindow {
   private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
   private final SampleSpreadsheetLayout sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
   private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
+  private boolean wasPrefillPreviouslySelected = false;
 
   public BatchRegistrationDialog() {
     addClassName("batch-registration-dialog");
@@ -141,19 +142,27 @@ public class BatchRegistrationDialog extends DialogWindow {
     private void generateSampleRegistrationLayout() {
       //we always set the batch name, as it can change without affecting the rest of the spreadsheet
       sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
-      //we need to reset the layout, if the experiment has changed
-      if (hasExperimentInformationChanged()) {
-        sampleSpreadsheetLayout.resetLayout();
-      }
-      //We need to build the spreadsheet upon initialization or if the user changed the experiment
-      if (sampleSpreadsheetLayout.getExperiment() == null || hasExperimentInformationChanged()) {
-        sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+
+      //We reset the spreadsheet independent on which selection was changed
+      if (hasPrefillStatusChanged() || hasExperimentInformationChanged()) {
+        sampleSpreadsheetLayout.resetSpreadSheet();
+        //If the user changes the experiment or selects one for the first time the spreadsheet has to be generated anew
+        if (hasExperimentInformationChanged()) {
+          sampleSpreadsheetLayout.resetExperimentInformation();
+          sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
+        }
         sampleSpreadsheetLayout.generateSampleRegistrationSheet(
             batchInformationLayout.dataTypeSelection.getValue());
+        //If the user changed the prefill selection the fields have to be filled dependent on if the checkbox was checked or not
+        if (hasPrefillStatusChanged()) {
+          boolean isPrefillSelected = batchInformationLayout.prefillSelection.getValue();
+          if (isPrefillSelected) {
+            sampleSpreadsheetLayout.prefillConditionsAndReplicates();
+          }
+          wasPrefillPreviouslySelected = isPrefillSelected;
+        }
       }
-      //With the spreadsheet prepared, we can fill the prefilled information in the spreadsheet
-      sampleSpreadsheetLayout.prefillConditionsAndReplicates(
-          batchInformationLayout.prefillSelection.getValue());
+      //rerender spreadsheet
       sampleSpreadsheetLayout.reloadSpreadsheet();
     }
 
@@ -161,8 +170,15 @@ public class BatchRegistrationDialog extends DialogWindow {
       ExperimentId previouslySelectedExperiment = sampleSpreadsheetLayout.getExperiment();
       ExperimentId selectedExperiment = batchInformationLayout.experimentSelect.getValue()
           .experimentId();
-      return previouslySelectedExperiment != null && !previouslySelectedExperiment.equals(
-          selectedExperiment);
+      if (previouslySelectedExperiment == null) {
+        return true;
+      } else {
+        return !previouslySelectedExperiment.equals(selectedExperiment);
+      }
+    }
+
+    private boolean hasPrefillStatusChanged() {
+      return wasPrefillPreviouslySelected != batchInformationLayout.prefillSelection.getValue();
     }
 
     private void setSubmissionListeners() {
@@ -208,9 +224,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     }
 
     private void reset() {
-
       batchInformationLayout.reset();
-      sampleSpreadsheetLayout.resetLayout();
+      sampleSpreadsheetLayout.reset();
       tabStepper.setSelectedTab(batchInformationTab);
     }
 

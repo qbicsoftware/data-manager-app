@@ -55,7 +55,7 @@ class SampleSpreadsheetLayout extends Div {
   private void initContent() {
     initHeaderAndInstruction();
     Div sampleSpreadSheetContainer = new Div();
-    sampleSpreadSheetContainer.addClassName("sample-spreadsheet");
+    sampleSpreadSheetContainer.addClassName("sample-spreadsheet-container");
     sampleSpreadSheetContainer.add(sampleRegistrationSpreadsheet);
     add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
@@ -111,10 +111,20 @@ class SampleSpreadsheetLayout extends Div {
     sampleRegistrationSpreadsheet.addSheetToSpreadsheet(metaDataType);
   }
 
-  public void resetLayout() {
-    sampleRegistrationSpreadsheet.getCellSelectionManager().clear();
+  public void reset() {
     sampleInformationLayoutHandler.reset();
-    experiment = null;
+  }
+
+  public void resetBatchInformation() {
+    sampleInformationLayoutHandler.resetBatchInformation();
+  }
+
+  public void resetExperimentInformation() {
+    sampleInformationLayoutHandler.resetExperimentInformation();
+  }
+
+  public void resetSpreadSheet() {
+    sampleInformationLayoutHandler.resetSpreadSheet();
   }
 
   public void reloadSpreadsheet() {
@@ -143,8 +153,8 @@ class SampleSpreadsheetLayout extends Div {
     return experiment;
   }
 
-  public void prefillConditionsAndReplicates(boolean isPrefilled) {
-    sampleRegistrationSpreadsheet.prefillConditionsAndReplicates(isPrefilled);
+  public void prefillConditionsAndReplicates() {
+    sampleRegistrationSpreadsheet.prefillConditionsAndReplicates();
   }
 
   private class SampleInformationLayoutHandler implements Serializable {
@@ -153,28 +163,31 @@ class SampleSpreadsheetLayout extends Div {
     private static final long serialVersionUID = 2837608401189525502L;
 
     private void reset() {
-      resetChildValues();
-    }
-
-    private void resetChildValues() {
-      resetInstructions();
+      resetBatchInformation();
+      resetExperimentInformation();
       resetSpreadSheet();
-      hideErrorInstructions();
     }
 
-    private void resetInstructions() {
+    private void resetBatchInformation() {
       batchName.setText("");
+    }
+
+    private void resetExperimentInformation() {
+      experiment = null;
       experimentName.setText("");
+      resetErrorInstructions();
     }
 
     private void resetSpreadSheet() {
       sampleRegistrationSpreadsheet.reset();
+      sampleRegistrationSpreadsheet.getCellSelectionManager().clear();
+
     }
 
     private boolean isInputValid() {
       Result<Void, InvalidSpreadsheetInput> content = sampleRegistrationSpreadsheet.areInputsValid();
       if (content.isValue()) {
-        hideErrorInstructions();
+        resetErrorInstructions();
       }
       return content.onError(error -> displayErrorInstructions(error.getInvalidationReason()))
           .isValue();
@@ -188,7 +201,7 @@ class SampleSpreadsheetLayout extends Div {
       errorInstructionSpan.add(errorSpan);
     }
 
-    private void hideErrorInstructions() {
+    private void resetErrorInstructions() {
       errorInstructionSpan.removeAll();
     }
 
