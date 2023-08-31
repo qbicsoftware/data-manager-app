@@ -19,6 +19,7 @@ public class DialogWindow extends Dialog {
   protected DialogWindow() {
     this.addClassName("dialog-window");
     confirmButton.addClassName("primary");
+    cancelButton.setThemeName("tertiary");
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
   }
@@ -37,27 +38,5 @@ public class DialogWindow extends Dialog {
    */
   public void setCancelButtonLabel(String cancelLabel){
     cancelButton.setText(cancelLabel);
-  }
-
-  protected static class Container<T> {
-
-    private T value;
-
-    /**
-     * Returns the value stored in this container
-     * @return
-     */
-    public T value() {
-      return this.value;
-    }
-
-    /**
-     * Sets the value stored in this container
-     * @return
-     */
-    public void setValue(T newValue) {
-      this.value = newValue;
-    }
-
   }
 }

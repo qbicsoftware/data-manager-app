@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
+import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -368,17 +369,17 @@ public class AddProjectDialog extends DialogWindow {
       Binder<Container<String>> binderTitle = new Binder<>();
       binderTitle.forField(titleField)
           .withValidator(value -> !value.isBlank(), "Please provide a title")
-          .bind(Container::value, Container::setValue);
+          .bind(Container::get, Container::set);
       Binder<Container<String>> binderObjective = new Binder<>();
       binderObjective.forField(projectObjective)
           .withValidator(value -> !value.isBlank(), "Please provide an " + "objective")
-          .bind(Container::value, Container::setValue);
+          .bind(Container::get, Container::set);
       Binder<Container<PersonReference>> binderPI = new Binder<>();
       binderPI.forField(principalInvestigator).asRequired("Please select at least one PI")
-          .bind(Container::value, Container::setValue);
+          .bind(Container::get, Container::set);
       Binder<Container<PersonReference>> binderPM = new Binder<>();
       binderPM.forField(projectManager).asRequired("Please select at least one PM")
-          .bind(Container::value, Container::setValue);
+          .bind(Container::get, Container::set);
       binders.addAll(List.of(binderTitle, binderObjective, binderPI, binderPM));
     }
 

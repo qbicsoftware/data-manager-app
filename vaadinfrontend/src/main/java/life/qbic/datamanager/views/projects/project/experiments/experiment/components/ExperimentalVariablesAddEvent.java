@@ -11,13 +11,13 @@ import java.io.Serial;
  *
  * @since 1.0.0
  */
-public class AddNewExperimentalVariableEvent extends
+public class ExperimentalVariablesAddEvent extends
     ComponentEvent<ExperimentalVariablesComponent> {
 
   @Serial
   private static final long serialVersionUID = 4816480598791695369L;
 
-  public AddNewExperimentalVariableEvent(ExperimentalVariablesComponent source,
+  public ExperimentalVariablesAddEvent(ExperimentalVariablesComponent source,
       boolean fromClient) {
     super(source, fromClient);
   }
