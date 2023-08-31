@@ -6,7 +6,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -238,18 +237,6 @@ public class ExperimentDetailsComponent extends PageArea {
     result.onError(responseCode -> {
       throw new ApplicationException("variable deletion failed: " + responseCode);
     });
-  }
-
-  private static ConfirmDialog experimentalGroupDeletionConfirmDialog() {
-    var confirmDialog = new ConfirmDialog();
-    confirmDialog.setHeader("Your experimental groups will be deleted");
-    confirmDialog.setText(
-        "Editing experimental variables requires all experimental groups to be deleted. Are you sure you want to delete them?");
-    confirmDialog.setConfirmText("Delete experimental groups");
-    confirmDialog.setCancelable(true);
-    confirmDialog.setCancelText("Abort");
-    confirmDialog.setRejectable(false);
-    return confirmDialog;
   }
 
   private void reloadExperimentInfo(ExperimentId experimentId) {
