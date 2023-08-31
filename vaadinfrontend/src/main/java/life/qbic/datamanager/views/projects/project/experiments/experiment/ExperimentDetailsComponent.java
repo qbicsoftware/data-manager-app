@@ -295,7 +295,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void configureExperimentalGroupCreation() {
-    experimentalGroupsCollection.addAddEventListener(listener -> openExperimentalGroupAddDialog());
+    experimentalGroupsCollection.subscribeToAddEvent(listener -> openExperimentalGroupAddDialog());
   }
 
   /**
@@ -343,7 +343,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
 
   private void configureExperimentalGroupsEdit() {
-    experimentalGroupsCollection.addEditEventListener(listener -> {
+    experimentalGroupsCollection.subscribeToEditEvent(listener -> {
       ExperimentId experimentId = context.experimentId().orElseThrow();
       List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
           experimentId);
