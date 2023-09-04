@@ -63,6 +63,7 @@
 .page-area.experiment-details-component .sample-source-display .icon-with-list .taglist {
   flex-direction: column;
   display: flex;
+  line-height: 1.3em;
 }
 
 .page-area.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
