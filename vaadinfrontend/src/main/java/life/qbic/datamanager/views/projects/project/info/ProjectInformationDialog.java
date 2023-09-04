@@ -23,7 +23,8 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  * @since 1.0.0
  */
 
-public class ProjectInformationDialog extends DialogWindow {
+public class ProjectInformationDialog extends
+    DialogWindow { //FIXME not needed? use add dialog instead?
 
   @Serial
   private static final long serialVersionUID = 1735754381220518292L;
@@ -83,23 +84,21 @@ public class ProjectInformationDialog extends DialogWindow {
   public static ProjectInformationDialog prefilled(
       PersonSearchService personSearchService,
       ProjectTitle projectTitle, ProjectObjective projectObjective,
-      ExperimentalDesignDescription experimentalDesignDescription,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       PersonReference projectManager) {
     ProjectInformationDialog projectInformationDialog = new ProjectInformationDialog(
         personSearchService, true);
     projectInformationDialog.setProjectInformation(projectTitle, projectObjective,
-        experimentalDesignDescription, principalInvestigator, responsiblePerson, projectManager);
+        principalInvestigator, responsiblePerson, projectManager);
     return projectInformationDialog;
   }
 
   private void setProjectInformation(ProjectTitle projectTitle,
       ProjectObjective projectObjective,
-      ExperimentalDesignDescription experimentalDesignDescription,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       PersonReference projectManager) {
     defineProjectComponent.setProjectInformation(projectTitle, projectObjective,
-        experimentalDesignDescription, principalInvestigator, responsiblePerson, projectManager);
+        principalInvestigator, responsiblePerson, projectManager);
   }
 
   /**

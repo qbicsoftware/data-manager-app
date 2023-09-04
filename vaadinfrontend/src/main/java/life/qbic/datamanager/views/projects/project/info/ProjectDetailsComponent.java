@@ -55,7 +55,6 @@ public class ProjectDetailsComponent extends PageArea {
   private final FormLayout formLayout = new FormLayout();
   private final Span projectTitleField = new Span();
   private final Span projectObjectiveField = new Span();
-  private final Span experimentalDesignField = new Span();
   private final Div speciesField = new Div();
   private final Div specimensField = new Div();
   private final Div analytesField = new Div();
@@ -129,7 +128,7 @@ public class ProjectDetailsComponent extends PageArea {
     ProjectInformationDialog projectInformationDialog = ProjectInformationDialog.prefilled(
         personSearchService,
         project.getProjectIntent().projectTitle(), project.getProjectIntent().objective(),
-        project.getProjectIntent().experimentalDesign(), project.getPrincipalInvestigator(),
+        project.getPrincipalInvestigator(),
         responsiblePerson, project.getProjectManager());
     projectInformationDialog.setConfirmButtonLabel("Save");
     return projectInformationDialog;
@@ -155,8 +154,6 @@ public class ProjectDetailsComponent extends PageArea {
     projectInformationService.updateTitle(projectId, projectInformationContent.projectTitle());
     projectInformationService.stateObjective(projectId,
         projectInformationContent.projectObjective());
-    projectInformationService.describeExperimentalDesign(projectId,
-        projectInformationContent.experimentalDesignDescription());
     projectInformationService.investigateProject(projectId,
         projectInformationContent.principalInvestigator());
     projectInformationService.manageProject(projectId,
@@ -182,7 +179,6 @@ public class ProjectDetailsComponent extends PageArea {
     analytesField.addClassName(tagCollectionCssClass);
     formLayout.addFormItem(projectTitleField, "Project Title");
     formLayout.addFormItem(projectObjectiveField, "Project Objective");
-    formLayout.addFormItem(experimentalDesignField, "Experimental Design");
     formLayout.addFormItem(speciesField, "Species");
     formLayout.addFormItem(specimensField, "Specimen");
     formLayout.addFormItem(analytesField, "Analyte");
@@ -204,7 +200,6 @@ public class ProjectDetailsComponent extends PageArea {
     resetProjectInformation();
     projectTitleField.setText(project.getProjectIntent().projectTitle().title());
     projectObjectiveField.setText(project.getProjectIntent().objective().value());
-    experimentalDesignField.setText(project.getProjectIntent().experimentalDesign().value());
     principalInvestigatorField.add(generatePersonReference(project.getPrincipalInvestigator()));
     project.getResponsiblePerson().ifPresentOrElse(
         personReference -> responsiblePersonField.add(generatePersonReference(personReference)),
@@ -216,7 +211,6 @@ public class ProjectDetailsComponent extends PageArea {
   private void resetProjectInformation() {
     projectTitleField.removeAll();
     projectObjectiveField.removeAll();
-    experimentalDesignField.removeAll();
     speciesField.removeAll();
     specimensField.removeAll();
     analytesField.removeAll();

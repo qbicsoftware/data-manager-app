@@ -152,15 +152,6 @@ public class Project {
     lastModified = Instant.now();
   }
 
-  public void describeExperimentalDesign(
-      ExperimentalDesignDescription experimentalDesignDescription) {
-    if (projectIntent.experimentalDesign().equals(experimentalDesignDescription)) {
-      return;
-    }
-    projectIntent.experimentalDesign(experimentalDesignDescription);
-    lastModified = Instant.now();
-  }
-
   public void addExperiment(Experiment experiment) {
     activeExperiment = experiment.experimentId();
     experiments.add(experiment);

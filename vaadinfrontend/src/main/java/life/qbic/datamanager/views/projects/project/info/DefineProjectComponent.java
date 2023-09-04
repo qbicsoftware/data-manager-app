@@ -111,8 +111,6 @@ public class DefineProjectComponent extends Div {
    *
    * @param projectTitle                  {@link ProjectTitle} of the project to be edited
    * @param projectObjective              {@link ProjectObjective} of the project to be edited
-   * @param experimentalDesignDescription {@link ExperimentalDesignDescription} of the project to be
-   *                                      edited
    * @param principalInvestigator         {@link PersonReference} of the principal investigator of
    *                                      the project to be edited
    * @param responsiblePerson             {@link PersonReference} of the responsible person to be
@@ -122,12 +120,10 @@ public class DefineProjectComponent extends Div {
    */
   public void setProjectInformation(ProjectTitle projectTitle,
       ProjectObjective projectObjective,
-      ExperimentalDesignDescription experimentalDesignDescription,
       PersonReference principalInvestigator, PersonReference responsiblePerson,
       PersonReference projectManager) {
     this.projectTitle.setValue(projectTitle.title());
     this.projectObjective.setValue(projectObjective.value());
-    this.experimentalDesign.setValue(experimentalDesignDescription.value());
     this.principalInvestigator.setValue(principalInvestigator);
     this.responsiblePerson.setValue(responsiblePerson);
     this.projectManager.setValue(projectManager);

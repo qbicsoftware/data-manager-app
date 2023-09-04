@@ -8,7 +8,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -103,14 +102,6 @@ public class ProjectInformationService {
   public void setResponsibility(ProjectId projectId, PersonReference personReference) {
     Project project = loadProject(projectId);
     project.setResponsiblePerson(personReference);
-    projectRepository.update(project);
-  }
-
-  public void describeExperimentalDesign(ProjectId projectId, String experimentalDesign) {
-    ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
-        experimentalDesign);
-    Project project = loadProject(projectId);
-    project.describeExperimentalDesign(experimentalDesignDescription);
     projectRepository.update(project);
   }
 

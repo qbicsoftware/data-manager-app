@@ -6,7 +6,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.project.experiment.repository.jpa.ExperimentalDesignDescriptionConverter;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectObjectiveConverter;
 import life.qbic.projectmanagement.domain.project.repository.jpa.ProjectTitleConverter;
 
@@ -25,10 +24,6 @@ public class ProjectIntent {
   @Column(name = "objective")
   private ProjectObjective projectObjective;
 
-  @Convert(converter = ExperimentalDesignDescriptionConverter.class)
-  @Column(name = "experimentalDesignDescription")
-  private ExperimentalDesignDescription experimentalDesignDescription;
-
   private ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
     requireNonNull(projectTitle);
     requireNonNull(objective);
@@ -45,15 +40,6 @@ public class ProjectIntent {
     return new ProjectIntent(projectTitle, projectObjective);
   }
 
-  public ProjectIntent with(ExperimentalDesignDescription experimentalDesignDescription) {
-    if (Objects.isNull(experimentalDesignDescription)) {
-      throw new IllegalArgumentException("experimental design is null");
-    }
-    Objects.requireNonNull(experimentalDesignDescription);
-    this.experimentalDesignDescription = experimentalDesignDescription;
-    return this;
-  }
-
   public ProjectTitle projectTitle() {
     return projectTitle;
   }
@@ -61,16 +47,6 @@ public class ProjectIntent {
   public void projectTitle(ProjectTitle projectTitle) {
     Objects.requireNonNull(projectTitle);
     this.projectTitle = projectTitle;
-  }
-
-  public ExperimentalDesignDescription experimentalDesign() {
-    Objects.requireNonNull(experimentalDesignDescription);
-    return experimentalDesignDescription;
-  }
-
-  public void experimentalDesign(ExperimentalDesignDescription experimentalDesignDescription) {
-    Objects.requireNonNull(experimentalDesignDescription);
-    this.experimentalDesignDescription = experimentalDesignDescription;
   }
 
   public ProjectObjective objective() {
@@ -83,32 +59,26 @@ public class ProjectIntent {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object object) {
+    if (this == object) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (object == null || getClass() != object.getClass()) {
       return false;
     }
 
-    ProjectIntent that = (ProjectIntent) o;
+    ProjectIntent that = (ProjectIntent) object;
 
     if (!projectTitle.equals(that.projectTitle)) {
       return false;
     }
-    if (!projectObjective.equals(that.projectObjective)) {
-      return false;
-    }
-    return Objects.equals(experimentalDesignDescription, that.experimentalDesignDescription);
+    return projectObjective.equals(that.projectObjective);
   }
 
   @Override
   public int hashCode() {
     int result = projectTitle.hashCode();
     result = 31 * result + projectObjective.hashCode();
-    result = 31 * result + (experimentalDesignDescription != null
-        ? experimentalDesignDescription.hashCode() : 0);
     return result;
   }
-
 }

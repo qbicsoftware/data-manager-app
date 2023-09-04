@@ -15,6 +15,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
@@ -107,7 +108,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     this.context = new Context().with(parsedProjectId);
 
     if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isEmpty()) {
-      forwardToExperiment(activeExperiment(parsedProjectId), beforeEnterEvent);
+      //forwardToExperiment(activeExperiment(parsedProjectId).orElseThrow(), beforeEnterEvent); //FIXME
       return; // abort the before-enter event and forward
     }
 
@@ -129,9 +130,9 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     setContext(this.context);
   }
 
-  private ExperimentId activeExperiment(ProjectId parsedProjectId) {
+  private Optional<ExperimentId> activeExperiment(ProjectId parsedProjectId) { //FIXME
     return projectInformationService.find(parsedProjectId)
-        .map(Project::activeExperiment).orElseThrow();
+        .map(Project::activeExperiment);
   }
 
   private void setContext(Context context) {

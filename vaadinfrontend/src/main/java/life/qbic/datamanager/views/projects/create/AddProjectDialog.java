@@ -19,14 +19,11 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Binder.Binding;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.util.Optional;
@@ -63,6 +60,9 @@ public class AddProjectDialog extends DialogWindow {
   private final TextField codeField;
   private final TextField titleField;
   private final TextArea projectObjective;
+  private final ContactField principalInvestigatorField;
+  private final ContactField responsiblePersonField;
+  private final ContactField projectManagerField;
 
   public AddProjectDialog(OfferLookupService offerLookupService) {
     super();
@@ -132,74 +132,29 @@ public class AddProjectDialog extends DialogWindow {
     projectContactsLayout.add(projectContactsTitle);
     projectContactsLayout.add(projectContactsDescription);
 
-    TextField principalInvestigatorName = new TextField("Principal Investigator Name",
-        "Please enter a name");
-    principalInvestigatorName.setRequired(true);
-    binder.forField(principalInvestigatorName)
-        .withValidator(it -> !it.isBlank(), "Please provide the principal investigator's name")
-        .bind(ProjectDraft::getPrincipalInvestigatorName,
-            ProjectDraft::setPrincipalInvestigatorName);
+    principalInvestigatorField = new ContactField("Principal Investigator");
+    principalInvestigatorField.setRequired(true);
+    principalInvestigatorField.setId("principal-investigator");
+    binder.forField(principalInvestigatorField)
+        .bind(ProjectDraft::getPrincipalInvestigator, ProjectDraft::setPrincipalInvestigator);
 
-    TextField principalInvestigatorEmail = new TextField("Principal Investigator Email",
-        "name@domain.de");
-    principalInvestigatorEmail.setRequired(true);
-    binder.forField(principalInvestigatorEmail)
-        .withValidator(it -> !it.isBlank(), "Please provide the principal investigator's email")
-        .withValidator(new EmailValidator("Please provide an email address name@domain.de", false))
-        .bind(ProjectDraft::getPrincipalInvestigatorEmail,
-            ProjectDraft::setPrincipalInvestigatorEmail);
+    responsiblePersonField = new ContactField("Project Responsible (optional)");
+    responsiblePersonField.setRequired(false);
+    responsiblePersonField.setId("responsible-person");
+    responsiblePersonField.setHelperText("Should be contacted about project-related questions");
+    binder.forField(responsiblePersonField)
+        .bind(projectDraft -> projectDraft.getResponsiblePerson().orElse(null),
+            ProjectDraft::setResponsiblePerson);
 
-    TextField projectManagerName = new TextField("Project Manager Name", "Please enter a name");
-    projectManagerName.setRequired(true);
-    binder.forField(projectManagerName)
-        .withValidator(it -> !it.isBlank(), "Please provide the project manager's name")
-        .bind(ProjectDraft::getProjectManagerName,
-            ProjectDraft::setProjectManagerName);
-    TextField projectManagerEmail = new TextField("Project Manager Email", "name@domain.de");
-    projectManagerEmail.setRequired(true);
-    binder.forField(projectManagerEmail)
-        .withValidator(it -> !it.isBlank(), "Please provide the project manager's email")
-        .withValidator(new EmailValidator("Please provide an email address name@domain.de", false))
-        .bind(ProjectDraft::getProjectManagerEmail, ProjectDraft::setProjectManagerEmail);
-
-    TextField responsiblePersonName = new TextField("Responsible Person Name",
-        "Please enter a name");
-    TextField responsiblePersonEmail = new TextField("Responsible Person Email",
-        "name@domain.de");
-    responsiblePersonName.setRequired(false);
-    responsiblePersonEmail.setRequired(false);
-
-    SerializablePredicate<String> isFilledOrNoResponsiblePerson = it -> !it.isBlank()
-        || (responsiblePersonName.isEmpty() && responsiblePersonEmail.isEmpty());
-
-    Binding<ProjectDraft, String> responsiblePersonNameFieldBinding = binder.forField(
-            responsiblePersonName)
-        .withValidator(isFilledOrNoResponsiblePerson,
-            "Please provide the responsible person's name")
-        .bind(ProjectDraft::getResponsiblePersonName,
-            ProjectDraft::setResponsiblePersonName);
-    Binding<ProjectDraft, String> responsiblePersonEmailFieldBinding = binder.forField(
-            responsiblePersonEmail)
-        .withValidator(isFilledOrNoResponsiblePerson,
-            "Please provide the responsible person's email")
-        .withValidator(new EmailValidator("Please provide an email address name@domain.de", true))
-        .bind(ProjectDraft::getResponsiblePersonEmail, ProjectDraft::setResponsiblePersonEmail);
-    responsiblePersonName.addValueChangeListener(
-        it -> responsiblePersonEmailFieldBinding.validate());
-    responsiblePersonEmail.addValueChangeListener(
-        it -> responsiblePersonNameFieldBinding.validate());
+    projectManagerField = new ContactField("Project Manager");
+    projectManagerField.setRequired(true);
+    projectManagerField.setId("project-manager");
+    binder.forField(projectManagerField)
+        .bind(ProjectDraft::getProjectManager, ProjectDraft::setProjectManager);
 
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> resetAndClose());
     cancelButton.addClickListener(buttonClickEvent -> resetAndClose());
-
-    // code generateCodeButton title
-    // -------objective-------------
-    // h3 > contacts
-    // blabla contacts
-    // PIname PIemail
-    // PRname PRemail
-    // PMname PMemail
 
     FormLayout formLayout = new FormLayout();
     formLayout.addClassName("form-content");
@@ -207,20 +162,35 @@ public class AddProjectDialog extends DialogWindow {
         offerSearchField,
         codeAndTitleLayout,
         projectObjective,
-        principalInvestigatorName, principalInvestigatorEmail,
-        responsiblePersonName, responsiblePersonEmail,
-        projectManagerName, projectManagerEmail
+        projectContactsLayout,
+        principalInvestigatorField,
+        responsiblePersonField,
+        projectManagerField
     );
     formLayout.setColspan(offerSearchField, 2);
     formLayout.setColspan(codeAndTitleLayout, 2);
     formLayout.setColspan(projectObjective, 2);
+    formLayout.setColspan(principalInvestigatorField, 2);
+    formLayout.setColspan(responsiblePersonField, 2);
+    formLayout.setColspan(projectManagerField, 2);
     add(formLayout);
   }
 
   private void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    if (isInputValid()) {
-      fireEvent(new ProjectAddEvent(binder.getBean(), this, clickEvent.isFromClient()));
+    ProjectDraft projectDraft = new ProjectDraft();
+    try {
+      binder.writeBean(projectDraft);
+      fireEvent(new ProjectAddEvent(projectDraft, this, clickEvent.isFromClient()));
+    } catch (ValidationException e) {
+      validate();
     }
+  }
+
+  private void validate() {
+    binder.validate();
+    principalInvestigatorField.validate();
+    responsiblePersonField.validate();
+    projectManagerField.validate();
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
@@ -278,8 +248,10 @@ public class AddProjectDialog extends DialogWindow {
    * interfaces
    */
   public void reset() {
-    binder.removeBean();
     offerSearchField.clear();
+    principalInvestigatorField.clear();
+    projectManagerField.clear();
+    binder.removeBean();
     binder.setBean(new ProjectDraft());
   }
 
@@ -322,7 +294,8 @@ public class AddProjectDialog extends DialogWindow {
   }
 
   public boolean isInputValid() {
-    return binder.validate().isOk();
+    return binder.isValid() && principalInvestigatorField.isValid()
+        && responsiblePersonField.isValid() && projectManagerField.isValid();
   }
 
   public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {
@@ -365,6 +338,7 @@ public class AddProjectDialog extends DialogWindow {
      */
     public ProjectAddEvent(ProjectDraft projectDraft, AddProjectDialog source, boolean fromClient) {
       super(source, fromClient);
+      requireNonNull(projectDraft, "projectDraft must not be null");
       this.projectDraft = projectDraft;
     }
 
@@ -383,16 +357,10 @@ public class AddProjectDialog extends DialogWindow {
     @NotEmpty
     private String projectObjective = "";
     @NotEmpty
-    private String principalInvestigatorName = "";
+    private Contact principalInvestigator;
+    private Contact responsiblePerson;
     @NotEmpty
-    private String principalInvestigatorEmail = "";
-    private String responsiblePersonName = "";
-    @Email
-    private String responsiblePersonEmail = "";
-    @NotEmpty
-    private String projectManagerName = "";
-    @NotEmpty
-    private String projectManagerEmail = "";
+    private Contact projectManager;
 
     void setOfferId(String offerId) {
       this.offerId = offerId;
@@ -410,20 +378,29 @@ public class AddProjectDialog extends DialogWindow {
       this.projectObjective = projectObjective;
     }
 
-    void setResponsiblePersonName(String responsibleName) {
-      this.responsiblePersonName = responsibleName;
+    public Contact getPrincipalInvestigator() {
+      return principalInvestigator;
     }
 
-    void setResponsiblePersonEmail(String responsibleEmail) {
-      this.responsiblePersonEmail = responsibleEmail;
+    public void setPrincipalInvestigator(
+        Contact principalInvestigator) {
+      this.principalInvestigator = principalInvestigator;
     }
 
-    void setProjectManagerName(String projectManagerName) {
-      this.projectManagerName = projectManagerName;
+    public Optional<Contact> getResponsiblePerson() {
+      return Optional.ofNullable(responsiblePerson);
     }
 
-    void setProjectManagerEmail(String projectManagerEmail) {
-      this.projectManagerEmail = projectManagerEmail;
+    public void setResponsiblePerson(Contact responsiblePerson) {
+      this.responsiblePerson = responsiblePerson;
+    }
+
+    public Contact getProjectManager() {
+      return projectManager;
+    }
+
+    public void setProjectManager(Contact projectManager) {
+      this.projectManager = projectManager;
     }
 
     public String getOfferId() {
@@ -435,43 +412,35 @@ public class AddProjectDialog extends DialogWindow {
     }
 
     public String getProjectCode() {
-      return projectManagerEmail;
+      return projectCode;
     }
 
     public String getProjectObjective() {
-      return projectManagerEmail;
+      return projectObjective;
     }
 
     public String getPrincipalInvestigatorName() {
-      return principalInvestigatorName;
-    }
-
-    public void setPrincipalInvestigatorName(String principalInvestigatorName) {
-      this.principalInvestigatorName = principalInvestigatorName;
+      return principalInvestigator.getFullName();
     }
 
     public String getPrincipalInvestigatorEmail() {
-      return principalInvestigatorEmail;
-    }
-
-    public void setPrincipalInvestigatorEmail(String principalInvestigatorEmail) {
-      this.principalInvestigatorEmail = principalInvestigatorEmail;
+      return principalInvestigator.getEmail();
     }
 
     public String getResponsiblePersonName() {
-      return responsiblePersonName;
+      return getResponsiblePerson().map(Contact::getFullName).orElse(null);
     }
 
     public String getResponsiblePersonEmail() {
-      return responsiblePersonEmail;
+      return getResponsiblePerson().map(Contact::getEmail).orElse(null);
     }
 
     public String getProjectManagerName() {
-      return projectManagerName;
+      return projectManager.getFullName();
     }
 
     public String getProjectManagerEmail() {
-      return projectManagerEmail;
+      return projectManager.getEmail();
     }
   }
 
