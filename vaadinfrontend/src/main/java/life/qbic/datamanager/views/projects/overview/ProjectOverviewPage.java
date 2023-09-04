@@ -11,8 +11,9 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.create.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectDraft;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.projectmanagement.application.ProjectRegistrationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -56,11 +57,9 @@ public class ProjectOverviewPage extends Div {
     projectCollectionComponent.addListener(projectCreationClickedEvent ->
         addProjectDialog.open()
     );
-    addProjectDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
-        addProjectDialog.resetAndClose());
-    addProjectDialog.addProjectAddEventListener(projectCreationEvent ->
-        createProject(projectCreationEvent.getSource().content())
-    );
+    addProjectDialog.addCancelListener(
+        cancelEvent -> cancelEvent.getSource().resetAndClose());
+    addProjectDialog.addProjectAddEventListener(this::createProject);
   }
 
   private void stylePage() {
@@ -68,25 +67,31 @@ public class ProjectOverviewPage extends Div {
     this.setHeightFull();
   }
 
-  private void createProject(ProjectDraft projectCreationContent) {
+  private void createProject(ProjectAddEvent projectAddEvent) {
+    ProjectDraft projectDraft = projectAddEvent.projectDraft();
     Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
-        projectCreationContent.offerId(), projectCreationContent.projectCode(),
-        projectCreationContent.title(), projectCreationContent.objective(),
-        projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
-        projectCreationContent.specimen(), projectCreationContent.analyte(),
-        projectCreationContent.principalInvestigator(),
-        projectCreationContent.projectResponsible(),
-        projectCreationContent.projectManager());
+        projectDraft.getOfferId(),
+        projectDraft.getProjectCode(),
+        projectDraft.getProjectTitle(),
+        projectDraft.getProjectObjective(),
+        projectDraft.getPrincipalInvestigatorName(),
+        projectDraft.getPrincipalInvestigatorEmail(),
+        projectDraft.getResponsiblePersonName(),
+        projectDraft.getResponsiblePersonEmail(),
+        projectDraft.getProjectManagerName(),
+        projectDraft.getProjectManagerEmail());
 
     project
-        .onValue(result -> {
-          displaySuccessfulProjectCreationNotification();
-          addProjectDialog.resetAndClose();
-          projectCollectionComponent.refresh();
-        })
+        .onValue(result -> onProjectCreated(projectAddEvent))
         .onError(e -> {
           throw e;
         });
+  }
+
+  private void onProjectCreated(ProjectAddEvent projectAddEvent) {
+    displaySuccessfulProjectCreationNotification();
+    projectAddEvent.getSource().resetAndClose();
+    projectCollectionComponent.refresh();
   }
 
   private void displaySuccessfulProjectCreationNotification() {
