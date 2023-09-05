@@ -9,6 +9,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -77,6 +79,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Span title = new Span();
   private final Span buttonBar = new Span();
   private final Div tagCollection = new Div();
+
+  private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
@@ -152,6 +156,7 @@ public class ExperimentDetailsComponent extends PageArea {
     title.addClassName("title");
     addTagCollectionToContent();
     addExperimentNotesComponent();
+    addSampleSourceInformationComponent();
     layoutTabSheet();
   }
 
@@ -347,6 +352,45 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(experimentNotes);
   }
 
+  private void addSampleSourceInformationComponent() {
+    sampleSourceComponent.addClassName("sample-source-display");
+
+    content.add(sampleSourceComponent);
+  }
+
+  private Span createSampleSourceList(String title, Icon icon, List<String> tags) {
+    Span iconAndList = new Span();
+    iconAndList.addClassName("icon-with-list");
+    iconAndList.add(icon);
+
+    Div list = new Div();
+    Span listTitle = new Span();
+    listTitle.setText(title);
+    listTitle.addClassName("title");
+    list.add(listTitle);
+    list.addClassName("taglist");
+    tags.forEach(name -> list.add(new Span(name)));
+    iconAndList.add(list);
+    return iconAndList;
+  }
+
+  private void loadSampleSources(Experiment experiment) {
+    sampleSourceComponent.removeAll();
+    List<String> speciesTags = new ArrayList<>();
+    List<String> specimenTags = new ArrayList<>();
+    List<String> analyteTags = new ArrayList<>();
+    experiment.getSpecies().forEach(species -> speciesTags.add(species.value()));
+    experiment.getSpecimens().forEach(specimen -> specimenTags.add(specimen.value()));
+    experiment.getAnalytes().forEach(analyte -> analyteTags.add(analyte.value()));
+
+    sampleSourceComponent.add(
+        createSampleSourceList("Species", VaadinIcon.BUG.create(), speciesTags));
+    sampleSourceComponent.add(
+        createSampleSourceList("Specimen", VaadinIcon.DROP.create(), specimenTags));
+    sampleSourceComponent.add(
+        createSampleSourceList("Analytes", VaadinIcon.CLUSTER.create(), analyteTags));
+  }
+
   private void layoutTabSheet() {
     experimentSheet.add("Experimental Variables", experimentalVariables);
     experimentalVariables.addClassName("experimental-groups-container");
@@ -457,7 +501,6 @@ public class ExperimentDetailsComponent extends PageArea {
     notification.open();
   }
 
-
   private void reloadExperimentalGroups() {
     loadExperimentalGroups();
     if (hasExperimentalGroups()) {
@@ -482,8 +525,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.experimentalGroupCount = experimentalGroupsCards.size();
   }
 
-
-
   private void addExperimentalVariables(
       List<ExperimentalVariableContent> experimentalVariableContents) {
     experimentalVariableContents.forEach(
@@ -505,6 +546,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void loadExperimentInformation(Experiment experiment) {
     title.setText(experiment.getName());
     loadTagInformation(experiment);
+    loadSampleSources(experiment);
     loadExperimentalVariables(experiment);
     loadExperimentalGroups();
     if (experiment.variables().isEmpty()) {
@@ -520,11 +562,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadTagInformation(Experiment experiment) {
     tagCollection.removeAll();
-    List<String> tags = new ArrayList<>();
-    experiment.getSpecies().forEach(species -> tags.add(species.value()));
-    experiment.getSpecimens().forEach(specimen -> tags.add(specimen.value()));
-    experiment.getAnalytes().forEach(analyte -> tags.add(analyte.value()));
-    tags.stream().map(Tag::new).forEach(tagCollection::add);
+
+    tagCollection.add(new Tag("Space for tags"));
   }
 
   private void loadExperimentalVariables(Experiment experiment) {
@@ -544,7 +583,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onNoVariablesDefined() {
     experimentalGroups.removeAll();
     experimentalGroups.add(noExperimentalVariablesDefined);
-
   }
 
   private void onNoGroupsDefined() {

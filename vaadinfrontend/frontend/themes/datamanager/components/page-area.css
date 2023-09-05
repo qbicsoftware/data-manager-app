@@ -49,6 +49,33 @@
   flex-direction: column;
 }
 
+.page-area.experiment-details-component .sample-source-display {
+  flex-direction: row;
+  display: flex;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list {
+  flex-direction: row;
+  flex-grow: 0.2;
+  display: flex;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist {
+  flex-direction: column;
+  display: flex;
+  line-height: 1.3em;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
+  font-size: small;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
+  color: var(--lumo-primary-color);
+  margin-right: 1em;
+  margin-top: 0.5em;
+}
+
 .page-area.experiment-details-component .header {
   display: flex;
   justify-content: space-between;
