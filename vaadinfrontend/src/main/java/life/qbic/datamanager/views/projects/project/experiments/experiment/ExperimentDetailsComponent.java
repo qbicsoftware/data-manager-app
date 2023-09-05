@@ -567,6 +567,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void loadExperimentalVariables(Experiment experiment) {
+    this.experimentalVariables.removeAll();
     // We load the experimental variables of the experiment and render them as cards
     List<ExperimentalVariable> variables = experiment.variables();
     List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
