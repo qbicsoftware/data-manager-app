@@ -7,6 +7,7 @@ import java.io.Serial;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
+import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
 
 /**
@@ -56,11 +57,9 @@ public class ExperimentalVariableCard extends Card {
     var variableLevels = experimentalVariable.levels();
     Div tagLayout = new Div();
     tagLayout.addClassName("tag-collection");
-    String tagFormat = "%s %s"; // "<value> [<unit>]"
     List<Tag> tags = variableLevels.stream()
         .sorted(Comparator.comparing(variable -> variable.variableName().value()))
-        .map(variableLevel -> new Tag(tagFormat.formatted(variableLevel.experimentalValue().value(),
-            variableLevel.experimentalValue().unit().orElse("").trim()))).toList();
+        .map(variableLevel -> new Tag(VariableValueFormatter.format(variableLevel.experimentalValue()))).toList();
     tags.forEach(tagLayout::add);
     return tagLayout;
   }

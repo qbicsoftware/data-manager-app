@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application;
 
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 
-public class ExperimentValueFormatter {
+public class VariableValueFormatter {
 
   /**
    * Formats the {@link ExperimentalValue} to show the defined value with the unit if a unit is
