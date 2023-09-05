@@ -7,9 +7,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentEditEvent;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.ExperimentNameChangedEvent;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -27,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 public class ExperimentContentComponent extends Div {
 
-  private static final Logger log = LoggerFactory.logger(ExperimentContentComponent.class);
   @Serial
   private static final long serialVersionUID = 464171225772721108L;
   private final ExperimentDetailsComponent experimentDetailsComponent;
@@ -55,8 +52,8 @@ public class ExperimentContentComponent extends Div {
    * Propagates the listener which will retrieve notification if a an {@link Experiment} was edited
    * in the {@link ExperimentDetailsComponent} within this container
    */
-  public void addExperimentEditListener(
-      ComponentEventListener<ExperimentEditEvent> experimentEditListener) {
-    experimentDetailsComponent.addExperimentEditEventListener(experimentEditListener);
+  public void addExperimentNameChangedListener(
+      ComponentEventListener<ExperimentNameChangedEvent> experimentEditListener) {
+    experimentDetailsComponent.addExperimentNameChangedListener(experimentEditListener);
   }
 }

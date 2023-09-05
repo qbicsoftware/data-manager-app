@@ -146,7 +146,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
         event -> routeToExperiment(event.getSource().experimentId()));
     experimentSupportComponent.addExperimentCreationListener(
         event -> routeToExperiment(event.experimentId()));
-    experimentContentComponent.addExperimentEditListener(
+    experimentContentComponent.addExperimentNameChangedListener(
         event -> {
           experimentSupportComponent.setContext(context);
           experimentSupportComponent.setSelectedExperiment(event.experimentId());

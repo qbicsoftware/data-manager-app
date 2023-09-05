@@ -25,6 +25,7 @@
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-m);
+  height: 100%;
 }
 
 .page-area.attachments-area .delete-button {
@@ -42,22 +43,76 @@
   gap: var(--lumo-space-xs);
 }
 
+.page-area.experiment-details-component {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-area.experiment-details-component .sample-source-display {
+  flex-direction: row;
+  display: flex;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list {
+  flex-direction: row;
+  flex-grow: 0.2;
+  display: flex;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist {
+  flex-direction: column;
+  display: flex;
+  line-height: 1.3em;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
+  font-size: small;
+}
+
+.page-area.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
+  color: var(--lumo-primary-color);
+  margin-right: 1em;
+  margin-top: 0.5em;
+}
+
 .page-area.experiment-details-component .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.page-area.experiment-details-component .content {
+.page-area.experiment-details-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
   gap: var(--lumo-space-m);
   font-size: var(--lumo-font-size-s);
+  height: 100%;
+}
+
+.page-area.experiment-details-component vaadin-tabsheet {
+  height: 100%;
+  width: 100%;
+}
+
+.page-area.experiment-details-component .details-content .experimental-groups-container {
+  height: 100%;
+  width: 100%;
+}
+
+.page-area.experiment-details-component .details-content .experimental-variables-container {
+  height: 100%;
+  width: 100%;
 }
 
 .page-area.experiment-details-component .sample-registration-possible {
   margin-bottom: var(--lumo-space-m);
+}
+
+.page-area.experiment-list-component {
+  height: 100%;
 }
 
 .page-area.project-access-component {
@@ -83,6 +138,10 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.page-area.project-details-component {
+  height: 100%;
 }
 
 .page-area.project-details-component .details-content {
@@ -111,10 +170,17 @@
   color: var(--lumo-secondary-text-color);
 }
 
-.page-area.sample-details-component .content {
+.page-area.sample-details-component {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-area.sample-details-component .sample-details-content {
   display: flex;
   flex-direction: column;
   margin-bottom: var(--lumo-space-m);
+  height: 100%;
 }
 
 .page-area.sample-details-component .button-and-search-bar {
@@ -134,4 +200,14 @@
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
+}
+
+.page-area.sample-details-component .sample-grid {
+  height: 100%;
+  width: 100%;
+}
+
+.page-area.sample-details-component .sample-tab-content {
+  height: 100%;
+  width: 100%;
 }

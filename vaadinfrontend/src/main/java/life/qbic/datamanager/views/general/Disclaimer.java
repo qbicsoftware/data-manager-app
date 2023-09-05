@@ -6,8 +6,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <b>Disclaimer</b>
@@ -21,14 +19,10 @@ import java.util.List;
  * <p>
  * The Div consists of a title that can be set, as well as a disclaimer text and a clickable
  * element that fires the event.
- * <p>
- * The confirmation element can be enabled (default) or disabled.
  *
  * @since 1.0.0
  */
 public class Disclaimer extends Div {
-
-  private final List<ComponentEventListener<DisclaimerConfirmedEvent>> listeners;
   @Serial
   private static final long serialVersionUID = -6441310468106881703L;
   private final String disclaimerLabel;
@@ -39,7 +33,6 @@ public class Disclaimer extends Div {
     this.title = title;
     this.disclaimerLabel = disclaimer;
     this.confirmationElement = new Button(confirmationLabel);
-    this.listeners = new ArrayList<>();
     initLayout();
     initConfirmation();
   }
@@ -67,7 +60,7 @@ public class Disclaimer extends Div {
 
   private void fireDisclaimerConfirmedEvent() {
     var event = new DisclaimerConfirmedEvent(this, true);
-    listeners.forEach(listener -> listener.onComponentEvent(event));
+    fireEvent(event);
   }
 
   /**
@@ -96,16 +89,9 @@ public class Disclaimer extends Div {
     return new Disclaimer(disclaimer, confirmationLabel, title);
   }
 
-  public void subscribe(ComponentEventListener<DisclaimerConfirmedEvent> listener) {
-    this.listeners.add(listener);
-  }
-
-  public void disableConfirmation() {
-    this.confirmationElement.setVisible(false);
-  }
-
-  public void enableConfirmation() {
-    this.confirmationElement.setVisible(true);
+  public void addDisclaimerConfirmedListener(
+      ComponentEventListener<DisclaimerConfirmedEvent> listener) {
+    addListener(DisclaimerConfirmedEvent.class, listener);
   }
 
 }

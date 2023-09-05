@@ -108,7 +108,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addComponentAsFirst(title);
     title.addClassName("title");
     add(content);
-    content.addClassName("content");
+    content.addClassName("sample-details-content");
   }
 
   private void initButtonAndFieldBar() {
@@ -258,15 +258,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     private void addExperimentTabToTabSheet(Experiment experiment) {
       Div experimentTabContent = new Div();
+      experimentTabContent.addClassName("sample-tab-content");
       SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
           0);
-      if (!isExperimentGroupInExperiment(experiment)) {
+      sampleExperimentTabSheet.setHeightFull();
+      if (noExperimentGroupsInExperiment(experiment)) {
         experimentTabContent.add(createNoGroupsDefinedDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
       }
-      if (!sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .isValue()) {
+      if (noSamplesRegisteredInExperiment(experiment)) {
         experimentTabContent.add(createNoSamplesRegisteredDisclaimer(experiment));
         sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
         return;
@@ -327,6 +328,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
           .setSortProperty("analysisType");
       sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
+      sampleGrid.addClassName("sample-grid");
       return sampleGrid;
     }
 
@@ -347,17 +349,23 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       }, query -> getSampleCountForExperiment(experimentId, samplePreviewFilter));
     }
 
-    private boolean isExperimentGroupInExperiment(Experiment experiment) {
-      return !experiment.getExperimentalGroups().isEmpty();
+    private boolean noExperimentGroupsInExperiment(Experiment experiment) {
+      return experiment.getExperimentalGroups().isEmpty();
+    }
+
+    private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
+      return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+          .getValue().isEmpty();
     }
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
       Disclaimer noGroupsDefinedCard = Disclaimer.createWithTitle(
-          "No experimental groups defined",
-          "Start the sample registration process by registering the first experimental group",
-          "Add Experimental Group");
+          "Design your experiment first",
+          "Start the sample registration process by defining experimental groups",
+          "Add groups");
       String experimentId = experiment.experimentId().value();
-      noGroupsDefinedCard.subscribe(event -> routeToExperimentalGroupCreation(event, experimentId));
+      noGroupsDefinedCard.addDisclaimerConfirmedListener(
+          event -> routeToExperimentalGroupCreation(event, experimentId));
       return noGroupsDefinedCard;
     }
 
@@ -374,9 +382,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     private Disclaimer createNoSamplesRegisteredDisclaimer(Experiment experiment) {
-      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle("No samples registered",
-          "Register your first samples for this experiment", "Register Samples");
-      noSamplesDefinedCard.subscribe(event -> {
+      Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
+          "Manage your samples in one place",
+          "Start your project by registering the first sample batch", "Register batch");
+      noSamplesDefinedCard.addDisclaimerConfirmedListener(event -> {
         batchRegistrationDialog.setSelectedExperiment(experiment);
         batchRegistrationDialog.open();
       });
@@ -448,44 +457,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     void handle(BatchRegistrationEvent event);
   }
 
-  private class SampleExperimentTab extends Tab {
+  private static class SampleExperimentTab extends Tab {
 
     private final Span sampleCountComponent;
-    private final Span experimentNameComponent;
 
     public SampleExperimentTab(String experimentName, int sampleCount) {
-      this.experimentNameComponent = new Span(experimentName);
+      Span experimentNameComponent = new Span(experimentName);
       this.sampleCountComponent = createBadge(sampleCount);
       this.add(experimentNameComponent, sampleCountComponent);
-    }
-
-    /**
-     * Getter method for retrieving the currently set name of the {@link Experiment} shown in this
-     * component
-     *
-     * @return String containing the experimentName shown in the Tab
-     */
-    public String getExperimentName() {
-      return experimentNameComponent.getText();
-    }
-
-    /**
-     * Setter method for specifying the name of the {@link Experiment} shown in this component
-     *
-     * @param experimentName name of the Experiment to be shown in this component
-     */
-    public void setExperimentName(String experimentName) {
-      experimentNameComponent.setText(experimentName);
-    }
-
-    /**
-     * Getter method for retrieving the currently set number of {@link Sample} associated with the
-     * {@link Experiment} shown in this component
-     *
-     * @return int containing the number of samples shown in the Tab
-     */
-    public int getSampleCount() {
-      return Integer.parseInt(sampleCountComponent.getText());
     }
 
     /**

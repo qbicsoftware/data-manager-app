@@ -18,6 +18,66 @@ vaadin-dialog-overlay::part(title) {
   margin-inline-start: 0;
 }
 
+/* set the width of the notification */
+.notification-dialog::part(overlay) {
+  width: 36.75rem;
+}
+
+.notification-dialog .content {
+  width: 100%;
+}
+
+/* notification dialog header */
+.notification-dialog > [slot="header"] {
+  display: flex;
+  align-items: center;
+  justify-items: flex-start;
+  gap: var(--lumo-space-s);
+}
+
+.notification-dialog .title {
+  font-family: var(--lumo-font-family);
+  line-height: var(--lumo-line-height-m);
+  font-size: var(--lumo-font-size-xl);
+  margin: 0;
+}
+
+/* icon in header */
+.notification-dialog > [slot="header"] vaadin-icon {
+  width: 1.83rem;
+  height: 1.83rem;
+  margin: 0.46rem;
+  margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
+}
+
+.notification-dialog .error-icon {
+  fill: var(--lumo-error-color);
+}
+
+.notification-dialog .warning-icon {
+  fill: var(--lumo-warning-color);
+}
+
+.notification-dialog .info-icon {
+  fill: var(--lumo-primary-color);
+}
+
+/* experimental groups exist dialog on variable edit */
+.existing-groups-prevent-variable-edit .content .experimental-group-count {
+  font-weight: bold;
+}
+
+/* samples exist on variable edit */
+.existing-samples-prevent-variable-edit .content .sample-count {
+  font-weight: bold;
+}
+
+/* samples exist on group edit */
+.existing-samples-prevent-group-edit .content .sample-count {
+  font-weight: bold;
+}
+
+
 .add-user-to-project-dialog::part(overlay) {
   height: 100%;
   min-width: 66vw;
@@ -27,8 +87,14 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
+.batch-registration-dialog vaadin-tabsheet {
+  height: 100%;
+  width: 100%;
+}
+
 .batch-registration-dialog::part(overlay) {
   min-width: 66vw;
+  height: 100%;
 }
 
 .batch-registration-dialog .stepper vaadin-tabs {
@@ -54,7 +120,6 @@ vaadin-dialog-overlay::part(title) {
 
 .batch-registration-dialog .batch-content .data-type-information {
   display: flex;
-  height: inherit;
   flex-direction: column;
 }
 
@@ -86,10 +151,14 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-s);
 }
 
-.batch-registration-dialog .sample-spreadsheet {
-  /*Todo Find solution on how to let spreadsheet set its size*/
+.batch-registration-dialog .sample-spreadsheet-container {
   width: 100%;
-  height: 60vh;
+  height: 100%;
+}
+
+.batch-registration-dialog .sample-spreadsheet {
+  width: 100%;
+  height: 100%;
 }
 
 .create-project-dialog .content {
