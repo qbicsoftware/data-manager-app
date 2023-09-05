@@ -49,7 +49,6 @@ public class SampleInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-
   public List<SamplePreview> queryPreview(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
