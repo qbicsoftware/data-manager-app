@@ -232,8 +232,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
-    experimentalVariableCollection.subscribeToAddEvent(addEvent -> openExperimentalVariablesAddDialog());
-    experimentalVariableCollection.subscribeToEditEvent(editEvent -> openExperimentalVariablesEditDialog());
+    experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
+    experimentalVariableCollection.addEditListener(editEvent -> openExperimentalVariablesEditDialog());
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -400,8 +400,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void listenForExperimentCollectionComponentEvents() {
-    experimentalGroupsCollection.subscribeToAddEvent(listener -> openExperimentalGroupAddDialog());
-    experimentalGroupsCollection.subscribeToEditEvent(editEvent -> openExperimentalGroupEditDialog());
+    experimentalGroupsCollection.addAddListener(listener -> openExperimentalGroupAddDialog());
+    experimentalGroupsCollection.addEditListener(editEvent -> openExperimentalGroupEditDialog());
   }
 
   /**

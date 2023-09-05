@@ -43,16 +43,16 @@ public class CardCollection extends Div {
     addButton.addClassName("primary");
     add(header, content);
 
-    addButton.addClickListener(this::emitAddEvent);
-    editButton.addClickListener(this::emitEditEvent);
+    addButton.addClickListener(this::fireAddEvent);
+    editButton.addClickListener(this::fireEditEvent);
   }
 
-  private void emitEditEvent(ClickEvent<Button> buttonClickEvent) {
+  private void fireEditEvent(ClickEvent<Button> buttonClickEvent) {
     var editEvent = new EditEvent(this, buttonClickEvent.isFromClient());
     fireEvent(editEvent);
   }
 
-  private void emitAddEvent(ClickEvent<Button> buttonClickEvent) {
+  private void fireAddEvent(ClickEvent<Button> buttonClickEvent) {
     var addEvent = new AddEvent(this, buttonClickEvent.isFromClient());
     fireEvent(addEvent);
   }
@@ -75,7 +75,7 @@ public class CardCollection extends Div {
    * @param listener a listener for adding variables events
    * @since 1.0.0
    */
-  public void subscribeToAddEvent(
+  public void addAddListener(
       ComponentEventListener<AddEvent> listener) {
     addListener(AddEvent.class, listener);
   }
@@ -88,7 +88,7 @@ public class CardCollection extends Div {
    * @param listener a listener for adding variables events
    * @since 1.0.0
    */
-  public void subscribeToEditEvent(
+  public void addEditListener(
       ComponentEventListener<EditEvent> listener) {
     addListener(EditEvent.class, listener);
   }
