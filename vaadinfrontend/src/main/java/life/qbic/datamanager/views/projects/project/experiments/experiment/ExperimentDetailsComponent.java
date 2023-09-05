@@ -366,7 +366,6 @@ public class ExperimentDetailsComponent extends PageArea {
     Span iconAndList = new Span();
     iconAndList.addClassName("icon-with-list");
     iconAndList.add(icon);
-    icon.addClassName("vaadin-icon");
 
     Div list = new Div();
     Span listTitle = new Span();

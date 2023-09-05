@@ -70,7 +70,7 @@
   font-size: small;
 }
 
-.page-area.experiment-details-component .sample-source-display .icon-with-list .vaadin-icon {
+.page-area.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
   color: var(--lumo-primary-color);
   margin-right: 1em;
   margin-top: 0.5em;
