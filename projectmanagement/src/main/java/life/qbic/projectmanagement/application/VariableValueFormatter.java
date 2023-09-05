@@ -4,6 +4,8 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
 
 public class VariableValueFormatter {
 
+  private VariableValueFormatter() {}
+
   /**
    * Formats the {@link ExperimentalValue} to show the defined value with the unit if a unit is
    * present
