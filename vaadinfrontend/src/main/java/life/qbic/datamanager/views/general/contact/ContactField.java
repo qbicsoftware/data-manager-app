@@ -4,7 +4,6 @@ import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Binder.Binding;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.validator.EmailValidator;
 
@@ -34,13 +33,13 @@ public class ContactField extends CustomField<Contact> {
     emailField.addClassName("email-field");
     emailField.setPlaceholder("Please enter an email address");
 
-    Binding<Contact, String> nameBinding = binder.forField(nameField)
+    binder.forField(nameField)
         .withValidator(it -> !isRequired() || !it.isBlank(), "Please provide a name")
         .withValidator(it -> !it.isBlank() || emailField.isEmpty(),
             "Please provide a name") // when an email is provided require a name as well
         .bind(Contact::getFullName, Contact::setFullName);
 
-    Binding<Contact, String> emailBinding = binder.forField(emailField)
+    binder.forField(emailField)
         .withValidator(it -> !isRequired() || !it.isBlank(), "Please provide an email address")
         .withValidator(new EmailValidator(
             "The email address '{0}' is invalid. Please provide a valid email name@domain.de",
@@ -48,9 +47,6 @@ public class ContactField extends CustomField<Contact> {
         .withValidator(it -> !it.isBlank() || nameField.isEmpty(),
             "Please provide an email address") // when a name is provided require an email as well
         .bind(Contact::getEmail, Contact::setEmail);
-
-    nameField.addValueChangeListener(it -> emailBinding.validate());
-    emailField.addValueChangeListener(it -> nameBinding.validate());
 
     Div layout = new Div(nameField, emailField);
     layout.addClassName("input-fields");
