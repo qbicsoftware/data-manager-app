@@ -26,6 +26,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -438,6 +439,50 @@ public class AddProjectDialog extends DialogWindow {
 
     public String getProjectManagerEmail() {
       return projectManager.getEmail();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      ProjectDraft that = (ProjectDraft) object;
+
+      if (!Objects.equals(offerId, that.offerId)) {
+        return false;
+      }
+      if (!Objects.equals(projectTitle, that.projectTitle)) {
+        return false;
+      }
+      if (!Objects.equals(projectCode, that.projectCode)) {
+        return false;
+      }
+      if (!Objects.equals(projectObjective, that.projectObjective)) {
+        return false;
+      }
+      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
+        return false;
+      }
+      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
+        return false;
+      }
+      return Objects.equals(projectManager, that.projectManager);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = offerId != null ? offerId.hashCode() : 0;
+      result = 31 * result + (projectTitle != null ? projectTitle.hashCode() : 0);
+      result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
+      result = 31 * result + (projectObjective != null ? projectObjective.hashCode() : 0);
+      result = 31 * result + (principalInvestigator != null ? principalInvestigator.hashCode() : 0);
+      result = 31 * result + (responsiblePerson != null ? responsiblePerson.hashCode() : 0);
+      result = 31 * result + (projectManager != null ? projectManager.hashCode() : 0);
+      return result;
     }
   }
 

@@ -1,13 +1,14 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentCreationListener;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentSelectionListener;
+import life.qbic.datamanager.views.support.experiment.ExperimentItem.ExperimentItemClickedEvent;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.AddExperimentClickEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -34,6 +35,8 @@ public class ExperimentSupportComponent extends Div {
   public ExperimentSupportComponent(@Autowired ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(experimentListComponent);
     this.experimentListComponent = experimentListComponent;
+    experimentListComponent.addAddButtonListener(this::fireEvent); //propagate event
+    experimentListComponent.addExperimentSelectionListener(this::fireEvent);
     layoutComponent();
   }
 
@@ -66,16 +69,12 @@ public class ExperimentSupportComponent extends Div {
    * to the {@link ExperimentListComponent} within this container
    */
   public void addExperimentSelectionListener(
-      ExperimentSelectionListener experimentSelectionListener) {
-    experimentListComponent.addExperimentSelectionListener(experimentSelectionListener);
+      ComponentEventListener<ExperimentItemClickedEvent> listener) {
+    this.addListener(ExperimentItemClickedEvent.class, listener);
   }
 
-  /**
-   * Propagates the listener which will retrieve notification if a new {@link Experiment} was
-   * created in the {@link ExperimentListComponent} within this container
-   */
-  public void addExperimentCreationListener(ExperimentCreationListener experimentCreationListener) {
-    experimentListComponent.addExperimentCreationListener(experimentCreationListener);
+  public void addExperimentAddButtonClickEventListener(
+      ComponentEventListener<AddExperimentClickEvent> listener) {
+    addListener(AddExperimentClickEvent.class, listener);
   }
-
 }

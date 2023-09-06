@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.support.experiment;
 
-import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.Span;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.AddEvent;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -19,7 +18,7 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
  * Component that lists experiments of a project and enables the user to quickly switch between them
  * for management.
  * <p>
- * The component enables the client to register to {@link ExperimentItemClickedEvent} to listen to
+ * The component enables the client to register to {@link ExperimentItem.ExperimentItemClickedEvent} to listen to
  * experiment selections by the user and {@link CreationClickedEvent}, indicating the user wants to
  * create a new experiment.
  *
@@ -31,8 +30,6 @@ public class ExperimentItemCollection extends Div {
   private final Div header = new Div();
   private final Div content = new Div();
   private final List<ExperimentItem> items = new ArrayList<>();
-  private final List<ComponentEventListener<ExperimentItemClickedEvent>> listeners = new ArrayList<>();
-  private final List<ComponentEventListener<AddEvent<ExperimentItemCollection>>> addListeners = new ArrayList<>();
 
   private ExperimentItemCollection() {
     addClassName("experiment-item-collection");
@@ -50,18 +47,14 @@ public class ExperimentItemCollection extends Div {
     controls.addClassName("controls");
     Button addButton = new Button("Add");
     addButton.addClassName("primary");
+    addButton.addClickListener(
+        event -> fireEvent(new AddExperimentClickEvent(this, event.isFromClient())));
     controls.add(addButton);
-    addButton.addClickListener(this::emitAddEvent);
     Span title = new Span("Experiments");
     title.addClassName("title");
     header.add(title, controls);
     header.addClassName("header");
     addComponentAsFirst(header);
-  }
-
-  private void emitAddEvent(ClickEvent<Button> buttonClickEvent) {
-    var addEvent = new AddEvent<>(this, true);
-    fireAddEvent(addEvent);
   }
 
   /**
@@ -81,22 +74,10 @@ public class ExperimentItemCollection extends Div {
    * @since 1.0.0
    */
   public void addExperimentItem(ExperimentItem item) {
+    item.addClickListener(event -> fireEvent(
+        new ExperimentSelectionEvent(this, event.isFromClient(), event.getExperimentId())));
     items.add(item);
     content.addComponentAsFirst(item);
-    addSelectionEventListener(item);
-  }
-
-  private void addSelectionEventListener(ExperimentItem item) {
-    item.addSelectionListener(
-        (ComponentEventListener<ExperimentItemClickedEvent>) this::fireClickEvent);
-  }
-
-  private void fireClickEvent(ExperimentItemClickedEvent event) {
-    listeners.forEach(listener -> listener.onComponentEvent(event));
-  }
-
-  private void fireAddEvent(AddEvent<ExperimentItemCollection> addEvent) {
-    addListeners.forEach(listener -> listener.onComponentEvent(addEvent));
   }
 
   /**
@@ -112,33 +93,60 @@ public class ExperimentItemCollection extends Div {
         .findAny();
   }
 
-  /**
-   * Add a listener of type {@link ComponentEventListener<ExperimentItemClickedEvent>} that will be
-   * called, if an {@link ExperimentItemClickedEvent} is emitted.
-   *
-   * @param listener the listener that will be informed
-   * @since 1.0.0
-   */
-  public void addClickEventListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
-    listeners.add(listener);
-  }
-
-  /**
-   * Add the specified listener which will be
-   * called, if the user intends to create a new experiment.
-   *
-   * @param listener the listener that will be informed
-   * @since 1.0.0
-   */
-  public void addAddEventListener(
-      ComponentEventListener<AddEvent<ExperimentItemCollection>> listener) {
-    addListeners.add(listener);
-  }
-
   @Override
   public void removeAll() {
     content.removeAll();
     items.clear();
   }
+
+  public void addAddButtonListener(ComponentEventListener<AddExperimentClickEvent> listener) {
+    addListener(AddExperimentClickEvent.class, listener);
+  }
+
+  public void addExperimentSelectionListener(
+      ComponentEventListener<ExperimentSelectionEvent> listener) {
+    addListener(ExperimentSelectionEvent.class, listener);
+  }
+
+  public static class AddExperimentClickEvent extends ComponentEvent<ExperimentItemCollection> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public AddExperimentClickEvent(ExperimentItemCollection source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+
+  public static class ExperimentSelectionEvent extends ComponentEvent<ExperimentItemCollection> {
+
+    private final ExperimentId experimentId;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source       the source component
+     * @param fromClient   <code>true</code> if the event originated from the client
+     *                     side, <code>false</code> otherwise
+     * @param experimentId
+     */
+    public ExperimentSelectionEvent(ExperimentItemCollection source, boolean fromClient,
+        ExperimentId experimentId) {
+      super(source, fromClient);
+      this.experimentId = experimentId;
+    }
+
+    public ExperimentId getExperimentId() {
+      return experimentId;
+    }
+  }
+
 
 }

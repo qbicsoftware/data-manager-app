@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.support.experiment;
 
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -7,8 +8,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -41,8 +40,6 @@ public class ExperimentItem extends Card {
 
   private final Icon flaskIcon = VaadinIcon.FLASK.create();
 
-  private final List<ComponentEventListener<ExperimentItemClickedEvent>> selectionListeners = new ArrayList<>();
-
   private ExperimentItem(Experiment experiment) {
     this.experiment = experiment;
     layoutComponent();
@@ -59,8 +56,6 @@ public class ExperimentItem extends Card {
     loadProgressStatus();
     loadExperimentTitle();
     setStatusToInactive();
-    addListener(ExperimentItemClickedEvent.class,
-        listener -> informListeners(new ExperimentItemClickedEvent(this, true)));
   }
 
   private void layoutExperimentLabel() {
@@ -92,10 +87,6 @@ public class ExperimentItem extends Card {
     activeTag.setVisible(false);
   }
 
-  private void informListeners(ExperimentItemClickedEvent componentClickedEvent) {
-    selectionListeners.forEach(listener -> listener.onComponentEvent(componentClickedEvent));
-  }
-
   /**
    * Creates an {@link ExperimentItem} based on the information available in the provided
    * {@link Experiment}.
@@ -122,24 +113,6 @@ public class ExperimentItem extends Card {
   }
 
   /**
-   * Sets the item in its "active" state.
-   *
-   * @since 1.0.0
-   */
-  public void setAsActive() {
-    activeTag.setVisible(true);
-  }
-
-  /**
-   * Sets the item in its "inactive" state
-   *
-   * @since 1.0.0
-   */
-  public void setAsInactive() {
-    activeTag.setVisible(false);
-  }
-
-  /**
    * Renders the item in its "selected" state.
    *
    * @since 1.0.0
@@ -154,8 +127,32 @@ public class ExperimentItem extends Card {
    * @param listener the listener to be called upon
    * @since 1.0.0
    */
-  public void addSelectionListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
-    selectionListeners.add(listener);
+  public void addClickListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
+    addListener(ExperimentItemClickedEvent.class, listener);
   }
 
+
+  /**
+   * <b>Experiment Item Clicked Event</b>
+   * <p>
+   * An event that indicates that an experiment item has been clicked by a user.
+   *
+   * @since 1.0.0
+   */
+  public static class ExperimentItemClickedEvent extends ComponentEvent<ExperimentItem> {
+
+    @Serial
+    private static final long serialVersionUID = -342132279090013139L;
+    private final ExperimentId experimentId;
+
+    public ExperimentItemClickedEvent(ExperimentItem source, boolean fromClient,
+        ExperimentId experimentId) {
+      super(source, fromClient);
+      this.experimentId = experimentId;
+    }
+
+    public ExperimentId getExperimentId() {
+      return experimentId;
+    }
+  }
 }
