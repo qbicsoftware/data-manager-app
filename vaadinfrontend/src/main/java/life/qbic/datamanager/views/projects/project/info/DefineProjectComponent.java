@@ -15,6 +15,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
@@ -48,7 +49,7 @@ public class DefineProjectComponent extends Div {
    * Creates a new empty DefineProjectComponent.
    * <p>
    * This component is intended to be used within the {@link ProjectInformationDialog} and
-   * {@link life.qbic.datamanager.views.projects.create.AddProjectDialog} containing the validation
+   * {@link AddProjectDialog} containing the validation
    * and vaadin field logic for the project information
    */
   public DefineProjectComponent(PersonSearchService personSearchService) {

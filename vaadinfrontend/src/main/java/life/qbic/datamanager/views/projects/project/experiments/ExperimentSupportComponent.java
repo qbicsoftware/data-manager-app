@@ -51,18 +51,6 @@ public class ExperimentSupportComponent extends Div {
   }
 
   /**
-   * Provides the {@link ExperimentId} which annotates an active Experiment within the project to
-   * the components within this container
-   * <p>
-   * This method serves as an entry point providing the {@link ExperimentId} which was set as the
-   * active experiment within a {@link life.qbic.projectmanagement.domain.project.Project} to
-   * components within this container.
-   */
-  public void setActiveExperiment(ExperimentId experimentId) {
-    experimentListComponent.setActiveExperiment(experimentId);
-  }
-
-  /**
    * Provides the {@link ExperimentId} which annotates the currently selected Experiment the
    * components within this container
    * <p>

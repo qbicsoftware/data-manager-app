@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.create;
+package life.qbic.datamanager.views.projects.edit;
 
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -6,36 +6,26 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.ItemLabelGenerator;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.finances.offer.OfferId;
-import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
@@ -48,60 +38,32 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
  */
 @SpringComponent
 @UIScope
-public class AddProjectDialog extends DialogWindow {
+public class EditProjectInformationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 7327075228498213661L;
-  private static final Logger log = logger(AddProjectDialog.class);
+  private static final Logger log = logger(EditProjectInformationDialog.class);
 
-  private final Binder<ProjectDraft> binder;
+  private final Binder<ProjectInformation> binder;
 
-  private final OfferLookupService offerLookupService;
-  public final ComboBox<OfferPreview> offerSearchField;
-
-  private final TextField codeField;
+  private ProjectInformation oldValue = new ProjectInformation();
   private final TextField titleField;
   private final TextArea projectObjective;
   private final ContactField principalInvestigatorField;
   private final ContactField responsiblePersonField;
   private final ContactField projectManagerField;
 
-  public AddProjectDialog(OfferLookupService offerLookupService) {
+  public EditProjectInformationDialog() {
     super();
-    this.offerLookupService = requireNonNull(offerLookupService,
-        "offerLookupService must not be null");
 
     addClassName("create-project-dialog");
-    setHeaderTitle("Add Project");
-    setConfirmButtonLabel("Add");
+    setHeaderTitle("Project Information");
+    setConfirmButtonLabel("Save");
     confirmButton.addClickListener(this::onConfirmClicked);
     setCancelButtonLabel("Cancel");
     cancelButton.addClickListener(this::onCancelClicked);
 
     binder = new Binder<>();
-    offerSearchField = createOfferSearch(this.offerLookupService);
-
-    codeField = new TextField("Code");
-    codeField.addClassName("code");
-    codeField.setId("project-code-field");
-    codeField.setRequired(true);
-    codeField.setHelperText("Q and 4 letters/numbers");
-    this.addOpenedChangeListener(openedChangeEvent -> {
-      if (openedChangeEvent.isOpened()) {
-        codeField.setValue(ProjectCode.random().value());
-      }
-    });
-    binder.forField(codeField)
-        .withValidator(ProjectCode::isValid,
-            "A project code starts with Q followed by 4 letters/numbers")
-        .bind(ProjectDraft::getProjectCode, ProjectDraft::setProjectCode);
-
-    Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
-    generateCodeButton.setId("generate-code-btn");
-    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
-    generateCodeButton.addClickListener(
-        buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
 
     titleField = new TextField("Title");
     titleField.addClassName("title");
@@ -110,18 +72,14 @@ public class AddProjectDialog extends DialogWindow {
     restrictProjectTitleLength();
     binder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind(ProjectDraft::getProjectTitle, ProjectDraft::setProjectTitle);
-
-    Span codeAndTitleLayout = new Span();
-    codeAndTitleLayout.addClassName("code-and-title");
-    codeAndTitleLayout.add(codeField, generateCodeButton, titleField);
+        .bind(ProjectInformation::getProjectTitle, ProjectInformation::setProjectTitle);
 
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
     restrictProjectObjectiveLength();
     binder.forField(projectObjective)
         .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind(ProjectDraft::getProjectObjective, ProjectDraft::setProjectObjective);
+        .bind(ProjectInformation::getProjectObjective, ProjectInformation::setProjectObjective);
 
     Div projectContactsLayout = new Div();
     projectContactsLayout.setClassName("project-contacts");
@@ -138,21 +96,22 @@ public class AddProjectDialog extends DialogWindow {
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
-        .bind(ProjectDraft::getPrincipalInvestigator, ProjectDraft::setPrincipalInvestigator);
+        .bind(ProjectInformation::getPrincipalInvestigator,
+            ProjectInformation::setPrincipalInvestigator);
 
     responsiblePersonField = new ContactField("Project Responsible (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
-        .bind(projectDraft -> projectDraft.getResponsiblePerson().orElse(null),
-            ProjectDraft::setResponsiblePerson);
+        .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
+            ProjectInformation::setResponsiblePerson);
 
     projectManagerField = new ContactField("Project Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
-        .bind(ProjectDraft::getProjectManager, ProjectDraft::setProjectManager);
+        .bind(ProjectInformation::getProjectManager, ProjectInformation::setProjectManager);
 
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> resetAndClose());
@@ -161,16 +120,14 @@ public class AddProjectDialog extends DialogWindow {
     FormLayout formLayout = new FormLayout();
     formLayout.addClassName("form-content");
     formLayout.add(
-        offerSearchField,
-        codeAndTitleLayout,
+        titleField,
         projectObjective,
         projectContactsLayout,
         principalInvestigatorField,
         responsiblePersonField,
         projectManagerField
     );
-    formLayout.setColspan(offerSearchField, 2);
-    formLayout.setColspan(codeAndTitleLayout, 2);
+    formLayout.setColspan(titleField, 2);
     formLayout.setColspan(projectObjective, 2);
     formLayout.setColspan(principalInvestigatorField, 2);
     formLayout.setColspan(responsiblePersonField, 2);
@@ -178,11 +135,24 @@ public class AddProjectDialog extends DialogWindow {
     add(formLayout);
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    ProjectDraft projectDraft = new ProjectDraft();
+  public void setProjectInformation(ProjectInformation projectInformation) {
+    binder.setBean(projectInformation);
     try {
-      binder.writeBean(projectDraft);
-      fireEvent(new ProjectAddEvent(projectDraft, this, clickEvent.isFromClient()));
+      oldValue = new ProjectInformation();
+      binder.writeBean(oldValue);
+    } catch (ValidationException e) {
+      oldValue = null;
+      throw new RuntimeException(
+          "Project information should be valid but was not. " + projectInformation, e);
+    }
+  }
+
+  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    ProjectInformation projectInformation = new ProjectInformation();
+    try {
+      binder.writeBean(projectInformation);
+      fireEvent(
+          new ProjectUpdateEvent(oldValue, projectInformation, this, clickEvent.isFromClient()));
     } catch (ValidationException e) {
       validate();
     }
@@ -200,46 +170,6 @@ public class AddProjectDialog extends DialogWindow {
     resetAndClose();
   }
 
-
-  private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {
-    final ComboBox<OfferPreview> offerSearchField = new ComboBox<>("Offer");
-    offerSearchField.setClassName("search-field");
-    offerSearchField.setPlaceholder("Search");
-    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
-
-    offerSearchField.setItems(
-        query -> offerLookupService.findOfferContainingProjectTitleOrId(
-            query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
-            query.getLimit()).stream());
-
-    // Render the preview
-    offerSearchField.setRenderer(
-        new ComponentRenderer<>(preview -> new Text(previewToString(preview))));
-
-    // Generate labels like the rendering
-    offerSearchField.setItemLabelGenerator(
-        (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
-
-    offerSearchField.addValueChangeListener(e -> {
-      if (offerSearchField.getValue() != null) {
-        setOffer(offerSearchField.getValue().offerId().id());
-      }
-    });
-    return offerSearchField;
-  }
-
-  private void setOffer(String offerId) {
-    OfferId id = OfferId.from(offerId);
-    Optional<Offer> offer = offerLookupService.findOfferById(id);
-    offer.ifPresentOrElse(this::fillProjectInformationFromOffer,
-        () -> log.error("No offer found with id: " + offerId));
-  }
-
-  private void fillProjectInformationFromOffer(Offer offer) {
-    titleField.setValue(offer.projectTitle().title());
-    projectObjective.setValue(offer.projectObjective().objective().replace("\n", " "));
-  }
-
   public void resetAndClose() {
     close();
     reset();
@@ -250,22 +180,10 @@ public class AddProjectDialog extends DialogWindow {
    * interfaces
    */
   public void reset() {
-    offerSearchField.clear();
     principalInvestigatorField.clear();
     projectManagerField.clear();
     binder.removeBean();
-    binder.setBean(new ProjectDraft());
-  }
-
-  /**
-   * Render the preview like `#offer-id, #project title`
-   *
-   * @param offerPreview the offer preview
-   * @return the formatted String representation
-   * @since 1.0.0
-   */
-  private static String previewToString(OfferPreview offerPreview) {
-    return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
+    binder.setBean(new ProjectInformation());
   }
 
   private void restrictProjectObjectiveLength() {
@@ -295,8 +213,8 @@ public class AddProjectDialog extends DialogWindow {
     textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
-  public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {
-    addListener(ProjectAddEvent.class, listener);
+  public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
+    addListener(ProjectUpdateEvent.class, listener);
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
@@ -304,53 +222,59 @@ public class AddProjectDialog extends DialogWindow {
   }
 
   public static class CancelEvent extends
-      life.qbic.datamanager.views.events.UserCancelEvent<AddProjectDialog> {
+      life.qbic.datamanager.views.events.UserCancelEvent<EditProjectInformationDialog> {
 
-    public CancelEvent(AddProjectDialog source, boolean fromClient) {
+    public CancelEvent(EditProjectInformationDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
   /**
-   * <b>Project Add Event</b>
+   * <b>Project Update Event</b>
    *
-   * <p>Indicates that a user submitted a project addition request</p>
+   * <p>Indicates that a user submitted a project update request</p>
    *
    * @since 1.0.0
    */
-  public static class ProjectAddEvent extends ComponentEvent<AddProjectDialog> {
+  public static class ProjectUpdateEvent extends ComponentEvent<EditProjectInformationDialog> {
 
     @Serial
     private static final long serialVersionUID = 1072173555312630829L;
-    private final ProjectDraft projectDraft;
+
+    private final ProjectInformation oldValue;
+    private final ProjectInformation value;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
      * the client side or the server side.
      *
-     * @param projectDraft
-     * @param source       the source component
-     * @param fromClient   <code>true</code> if the event originated from the client
-     *                     side, <code>false</code> otherwise
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     * @param oldValue   the project information before modification
+     * @param value      the modified project information
      */
-    public ProjectAddEvent(ProjectDraft projectDraft, AddProjectDialog source, boolean fromClient) {
+    public ProjectUpdateEvent(ProjectInformation oldValue, ProjectInformation value,
+        EditProjectInformationDialog source, boolean fromClient) {
       super(source, fromClient);
-      requireNonNull(projectDraft, "projectDraft must not be null");
-      this.projectDraft = projectDraft;
+      requireNonNull(value, "new project information (value) must not be null");
+      this.oldValue = oldValue;
+      this.value = value;
     }
 
-    public ProjectDraft projectDraft() {
-      return projectDraft;
+    public Optional<ProjectInformation> getOldValue() {
+      return Optional.ofNullable(oldValue);
+    }
+
+    public ProjectInformation getValue() {
+      return value;
     }
   }
 
-  public static final class ProjectDraft {
+  public static final class ProjectInformation {
 
-    private String offerId = "";
     @NotEmpty
     private String projectTitle = "";
-    @NotEmpty
-    private String projectCode = "";
     @NotEmpty
     private String projectObjective = "";
     @NotEmpty
@@ -359,19 +283,11 @@ public class AddProjectDialog extends DialogWindow {
     @NotEmpty
     private Contact projectManager;
 
-    void setOfferId(String offerId) {
-      this.offerId = offerId;
-    }
-
-    void setProjectTitle(String projectTitle) {
+    public void setProjectTitle(String projectTitle) {
       this.projectTitle = projectTitle;
     }
 
-    void setProjectCode(String projectCode) {
-      this.projectCode = projectCode;
-    }
-
-    void setProjectObjective(String projectObjective) {
+    public void setProjectObjective(String projectObjective) {
       this.projectObjective = projectObjective;
     }
 
@@ -400,16 +316,8 @@ public class AddProjectDialog extends DialogWindow {
       this.projectManager = projectManager;
     }
 
-    public String getOfferId() {
-      return offerId;
-    }
-
     public String getProjectTitle() {
       return projectTitle;
-    }
-
-    public String getProjectCode() {
-      return projectCode;
     }
 
     public String getProjectObjective() {
@@ -439,6 +347,52 @@ public class AddProjectDialog extends DialogWindow {
     public String getProjectManagerEmail() {
       return projectManager.getEmail();
     }
-  }
 
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      ProjectInformation that = (ProjectInformation) object;
+
+      if (!Objects.equals(projectTitle, that.projectTitle)) {
+        return false;
+      }
+      if (!Objects.equals(projectObjective, that.projectObjective)) {
+        return false;
+      }
+      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
+        return false;
+      }
+      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
+        return false;
+      }
+      return Objects.equals(projectManager, that.projectManager);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = projectTitle != null ? projectTitle.hashCode() : 0;
+      result = 31 * result + (projectObjective != null ? projectObjective.hashCode() : 0);
+      result = 31 * result + (principalInvestigator != null ? principalInvestigator.hashCode() : 0);
+      result = 31 * result + (responsiblePerson != null ? responsiblePerson.hashCode() : 0);
+      result = 31 * result + (projectManager != null ? projectManager.hashCode() : 0);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", ProjectInformation.class.getSimpleName() + "[", "]")
+          .add("projectTitle='" + projectTitle + "'")
+          .add("projectObjective='" + projectObjective + "'")
+          .add("principalInvestigator=" + principalInvestigator)
+          .add("responsiblePerson=" + responsiblePerson)
+          .add("projectManager=" + projectManager)
+          .toString();
+    }
+  }
 }

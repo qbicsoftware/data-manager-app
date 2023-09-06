@@ -51,7 +51,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   /**
    * Creates a new dialog prefilled with experimental variables.
    *
-   * @param experimentalVariables the variables to fill the dialog with
+   * @param experimentalVariables the variables to setProjectInformation the dialog with
    * @return a new instance of the dialog
    */
   public static ExperimentalVariablesDialog prefilled(

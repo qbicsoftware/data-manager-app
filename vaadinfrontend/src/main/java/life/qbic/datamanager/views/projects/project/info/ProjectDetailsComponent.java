@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -11,7 +10,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,10 +18,13 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
+import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.PersonSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -61,21 +62,16 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private final List<ComponentEventListener<ProjectEditEvent>> editListeners = new ArrayList<>();
   private Context context;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final transient PersonSearchService personSearchService;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired PersonSearchService personSearchService) {
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(personSearchService);
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
-    this.personSearchService = personSearchService;
     layoutComponent();
     addListenerForNewEditEvent();
     this.addClassName("project-details-component");
@@ -110,9 +106,12 @@ public class ProjectDetailsComponent extends PageArea {
     ProjectId projectId = context.projectId().orElseThrow();
     Optional<Project> project = projectInformationService.find(projectId);
     project.ifPresentOrElse(proj -> {
-          ProjectInformationDialog projectInformationDialog = generateProjectInformationDialog(proj);
-          addProjectInformationDialogListeners(projectId, projectInformationDialog);
-          projectInformationDialog.open();
+          EditProjectInformationDialog editProjectInformationDialog = generateEditProjectInformationDialog(
+              proj);
+          editProjectInformationDialog.addCancelListener(
+              cancelEvent -> cancelEvent.getSource().close());
+          editProjectInformationDialog.addProjectUpdateEventListener(this::onProjectUpdateEvent);
+          editProjectInformationDialog.open();
         }
         , () -> {
           throw new ApplicationException(
@@ -120,56 +119,57 @@ public class ProjectDetailsComponent extends PageArea {
         });
   }
 
-  private ProjectInformationDialog generateProjectInformationDialog(Project project) {
-    PersonReference responsiblePerson = null;
-    if (project.getResponsiblePerson().isPresent()) {
-      responsiblePerson = project.getResponsiblePerson().get();
+  private EditProjectInformationDialog generateEditProjectInformationDialog(Project project) {
+    EditProjectInformationDialog dialog = new EditProjectInformationDialog();
+    ProjectInformation projectInformation = new ProjectInformation();
+    projectInformation.setProjectTitle(project.getProjectIntent().projectTitle().title());
+    projectInformation.setProjectObjective(project.getProjectIntent().objective().value());
+    projectInformation.setPrincipalInvestigator(
+        new Contact(project.getPrincipalInvestigator().fullName(),
+            project.getPrincipalInvestigator().emailAddress()));
+    project.getResponsiblePerson().ifPresent(
+        it -> projectInformation.setResponsiblePerson(new Contact(it.fullName(), it.emailAddress()))
+    );
+
+    projectInformation.setProjectManager(
+        new Contact(project.getProjectManager().fullName(),
+            project.getProjectManager().emailAddress()));
+
+    dialog.setProjectInformation(projectInformation);
+    return dialog;
+  }
+
+  private void onProjectUpdateEvent(ProjectUpdateEvent projectUpdateEvent) {
+    if (projectUpdateEvent.getOldValue().isEmpty() || !projectUpdateEvent.getOldValue().get()
+        .equals(projectUpdateEvent.getValue())) {
+      ProjectInformation projectInformation = projectUpdateEvent.getValue();
+      updateProjectInformation(projectInformation);
+      ProjectId projectId = context.projectId().orElseThrow();
+      fireEvent(new ProjectEditEvent(this, projectId, projectUpdateEvent.isFromClient()));
     }
-    ProjectInformationDialog projectInformationDialog = ProjectInformationDialog.prefilled(
-        personSearchService,
-        project.getProjectIntent().projectTitle(), project.getProjectIntent().objective(),
-        project.getPrincipalInvestigator(),
-        responsiblePerson, project.getProjectManager());
-    projectInformationDialog.setConfirmButtonLabel("Save");
-    return projectInformationDialog;
+    projectUpdateEvent.getSource().close();
   }
 
-  private void addProjectInformationDialogListeners(ProjectId projectId,
-      ProjectInformationDialog projectInformationDialog) {
-    projectInformationDialog.addCancelEventListener(
-        experimentInformationDialogCancelEvent -> projectInformationDialog.close());
-    projectInformationDialog.addConfirmEventListener(projectInformationDialogConfirmEvent -> {
-      if (projectInformationDialog.isInputValid()) {
-        ProjectInformationContent projectInformationContent = projectInformationDialogConfirmEvent.getSource()
-            .content();
-        updateProjectInformation(projectId, projectInformationContent);
-        projectInformationDialog.close();
-        fireEditEvent();
-      }
-    });
-  }
-
-  private void updateProjectInformation(ProjectId projectId,
-      ProjectInformationContent projectInformationContent) {
-    projectInformationService.updateTitle(projectId, projectInformationContent.projectTitle());
+  private void updateProjectInformation(ProjectInformation projectInformationContent) {
+    ProjectId projectId = this.context.projectId().orElseThrow();
+    projectInformationService.updateTitle(projectId, projectInformationContent.getProjectTitle());
     projectInformationService.stateObjective(projectId,
-        projectInformationContent.projectObjective());
+        projectInformationContent.getProjectObjective());
     projectInformationService.investigateProject(projectId,
-        projectInformationContent.principalInvestigator());
+        fromContact(projectInformationContent.getPrincipalInvestigator()));
     projectInformationService.manageProject(projectId,
-        projectInformationContent.projectManager());
-    projectInformationService.setResponsibility(projectId,
-        projectInformationContent.responsiblePerson());
+        fromContact(projectInformationContent.getProjectManager()));
+    projectInformationContent.getResponsiblePerson()
+        .map(ProjectDetailsComponent::fromContact)
+        .ifPresent(person -> projectInformationService.setResponsibility(projectId, person));
+  }
+
+  private static PersonReference fromContact(Contact contact) {
+    return new PersonReference("", contact.getFullName(), contact.getEmail());
   }
 
   private void addListenerForNewEditEvent() {
-    this.editListeners.add(event -> loadProjectData(event.projectId()));
-  }
-
-  private void fireEditEvent() {
-    ProjectId projectId = context.projectId().orElseThrow();
-    var editEvent = new ProjectEditEvent(this, projectId, true);
-    editListeners.forEach(listener -> listener.onComponentEvent(editEvent));
+    addListener(ProjectEditEvent.class, event -> loadProjectData(event.projectId()));
   }
 
   private void initFormLayout() {

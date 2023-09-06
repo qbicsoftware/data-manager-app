@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**
- * <b>ProjectInformationDialog</b>
+ * <b>EditProjectInformationDialog</b>
  *
  * <p>Dialog to edit project information by providing the minimal required information
  * in the {@link DefineExperimentComponent}</p>

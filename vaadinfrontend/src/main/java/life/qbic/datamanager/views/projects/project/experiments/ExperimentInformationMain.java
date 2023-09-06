@@ -15,7 +15,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
@@ -108,8 +107,13 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     this.context = new Context().with(parsedProjectId);
 
     if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isEmpty()) {
-      //forwardToExperiment(activeExperiment(parsedProjectId).orElseThrow(), beforeEnterEvent); //FIXME
-      return; // abort the before-enter event and forward
+      Project project = projectInformationService.find(parsedProjectId)
+          .orElseThrow();
+      project.experiments().stream()
+          .findFirst()
+          .ifPresent(experimentId -> forwardToExperiment(experimentId, beforeEnterEvent));
+      setContext(this.context);
+      return; // abort the before-enter event
     }
 
     String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
@@ -130,15 +134,13 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     setContext(this.context);
   }
 
-  private Optional<ExperimentId> activeExperiment(ProjectId parsedProjectId) { //FIXME
-    return projectInformationService.find(parsedProjectId)
-        .map(Project::activeExperiment);
-  }
-
   private void setContext(Context context) {
-    experimentContentComponent.setContext(context);
     experimentSupportComponent.setContext(context);
-    experimentSupportComponent.setSelectedExperiment(context.experimentId().orElseThrow());
+    context.experimentId().ifPresent(
+        experimentId -> {
+          experimentSupportComponent.setSelectedExperiment(experimentId);
+          experimentContentComponent.setContext(context);
+        });
     projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
     this.context = context;
   }

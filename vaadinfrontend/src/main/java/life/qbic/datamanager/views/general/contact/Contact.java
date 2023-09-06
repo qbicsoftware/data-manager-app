@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.create;
+package life.qbic.datamanager.views.general.contact;
 
 import static java.util.Objects.requireNonNull;
 

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.create;
+package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
@@ -57,6 +57,10 @@ public class ContactField extends CustomField<Contact> {
     add(layout);
   }
 
+  public void setContact(Contact contact) {
+    binder.setBean(contact);
+  }
+
   @Override
   protected Contact generateModelValue() {
     return new Contact(nameField.getValue(), emailField.getValue());
@@ -71,7 +75,7 @@ public class ContactField extends CustomField<Contact> {
   /**
    * Sets the component to required
    *
-   * @param required whether the user is required to fill the field
+   * @param required whether the user is required to setProjectInformation the field
    */
   public void setRequired(boolean required) {
     nameField.setRequired(required);

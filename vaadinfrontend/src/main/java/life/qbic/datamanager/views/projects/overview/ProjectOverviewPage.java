@@ -15,7 +15,7 @@ import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectDraft;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
-import life.qbic.projectmanagement.application.ProjectRegistrationService;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -35,14 +35,14 @@ public class ProjectOverviewPage extends Div {
 
   private final ProjectCollectionComponent projectCollectionComponent;
   private final AddProjectDialog addProjectDialog;
-  private final ProjectRegistrationService projectRegistrationService;
+  private final ProjectCreationService projectCreationService;
 
   public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
       AddProjectDialog addProjectDialog,
-      ProjectRegistrationService projectRegistrationService) {
+      ProjectCreationService projectCreationService) {
     this.projectCollectionComponent = projectCollectionComponent;
     this.addProjectDialog = addProjectDialog;
-    this.projectRegistrationService = projectRegistrationService;
+    this.projectCreationService = projectCreationService;
     layoutPage();
     configurePage();
 
@@ -69,7 +69,7 @@ public class ProjectOverviewPage extends Div {
 
   private void createProject(ProjectAddEvent projectAddEvent) {
     ProjectDraft projectDraft = projectAddEvent.projectDraft();
-    Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
+    Result<Project, ApplicationException> project = projectCreationService.createProject(
         projectDraft.getOfferId(),
         projectDraft.getProjectCode(),
         projectDraft.getProjectTitle(),

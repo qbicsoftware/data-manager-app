@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
@@ -16,6 +17,9 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService.ResponseCode;
@@ -25,16 +29,16 @@ import org.springframework.stereotype.Service;
  * Application service facilitating the creation of projects.
  */
 @Service
-public class ProjectRegistrationService {
+public class ProjectCreationService {
 
-  private static final Logger log = logger(ProjectRegistrationService.class);
+  private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
 
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final ProjectDomainService projectDomainService;
 
-  public ProjectRegistrationService(ProjectRepository projectRepository,
+  public ProjectCreationService(ProjectRepository projectRepository,
       AddExperimentToProjectService addExperimentToProjectService,
       ProjectDomainService projectDomainService) {
     this.projectRepository = Objects.requireNonNull(projectRepository);
@@ -50,7 +54,7 @@ public class ProjectRegistrationService {
    * @param experimentalDesign a description of the experimental design
    * @return the created project
    */
-  public Result<Project, ApplicationException> registerProject(String sourceOffer,
+  public Result<Project, ApplicationException> createProject(String sourceOffer,
       String code,
       String title,
       String objective,
@@ -68,17 +72,19 @@ public class ProjectRegistrationService {
           responsiblePersonEmail);
       PersonReference projectManager = new PersonReference("", projectManagerName,
           projectManagerEmail);
-      Project project = registerProject(code, title, objective, projectManager,
+      Project project = createProject(code, title, objective, projectManager,
           principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-//      addExperimentToProjectService.addExperimentToProject(project.getId(), "First Experiment",
-//          speciesList, specimenList, analyteList).onError(e -> {
-//        projectRepository.deleteByProjectCode(project.getProjectCode());
-//        throw new ApplicationException(
-//            "failed to add experiment to project " + project.getId(), e);
-//      });
+      addExperimentToProjectService.addExperimentToProject(project.getId(), "Example Experiment",
+          List.of(new Species("Homo sapiens")),
+          List.of(Specimen.create("Bone Marrow"), Specimen.create("Blood serum")), List.of(
+              Analyte.create("Circulating free DNA"))).onError(e -> {
+        projectRepository.deleteByProjectCode(project.getProjectCode());
+        throw new ApplicationException(
+            "failed to add experiment to project " + project.getId(), e);
+      });
       return Result.fromValue(project);
     } catch (ApplicationException projectManagementException) {
       return Result.fromError(projectManagementException);
@@ -88,7 +94,7 @@ public class ProjectRegistrationService {
     }
   }
 
-  private Project registerProject(String code, String title, String objective,
+  private Project createProject(String code, String title, String objective,
       PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson) {
 

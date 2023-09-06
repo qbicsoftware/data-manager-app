@@ -40,9 +40,6 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
-  @AttributeOverride(name = "uuid", column = @Column(name = "activeExperiment"))
-  private ExperimentId activeExperiment;
-
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "project")
   private List<Experiment> experiments = new ArrayList<>();
@@ -153,7 +150,6 @@ public class Project {
   }
 
   public void addExperiment(Experiment experiment) {
-    activeExperiment = experiment.experimentId();
     experiments.add(experiment);
     lastModified = Instant.now();
   }
@@ -181,11 +177,6 @@ public class Project {
     if (offerRemoved) {
       this.lastModified = Instant.now();
     }
-  }
-
-  public void setActiveExperiment(ExperimentId experimentId) {
-    activeExperiment = experimentId;
-    lastModified = Instant.now();
   }
 
   public List<OfferIdentifier> linkedOffers() {
@@ -265,10 +256,6 @@ public class Project {
 
   public Optional<PersonReference> getResponsiblePerson() {
     return Optional.ofNullable(responsiblePerson);
-  }
-
-  public ExperimentId activeExperiment() {
-    return activeExperiment;
   }
 
   public List<ExperimentId> experiments() {

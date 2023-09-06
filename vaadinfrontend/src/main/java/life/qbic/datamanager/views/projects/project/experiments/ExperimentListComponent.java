@@ -72,8 +72,6 @@ public class ExperimentListComponent extends PageArea {
   public void setContext(Context context) {
     ProjectId projectId = context.projectId()
         .orElseThrow(() -> new ApplicationException("no project id in context " + context));
-    context.experimentId()
-        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
     this.context = context;
     loadExperimentsForProject(projectId);
   }
@@ -123,17 +121,6 @@ public class ExperimentListComponent extends PageArea {
 
   private void addExperimentToExperimentItemCollection(Experiment experiment) {
     experimentItemCollection.addExperimentItem(ExperimentItem.create(experiment));
-  }
-
-  /**
-   * Provides the {@link ExperimentId} which annotates the currently active Experiment to this
-   * component
-   * <p>
-   * This informs the {@link ExperimentItemCollection} about which experiment is set as active via
-   * the provided {@link ExperimentId}
-   */
-  public void setActiveExperiment(ExperimentId experimentId) {
-    experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsActive);
   }
 
   /**
