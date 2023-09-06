@@ -25,6 +25,7 @@ import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.project.service.AccessDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -53,17 +54,21 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
   private ProjectId projectId;
 
+  private final AccessDomainService accessDomainService;
+
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserDetailsService userDetailsService,
       @Autowired UserRepository userRepository,
       @Autowired SidRepository sidRepository,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired UserPermissions userPermissions,
+      @Autowired AccessDomainService accessDomainService) {
     this.projectAccessService = projectAccessService;
     this.userDetailsService = userDetailsService;
     this.userRepository = userRepository;
     this.sidRepository = sidRepository;
     this.userPermissions = userPermissions;
+    this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userDetailsService, "userDetailsService must not be null");
     requireNonNull(userRepository, "userRepository must not be null");
@@ -231,6 +236,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private void addUsersToProject(List<User> users) {
     for (User user : users) {
       projectAccessService.grant(user.emailAddress().get(), projectId, BasePermission.READ);
+      accessDomainService.grantProjectAccessFor(projectId.value(), user.emailAddress().get());
     }
   }
 
