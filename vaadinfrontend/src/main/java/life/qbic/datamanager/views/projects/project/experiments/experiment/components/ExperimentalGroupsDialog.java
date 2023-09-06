@@ -15,7 +15,7 @@ import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
+import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
 
 /**
@@ -30,7 +30,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
       "%s: %s", it.variableName().value(),
-      ExperimentValueFormatter.format(it.experimentalValue()));
+      VariableValueFormatter.format(it.experimentalValue()));
   @Serial
   private static final long serialVersionUID = 1657697182040756406L;
   private final Collection<VariableLevel> experimentalVariableLevels;
