@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
@@ -17,9 +16,6 @@ import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService.ResponseCode;
@@ -34,15 +30,11 @@ public class ProjectCreationService {
   private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
-
-  private final AddExperimentToProjectService addExperimentToProjectService;
   private final ProjectDomainService projectDomainService;
 
   public ProjectCreationService(ProjectRepository projectRepository,
-      AddExperimentToProjectService addExperimentToProjectService,
       ProjectDomainService projectDomainService) {
     this.projectRepository = Objects.requireNonNull(projectRepository);
-    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService);
     this.projectDomainService = Objects.requireNonNull(projectDomainService);
   }
 
@@ -77,14 +69,6 @@ public class ProjectCreationService {
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-      addExperimentToProjectService.addExperimentToProject(project.getId(), "Example Experiment",
-          List.of(new Species("Homo sapiens")),
-          List.of(Specimen.create("Bone Marrow"), Specimen.create("Blood serum")), List.of(
-              Analyte.create("Circulating free DNA"))).onError(e -> {
-        projectRepository.deleteByProjectCode(project.getProjectCode());
-        throw new ApplicationException(
-            "failed to add experiment to project " + project.getId(), e);
-      });
       return Result.fromValue(project);
     } catch (ApplicationException projectManagementException) {
       return Result.fromError(projectManagementException);
@@ -97,18 +81,7 @@ public class ProjectCreationService {
   private Project createProject(String code, String title, String objective,
       PersonReference projectManager,
       PersonReference principalInvestigator, PersonReference responsiblePerson) {
-
-//    ExperimentalDesignDescription experimentalDesignDescription;
-//    try {
-//      experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
-//    } catch (IllegalArgumentException e) {
-//      log.error(e.getMessage(), e);
-//      throw new ApplicationException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
-//          ErrorParameters.of(ExperimentalDesignDescription.maxLength(), experimentalDesign));
-//    }
-
-    ProjectIntent intent = getProjectIntent(title,
-        objective);//.with(experimentalDesignDescription);
+    ProjectIntent intent = getProjectIntent(title, objective);
     ProjectCode projectCode;
     try {
       projectCode = ProjectCode.parse(code);
