@@ -123,6 +123,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void layoutComponent() {
+    System.err.println("layout called");
     layoutHeaderAndFooter();
 
     content.addClassName("content");
@@ -150,6 +151,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void addNewGroupEntry() {
+    System.err.println("add called");
     var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
     experimentalGroupsCollection.add(groupEntry);
     groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));

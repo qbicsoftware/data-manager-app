@@ -246,6 +246,11 @@ Used by both project creation and experiment creation dialog, thus the unique na
   align-items: baseline;
 }
 
+.experiment-variable-dialog vaadin-icon {
+  cursor: pointer;
+  color: var(--lumo-primary-color);
+}
+
 .experiment-group-dialog vaadin-icon {
   cursor: pointer;
   color: var(--lumo-primary-color);
@@ -253,6 +258,16 @@ Used by both project creation and experiment creation dialog, thus the unique na
 
 .experiment-group-dialog .header {
   font-weight: bold;
+}
+
+.experiment-variable-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+
+.experiment-variable-dialog .add-new-group-action span {
+  cursor: pointer;
 }
 
 .experiment-variable-dialog .content {
@@ -265,6 +280,9 @@ Used by both project creation and experiment creation dialog, thus the unique na
   column-gap: 1rem;
   color: var(--lumo-primary-color)
 }
+.experiment-group-dialog .add-new-group-action span {
+  cursor: pointer;
+}
 
 .experiment-group-dialog .content {
   display: grid;
@@ -274,11 +292,6 @@ Used by both project creation and experiment creation dialog, thus the unique na
 .experiment-group-dialog .content .group-collection {
   display: grid;
   gap: 1rem;
-}
-
-
-.experiment-group-dialog .add-new-group-action span {
-  cursor: pointer;
 }
 
 .experiment-variable-dialog .content .variables {
@@ -294,11 +307,6 @@ Used by both project creation and experiment creation dialog, thus the unique na
   display: flex;
   align-items: center;
   gap: var(--lumo-space-l);
-}
-
-.experiment-variable-dialog .content .row vaadin-icon {
-  cursor: pointer;
-  color: var(--lumo-primary-color);
 }
 
 .project-information-dialog::part(overlay) {
