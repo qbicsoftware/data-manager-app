@@ -58,7 +58,7 @@ public class ProjectOverviewPage extends Div {
         addProjectDialog.open()
     );
     addProjectDialog.addCancelListener(
-        cancelEvent -> cancelEvent.getSource().resetAndClose());
+        cancelEvent -> cancelEvent.getSource().close());
     addProjectDialog.addProjectAddEventListener(this::createProject);
   }
 
@@ -90,7 +90,7 @@ public class ProjectOverviewPage extends Div {
 
   private void onProjectCreated(ProjectAddEvent projectAddEvent) {
     displaySuccessfulProjectCreationNotification();
-    projectAddEvent.getSource().resetAndClose();
+    projectAddEvent.getSource().close();
     projectCollectionComponent.refresh();
   }
 

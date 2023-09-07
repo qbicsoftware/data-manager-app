@@ -247,13 +247,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           fireBatchCreatedEvent(batchRegistrationEvent);
-          batchRegistrationDialog.resetAndClose();
+          batchRegistrationDialog.close();
           displayRegistrationSuccess();
         });
       });
       registerButton.addClickListener(event -> batchRegistrationDialog.open());
       batchRegistrationDialog.addCancelEventListener(
-          event -> batchRegistrationDialog.resetAndClose());
+          event -> batchRegistrationDialog.close());
     }
 
     private void addExperimentTabToTabSheet(Experiment experiment) {

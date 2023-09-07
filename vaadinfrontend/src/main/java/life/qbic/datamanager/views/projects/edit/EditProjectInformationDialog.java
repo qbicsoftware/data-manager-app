@@ -111,8 +111,8 @@ public class EditProjectInformationDialog extends DialogWindow {
         .bind(ProjectInformation::getProjectManager, ProjectInformation::setProjectManager);
 
     // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> resetAndClose());
-    cancelButton.addClickListener(buttonClickEvent -> resetAndClose());
+    addDialogCloseActionListener(closeActionEvent -> close());
+    cancelButton.addClickListener(buttonClickEvent -> close());
 
     FormLayout formLayout = new FormLayout();
     formLayout.addClassName("form-content");
@@ -164,11 +164,12 @@ public class EditProjectInformationDialog extends DialogWindow {
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    resetAndClose();
+    close();
   }
 
-  public void resetAndClose() {
-    close();
+  @Override
+  public void close() {
+    super.close();
     reset();
   }
 
@@ -179,7 +180,6 @@ public class EditProjectInformationDialog extends DialogWindow {
   public void reset() {
     principalInvestigatorField.clear();
     projectManagerField.clear();
-    binder.removeBean();
     binder.setBean(new ProjectInformation());
   }
 

@@ -101,7 +101,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
   private void resetDialogUponClosure() {
     // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    addDialogCloseActionListener(closeActionEvent -> close());
   }
 
   /**
@@ -127,10 +127,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
    */
   @Override
   public void close() {
-    resetAndClose();
-  }
-
-  private void resetAndClose() {
     reset();
     super.close();
   }
