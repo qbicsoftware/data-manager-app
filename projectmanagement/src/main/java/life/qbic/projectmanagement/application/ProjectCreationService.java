@@ -43,42 +43,6 @@ public class ProjectCreationService {
   /**
    * Create a new project based on the information provided
    *
-   * @param sourceOffer                the offer from which information was taken
-   * @param code                       the projects code
-   * @param title                      the project title
-   * @param objective                  the project objective
-   * @param principalInvestigatorName  the full name of the principal investigator
-   * @param principalInvestigatorEmail the email of the principal investigator
-   * @param responsiblePersonName      the full name of the project responsible person
-   * @param responsiblePersonEmail     the email of the project responsible person
-   * @param projectManagerName         the full name of the project manager
-   * @param projectManagerEmail        the email of the project manager
-   * @return a result containing the project or an exception
-   */
-  public Result<Project, ApplicationException> createProject(String sourceOffer,
-      String code,
-      String title,
-      String objective,
-      String principalInvestigatorName,
-      String principalInvestigatorEmail,
-      String responsiblePersonName,
-      String responsiblePersonEmail,
-      String projectManagerName,
-      String projectManagerEmail) {
-    Contact principalInvestigator = new Contact(principalInvestigatorName,
-        principalInvestigatorEmail);
-    Contact responsiblePerson = new Contact(responsiblePersonName,
-        responsiblePersonEmail);
-    Contact projectManager = new Contact(projectManagerName,
-        projectManagerEmail);
-    return createProject(sourceOffer, code, title, objective, principalInvestigator,
-        responsiblePerson,
-        projectManager);
-  }
-
-  /**
-   * Create a new project based on the information provided
-   *
    * @param sourceOffer the offer from which information was taken
    * @param code        the projects code
    * @param title       the project title

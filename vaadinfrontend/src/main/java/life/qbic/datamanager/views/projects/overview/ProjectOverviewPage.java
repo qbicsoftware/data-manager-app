@@ -9,6 +9,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
@@ -74,12 +75,9 @@ public class ProjectOverviewPage extends Div {
         projectDraft.getProjectCode(),
         projectDraft.getProjectTitle(),
         projectDraft.getProjectObjective(),
-        projectDraft.getPrincipalInvestigatorName(),
-        projectDraft.getPrincipalInvestigatorEmail(),
-        projectDraft.getResponsiblePersonName(),
-        projectDraft.getResponsiblePersonEmail(),
-        projectDraft.getProjectManagerName(),
-        projectDraft.getProjectManagerEmail());
+        projectDraft.getPrincipalInvestigator().toDomainContact(),
+        projectDraft.getResponsiblePerson().map(Contact::toDomainContact).orElse(null),
+        projectDraft.getProjectManager().toDomainContact());
 
     project
         .onValue(result -> onProjectCreated(projectAddEvent))

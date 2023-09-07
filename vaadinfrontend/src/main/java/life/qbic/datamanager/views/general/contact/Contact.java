@@ -40,6 +40,9 @@ public final class Contact {
     return email;
   }
 
+  public life.qbic.projectmanagement.domain.project.Contact toDomainContact() {
+    return new life.qbic.projectmanagement.domain.project.Contact(getFullName(), getEmail());
+  }
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {
