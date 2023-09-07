@@ -34,8 +34,6 @@ class AddExperimentToProjectServiceSpec extends Specification {
         then: "the project holds a reference to the created experiment"
         project.experiments().contains(experimentId)
 
-        and: "the active experiment of the project is the added experiment"
-        project.activeExperiment() == experimentId
 
         and: "the project is updated"
         1 * projectRepository.update(project)

@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup
 import life.qbic.projectmanagement.domain.project.*
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
 import spock.lang.Specification
 
@@ -40,7 +39,6 @@ class ProjectInformationServiceSpec extends Specification {
         projectInformationService.manageProject(project.getId(), personReference)
 
         then: "the project contains the new person reference as project manager"
-        project.projectManager.referenceId() == personReference.referenceId()
         project.projectManager.fullName() == personReference.fullName()
         project.projectManager.emailAddress() == personReference.emailAddress()
 
@@ -58,7 +56,6 @@ class ProjectInformationServiceSpec extends Specification {
         projectInformationService.investigateProject(project.getId(), personReference)
 
         then: "the project contains the new person reference as principal investigator"
-        project.principalInvestigator.referenceId() == personReference.referenceId()
         project.principalInvestigator.fullName() == personReference.fullName()
         project.principalInvestigator.emailAddress() == personReference.emailAddress()
 
@@ -76,25 +73,8 @@ class ProjectInformationServiceSpec extends Specification {
         projectInformationService.setResponsibility(project.getId(), personReference)
 
         then: "the project contains the new person reference as responsible person"
-        project.responsiblePerson.get().referenceId() == personReference.referenceId()
         project.responsiblePerson.get().fullName() == personReference.fullName()
         project.responsiblePerson.get().emailAddress() == personReference.emailAddress()
-
-        and: "the project is updated"
-        1 * projectRepository.update(project)
-    }
-
-    def "Updating the experimental design description via the ProjectInformationService sets the new description within the experimental design of the project"() {
-        given:
-        projectRepository.find(project.getId()) >> Optional.of(project)
-        projectRepository.find((ProjectId) _) >> Optional.empty()
-
-        when: "the experimental design description is updated for a project"
-        String experimentalDesignDescription = "I created an experiment and i liked it"
-        projectInformationService.describeExperimentalDesign(project.getId(), experimentalDesignDescription)
-
-        then: "the project contains the new description as an experimental design description"
-        project.projectIntent.experimentalDesign().value() == experimentalDesignDescription
 
         and: "the project is updated"
         1 * projectRepository.update(project)
@@ -116,28 +96,11 @@ class ProjectInformationServiceSpec extends Specification {
         1 * projectRepository.update(project)
     }
 
-    def "Updating the active Experiment via the ProjectInformationService sets the provided ExperimentId as the activeExperiment of the project"() {
-        given:
-        projectRepository.find(project.getId()) >> Optional.of(project)
-        projectRepository.find((ProjectId) _) >> Optional.empty()
-
-        when: "the active experiment is updated for a project"
-        ExperimentId experimentId = ExperimentId.create()
-        projectInformationService.setActiveExperiment(project.getId(), experimentId)
-
-        then: "the project intent contains the new project objective"
-        project.activeExperiment() == experimentId
-
-        and: "the project is updated"
-        1 * projectRepository.update(project)
-    }
-
 
     private static Project setupProject() {
         ProjectId projectId = ProjectId.parse("0270ce7f-4092-40e3-9c4c-ce7adb688bf5")
         ProjectIntent projectIntent = ProjectIntent.of(ProjectTitle.of("Oral microbiome study"),
                 ProjectObjective.create("Analysis if tooth paste has an impact oral health and the mouth microbiome"))
-//        projectIntent.with(ExperimentalDesignDescription.create("Detailed description about the experiment"))
         ProjectCode projectCode = ProjectCode.random()
         Contact personReference = new Contact("John Doe", "john@doe.abcdefg")
         return Project.of(projectId, projectIntent, projectCode, personReference, personReference, personReference)

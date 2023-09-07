@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Objects;
@@ -34,8 +35,8 @@ public class ProjectCreationService {
 
   public ProjectCreationService(ProjectRepository projectRepository,
       ProjectDomainService projectDomainService) {
-    this.projectRepository = Objects.requireNonNull(projectRepository);
-    this.projectDomainService = Objects.requireNonNull(projectDomainService);
+    this.projectRepository = requireNonNull(projectRepository);
+    this.projectDomainService = requireNonNull(projectDomainService);
   }
 
 
@@ -64,25 +65,49 @@ public class ProjectCreationService {
       String responsiblePersonEmail,
       String projectManagerName,
       String projectManagerEmail) {
+    Contact principalInvestigator = new Contact(principalInvestigatorName,
+        principalInvestigatorEmail);
+    Contact responsiblePerson = new Contact(responsiblePersonName,
+        responsiblePersonEmail);
+    Contact projectManager = new Contact(projectManagerName,
+        projectManagerEmail);
+    return createProject(sourceOffer, code, title, objective, principalInvestigator,
+        responsiblePerson,
+        projectManager);
+  }
+
+  /**
+   * Create a new project based on the information provided
+   *
+   * @param sourceOffer the offer from which information was taken
+   * @param code        the projects code
+   * @param title       the project title
+   * @param objective   the project objective
+   * @return a result containing the project or an exception
+   */
+  public Result<Project, ApplicationException> createProject(String sourceOffer,
+      String code,
+      String title,
+      String objective,
+      Contact principalInvestigator,
+      Contact responsiblePerson,
+      Contact projectManager) {
+    if (Objects.isNull(principalInvestigator)) {
+      return Result.fromError(new ApplicationException("principal investigator is null"));
+    }
+    if (Objects.isNull(projectManager)) {
+      return Result.fromError(new ApplicationException("project manager is null"));
+    }
 
     try {
-      Contact principalInvestigator = new Contact(principalInvestigatorName,
-          principalInvestigatorEmail);
-      Contact responsiblePerson = new Contact(responsiblePersonName,
-          responsiblePersonEmail);
-      Contact projectManager = new Contact(projectManagerName,
-          projectManagerEmail);
       Project project = createProject(code, title, objective, projectManager,
           principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
       return Result.fromValue(project);
-    } catch (ApplicationException projectManagementException) {
-      return Result.fromError(projectManagementException);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      return Result.fromError(new ApplicationException());
+      return Result.fromError(ApplicationException.wrapping(e));
     }
   }
 
