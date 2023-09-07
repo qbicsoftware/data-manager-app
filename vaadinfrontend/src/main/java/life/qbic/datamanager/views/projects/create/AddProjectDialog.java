@@ -26,6 +26,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -203,30 +204,30 @@ public class AddProjectDialog extends DialogWindow {
 
 
   private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {
-    final ComboBox<OfferPreview> offerSearchField = new ComboBox<>("Offer");
-    offerSearchField.setClassName("search-field");
-    offerSearchField.setPlaceholder("Search");
-    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+    final ComboBox<OfferPreview> searchField = new ComboBox<>("Offer");
+    searchField.setClassName("search-field");
+    searchField.setPlaceholder("Search");
+    searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
-    offerSearchField.setItems(
+    searchField.setItems(
         query -> offerLookupService.findOfferContainingProjectTitleOrId(
             query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
             query.getLimit()).stream());
 
     // Render the preview
-    offerSearchField.setRenderer(
+    searchField.setRenderer(
         new ComponentRenderer<>(preview -> new Text(previewToString(preview))));
 
     // Generate labels like the rendering
-    offerSearchField.setItemLabelGenerator(
+    searchField.setItemLabelGenerator(
         (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
 
-    offerSearchField.addValueChangeListener(e -> {
-      if (offerSearchField.getValue() != null) {
-        setOffer(offerSearchField.getValue().offerId().id());
+    searchField.addValueChangeListener(e -> {
+      if (searchField.getValue() != null) {
+        setOffer(searchField.getValue().offerId().id());
       }
     });
-    return offerSearchField;
+    return searchField;
   }
 
   private void setOffer(String offerId) {
@@ -346,8 +347,10 @@ public class AddProjectDialog extends DialogWindow {
     }
   }
 
-  public static final class ProjectDraft {
+  public static final class ProjectDraft implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1997619416908358254L;
     private String offerId = "";
     @NotEmpty
     private String projectTitle = "";

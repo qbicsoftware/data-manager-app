@@ -18,6 +18,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -139,7 +140,7 @@ public class EditProjectInformationDialog extends DialogWindow {
       binder.writeBean(oldValue);
     } catch (ValidationException e) {
       oldValue = null;
-      throw new RuntimeException(
+      throw new IllegalArgumentException(
           "Project information should be valid but was not. " + projectInformation, e);
     }
   }
@@ -268,7 +269,10 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  public static final class ProjectInformation {
+  public static final class ProjectInformation implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -7260109309939021850L;
 
     @NotEmpty
     private String projectTitle = "";

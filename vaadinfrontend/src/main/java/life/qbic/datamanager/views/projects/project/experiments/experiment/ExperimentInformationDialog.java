@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -169,7 +170,7 @@ public class ExperimentInformationDialog extends DialogWindow {
      * @param source          the source component
      * @param fromClient      <code>true</code> if the event originated from the client
      *                        side, <code>false</code> otherwise
-     * @param experimentDraft
+     * @param experimentDraft the draft for the experiment
      */
     public ExperimentAddEvent(ExperimentInformationDialog source, boolean fromClient,
         ExperimentDraft experimentDraft) {
@@ -194,7 +195,8 @@ public class ExperimentInformationDialog extends DialogWindow {
      * @param source          the source component
      * @param fromClient      <code>true</code> if the event originated from the client
      *                        side, <code>false</code> otherwise
-     * @param experimentDraft
+     * @param oldDraft the draft of the old experiment
+     * @param experimentDraft the draft for the changed experiment
      */
     public ExperimentUpdateEvent(ExperimentInformationDialog source, boolean fromClient,
         ExperimentDraft oldDraft, ExperimentDraft experimentDraft) {
@@ -212,7 +214,10 @@ public class ExperimentInformationDialog extends DialogWindow {
     }
   }
 
-  public static class ExperimentDraft {
+  public static class ExperimentDraft implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 8878913301284832509L;
 
     private String experimentName;
     private final List<Species> species;
