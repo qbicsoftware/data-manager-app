@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
 
@@ -16,6 +18,14 @@ public class Contact {
   private String emailAddress;
 
   public Contact(String fullName, String emailAddress) {
+    requireNonNull(fullName, "fullName must not be null");
+    requireNonNull(emailAddress, "emailAddress must not be null");
+    if (fullName.isBlank()) {
+      throw new IllegalArgumentException("A contacts name must not be empty");
+    }
+    if (emailAddress.isBlank()) {
+      throw new IllegalArgumentException("A contacts email must not be empty");
+    }
     this.fullName = fullName;
     this.emailAddress = emailAddress;
   }
