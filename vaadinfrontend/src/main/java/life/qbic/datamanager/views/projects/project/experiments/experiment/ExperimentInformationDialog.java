@@ -19,17 +19,16 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.projects.create.DefineExperimentComponent;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>ExperimentInformationDialog</b>
  *
- * <p>Dialog to create or edit experiment information by providing the minimal required information
- * in the {@link DefineExperimentComponent}</p>
+ * <p>Dialog to create or edit experiment information by providing the minimal required information</p>
  *
  * @since 1.0.0
  */
@@ -137,6 +136,7 @@ public class ExperimentInformationDialog extends DialogWindow {
     binder.setBean(new ExperimentDraft());
   }
 
+  @Transactional
   public void addExperimentAddEventListener(ComponentEventListener<ExperimentAddEvent> listener) {
     addListener(ExperimentAddEvent.class, listener);
   }

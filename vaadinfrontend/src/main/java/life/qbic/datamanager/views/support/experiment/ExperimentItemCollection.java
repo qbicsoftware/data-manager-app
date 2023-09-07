@@ -135,7 +135,7 @@ public class ExperimentItemCollection extends Div {
      * @param source       the source component
      * @param fromClient   <code>true</code> if the event originated from the client
      *                     side, <code>false</code> otherwise
-     * @param experimentId
+     * @param experimentId the selected experiment
      */
     public ExperimentSelectionEvent(ExperimentItemCollection source, boolean fromClient,
         ExperimentId experimentId) {

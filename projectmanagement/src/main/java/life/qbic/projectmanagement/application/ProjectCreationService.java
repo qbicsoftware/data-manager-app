@@ -9,8 +9,8 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.project.Contact;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -38,13 +38,21 @@ public class ProjectCreationService {
     this.projectDomainService = Objects.requireNonNull(projectDomainService);
   }
 
+
   /**
-   * Create a new project based on the information provided.
+   * Create a new project based on the information provided
    *
-   * @param title              the title of the project.
-   * @param objective          the objective of the project
-   * @param experimentalDesign a description of the experimental design
-   * @return the created project
+   * @param sourceOffer                the offer from which information was taken
+   * @param code                       the projects code
+   * @param title                      the project title
+   * @param objective                  the project objective
+   * @param principalInvestigatorName  the full name of the principal investigator
+   * @param principalInvestigatorEmail the email of the principal investigator
+   * @param responsiblePersonName      the full name of the project responsible person
+   * @param responsiblePersonEmail     the email of the project responsible person
+   * @param projectManagerName         the full name of the project manager
+   * @param projectManagerEmail        the email of the project manager
+   * @return a result containing the project or an exception
    */
   public Result<Project, ApplicationException> createProject(String sourceOffer,
       String code,
@@ -58,11 +66,11 @@ public class ProjectCreationService {
       String projectManagerEmail) {
 
     try {
-      PersonReference principalInvestigator = new PersonReference("", principalInvestigatorName,
+      Contact principalInvestigator = new Contact(principalInvestigatorName,
           principalInvestigatorEmail);
-      PersonReference responsiblePerson = new PersonReference("", responsiblePersonName,
+      Contact responsiblePerson = new Contact(responsiblePersonName,
           responsiblePersonEmail);
-      PersonReference projectManager = new PersonReference("", projectManagerName,
+      Contact projectManager = new Contact(projectManagerName,
           projectManagerEmail);
       Project project = createProject(code, title, objective, projectManager,
           principalInvestigator, responsiblePerson);
@@ -79,8 +87,8 @@ public class ProjectCreationService {
   }
 
   private Project createProject(String code, String title, String objective,
-      PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      Contact projectManager,
+      Contact principalInvestigator, Contact responsiblePerson) {
     ProjectIntent intent = getProjectIntent(title, objective);
     ProjectCode projectCode;
     try {

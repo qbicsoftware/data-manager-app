@@ -48,7 +48,7 @@ class AddExperimentToProjectServiceSpec extends Specification {
                 ProjectTitle.of("Oral microbiome study"),
                 ProjectObjective.create("Analysis if tooth paste has an impact oral health and the mouth microbiome"))
         ProjectCode projectCode = ProjectCode.random()
-        PersonReference personReference = new PersonReference("abcd", "John Doe", "john@doe.abcdefg")
+        Contact personReference = new Contact("John Doe", "john@doe.abcdefg")
         return Project.of(projectId, projectIntent, projectCode, personReference, personReference, personReference)
     }
 }

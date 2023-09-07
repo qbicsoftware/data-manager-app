@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.ApplicationException
 import life.qbic.application.commons.Result
-import life.qbic.projectmanagement.domain.project.PersonReference
+import life.qbic.projectmanagement.domain.project.Contact
 import life.qbic.projectmanagement.domain.project.Project
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
@@ -25,7 +25,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
     when: "null input is provided"
 
 
@@ -46,7 +46,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
     when: "null input is provided"
     Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
             "my title",
@@ -66,7 +66,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     and:
     String descriptionWithToManyCharacters = "test" * 1000
@@ -90,7 +90,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
@@ -111,7 +111,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
@@ -132,7 +132,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
@@ -155,7 +155,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.update(_) >> {}
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, projectDomainServiceStub)
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
     def analytes = List.of(Analyte.create("my analyte"))
 
     when: "analytes are provided at creation"
@@ -179,7 +179,7 @@ class ProjectCreationServiceSpec extends Specification {
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, projectDomainServiceStub)
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
     def species = List.of(Species.create("my analyte"))
 
     when: "species are provided at creation"
@@ -203,7 +203,7 @@ class ProjectCreationServiceSpec extends Specification {
     AddExperimentToProjectService addExperimentToProjectService = Mock()
     addExperimentToProjectService.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
     ProjectCreationService projectCreationService = new ProjectCreationService(projectRepositoryStub, projectDomainServiceStub)
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
     def specimens = List.of(Specimen.create("my analyte"))
 
     when: "specimens are provided at creation"
@@ -226,7 +226,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> Result.fromValue(ExperimentId.create())
 
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "a project is created with a non-empty title"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
@@ -247,7 +247,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_) >> { throw new RuntimeException("expected exception") }
     addExperimentToProjectServiceStub.addExperimentToProject(_, _, _, _, _) >> {}
-    def personReference = new PersonReference("Max", "Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
 
     when:
     Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject("source offer", "QABCD",

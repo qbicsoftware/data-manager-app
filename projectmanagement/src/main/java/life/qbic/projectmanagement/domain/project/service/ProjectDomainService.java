@@ -5,7 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.Contact;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -48,8 +48,8 @@ public class ProjectDomainService {
    */
   public Result<Project, ResponseCode> registerProject(
       ProjectIntent projectIntent, ProjectCode projectCode,
-      PersonReference projectManager, PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+      Contact projectManager, Contact principalInvestigator,
+      Contact responsiblePerson) {
     var project = Project.create(projectIntent, projectCode,
         projectManager, principalInvestigator,
         responsiblePerson);

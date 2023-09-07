@@ -9,8 +9,6 @@ import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.support.experiment.ExperimentItem.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.AddExperimentClickEvent;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +28,6 @@ public class ExperimentSupportComponent extends Div {
   @Serial
   private static final long serialVersionUID = -6996282848714468102L;
   private final ExperimentListComponent experimentListComponent;
-  private static final Logger log = LoggerFactory.logger(ExperimentSupportComponent.class);
 
   public ExperimentSupportComponent(@Autowired ExperimentListComponent experimentListComponent) {
     Objects.requireNonNull(experimentListComponent);

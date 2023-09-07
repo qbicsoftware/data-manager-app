@@ -329,7 +329,7 @@ public class AddProjectDialog extends DialogWindow {
      * Creates a new event using the given source and indicator whether the event originated from
      * the client side or the server side.
      *
-     * @param projectDraft
+     * @param projectDraft the project draft for which the event is fired
      * @param source       the source component
      * @param fromClient   <code>true</code> if the event originated from the client
      *                     side, <code>false</code> otherwise

@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -18,15 +16,13 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.Contact;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -46,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ProjectDetailsComponent extends PageArea {
 
-  private static final Logger log = logger(ProjectDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
   private final Div header = new Div();
@@ -125,14 +120,18 @@ public class ProjectDetailsComponent extends PageArea {
     projectInformation.setProjectTitle(project.getProjectIntent().projectTitle().title());
     projectInformation.setProjectObjective(project.getProjectIntent().objective().value());
     projectInformation.setPrincipalInvestigator(
-        new Contact(project.getPrincipalInvestigator().fullName(),
+        new life.qbic.datamanager.views.general.contact.Contact(
+            project.getPrincipalInvestigator().fullName(),
             project.getPrincipalInvestigator().emailAddress()));
     project.getResponsiblePerson().ifPresent(
-        it -> projectInformation.setResponsiblePerson(new Contact(it.fullName(), it.emailAddress()))
+        it -> projectInformation.setResponsiblePerson(
+            new life.qbic.datamanager.views.general.contact.Contact(it.fullName(),
+                it.emailAddress()))
     );
 
     projectInformation.setProjectManager(
-        new Contact(project.getProjectManager().fullName(),
+        new life.qbic.datamanager.views.general.contact.Contact(
+            project.getProjectManager().fullName(),
             project.getProjectManager().emailAddress()));
 
     dialog.setProjectInformation(projectInformation);
@@ -164,8 +163,8 @@ public class ProjectDetailsComponent extends PageArea {
         .ifPresent(person -> projectInformationService.setResponsibility(projectId, person));
   }
 
-  private static PersonReference fromContact(Contact contact) {
-    return new PersonReference("", contact.getFullName(), contact.getEmail());
+  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
+    return new Contact(contact.getFullName(), contact.getEmail());
   }
 
   private void addListenerForNewEditEvent() {
@@ -238,9 +237,9 @@ public class ProjectDetailsComponent extends PageArea {
     analytesField.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
   }
 
-  private Div generatePersonReference(PersonReference personReference) {
-    Span nameSpan = new Span(personReference.fullName());
-    Span emailSpan = new Span(personReference.emailAddress());
+  private Div generatePersonReference(Contact contact) {
+    Span nameSpan = new Span(contact.fullName());
+    Span emailSpan = new Span(contact.emailAddress());
     Div personReferenceContainer = new Div(nameSpan, emailSpan);
     personReferenceContainer.addClassName("person-reference");
     emailSpan.addClassNames("email");

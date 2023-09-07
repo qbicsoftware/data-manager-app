@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.edit;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -25,7 +24,6 @@ import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
@@ -42,7 +40,6 @@ public class EditProjectInformationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 7327075228498213661L;
-  private static final Logger log = logger(EditProjectInformationDialog.class);
 
   private final Binder<ProjectInformation> binder;
 
@@ -322,30 +319,6 @@ public class EditProjectInformationDialog extends DialogWindow {
 
     public String getProjectObjective() {
       return projectObjective;
-    }
-
-    public String getPrincipalInvestigatorName() {
-      return principalInvestigator.getFullName();
-    }
-
-    public String getPrincipalInvestigatorEmail() {
-      return principalInvestigator.getEmail();
-    }
-
-    public String getResponsiblePersonName() {
-      return getResponsiblePerson().map(Contact::getFullName).orElse(null);
-    }
-
-    public String getResponsiblePersonEmail() {
-      return getResponsiblePerson().map(Contact::getEmail).orElse(null);
-    }
-
-    public String getProjectManagerName() {
-      return projectManager.getFullName();
-    }
-
-    public String getProjectManagerEmail() {
-      return projectManager.getEmail();
     }
 
     @Override
