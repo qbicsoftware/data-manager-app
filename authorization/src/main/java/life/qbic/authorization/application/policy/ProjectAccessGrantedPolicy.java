@@ -1,15 +1,15 @@
-package life.qbic.projectmanagement.application.policy;
+package life.qbic.authorization.application.policy;
 
 import java.util.Objects;
+import life.qbic.authorization.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Policy: Project access granted</b>
+ * <p>
+ * Business policy that needs to be executed after a project access has been granted.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectAccessGrantedPolicy {
 

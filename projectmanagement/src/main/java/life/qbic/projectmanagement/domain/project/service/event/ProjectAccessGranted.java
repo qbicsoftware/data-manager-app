@@ -19,16 +19,19 @@ public class ProjectAccessGranted extends DomainEvent {
   private final String userId;
   private final String projectId;
 
+  private final String projectTitle;
+
   private final Instant occurredOn;
 
-  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId) {
+  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId, String projectTitle) {
     this.userId = Objects.requireNonNull(userId);
     this.projectId = Objects.requireNonNull(projectId);
+    this.projectTitle = Objects.requireNonNull(projectTitle);
     this.occurredOn = occurredOn;
   }
 
-  public static ProjectAccessGranted create(String userId, String projectId) {
-    return new ProjectAccessGranted(Instant.now(), userId, projectId);
+  public static ProjectAccessGranted create(String userId, String projectId, String projectTitle) {
+    return new ProjectAccessGranted(Instant.now(), userId, projectId, projectTitle);
   }
 
   @Override
@@ -43,4 +46,7 @@ public class ProjectAccessGranted extends DomainEvent {
   public String forProject() {
     return projectId;
   }
+
+  public String withTitle() {
+    return projectTitle; }
 }
