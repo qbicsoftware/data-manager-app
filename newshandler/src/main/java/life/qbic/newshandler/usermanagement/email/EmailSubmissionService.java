@@ -15,6 +15,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.domain.concepts.communication.Email;
 import life.qbic.domain.concepts.communication.EmailService;
+import life.qbic.domain.concepts.communication.Recipient;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,6 +77,16 @@ public class EmailSubmissionService implements EmailService {
           successResponse -> reportSuccess(successResponse, email),
           failureResponse -> reportFailure(failureResponse, email));
     }
+  }
+
+  @Override
+  public void send(String recipientAddress, String recipientFullName, String subject, String message) {
+    var email = new Email(message, subject, "no-reply@qbic.life",
+        new Recipient(recipientAddress, recipientFullName),  "text/plain");
+    sendPlainEmail(email).ifSuccessOrElse(
+            successResponse -> reportSuccess(successResponse, email),
+            failureResponse -> reportFailure(failureResponse, email)
+    );
   }
 
   private void reportSuccess(ApplicationResponse applicationResponse, Email email) {
