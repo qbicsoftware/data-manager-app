@@ -7,7 +7,7 @@ import life.qbic.projectmanagement.domain.project.sample.SampleCode;
 
 
 /**
- * <b>Project Data Storage Interface</b>
+ * <b>Sample Data Storage Interface</b>
  *
  * <p>Provides access to the persistence layer that handles the {@link Sample} data storage.
  *
