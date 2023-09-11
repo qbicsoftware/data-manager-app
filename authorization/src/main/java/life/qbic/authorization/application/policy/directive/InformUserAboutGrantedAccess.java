@@ -64,7 +64,7 @@ public class InformUserAboutGrantedAccess implements DomainEventSubscriber<Proje
 
   @Override
   public void handleEvent(ProjectAccessGranted event) {
-    jobScheduler.enqueue(() -> notifyUser(event.forUser(), event.forProject(), event.withTitle()));
+    jobScheduler.enqueue(() -> notifyUser(event.forUserId(), event.forProjectId(), event.forProjectTitle()));
   }
 
   @Job(name = "Notify user about granted project access")

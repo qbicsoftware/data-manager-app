@@ -6,11 +6,11 @@ import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Access Granted Event</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>This event is emitted after access has been granted to a user</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectAccessGranted extends DomainEvent {
 
@@ -23,7 +23,8 @@ public class ProjectAccessGranted extends DomainEvent {
 
   private final Instant occurredOn;
 
-  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId, String projectTitle) {
+  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId,
+      String projectTitle) {
     this.userId = Objects.requireNonNull(userId);
     this.projectId = Objects.requireNonNull(projectId);
     this.projectTitle = Objects.requireNonNull(projectTitle);
@@ -39,14 +40,15 @@ public class ProjectAccessGranted extends DomainEvent {
     return this.occurredOn;
   }
 
-  public String forUser() {
+  public String forUserId() {
     return userId;
   }
 
-  public String forProject() {
+  public String forProjectId() {
     return projectId;
   }
 
-  public String withTitle() {
-    return projectTitle; }
+  public String forProjectTitle() {
+    return projectTitle;
+  }
 }
