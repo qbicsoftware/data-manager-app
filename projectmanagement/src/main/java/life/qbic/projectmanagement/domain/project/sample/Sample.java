@@ -1,7 +1,10 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Converter;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -40,7 +43,13 @@ public class Sample {
   private String label;
   private String comment;
   @Column(name = "analysis_type")
+  @Deprecated(forRemoval = true)
   private String analysisType;
+
+  @Column(name = "analysis_method")
+  @Convert(converter = AnalysisMethodConverter.class)
+  private AnalysisMethod analysisMethod;
+
   @Embedded
   private SampleCode sampleCode;
   @Embedded
@@ -119,6 +128,19 @@ public class Sample {
 
   public BiologicalReplicateId biologicalReplicateId() {
     return this.biologicalReplicateId;
+  }
+
+  static class AnalysisMethodConverter implements AttributeConverter<AnalysisMethod, String> {
+    
+    @Override
+    public String convertToDatabaseColumn(AnalysisMethod analysisMethod) {
+      return analysisMethod.name();
+    }
+
+    @Override
+    public AnalysisMethod convertToEntityAttribute(String s) {
+      return AnalysisMethod.valueOf(s);
+    }
   }
 
 }

@@ -212,7 +212,7 @@ class SampleSpreadsheetLayout extends Div {
         SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
             row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
             row.specimen(),
-            row.analyte(), row.analysisType(), row.customerComment());
+            row.analyte(), row.analysisType(), row.customerComment(), row.analysisMethod());
         samplesToRegister.add(sampleRegistrationContent);
       });
       return samplesToRegister;

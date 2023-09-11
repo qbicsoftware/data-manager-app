@@ -4,6 +4,7 @@ import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.AnalysisMethod;
 
 /**
  * <p> SampleRegistrationContent contains the sample information provided by the user during sample batch creation in the {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog}
@@ -22,6 +23,6 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
 public record SampleRegistrationContent(String label, BiologicalReplicateId biologicalReplicateId,
                                         Long experimentalGroupId,
                                         String species, String specimen, String analyte, String analysisType,
-                                        String comment) {
+                                        String comment, AnalysisMethod analysisMethod) {
 
 }

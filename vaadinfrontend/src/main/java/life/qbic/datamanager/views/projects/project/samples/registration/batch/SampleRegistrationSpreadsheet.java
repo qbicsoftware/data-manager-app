@@ -32,6 +32,7 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.AnalysisMethod;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ExtendedColor;
@@ -603,7 +604,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       rows.add(
           new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(), biologicalReplicateId,
               experimentalGroupId, speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
-              commentInput.trim()));
+              commentInput.trim(), AnalysisMethod.forFixedTerm(analysisTypeInput.trim())));
     }
     return rows;
   }
@@ -648,7 +649,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   public record NGSRowDTO(String analysisType, String sampleLabel,
                           BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
-                          String customerComment) {
+                          String customerComment, AnalysisMethod analysisMethod) {
 
   }
 

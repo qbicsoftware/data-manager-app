@@ -17,17 +17,18 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
  * @param replicateReference  the biological replicated reference the sample has been taken from
  * @param sampleOrigin        information about the sample origin.
  * @param analysisType        analysis to be performed
+ * @param analysisMethod      analysis method to be permed
  * @param comment             comment relating to the sample
  * @since 1.0.0
  */
 public record SampleRegistrationRequest(String label, BatchId assignedBatch,
                                         ExperimentId experimentId, Long experimentalGroupId,
                                         BiologicalReplicateId replicateReference,
-                                        SampleOrigin sampleOrigin, String analysisType, String comment) {
+                                        SampleOrigin sampleOrigin, String analysisType, String comment, AnalysisMethod analysisMethod) {
 
   public SampleRegistrationRequest(String label, BatchId assignedBatch, ExperimentId experimentId,
       Long experimentalGroupId, BiologicalReplicateId replicateReference,
-      SampleOrigin sampleOrigin, String analysisType, String comment) {
+      SampleOrigin sampleOrigin, String analysisType, String comment, AnalysisMethod analysisMethod) {
     this.label = Objects.requireNonNull(label);
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.experimentId = Objects.requireNonNull(experimentId);
@@ -36,6 +37,7 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.sampleOrigin = Objects.requireNonNull(sampleOrigin);
     this.comment = comment;
     this.analysisType = analysisType;
+    this.analysisMethod = analysisMethod;
   }
 
 }
