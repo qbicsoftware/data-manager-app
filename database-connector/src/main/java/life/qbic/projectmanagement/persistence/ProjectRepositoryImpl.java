@@ -78,7 +78,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
         PROJECT_MANAGER.permissions());
     try {
-      projectDataRepo.add(project.getProjectCode());
+      projectDataRepo.add(project);
     } catch (Exception e) {
       log.error("Could not add project to openBIS. Removing project from repository, as well.");
       projectRepo.delete(project);

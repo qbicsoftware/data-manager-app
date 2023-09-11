@@ -1,61 +1,77 @@
-package life.qbic.projectmanagement.experiment.persistence;
+package life.qbic.projectmanagement.persistence;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
+import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService.ResponseCode;
+import life.qbic.projectmanagement.experiment.persistence.QbicSampleDataRepo;
+import life.qbic.projectmanagement.experiment.persistence.QbicSampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
+
 
 /**
- * <b>Sample JPA Repository</b>
+ * <b>Sample repository implementation</b>
  *
- * <p>Implementation of the {@link SampleRepository} interface</p>
+ * <p>Implementation for the {@link SampleRepository} interface.
+ *
+ * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
+ * with persistent {@link Sample} data in the storage layer.
+ *
+ * <p>The actual JPA implementation is done by {@link QbicSampleRepository}, which is injected as
+ * dependency upon creation.
+ * <p>
+ * Also handles project storage in openBIS through {@link QbicSampleDataRepo}
  *
  * @since 1.0.0
  */
-@Repository
-public class SampleJpaRepository implements SampleRepository {
+@Service
+public class SampleRepositoryImpl implements SampleRepository {
 
-  private static final Logger log = logger(SampleJpaRepository.class);
+  private static final Logger log = logger(SampleRepositoryImpl.class);
   private final QbicSampleRepository qbicSampleRepository;
+  private final QbicSampleDataRepo sampleDataRepo;
 
   @Autowired
-  public SampleJpaRepository(QbicSampleRepository qbicSampleRepository) {
+  public SampleRepositoryImpl(QbicSampleRepository qbicSampleRepository,
+      QbicSampleDataRepo sampleDataRepo, ProjectAccessService projectAccessService) {
     this.qbicSampleRepository = qbicSampleRepository;
+    this.sampleDataRepo = sampleDataRepo;
   }
 
   @Override
-  public Result<Sample, ResponseCode> add(Sample sample) {
-    try {
-      this.qbicSampleRepository.save(sample);
-    } catch (Exception e) {
-      log.error("Saving sample with id failed:" + sample.sampleId(), e);
-      return Result.fromError(ResponseCode.REGISTRATION_FAILED);
-    }
-    return Result.fromValue(sample);
-  }
-
-  @Override
-  public Result<Collection<Sample>, ResponseCode> addAll(Collection<Sample> samples) {
+  public Result<Collection<Sample>, ResponseCode> addAll(Project project,
+      Collection<Sample> samples) {
     try {
       this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
       Collection<SampleId> failedSamples = new ArrayList<>();
       samples.forEach(sample -> failedSamples.add(sample.sampleId()));
-      String commaSeperatedSampleIds = failedSamples.stream().map(Object::toString).collect(Collectors.joining(", "));
+      String commaSeperatedSampleIds = failedSamples.stream().map(Object::toString).collect(
+          Collectors.joining(", "));
       log.error("The samples:" + commaSeperatedSampleIds + "could not be saved", e);
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
+    }
+    try {
+      sampleDataRepo.addBatch(project, samples.stream().toList());
+    } catch (Exception e) {
+      log.error("Could not add samples to openBIS. Removing samples from repository, as well.");
+      samples.forEach(sample -> qbicSampleRepository.delete(sample));
+      throw e;
     }
     return Result.fromValue(samples);
   }
@@ -74,4 +90,5 @@ public class SampleJpaRepository implements SampleRepository {
     }
     return Result.fromValue(samples);
   }
+
 }

@@ -17,7 +17,8 @@ class SampleRegistrationServiceSpec extends Specification {
 
     SampleCodeService sampleCodeService = Mock()
     SampleDomainService sampleDomainService = Mock()
-    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService)
+    ProjectInformationService projectInformationService = Mock()
+    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService)
     ProjectId projectId = ProjectId.create()
 
     def "No SampleRegistrationRequests returns a Result containing a NO_SAMPLES_DEFINED response code"() {
