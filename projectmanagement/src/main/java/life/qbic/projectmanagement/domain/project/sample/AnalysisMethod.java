@@ -57,10 +57,10 @@ public enum AnalysisMethod {
 
   static {
     fixedTermToEnum = new HashMap<>();
-    for(AnalysisMethod method : AnalysisMethod.values()) {
+    for (AnalysisMethod method : AnalysisMethod.values()) {
       fixedTermToEnum.put(method.term(), method);
     }
-  };
+  }
 
 
   private final String fixedTerm;

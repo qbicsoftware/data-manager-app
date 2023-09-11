@@ -73,11 +73,12 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
     Specification<SamplePreview> specimenSpec = SamplePreviewSpecs.specimenContains(filter);
     Specification<SamplePreview> analyteSpec = SamplePreviewSpecs.analyteContains(filter);
-    Specification<SamplePreview> analysisTypeSpec = SamplePreviewSpecs.analysisTypeContains(filter);
+    Specification<SamplePreview> analysisMethodContains = SamplePreviewSpecs.analysisMethodContains(
+        filter);
     Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
         sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, conditionSpec, speciesSpec,
-        specimenSpec, analyteSpec, analysisTypeSpec, commentSpec);
+        specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
         .and(containsFilterSpec)
@@ -163,9 +164,9 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
           builder.like(root.get("analyte"), "%" + filter + "%");
     }
 
-    public static Specification<SamplePreview> analysisTypeContains(String filter) {
+    public static Specification<SamplePreview> analysisMethodContains(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("analysisType"), "%" + filter + "%");
+          builder.like(root.get("analysisMethod"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> commentContains(String filter) {

@@ -382,7 +382,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
-    analysisTypes = generateGenomicsAnalysisTypes();
+    analysisTypes = generateGenomicsAnalysisMethods();
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
@@ -397,14 +397,13 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   }
 
   /**
-   * Collects all {@link SequenceAnalysisType} specific for the genomic {@link MetadataType}
+   * Collects all {@link AnalysisMethod} specific for the genomic {@link MetadataType}
    *
    * @return List of String labels for all genomic analysis types.
    */
-  private List<String> generateGenomicsAnalysisTypes() {
-    return Arrays.stream(SequenceAnalysisType
-            .values())
-        .map(e -> e.label)
+  private List<String> generateGenomicsAnalysisMethods() {
+    return Arrays.stream(AnalysisMethod.values())
+        .map(AnalysisMethod::term)
         .collect(Collectors.toList());
   }
 
@@ -673,21 +672,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     SamplesheetHeaderName(String label, boolean isMandatory) {
       this.label = label;
       this.isMandatory = isMandatory;
-    }
-  }
-
-  /**
-   * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
-   * of Analysis will be performed.
-   *
-   * @since 1.0.0
-   */
-  enum SequenceAnalysisType {
-    RNASEQ("RNA-Seq"), DNASEQ("DNA-Seq");
-    final String label;
-
-    SequenceAnalysisType(String label) {
-      this.label = label;
     }
   }
 
