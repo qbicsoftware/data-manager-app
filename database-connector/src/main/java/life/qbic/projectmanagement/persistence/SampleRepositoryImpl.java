@@ -48,7 +48,7 @@ public class SampleRepositoryImpl implements SampleRepository {
 
   @Autowired
   public SampleRepositoryImpl(QbicSampleRepository qbicSampleRepository,
-      QbicSampleDataRepo sampleDataRepo, ProjectAccessService projectAccessService) {
+      QbicSampleDataRepo sampleDataRepo) {
     this.qbicSampleRepository = qbicSampleRepository;
     this.sampleDataRepo = sampleDataRepo;
   }

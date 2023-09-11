@@ -225,8 +225,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private String getSampleTypeFromAnalysis(Optional<String> analysisType) {
     Map<String, String> analysisTypeToOpenBISType = new HashMap<>();
-    //analysisTypeToOpenBISType.put("RNA-Seq", "RNA");
-    //analysisTypeToOpenBISType.put("DNA-Seq", "DNA");
+    analysisTypeToOpenBISType.put("RNA-Seq", "RNA");
+    analysisTypeToOpenBISType.put("DNA-Seq", "DNA");
     return analysisTypeToOpenBISType.get(analysisType.get());
   }
 
