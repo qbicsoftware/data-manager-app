@@ -11,10 +11,14 @@ import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.authorization.application.AppContextProvider;
+import life.qbic.authorization.application.policy.ProjectAccessGrantedPolicy;
+import life.qbic.authorization.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
+import life.qbic.domain.concepts.communication.EmailService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
@@ -116,5 +120,14 @@ public class AppConfig {
         jobScheduler,
         projectRepository);
     return new ProjectRegisteredPolicy(createNewSampleStatisticsEntry);
+  }
+
+  @Bean
+  public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(EmailService emailService,
+      JobScheduler jobScheduler, UserRepository userRepository,
+      AppContextProvider appContextProvider) {
+    var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(emailService, jobScheduler,
+        userRepository, appContextProvider);
+    return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
   }
 }
