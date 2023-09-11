@@ -33,7 +33,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "Invalid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 5, BiologicalReplicateId.create(), sampleOrigin, "mytype", "no comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 5, BiologicalReplicateId.create(), sampleOrigin, "mytype", AnalysisMethod.ATAC_SEQ, "no comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
@@ -53,7 +53,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "Valid SampleRegistrationRequests returns a Result with the list of registered Samples"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)

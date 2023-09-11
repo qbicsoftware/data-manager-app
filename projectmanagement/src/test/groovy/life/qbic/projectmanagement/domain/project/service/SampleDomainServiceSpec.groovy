@@ -25,7 +25,7 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", ""))
+        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", AnalysisMethod.ATAC_SEQ, "comment"))
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
@@ -54,7 +54,7 @@ class SampleDomainServiceSpec extends Specification {
 
         when:
         Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample(SampleCode.create("test"),
-                new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", ""))
+                new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", AnalysisMethod.ATAC_SEQ, "comment"))
 
         then:
         sampleRegistered.batchIdOfEvent.equals(result.getValue().assignedBatch())
