@@ -19,7 +19,7 @@ import life.qbic.logging.service.LoggerFactory;
 public class MailServerConfiguration {
 
   private static final Logger log = LoggerFactory.logger(
-      EmailSubmissionService.class);
+      MailServerConfiguration.class);
 
   private static final boolean STARTTLS_ENABLED = true;
 

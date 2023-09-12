@@ -10,7 +10,6 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.domain.concepts.communication.Content;
-import life.qbic.domain.concepts.communication.EmailService;
 import life.qbic.domain.concepts.communication.Recipient;
 import life.qbic.domain.concepts.communication.Subject;
 import life.qbic.projectmanagement.domain.project.service.event.ProjectAccessGranted;

@@ -19,7 +19,6 @@ import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.domain.concepts.communication.CommunicationService;
-import life.qbic.domain.concepts.communication.EmailService;
 import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
 import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
