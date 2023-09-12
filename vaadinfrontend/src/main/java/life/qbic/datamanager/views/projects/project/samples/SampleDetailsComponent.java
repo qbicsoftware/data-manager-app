@@ -7,6 +7,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -46,6 +47,7 @@ import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
@@ -60,9 +62,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Sample Details Component
  * <p>
- * Component embedded within the {@link SampleInformationMain}. It
- * allows the user to see the information associated for all {@link Batch} and {@link Sample} of
- * each
+ * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
+ * information associated for all {@link Batch} and {@link Sample} of each
  * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
  * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
  * contained {@link BatchRegistrationDialog} and propagates the successful registration to the
@@ -130,10 +131,19 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return new ComponentRenderer<>(Div::new, styleConditionValue);
   }
 
-  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> {
+  private static final SerializableBiConsumer<Div, SamplePreview> styleConditionValue = (div, samplePreview) -> collectVariableLevelsInExperimentalGroup(
+      samplePreview.experimentalGroup()).forEach(
+      experimentalVariable -> {
+        Tag tag = new Tag(experimentalVariable);
+        tag.setTitle(experimentalVariable);
+        div.add(tag);
+        div.addClassName("tag-collection");
+      });
+
+  private static List<String> collectVariableLevelsInExperimentalGroup(
+      ExperimentalGroup experimentalGroup) {
     List<String> variableLevels = new ArrayList<>();
-    div.addClassName("tag-collection");
-    samplePreview.experimentalGroup()
+    experimentalGroup
         .condition().getVariableLevels().forEach(variableLevel -> {
           String experimentalVariable =
               variableLevel.variableName().value() + ": " + variableLevel.experimentalValue().value();
@@ -144,13 +154,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           variableLevels.add(experimentalVariable);
         });
     variableLevels.sort(null);
-    variableLevels.forEach(experimentalVariable -> {
-      Tag tag = new Tag(experimentalVariable);
-      tag.addClassName("primary");
-      tag.setTitle(experimentalVariable);
-      div.add(tag);
-    });
-  };
+    return variableLevels;
+  }
 
 
   /**
@@ -312,23 +317,28 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private Grid<SamplePreview> createSampleGrid() {
       Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
       sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
-          .setSortProperty("sampleCode");
+          .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
+          .setTooltipGenerator(SamplePreview::sampleCode);
       sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
-          .setSortProperty("sampleLabel");
+          .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
       sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
-          .setSortProperty("batchLabel");
+          .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
       sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
-          .setSortProperty("bioReplicateLabel");
-      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition").setAutoWidth(true)
-          .setSortProperty("experimentalGroup");
-      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species");
+          .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
+      sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
+          .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
+      sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species")
+          .setTooltipGenerator(SamplePreview::species);
       sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
-          .setSortProperty("specimen");
-      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte");
+          .setSortProperty("specimen").setTooltipGenerator(SamplePreview::specimen);
+      sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
+          .setTooltipGenerator(SamplePreview::analyte);
       sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
-          .setSortProperty("analysisType");
-      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment");
+          .setSortProperty("analysisType").setTooltipGenerator(SamplePreview::analysisType);
+      sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
+          .setTooltipGenerator(SamplePreview::comment);
       sampleGrid.addClassName("sample-grid");
+      sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
       return sampleGrid;
     }
 
