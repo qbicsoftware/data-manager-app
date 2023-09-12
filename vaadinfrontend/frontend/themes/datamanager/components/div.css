@@ -60,35 +60,5 @@
   flex-wrap: wrap;
   gap: var(--lumo-space-xs);
   width: 100%;
-}
-
-/* vaadin badge styling*/
-.tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 0.4em calc(0.5em + var(--lumo-border-radius-s) / 4);
-  color: var(--lumo-primary-text-color);
-  background-color: var(--lumo-primary-color-10pct);
-  border-radius: var(--lumo-border-radius-s);
-  font-family: var(--lumo-font-family);
-  font-size: var(--lumo-font-size-s);
-  line-height: 1;
-  font-weight: 500;
-  text-transform: initial;
-  letter-spacing: initial;
-  min-width: calc(var(--lumo-line-height-xs) * 1em + 0.45em);
-  flex-shrink: 0;
-}
-
-.tag::before {
-  display: inline-block;
-  content: '\2003';
-  width: 0;
-}
-
-.tag.contrast {
-  color: var(--lumo-contrast-80pct);
-  background-color: var(--lumo-contrast-5pct);
+  white-space: nowrap;
 }
