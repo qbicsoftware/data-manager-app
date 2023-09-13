@@ -73,6 +73,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private final OpenBisClient openBisClient;
 
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
+  private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
+  private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
@@ -201,7 +203,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     samples.forEach(sample -> {
       SampleCreation sampleCreation = new SampleCreation();
       sampleCreation.setCode(sample.sampleCode().code());
-      sampleCreation.setTypeId(new EntityTypePermId("Q_TEST_SAMPLE"));
+      sampleCreation.setTypeId(new EntityTypePermId(DEFAULT_SAMPLE_TYPE));
       sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
       Map<String, String> props = new HashMap<>();
 
@@ -295,7 +297,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private void createOpenbisExperiment(String spaceCode, String projectCode,
       String experimentCode) {
     ExperimentCreation experiment = new ExperimentCreation();
-    experiment.setTypeId(new EntityTypePermId("Q_SAMPLE_PREPARATION"));
+    experiment.setTypeId(new EntityTypePermId(DEFAULT_EXPERIMENT_TYPE));
     experiment.setProjectId(new ProjectIdentifier(spaceCode, projectCode));
     experiment.setCode(experimentCode);
 
