@@ -39,6 +39,9 @@ public class ExperimentInformationDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
 
+  private final String CHIP_BADGE_CLASS = "chip-badge";
+  private final String FULL_WIDTH_CLASS = "full-width-input";
+
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public ExperimentInformationDialog(
@@ -48,7 +51,7 @@ public class ExperimentInformationDialog extends DialogWindow {
     experimentHeader.addClassName("header");
 
     TextField experimentNameField = new TextField("Experiment Name");
-    experimentNameField.addClassName("full-width-input");
+    experimentNameField.addClassName(FULL_WIDTH_CLASS);
     binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
@@ -58,7 +61,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
     speciesBox.setRequired(true);
-    speciesBox.addClassNames("chip-badge", "full-width-input");
+    speciesBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
@@ -69,7 +72,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
     specimenBox.setRequired(true);
-    specimenBox.addClassNames("chip-badge", "full-width-input");
+    specimenBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
@@ -80,7 +83,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
     analyteBox.setRequired(true);
-    analyteBox.addClassNames("chip-badge", "full-width-input");
+    analyteBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
