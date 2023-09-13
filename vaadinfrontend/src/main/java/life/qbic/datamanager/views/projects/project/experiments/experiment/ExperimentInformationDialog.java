@@ -220,9 +220,9 @@ public class ExperimentInformationDialog extends DialogWindow {
     private static final long serialVersionUID = 8878913301284832509L;
 
     private String experimentName;
-    private final List<Species> species;
-    private final List<Specimen> specimen;
-    private final List<Analyte> analytes;
+    private final ArrayList<Species> species;
+    private final ArrayList<Specimen> specimen;
+    private final ArrayList<Analyte> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();

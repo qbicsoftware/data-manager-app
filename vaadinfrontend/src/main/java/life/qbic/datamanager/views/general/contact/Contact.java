@@ -17,7 +17,7 @@ import java.util.Objects;
 public final class Contact implements Serializable {
 
   @Serial
-  private static final long serialVersionUID = 8234652380418521324L;
+  private static final long serialVersionUID = 8233688580418521324L;
   private String fullName;
   private String email;
 
