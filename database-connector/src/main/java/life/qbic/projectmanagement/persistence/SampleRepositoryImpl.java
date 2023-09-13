@@ -3,13 +3,10 @@ package life.qbic.projectmanagement.persistence;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
-import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -67,7 +64,7 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     try {
-      sampleDataRepo.addBatch(project, samples.stream().toList());
+      sampleDataRepo.addSamplesToProject(project, samples.stream().toList());
     } catch (Exception e) {
       log.error("Could not add samples to openBIS. Removing samples from repository, as well.");
       samples.forEach(sample -> qbicSampleRepository.delete(sample));

@@ -20,10 +20,10 @@ public interface QbicSampleDataRepo {
    * A project must be provided, a unique experiment is created with each batch.
    *
    * @param project the {@link Project} for which samples should be created
-   * @param sampleBatch the batch of {@link Sample}s to be created in the data repo
+   * @param samples a list of {@link Sample}s to be created in the data repo
    * @since 1.0.0
    */
-  void addBatch(Project project, List<Sample> sampleBatch);
+  void addSamplesToProject(Project project, List<Sample> samples);
 
   /**
    * Deletes a sample with the provided code from persistence.

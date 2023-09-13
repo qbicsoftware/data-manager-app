@@ -185,11 +185,11 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * data. A project must be provided, a unique experiment is created with each batch.
    *
    * @param project the {@link Project} for which samples should be created
-   * @param sampleBatch the batch of {@link Sample}s to be created in the data repo
+   * @param samples the batch of {@link Sample}s to be created in the data repo
    * @since 1.0.0
    */
-  public void addBatch(Project project,
-      List<life.qbic.projectmanagement.domain.project.sample.Sample> sampleBatch) {
+  public void addSamplesToProject(Project project,
+      List<life.qbic.projectmanagement.domain.project.sample.Sample> samples) {
     String projectCodeString = project.getProjectCode().value();
     List<SampleCreation> samplesToRegister = new ArrayList<>();
 
@@ -198,7 +198,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     ExperimentIdentifier newExperimentID = new ExperimentIdentifier(DEFAULT_SPACE_CODE,
         projectCodeString, newExperimentCode);
 
-    sampleBatch.forEach(sample -> {
+    samples.forEach(sample -> {
       SampleCreation sampleCreation = new SampleCreation();
       sampleCreation.setCode(sample.sampleCode().code());
       sampleCreation.setTypeId(new EntityTypePermId("Q_TEST_SAMPLE"));
