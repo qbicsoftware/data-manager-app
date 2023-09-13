@@ -8,12 +8,13 @@ import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.validator.EmailValidator;
 
 /**
- * TODO!
- * <b>short description</b>
  *
- * <p>detailed description</p>
+ * <b>A component for contact person input</b>
  *
- * @since <version tag>
+ * <p>Provides components to add a contact person with a name and email.
+ * Includes methods for basic input validation.</p>
+ *
+ * @since 1.0.0
  */
 public class ContactField extends CustomField<Contact> {
 

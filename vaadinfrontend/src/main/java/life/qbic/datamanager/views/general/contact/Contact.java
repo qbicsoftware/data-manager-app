@@ -5,12 +5,12 @@ import static java.util.Objects.requireNonNull;
 import java.util.Objects;
 
 /**
- * TODO!
- * <b>short description</b>
  *
- * <p>detailed description</p>
+ * <b>A contact person</b>
  *
- * @since <version tag>
+ * <p>Describes a contact person with a name and email.</p>
+ *
+ * @since 1.0.0
  */
 public final class Contact {
 
