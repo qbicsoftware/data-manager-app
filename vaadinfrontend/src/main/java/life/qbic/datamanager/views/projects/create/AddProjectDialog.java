@@ -325,7 +325,7 @@ public class AddProjectDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = 1072173555312630829L;
-    private final ProjectDraft projectDraft;
+    private ProjectDraft projectDraft;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from

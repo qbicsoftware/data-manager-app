@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.general.contact;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -12,8 +14,10 @@ import java.util.Objects;
  *
  * @since 1.0.0
  */
-public final class Contact {
+public final class Contact implements Serializable {
 
+  @Serial
+  private static final long serialVersionUID = 8234652380418521324L;
   private String fullName;
   private String email;
 
