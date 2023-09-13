@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
@@ -39,8 +38,8 @@ public class ExperimentInformationDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
 
-  private final String CHIP_BADGE_CLASS = "chip-badge";
-  private final String FULL_WIDTH_CLASS = "full-width-input";
+  private static final String chipBadgeClass = "chip-badge";
+  private static final String fullWidthClass = "full-width-input";
 
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
@@ -51,7 +50,7 @@ public class ExperimentInformationDialog extends DialogWindow {
     experimentHeader.addClassName("header");
 
     TextField experimentNameField = new TextField("Experiment Name");
-    experimentNameField.addClassName(FULL_WIDTH_CLASS);
+    experimentNameField.addClassName(fullWidthClass);
     binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
@@ -61,7 +60,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
     speciesBox.setRequired(true);
-    speciesBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
+    speciesBox.addClassNames(chipBadgeClass, fullWidthClass);
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
@@ -72,7 +71,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
     specimenBox.setRequired(true);
-    specimenBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
+    specimenBox.addClassNames(chipBadgeClass, fullWidthClass);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
@@ -83,7 +82,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
     analyteBox.setRequired(true);
-    analyteBox.addClassNames(CHIP_BADGE_CLASS, FULL_WIDTH_CLASS);
+    analyteBox.addClassNames(chipBadgeClass, fullWidthClass);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
@@ -241,7 +240,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<Species> getSpecies() {
+    public ArrayList<Species> getSpecies() {
       return new ArrayList<>(species);
     }
 
@@ -250,7 +249,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.species.addAll(species);
     }
 
-    public List<Specimen> getSpecimens() {
+    public ArrayList<Specimen> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
@@ -259,7 +258,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.specimen.addAll(specimen);
     }
 
-    public List<Analyte> getAnalytes() {
+    public ArrayList<Analyte> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
