@@ -1,11 +1,11 @@
 package life.qbic.domain.concepts.communication;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Subject</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>The subject of a communication initiated with a user of the data manager.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record Subject(String content) {
 

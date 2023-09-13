@@ -1,11 +1,11 @@
 package life.qbic.domain.concepts.communication;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Content</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Content representation in the context of communication</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record Content(String content) {
 

@@ -7,7 +7,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.util.Objects;
 import life.qbic.domain.concepts.communication.Content;
-import life.qbic.domain.concepts.communication.NotificationException;
+import life.qbic.domain.concepts.communication.CommunicationException;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.domain.concepts.communication.Recipient;
 import life.qbic.domain.concepts.communication.Subject;
@@ -27,7 +27,7 @@ public class EmailCommunicationService implements CommunicationService {
       EmailCommunicationService.class);
   private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
 
-  private static final String CLOSING_MESSAGE_SCRIPT = """
+  private static final String SIGNATURE = """
       \nWith kind regards,
             
       Your QBiC team
@@ -40,7 +40,7 @@ public class EmailCommunicationService implements CommunicationService {
   }
 
   private static Content combineMessageWithRegards(Content message) {
-    return new Content(message.content() + CLOSING_MESSAGE_SCRIPT);
+    return new Content(message.content() + SIGNATURE);
   }
 
   @Override
@@ -51,7 +51,7 @@ public class EmailCommunicationService implements CommunicationService {
       log.debug("Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
     } catch (MessagingException e) {
       log.error("Could not send email to " + recipient.address(), e);
-      throw new NotificationException("Notification of recipient failed!");
+      throw new CommunicationException("Notification of recipient failed!");
     }
   }
 

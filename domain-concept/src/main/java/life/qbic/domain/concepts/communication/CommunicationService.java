@@ -9,6 +9,6 @@ package life.qbic.domain.concepts.communication;
  */
 public interface CommunicationService {
 
-  void send(Subject subject, Recipient recipient, Content content) throws NotificationException;
+  void send(Subject subject, Recipient recipient, Content content) throws CommunicationException;
 
 }
