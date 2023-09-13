@@ -53,22 +53,23 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Result<Collection<Sample>, ResponseCode> addAll(Project project,
       Collection<Sample> samples) {
+    Collection<SampleId> sampleIds = new ArrayList<>();
+    samples.forEach(sample -> sampleIds.add(sample.sampleId()));
+    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
+        Collectors.joining(", "));
     try {
       this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
-      Collection<SampleId> failedSamples = new ArrayList<>();
-      samples.forEach(sample -> failedSamples.add(sample.sampleId()));
-      String commaSeperatedSampleIds = failedSamples.stream().map(Object::toString).collect(
-          Collectors.joining(", "));
       log.error("The samples:" + commaSeperatedSampleIds + "could not be saved", e);
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     try {
       sampleDataRepo.addSamplesToProject(project, samples.stream().toList());
     } catch (Exception e) {
-      log.error("Could not add samples to openBIS. Removing samples from repository, as well.");
+      log.error("The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
+      log.error("Removing samples from repository, as well.");
       samples.forEach(sample -> qbicSampleRepository.delete(sample));
-      throw e;
+      return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     return Result.fromValue(samples);
   }

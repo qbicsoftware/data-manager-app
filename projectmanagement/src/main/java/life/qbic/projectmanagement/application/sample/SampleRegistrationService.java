@@ -1,10 +1,13 @@
 package life.qbic.projectmanagement.application.sample;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -26,6 +29,7 @@ public class SampleRegistrationService {
     private final SampleCodeService sampleCodeService;
     private final SampleDomainService sampleDomainService;
     private final ProjectInformationService projectInformationService;
+    private static final Logger log = logger(SampleRegistrationService.class);
 
     @Autowired
     public SampleRegistrationService(SampleCodeService sampleCodeService,
@@ -42,9 +46,11 @@ public class SampleRegistrationService {
         Objects.requireNonNull(projectId);
         var project = projectInformationService.find(projectId);
         if (project.isEmpty()) {
+            log.error("Project "+projectId+" was not found");
             return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
         }
         if (sampleRegistrationRequests.isEmpty()) {
+            log.error("No samples were defined");
             return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
         }
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>();
