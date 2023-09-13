@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
@@ -222,9 +223,9 @@ public class ExperimentInformationDialog extends DialogWindow {
     private static final long serialVersionUID = 8878913301284832509L;
 
     private String experimentName;
-    private final ArrayList<Species> species;
-    private final ArrayList<Specimen> specimen;
-    private final ArrayList<Analyte> analytes;
+    private final List<Species> species;
+    private final List<Specimen> specimen;
+    private final List<Analyte> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();
@@ -240,7 +241,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public ArrayList<Species> getSpecies() {
+    public List<Species> getSpecies() {
       return new ArrayList<>(species);
     }
 
@@ -249,7 +250,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.species.addAll(species);
     }
 
-    public ArrayList<Specimen> getSpecimens() {
+    public List<Specimen> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
@@ -258,7 +259,7 @@ public class ExperimentInformationDialog extends DialogWindow {
       this.specimen.addAll(specimen);
     }
 
-    public ArrayList<Analyte> getAnalytes() {
+    public List<Analyte> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
