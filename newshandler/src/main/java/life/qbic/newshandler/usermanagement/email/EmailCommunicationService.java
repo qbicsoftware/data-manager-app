@@ -6,20 +6,21 @@ import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.util.Objects;
-import life.qbic.domain.concepts.communication.Content;
 import life.qbic.domain.concepts.communication.CommunicationException;
 import life.qbic.domain.concepts.communication.CommunicationService;
+import life.qbic.domain.concepts.communication.Content;
 import life.qbic.domain.concepts.communication.Recipient;
 import life.qbic.domain.concepts.communication.Subject;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Email communication service</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of a {@link CommunicationService} that uses email to communicate with the
+ * user.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailCommunicationService implements CommunicationService {
 
@@ -48,7 +49,8 @@ public class EmailCommunicationService implements CommunicationService {
     try {
       var message = setupMessage(subject, recipient, content);
       Transport.send(message);
-      log.debug("Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
+      log.debug(
+          "Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
     } catch (MessagingException e) {
       log.error("Could not send email to " + recipient.address(), e);
       throw new CommunicationException("Notification of recipient failed!");
