@@ -144,10 +144,10 @@ public class ProjectCode {
   public static boolean isValid(String value) {
     try {
       parse(value);
-      return true;
     } catch (IllegalArgumentException e) {
       return false;
     }
+    return true;
   }
 
   public String value() {
