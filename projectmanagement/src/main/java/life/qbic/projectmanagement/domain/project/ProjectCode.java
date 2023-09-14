@@ -142,12 +142,14 @@ public class ProjectCode {
   }
 
   public static boolean isValid(String value) {
+    boolean isValid;
     try {
       parse(value);
+      isValid = true;
     } catch (IllegalArgumentException e) {
-      return false;
+      isValid = false;
     }
-    return true;
+    return isValid;
   }
 
   public String value() {
