@@ -32,6 +32,27 @@
   margin-bottom: 0.5rem;
 }
 
+/* Support section formatting and components */
+
+.experiment-item-collection {
+  display: flex;
+  gap: var(--lumo-space-s);
+  flex-flow: column;
+}
+
+.experiment-item-collection .content {
+  display: grid;
+  gap: var(--lumo-space-m);
+  grid-auto-rows: max-content;
+}
+
+.experiment-item-collection .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
 .project-collection {
   display: flex;
   gap: 1rem;
