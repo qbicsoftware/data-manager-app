@@ -71,10 +71,16 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final Logger log = logger(OpenbisConnector.class);
 
   private final OpenBisClient openBisClient;
-
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
+  private static Map<String, String> analysisTypeToSampleType;
+  static {
+    analysisTypeToSampleType = new HashMap<>();
+    analysisTypeToSampleType.put("RNA-Seq", "RNA");
+    analysisTypeToSampleType.put("DNA-Seq", "DNA");
+  }
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
@@ -209,7 +215,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
       props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
       props.put("Q_EXTERNALDB_ID", sample.label());
-      props.put("Q_SAMPLE_TYPE", getSampleTypeFromAnalysis(sample.analysisType()));
+      props.put("Q_SAMPLE_TYPE", analysisTypeToSampleType.get(sample.analysisType()));
 
       sampleCreation.setProperties(props);
 
@@ -223,13 +229,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       deleteOpenbisExperiment(newExperimentID);
       throw e;
     }
-  }
-
-  private String getSampleTypeFromAnalysis(Optional<String> analysisType) {
-    Map<String, String> analysisTypeToOpenBISType = new HashMap<>();
-    analysisTypeToOpenBISType.put("RNA-Seq", "RNA");
-    analysisTypeToOpenBISType.put("DNA-Seq", "DNA");
-    return analysisTypeToOpenBISType.get(analysisType.get());
   }
 
   private String findFreeExperimentCode(String projectCode) {
@@ -307,7 +306,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void deleteOpenbisProject(String spaceCode, String projectCode) {
     ProjectDeletionOptions deletionOptions = new ProjectDeletionOptions();
-    deletionOptions.setReason("unknown reason in data-manager");
+    deletionOptions.setReason(DEFAULT_DELETION_REASON);
     //OpenBis expects the projectspace and code during deletion
     ProjectIdentifier projectIdentifier = new ProjectIdentifier(spaceCode,
         projectCode);
@@ -320,7 +319,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void deleteOpenbisSample(String spaceCode, String sampleCode) {
     SampleDeletionOptions deletionOptions = new SampleDeletionOptions();
-    deletionOptions.setReason("unknown reason in data-manager");
+    deletionOptions.setReason(DEFAULT_DELETION_REASON);
     //OpenBis expects the projectspace and code during deletion
     SampleIdentifier sampleIdentifier = new SampleIdentifier(spaceCode, null, sampleCode);
     List<SampleIdentifier> openBisSampleIds = new ArrayList<>();
@@ -334,7 +333,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void deleteOpenbisExperiment(ExperimentIdentifier experimentIdentifier) {
     ExperimentDeletionOptions deletionOptions = new ExperimentDeletionOptions();
-    deletionOptions.setReason("unknown reason in data-manager");
+    deletionOptions.setReason(DEFAULT_DELETION_REASON);
     List<ExperimentIdentifier> openBisIds = new ArrayList<>();
     openBisIds.add(experimentIdentifier);
     // we need to handle this deletion operation differently in order to confirm deletion
