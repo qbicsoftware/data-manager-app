@@ -18,7 +18,7 @@ public class UserRepository implements Serializable {
   @Serial
   private static final long serialVersionUID = 5576670098610784078L;
 
-  private static UserRepository INSTANCE;
+  private static UserRepository instance;
 
   private final UserDataStorage dataStorage;
 
@@ -32,10 +32,10 @@ public class UserRepository implements Serializable {
    * @since 1.0.0
    */
   public static UserRepository getInstance(UserDataStorage dataStorage) {
-    if (INSTANCE == null) {
-      INSTANCE = new UserRepository(dataStorage);
+    if (instance == null) {
+      instance = new UserRepository(dataStorage);
     }
-    return INSTANCE;
+    return instance;
   }
 
   protected UserRepository(UserDataStorage dataStorage) {
