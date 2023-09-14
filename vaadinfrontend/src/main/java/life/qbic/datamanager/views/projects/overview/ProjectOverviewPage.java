@@ -73,11 +73,11 @@ public class ProjectOverviewPage extends Div {
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         projectDraft.getOfferId(),
         projectDraft.getProjectCode(),
-        projectDraft.getProjectTitle(),
-        projectDraft.getProjectObjective(),
-        projectDraft.getPrincipalInvestigator().toDomainContact(),
-        projectDraft.getResponsiblePerson().map(Contact::toDomainContact).orElse(null),
-        projectDraft.getProjectManager().toDomainContact());
+        projectDraft.getProjectInformation().getProjectTitle(),
+        projectDraft.getProjectInformation().getProjectObjective(),
+        projectDraft.getProjectInformation().getPrincipalInvestigator().toDomainContact(),
+        projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact).orElse(null),
+        projectDraft.getProjectInformation().getProjectManager().toDomainContact());
 
     project
         .onValue(result -> onProjectCreated(projectAddEvent))
