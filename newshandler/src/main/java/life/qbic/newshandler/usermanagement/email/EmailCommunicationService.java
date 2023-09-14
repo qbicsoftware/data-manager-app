@@ -29,7 +29,7 @@ public class EmailCommunicationService implements CommunicationService {
   private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
 
   private static final String SIGNATURE = """
-      \nWith kind regards,
+      With kind regards,
             
       Your QBiC team
       """;
