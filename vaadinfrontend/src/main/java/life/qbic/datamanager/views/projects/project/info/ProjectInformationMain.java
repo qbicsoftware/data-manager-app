@@ -43,7 +43,6 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ProjectContentComponent projectContentComponent;
   private final ProjectSupportComponent projectSupportComponent;
   private final UserPermissions userPermissions;
@@ -51,30 +50,26 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   private Context context;
 
   public ProjectInformationMain(
-      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ProjectContentComponent projectContentComponent,
       @Autowired ProjectSupportComponent projectSupportComponent,
       @Autowired UserPermissions userPermissions) {
     super(projectContentComponent, projectSupportComponent);
     requireNonNull(userPermissions, "userPermissions must not be null");
-    requireNonNull(projectNavigationBarComponent);
     requireNonNull(projectContentComponent);
     requireNonNull(projectSupportComponent);
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.projectContentComponent = projectContentComponent;
     this.projectSupportComponent = projectSupportComponent;
     this.userPermissions = userPermissions;
     layoutComponent();
     log.debug(String.format(
-        "New instance for project Information Page (#%s) created with Project Navigation Bar Component (#%s) and Project Content Component (#%s) and Project Support Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        "New instance for project Information Page (#%s) created with Project Content Component (#%s) and Project Support Component (#%s)",
+        System.identityHashCode(this),
         System.identityHashCode(projectContentComponent),
         System.identityHashCode(projectSupportComponent)));
   }
 
   private void layoutComponent() {
     addClassName("project");
-    addComponentAsFirst(projectNavigationBarComponent);
   }
 
   /**
@@ -102,7 +97,6 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
 
   private void setContext(Context context) {
     projectContentComponent.setContext(context);
-    projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
     projectSupportComponent.projectId(context.projectId().orElseThrow());
   }
 
