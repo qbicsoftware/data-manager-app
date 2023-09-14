@@ -20,13 +20,13 @@ public class EmailFormatPolicy {
   private static final String FULL_ADDRESS_SPEC =
       "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*+@(?:[a-zA-Z0-9-]+\\.)+?[a-zA-Z]{2,6}$";
 
-  private static EmailFormatPolicy INSTANCE;
+  private static EmailFormatPolicy policy;
 
   public static EmailFormatPolicy instance() {
-    if (INSTANCE == null) {
-      INSTANCE = new EmailFormatPolicy();
+    if (policy == null) {
+      policy = new EmailFormatPolicy();
     }
-    return INSTANCE;
+    return policy;
   }
 
   /**

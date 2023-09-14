@@ -32,7 +32,7 @@ public class PasswordEncryptionPolicy {
 
   private static final int KEY_SIZE_BITS = 256; // the key size value in bits for the encryption algorithm
   private static final int SALT_LENGTH_BYTES = 20; // the salt bit value for the salt generation
-  private static PasswordEncryptionPolicy INSTANCE;
+  private static PasswordEncryptionPolicy policy;
 
   /**
    * Creates a {@link PasswordEncryptionPolicy} reference. Following the singleton pattern an object
@@ -42,10 +42,10 @@ public class PasswordEncryptionPolicy {
    * @since 1.0.0
    */
   public static PasswordEncryptionPolicy instance() {
-    if (INSTANCE == null) {
-      INSTANCE = new PasswordEncryptionPolicy();
+    if (policy == null) {
+      policy = new PasswordEncryptionPolicy();
     }
-    return INSTANCE;
+    return policy;
   }
 
   /**

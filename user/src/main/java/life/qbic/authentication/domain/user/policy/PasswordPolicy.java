@@ -17,13 +17,13 @@ public class PasswordPolicy {
 
   private static final int MIN_LENGTH = 8;
 
-  private static PasswordPolicy INSTANCE;
+  private static PasswordPolicy policy;
 
   public static PasswordPolicy instance() {
-    if (INSTANCE == null) {
-      INSTANCE = new PasswordPolicy();
+    if (policy == null) {
+      policy = new PasswordPolicy();
     }
-    return INSTANCE;
+    return policy;
   }
 
   /**
