@@ -9,6 +9,10 @@ package life.qbic.authorization.application;
  */
 public class Messages {
 
+  private Messages() {
+
+  }
+
   /**
    * A pre-formatted message that informs a user about their new access grant to a project in the
    * data manager.
