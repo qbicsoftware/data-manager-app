@@ -46,7 +46,7 @@ public class SampleRegistrationService {
         Objects.requireNonNull(projectId);
         var project = projectInformationService.find(projectId);
         if (project.isEmpty()) {
-            log.error("Project "+projectId+" was not found");
+            log.error("Sample registration aborted. Reason: project with id:"+projectId+" was not found");
             return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
         }
         if (sampleRegistrationRequests.isEmpty()) {
