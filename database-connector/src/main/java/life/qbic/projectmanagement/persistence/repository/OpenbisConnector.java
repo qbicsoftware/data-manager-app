@@ -10,7 +10,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.create.CreateExperimentsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.create.ExperimentCreation;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.delete.DeleteExperimentsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.delete.ExperimentDeletionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.id.ExperimentIdentifier;
@@ -26,7 +25,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCrit
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.CreateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.DeleteSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
@@ -75,12 +73,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
-  private static Map<String, String> analysisTypeToSampleType;
-  static {
-    analysisTypeToSampleType = new HashMap<>();
-    analysisTypeToSampleType.put("RNA-Seq", "RNA");
-    analysisTypeToSampleType.put("DNA-Seq", "DNA");
-  }
+
+  private AnalyteToOpenbisSampleTypeMapper analyteMapper = new AnalyteToOpenbisSampleTypeMapperImpl();
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
@@ -206,6 +200,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     ExperimentIdentifier newExperimentID = new ExperimentIdentifier(DEFAULT_SPACE_CODE,
         projectCodeString, newExperimentCode);
 
+    try {
     samples.forEach(sample -> {
       SampleCreation sampleCreation = new SampleCreation();
       sampleCreation.setCode(sample.sampleCode().code());
@@ -215,7 +210,14 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
       props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
       props.put("Q_EXTERNALDB_ID", sample.label());
-      props.put("Q_SAMPLE_TYPE", analysisTypeToSampleType.get(sample.analysisType()));
+      String analyteValue = sample.sampleOrigin().getAnalyte().value();
+      Optional<String> openbisSampleType = analyteMapper.translateSampleTypeString(
+          analyteValue);
+      if(openbisSampleType.isEmpty()) {
+        logger("No mapping was found for "+analyteValue);
+        throw new MappingNotFoundException();
+      }
+      props.put("Q_SAMPLE_TYPE", openbisSampleType.get());
 
       sampleCreation.setProperties(props);
 
@@ -223,7 +225,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       samplesToRegister.add(sampleCreation);
 
     });
-    try {
       createOpenbisSamples(samplesToRegister);
     } catch (Exception e) {
       deleteOpenbisExperiment(newExperimentID);
@@ -374,4 +375,29 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   }
 
+  static class MappingNotFoundException extends RuntimeException {
+
+  }
+
+  public interface AnalyteToOpenbisSampleTypeMapper {
+
+    Optional<String> translateSampleTypeString(String analyte);
+  }
+
+  private class AnalyteToOpenbisSampleTypeMapperImpl implements
+      AnalyteToOpenbisSampleTypeMapper {
+
+    // dummy map needed once ontologies outside openBIS are used
+    private static Map<String, String> analyteToSampleType;
+    static {
+      analyteToSampleType = new HashMap<>();
+      analyteToSampleType.put("RNA", "RNA");
+      analyteToSampleType.put("DNA", "DNA");
+    }
+
+    @Override
+    public Optional<String> translateSampleTypeString(String analyte) {
+      return Optional.ofNullable(analyte);
+    }
+  }
 }
