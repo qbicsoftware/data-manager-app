@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.project.repository;
 import java.util.Collection;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.service.SampleDomainService.ResponseCode;
@@ -19,12 +20,10 @@ public interface SampleRepository {
   /**
    * Saves a sample entity persistently.
    *
-   * @param sample the sample to save.
+   * @param project the project this sample belongs to
+   * @param samples a batch of samples to save
    * @since 1.0.0
-   */
-  Result<Sample, ResponseCode> add(Sample sample);
-
-  Result<Collection<Sample>, ResponseCode> addAll(Collection<Sample> sample);
+   */Result<Collection<Sample>, ResponseCode> addAll(Project project, Collection<Sample> samples);
 
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
       ExperimentId experimentId);

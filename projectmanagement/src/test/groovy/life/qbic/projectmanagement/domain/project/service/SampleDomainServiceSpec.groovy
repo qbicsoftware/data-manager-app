@@ -4,6 +4,12 @@ import life.qbic.application.commons.Result
 import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
+import life.qbic.projectmanagement.domain.project.PersonReference
+import life.qbic.projectmanagement.domain.project.Project
+import life.qbic.projectmanagement.domain.project.ProjectCode
+import life.qbic.projectmanagement.domain.project.ProjectIntent
+import life.qbic.projectmanagement.domain.project.ProjectObjective
+import life.qbic.projectmanagement.domain.project.ProjectTitle
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
@@ -25,11 +31,16 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", AnalysisMethod.ATAC_SEQ, "comment"))
+        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", ""))
+        PersonReference who = new PersonReference()
+        Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
+        Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", "")
+        sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
-        testRepo.add(_ as Sample) >> Result.fromValue(testSample)
+        testRepo.addAll(_ as Project, _ as Collection<Sample>) >> Result.fromValue(Arrays.asList(testSample))
         SampleDomainService sampleDomainService = new SampleDomainService(testRepo)
 
         and:
@@ -53,11 +64,10 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        Result<Sample, SampleDomainService.ResponseCode> result = sampleDomainService.registerSample(SampleCode.create("test"),
-                new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", AnalysisMethod.ATAC_SEQ, "comment"))
+        Result<Collection<Sample>, SampleDomainService.ResponseCode> result = sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
 
         then:
-        sampleRegistered.batchIdOfEvent.equals(result.getValue().assignedBatch())
-        sampleRegistered.sampleIdOfEvent.equals(result.getValue().sampleId())
+        sampleRegistered.batchIdOfEvent.equals(result.getValue()[0].assignedBatch())
+        sampleRegistered.sampleIdOfEvent.equals(result.getValue()[0].sampleId())
     }
 }

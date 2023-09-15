@@ -16,10 +16,10 @@ public interface QbicProjectDataRepo {
   /**
    * Creates a reference to a {@link Project} in the data repository to connect project data.
    *
-   * @param projectCode the {@link ProjectCode} of the project reference to store
+   * @param project the {@link Project} for which a reference should be created
    * @since 1.0.0
    */
-  void add(ProjectCode projectCode);
+  void add(Project project);
 
   /**
    * Deletes a project with the provided code from persistence.

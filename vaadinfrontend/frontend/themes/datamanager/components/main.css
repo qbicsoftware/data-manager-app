@@ -1,6 +1,6 @@
 .main {
   display: grid;
-  gap: 1px 1px;
+  gap: 1rem 1px;
 }
 
 .main.experiment {
@@ -22,9 +22,7 @@
 
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, auto) 1fr;
   grid-template-areas:
-    "navbar support"
     "content support";
   height: 100%;
 }
@@ -70,7 +68,6 @@
   .main.project {
     grid-template-columns: minmax(1200px, 1fr);
     grid-template-areas:
-        "navbar"
     "content"
     "support";
     grid-auto-rows: auto;
