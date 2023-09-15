@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
@@ -199,6 +200,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     ExperimentIdentifier newExperimentID = new ExperimentIdentifier(DEFAULT_SPACE_CODE,
         projectCodeString, newExperimentCode);
 
+    try {
     samples.forEach(sample -> {
       SampleCreation sampleCreation = new SampleCreation();
       sampleCreation.setCode(sample.sampleCode().code());
@@ -208,7 +210,14 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
       props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
       props.put("Q_EXTERNALDB_ID", sample.label());
-      props.put("Q_SAMPLE_TYPE", analyteMapper.translateSampleTypeString(sample.sampleOrigin().getAnalyte().value()));
+      String analyteValue = sample.sampleOrigin().getAnalyte().value();
+      Optional<String> openbisSampleType = analyteMapper.translateSampleTypeString(
+          analyteValue);
+      if(openbisSampleType.isEmpty()) {
+        logger("No mapping was found for "+analyteValue);
+        throw new MappingNotFoundException();
+      }
+      props.put("Q_SAMPLE_TYPE", openbisSampleType.get());
 
       sampleCreation.setProperties(props);
 
@@ -216,7 +225,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       samplesToRegister.add(sampleCreation);
 
     });
-    try {
       createOpenbisSamples(samplesToRegister);
     } catch (Exception e) {
       deleteOpenbisExperiment(newExperimentID);
@@ -367,9 +375,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   }
 
+  static class MappingNotFoundException extends RuntimeException {
+
+  }
+
   public interface AnalyteToOpenbisSampleTypeMapper {
 
-    String translateSampleTypeString(String analyte);
+    Optional<String> translateSampleTypeString(String analyte);
   }
 
   private class AnalyteToOpenbisSampleTypeMapperImpl implements
@@ -384,8 +396,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     }
 
     @Override
-    public String translateSampleTypeString(String analyte) {
-      return analyte;
+    public Optional<String> translateSampleTypeString(String analyte) {
+      return Optional.ofNullable(analyte);
     }
   }
 }
