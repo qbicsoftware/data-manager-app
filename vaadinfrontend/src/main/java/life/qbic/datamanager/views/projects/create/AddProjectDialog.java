@@ -32,6 +32,7 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
@@ -112,7 +113,8 @@ public class AddProjectDialog extends DialogWindow {
     restrictProjectTitleLength();
     binder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind(ProjectDraft::getProjectTitle, ProjectDraft::setProjectTitle);
+        .bind((draft) -> draft.projectInformation.getProjectTitle(),
+            (draft, title) -> draft.projectInformation.setProjectTitle(title));
 
     Span codeAndTitleLayout = new Span();
     codeAndTitleLayout.addClassName("code-and-title");
@@ -123,7 +125,8 @@ public class AddProjectDialog extends DialogWindow {
     restrictProjectObjectiveLength();
     binder.forField(projectObjective)
         .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind(ProjectDraft::getProjectObjective, ProjectDraft::setProjectObjective);
+        .bind((draft) -> draft.projectInformation.getProjectObjective(),
+            (draft, objective) -> draft.projectInformation.setProjectObjective(objective));
 
     Div projectContactsLayout = new Div();
     projectContactsLayout.setClassName("project-contacts");
@@ -140,21 +143,23 @@ public class AddProjectDialog extends DialogWindow {
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
-        .bind(ProjectDraft::getPrincipalInvestigator, ProjectDraft::setPrincipalInvestigator);
+        .bind((draft) -> draft.projectInformation.getPrincipalInvestigator(),
+            (draft, pi) -> draft.projectInformation.setPrincipalInvestigator(pi));
 
     responsiblePersonField = new ContactField("Project Responsible (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
-        .bind(projectDraft -> projectDraft.getResponsiblePerson().orElse(null),
-            ProjectDraft::setResponsiblePerson);
+        .bind(projectDraft -> projectDraft.projectInformation.getResponsiblePerson().orElse(null),
+            (draft, responsible) -> draft.projectInformation.setResponsiblePerson(responsible));
 
     projectManagerField = new ContactField("Project Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
-        .bind(ProjectDraft::getProjectManager, ProjectDraft::setProjectManager);
+        .bind((draft) -> draft.projectInformation.getProjectManager(),
+            (draft, manager) -> draft.projectInformation.setProjectManager(manager));
 
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> close());
@@ -351,99 +356,28 @@ public class AddProjectDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = 1997619416908358254L;
+    private ProjectInformation projectInformation = new ProjectInformation();
     private String offerId = "";
     @NotEmpty
-    private String projectTitle = "";
-    @NotEmpty
     private String projectCode = "";
-    @NotEmpty
-    private String projectObjective = "";
-    @NotEmpty
-    private Contact principalInvestigator;
-    private Contact responsiblePerson;
-    @NotEmpty
-    private Contact projectManager;
 
     void setOfferId(String offerId) {
       this.offerId = offerId;
-    }
-
-    void setProjectTitle(String projectTitle) {
-      this.projectTitle = projectTitle;
     }
 
     void setProjectCode(String projectCode) {
       this.projectCode = projectCode;
     }
 
-    void setProjectObjective(String projectObjective) {
-      this.projectObjective = projectObjective;
-    }
-
-    public Contact getPrincipalInvestigator() {
-      return principalInvestigator;
-    }
-
-    public void setPrincipalInvestigator(
-        Contact principalInvestigator) {
-      this.principalInvestigator = principalInvestigator;
-    }
-
-    public Optional<Contact> getResponsiblePerson() {
-      return Optional.ofNullable(responsiblePerson);
-    }
-
-    public void setResponsiblePerson(Contact responsiblePerson) {
-      this.responsiblePerson = responsiblePerson;
-    }
-
-    public Contact getProjectManager() {
-      return projectManager;
-    }
-
-    public void setProjectManager(Contact projectManager) {
-      this.projectManager = projectManager;
-    }
-
     public String getOfferId() {
       return offerId;
-    }
-
-    public String getProjectTitle() {
-      return projectTitle;
     }
 
     public String getProjectCode() {
       return projectCode;
     }
 
-    public String getProjectObjective() {
-      return projectObjective;
-    }
-
-    public String getPrincipalInvestigatorName() {
-      return principalInvestigator.getFullName();
-    }
-
-    public String getPrincipalInvestigatorEmail() {
-      return principalInvestigator.getEmail();
-    }
-
-    public String getResponsiblePersonName() {
-      return getResponsiblePerson().map(Contact::getFullName).orElse(null);
-    }
-
-    public String getResponsiblePersonEmail() {
-      return getResponsiblePerson().map(Contact::getEmail).orElse(null);
-    }
-
-    public String getProjectManagerName() {
-      return projectManager.getFullName();
-    }
-
-    public String getProjectManagerEmail() {
-      return projectManager.getEmail();
-    }
+    public ProjectInformation getProjectInformation() { return projectInformation; }
 
     @Override
     public boolean equals(Object object) {
@@ -459,33 +393,17 @@ public class AddProjectDialog extends DialogWindow {
       if (!Objects.equals(offerId, that.offerId)) {
         return false;
       }
-      if (!Objects.equals(projectTitle, that.projectTitle)) {
+      if (!Objects.equals(projectInformation, that.projectInformation)) {
         return false;
       }
-      if (!Objects.equals(projectCode, that.projectCode)) {
-        return false;
-      }
-      if (!Objects.equals(projectObjective, that.projectObjective)) {
-        return false;
-      }
-      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
-        return false;
-      }
-      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
-        return false;
-      }
-      return Objects.equals(projectManager, that.projectManager);
+      return Objects.equals(projectCode, that.projectCode);
     }
 
     @Override
     public int hashCode() {
       int result = offerId != null ? offerId.hashCode() : 0;
-      result = 31 * result + (projectTitle != null ? projectTitle.hashCode() : 0);
+      result = 31 * result + (projectInformation != null ? projectInformation.hashCode() : 0);
       result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
-      result = 31 * result + (projectObjective != null ? projectObjective.hashCode() : 0);
-      result = 31 * result + (principalInvestigator != null ? principalInvestigator.hashCode() : 0);
-      result = 31 * result + (responsiblePerson != null ? responsiblePerson.hashCode() : 0);
-      result = 31 * result + (projectManager != null ? projectManager.hashCode() : 0);
       return result;
     }
   }

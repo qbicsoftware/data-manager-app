@@ -273,7 +273,6 @@ public class EditProjectInformationDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = -7260109309939021850L;
-
     @NotEmpty
     private String projectTitle = "";
     @NotEmpty
