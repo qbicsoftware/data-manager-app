@@ -215,7 +215,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
       props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
       props.put("Q_EXTERNALDB_ID", sample.label());
-      props.put("Q_SAMPLE_TYPE", analysisTypeToSampleType.get(sample.analysisType()));
+      props.put("Q_SAMPLE_TYPE", analysisTypeToSampleType.get(sample.analysisMethod().toString()));
 
       sampleCreation.setProperties(props);
 

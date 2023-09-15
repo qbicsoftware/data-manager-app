@@ -13,6 +13,9 @@ import java.util.Map;
  */
 public enum AnalysisMethod {
 
+  /*
+  NGS related analysis types
+   */
 
   SIXTEEN_S("16S", "16S amplicon sequencing",
       "Amplicon sequencing targeting the V4 region of the 16S rRNA gene"),
@@ -51,7 +54,36 @@ public enum AnalysisMethod {
       "Detection and quantitative analysis of RNA in a sample with PacBio technology"),
   ISOLATION_ONLY("ISOLATION-ONLY", "Isolation only", "DNA and RNA isolation only, no sequencing"),
   QC_ONLY("QC-ONLY", "QC only", "Quality control only, no sequencing"),
-  SEQ_ONLY("SEQ-ONLY", "Sequencing only", "Processing of ready-to-sequence pools");
+  SEQ_ONLY("SEQ-ONLY", "Sequencing only", "Processing of ready-to-sequence pools"),
+
+  /*
+  Proteomics related analysis types
+   */
+
+  PROTEOMICS("PROTEOMIICS", "Proteomics", ""),
+
+  PHOSPHO_PROTEOMICS("PHOSPHO", "Phosphoproteomics", ""),
+
+  PEPTIDOMICS("PEPTIDOMICS", "Peptidomics", ""),
+
+  INTERACTORS("INTERACTORS", "Interactors", ""),
+
+  PTMS("PTMS", "Posttransductional mutations", ""),
+
+  /*
+  Metabolomics related analysis types
+   */
+
+  UNTARGETED_MX("UNTARGETED-MX", "Untargeted metabolomics", ""),
+
+  TARGETED_AA("TARGETED-AA", "Targeted amino acids", "" ),
+
+  TARGETED_NUCLEOTIDES("TARGETED-NUCLEOTIDES", "Targeted nucleotides", ""),
+
+  TARGETED_CETO_ACIDS("TARGETED-CETO-ACIDS", "Targeted ceto acids", ""),
+
+  TARGETED_ALL_MX("TARGETED-ALL-MX", "Targeted all metabolites", "");
+
 
   private static final Map<String, AnalysisMethod> fixedTermToEnum;
 
@@ -73,6 +105,14 @@ public enum AnalysisMethod {
     this.fixedTerm = fixedTerm;
     this.label = label;
     this.description = description;
+  }
+
+  public static AnalysisMethod forFixedTerm(String term) throws IllegalArgumentException {
+    try {
+      return fixedTermToEnum.get(term);
+    } catch (NullPointerException e) {
+      throw new IllegalArgumentException("Unknown term " + term);
+    }
   }
 
   /**
@@ -108,12 +148,4 @@ public enum AnalysisMethod {
   public String description() {
     return this.description;
   }
-
-  public static AnalysisMethod forFixedTerm(String term) throws IllegalArgumentException {
-    try {
-      return fixedTermToEnum.get(term);
-    } catch (NullPointerException e) {
-      throw new IllegalArgumentException("Unknown term " + term);
-    }
   }
-}
