@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.CreationClickedEvent;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
 /**
@@ -18,9 +19,9 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
  * Component that lists experiments of a project and enables the user to quickly switch between them
  * for management.
  * <p>
- * The component enables the client to register to {@link ExperimentItem.ExperimentItemClickedEvent} to listen to
- * experiment selections by the user and {@link CreationClickedEvent}, indicating the user wants to
- * create a new experiment.
+ * The component enables the client to register to {@link ExperimentItem.ExperimentItemClickedEvent}
+ * to listen to experiment selections by the user and {@link CreationClickedEvent}, indicating the
+ * user wants to create a new experiment.
  *
  * @since 1.0.0
  */
@@ -30,11 +31,14 @@ public class ExperimentItemCollection extends Div {
   private final Div header = new Div();
   private final Div content = new Div();
   private final List<ExperimentItem> items = new ArrayList<>();
+  private final Disclaimer noExperimentDisclaimer;
 
   private ExperimentItemCollection() {
     addClassName("experiment-item-collection");
     layoutComponent();
+    this.noExperimentDisclaimer = createNoExperimentDisclaimer();
   }
+
 
   private void layoutComponent() {
     initHeader();
@@ -75,9 +79,30 @@ public class ExperimentItemCollection extends Div {
    */
   public void addExperimentItem(ExperimentItem item) {
     item.addClickListener(event -> fireEvent(
-        new ExperimentSelectionEvent(this, event.isFromClient(), event.getExperimentId())));
+        new ExperimentSelectionEvent(this, event.isFromClient(),
+            event.getSource().experimentId())));
     items.add(item);
     content.addComponentAsFirst(item);
+  }
+
+  private Disclaimer createNoExperimentDisclaimer() {
+    var disclaimer = Disclaimer.createWithTitle("Add an experiment",
+        "Get started by adding an experiment", "Add experiment");
+    disclaimer.addDisclaimerConfirmedListener(confirmedEvent -> fireEvent(
+        new AddExperimentClickEvent(this, confirmedEvent.isFromClient())));
+    return disclaimer;
+  }
+
+  public void showNoExperimentDisclaimer(boolean isShown) {
+    if (isShown) {
+      remove(header);
+      remove(content);
+      add(noExperimentDisclaimer);
+    } else {
+      remove(noExperimentDisclaimer);
+      addComponentAsFirst(header);
+      add(content);
+    }
   }
 
   /**

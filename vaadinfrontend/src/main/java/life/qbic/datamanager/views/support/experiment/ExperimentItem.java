@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.support.experiment;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.DomEvent;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -127,10 +128,10 @@ public class ExperimentItem extends Card {
    * @param listener the listener to be called upon
    * @since 1.0.0
    */
-  public void addClickListener(ComponentEventListener<ExperimentItemClickedEvent> listener) {
+  public void addClickListener(
+      ComponentEventListener<ExperimentItemClickedEvent> listener) {
     addListener(ExperimentItemClickedEvent.class, listener);
   }
-
 
   /**
    * <b>Experiment Item Clicked Event</b>
@@ -139,20 +140,15 @@ public class ExperimentItem extends Card {
    *
    * @since 1.0.0
    */
+  @DomEvent("click")
   public static class ExperimentItemClickedEvent extends ComponentEvent<ExperimentItem> {
 
     @Serial
     private static final long serialVersionUID = -342132279090013139L;
-    private final ExperimentId experimentId;
 
-    public ExperimentItemClickedEvent(ExperimentItem source, boolean fromClient,
-        ExperimentId experimentId) {
+    public ExperimentItemClickedEvent(ExperimentItem source, boolean fromClient) {
       super(source, fromClient);
-      this.experimentId = experimentId;
     }
 
-    public ExperimentId getExperimentId() {
-      return experimentId;
-    }
   }
 }

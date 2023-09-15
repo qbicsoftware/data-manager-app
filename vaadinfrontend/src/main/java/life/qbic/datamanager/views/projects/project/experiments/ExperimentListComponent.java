@@ -14,11 +14,11 @@ import life.qbic.datamanager.views.support.experiment.ExperimentItem;
 import life.qbic.datamanager.views.support.experiment.ExperimentItem.ExperimentItemClickedEvent;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection;
 import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.AddExperimentClickEvent;
+import life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.ExperimentSelectionEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -32,8 +32,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * {@link ExperimentInformationDialog} and enables the user to select an experiment of interest via
  * clicking on the {@link ExperimentItem} associated with the experiment.
  * <p>
- * Finally, it allows
- * components to be informed about a new experiment creation or selection via the {@link life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.ExperimentSelectionEvent} event.
+ * Finally, it allows components to be informed about a new experiment creation or selection via the
+ * {@link
+ * life.qbic.datamanager.views.support.experiment.ExperimentItemCollection.ExperimentSelectionEvent}
+ * event.
  */
 @SpringComponent
 @UIScope
@@ -44,15 +46,16 @@ public class ExperimentListComponent extends PageArea {
   private final transient ExperimentInformationService experimentInformationService;
   private Context context;
 
+
   public ExperimentListComponent(
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(experimentalDesignSearchService);
     this.experimentInformationService = experimentInformationService;
-    this.addClassName("experiment-list-component");
     this.experimentItemCollection = ExperimentItemCollection.create();
     this.add(experimentItemCollection);
+    this.addClassName("experiment-list-component");
     addItemCollectionListeners();
   }
 
@@ -65,8 +68,15 @@ public class ExperimentListComponent extends PageArea {
     experimentItemCollection.removeAll();
     Collection<Experiment> foundExperiments = experimentInformationService.findAllForProject(
         projectId);
-    foundExperiments.forEach(this::addExperimentToExperimentItemCollection);
+    if (foundExperiments.isEmpty()) {
+      experimentItemCollection.showNoExperimentDisclaimer(true);
+    } else {
+      experimentItemCollection.showNoExperimentDisclaimer(false);
+      foundExperiments.forEach(this::addExperimentToExperimentItemCollection);
+    }
   }
+
+
 
   public void refresh() {
     loadExperimentsForProject(context.projectId()
@@ -79,20 +89,8 @@ public class ExperimentListComponent extends PageArea {
   }
 
 
-
   private void addExperimentToExperimentItemCollection(Experiment experiment) {
     experimentItemCollection.addExperimentItem(ExperimentItem.create(experiment));
-  }
-
-  /**
-   * Provides the {@link ExperimentId} which annotates the currently selected Experiment to this
-   * component
-   * <p>
-   * This informs the {@link ExperimentItemCollection} about which experiment was selected by the
-   * user via the provided {@link ExperimentId}
-   */
-  public void setSelectedExperiment(ExperimentId experimentId) {
-    experimentItemCollection.findBy(experimentId).ifPresent(ExperimentItem::setAsSelected);
   }
 
   public void addAddButtonListener(ComponentEventListener<AddExperimentClickEvent> listener) {
@@ -103,10 +101,8 @@ public class ExperimentListComponent extends PageArea {
    * Adds the provided component listener for {@link ExperimentItemClickedEvent}
    */
   public void addExperimentSelectionListener(
-      ComponentEventListener<ExperimentItemClickedEvent> experimentSelectionListener) {
-    addListener(ExperimentItemClickedEvent.class, experimentSelectionListener);
+      ComponentEventListener<ExperimentSelectionEvent> experimentSelectionListener) {
+    addListener(ExperimentSelectionEvent.class, experimentSelectionListener);
   }
-
-
 
 }

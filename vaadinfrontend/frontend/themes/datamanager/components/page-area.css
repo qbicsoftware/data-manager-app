@@ -25,7 +25,8 @@
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-m);
-  height: 100%;
+  overflow: auto;
+  max-height: 50%;
 }
 
 .page-area.attachments-area .delete-button {
@@ -112,7 +113,11 @@
 }
 
 .page-area.experiment-list-component {
-  height: 100%;
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-m);
+  overflow: auto;
+  max-height: 50%;
 }
 
 .page-area.project-access-component {

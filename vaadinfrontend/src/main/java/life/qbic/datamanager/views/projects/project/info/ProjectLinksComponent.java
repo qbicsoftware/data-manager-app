@@ -12,13 +12,13 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -67,8 +67,8 @@ public class ProjectLinksComponent extends PageArea {
     add(projectLinks);
   }
 
-  public void projectId(ProjectId projectId) {
-    projectLinksComponentHandler.setProjectId(projectId);
+  public void setContext(Context context) {
+    projectLinksComponentHandler.setProjectId(context.projectId().orElseThrow());
   }
 
   private static ProjectLink offerLink(OfferIdentifier offerIdentifier) {
@@ -188,9 +188,9 @@ public class ProjectLinksComponent extends PageArea {
               it.isFromClient())));
     }
 
-    public Registration addSelectedOfferChangeListener(
+    public void addSelectedOfferChangeListener(
         ComponentEventListener<SelectedOfferChangeEvent> listener) {
-      return this.addListener(SelectedOfferChangeEvent.class, listener);
+      addListener(SelectedOfferChangeEvent.class, listener);
     }
 
     public void clearSelection() {
