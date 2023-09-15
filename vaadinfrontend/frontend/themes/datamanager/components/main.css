@@ -16,10 +16,6 @@
   grid-area: content;
 }
 
-.main.experiment .support {
-  grid-area: support;
-}
-
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
   grid-template-rows: minmax(10px, 100%);

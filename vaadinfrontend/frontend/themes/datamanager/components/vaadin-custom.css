@@ -49,3 +49,8 @@ vaadin-tabsheet.minimal::part(tabs-container) {
   box-shadow: none;
   --_lumo-tab-marker-display: none;
 }
+
+/*Hides the icon from the listbox*/
+vaadin-list-box.transparent-icons vaadin-item::part(checkmark)::before {
+  color: transparent;
+}
