@@ -403,8 +403,9 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private List<String> generateGenomicsAnalysisMethods() {
     return Arrays.stream(AnalysisMethod.values())
-        .map(AnalysisMethod::term)
-        .collect(Collectors.toList());
+        .map(method -> "%s".formatted(method.label()))
+        .sorted(Comparator.naturalOrder())
+        .toList();
   }
 
   public List<SamplesheetHeaderName> retrieveProteomics() {
