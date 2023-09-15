@@ -18,5 +18,6 @@ public class ExperimentSupportComponent extends Div {
   private static final long serialVersionUID = -6996282848714468102L;
 
   public ExperimentSupportComponent() {
+    //Needed for ExperimentInformationMain
   }
 }

@@ -133,7 +133,6 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   }
 
   private void setContext(Context context) {
-    experimentSupportComponent.setContext(context);
     experimentContentComponent.setContext(context);
     projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
     this.context = context;
