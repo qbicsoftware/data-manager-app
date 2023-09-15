@@ -4,7 +4,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import life.qbic.datamanager.views.Context;
 
 /**
  * Experiment support component
@@ -20,13 +19,4 @@ public class ExperimentSupportComponent extends Div {
 
   public ExperimentSupportComponent() {
   }
-
-  /**
-   * Propagates the context to internal components.
-   *
-   * @param context the context in which the user is.
-   */
-  public void setContext(Context context) {
-  }
-
 }
