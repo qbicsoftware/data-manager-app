@@ -6,14 +6,8 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
@@ -24,9 +18,8 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
+import life.qbic.datamanager.views.projects.ProjectFormLayout;
+import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 
 /**
  * <b>Project Information Dialog</b>
@@ -43,13 +36,9 @@ public class EditProjectInformationDialog extends DialogWindow {
   private static final long serialVersionUID = 7327075228498213661L;
 
   private final Binder<ProjectInformation> binder;
+  private final ProjectFormLayout formLayout;
 
   private ProjectInformation oldValue = new ProjectInformation();
-  private final TextField titleField;
-  private final TextArea projectObjective;
-  private final ContactField principalInvestigatorField;
-  private final ContactField responsiblePersonField;
-  private final ContactField projectManagerField;
 
   public EditProjectInformationDialog() {
     super();
@@ -61,75 +50,13 @@ public class EditProjectInformationDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     cancelButton.addClickListener(this::onCancelClicked);
 
-    binder = new Binder<>();
-
-    titleField = new TextField("Title");
-    titleField.addClassName("title");
-    titleField.setId("project-title-field");
-    titleField.setRequired(true);
-    restrictProjectTitleLength();
-    binder.forField(titleField)
-        .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind(ProjectInformation::getProjectTitle, ProjectInformation::setProjectTitle);
-
-    projectObjective = new TextArea("Objective");
-    projectObjective.setRequired(true);
-    restrictProjectObjectiveLength();
-    binder.forField(projectObjective)
-        .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind(ProjectInformation::getProjectObjective, ProjectInformation::setProjectObjective);
-
-    Div projectContactsLayout = new Div();
-    projectContactsLayout.setClassName("project-contacts");
-
-    Span projectContactsTitle = new Span("Project Contacts");
-    projectContactsTitle.addClassName("title");
-
-    Span projectContactsDescription = new Span("Important contact people of the project");
-
-    projectContactsLayout.add(projectContactsTitle);
-    projectContactsLayout.add(projectContactsDescription);
-
-    principalInvestigatorField = new ContactField("Principal Investigator");
-    principalInvestigatorField.setRequired(true);
-    principalInvestigatorField.setId("principal-investigator");
-    binder.forField(principalInvestigatorField)
-        .bind(ProjectInformation::getPrincipalInvestigator,
-            ProjectInformation::setPrincipalInvestigator);
-
-    responsiblePersonField = new ContactField("Project Responsible (optional)");
-    responsiblePersonField.setRequired(false);
-    responsiblePersonField.setId("responsible-person");
-    responsiblePersonField.setHelperText("Should be contacted about project-related questions");
-    binder.forField(responsiblePersonField)
-        .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
-            ProjectInformation::setResponsiblePerson);
-
-    projectManagerField = new ContactField("Project Manager");
-    projectManagerField.setRequired(true);
-    projectManagerField.setId("project-manager");
-    binder.forField(projectManagerField)
-        .bind(ProjectInformation::getProjectManager, ProjectInformation::setProjectManager);
+    formLayout = new ProjectFormLayout().buildEditProjectLayout();
+    binder = formLayout.getBinder();
 
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> close());
     cancelButton.addClickListener(buttonClickEvent -> close());
 
-    FormLayout formLayout = new FormLayout();
-    formLayout.addClassName("form-content");
-    formLayout.add(
-        titleField,
-        projectObjective,
-        projectContactsLayout,
-        principalInvestigatorField,
-        responsiblePersonField,
-        projectManagerField
-    );
-    formLayout.setColspan(titleField, 2);
-    formLayout.setColspan(projectObjective, 2);
-    formLayout.setColspan(principalInvestigatorField, 2);
-    formLayout.setColspan(responsiblePersonField, 2);
-    formLayout.setColspan(projectManagerField, 2);
     add(formLayout);
   }
 
@@ -157,10 +84,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   }
 
   private void validate() {
-    binder.validate();
-    principalInvestigatorField.validate();
-    responsiblePersonField.validate();
-    projectManagerField.validate();
+    formLayout.validate();
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
@@ -179,36 +103,8 @@ public class EditProjectInformationDialog extends DialogWindow {
    * interfaces
    */
   public void reset() {
-    principalInvestigatorField.clear();
-    projectManagerField.clear();
+    formLayout.reset();
     binder.setBean(new ProjectInformation());
-  }
-
-  private void restrictProjectObjectiveLength() {
-    projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-    projectObjective.setMaxLength((int) ProjectObjective.maxLength());
-    addConsumedLengthHelper(projectObjective, projectObjective.getValue());
-    projectObjective.addValueChangeListener(
-        e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-  }
-
-  private void restrictProjectTitleLength() {
-    titleField.setMaxLength((int) ProjectTitle.maxLength());
-    titleField.setValueChangeMode(ValueChangeMode.EAGER);
-    addConsumedLengthHelper(titleField, titleField.getValue());
-    titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-  }
-
-  private static void addConsumedLengthHelper(TextField textField, String newValue) {
-    int maxLength = textField.getMaxLength();
-    int consumedLength = newValue.length();
-    textField.setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
-    int maxLength = textArea.getMaxLength();
-    int consumedLength = newValue.length();
-    textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
@@ -307,7 +203,6 @@ public class EditProjectInformationDialog extends DialogWindow {
     public void setResponsiblePerson(Contact responsiblePerson) {
       this.responsiblePerson = responsiblePerson;
     }
-
     public Contact getProjectManager() {
       return projectManager;
     }

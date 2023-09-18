@@ -20,6 +20,9 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -32,6 +35,8 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.projects.ProjectFormLayout;
+import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
@@ -56,18 +61,12 @@ public class AddProjectDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 7327075228498213661L;
   private static final Logger log = logger(AddProjectDialog.class);
-
-  private final Binder<ProjectDraft> binder;
-
+  private final Binder<ProjectInformation> binder;
+  private final Binder<String> projectCodeBinder;
+  private final ProjectFormLayout formLayout;
   private final OfferLookupService offerLookupService;
   public final ComboBox<OfferPreview> offerSearchField;
-
   private final TextField codeField;
-  private final TextField titleField;
-  private final TextArea projectObjective;
-  private final ContactField principalInvestigatorField;
-  private final ContactField responsiblePersonField;
-  private final ContactField projectManagerField;
 
   public AddProjectDialog(OfferLookupService offerLookupService) {
     super();
@@ -81,7 +80,6 @@ public class AddProjectDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     cancelButton.addClickListener(this::onCancelClicked);
 
-    binder = new Binder<>();
     offerSearchField = createOfferSearch(this.offerLookupService);
 
     codeField = new TextField("Code");
@@ -94,101 +92,29 @@ public class AddProjectDialog extends DialogWindow {
         codeField.setValue(ProjectCode.random().value());
       }
     });
-    binder.forField(codeField)
-        .withValidator(ProjectCode::isValid,
-            "A project code starts with Q followed by 4 letters/numbers")
-        .bind(ProjectDraft::getProjectCode, ProjectDraft::setProjectCode);
 
-    Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
-    generateCodeButton.setId("generate-code-btn");
-    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
-    generateCodeButton.addClickListener(
-        buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
+    String code = "";
+    projectCodeBinder = new Binder<>();
+    projectCodeBinder.forField(codeField).withValidator(ProjectCode::isValid,
+        "A project code starts with Q followed by 4 letters/numbers").
+        bind(s -> code, (s, v) -> s = v);
 
-    titleField = new TextField("Title");
-    titleField.addClassName("title");
-    titleField.setId("project-title-field");
-    titleField.setRequired(true);
-    restrictProjectTitleLength();
-    binder.forField(titleField)
-        .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind((draft) -> draft.projectInformation.getProjectTitle(),
-            (draft, title) -> draft.projectInformation.setProjectTitle(title));
-
-    Span codeAndTitleLayout = new Span();
-    codeAndTitleLayout.addClassName("code-and-title");
-    codeAndTitleLayout.add(codeField, generateCodeButton, titleField);
-
-    projectObjective = new TextArea("Objective");
-    projectObjective.setRequired(true);
-    restrictProjectObjectiveLength();
-    binder.forField(projectObjective)
-        .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind((draft) -> draft.projectInformation.getProjectObjective(),
-            (draft, objective) -> draft.projectInformation.setProjectObjective(objective));
-
-    Div projectContactsLayout = new Div();
-    projectContactsLayout.setClassName("project-contacts");
-
-    Span projectContactsTitle = new Span("Project Contacts");
-    projectContactsTitle.addClassName("title");
-
-    Span projectContactsDescription = new Span("Important contact people of the project");
-
-    projectContactsLayout.add(projectContactsTitle);
-    projectContactsLayout.add(projectContactsDescription);
-
-    principalInvestigatorField = new ContactField("Principal Investigator");
-    principalInvestigatorField.setRequired(true);
-    principalInvestigatorField.setId("principal-investigator");
-    binder.forField(principalInvestigatorField)
-        .bind((draft) -> draft.projectInformation.getPrincipalInvestigator(),
-            (draft, pi) -> draft.projectInformation.setPrincipalInvestigator(pi));
-
-    responsiblePersonField = new ContactField("Project Responsible (optional)");
-    responsiblePersonField.setRequired(false);
-    responsiblePersonField.setId("responsible-person");
-    responsiblePersonField.setHelperText("Should be contacted about project-related questions");
-    binder.forField(responsiblePersonField)
-        .bind(projectDraft -> projectDraft.projectInformation.getResponsiblePerson().orElse(null),
-            (draft, responsible) -> draft.projectInformation.setResponsiblePerson(responsible));
-
-    projectManagerField = new ContactField("Project Manager");
-    projectManagerField.setRequired(true);
-    projectManagerField.setId("project-manager");
-    binder.forField(projectManagerField)
-        .bind((draft) -> draft.projectInformation.getProjectManager(),
-            (draft, manager) -> draft.projectInformation.setProjectManager(manager));
-
+    formLayout = new ProjectFormLayout().buildAddProjectLayout(offerSearchField, codeField);
+    binder = formLayout.getBinder();
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> close());
     cancelButton.addClickListener(buttonClickEvent -> close());
 
-    FormLayout formLayout = new FormLayout();
-    formLayout.addClassName("form-content");
-    formLayout.add(
-        offerSearchField,
-        codeAndTitleLayout,
-        projectObjective,
-        projectContactsLayout,
-        principalInvestigatorField,
-        responsiblePersonField,
-        projectManagerField
-    );
-    formLayout.setColspan(offerSearchField, 2);
-    formLayout.setColspan(codeAndTitleLayout, 2);
-    formLayout.setColspan(projectObjective, 2);
-    formLayout.setColspan(principalInvestigatorField, 2);
-    formLayout.setColspan(responsiblePersonField, 2);
-    formLayout.setColspan(projectManagerField, 2);
     add(formLayout);
   }
 
   private void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ProjectDraft projectDraft = new ProjectDraft();
+    ProjectInformation projectInformation = new ProjectInformation();
     try {
-      binder.writeBean(projectDraft);
+      binder.writeBean(projectInformation);
+      projectDraft.setProjectInformation(projectInformation);
+      projectDraft.setProjectCode(codeField.getValue());
       fireEvent(new ProjectAddEvent(projectDraft, this, clickEvent.isFromClient()));
     } catch (ValidationException e) {
       validate();
@@ -196,17 +122,14 @@ public class AddProjectDialog extends DialogWindow {
   }
 
   private void validate() {
-    binder.validate();
-    principalInvestigatorField.validate();
-    responsiblePersonField.validate();
-    projectManagerField.validate();
+    formLayout.validate();
+    projectCodeBinder.validate();
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
     close();
   }
-
 
   private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {
     final ComboBox<OfferPreview> searchField = new ComboBox<>("Offer");
@@ -243,8 +166,7 @@ public class AddProjectDialog extends DialogWindow {
   }
 
   private void fillProjectInformationFromOffer(Offer offer) {
-    titleField.setValue(offer.projectTitle().title());
-    projectObjective.setValue(offer.projectObjective().objective().replace("\n", " "));
+    formLayout.fillProjectInformationFromOffer(offer);
   }
 
   @Override
@@ -259,10 +181,7 @@ public class AddProjectDialog extends DialogWindow {
    */
   public void reset() {
     offerSearchField.clear();
-    principalInvestigatorField.clear();
-    projectManagerField.clear();
-    binder.removeBean();
-    binder.setBean(new ProjectDraft());
+    formLayout.reset();
   }
 
   /**
@@ -274,33 +193,6 @@ public class AddProjectDialog extends DialogWindow {
    */
   private static String previewToString(OfferPreview offerPreview) {
     return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
-  }
-
-  private void restrictProjectObjectiveLength() {
-    projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-    projectObjective.setMaxLength((int) ProjectObjective.maxLength());
-    addConsumedLengthHelper(projectObjective, projectObjective.getValue());
-    projectObjective.addValueChangeListener(
-        e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-  }
-
-  private void restrictProjectTitleLength() {
-    titleField.setMaxLength((int) ProjectTitle.maxLength());
-    titleField.setValueChangeMode(ValueChangeMode.EAGER);
-    addConsumedLengthHelper(titleField, titleField.getValue());
-    titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-  }
-
-  private static void addConsumedLengthHelper(TextField textField, String newValue) {
-    int maxLength = textField.getMaxLength();
-    int consumedLength = newValue.length();
-    textField.setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
-    int maxLength = textArea.getMaxLength();
-    int consumedLength = newValue.length();
-    textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
   public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {
@@ -349,62 +241,6 @@ public class AddProjectDialog extends DialogWindow {
 
     public ProjectDraft projectDraft() {
       return projectDraft;
-    }
-  }
-
-  public static final class ProjectDraft implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1997619416908358254L;
-    private ProjectInformation projectInformation = new ProjectInformation();
-    private String offerId = "";
-    @NotEmpty
-    private String projectCode = "";
-
-    void setOfferId(String offerId) {
-      this.offerId = offerId;
-    }
-
-    void setProjectCode(String projectCode) {
-      this.projectCode = projectCode;
-    }
-
-    public String getOfferId() {
-      return offerId;
-    }
-
-    public String getProjectCode() {
-      return projectCode;
-    }
-
-    public ProjectInformation getProjectInformation() { return projectInformation; }
-
-    @Override
-    public boolean equals(Object object) {
-      if (this == object) {
-        return true;
-      }
-      if (object == null || getClass() != object.getClass()) {
-        return false;
-      }
-
-      ProjectDraft that = (ProjectDraft) object;
-
-      if (!Objects.equals(offerId, that.offerId)) {
-        return false;
-      }
-      if (!Objects.equals(projectInformation, that.projectInformation)) {
-        return false;
-      }
-      return Objects.equals(projectCode, that.projectCode);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = offerId != null ? offerId.hashCode() : 0;
-      result = 31 * result + (projectInformation != null ? projectInformation.hashCode() : 0);
-      result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
-      return result;
     }
   }
 

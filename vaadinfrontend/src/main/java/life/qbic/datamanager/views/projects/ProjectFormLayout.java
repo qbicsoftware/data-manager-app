@@ -1,13 +1,7 @@
 package life.qbic.datamanager.views.projects;
 
-import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.ItemLabelGenerator;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -19,8 +13,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -28,14 +20,9 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.Optional;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
@@ -54,56 +41,21 @@ public class ProjectFormLayout extends FormLayout {
 
   @Serial
   private static final long serialVersionUID = 972380320581239752L;
-  private static final Logger log = logger(ProjectFormLayout.class);
+  private final Div projectContactsLayout = new Div();
 
-  private final Binder<ProjectDraft> binder;
-
-  private final OfferLookupService offerLookupService;
-  public final ComboBox<OfferPreview> offerSearchField;
-
-  private final TextField codeField;
+  private final Binder<ProjectInformation> binder;
   private final TextField titleField;
   private final TextArea projectObjective;
   private final ContactField principalInvestigatorField;
   private final ContactField responsiblePersonField;
   private final ContactField projectManagerField;
 
-  public ProjectFormLayout(OfferLookupService offerLookupService) {
+  public ProjectFormLayout() {
     super();
-    this.offerLookupService = requireNonNull(offerLookupService,
-        "offerLookupService must not be null");
 
-    addClassName("create-project-dialog");
-    setHeaderTitle("Add Project");
-    setConfirmButtonLabel("Add");
-    confirmButton.addClickListener(this::onConfirmClicked);
-    setCancelButtonLabel("Cancel");
-    cancelButton.addClickListener(this::onCancelClicked);
-
+    addClassName("form-content");
     binder = new Binder<>();
-    offerSearchField = createOfferSearch(this.offerLookupService);
-
-    codeField = new TextField("Code");
-    codeField.addClassName("code");
-    codeField.setId("project-code-field");
-    codeField.setRequired(true);
-    codeField.setHelperText("Q and 4 letters/numbers");
-    this.addOpenedChangeListener(openedChangeEvent -> {
-      if (openedChangeEvent.isOpened()) {
-        codeField.setValue(ProjectCode.random().value());
-      }
-    });
-    binder.forField(codeField)
-        .withValidator(ProjectCode::isValid,
-            "A project code starts with Q followed by 4 letters/numbers")
-        .bind(ProjectDraft::getProjectCode, ProjectDraft::setProjectCode);
-
-    Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
-    generateCodeButton.setId("generate-code-btn");
-    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
-    generateCodeButton.addClickListener(
-        buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
+    binder.setBean(new ProjectInformation());
 
     titleField = new TextField("Title");
     titleField.addClassName("title");
@@ -112,22 +64,17 @@ public class ProjectFormLayout extends FormLayout {
     restrictProjectTitleLength();
     binder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind((draft) -> draft.projectInformation.getProjectTitle(),
-            (draft, title) -> draft.projectInformation.setProjectTitle(title));
-
-    Span codeAndTitleLayout = new Span();
-    codeAndTitleLayout.addClassName("code-and-title");
-    codeAndTitleLayout.add(codeField, generateCodeButton, titleField);
+        .bind((ProjectInformation :: getProjectTitle),
+            ProjectInformation :: setProjectTitle);
 
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
     restrictProjectObjectiveLength();
     binder.forField(projectObjective)
         .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind((draft) -> draft.projectInformation.getProjectObjective(),
-            (draft, objective) -> draft.projectInformation.setProjectObjective(objective));
+        .bind((ProjectInformation :: getProjectObjective),
+            ProjectInformation :: setProjectObjective);
 
-    Div projectContactsLayout = new Div();
     projectContactsLayout.setClassName("project-contacts");
 
     Span projectContactsTitle = new Span("Project Contacts");
@@ -142,31 +89,58 @@ public class ProjectFormLayout extends FormLayout {
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
-        .bind((draft) -> draft.projectInformation.getPrincipalInvestigator(),
-            (draft, pi) -> draft.projectInformation.setPrincipalInvestigator(pi));
+        .bind((ProjectInformation :: getPrincipalInvestigator),
+            ProjectInformation :: setPrincipalInvestigator);
 
     responsiblePersonField = new ContactField("Project Responsible (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
-        .bind(projectDraft -> projectDraft.projectInformation.getResponsiblePerson().orElse(null),
-            (draft, responsible) -> draft.projectInformation.setResponsiblePerson(responsible));
+        .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
+            (projectInformation, responsible) -> projectInformation.setResponsiblePerson(responsible));
 
     projectManagerField = new ContactField("Project Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
-        .bind((draft) -> draft.projectInformation.getProjectManager(),
-            (draft, manager) -> draft.projectInformation.setProjectManager(manager));
+        .bind((ProjectInformation :: getProjectManager),
+            ProjectInformation :: setProjectManager);
+  }
 
-    // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> close());
-    cancelButton.addClickListener(buttonClickEvent -> close());
+  public ProjectFormLayout buildEditProjectLayout() {
+    add(
+        titleField,
+        projectObjective,
+        projectContactsLayout,
+        principalInvestigatorField,
+        responsiblePersonField,
+        projectManagerField
+    );
+    setColspan(titleField, 2);
+    setColspan(projectObjective, 2);
+    setColspan(principalInvestigatorField, 2);
+    setColspan(responsiblePersonField, 2);
+    setColspan(projectManagerField, 2);
 
-    FormLayout formLayout = new FormLayout();
-    formLayout.addClassName("form-content");
-    formLayout.add(
+    return this;
+  }
+
+  public ProjectFormLayout buildAddProjectLayout(ComboBox<OfferPreview> offerSearchField,
+      TextField codeField) {
+
+    Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
+    generateCodeButton.getElement().setAttribute("aria-label", "Generate Code");
+    generateCodeButton.setId("generate-code-btn");
+    generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    generateCodeButton.addClickListener(
+        buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
+
+    Span codeAndTitleLayout = new Span();
+    codeAndTitleLayout.addClassName("code-and-title");
+    codeAndTitleLayout.add(codeField, generateCodeButton, titleField);
+
+    add(
         offerSearchField,
         codeAndTitleLayout,
         projectObjective,
@@ -175,81 +149,26 @@ public class ProjectFormLayout extends FormLayout {
         responsiblePersonField,
         projectManagerField
     );
-    formLayout.setColspan(offerSearchField, 2);
-    formLayout.setColspan(codeAndTitleLayout, 2);
-    formLayout.setColspan(projectObjective, 2);
-    formLayout.setColspan(principalInvestigatorField, 2);
-    formLayout.setColspan(responsiblePersonField, 2);
-    formLayout.setColspan(projectManagerField, 2);
-    add(formLayout);
+    setColspan(offerSearchField, 2);
+    setColspan(codeAndTitleLayout, 2);
+    setColspan(projectObjective, 2);
+    setColspan(principalInvestigatorField, 2);
+    setColspan(responsiblePersonField, 2);
+    setColspan(projectManagerField, 2);
+
+    return this;
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    ProjectDraft projectDraft = new ProjectDraft();
-    try {
-      binder.writeBean(projectDraft);
-      fireEvent(new ProjectAddEvent(projectDraft, this, clickEvent.isFromClient()));
-    } catch (ValidationException e) {
-      validate();
-    }
-  }
-
-  private void validate() {
-    binder.validate();
-    principalInvestigatorField.validate();
-    responsiblePersonField.validate();
-    projectManagerField.validate();
-  }
-
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
-  }
-
-
-  private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {
-    final ComboBox<OfferPreview> searchField = new ComboBox<>("Offer");
-    searchField.setClassName("search-field");
-    searchField.setPlaceholder("Search");
-    searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
-
-    searchField.setItems(
-        query -> offerLookupService.findOfferContainingProjectTitleOrId(
-            query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
-            query.getLimit()).stream());
-
-    // Render the preview
-    searchField.setRenderer(
-        new ComponentRenderer<>(preview -> new Text(previewToString(preview))));
-
-    // Generate labels like the rendering
-    searchField.setItemLabelGenerator(
-        (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
-
-    searchField.addValueChangeListener(e -> {
-      if (searchField.getValue() != null) {
-        setOffer(searchField.getValue().offerId().id());
-      }
-    });
-    return searchField;
-  }
-
-  private void setOffer(String offerId) {
-    OfferId id = OfferId.from(offerId);
-    Optional<Offer> offer = offerLookupService.findOfferById(id);
-    offer.ifPresentOrElse(this::fillProjectInformationFromOffer,
-        () -> log.error("No offer found with id: " + offerId));
-  }
-
-  private void fillProjectInformationFromOffer(Offer offer) {
+  public void fillProjectInformationFromOffer(Offer offer) {
     titleField.setValue(offer.projectTitle().title());
     projectObjective.setValue(offer.projectObjective().objective().replace("\n", " "));
   }
 
-  @Override
-  public void close() {
-    super.close();
-    reset();
+  public void validate() {
+    binder.validate();
+    principalInvestigatorField.validate();
+    responsiblePersonField.validate();
+    projectManagerField.validate();
   }
 
   /**
@@ -257,22 +176,10 @@ public class ProjectFormLayout extends FormLayout {
    * interfaces
    */
   public void reset() {
-    offerSearchField.clear();
     principalInvestigatorField.clear();
     projectManagerField.clear();
     binder.removeBean();
-    binder.setBean(new ProjectDraft());
-  }
-
-  /**
-   * Render the preview like `#offer-id, #project title`
-   *
-   * @param offerPreview the offer preview
-   * @return the formatted String representation
-   * @since 1.0.0
-   */
-  private static String previewToString(OfferPreview offerPreview) {
-    return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
+    binder.setBean(new ProjectInformation());
   }
 
   private void restrictProjectObjectiveLength() {
@@ -302,54 +209,7 @@ public class ProjectFormLayout extends FormLayout {
     textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
-  public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {
-    addListener(ProjectAddEvent.class, listener);
-  }
-
-  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
-    addListener(CancelEvent.class, listener);
-  }
-
-  public static class CancelEvent extends
-      life.qbic.datamanager.views.events.UserCancelEvent<ProjectFormLayout> {
-
-    public CancelEvent(ProjectFormLayout source, boolean fromClient) {
-      super(source, fromClient);
-    }
-  }
-
-  /**
-   * <b>Project Add Event</b>
-   *
-   * <p>Indicates that a user submitted a project addition request</p>
-   *
-   * @since 1.0.0
-   */
-  public static class ProjectAddEvent extends ComponentEvent<ProjectFormLayout> {
-
-    @Serial
-    private static final long serialVersionUID = 1072173555312630829L;
-    private ProjectDraft projectDraft;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param projectDraft the project draft for which the event is fired
-     * @param source       the source component
-     * @param fromClient   <code>true</code> if the event originated from the client
-     *                     side, <code>false</code> otherwise
-     */
-    public ProjectAddEvent(ProjectDraft projectDraft, ProjectFormLayout source, boolean fromClient) {
-      super(source, fromClient);
-      requireNonNull(projectDraft, "projectDraft must not be null");
-      this.projectDraft = projectDraft;
-    }
-
-    public ProjectDraft projectDraft() {
-      return projectDraft;
-    }
-  }
+  public Binder<ProjectInformation> getBinder() { return binder; }
 
   public static final class ProjectDraft implements Serializable {
 
@@ -360,11 +220,7 @@ public class ProjectFormLayout extends FormLayout {
     @NotEmpty
     private String projectCode = "";
 
-    void setOfferId(String offerId) {
-      this.offerId = offerId;
-    }
-
-    void setProjectCode(String projectCode) {
+    public void setProjectCode(String projectCode) {
       this.projectCode = projectCode;
     }
 
@@ -405,6 +261,9 @@ public class ProjectFormLayout extends FormLayout {
       result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
       return result;
     }
-  }
 
+    public void setProjectInformation(ProjectInformation projectInformation) {
+      this.projectInformation = projectInformation;
+    }
+  }
 }
