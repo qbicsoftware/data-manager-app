@@ -53,7 +53,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private final ExperimentSupportComponent experimentSupportComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
-  private Context context;
+  private transient Context context;
 
   public ExperimentInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
@@ -134,7 +134,7 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
 
   private void setContext(Context context) {
     experimentContentComponent.setContext(context);
-    projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
+    projectNavigationBarComponent.setContext(context);
     this.context = context;
   }
 
