@@ -1,14 +1,14 @@
 .main {
   display: grid;
   gap: 1rem 1px;
+  height: 100%;
 }
 
 .main.experiment {
-  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
   grid-template-rows: minmax(130px, auto) 1fr;
   grid-template-areas:
-    "navbar support"
-    "content support";
+    "navbar"
+    "content";
   height: 100%;
 }
 
@@ -16,12 +16,9 @@
   grid-area: content;
 }
 
-.main.experiment .support {
-  grid-area: support;
-}
-
 .main.project {
-  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
+  grid-template-rows: minmax(10px, 100%);
   grid-template-areas:
     "content support";
   height: 100%;
@@ -34,6 +31,7 @@
 
 .main.project .support {
   grid-area: support;
+  height: 100%;
 }
 
 .main.sample {
@@ -60,8 +58,7 @@
     grid-template-columns: minmax(1200px, 1fr);
     grid-template-areas:
         "navbar"
-    "content"
-    "support";
+    "content";
     grid-auto-rows: auto;
   }
 
