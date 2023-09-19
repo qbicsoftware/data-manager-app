@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * The support component is a {@link Div} container, which is responsible for hosting the components
  * handling the sidebar content within the {@link ProjectInformationMain}. It propagates the project
  * information provided in the {@link ProjectLinksComponent} and the experiment information provided
- * in the {@link ExperimentListComponent} to the to the {@link ProjectInformationMain}, and vice
+ * in the {@link ExperimentListComponent} to the {@link ProjectInformationMain}, and vice
  * versa and can be easily extended with additional components if necessary
  */
 @SpringComponent
