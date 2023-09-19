@@ -252,7 +252,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
             batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
           fireBatchCreatedEvent(batchRegistrationEvent);
-          batchRegistrationDialog.close();
+          batchRegistrationDialog.resetAndClose();
           displayRegistrationSuccess();
         });
       });
