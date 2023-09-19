@@ -13,6 +13,8 @@ import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,7 @@ import org.springframework.context.annotation.Scope;
 /**
  * ProjectNavigationBarComponent
  * <p>
- * Allows the user to switch between the components shown in the {@link ProjectViewPage} by clicking
+ * Allows the user to switch between the components shown in each {@link MainComponent} by clicking
  * on the corresponding button within the Navigation Bar which routes the user to the respective
  * route defined in {@link life.qbic.datamanager.views.AppRoutes} for the component in question
  */
@@ -57,13 +59,15 @@ public class ProjectNavigationBarComponent extends PageArea {
     this.userPermissions = userPermissions;
   }
 
-  public void projectId(ProjectId projectId) {
+  public void setContext(Context context) {
+    ProjectId projectId = context.projectId().orElseThrow();
     projectInformationButton.setButtonRoute(
         String.format(Projects.PROJECT_INFO, projectId.value()));
+    context.experimentId().ifPresentOrElse(expId1 -> experimentsButton.setButtonRoute(
+            String.format(Projects.EXPERIMENT, projectId.value(), expId1.value())),
+        () -> experimentsButton.setButtonRoute(
+            String.format(Projects.EXPERIMENTS, projectId.value())));
     samplesButton.setButtonRoute(String.format(Projects.SAMPLES, projectId.value()));
-    //The user will be routed to the active experiment of the project handled by the experimentInformationMainPage
-    experimentsButton.setButtonRoute(String.format(Projects.EXPERIMENTS, projectId.value()));
-
     if (userPermissions.changeProjectAccess(projectId)) {
       accessButton.setButtonRoute(String.format(Projects.ACCESS, projectId.value()));
       add(accessButton);

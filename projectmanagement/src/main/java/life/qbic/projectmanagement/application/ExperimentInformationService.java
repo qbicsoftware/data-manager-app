@@ -71,11 +71,11 @@ public class ExperimentInformationService {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    Result<ExperimentalGroup, ResponseCode> result = activeExperiment.addExperimentalGroup(
+    Experiment experiment = loadExperimentById(experimentId);
+    Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
         experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
-      experimentRepository.update(activeExperiment);
+      experimentRepository.update(experiment);
     }
     return result;
   }
@@ -140,9 +140,9 @@ public class ExperimentInformationService {
     if (species.length < 1) {
       return;
     }
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    activeExperiment.addSpecies(List.of(species));
-    experimentRepository.update(activeExperiment);
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.addSpecies(List.of(species));
+    experimentRepository.update(experiment);
   }
 
   /**
@@ -157,9 +157,9 @@ public class ExperimentInformationService {
     if (specimens.length < 1) {
       return;
     }
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    activeExperiment.addSpecimens(List.of(specimens));
-    experimentRepository.update(activeExperiment);
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.addSpecimens(List.of(specimens));
+    experimentRepository.update(experiment);
   }
 
   /**
@@ -174,9 +174,9 @@ public class ExperimentInformationService {
     if (analytes.length < 1) {
       return;
     }
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    activeExperiment.addAnalytes(List.of(analytes));
-    experimentRepository.update(activeExperiment);
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.addAnalytes(List.of(analytes));
+    experimentRepository.update(experiment);
   }
 
   /**
@@ -197,15 +197,15 @@ public class ExperimentInformationService {
     if (levels.isEmpty()) {
       return;
     }
-    Experiment activeExperiment = loadExperimentById(experimentId);
+    Experiment experiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {
       ExperimentalValue experimentalValue = (unit.isBlank()) ? ExperimentalValue.create(level)
           : ExperimentalValue.create(level, unit);
       experimentalValues.add(experimentalValue);
     }
-    activeExperiment.addVariableToDesign(variableName, experimentalValues);
-    experimentRepository.update(activeExperiment);
+    experiment.addVariableToDesign(variableName, experimentalValues);
+    experimentRepository.update(experiment);
   }
 
   /**
@@ -250,8 +250,8 @@ public class ExperimentInformationService {
    * {@link ExperimentId}
    */
   public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
-    Experiment activeExperiment = loadExperimentById(experimentId);
-    return activeExperiment.variables();
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.variables();
   }
 
   /**

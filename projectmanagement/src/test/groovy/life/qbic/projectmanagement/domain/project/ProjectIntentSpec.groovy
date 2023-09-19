@@ -27,11 +27,10 @@ class ProjectIntentSpec extends Specification {
         given:
         ProjectTitle title = ProjectTitle.of("title")
         ProjectObjective objective = ProjectObjective.create("objective")
-        ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create("description")
 
         expect: "a project intent with equal values to be equal"
-        ProjectIntent.of(title, objective).with(experimentalDesignDescription)
-                == ProjectIntent.of(title, objective).with(experimentalDesignDescription)
+        ProjectIntent.of(title, objective)
+                == ProjectIntent.of(title, objective)
     }
 
     def "expect two project intents with different title to be different"() {
@@ -50,16 +49,5 @@ class ProjectIntentSpec extends Specification {
         ProjectObjective objectiveTwo = ProjectObjective.create("objective two")
         expect: "two project intents with different title to be different"
         ProjectIntent.of(title, objectiveOne) != ProjectIntent.of(title, objectiveTwo)
-    }
-
-    def "expect two project intents with different experimental design descriptions to be different"() {
-        given:
-        ProjectTitle title = ProjectTitle.of("title")
-        ProjectObjective objective = ProjectObjective.create("objective")
-        ExperimentalDesignDescription descriptionOne = ExperimentalDesignDescription.create("description one")
-        ExperimentalDesignDescription descriptionTwo = ExperimentalDesignDescription.create("description two")
-
-        expect: "two project intents with different title to be different"
-        ProjectIntent.of(title, objective).with(descriptionOne) != ProjectIntent.of(title, objective).with(descriptionTwo)
     }
 }

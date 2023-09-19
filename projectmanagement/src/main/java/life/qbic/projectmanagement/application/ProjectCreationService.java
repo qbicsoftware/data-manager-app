@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
@@ -10,17 +10,13 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
+import life.qbic.projectmanagement.domain.project.Contact;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.PersonReference;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService;
 import life.qbic.projectmanagement.domain.project.service.ProjectDomainService.ResponseCode;
@@ -30,71 +26,59 @@ import org.springframework.stereotype.Service;
  * Application service facilitating the creation of projects.
  */
 @Service
-public class ProjectRegistrationService {
+public class ProjectCreationService {
 
-  private static final Logger log = logger(ProjectRegistrationService.class);
+  private static final Logger log = logger(ProjectCreationService.class);
 
   private final ProjectRepository projectRepository;
-
-  private final AddExperimentToProjectService addExperimentToProjectService;
   private final ProjectDomainService projectDomainService;
 
-  public ProjectRegistrationService(ProjectRepository projectRepository,
-      AddExperimentToProjectService addExperimentToProjectService,
+  public ProjectCreationService(ProjectRepository projectRepository,
       ProjectDomainService projectDomainService) {
-    this.projectRepository = Objects.requireNonNull(projectRepository);
-    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService);
-    this.projectDomainService = Objects.requireNonNull(projectDomainService);
+    this.projectRepository = requireNonNull(projectRepository);
+    this.projectDomainService = requireNonNull(projectDomainService);
   }
 
+
   /**
-   * Create a new project based on the information provided.
+   * Create a new project based on the information provided
    *
-   * @param title              the title of the project.
-   * @param objective          the objective of the project
-   * @param experimentalDesign a description of the experimental design
-   * @return the created project
+   * @param sourceOffer the offer from which information was taken
+   * @param code        the projects code
+   * @param title       the project title
+   * @param objective   the project objective
+   * @return a result containing the project or an exception
    */
-  public Result<Project, ApplicationException> registerProject(String sourceOffer, String code,
-      String title, String objective, String experimentalDesign, List<Species> speciesList,
-      List<Specimen> specimenList, List<Analyte> analyteList, PersonReference principalInvestigator,
-      PersonReference responsiblePerson, PersonReference projectManager) {
+  public Result<Project, ApplicationException> createProject(String sourceOffer,
+      String code,
+      String title,
+      String objective,
+      Contact principalInvestigator,
+      Contact responsiblePerson,
+      Contact projectManager) {
+    if (Objects.isNull(principalInvestigator)) {
+      return Result.fromError(new ApplicationException("principal investigator is null"));
+    }
+    if (Objects.isNull(projectManager)) {
+      return Result.fromError(new ApplicationException("project manager is null"));
+    }
 
     try {
-      Project project = registerProject(code, title, objective, experimentalDesign, projectManager,
+      Project project = createProject(code, title, objective, projectManager,
           principalInvestigator, responsiblePerson);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
-      addExperimentToProjectService.addExperimentToProject(project.getId(), "First Experiment",
-          speciesList, specimenList, analyteList).onError(e -> {
-        projectRepository.deleteByProjectCode(project.getProjectCode());
-        throw new ApplicationException(
-            "failed to add experiment to project " + project.getId(), e);
-      });
       return Result.fromValue(project);
-    } catch (ApplicationException projectManagementException) {
-      return Result.fromError(projectManagementException);
     } catch (RuntimeException e) {
-      log.error(e.getMessage(), e);
-      return Result.fromError(new ApplicationException());
+      return Result.fromError(ApplicationException.wrapping(e));
     }
   }
 
-  private Project registerProject(String code, String title, String objective,
-      String experimentalDesign, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
-
-    ExperimentalDesignDescription experimentalDesignDescription;
-    try {
-      experimentalDesignDescription = ExperimentalDesignDescription.create(experimentalDesign);
-    } catch (IllegalArgumentException e) {
-      log.error(e.getMessage(), e);
-      throw new ApplicationException(ErrorCode.INVALID_EXPERIMENTAL_DESIGN,
-          ErrorParameters.of(ExperimentalDesignDescription.maxLength(), experimentalDesign));
-    }
-
-    ProjectIntent intent = getProjectIntent(title, objective).with(experimentalDesignDescription);
+  private Project createProject(String code, String title, String objective,
+      Contact projectManager,
+      Contact principalInvestigator, Contact responsiblePerson) {
+    ProjectIntent intent = getProjectIntent(title, objective);
     ProjectCode projectCode;
     try {
       projectCode = ProjectCode.parse(code);

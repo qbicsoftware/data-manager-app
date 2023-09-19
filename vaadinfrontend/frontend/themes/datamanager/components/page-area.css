@@ -25,7 +25,8 @@
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-m);
-  height: 100%;
+  overflow: auto;
+  max-height: 50%;
 }
 
 .page-area.attachments-area .delete-button {
@@ -112,7 +113,24 @@
 }
 
 .page-area.experiment-list-component {
-  height: 100%;
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-m);
+  overflow: auto;
+  max-height: 50%;
+}
+
+.page-area.experiment-list-component .content {
+  display: grid;
+  gap: var(--lumo-space-m);
+  grid-auto-rows: max-content;
+}
+
+.page-area.experiment-list-component .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
 }
 
 .page-area.project-access-component {
