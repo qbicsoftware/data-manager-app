@@ -80,11 +80,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
-  /**
-   * Resets the dialogue to its original state, removing all user input and changes and closes the
-   * dialog window
-   */
-  public void resetAndClose() {
+  @Override
+  public void close() {
     registerBatchDialogHandler.resetAndClose();
   }
 

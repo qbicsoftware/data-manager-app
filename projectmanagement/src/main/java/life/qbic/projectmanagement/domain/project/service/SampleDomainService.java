@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.domain.project.service;
 
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.SampleCode;
@@ -33,34 +35,16 @@ public class SampleDomainService {
         this.sampleRepository = Objects.requireNonNull(sampleRepository);
     }
 
-    /**
-     * Registers a new sample for measurement.
-     *
-     * @param sampleCode                A unique {@link SampleCode} which defines the sample to be registered
-     * @param sampleRegistrationRequest The {@link SampleRegistrationRequest} containing the information to be stored within the sample
-     * @return A {@link Result} object with the created {@link Sample} or an error with
-     * {@link ResponseCode}
-     * @since 1.0.0
-     */
-    public Result<Sample, ResponseCode> registerSample(SampleCode sampleCode,
-                                                       SampleRegistrationRequest sampleRegistrationRequest) {
-        Objects.requireNonNull(sampleCode);
-        Objects.requireNonNull(sampleRegistrationRequest);
-        var sample = Sample.create(sampleCode, sampleRegistrationRequest);
-        Result<Sample, ResponseCode> result = this.sampleRepository.add(sample);
-        // For successful registration transactions we dispatch the event
-        result.onValue(this::dispatchSuccessfulSampleRegistration);
-        return result;
-    }
-
-    public Result<Collection<Sample>, ResponseCode> registerSamples(Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests) {
+    public Result<Collection<Sample>, ResponseCode> registerSamples(Project project, Map<SampleCode,
+        SampleRegistrationRequest> sampleCodesToRegistrationRequests) {
         Objects.requireNonNull(sampleCodesToRegistrationRequests);
         Collection<Sample> samplesToRegister = new ArrayList<>();
         sampleCodesToRegistrationRequests.forEach((sampleCode, sampleRegistrationRequest) -> {
             var sample = Sample.create(sampleCode, sampleRegistrationRequest);
             samplesToRegister.add(sample);
         });
-        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(samplesToRegister);
+        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(project,
+            samplesToRegister);
         result.onValue(createdSamples ->
                 createdSamples.forEach(this::dispatchSuccessfulSampleRegistration)).onError(Result::fromError);
         return result;

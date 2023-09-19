@@ -8,13 +8,11 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.project.ExperimentalDesignDescription;
-import life.qbic.projectmanagement.domain.project.PersonReference;
+import life.qbic.projectmanagement.domain.project.Contact;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
@@ -88,29 +86,21 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
-  public void manageProject(ProjectId projectId, PersonReference personReference) {
+  public void manageProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
-    project.setProjectManager(personReference);
+    project.setProjectManager(contact);
     projectRepository.update(project);
   }
 
-  public void investigateProject(ProjectId projectId, PersonReference personReference) {
+  public void investigateProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
-    project.setPrincipalInvestigator(personReference);
+    project.setPrincipalInvestigator(contact);
     projectRepository.update(project);
   }
 
-  public void setResponsibility(ProjectId projectId, PersonReference personReference) {
+  public void setResponsibility(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
-    project.setResponsiblePerson(personReference);
-    projectRepository.update(project);
-  }
-
-  public void describeExperimentalDesign(ProjectId projectId, String experimentalDesign) {
-    ExperimentalDesignDescription experimentalDesignDescription = ExperimentalDesignDescription.create(
-        experimentalDesign);
-    Project project = loadProject(projectId);
-    project.describeExperimentalDesign(experimentalDesignDescription);
+    project.setResponsiblePerson(contact);
     projectRepository.update(project);
   }
 
@@ -118,12 +108,6 @@ public class ProjectInformationService {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);
-    projectRepository.update(project);
-  }
-
-  public void setActiveExperiment(ProjectId projectId, ExperimentId experimentId) {
-    Project project = loadProject(projectId);
-    project.setActiveExperiment(experimentId);
     projectRepository.update(project);
   }
 }

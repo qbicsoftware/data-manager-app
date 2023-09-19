@@ -22,6 +22,7 @@ public class DialogWindow extends Dialog {
     cancelButton.setThemeName("tertiary");
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
+    getFooter().add(cancelButton, confirmButton);
   }
 
   /**

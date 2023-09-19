@@ -9,12 +9,14 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.create.ProjectDraft;
+import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
-import life.qbic.projectmanagement.application.ProjectRegistrationService;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,14 +36,14 @@ public class ProjectOverviewPage extends Div {
 
   private final ProjectCollectionComponent projectCollectionComponent;
   private final AddProjectDialog addProjectDialog;
-  private final ProjectRegistrationService projectRegistrationService;
+  private final ProjectCreationService projectCreationService;
 
   public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
       AddProjectDialog addProjectDialog,
-      ProjectRegistrationService projectRegistrationService) {
+      ProjectCreationService projectCreationService) {
     this.projectCollectionComponent = projectCollectionComponent;
     this.addProjectDialog = addProjectDialog;
-    this.projectRegistrationService = projectRegistrationService;
+    this.projectCreationService = projectCreationService;
     layoutPage();
     configurePage();
 
@@ -56,11 +58,9 @@ public class ProjectOverviewPage extends Div {
     projectCollectionComponent.addListener(projectCreationClickedEvent ->
         addProjectDialog.open()
     );
-    addProjectDialog.addCancelEventListener(projectCreationDialogUserCancelEvent ->
-        addProjectDialog.resetAndClose());
-    addProjectDialog.addProjectAddEventListener(projectCreationEvent ->
-        createProject(projectCreationEvent.getSource().content())
-    );
+    addProjectDialog.addCancelListener(
+        cancelEvent -> cancelEvent.getSource().close());
+    addProjectDialog.addProjectAddEventListener(this::createProject);
   }
 
   private void stylePage() {
@@ -68,25 +68,28 @@ public class ProjectOverviewPage extends Div {
     this.setHeightFull();
   }
 
-  private void createProject(ProjectDraft projectCreationContent) {
-    Result<Project, ApplicationException> project = projectRegistrationService.registerProject(
-        projectCreationContent.offerId(), projectCreationContent.projectCode(),
-        projectCreationContent.title(), projectCreationContent.objective(),
-        projectCreationContent.experimentalDesignDescription(), projectCreationContent.species(),
-        projectCreationContent.specimen(), projectCreationContent.analyte(),
-        projectCreationContent.principalInvestigator(),
-        projectCreationContent.projectResponsible(),
-        projectCreationContent.projectManager());
-
+  private void createProject(ProjectAddEvent projectAddEvent) {
+    ProjectDraft projectDraft = projectAddEvent.projectDraft();
+    Result<Project, ApplicationException> project = projectCreationService.createProject(
+        projectDraft.getOfferId(),
+        projectDraft.getProjectCode(),
+        projectDraft.getProjectInformation().getProjectTitle(),
+        projectDraft.getProjectInformation().getProjectObjective(),
+        projectDraft.getProjectInformation().getPrincipalInvestigator().toDomainContact(),
+        projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact)
+            .orElse(null),
+        projectDraft.getProjectInformation().getProjectManager().toDomainContact());
     project
-        .onValue(result -> {
-          displaySuccessfulProjectCreationNotification();
-          addProjectDialog.resetAndClose();
-          projectCollectionComponent.refresh();
-        })
+        .onValue(result -> onProjectCreated(projectAddEvent))
         .onError(e -> {
           throw e;
         });
+  }
+
+  private void onProjectCreated(ProjectAddEvent projectAddEvent) {
+    displaySuccessfulProjectCreationNotification();
+    projectAddEvent.getSource().close();
+    projectCollectionComponent.refresh();
   }
 
   private void displaySuccessfulProjectCreationNotification() {
