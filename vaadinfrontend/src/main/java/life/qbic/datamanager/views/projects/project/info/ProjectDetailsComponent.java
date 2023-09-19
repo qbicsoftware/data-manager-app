@@ -199,11 +199,11 @@ public class ProjectDetailsComponent extends PageArea {
     resetProjectInformation();
     projectTitleField.setText(project.getProjectIntent().projectTitle().title());
     projectObjectiveField.setText(project.getProjectIntent().objective().value());
-    principalInvestigatorField.add(generatePersonReference(project.getPrincipalInvestigator()));
+    principalInvestigatorField.add(generateContactContainer(project.getPrincipalInvestigator()));
     project.getResponsiblePerson().ifPresentOrElse(
-        personReference -> responsiblePersonField.add(generatePersonReference(personReference)),
+        person -> responsiblePersonField.add(generateContactContainer(person)),
         () -> responsiblePersonField.add(createNoPersonAssignedSpan()));
-    projectManagerField.add(generatePersonReference(project.getProjectManager()));
+    projectManagerField.add(generateContactContainer(project.getProjectManager()));
     setGroupedExperimentInformation(project.getId());
   }
 
@@ -237,14 +237,14 @@ public class ProjectDetailsComponent extends PageArea {
     analytesField.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
   }
 
-  private Div generatePersonReference(Contact contact) {
+  private Div generateContactContainer(Contact contact) {
     Span nameSpan = new Span(contact.fullName());
     Span emailSpan = new Span(contact.emailAddress());
-    Div personReferenceContainer = new Div(nameSpan, emailSpan);
-    personReferenceContainer.addClassName("person-reference");
+    Div personContainer = new Div(nameSpan, emailSpan);
+    personContainer.addClassName("person-reference");
     emailSpan.addClassNames("email");
     nameSpan.addClassName("name");
-    return personReferenceContainer;
+    return personContainer;
   }
 
   private Span createNoPersonAssignedSpan() {
