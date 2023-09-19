@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -31,7 +29,8 @@ import life.qbic.projectmanagement.domain.project.ProjectTitle;
 /**
  * <b>Project Form Layout</b>
  *
- * <p>Used to style and list the common elements of Project Edit and Project Creation functionality</p>
+ * <p>Used to style and list the common elements of Project Edit and Project Creation
+ * functionality</p>
  *
  * @since 1.0.0
  */
@@ -64,16 +63,16 @@ public class ProjectFormLayout extends FormLayout {
     restrictProjectTitleLength();
     binder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
-        .bind((ProjectInformation :: getProjectTitle),
-            ProjectInformation :: setProjectTitle);
+        .bind((ProjectInformation::getProjectTitle),
+            ProjectInformation::setProjectTitle);
 
     projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
     restrictProjectObjectiveLength();
     binder.forField(projectObjective)
         .withValidator(value -> !value.isBlank(), "Please provide an objective")
-        .bind((ProjectInformation :: getProjectObjective),
-            ProjectInformation :: setProjectObjective);
+        .bind((ProjectInformation::getProjectObjective),
+            ProjectInformation::setProjectObjective);
 
     projectContactsLayout.setClassName("project-contacts");
 
@@ -89,8 +88,8 @@ public class ProjectFormLayout extends FormLayout {
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
-        .bind((ProjectInformation :: getPrincipalInvestigator),
-            ProjectInformation :: setPrincipalInvestigator);
+        .bind((ProjectInformation::getPrincipalInvestigator),
+            ProjectInformation::setPrincipalInvestigator);
 
     responsiblePersonField = new ContactField("Project Responsible (optional)");
     responsiblePersonField.setRequired(false);
@@ -98,14 +97,20 @@ public class ProjectFormLayout extends FormLayout {
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
         .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
-            (projectInformation, responsible) -> projectInformation.setResponsiblePerson(responsible));
+            (projectInformation, contact) -> {
+              if (contact.getFullName().isEmpty() || contact.getEmail().isEmpty()) {
+                projectInformation.setResponsiblePerson(null);
+              } else {
+                projectInformation.setResponsiblePerson(contact);
+              }
+            });
 
     projectManagerField = new ContactField("Project Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
-        .bind((ProjectInformation :: getProjectManager),
-            ProjectInformation :: setProjectManager);
+        .bind((ProjectInformation::getProjectManager),
+            ProjectInformation::setProjectManager);
   }
 
   public ProjectFormLayout buildEditProjectLayout() {
@@ -209,14 +214,16 @@ public class ProjectFormLayout extends FormLayout {
     textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
-  public Binder<ProjectInformation> getBinder() { return binder; }
+  public Binder<ProjectInformation> getBinder() {
+    return binder;
+  }
 
   public static final class ProjectDraft implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1997619416908358254L;
     private ProjectInformation projectInformation = new ProjectInformation();
-    private String offerId = "";
+    private final String offerId = "";
     @NotEmpty
     private String projectCode = "";
 
@@ -232,7 +239,9 @@ public class ProjectFormLayout extends FormLayout {
       return projectCode;
     }
 
-    public ProjectInformation getProjectInformation() { return projectInformation; }
+    public ProjectInformation getProjectInformation() {
+      return projectInformation;
+    }
 
     @Override
     public boolean equals(Object object) {

@@ -158,9 +158,9 @@ public class ProjectDetailsComponent extends PageArea {
         fromContact(projectInformationContent.getPrincipalInvestigator()));
     projectInformationService.manageProject(projectId,
         fromContact(projectInformationContent.getProjectManager()));
-    projectInformationContent.getResponsiblePerson()
-        .map(ProjectDetailsComponent::fromContact)
-        .ifPresent(person -> projectInformationService.setResponsibility(projectId, person));
+    projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
+            projectInformationService.setResponsibility(projectId, fromContact(contact)),
+        () -> projectInformationService.setResponsibility(projectId, null));
   }
 
   private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {

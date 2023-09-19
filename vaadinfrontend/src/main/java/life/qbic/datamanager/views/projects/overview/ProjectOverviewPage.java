@@ -76,9 +76,9 @@ public class ProjectOverviewPage extends Div {
         projectDraft.getProjectInformation().getProjectTitle(),
         projectDraft.getProjectInformation().getProjectObjective(),
         projectDraft.getProjectInformation().getPrincipalInvestigator().toDomainContact(),
-        projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact).orElse(null),
+        projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact)
+            .orElse(null),
         projectDraft.getProjectInformation().getProjectManager().toDomainContact());
-
     project
         .onValue(result -> onProjectCreated(projectAddEvent))
         .onError(e -> {
