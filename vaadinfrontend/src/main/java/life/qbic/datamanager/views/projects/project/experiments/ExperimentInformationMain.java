@@ -7,7 +7,6 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLayout;
@@ -16,20 +15,12 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.MainComponent;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentAddEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentDraft;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -60,38 +51,28 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ExperimentContentComponent experimentContentComponent;
   private final ExperimentSupportComponent experimentSupportComponent;
-  private final ProjectInformationService projectInformationService;
-  private final ExperimentInformationService experimentInformationService;
-  private final AddExperimentToProjectService addExperimentToProjectService;
-  private final ExperimentalDesignSearchService experimentalDesignSearchService;
-  private Context context;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
+  private transient Context context;
 
   public ExperimentInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired ExperimentContentComponent experimentContentComponent,
       @Autowired ExperimentSupportComponent experimentSupportComponent,
       @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired ExperimentInformationService experimentInformationService) {
     super(experimentContentComponent, experimentSupportComponent);
     requireNonNull(projectNavigationBarComponent);
     requireNonNull(experimentSupportComponent);
     requireNonNull(experimentContentComponent);
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
-    requireNonNull(addExperimentToProjectService, "addExperimentToProjectService must not be null");
-    requireNonNull(experimentalDesignSearchService,
-        "experimentalDesignSearchService must not be null");
-    this.experimentalDesignSearchService = experimentalDesignSearchService;
-    this.addExperimentToProjectService = addExperimentToProjectService;
     this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.experimentContentComponent = experimentContentComponent;
     this.experimentSupportComponent = experimentSupportComponent;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     layoutComponent();
-    addListeners();
     log.debug(String.format(
         "New instance for ExperimentInformationMain (#%s) created with ProjectNavigationBar Component (#%s), ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
         System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
@@ -152,61 +133,10 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   }
 
   private void setContext(Context context) {
-    experimentSupportComponent.setContext(context);
-    context.experimentId().ifPresent(experimentSupportComponent::setSelectedExperiment);
     experimentContentComponent.setContext(context);
-    projectNavigationBarComponent.projectId(context.projectId().orElseThrow());
+    projectNavigationBarComponent.setContext(context);
     this.context = context;
   }
-
-  private void addListeners() {
-    experimentSupportComponent.addExperimentSelectionListener(
-        event -> routeToExperiment(event.getSource().experimentId()));
-    experimentContentComponent.addExperimentNameChangedListener(
-        event -> {
-          experimentSupportComponent.setContext(context);
-          experimentSupportComponent.setSelectedExperiment(event.experimentId());
-        });
-    experimentContentComponent.addExperimentAddButtonClickEventListener(
-        event -> showAddExperimentDialog());
-    experimentSupportComponent.addExperimentAddButtonClickEventListener(
-        event -> showAddExperimentDialog());
-  }
-
-  private void showAddExperimentDialog() {
-    var creationDialog = new ExperimentInformationDialog(experimentalDesignSearchService);
-    creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.open();
-  }
-
-  private void onExperimentAddEvent(ExperimentAddEvent event) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
-    event.getSource().close();
-    displayExperimentCreationSuccess();
-    routeToExperiment(createdExperiment);
-  }
-
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
-  }
-
-  private ExperimentId createExperiment(ProjectId projectId, ExperimentDraft experimentDraft) {
-    Result<ExperimentId, RuntimeException> result = addExperimentToProjectService.addExperimentToProject(
-        projectId,
-        experimentDraft.getExperimentName(),
-        experimentDraft.getSpecies(),
-        experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes());
-    if (result.isValue()) {
-      return result.getValue();
-    } else {
-      throw new ApplicationException("Experiment Creation failed");
-    }
-  }
-
 
   private void forwardToExperiment(ExperimentId experimentId, BeforeEnterEvent beforeEnterEvent) {
     RouteParameters routeParameters = new RouteParameters(
@@ -218,18 +148,4 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     beforeEnterEvent.forwardTo(ExperimentInformationMain.class, routeParameters);
   }
 
-  private void routeToExperiment(ExperimentId experimentId) {
-    RouteParameters routeParameters = new RouteParameters(
-        new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
-            context.projectId().map(ProjectId::value).orElseThrow()),
-        new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId.value()));
-
-    String deepLinkUrl = RouteConfiguration.forSessionScope()
-        .getUrl(ExperimentInformationMain.class, routeParameters);
-    log.debug("re-routing to " + deepLinkUrl);
-    getUI().orElseThrow().getPage().getHistory().replaceState(null, deepLinkUrl);
-    getUI().orElseThrow().access(
-        () -> setContext(this.context.with(experimentId))
-    );
-  }
 }
