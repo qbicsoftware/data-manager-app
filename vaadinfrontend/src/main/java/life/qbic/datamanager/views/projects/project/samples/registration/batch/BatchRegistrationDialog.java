@@ -96,6 +96,10 @@ public class BatchRegistrationDialog extends Dialog {
     batchInformationLayout.experimentSelect.setValue(experiment);
   }
 
+  public void resetAndClose() {
+    registerBatchDialogHandler.resetAndClose();
+  }
+
   private class RegisterBatchDialogHandler implements Serializable {
 
     @Serial
