@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
-import life.qbic.projectmanagement.application.ExperimentValueFormatter;
+import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.project.experiment.Condition;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -44,7 +44,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       .thenComparing(level -> level.experimentalValue().value());
   private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
       "%s: %s", it.variableName().value(),
-      ExperimentValueFormatter.format(it.experimentalValue()));
+      VariableValueFormatter.format(it.experimentalValue()));
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
@@ -201,7 +201,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   }
 
   private boolean filterLevel(VariableLevel level, String filterString) {
-    boolean levelValueContainsFilterString = ExperimentValueFormatter.format(
+    boolean levelValueContainsFilterString = VariableValueFormatter.format(
             level.experimentalValue()).toLowerCase()
         .contains(filterString.toLowerCase());
     boolean variableNameContainsFilterString = level.variableName().value().toLowerCase()

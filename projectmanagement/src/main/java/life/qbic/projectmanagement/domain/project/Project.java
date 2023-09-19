@@ -40,9 +40,6 @@ public class Project {
   @Embedded
   private ProjectIntent projectIntent;
 
-  @AttributeOverride(name = "uuid", column = @Column(name = "activeExperiment"))
-  private ExperimentId activeExperiment;
-
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "project")
   private List<Experiment> experiments = new ArrayList<>();
@@ -62,32 +59,29 @@ public class Project {
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "referenceId", column = @Column(name = "projectManagerReferenceId")),
       @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
       @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
   })
-  private PersonReference projectManager;
+  private Contact projectManager;
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "referenceId", column = @Column(name = "principalInvestigatorReferenceId")),
       @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
       @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
   })
-  private PersonReference principalInvestigator;
+  private Contact principalInvestigator;
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "referenceId", column = @Column(name = "responsibePersonReferenceId")),
       @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
       @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
   })
-  private PersonReference responsiblePerson;
+  private Contact responsiblePerson;
 
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
-      PersonReference projectManager, PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+      Contact projectManager, Contact principalInvestigator,
+      Contact responsiblePerson) {
     requireNonNull(principalInvestigator, "requires non-null principal investigator");
     requireNonNull(projectCode, "requires non-null project code");
     requireNonNull(projectId, "requires non-null project id");
@@ -107,7 +101,7 @@ public class Project {
     int offersSize = linkedOffers.size();
   }
 
-  public void setProjectManager(PersonReference projectManager) {
+  public void setProjectManager(Contact projectManager) {
     Objects.requireNonNull(projectManager);
     if (projectManager.equals(this.projectManager)) {
       return;
@@ -116,7 +110,7 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
-  public void setPrincipalInvestigator(PersonReference principalInvestigator) {
+  public void setPrincipalInvestigator(Contact principalInvestigator) {
     Objects.requireNonNull(principalInvestigator);
     if (principalInvestigator.equals(this.principalInvestigator)) {
       return;
@@ -125,7 +119,7 @@ public class Project {
     this.lastModified = Instant.now();
   }
 
-  public void setResponsiblePerson(PersonReference responsiblePerson) {
+  public void setResponsiblePerson(Contact responsiblePerson) {
     if (Objects.isNull(this.responsiblePerson) && Objects.isNull(responsiblePerson)) {
       return;
     } else if (Objects.nonNull(this.responsiblePerson)) {
@@ -152,17 +146,7 @@ public class Project {
     lastModified = Instant.now();
   }
 
-  public void describeExperimentalDesign(
-      ExperimentalDesignDescription experimentalDesignDescription) {
-    if (projectIntent.experimentalDesign().equals(experimentalDesignDescription)) {
-      return;
-    }
-    projectIntent.experimentalDesign(experimentalDesignDescription);
-    lastModified = Instant.now();
-  }
-
   public void addExperiment(Experiment experiment) {
-    activeExperiment = experiment.experimentId();
     experiments.add(experiment);
     lastModified = Instant.now();
   }
@@ -190,11 +174,6 @@ public class Project {
     if (offerRemoved) {
       this.lastModified = Instant.now();
     }
-  }
-
-  public void setActiveExperiment(ExperimentId experimentId) {
-    activeExperiment = experimentId;
-    lastModified = Instant.now();
   }
 
   public List<OfferIdentifier> linkedOffers() {
@@ -229,8 +208,8 @@ public class Project {
    * @return a new project instance
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
-      PersonReference projectManager, PersonReference principalInvestigator,
-      PersonReference responsiblePerson) {
+      Contact projectManager, Contact principalInvestigator,
+      Contact responsiblePerson) {
     return new Project(ProjectId.create(), projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }
@@ -246,8 +225,8 @@ public class Project {
    * @return a project with the given identity and project intent
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
-      ProjectCode projectCode, PersonReference projectManager,
-      PersonReference principalInvestigator, PersonReference responsiblePerson) {
+      ProjectCode projectCode, Contact projectManager,
+      Contact principalInvestigator, Contact responsiblePerson) {
     return new Project(projectId, projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }
@@ -264,20 +243,16 @@ public class Project {
     return projectCode;
   }
 
-  public PersonReference getProjectManager() {
+  public Contact getProjectManager() {
     return projectManager;
   }
 
-  public PersonReference getPrincipalInvestigator() {
+  public Contact getPrincipalInvestigator() {
     return principalInvestigator;
   }
 
-  public Optional<PersonReference> getResponsiblePerson() {
+  public Optional<Contact> getResponsiblePerson() {
     return Optional.ofNullable(responsiblePerson);
-  }
-
-  public ExperimentId activeExperiment() {
-    return activeExperiment;
   }
 
   public List<ExperimentId> experiments() {

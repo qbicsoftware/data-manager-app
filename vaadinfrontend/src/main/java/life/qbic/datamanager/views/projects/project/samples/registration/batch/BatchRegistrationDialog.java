@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -22,7 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
  * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
  * their associated metadata information</p>
  */
-public class BatchRegistrationDialog extends DialogWindow {
+public class BatchRegistrationDialog extends Dialog {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
@@ -78,14 +78,6 @@ public class BatchRegistrationDialog extends DialogWindow {
   public void addCancelEventListener(
       ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
-  }
-
-  /**
-   * Resets the dialogue to its original state, removing all user input and changes and closes the
-   * dialog window
-   */
-  public void resetAndClose() {
-    registerBatchDialogHandler.resetAndClose();
   }
 
   /**

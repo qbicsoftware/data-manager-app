@@ -19,7 +19,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,15 +35,15 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentDraft;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentUpdateEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupCardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
@@ -84,11 +83,10 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
-  private final ExperimentalVariablesComponent experimentalVariablesComponent = ExperimentalVariablesComponent.create(
-      new ArrayList<>());
   private final Div experimentalGroups = new Div();
   private final Div experimentalVariables = new Div();
-  private final ExperimentalGroupCardCollection experimentalGroupsCollection = new ExperimentalGroupCardCollection();
+  private final CardCollection experimentalGroupsCollection = new CardCollection("GROUPS");
+  private final CardCollection experimentalVariableCollection = new CardCollection("VARIABLES");
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
@@ -170,74 +168,64 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void initButtonBar() {
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openExperimentInformationDialog());
+    editButton.addClickListener(event -> createExperimentInformationDialog());
     buttonBar.add(editButton);
   }
 
-  private void openExperimentInformationDialog() {
+  private void createExperimentInformationDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     Optional<Experiment> experiment = experimentInformationService.find(experimentId);
     experiment.ifPresentOrElse(exp -> {
-          ExperimentInformationDialog experimentInformationDialog = openExperimentInformationDialog(
-              exp);
-          addExperimentInformationDialogListeners(experimentInformationDialog);
-          experimentInformationDialog.open();
-        }
-        , () -> {
-          throw new ApplicationException(
-              "Experiment information could not be retrieved from service");
-        });
+      var experimentInformationDialog = createExperimentInformationDialog(exp);
+      experimentInformationDialog.open();
+    }, () -> {
+      throw new ApplicationException(
+          "Experiment information could not be retrieved from service");
+    });
   }
 
-  private ExperimentInformationDialog openExperimentInformationDialog(Experiment experiment) {
-    ExperimentInformationDialog experimentInformationDialog = ExperimentInformationDialog.prefilled(
-        experimentalDesignSearchService,
-        experiment.getName(), experiment.getSpecies(),
-        experiment.getSpecimens(), experiment.getAnalytes());
+  private ExperimentInformationDialog createExperimentInformationDialog(Experiment experiment) {
+    ExperimentInformationDialog experimentInformationDialog = new ExperimentInformationDialog(
+        experimentalDesignSearchService);
+
+    ExperimentDraft experimentDraft = new ExperimentDraft();
+    experimentDraft.setExperimentName(experiment.getName());
+    experimentDraft.setSpecies(experiment.getSpecies());
+    experimentDraft.setSpecimens(experiment.getSpecimens());
+    experimentDraft.setAnalytes(experiment.getAnalytes());
+
+    experimentInformationDialog.setExperiment(experimentDraft);
     experimentInformationDialog.setConfirmButtonLabel("Save");
+
+    experimentInformationDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
+
     return experimentInformationDialog;
   }
 
-  private void addExperimentInformationDialogListeners(
-      ExperimentInformationDialog experimentInformationDialog) {
-    experimentInformationDialog.addCancelEventListener(
-        experimentInformationDialogCancelEvent -> experimentInformationDialogCancelEvent.getSource()
-            .close());
-    experimentInformationDialog.addConfirmEventListener(
-        this::onExperimentInformationDialogConfirmEvent);
-  }
-
-  private void onExperimentInformationDialogConfirmEvent(
-      ConfirmEvent<ExperimentInformationDialog> experimentInformationDialogConfirmEvent) {
+  private void onExperimentUpdateEvent(ExperimentUpdateEvent event) {
     ExperimentId experimentId = context.experimentId().orElseThrow();
 
-    ExperimentInformationContent experimentInformationContent = experimentInformationDialogConfirmEvent.getSource()
-        .content();
-    String oldExperimentName = experimentInformationService.find(experimentId)
-        .map(Experiment::getName)
-        .orElseThrow();
-    String newExperimentName = experimentInformationContent.experimentName();
+    ExperimentDraft experimentDraft = event.getExperimentDraft();
     experimentInformationService.editExperimentInformation(experimentId,
-        newExperimentName, experimentInformationContent.species(),
-        experimentInformationContent.specimen(), experimentInformationContent.analytes());
-    experimentInformationDialogConfirmEvent.getSource().close();
-    reloadExperimentInfo(context.experimentId().orElseThrow());
-    if (!oldExperimentName.equals(newExperimentName)) {
-      fireExperimentNameChangedEvent(oldExperimentName, newExperimentName);
-    }
+        experimentDraft.getExperimentName(),
+        experimentDraft.getSpecies(),
+        experimentDraft.getSpecimens(),
+        experimentDraft.getAnalytes());
+    event.getOldDraft().ifPresent(
+        oldDraft -> {
+          if (!oldDraft.getExperimentName().equals(experimentDraft.getExperimentName())) {
+            fireEvent(new ExperimentNameChangedEvent(experimentId, oldDraft.getExperimentName(),
+                experimentDraft.getExperimentName(), this, event.isFromClient()));
+          }
+        }
+    );
+    event.getSource().close();
   }
 
-  private void fireExperimentNameChangedEvent(String oldExperimentName, String newExperimentName) {
-    ExperimentNameChangedEvent event = new ExperimentNameChangedEvent(context.experimentId()
-        .orElseThrow(), oldExperimentName,
-        newExperimentName, this, false);
-    fireEvent(event);
-  }
 
   private void listenForExperimentalVariablesComponentEvents() {
-    experimentalVariablesComponent.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
-    experimentalVariablesComponent.addEditListener(
-        editEvent -> openExperimentalVariablesEditDialog());
+    experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
+    experimentalVariableCollection.addEditListener(editEvent -> openExperimentalVariablesEditDialog());
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -397,17 +385,15 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void layoutTabSheet() {
     experimentSheet.add("Experimental Variables", experimentalVariables);
-    experimentalVariables.addClassName(Display.FLEX);
-    experimentalVariables.addClassName("experimental-variables-container");
+    experimentalVariables.addClassName("experimental-groups-container");
     experimentSheet.add("Experimental Groups", experimentalGroups);
     experimentalGroups.addClassName("experimental-groups-container");
     content.add(experimentSheet);
   }
 
   private void listenForExperimentCollectionComponentEvents() {
-    experimentalGroupsCollection.addAddEventListener(listener -> openExperimentalGroupAddDialog());
-    experimentalGroupsCollection.addEditEventListener(
-        editEvent -> openExperimentalGroupEditDialog());
+    experimentalGroupsCollection.addAddListener(listener -> openExperimentalGroupAddDialog());
+    experimentalGroupsCollection.addEditListener(editEvent -> openExperimentalGroupEditDialog());
   }
 
   /**
@@ -440,7 +426,6 @@ public class ExperimentDetailsComponent extends PageArea {
     reloadExperimentalGroups();
     dialog.close();
   }
-
 
   private void openExperimentalGroupEditDialog() {
     if (editGroupsNotAllowed()) {
@@ -552,7 +537,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadExperimentInformation(Experiment experiment) {
     title.setText(experiment.getName());
-    loadTagInformation(experiment);
+    loadTagInformation();
     loadSampleSources(experiment);
     loadExperimentalVariables(experiment);
     loadExperimentalGroups();
@@ -567,19 +552,23 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
-  private void loadTagInformation(Experiment experiment) {
+  private void loadTagInformation() {
     tagCollection.removeAll();
-
     tagCollection.add(new Tag("Space for tags"));
   }
 
   private void loadExperimentalVariables(Experiment experiment) {
     this.experimentalVariables.removeAll();
-    this.experimentalVariablesComponent.setExperimentalVariables(experiment.variables());
-    if (experiment.variables().isEmpty()) {
+    // We load the experimental variables of the experiment and render them as cards
+    List<ExperimentalVariable> variables = experiment.variables();
+    List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
+        .map(ExperimentalVariableCard::new).toList();
+    experimentalVariableCollection.setContent(experimentalVariableCards);
+
+    if (variables.isEmpty()) {
       this.experimentalVariables.add(addExperimentalVariablesNote);
     } else {
-      this.experimentalVariables.add(experimentalVariablesComponent);
+      this.experimentalVariables.add(experimentalVariableCollection);
     }
   }
 

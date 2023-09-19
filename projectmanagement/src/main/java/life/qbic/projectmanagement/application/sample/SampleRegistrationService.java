@@ -1,10 +1,14 @@
 package life.qbic.projectmanagement.application.sample;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
@@ -24,40 +28,36 @@ public class SampleRegistrationService {
 
     private final SampleCodeService sampleCodeService;
     private final SampleDomainService sampleDomainService;
+    private final ProjectInformationService projectInformationService;
+    private static final Logger log = logger(SampleRegistrationService.class);
 
     @Autowired
     public SampleRegistrationService(SampleCodeService sampleCodeService,
-                                     SampleDomainService sampleDomainService) {
+                                     SampleDomainService sampleDomainService,
+        ProjectInformationService projectInformationService) {
         this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
         this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
-    }
-
-    public Result<Sample, ResponseCode> registerSample(SampleRegistrationRequest sampleRegistrationRequest, ProjectId projectId) {
-        Objects.requireNonNull(sampleRegistrationRequest);
-        Objects.requireNonNull(projectId);
-        var sampleCode = sampleCodeService.generateFor(projectId);
-        if (sampleCode.isError()) {
-            return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
-        }
-        var result = sampleDomainService.registerSample(sampleCode.getValue(), sampleRegistrationRequest);
-        if (result.isError()) {
-            return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
-        }
-        return Result.fromValue(result.getValue());
+        this.projectInformationService = Objects.requireNonNull(projectInformationService);
     }
 
     public Result<Collection<Sample>, ResponseCode> registerSamples(
             Collection<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
         Objects.requireNonNull(sampleRegistrationRequests);
         Objects.requireNonNull(projectId);
+        var project = projectInformationService.find(projectId);
+        if (project.isEmpty()) {
+            log.error("Sample registration aborted. Reason: project with id:"+projectId+" was not found");
+            return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
+        }
         if (sampleRegistrationRequests.isEmpty()) {
+            log.error("No samples were defined");
             return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
         }
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>();
         sampleRegistrationRequests.forEach(sampleRegistrationRequest -> sampleCodeService.generateFor(projectId)
                 .onValue(sampleCode -> sampleCodesToRegistrationRequests.put(sampleCode, sampleRegistrationRequest))
                 .onError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED)));
-        var result = sampleDomainService.registerSamples(sampleCodesToRegistrationRequests);
+        var result = sampleDomainService.registerSamples(project.get(), sampleCodesToRegistrationRequests);
         return result.onValue(Result::fromValue).flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
     }
 

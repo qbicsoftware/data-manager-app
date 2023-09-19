@@ -1,14 +1,11 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.ExperimentNameChangedEvent;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -24,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 public class ExperimentContentComponent extends Div {
-
   @Serial
   private static final long serialVersionUID = 464171225772721108L;
   private final ExperimentDetailsComponent experimentDetailsComponent;
@@ -32,11 +28,6 @@ public class ExperimentContentComponent extends Div {
   public ExperimentContentComponent(
       @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
     this.experimentDetailsComponent = experimentDetailsComponent;
-    layoutComponent();
-  }
-
-  private void layoutComponent() {
-    this.add(experimentDetailsComponent);
   }
 
   /**
@@ -45,15 +36,11 @@ public class ExperimentContentComponent extends Div {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    experimentDetailsComponent.setContext(context);
-  }
-
-  /**
-   * Propagates the listener which will retrieve notification if a an {@link Experiment} was edited
-   * in the {@link ExperimentDetailsComponent} within this container
-   */
-  public void addExperimentNameChangedListener(
-      ComponentEventListener<ExperimentNameChangedEvent> experimentEditListener) {
-    experimentDetailsComponent.addExperimentNameChangedListener(experimentEditListener);
+    context.experimentId().ifPresentOrElse(
+        experimentId -> {
+          experimentDetailsComponent.setContext(context);
+          this.add(experimentDetailsComponent);
+        }, () -> this.remove(experimentDetailsComponent)
+    );
   }
 }

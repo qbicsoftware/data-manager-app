@@ -10,12 +10,12 @@
   <version>0.24.0</version>
   <modules>
     <module>vaadinfrontend</module>
-    <module>authentication</module>
+    <module>user</module>
     <module>authorization</module>
     <module>broadcasting</module>
     <module>newshandler</module>
     <module>database-connector</module>
-    <module>commons</module>
+    <module>application-commons</module>
     <module>logging</module>
     <module>subscription-provider</module>
     <module>subscription-api</module>

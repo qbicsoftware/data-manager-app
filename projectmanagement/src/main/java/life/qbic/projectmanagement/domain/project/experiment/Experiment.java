@@ -39,7 +39,6 @@ public class Experiment {
   private ExperimentId experimentId;
   @Column(name = "experimentName")
   private String name;
-
   @Embedded
   private ExperimentalDesign experimentalDesign;
 

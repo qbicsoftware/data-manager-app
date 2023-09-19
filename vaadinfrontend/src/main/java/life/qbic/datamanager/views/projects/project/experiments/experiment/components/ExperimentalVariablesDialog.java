@@ -31,6 +31,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   private final Div dialogueContentLayout = new Div();
   private final Div experimentalVariableRowsContainerLayout = new Div();
   private final Span addExperimentalVariableLayoutRow = new Span();
+  private final Div addNewVariableContainer = new Div();
   private final MODE mode;
 
   public ExperimentalVariablesDialog() {
@@ -51,7 +52,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   /**
    * Creates a new dialog prefilled with experimental variables.
    *
-   * @param experimentalVariables the variables to fill the dialog with
+   * @param experimentalVariables the variables to setProjectInformation the dialog with
    * @return a new instance of the dialog
    */
   public static ExperimentalVariablesDialog prefilled(
@@ -101,7 +102,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
   private void resetDialogUponClosure() {
     // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    addDialogCloseActionListener(closeActionEvent -> close());
   }
 
   /**
@@ -127,10 +128,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
    */
   @Override
   public void close() {
-    resetAndClose();
-  }
-
-  private void resetAndClose() {
     reset();
     super.close();
   }
@@ -138,13 +135,10 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   private void reset() {
     this.experimentalVariablesLayoutRows.clear();
     this.experimentalVariableRowsContainerLayout.removeAll();
-    initDefineExperimentalVariableLayout();
+    appendEmptyRowForAddMode();
   }
 
-  private void initDefineExperimentalVariableLayout() {
-    final Span experimentalDesignHeader = new Span("Define Experimental Variable");
-    experimentalDesignHeader.addClassName("header");
-    this.experimentalVariableRowsContainerLayout.add(experimentalDesignHeader);
+  private void appendEmptyRowForAddMode() {
     if (isAdding()) {
       appendEmptyRow();
     }
@@ -174,21 +168,34 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     if (wasRemoved) {
       this.experimentalVariableRowsContainerLayout.remove(experimentalVariableRowLayout);
     }
+    if(experimentalVariableRowsContainerLayout.getChildren().toList().isEmpty()) {
+      appendEmptyRowForAddMode();
+    }
   }
 
   private void layoutComponent() {
-    setHeaderTitle("Experimental Design");
+    setHeaderTitle("Define Experimental Variable");
     final DialogFooter footer = getFooter();
     footer.add(this.cancelButton, this.confirmButton);
   }
 
   private void initDialogueContent() {
-    initDefineExperimentalVariableLayout();
+    appendEmptyRowForAddMode();
     initDesignVariableTemplate();
     this.dialogueContentLayout.addClassName("content");
     this.experimentalVariableRowsContainerLayout.addClassName("variables");
     this.dialogueContentLayout.add(this.experimentalVariableRowsContainerLayout);
-    this.dialogueContentLayout.add(this.addExperimentalVariableLayoutRow);
+
+    this.dialogueContentLayout.add(addNewVariableContainer);
+
+    addNewVariableContainer.addClassName("add-new-group-action");
+
+    var addNewVariableIcon = new Icon(VaadinIcon.PLUS);
+    addNewVariableIcon.addClickListener(listener -> appendEmptyRow());
+    Span addVariableHelperText = new Span("Add Experimental Variable");
+    addVariableHelperText.addClickListener(listener -> appendEmptyRow());
+    addNewVariableContainer.add(addNewVariableIcon, addVariableHelperText);
+
     add(this.dialogueContentLayout);
   }
 
