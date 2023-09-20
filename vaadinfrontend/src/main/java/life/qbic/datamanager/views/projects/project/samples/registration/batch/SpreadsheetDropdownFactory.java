@@ -45,7 +45,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       if (columnIndex == 1) {
         ComboBox<AnalysisMethod> combo = createEditorAnalysisComboBox(spreadsheet, cell.getColumnIndex(), cell.getRowIndex());
         if (!cell.getStringCellValue().isEmpty()) {
-          combo.setValue(AnalysisMethod.valueOf(cell.getStringCellValue()));
+          combo.setValue(AnalysisMethod.valueOf(cell.getStringCellValue().trim()));
         }
         return combo;
       }
@@ -75,7 +75,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private Renderer<AnalysisMethod> createRenderer() {
     StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("<div>${item.label} <vaadin-icon icon='vaadin:question-circle' alt='${item.description}'></div>");
+    stringBuilder.append("<div>${item.label} <vaadin-icon icon='vaadin:question-circle'><vaadin-tooltip slot=\"tooltip\" text=\"${item.description}\"></vaadin-tooltip></div>");
 
     return LitRenderer.<AnalysisMethod>of(stringBuilder.toString()).withProperty("label", AnalysisMethod::label).withProperty("description", AnalysisMethod::description);
   }

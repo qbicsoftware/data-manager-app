@@ -211,7 +211,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         props.put("Q_EXTERNALDB_ID", sample.label());
         String analyteValue = sample.sampleOrigin().getAnalyte().value();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-                () -> analyteMapper.translateSampleTypeString(analyteValue))
+                () -> analyteMapper.mapFrom(analyteValue))
             .orElseThrow(() -> {
               logger("No mapping was found for " + analyteValue);
               return new MappingNotFoundException();
