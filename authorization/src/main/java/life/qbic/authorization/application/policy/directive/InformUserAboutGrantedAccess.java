@@ -63,7 +63,6 @@ public class InformUserAboutGrantedAccess implements DomainEventSubscriber<Proje
       throws RuntimeException {
     var recipient = userRepository.findById(UserId.from(userId)).get();
     var projectUrl = appContextProvider.urlToProject(projectId);
-    System.out.println(projectUrl);
     var message = Messages.projectAccessToUser(recipient.fullName().get(), projectTitle, projectUrl);
     communicationService.send(new Subject("Project access granted"), new Recipient(recipient.emailAddress().get(), recipient.fullName().get()), new Content(message));
   }
