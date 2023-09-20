@@ -3,13 +3,14 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
@@ -42,6 +43,7 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   private final SampleContentComponent sampleContentComponent;
   private final SampleSupportComponent sampleSupportComponent;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  private transient Context context;
 
   public SampleInformationMain(
       @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
@@ -68,15 +70,16 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   }
 
   /**
-   * Provides the {@link ProjectId} to the components within this page
+   * Provides the {@link Context} to the components within this page
    * <p>
-   * This method serves as an entry point providing the necessary {@link ProjectId} to the
-   * components within this cage
+   * This method serves as an entry point providing the necessary {@link Context} to the components
+   * within this cage
    *
-   * @param projectId projectId of the selected project
+   * @param context Context containing the projectId of the selected project
    */
-  public void projectId(ProjectId projectId) {
-    projectNavigationBarComponent.projectId(projectId);
+  public void setContext(Context context) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    projectNavigationBarComponent.setContext(context);
     sampleContentComponent.projectId(projectId);
     sampleSupportComponent.projectId(projectId);
   }
@@ -88,24 +91,14 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
    */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .ifPresent(this::propagateProjectId);
-  }
-
-  /**
-   * Reroutes to the ProjectId provided in the URL
-   * <p>
-   * This method generates the URL and routes the user via {@link RouteParam} to the provided
-   * ProjectId
-   */
-  private void propagateProjectId(String projectParam) {
-    try {
-      ProjectId projectId = ProjectId.parse(projectParam);
-      projectId(projectId);
-    } catch (IllegalArgumentException e) {
-      log.debug(
-          String.format("Provided ProjectId %s is invalid due to %s", projectParam,
-              e.getMessage()));
+    String projectID = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
+        .orElseThrow();
+    if (!ProjectId.isValid(projectID)) {
+      throw new ApplicationException("invalid project id " + projectID);
     }
+
+    ProjectId parsedProjectId = ProjectId.parse(projectID);
+    context = new Context().with(parsedProjectId);
+    setContext(context);
   }
 }

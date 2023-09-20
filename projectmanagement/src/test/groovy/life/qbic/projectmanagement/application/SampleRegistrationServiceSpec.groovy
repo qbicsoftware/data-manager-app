@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.application
 import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.api.SampleCodeService
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService
-import life.qbic.projectmanagement.domain.project.PersonReference
+import life.qbic.projectmanagement.domain.project.Contact
 import life.qbic.projectmanagement.domain.project.Project
 import life.qbic.projectmanagement.domain.project.ProjectCode
 import life.qbic.projectmanagement.domain.project.ProjectId
@@ -26,7 +26,7 @@ class SampleRegistrationServiceSpec extends Specification {
     ProjectInformationService projectInformationService = Mock()
     SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService)
     ProjectId projectId = ProjectId.create()
-    PersonReference who = new PersonReference()
+    Contact who = new Contact()
     Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
 
     def "No SampleRegistrationRequests returns a Result containing a NO_SAMPLES_DEFINED response code"() {

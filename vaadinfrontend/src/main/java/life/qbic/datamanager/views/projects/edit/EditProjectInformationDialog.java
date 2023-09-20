@@ -1,0 +1,269 @@
+package life.qbic.datamanager.views.projects.edit;
+
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
+import jakarta.validation.constraints.NotEmpty;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
+import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.projects.ProjectFormLayout;
+import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
+
+/**
+ * <b>Project Information Dialog</b>
+ *
+ * <p>Dialog to create a project based on a project intent or to update a project's information</p>
+ *
+ * @since 1.0.0
+ */
+@SpringComponent
+@UIScope
+public class EditProjectInformationDialog extends DialogWindow {
+
+  @Serial
+  private static final long serialVersionUID = 7327075228498213661L;
+
+  private final Binder<ProjectInformation> binder;
+  private final ProjectFormLayout formLayout;
+
+  private ProjectInformation oldValue = new ProjectInformation();
+
+  public EditProjectInformationDialog() {
+    super();
+
+    addClassName("create-project-dialog");
+    setHeaderTitle("Project Information");
+    setConfirmButtonLabel("Save");
+    confirmButton.addClickListener(this::onConfirmClicked);
+    setCancelButtonLabel("Cancel");
+    cancelButton.addClickListener(this::onCancelClicked);
+
+    formLayout = new ProjectFormLayout().buildEditProjectLayout();
+    binder = formLayout.getBinder();
+
+    // Calls the reset method for all possible closure methods of the dialogue window:
+    addDialogCloseActionListener(closeActionEvent -> close());
+    cancelButton.addClickListener(buttonClickEvent -> close());
+
+    add(formLayout);
+  }
+
+  public void setProjectInformation(ProjectInformation projectInformation) {
+    binder.setBean(projectInformation);
+    try {
+      oldValue = new ProjectInformation();
+      binder.writeBean(oldValue);
+    } catch (ValidationException e) {
+      oldValue = null;
+      throw new IllegalArgumentException(
+          "Project information should be valid but was not. " + projectInformation, e);
+    }
+  }
+
+  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    ProjectInformation projectInformation = new ProjectInformation();
+    try {
+      binder.writeBean(projectInformation);
+      fireEvent(
+          new ProjectUpdateEvent(oldValue, projectInformation, this, clickEvent.isFromClient()));
+    } catch (ValidationException e) {
+      validate();
+    }
+  }
+
+  private void validate() {
+    formLayout.validate();
+  }
+
+  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    close();
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    reset();
+  }
+
+  /**
+   * Resets the values and validity of all components that implement value storing and validity
+   * interfaces
+   */
+  public void reset() {
+    formLayout.reset();
+    binder.setBean(new ProjectInformation());
+  }
+
+  public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
+    addListener(ProjectUpdateEvent.class, listener);
+  }
+
+  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
+  }
+
+  public static class CancelEvent extends
+      life.qbic.datamanager.views.events.UserCancelEvent<EditProjectInformationDialog> {
+
+    public CancelEvent(EditProjectInformationDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Project Update Event</b>
+   *
+   * <p>Indicates that a user submitted a project update request</p>
+   *
+   * @since 1.0.0
+   */
+  public static class ProjectUpdateEvent extends ComponentEvent<EditProjectInformationDialog> {
+
+    @Serial
+    private static final long serialVersionUID = 1072173555312630829L;
+
+    private final ProjectInformation oldValue;
+    private final ProjectInformation value;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     * @param oldValue   the project information before modification
+     * @param value      the modified project information
+     */
+    public ProjectUpdateEvent(ProjectInformation oldValue, ProjectInformation value,
+        EditProjectInformationDialog source, boolean fromClient) {
+      super(source, fromClient);
+      requireNonNull(value, "new project information (value) must not be null");
+      this.oldValue = oldValue;
+      this.value = value;
+    }
+
+    public Optional<ProjectInformation> getOldValue() {
+      return Optional.ofNullable(oldValue);
+    }
+
+    public ProjectInformation getValue() {
+      return value;
+    }
+  }
+
+  public static final class ProjectInformation implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -7260109309939021850L;
+    @NotEmpty
+    private String projectTitle = "";
+    @NotEmpty
+    private String projectObjective = "";
+    @NotEmpty
+    private Contact principalInvestigator;
+    private Contact responsiblePerson;
+    @NotEmpty
+    private Contact projectManager;
+
+    public void setProjectTitle(String projectTitle) {
+      this.projectTitle = projectTitle;
+    }
+
+    public void setProjectObjective(String projectObjective) {
+      this.projectObjective = projectObjective;
+    }
+
+    public Contact getPrincipalInvestigator() {
+      return principalInvestigator;
+    }
+
+    public void setPrincipalInvestigator(
+        Contact principalInvestigator) {
+      this.principalInvestigator = principalInvestigator;
+    }
+
+    public Optional<Contact> getResponsiblePerson() {
+      return Optional.ofNullable(responsiblePerson);
+    }
+
+    public void setResponsiblePerson(Contact responsiblePerson) {
+      this.responsiblePerson = responsiblePerson;
+    }
+    public Contact getProjectManager() {
+      return projectManager;
+    }
+
+    public void setProjectManager(Contact projectManager) {
+      this.projectManager = projectManager;
+    }
+
+    public String getProjectTitle() {
+      return projectTitle;
+    }
+
+    public String getProjectObjective() {
+      return projectObjective;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      ProjectInformation that = (ProjectInformation) object;
+
+      if (!Objects.equals(projectTitle, that.projectTitle)) {
+        return false;
+      }
+      if (!Objects.equals(projectObjective, that.projectObjective)) {
+        return false;
+      }
+      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
+        return false;
+      }
+      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
+        return false;
+      }
+      return Objects.equals(projectManager, that.projectManager);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = projectTitle != null ? projectTitle.hashCode() : 0;
+      result = 31 * result + (projectObjective != null ? projectObjective.hashCode() : 0);
+      result = 31 * result + (principalInvestigator != null ? principalInvestigator.hashCode() : 0);
+      result = 31 * result + (responsiblePerson != null ? responsiblePerson.hashCode() : 0);
+      result = 31 * result + (projectManager != null ? projectManager.hashCode() : 0);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", ProjectInformation.class.getSimpleName() + "[", "]")
+          .add("projectTitle='" + projectTitle + "'")
+          .add("projectObjective='" + projectObjective + "'")
+          .add("principalInvestigator=" + principalInvestigator)
+          .add("responsiblePerson=" + responsiblePerson)
+          .add("projectManager=" + projectManager)
+          .toString();
+    }
+  }
+}

@@ -33,7 +33,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentalDesignVocabularyRepository;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
@@ -139,7 +137,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     return searchResult.getObjects();
   }
 
-  private List<ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project> searchProjectsByCode(String code) {
+  private List<ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project> searchProjectsByCode(
+      String code) {
     ProjectSearchCriteria criteria = new ProjectSearchCriteria();
     criteria.withCode().thatEquals(code);
 
@@ -201,29 +200,28 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         projectCodeString, newExperimentCode);
 
     try {
-    samples.forEach(sample -> {
-      SampleCreation sampleCreation = new SampleCreation();
-      sampleCreation.setCode(sample.sampleCode().code());
-      sampleCreation.setTypeId(new EntityTypePermId(DEFAULT_SAMPLE_TYPE));
-      sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
-      Map<String, String> props = new HashMap<>();
+      samples.forEach(sample -> {
+        SampleCreation sampleCreation = new SampleCreation();
+        sampleCreation.setCode(sample.sampleCode().code());
+        sampleCreation.setTypeId(new EntityTypePermId(DEFAULT_SAMPLE_TYPE));
+        sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+        Map<String, String> props = new HashMap<>();
 
-      props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
-      props.put("Q_EXTERNALDB_ID", sample.label());
-      String analyteValue = sample.sampleOrigin().getAnalyte().value();
-      Optional<String> openbisSampleType = analyteMapper.mapFrom(analyteValue);
-      if(openbisSampleType.isEmpty()) {
-        logger("No mapping was found for "+analyteValue);
-        throw new MappingNotFoundException();
-      }
-      props.put("Q_SAMPLE_TYPE", openbisSampleType.get());
+        props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
+        props.put("Q_EXTERNALDB_ID", sample.label());
+        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
+                () -> analyteMapper.translateSampleTypeString(analyteValue))
+            .orElseThrow(() -> {
+              logger("No mapping was found for " + analyteValue);
+              return new MappingNotFoundException();
+            });
+        props.put("Q_SAMPLE_TYPE", openBisSampleType);
+        sampleCreation.setProperties(props);
 
-      sampleCreation.setProperties(props);
-
-      sampleCreation.setExperimentId(newExperimentID);
-      samplesToRegister.add(sampleCreation);
-
-    });
+        sampleCreation.setExperimentId(newExperimentID);
+        samplesToRegister.add(sampleCreation);
+      });
       createOpenbisSamples(samplesToRegister);
     } catch (Exception e) {
       deleteOpenbisExperiment(newExperimentID);
@@ -231,13 +229,20 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     }
   }
 
+  private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
+    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
+        .filter(vocabularyTerm -> vocabularyTerm.label.equals(analyteLabel))
+        .map(vocabularyTerm -> vocabularyTerm.code).findFirst();
+  }
+
   private String findFreeExperimentCode(String projectCode) {
     List<Experiment> experiments = searchExperimentsByCode(projectCode);
     int lastExperimentNumber = 0;
-    for(Experiment experiment : experiments) {
-      lastExperimentNumber = Integer.max(lastExperimentNumber, getTrailingNumber(experiment.getCode()));
+    for (Experiment experiment : experiments) {
+      lastExperimentNumber = Integer.max(lastExperimentNumber,
+          getTrailingNumber(experiment.getCode()));
     }
-    String newExperimentNumber = Integer.toString(lastExperimentNumber+1);
+    String newExperimentNumber = Integer.toString(lastExperimentNumber + 1);
     return projectCode + "E" + newExperimentNumber;
   }
 
@@ -327,8 +332,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
     // we need to handle this deletion operation differently in order to confirm deletion
     IApplicationServerApi api = openBisClient.getV3();
-    IDeletionId deletionId = api.deleteSamples(openBisClient.getSessionToken(), openBisSampleIds, deletionOptions);
-    api.confirmDeletions(openBisClient.getSessionToken(), Arrays.asList(deletionId));
+    IDeletionId deletionId = api.deleteSamples(openBisClient.getSessionToken(), openBisSampleIds,
+        deletionOptions);
+    api.confirmDeletions(openBisClient.getSessionToken(), Collections.singletonList(deletionId));
   }
 
   private void deleteOpenbisExperiment(ExperimentIdentifier experimentIdentifier) {
@@ -338,8 +344,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     openBisIds.add(experimentIdentifier);
     // we need to handle this deletion operation differently in order to confirm deletion
     IApplicationServerApi api = openBisClient.getV3();
-    IDeletionId deletionId = api.deleteExperiments(openBisClient.getSessionToken(), openBisIds, deletionOptions);
-    api.confirmDeletions(openBisClient.getSessionToken(), Arrays.asList(deletionId));
+    IDeletionId deletionId = api.deleteExperiments(openBisClient.getSessionToken(), openBisIds,
+        deletionOptions);
+    api.confirmDeletions(openBisClient.getSessionToken(), Collections.singletonList(deletionId));
   }
 
   private void handleOperations(IOperation operation) {

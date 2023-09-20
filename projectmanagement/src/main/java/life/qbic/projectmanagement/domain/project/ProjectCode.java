@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.project;
 
-import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Arrays;
@@ -140,6 +139,17 @@ public class ProjectCode {
 
   private ProjectCode(String value) {
     this.value = value;
+  }
+
+  public static boolean isValid(String value) {
+    boolean isValid;
+    try {
+      parse(value);
+      isValid = true;
+    } catch (IllegalArgumentException e) {
+      isValid = false;
+    }
+    return isValid;
   }
 
   public String value() {

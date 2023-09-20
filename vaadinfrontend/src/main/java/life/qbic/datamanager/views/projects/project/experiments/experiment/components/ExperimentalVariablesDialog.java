@@ -52,7 +52,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   /**
    * Creates a new dialog prefilled with experimental variables.
    *
-   * @param experimentalVariables the variables to fill the dialog with
+   * @param experimentalVariables the variables to setProjectInformation the dialog with
    * @return a new instance of the dialog
    */
   public static ExperimentalVariablesDialog prefilled(
@@ -102,7 +102,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
   private void resetDialogUponClosure() {
     // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> resetAndClose());
+    addDialogCloseActionListener(closeActionEvent -> close());
   }
 
   /**
@@ -128,10 +128,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
    */
   @Override
   public void close() {
-    resetAndClose();
-  }
-
-  private void resetAndClose() {
     reset();
     super.close();
   }

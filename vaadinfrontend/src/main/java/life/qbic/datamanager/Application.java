@@ -27,7 +27,6 @@ import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.PersonSearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -73,9 +72,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
 
     setupUseCases(appContext);
-
-    var personSearchService = appContext.getBean(PersonSearchService.class);
-    var result = personSearchService.find("fillinger", 0, 20);
   }
 
   private static void setupUseCases(ConfigurableApplicationContext context) {

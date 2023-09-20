@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
 
@@ -22,7 +22,7 @@ import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
  * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
  * their associated metadata information</p>
  */
-public class BatchRegistrationDialog extends DialogWindow {
+public class BatchRegistrationDialog extends Dialog {
 
   private static final String TITLE = "Register Batch";
   private final TabSheet tabStepper = new TabSheet();
@@ -81,14 +81,6 @@ public class BatchRegistrationDialog extends DialogWindow {
   }
 
   /**
-   * Resets the dialogue to its original state, removing all user input and changes and closes the
-   * dialog window
-   */
-  public void resetAndClose() {
-    registerBatchDialogHandler.resetAndClose();
-  }
-
-  /**
    * Defines the currently active {@link Experiment} within the project from which the information
    * will be derived in the {@link SampleRegistrationSpreadsheet}
    */
@@ -102,6 +94,10 @@ public class BatchRegistrationDialog extends DialogWindow {
    */
   public void setSelectedExperiment(Experiment experiment) {
     batchInformationLayout.experimentSelect.setValue(experiment);
+  }
+
+  public void resetAndClose() {
+    registerBatchDialogHandler.resetAndClose();
   }
 
   private class RegisterBatchDialogHandler implements Serializable {

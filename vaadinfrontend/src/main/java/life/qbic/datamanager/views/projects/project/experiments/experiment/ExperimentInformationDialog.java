@@ -1,25 +1,35 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
-import life.qbic.datamanager.views.general.CancelEvent;
-import life.qbic.datamanager.views.general.ConfirmEvent;
+import java.util.Objects;
+import java.util.Optional;
+import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.projects.create.DefineExperimentComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentInformationContent;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>ExperimentInformationDialog</b>
  *
- * <p>Dialog to create or edit experiment information by providing the minimal required information
- * in the {@link DefineExperimentComponent}</p>
+ * <p>Dialog to create or edit experiment information by providing the minimal required information</p>
  *
  * @since 1.0.0
  */
@@ -28,139 +38,266 @@ public class ExperimentInformationDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
-  private static final String TITLE = "Experimental Design";
-  private final DefineExperimentComponent defineExperimentComponent;
-  private final List<ComponentEventListener<CancelEvent<ExperimentInformationDialog>>> cancelEventListeners = new ArrayList<>();
-  private final List<ComponentEventListener<ConfirmEvent<ExperimentInformationDialog>>> confirmEventListeners = new ArrayList<>();
-  private final MODE mode;
+
+  private static final String CHIP_BADGE = "chip-badge";
+  private static final String WIDTH_INPUT = "full-width-input";
+
+  private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public ExperimentInformationDialog(
       ExperimentalDesignSearchService experimentalDesignSearchService) {
-    this(experimentalDesignSearchService, false);
-  }
 
-  private ExperimentInformationDialog(
-      ExperimentalDesignSearchService experimentalDesignSearchService, boolean mode) {
-    super();
-    this.mode = mode ? MODE.EDIT : MODE.ADD;
+    Span experimentHeader = new Span("Experiment");
+    experimentHeader.addClassName("header");
+
+    TextField experimentNameField = new TextField("Experiment Name");
+    experimentNameField.addClassName(WIDTH_INPUT);
+    binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
+        .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
+
+    Span experimentDescription = new Span(
+        "Please specify the sample origin information of the samples. Multiple "
+            + "values are allowed!");
+
+    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    speciesBox.setRequired(true);
+    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    binder.forField(speciesBox)
+        .asRequired("Please select at least one species")
+        .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
+            ExperimentDraft::setSpecies);
+    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
+        .sorted(Comparator.comparing(Species::label)).toList());
+    speciesBox.setItemLabelGenerator(Species::label);
+
+    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+    specimenBox.setRequired(true);
+    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    binder.forField(specimenBox)
+        .asRequired("Please select at least one specimen")
+        .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
+            ExperimentDraft::setSpecimens);
+    specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
+        .sorted(Comparator.comparing(Specimen::label)).toList());
+    specimenBox.setItemLabelGenerator(Specimen::label);
+
+    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    analyteBox.setRequired(true);
+    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    binder.forField(analyteBox)
+        .asRequired("Please select at least one analyte")
+        .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
+            ExperimentDraft::setAnalytes);
+    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
+        .sorted(Comparator.comparing(Analyte::label)).toList());
+    analyteBox.setItemLabelGenerator(Analyte::label);
+
+    Div createExperimentContent = new Div();
+    createExperimentContent.addClassName("create-experiment-content");
+    createExperimentContent.add(experimentHeader,
+        experimentDescription,
+        experimentNameField,
+        experimentDescription,
+        speciesBox,
+        specimenBox,
+        analyteBox);
+
     addClassName("experiment-information-dialog");
-    defineExperimentComponent = new DefineExperimentComponent(experimentalDesignSearchService);
-    layoutComponent();
-    initDialogueContent();
-    configureComponent();
-  }
-
-  private void layoutComponent() {
-    setHeaderTitle(TITLE);
-    add(defineExperimentComponent);
+    setHeaderTitle("Experimental Design");
     setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
-    final DialogFooter footer = getFooter();
-    footer.add(this.cancelButton, this.confirmButton);
+    add(createExperimentContent);
+
+    confirmButton.addClickListener(this::onConfirmClicked);
+    cancelButton.addClickListener(this::onCancelClicked);
   }
 
-  private void initDialogueContent() {
-    add(defineExperimentComponent);
+  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    ExperimentDraft experimentDraft = new ExperimentDraft();
+    boolean isValid = binder.writeBeanIfValid(experimentDraft);
+    if (isValid) {
+      fireEvent(new ExperimentAddEvent(this, clickEvent.isFromClient(), experimentDraft));
+    }
+
   }
 
-  private void configureComponent() {
-    configureCancelling();
-    configureConfirmation();
+  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    close();
   }
 
-  /**
-   * Creates a new dialog prefilled with experiment information.
-   *
-   * @param experimentalDesignSearchService the service providing the selectable options for the
-   *                                        analyte, specimen and species within this dialog
-   * @param experimentName                  experimentName to be preset within the dialog
-   * @param species                         List of {@link Species} to be preset within the dialog
-   * @param specimen                        List of {@link Specimen} to be preset within the dialog
-   * @param analytes                        List of {@link Analyte} to be preset within the dialog
-   * @return a new instance of the dialog
-   */
-  public static ExperimentInformationDialog prefilled(
-      ExperimentalDesignSearchService experimentalDesignSearchService,
-      String experimentName, Collection<Species> species, Collection<Specimen> specimen,
-      Collection<Analyte> analytes) {
-    return editDialog(experimentalDesignSearchService, experimentName, species, specimen, analytes);
+  public void setExperiment(ExperimentDraft experiment) {
+    binder.setBean(experiment);
   }
 
-  private static ExperimentInformationDialog editDialog(
-      ExperimentalDesignSearchService experimentalDesignSearchService, String experimentName,
-      Collection<Species> species, Collection<Specimen> specimen, Collection<Analyte> analytes) {
-    ExperimentInformationDialog experimentInformationDialog = new ExperimentInformationDialog(
-        experimentalDesignSearchService, true);
-    experimentInformationDialog.setExperimentInformation(experimentName, species, specimen,
-        analytes);
-    return experimentInformationDialog;
+  @Override
+  public void close() {
+    super.close();
+    reset();
   }
 
-  private void setExperimentInformation(String experimentName,
-      Collection<Species> species, Collection<Specimen> specimen, Collection<Analyte> analytes) {
-    defineExperimentComponent.setExperimentInformation(experimentName, species, specimen, analytes);
+  public void reset() {
+    binder.setBean(new ExperimentDraft());
   }
 
-  private boolean isInputValid() {
-    return defineExperimentComponent.isValid();
+  @Transactional
+  public void addExperimentAddEventListener(ComponentEventListener<ExperimentAddEvent> listener) {
+    addListener(ExperimentAddEvent.class, listener);
   }
 
-  private void configureConfirmation() {
-    this.confirmButton.addClickListener(event -> fireConfirmEvent());
+  public void addExperimentUpdateEventListener(
+      ComponentEventListener<ExperimentUpdateEvent> listener) {
+
+    addListener(ExperimentUpdateEvent.class, listener);
   }
 
-  private void configureCancelling() {
-    this.cancelButton.addClickListener(cancelListener -> fireCancelEvent());
+  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
   }
 
-  private void fireConfirmEvent() {
-    if (isInputValid()) {
-      this.confirmEventListeners.forEach(
-          listener -> listener.onComponentEvent(new ConfirmEvent<>(this, true)));
+  public static class CancelEvent extends UserCancelEvent<ExperimentInformationDialog> {
+
+    public CancelEvent(ExperimentInformationDialog source, boolean fromClient) {
+      super(source, fromClient);
     }
   }
 
-  private void fireCancelEvent() {
-    this.cancelEventListeners.forEach(
-        listener -> listener.onComponentEvent(new CancelEvent<>(this, true)));
+  public static class ExperimentAddEvent extends ComponentEvent<ExperimentInformationDialog> {
+
+    private final ExperimentDraft experimentDraft;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source          the source component
+     * @param fromClient      <code>true</code> if the event originated from the client
+     *                        side, <code>false</code> otherwise
+     * @param experimentDraft the draft for the experiment
+     */
+    public ExperimentAddEvent(ExperimentInformationDialog source, boolean fromClient,
+        ExperimentDraft experimentDraft) {
+      super(source, fromClient);
+      this.experimentDraft = experimentDraft;
+    }
+
+    public ExperimentDraft getExperimentDraft() {
+      return experimentDraft;
+    }
   }
 
+  public static class ExperimentUpdateEvent extends ComponentEvent<ExperimentInformationDialog> {
 
-  /**
-   * Adds a listener for {@link ConfirmEvent}s
-   *
-   * @param listener the listener to add
-   */
-  public void addConfirmEventListener(
-      final ComponentEventListener<ConfirmEvent<ExperimentInformationDialog>> listener) {
-    this.confirmEventListeners.add(listener);
+    private final ExperimentDraft oldDraft;
+    private final ExperimentDraft experimentDraft;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source          the source component
+     * @param fromClient      <code>true</code> if the event originated from the client
+     *                        side, <code>false</code> otherwise
+     * @param oldDraft the draft of the old experiment
+     * @param experimentDraft the draft for the changed experiment
+     */
+    public ExperimentUpdateEvent(ExperimentInformationDialog source, boolean fromClient,
+        ExperimentDraft oldDraft, ExperimentDraft experimentDraft) {
+      super(source, fromClient);
+      this.experimentDraft = experimentDraft;
+      this.oldDraft = oldDraft;
+    }
+
+    public ExperimentDraft getExperimentDraft() {
+      return experimentDraft;
+    }
+
+    public Optional<ExperimentDraft> getOldDraft() {
+      return Optional.ofNullable(oldDraft);
+    }
   }
 
-  /**
-   * Adds a listener for {@link CancelEvent}s
-   *
-   * @param listener the listener to add
-   */
-  public void addCancelEventListener(
-      final ComponentEventListener<CancelEvent<ExperimentInformationDialog>> listener) {
-    this.cancelEventListeners.add(listener);
-  }
+  public static class ExperimentDraft implements Serializable {
 
-  /**
-   * Provides the content set in the fields of this dialog
-   *
-   * @return {@link ExperimentInformationContent} providing the information filled by the user
-   * within this dialog
-   */
-  public ExperimentInformationContent content() {
-    return new ExperimentInformationContent(
-        defineExperimentComponent.experimentNameField.getValue(),
-        defineExperimentComponent.speciesBox.getValue().stream().toList(),
-        defineExperimentComponent.specimenBox.getValue().stream().toList(),
-        defineExperimentComponent.analyteBox.getValue().stream().toList());
-  }
+    @Serial
+    private static final long serialVersionUID = 8878913301284832509L;
 
-  private enum MODE {
-    ADD, EDIT
+    private String experimentName;
+    private final List<Species> species;
+    private final List<Specimen> specimen;
+    private final List<Analyte> analytes;
+
+    public ExperimentDraft() {
+      species = new ArrayList<>();
+      specimen = new ArrayList<>();
+      analytes = new ArrayList<>();
+    }
+
+    public String getExperimentName() {
+      return experimentName;
+    }
+
+    public void setExperimentName(String experimentName) {
+      this.experimentName = experimentName;
+    }
+
+    public List<Species> getSpecies() {
+      return new ArrayList<>(species);
+    }
+
+    public void setSpecies(Collection<Species> species) {
+      this.species.clear();
+      this.species.addAll(species);
+    }
+
+    public List<Specimen> getSpecimens() {
+      return new ArrayList<>(specimen);
+    }
+
+    public void setSpecimens(Collection<Specimen> specimen) {
+      this.specimen.clear();
+      this.specimen.addAll(specimen);
+    }
+
+    public List<Analyte> getAnalytes() {
+      return new ArrayList<>(analytes);
+    }
+
+    public void setAnalytes(Collection<Analyte> analytes) {
+      this.analytes.clear();
+      this.analytes.addAll(analytes);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      ExperimentDraft that = (ExperimentDraft) object;
+
+      if (!Objects.equals(experimentName, that.experimentName)) {
+        return false;
+      }
+      if (!species.equals(that.species)) {
+        return false;
+      }
+      if (!specimen.equals(that.specimen)) {
+        return false;
+      }
+      return analytes.equals(that.analytes);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = experimentName != null ? experimentName.hashCode() : 0;
+      result = 31 * result + species.hashCode();
+      result = 31 * result + specimen.hashCode();
+      result = 31 * result + analytes.hashCode();
+      return result;
+    }
   }
 }
