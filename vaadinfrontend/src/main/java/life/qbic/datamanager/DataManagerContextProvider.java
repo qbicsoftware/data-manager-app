@@ -37,7 +37,7 @@ public class DataManagerContextProvider implements AppContextProvider {
 
   @Override
   public String urlToProject(String projectId) {
-    var fullPath = context + endpoint + "/" + projectId;
+    var fullPath = context + endpoint + "/" + projectId + "/info";
     try {
       return new URL(protocol, host, port, fullPath).toExternalForm();
     } catch (MalformedURLException e) {

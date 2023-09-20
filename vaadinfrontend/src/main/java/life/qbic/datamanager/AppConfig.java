@@ -136,8 +136,8 @@ public class AppConfig {
 
   @Bean
   public CommunicationService communicationService(@Value("${spring.mail.host}") String host,
-      @Value("${spring.mail.port}") int port, @Value("${spring.mail.username") String mailUserName,
-      @Value("${spring.mail.password") String mailUserPassword) {
+      @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
+      @Value("${spring.mail.password}") String mailUserPassword) {
     MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(host, port,
         mailUserName, mailUserPassword);
     return new EmailCommunicationService(mailServerConfiguration);
