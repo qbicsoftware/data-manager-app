@@ -75,7 +75,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
 
   private Renderer<AnalysisMethod> createRenderer() {
     StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("<div><strong>${item.label}</strong> ==> <i>${item.description}</i></div>");
+    stringBuilder.append("<div>${item.label} <vaadin-icon icon='vaadin:question-circle' alt='${item.description}'></div>");
 
     return LitRenderer.<AnalysisMethod>of(stringBuilder.toString()).withProperty("label", AnalysisMethod::label).withProperty("description", AnalysisMethod::description);
   }
