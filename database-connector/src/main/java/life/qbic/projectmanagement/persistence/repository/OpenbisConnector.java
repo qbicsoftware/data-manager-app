@@ -72,7 +72,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
 
-  private final AnalyteTermMapper analyteMapper = new OpenBisTermMapper();
+  private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
