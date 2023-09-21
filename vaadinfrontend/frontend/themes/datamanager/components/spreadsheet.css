@@ -1,11 +1,21 @@
-vaadin-combo-box-overlay.spreadsheet-combo-box::part(content) {
+vaadin-combo-box-overlay::part(content) {
   height: 30rem;
   width: 20rem;
-  max-height: 20vh;
+  max-height: 30vh;
 }
 
-vaadin-combo-box-overlay.spreadsheet-combo-box::part(overlay) {
+vaadin-combo-box-overlay::part(overlay) {
   height: 30rem;
   width: 20rem;
-  max-height: 20vh;
+  max-height: 30vh;
 }
+
+.spreadsheet-list-item {
+  display: grid;
+  grid-template-columns: auto 5%;
+}
+
+.spreadsheet-list-item > div{
+  width: 100%;
+}
+
