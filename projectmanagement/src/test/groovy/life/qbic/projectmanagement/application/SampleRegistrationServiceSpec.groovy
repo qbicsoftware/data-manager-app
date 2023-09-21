@@ -89,7 +89,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "If project cannot be found, valid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
