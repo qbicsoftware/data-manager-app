@@ -117,7 +117,8 @@ public class SampleRegistrationService {
         var message = Messages.samplesAddedToProject(contact.fullName(), projectTitle, projectUri);
 
         communicationService.send(new Subject(subject),
-            new Recipient(contact.emailAddress(), contact.fullName()), new Content(message));
+            new Recipient(contact.emailAddress(), contact.fullName()), new Content(message),
+            attachmentContent, "sample_sheet.tsv");
     }
 
     public enum ResponseCode {
