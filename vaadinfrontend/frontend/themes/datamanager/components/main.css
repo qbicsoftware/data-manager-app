@@ -63,7 +63,7 @@
   }
 
   .main.project {
-    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "content"
     "support";

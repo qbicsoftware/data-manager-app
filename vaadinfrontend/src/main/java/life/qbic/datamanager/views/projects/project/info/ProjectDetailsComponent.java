@@ -121,6 +121,8 @@ public class ProjectDetailsComponent extends PageArea {
     disclaimer.setText("No funding information provided.");
     entries.add(new Entry("Grant", disclaimer));
 
+    //TODO load funding information about project
+
     return entries;
   }
 
