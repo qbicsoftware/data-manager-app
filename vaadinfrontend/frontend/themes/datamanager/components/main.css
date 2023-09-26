@@ -67,7 +67,8 @@
     grid-template-areas:
     "content"
     "support";
-    grid-auto-rows: auto;
+    height: 100%;
+    grid-template-rows: auto;
   }
 
   .main.sample {
