@@ -5,11 +5,11 @@ import com.vaadin.flow.component.html.Div;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Information component</b>
+ * <p>
+ * Provides sections with a title and a form like display of row entries.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class InformationComponent extends Div {
 
@@ -28,18 +28,17 @@ public class InformationComponent extends Div {
     add(title, content);
   }
 
+  /**
+   * Creates an information component with a title
+   *
+   * @param title the title of the information component
+   * @return a new instance of the component
+   * @since 1.0.0
+   */
   public static InformationComponent create(String title) {
     var component = new InformationComponent();
     component.setTitle(title);
     return component;
-  }
-
-  public void add(Entry entry) {
-    this.content.add(styleRow(entry.label(), entry.content()));
-  }
-
-  public void clearContent() {
-    this.content.removeAll();
   }
 
   private static Div styleRow(String label, Component content) {
@@ -55,10 +54,44 @@ public class InformationComponent extends Div {
     return rowEntry;
   }
 
+  /**
+   * Appends a new {@link Entry} with the default rendering of the information component.
+   *
+   * @param entry the entry to append, containing a label and content
+   * @since 1.0.0
+   */
+  public void add(Entry entry) {
+    this.content.add(styleRow(entry.label(), entry.content()));
+  }
+
+  /**
+   * Removes all entries appended in the information content.
+   * <p>
+   * <i>Note: will not impact the title</i>
+   *
+   * @since 1.0.0
+   */
+  public void clearContent() {
+    this.content.removeAll();
+  }
+
+  /**
+   * Sets and overrides an existing title of the information component
+   *
+   * @param title the new title
+   */
   public void setTitle(String title) {
     this.title.setText(title);
   }
 
+  /**
+   * A row entry for the information component, contains a label and a Vaadin {@link Component},
+   * that will be shown next to the label.
+   *
+   * @param label   a descriptive label about the content
+   * @param content the content to display
+   * @since 1.0.0
+   */
   public record Entry(String label, Component content) {
 
   }
