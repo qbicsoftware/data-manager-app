@@ -1,13 +1,12 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +19,7 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
+import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Contact;
@@ -44,11 +44,11 @@ public class ProjectDetailsComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
+  private static final String TAG_COLLECTION_CSS_CLASS = "tag-collection";
   private final Div header = new Div();
   private final Span titleField = new Span();
   private final Span buttonBar = new Span();
   private final Div content = new Div();
-  private final FormLayout formLayout = new FormLayout();
   private final Span projectTitleField = new Span();
   private final Span projectObjectiveField = new Span();
   private final Div speciesField = new Div();
@@ -57,9 +57,15 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private Context context;
+  private final InformationComponent projectInformationSection = InformationComponent.create(
+      "Project Information");
+  private final InformationComponent fundingInformationSection = InformationComponent.create(
+      "Funding Information");
+  private final InformationComponent collaboratorSection = InformationComponent.create(
+      "Collaboration Information");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -69,7 +75,107 @@ public class ProjectDetailsComponent extends PageArea {
     this.experimentInformationService = experimentInformationService;
     layoutComponent();
     addListenerForNewEditEvent();
-    this.addClassName("project-details-component");
+    addClassName("project-details-component");
+  }
+
+  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
+    return new Contact(contact.getFullName(), contact.getEmail());
+  }
+
+  private static List<Entry> extractProjectInfo(Project project, List<Experiment> experiments) {
+    List<Entry> entries = new ArrayList<>();
+
+    var projectCode = new Div();
+    projectCode.setText(project.getProjectCode().value());
+    entries.add(new Entry("Code", projectCode));
+
+    var projectTitle = new Div();
+    projectTitle.setText(project.getProjectIntent().projectTitle().title());
+    entries.add(new Entry("Title", projectTitle));
+
+    var objective = new Div();
+    objective.setText(project.getProjectIntent().objective().objective());
+    entries.add(new Entry("Objective", objective));
+
+    var species = new Div();
+    species.addClassName(TAG_COLLECTION_CSS_CLASS);
+    speciesTags(experiments).forEach(species::add);
+    entries.add(new Entry("Species", species));
+
+    var specimen = new Div();
+    specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
+    specimenTags(experiments).forEach(specimen::add);
+    entries.add(new Entry("Specimen", specimen));
+
+    var analyte = new Div();
+    analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
+    analyteTags(experiments).forEach(analyte::add);
+    entries.add(new Entry("Analyte", analyte));
+    return entries;
+  }
+
+  private static List<Entry> extractFundingInfo(Project project) {
+    List<Entry> entries = new ArrayList<>();
+
+    var disclaimer = new Div();
+    disclaimer.setText("No funding information provided.");
+    entries.add(new Entry("Grant", disclaimer));
+
+    return entries;
+  }
+
+  private static List<Entry> extractContactInfo(Project project) {
+    List<Entry> entries = new ArrayList<>();
+
+    var principalInvestigator = new Div();
+    principalInvestigator.add(generateContactContainer(project.getPrincipalInvestigator()));
+    entries.add(new Entry("Project Investigator", principalInvestigator));
+
+    var projectResponsible = new Div();
+    project.getResponsiblePerson()
+        .ifPresentOrElse(person -> projectResponsible.add(generateContactContainer(person)),
+            () -> projectResponsible.add(createNoPersonAssignedSpan()));
+    entries.add(new Entry("Project Responsible", projectResponsible));
+
+    var projectManager = new Div();
+    projectManager.add(generateContactContainer(project.getProjectManager()));
+    entries.add(new Entry("Project Manager", projectManager));
+
+    return entries;
+  }
+
+  private static Div generateContactContainer(Contact contact) {
+    Span nameSpan = new Span(contact.fullName());
+    Span emailSpan = new Span(contact.emailAddress());
+    Div personContainer = new Div(nameSpan, emailSpan);
+    personContainer.addClassName("person-reference");
+    emailSpan.addClassNames("email");
+    nameSpan.addClassName("name");
+    return personContainer;
+  }
+
+  private static Span createNoPersonAssignedSpan() {
+    Span noPersonAssignedSpan = new Span("-");
+    noPersonAssignedSpan.addClassName("no-person-assigned");
+    return noPersonAssignedSpan;
+  }
+
+  private static List<Tag> speciesTags(List<Experiment> experiments) {
+    return experiments.stream()
+        .flatMap(experiment -> experiment.getSpecies().stream()).map(Species::label).sorted()
+        .map(Tag::new).toList();
+  }
+
+  private static List<Tag> specimenTags(List<Experiment> experiments) {
+    return experiments.stream()
+        .flatMap(experiment -> experiment.getSpecimens().stream()).map(Specimen::label).sorted()
+        .map(Tag::new).toList();
+  }
+
+  private static List<Tag> analyteTags(List<Experiment> experiments) {
+    return experiments.stream()
+        .flatMap(experiment -> experiment.getAnalytes().stream()).map(Analyte::label).sorted()
+        .map(Tag::new).toList();
   }
 
   public void setContext(Context context) {
@@ -81,14 +187,15 @@ public class ProjectDetailsComponent extends PageArea {
 
   private void layoutComponent() {
     this.add(header);
-    titleField.setText("Project Information");
+    this.add(content);
+    content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
+    content.addClassName("project-information-content");
+
+    titleField.setText("Project Summary");
     header.addClassName("header");
     initButtonBar();
     header.add(titleField, buttonBar);
     titleField.addClassName("title");
-    this.add(content);
-    content.addClassName("details-content");
-    initFormLayout();
   }
 
   private void initButtonBar() {
@@ -163,51 +270,44 @@ public class ProjectDetailsComponent extends PageArea {
         () -> projectInformationService.setResponsibility(projectId, null));
   }
 
-  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
-    return new Contact(contact.getFullName(), contact.getEmail());
-  }
-
   private void addListenerForNewEditEvent() {
     addListener(ProjectEditEvent.class, event -> loadProjectData(event.projectId()));
   }
 
-  private void initFormLayout() {
-    String tagCollectionCssClass = "tag-collection";
-    speciesField.addClassName(tagCollectionCssClass);
-    specimensField.addClassName(tagCollectionCssClass);
-    analytesField.addClassName(tagCollectionCssClass);
-    formLayout.addFormItem(projectTitleField, "Project Title");
-    formLayout.addFormItem(projectObjectiveField, "Project Objective");
-    formLayout.addFormItem(speciesField, "Species");
-    formLayout.addFormItem(specimensField, "Specimen");
-    formLayout.addFormItem(analytesField, "Analyte");
-    formLayout.addFormItem(principalInvestigatorField, "Principal Investigator");
-    formLayout.addFormItem(responsiblePersonField, "Responsible Person");
-    formLayout.addFormItem(projectManagerField, "Project Manager");
-    // set form layout to only have one column (for any width)
-    formLayout.setResponsiveSteps(new ResponsiveStep("0", 1));
-    content.add(formLayout);
-  }
-
   private void loadProjectData(ProjectId projectId) {
-    projectInformationService.find(projectId).ifPresentOrElse(this::setProjectInformation, () -> {
-      throw new ApplicationException("Project information could not be retrieved from service");
-    });
+    projectInformationService.find(projectId)
+        .ifPresentOrElse(this::loadProjectWithExperiments, () -> {
+          throw new ApplicationException("Project information could not be retrieved from service");
+        });
   }
 
-  private void setProjectInformation(Project project) {
+  private void loadProjectWithExperiments(Project project) {
+    var experiments = experimentInformationService.findAllForProject(project.getId());
+    setProjectInformation(project, experiments);
+  }
+
+  private void setProjectInformation(Project project, List<Experiment> experiments) {
     resetProjectInformation();
-    projectTitleField.setText(project.getProjectIntent().projectTitle().title());
-    projectObjectiveField.setText(project.getProjectIntent().objective().value());
-    principalInvestigatorField.add(generateContactContainer(project.getPrincipalInvestigator()));
-    project.getResponsiblePerson().ifPresentOrElse(
-        person -> responsiblePersonField.add(generateContactContainer(person)),
-        () -> responsiblePersonField.add(createNoPersonAssignedSpan()));
-    projectManagerField.add(generateContactContainer(project.getProjectManager()));
-    setGroupedExperimentInformation(project.getId());
+
+    fillInformationSection(projectInformationSection, "",
+        extractProjectInfo(project, experiments));
+    fillInformationSection(fundingInformationSection, "Funding Information",
+        extractFundingInfo(project));
+    fillInformationSection(collaboratorSection, "Project Contacts",
+        extractContactInfo(project));
+  }
+
+  private void fillInformationSection(InformationComponent section, String title,
+      List<Entry> entries) {
+    section.setTitle(title);
+    entries.forEach(section::add);
   }
 
   private void resetProjectInformation() {
+    projectInformationSection.clearContent();
+    fundingInformationSection.clearContent();
+    collaboratorSection.clearContent();
+
     projectTitleField.removeAll();
     projectObjectiveField.removeAll();
     speciesField.removeAll();
@@ -235,21 +335,5 @@ public class ProjectDetailsComponent extends PageArea {
     speciesField.add(speciesSet.stream().map(Tag::new).collect(Collectors.toList()));
     specimensField.add(specimenSet.stream().map(Tag::new).collect(Collectors.toList()));
     analytesField.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
-  }
-
-  private Div generateContactContainer(Contact contact) {
-    Span nameSpan = new Span(contact.fullName());
-    Span emailSpan = new Span(contact.emailAddress());
-    Div personContainer = new Div(nameSpan, emailSpan);
-    personContainer.addClassName("person-reference");
-    emailSpan.addClassNames("email");
-    nameSpan.addClassName("name");
-    return personContainer;
-  }
-
-  private Span createNoPersonAssignedSpan() {
-    Span noPersonAssignedSpan = new Span("None");
-    noPersonAssignedSpan.addClassName("no-person-assigned");
-    return noPersonAssignedSpan;
   }
 }

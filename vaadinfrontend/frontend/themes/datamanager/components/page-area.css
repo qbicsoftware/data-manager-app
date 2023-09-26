@@ -11,7 +11,7 @@
   max-width: 100%;
   max-height: 100%;
   margin: var(--lumo-space-s);
-  padding: var(--lumo-space-l);
+  padding: var(--lumo-space-xl);
 }
 
 .page-area .title {
