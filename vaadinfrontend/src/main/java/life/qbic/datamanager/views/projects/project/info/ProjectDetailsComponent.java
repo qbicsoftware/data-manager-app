@@ -150,7 +150,7 @@ public class ProjectDetailsComponent extends PageArea {
     Span nameSpan = new Span(contact.fullName());
     Span emailSpan = new Span(contact.emailAddress());
     Div personContainer = new Div(nameSpan, emailSpan);
-    personContainer.addClassName("person-reference");
+    personContainer.addClassName("person-contact-display");
     emailSpan.addClassNames("email");
     nameSpan.addClassName("name");
     return personContainer;

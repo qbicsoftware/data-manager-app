@@ -31,11 +31,11 @@
   gap: 4rem;
 }
 
-.person-reference {
+.person-contact-display {
   display: grid;
 
 }
-.person-reference .email {
+.person-contact-display  .email {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
 }
