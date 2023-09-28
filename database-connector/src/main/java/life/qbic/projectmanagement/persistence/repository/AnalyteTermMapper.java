@@ -3,11 +3,12 @@ package life.qbic.projectmanagement.persistence.repository;
 import java.util.Optional;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Analyte Term Mapper</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Enables the mapping of an analyte ontology term used in the data manager against a term
+ * provided by the mapper implementation. </p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface AnalyteTermMapper {
 
