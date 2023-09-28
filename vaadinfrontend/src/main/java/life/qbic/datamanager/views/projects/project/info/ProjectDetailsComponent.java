@@ -57,9 +57,9 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private Context context;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -70,6 +70,10 @@ public class ProjectDetailsComponent extends PageArea {
     layoutComponent();
     addListenerForNewEditEvent();
     this.addClassName("project-details-component");
+  }
+
+  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
+    return new Contact(contact.getFullName(), contact.getEmail());
   }
 
   public void setContext(Context context) {
@@ -158,13 +162,15 @@ public class ProjectDetailsComponent extends PageArea {
         fromContact(projectInformationContent.getPrincipalInvestigator()));
     projectInformationService.manageProject(projectId,
         fromContact(projectInformationContent.getProjectManager()));
+
+    projectInformationContent.getFundingEntry().ifPresent(
+        funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
+            funding.getReferenceId()));
+
+
     projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
             projectInformationService.setResponsibility(projectId, fromContact(contact)),
         () -> projectInformationService.setResponsibility(projectId, null));
-  }
-
-  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
-    return new Contact(contact.getFullName(), contact.getEmail());
   }
 
   private void addListenerForNewEditEvent() {

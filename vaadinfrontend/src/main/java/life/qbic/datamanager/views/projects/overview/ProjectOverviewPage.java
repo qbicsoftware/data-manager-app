@@ -17,6 +17,7 @@ import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.domain.project.Funding;
 import life.qbic.projectmanagement.domain.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -78,7 +79,10 @@ public class ProjectOverviewPage extends Div {
         projectDraft.getProjectInformation().getPrincipalInvestigator().toDomainContact(),
         projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact)
             .orElse(null),
-        projectDraft.getProjectInformation().getProjectManager().toDomainContact());
+        projectDraft.getProjectInformation().getProjectManager().toDomainContact(),
+        projectDraft.getProjectInformation().getFundingEntry()
+            .map(fundingEntry -> Funding.of(fundingEntry.getLabel(), fundingEntry.getReferenceId()))
+            .orElse(null));
     project
         .onValue(result -> onProjectCreated(projectAddEvent))
         .onError(e -> {

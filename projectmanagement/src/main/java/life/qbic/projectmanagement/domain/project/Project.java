@@ -78,6 +78,12 @@ public class Project {
   })
   private Contact responsiblePerson;
 
+  @Embedded
+  @AttributeOverrides({
+      @AttributeOverride(name = "grant", column = @Column(name = "grantLabel")),
+      @AttributeOverride(name = "grantId", column = @Column(name = "grantId"))
+  })
+  private Funding funding;
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
@@ -129,6 +135,10 @@ public class Project {
     }
     this.responsiblePerson = responsiblePerson;
     this.lastModified = Instant.now();
+  }
+
+  public void setFunding(Funding funding) {
+    this.funding = funding;
   }
 
   private void setProjectCode(ProjectCode projectCode) {
@@ -253,6 +263,10 @@ public class Project {
 
   public Optional<Contact> getResponsiblePerson() {
     return Optional.ofNullable(responsiblePerson);
+  }
+
+  public Optional<Funding> funding() {
+    return Optional.ofNullable(funding);
   }
 
   public List<ExperimentId> experiments() {

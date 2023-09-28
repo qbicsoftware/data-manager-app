@@ -182,6 +182,12 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+.create-project-dialog .input-fields {
+   display: flex;
+   gap: 1em;
+   align-items: baseline;
+ }
+
 .create-project-dialog .form-content .contact-field .name-field {
   flex-grow: 1;
 }

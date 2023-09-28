@@ -19,6 +19,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
@@ -49,6 +50,8 @@ public class ProjectFormLayout extends FormLayout {
   private final ContactField responsiblePersonField;
   private final ContactField projectManagerField;
 
+  private final FundingField fundingField;
+
   public ProjectFormLayout() {
     super();
 
@@ -73,6 +76,23 @@ public class ProjectFormLayout extends FormLayout {
         .withValidator(value -> !value.isBlank(), "Please provide an objective")
         .bind((ProjectInformation::getProjectObjective),
             ProjectInformation::setProjectObjective);
+
+    fundingField = new FundingField("Funding Information");
+    binder.forField(fundingField)
+        .withValidator(field -> {
+              if (field == null) {
+                return true;
+              }
+              if (!field.getLabel().isBlank()) {
+                return !field.getReferenceId().isBlank();
+              } else if (!field.getReferenceId().isBlank()) {
+                return !field.getLabel().isBlank();
+              }
+              return true;
+            },
+            "No, that is not how it works.").bind(
+            projectInformation -> projectInformation.getFundingEntry().orElse(null),
+            ProjectInformation::setFundingEntry);
 
     projectContactsLayout.setClassName("project-contacts");
 
@@ -113,10 +133,23 @@ public class ProjectFormLayout extends FormLayout {
             ProjectInformation::setProjectManager);
   }
 
+  private static void addConsumedLengthHelper(TextField textField, String newValue) {
+    int maxLength = textField.getMaxLength();
+    int consumedLength = newValue.length();
+    textField.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
+    int maxLength = textArea.getMaxLength();
+    int consumedLength = newValue.length();
+    textArea.setHelperText(consumedLength + "/" + maxLength);
+  }
+
   public ProjectFormLayout buildEditProjectLayout() {
     add(
         titleField,
         projectObjective,
+        fundingField,
         projectContactsLayout,
         principalInvestigatorField,
         responsiblePersonField,
@@ -124,6 +157,7 @@ public class ProjectFormLayout extends FormLayout {
     );
     setColspan(titleField, 2);
     setColspan(projectObjective, 2);
+    setColspan(fundingField, 2);
     setColspan(principalInvestigatorField, 2);
     setColspan(responsiblePersonField, 2);
     setColspan(projectManagerField, 2);
@@ -183,7 +217,7 @@ public class ProjectFormLayout extends FormLayout {
   public void reset() {
     principalInvestigatorField.clear();
     projectManagerField.clear();
-    binder.removeBean();
+    fundingField.clear();
     binder.setBean(new ProjectInformation());
   }
 
@@ -202,18 +236,6 @@ public class ProjectFormLayout extends FormLayout {
     titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
   }
 
-  private static void addConsumedLengthHelper(TextField textField, String newValue) {
-    int maxLength = textField.getMaxLength();
-    int consumedLength = newValue.length();
-    textField.setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
-    int maxLength = textArea.getMaxLength();
-    int consumedLength = newValue.length();
-    textArea.setHelperText(consumedLength + "/" + maxLength);
-  }
-
   public Binder<ProjectInformation> getBinder() {
     return binder;
   }
@@ -222,14 +244,10 @@ public class ProjectFormLayout extends FormLayout {
 
     @Serial
     private static final long serialVersionUID = 1997619416908358254L;
-    private ProjectInformation projectInformation = new ProjectInformation();
     private final String offerId = "";
+    private ProjectInformation projectInformation = new ProjectInformation();
     @NotEmpty
     private String projectCode = "";
-
-    public void setProjectCode(String projectCode) {
-      this.projectCode = projectCode;
-    }
 
     public String getOfferId() {
       return offerId;
@@ -239,8 +257,16 @@ public class ProjectFormLayout extends FormLayout {
       return projectCode;
     }
 
+    public void setProjectCode(String projectCode) {
+      this.projectCode = projectCode;
+    }
+
     public ProjectInformation getProjectInformation() {
       return projectInformation;
+    }
+
+    public void setProjectInformation(ProjectInformation projectInformation) {
+      this.projectInformation = projectInformation;
     }
 
     @Override
@@ -269,10 +295,6 @@ public class ProjectFormLayout extends FormLayout {
       result = 31 * result + (projectInformation != null ? projectInformation.hashCode() : 0);
       result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
       return result;
-    }
-
-    public void setProjectInformation(ProjectInformation projectInformation) {
-      this.projectInformation = projectInformation;
     }
   }
 }

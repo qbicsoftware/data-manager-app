@@ -18,8 +18,11 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
+import life.qbic.projectmanagement.domain.project.Funding;
+import org.apache.poi.sl.draw.geom.GuideIf.Op;
 
 /**
  * <b>Project Information Dialog</b>
@@ -173,11 +176,21 @@ public class EditProjectInformationDialog extends DialogWindow {
     private String projectTitle = "";
     @NotEmpty
     private String projectObjective = "";
+
+    private FundingEntry fundingEntry;
     @NotEmpty
     private Contact principalInvestigator;
     private Contact responsiblePerson;
     @NotEmpty
     private Contact projectManager;
+
+    public Optional<FundingEntry> getFundingEntry() {
+      return Optional.ofNullable(fundingEntry);
+    }
+
+    public void setFundingEntry(FundingEntry fundingEntry) {
+      this.fundingEntry = fundingEntry;
+    }
 
     public void setProjectTitle(String projectTitle) {
       this.projectTitle = projectTitle;
@@ -220,39 +233,25 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
 
     @Override
-    public boolean equals(Object object) {
-      if (this == object) {
+    public boolean equals(Object o) {
+      if (this == o) {
         return true;
       }
-      if (object == null || getClass() != object.getClass()) {
+      if (o == null || getClass() != o.getClass()) {
         return false;
       }
-
-      ProjectInformation that = (ProjectInformation) object;
-
-      if (!Objects.equals(projectTitle, that.projectTitle)) {
-        return false;
-      }
-      if (!Objects.equals(projectObjective, that.projectObjective)) {
-        return false;
-      }
-      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
-        return false;
-      }
-      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
-        return false;
-      }
-      return Objects.equals(projectManager, that.projectManager);
+      ProjectInformation that = (ProjectInformation) o;
+      return Objects.equals(projectTitle, that.projectTitle) && Objects.equals(
+          projectObjective, that.projectObjective) && Objects.equals(fundingEntry,
+          that.fundingEntry) && Objects.equals(principalInvestigator,
+          that.principalInvestigator) && Objects.equals(responsiblePerson,
+          that.responsiblePerson) && Objects.equals(projectManager, that.projectManager);
     }
 
     @Override
     public int hashCode() {
-      int result = projectTitle != null ? projectTitle.hashCode() : 0;
-      result = 31 * result + (projectObjective != null ? projectObjective.hashCode() : 0);
-      result = 31 * result + (principalInvestigator != null ? principalInvestigator.hashCode() : 0);
-      result = 31 * result + (responsiblePerson != null ? responsiblePerson.hashCode() : 0);
-      result = 31 * result + (projectManager != null ? projectManager.hashCode() : 0);
-      return result;
+      return Objects.hash(projectTitle, projectObjective, fundingEntry, principalInvestigator,
+          responsiblePerson, projectManager);
     }
 
     @Override
