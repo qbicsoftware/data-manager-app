@@ -6,7 +6,10 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.ListBox;
+import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -87,15 +90,21 @@ public class ExperimentListComponent extends PageArea {
     } else {
       addComponentAsFirst(header);
       setExperimentsInListBox(foundExperiments);
+      addExperimentSelectionListener();
       content.add(listBox);
     }
     add(content);
   }
 
   private void setExperimentsInListBox(Collection<Experiment> experiments) {
-    listBox.setItems(experiments);
+    var dataView = listBox.setItems(experiments);
+    dataView.setSortOrder(experiment -> experiment.getName().toLowerCase(),
+        SortDirection.ASCENDING);
     listBox.setRenderer(new ComponentRenderer<Component, Experiment>(
-        experiment -> new Span(experiment.getName())));
+        this::generateExperimentListItem));
+  }
+
+  private void addExperimentSelectionListener() {
     listBox.addValueChangeListener(
         listBoxExperimentComponentValueChangeEvent -> {
           if (listBoxExperimentComponentValueChangeEvent.isFromClient()) {
@@ -104,6 +113,15 @@ public class ExperimentListComponent extends PageArea {
                 listBoxExperimentComponentValueChangeEvent.isFromClient());
           }
         });
+  }
+
+  private Span generateExperimentListItem(Experiment experiment) {
+    Icon flaskIcon = new Icon(VaadinIcon.FLASK);
+    flaskIcon.setClassName("primary");
+    Span experimentListItem = new Span();
+    experimentListItem.addClassName("experiment-list-item");
+    experimentListItem.add(flaskIcon, new Span(experiment.getName()));
+    return experimentListItem;
   }
 
   public void refresh() {
