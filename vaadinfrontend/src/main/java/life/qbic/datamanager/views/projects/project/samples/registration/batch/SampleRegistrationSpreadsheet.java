@@ -403,7 +403,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private List<String> generateGenomicsAnalysisMethods() {
     return Arrays.stream(AnalysisMethod.values())
-        .map(method -> "%s".formatted(method.label()))
+        .map(method -> "%s".formatted(method.name()))
         .sorted(Comparator.naturalOrder())
         .toList();
   }
