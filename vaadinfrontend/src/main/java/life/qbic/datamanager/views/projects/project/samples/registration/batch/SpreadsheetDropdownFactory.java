@@ -2,10 +2,16 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
+import com.vaadin.flow.data.provider.DataKeyMapper;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
+import com.vaadin.flow.data.renderer.Rendering;
+import com.vaadin.flow.dom.Element;
 import java.util.HashMap;
 import java.util.List;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SamplesheetHeaderName;
@@ -60,7 +66,19 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
     ComboBox<AnalysisMethod> editorComboBox = new ComboBox<>();
     editorComboBox.setClassName("spreadsheet-combo-box");
     editorComboBox.setItems(AnalysisMethod.values());
-    editorComboBox.setRenderer(createRenderer());
+    editorComboBox.setRenderer(new ComponentRenderer<>(analysisMethod -> {
+      var listItem = new Div();
+      listItem.addClassName("spreadsheet-list-item");
+      var label = new Div();
+      label.setText(analysisMethod.label());
+      var iconContainer = new Div();
+      var questionMarkIcon = VaadinIcon.QUESTION_CIRCLE_O.create();
+      questionMarkIcon.setTooltipText(analysisMethod.description());
+      iconContainer.add(questionMarkIcon);
+
+      listItem.add(label, iconContainer);
+      return listItem;
+    }));
     editorComboBox.addValueChangeListener(e -> {
       if (e.isFromClient()) {
         //We add a whitespace so the value is not auto incremented when the user drags a value
@@ -70,16 +88,6 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       }
     });
     return editorComboBox;
-  }
-
-  private Renderer<AnalysisMethod> createRenderer() {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append(
-        "<div class=\"spreadsheet-list-item\"><div>${item.label}</div> <div><vaadin-icon icon='vaadin:question-circle'><vaadin-tooltip slot=\"tooltip\" text=\"${item.description}\"></vaadin-tooltip></div></div>");
-
-    return LitRenderer.<AnalysisMethod>of(stringBuilder.toString())
-        .withProperty("label", AnalysisMethod::label)
-        .withProperty("description", AnalysisMethod::description);
   }
 
   private ComboBox<String> createEditorCombobox(Spreadsheet spreadsheet,
