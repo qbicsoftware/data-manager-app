@@ -1,3 +1,14 @@
+.experiment-list-item {
+  display: flex;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-l)
+}
+
+.experiment-list-item vaadin-icon {
+  font-size: var(--lumo-font-size-m);
+  padding: var(--lumo-space-xs);
+}
+
 span.bold {
   font-weight: bold;
 }
