@@ -22,7 +22,7 @@ public enum AnalysisMethod {
   CUSTOM_AMPLICON("CUSTOM-AMPLICON", "Custom amplicon sequencing",
       "Amplicon sequencing from DNA using custom primers"),
   METATRANSCRIPTOMICS(
-      "METATRANSCRIPTOMICS", "Metatrascriptomics",
+      "METATRANSCRIPTOMICS", "Metatranscriptomics",
       "Sequencing of the total RNA content in a community present in a sample"),
   METAGENOMIC(
       "METAGENOMIC", "Metagenomics",

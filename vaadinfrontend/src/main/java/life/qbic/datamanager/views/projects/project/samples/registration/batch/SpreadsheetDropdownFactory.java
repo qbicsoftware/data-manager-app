@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
@@ -59,19 +59,17 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
   private ComboBox<AnalysisMethod> createEditorAnalysisComboBox(Spreadsheet spreadsheet,
       int selectedCellColumnIndex, int selectedCellRowIndex) {
     ComboBox<AnalysisMethod> editorComboBox = new ComboBox<>();
-    editorComboBox.setClassName("spreadsheet-combo-box");
+    editorComboBox.addClassName("spreadsheet-combo-box");
+    editorComboBox.setOverlayClassName("analysis-type-combo-box");
     editorComboBox.setItems(AnalysisMethod.values());
     editorComboBox.setRenderer(new ComponentRenderer<>(analysisMethod -> {
-      var listItem = new Div();
+      var listItem = new Span();
       listItem.addClassName("spreadsheet-list-item");
-      var label = new Div();
+      Span label = new Span(analysisMethod.label());
       label.setText(analysisMethod.label());
-      var iconContainer = new Div();
       var questionMarkIcon = VaadinIcon.QUESTION_CIRCLE_O.create();
       questionMarkIcon.setTooltipText(analysisMethod.description());
-      iconContainer.add(questionMarkIcon);
-
-      listItem.add(label, iconContainer);
+      listItem.add(label, questionMarkIcon);
       return listItem;
     }));
     editorComboBox.setItemLabelGenerator(AnalysisMethod::term);
