@@ -6,12 +6,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
-import com.vaadin.flow.data.provider.DataKeyMapper;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LitRenderer;
-import com.vaadin.flow.data.renderer.Renderer;
-import com.vaadin.flow.data.renderer.Rendering;
-import com.vaadin.flow.dom.Element;
 import java.util.HashMap;
 import java.util.List;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SamplesheetHeaderName;
@@ -49,7 +44,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         ComboBox<AnalysisMethod> combo = createEditorAnalysisComboBox(spreadsheet,
             cell.getColumnIndex(), cell.getRowIndex());
         if (!cell.getStringCellValue().isEmpty()) {
-          combo.setValue(AnalysisMethod.valueOf(cell.getStringCellValue().trim()));
+          combo.setValue(AnalysisMethod.forFixedTerm(cell.getStringCellValue().trim()));
         }
         return combo;
       }
@@ -79,11 +74,12 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       listItem.add(label, iconContainer);
       return listItem;
     }));
-    editorComboBox.addValueChangeListener(e -> {
-      if (e.isFromClient()) {
+    editorComboBox.setItemLabelGenerator(AnalysisMethod::term);
+    editorComboBox.addValueChangeListener(valueChangeEvent -> {
+      if (valueChangeEvent.isFromClient()) {
         //We add a whitespace so the value is not auto incremented when the user drags a value
         Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
-            e.getValue() + " ");
+            valueChangeEvent.getValue().term() + " ");
         spreadsheet.refreshCells(createdCell);
       }
     });

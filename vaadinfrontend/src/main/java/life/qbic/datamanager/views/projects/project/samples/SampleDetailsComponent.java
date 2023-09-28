@@ -431,7 +431,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                 experimentId,
                 sampleRegistrationContent.experimentalGroupId(),
                 sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
-                sampleRegistrationContent.analysisType(),
                 sampleRegistrationContent.analysisMethod(), sampleRegistrationContent.comment());
           }).toList();
     }

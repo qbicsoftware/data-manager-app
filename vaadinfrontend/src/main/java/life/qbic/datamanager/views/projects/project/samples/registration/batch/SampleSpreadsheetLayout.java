@@ -210,9 +210,10 @@ class SampleSpreadsheetLayout extends Div {
       List<SampleRegistrationContent> samplesToRegister = new ArrayList<>();
       filledRows.forEach(row -> {
         SampleRegistrationContent sampleRegistrationContent = new SampleRegistrationContent(
+            row.analysisMethod(),
             row.sampleLabel(), row.bioReplicateID(), row.experimentalGroupId(), row.species(),
             row.specimen(),
-            row.analyte(), row.analysisType(), row.customerComment(), row.analysisMethod());
+            row.analyte(), row.customerComment());
         samplesToRegister.add(sampleRegistrationContent);
       });
       return samplesToRegister;
