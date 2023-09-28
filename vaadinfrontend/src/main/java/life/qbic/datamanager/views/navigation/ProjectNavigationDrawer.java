@@ -43,7 +43,8 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
 
   private final Div projectDrawerSection = new Div();
   private final SideNavItem projectDrawerTitle = new SideNavItem("");
-  private final SideNavItem experimentsDrawerSection = new SideNavItem("");
+  private final Div experimentsDrawerSection = new Div();
+  private final SideNavItem experimentDrawerTitle = new SideNavItem("");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final Select<Project> projectSelect = new Select<>();
@@ -57,12 +58,12 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     this.experimentInformationService = experimentInformationService;
     projectDrawerSection.addClassName("project-section");
     experimentsDrawerSection.addClassName("experiment-section");
-    addDrawers();
+    add(projectDrawerSection, experimentsDrawerSection);
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    removeDrawers();
+    resetDrawers();
     Optional<String> projectIdOpt = beforeEnterEvent.getRouteParameters()
         .get(PROJECT_ID_ROUTE_PARAMETER);
     if (projectIdOpt.isEmpty()) {
@@ -71,7 +72,6 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     ProjectId projectId = ProjectId.parse(projectIdOpt.get());
     initializeProjectDrawerSection(projectId);
     initializeExperimentDrawerSection(projectId);
-    addDrawers();
     Optional<String> experimentIdOpt = beforeEnterEvent.getRouteParameters()
         .get(EXPERIMENT_ID_ROUTE_PARAMETER);
     if (experimentIdOpt.isEmpty()) {
@@ -83,49 +83,53 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
 
   //ToDo Load Project Information in Combobox
   private void initializeProjectDrawerSection(ProjectId projectId) {
-    initProjectSelect(projectId);
     projectDrawerTitle.setLabel("PROJECT");
     projectDrawerTitle.setPrefixComponent(VaadinIcon.BOOK.create());
+    initProjectSelect(projectId);
     String projectInformationPath = String.format(Projects.PROJECT_INFO, projectId.value());
     String projectAccessPath = String.format(Projects.ACCESS, projectId.value());
     SideNavItem projectInformationItem = new SideNavItem("PROJECT INFORMATION",
         projectInformationPath, VaadinIcon.DEINDENT.create());
     SideNavItem projectAccessItem = new SideNavItem("PROJECT ACCESS MANAGEMENT", projectAccessPath,
         VaadinIcon.USERS.create());
-    projectDrawerSection.add(projectDrawerTitle, projectSelect, projectInformationItem,
+    projectDrawerSection.addComponentAsFirst(projectDrawerTitle);
+    projectDrawerSection.add(projectSelect, projectInformationItem,
         projectAccessItem);
   }
 
+
+  //Todo add Renderer and last modified projects
   private void initProjectSelect(ProjectId projectId) {
-    projectSelect.clear();
-    Span routeToOverView = new Span("Select your project");
-    projectSelect.setEmptySelectionAllowed(true);
+    projectSelect.removeAll();
+    Span routeToOverView = new Span("Go To Projects");
     routeToOverView.addClickListener(
         spanClickEvent -> UI.getCurrent().navigate(ProjectOverviewPage.class));
-    projectSelect.addComponentAsFirst(new Div(routeToOverView));
+    Optional<Project> projectOptional = projectInformationService.find(projectId);
+    projectOptional.ifPresent(projectSelect::setValue);
+    projectOptional.ifPresent(projectSelect::setItems);
+    projectSelect.setItemLabelGenerator(project -> project.getProjectCode().value());
+    projectSelect.addComponentAsFirst(new Span(routeToOverView));
     projectSelect.addComponentAtIndex(1, new Hr());
-    projectSelect.setValue(projectInformationService.find(projectId).orElse(null));
   }
 
   private void initializeExperimentDrawerSection(ProjectId projectId) {
-    experimentsDrawerSection.setLabel("Experiments");
-    experimentsDrawerSection.setPrefixComponent(VaadinIcon.FLASK.create());
+    experimentDrawerTitle.removeAll();
+    experimentDrawerTitle.setLabel("Experiments");
+    experimentDrawerTitle.setPrefixComponent(VaadinIcon.FLASK.create());
     List<Experiment> experiments = experimentInformationService.findAllForProject(projectId);
     experiments.forEach(experiment -> {
       String experimentPath = String.format(Projects.EXPERIMENT, projectId.value(),
           experiment.experimentId().value());
       SideNavItem experimentItem = new SideNavItem(experiment.getName(), experimentPath,
           VaadinIcon.FLASK.create());
-      experimentsDrawerSection.addItem(experimentItem);
+      experimentDrawerTitle.addItem(experimentItem);
     });
+    experimentsDrawerSection.addComponentAsFirst(experimentDrawerTitle);
   }
 
-  private void removeDrawers() {
+  private void resetDrawers() {
     projectDrawerSection.removeAll();
     experimentsDrawerSection.removeAll();
   }
 
-  private void addDrawers() {
-    add(projectDrawerSection, experimentsDrawerSection);
-  }
 }

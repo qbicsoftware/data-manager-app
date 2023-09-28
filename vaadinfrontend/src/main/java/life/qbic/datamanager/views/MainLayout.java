@@ -20,25 +20,19 @@ public class MainLayout extends DataManagerLayout {
 
   private Button homeButton;
   private Button logout;
-  private final ProjectNavigationDrawer projectNavigationDrawer;
 
   public MainLayout(@Autowired MainHandlerInterface startHandlerInterface,
       ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    ;
-    projectNavigationDrawer = new ProjectNavigationDrawer(projectInformationService,
+    ProjectNavigationDrawer projectNavigationDrawer = new ProjectNavigationDrawer(
+        projectInformationService,
         experimentInformationService);
     DrawerToggle drawerToggle = new DrawerToggle();
     createNavBarContent(drawerToggle);
-    createDrawer();
-    registerToHandler(startHandlerInterface);
-  }
-
-  private void createDrawer() {
-
     addToDrawer(projectNavigationDrawer);
+    registerToHandler(startHandlerInterface);
   }
 
   private void registerToHandler(MainHandlerInterface startHandler) {
