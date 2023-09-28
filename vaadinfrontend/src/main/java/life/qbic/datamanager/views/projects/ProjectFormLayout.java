@@ -183,6 +183,7 @@ public class ProjectFormLayout extends FormLayout {
         offerSearchField,
         codeAndTitleLayout,
         projectObjective,
+        fundingField,
         projectContactsLayout,
         principalInvestigatorField,
         responsiblePersonField,
@@ -191,6 +192,7 @@ public class ProjectFormLayout extends FormLayout {
     setColspan(offerSearchField, 2);
     setColspan(codeAndTitleLayout, 2);
     setColspan(projectObjective, 2);
+    setColspan(fundingField, 2);
     setColspan(principalInvestigatorField, 2);
     setColspan(responsiblePersonField, 2);
     setColspan(projectManagerField, 2);
