@@ -1,0 +1,16 @@
+/* All custom css for components within the navigation drawer go here */
+
+.project-navigation-drawer {
+  display: flex;
+  gap: var(--lumo-space-s);
+  flex-flow: column;
+}
+
+.project-navigation-drawer .project-section {
+}
+
+.project-navigation-drawer.experiment-section .content {
+  display: flex;
+  flex-flow: column;
+  gap: var(--lumo-space-m);
+}

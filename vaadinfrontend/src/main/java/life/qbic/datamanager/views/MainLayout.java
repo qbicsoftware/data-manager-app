@@ -1,8 +1,13 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
+import java.util.Objects;
+import life.qbic.datamanager.views.navigation.ProjectNavigationDrawer;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -15,18 +20,33 @@ public class MainLayout extends DataManagerLayout {
 
   private Button homeButton;
   private Button logout;
+  private final ProjectNavigationDrawer projectNavigationDrawer;
 
-  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
-    createNavBarContent();
+  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface,
+      ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService) {
+    Objects.requireNonNull(projectInformationService);
+    Objects.requireNonNull(experimentInformationService);
+    ;
+    projectNavigationDrawer = new ProjectNavigationDrawer(projectInformationService,
+        experimentInformationService);
+    DrawerToggle drawerToggle = new DrawerToggle();
+    createNavBarContent(drawerToggle);
+    createDrawer();
     registerToHandler(startHandlerInterface);
+  }
+
+  private void createDrawer() {
+
+    addToDrawer(projectNavigationDrawer);
   }
 
   private void registerToHandler(MainHandlerInterface startHandler) {
     startHandler.handle(this);
   }
 
-  private void createNavBarContent() {
-    addToNavbar(createHeaderButtonLayout());
+  private void createNavBarContent(DrawerToggle drawerToggle) {
+    addToNavbar(drawerToggle, createHeaderButtonLayout());
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
@@ -36,7 +56,11 @@ public class MainLayout extends DataManagerLayout {
     return new HorizontalLayout(homeButton, logout);
   }
 
-  public Button logout() { return logout; }
+  public Button logout() {
+    return logout;
+  }
 
-  public Button homeButton() { return homeButton; }
+  public Button homeButton() {
+    return homeButton;
+  }
 }
