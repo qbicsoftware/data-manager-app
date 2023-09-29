@@ -207,8 +207,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
         Map<String, String> props = new HashMap<>();
 
-        props.put("Q_SECONDARY_NAME", sample.biologicalReplicateId().toString());
-        props.put("Q_EXTERNALDB_ID", sample.label());
+        props.put("Q_SECONDARY_NAME", sample.label());
+        props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
         String analyteValue = sample.sampleOrigin().getAnalyte().value();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
                 () -> analyteMapper.translateSampleTypeString(analyteValue))
