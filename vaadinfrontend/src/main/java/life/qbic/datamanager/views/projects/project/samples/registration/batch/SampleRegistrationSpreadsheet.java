@@ -381,7 +381,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
-    analysisMethods = generateGenomicsAnalysisMethods(); // 16S... term
+    analysisMethods = generateGenomicsAnalysisMethods(); // 16S amplicon sequencing... label
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
@@ -402,7 +402,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private List<String> generateGenomicsAnalysisMethods() {
     return Arrays.stream(AnalysisMethod.values())
-        .map(AnalysisMethod::term)
+        .map(AnalysisMethod::label)
         .sorted(Comparator.naturalOrder())
         .toList();
   }
@@ -601,7 +601,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(replicateIDString,
           conditionString);
       rows.add(
-          new NGSRowDTO(AnalysisMethod.forFixedTerm(analysisMethodInput.trim()),
+          new NGSRowDTO(AnalysisMethod.forLabel(analysisMethodInput.trim()),
               sampleLabelInput.trim(), biologicalReplicateId,
               experimentalGroupId, speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
               commentInput.trim()));

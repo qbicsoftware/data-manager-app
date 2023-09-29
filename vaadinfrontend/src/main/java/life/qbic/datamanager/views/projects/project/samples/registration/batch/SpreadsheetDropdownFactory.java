@@ -44,7 +44,7 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
         ComboBox<AnalysisMethod> combo = createEditorAnalysisComboBox(spreadsheet,
             cell.getColumnIndex(), cell.getRowIndex());
         if (!cell.getStringCellValue().isEmpty()) {
-          combo.setValue(AnalysisMethod.forFixedTerm(cell.getStringCellValue().trim()));
+          combo.setValue(AnalysisMethod.forLabel(cell.getStringCellValue().trim()));
         }
         return combo;
       }
@@ -72,12 +72,12 @@ public class SpreadsheetDropdownFactory implements SpreadsheetComponentFactory {
       listItem.add(label, questionMarkIcon);
       return listItem;
     }));
-    editorComboBox.setItemLabelGenerator(AnalysisMethod::term);
+    editorComboBox.setItemLabelGenerator(AnalysisMethod::label);
     editorComboBox.addValueChangeListener(valueChangeEvent -> {
       if (valueChangeEvent.isFromClient()) {
         //We add a whitespace so the value is not auto incremented when the user drags a value
         Cell createdCell = spreadsheet.createCell(selectedCellRowIndex, selectedCellColumnIndex,
-            valueChangeEvent.getValue().term() + " ");
+            valueChangeEvent.getValue().label() + " ");
         spreadsheet.refreshCells(createdCell);
       }
     });

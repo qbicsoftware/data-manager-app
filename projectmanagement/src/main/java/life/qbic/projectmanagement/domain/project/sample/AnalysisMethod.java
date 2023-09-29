@@ -76,7 +76,7 @@ public enum AnalysisMethod {
 
   UNTARGETED_MX("UNTARGETED-MX", "Untargeted metabolomics", ""),
 
-  TARGETED_AA("TARGETED-AA", "Targeted amino acids", "" ),
+  TARGETED_AA("TARGETED-AA", "Targeted amino acids", ""),
 
   TARGETED_NUCLEOTIDES("TARGETED-NUCLEOTIDES", "Targeted nucleotides", ""),
 
@@ -84,47 +84,45 @@ public enum AnalysisMethod {
 
   TARGETED_ALL_MX("TARGETED-ALL-MX", "Targeted all metabolites", "");
 
-
-  private static final Map<String, AnalysisMethod> fixedTermToEnum;
+  private static final Map<String, AnalysisMethod> labelToEnum;
 
   static {
-    fixedTermToEnum = new HashMap<>();
+    labelToEnum = new HashMap<>();
     for (AnalysisMethod method : AnalysisMethod.values()) {
-      fixedTermToEnum.put(method.term(), method);
+      labelToEnum.put(method.label(), method);
     }
   }
 
-
-  private final String fixedTerm;
+  private final String abbreviation;
 
   private final String label;
 
   private final String description;
 
-  AnalysisMethod(String fixedTerm, String label, String description) {
-    this.fixedTerm = fixedTerm;
+  AnalysisMethod(String abbreviation, String label, String description) {
+    this.abbreviation = abbreviation;
     this.label = label;
     this.description = description;
   }
 
-  public static AnalysisMethod forFixedTerm(String term) throws IllegalArgumentException {
+  public static AnalysisMethod forLabel(String label) throws IllegalArgumentException {
     try {
-      return fixedTermToEnum.get(term);
+      return labelToEnum.get(label);
     } catch (NullPointerException e) {
-      throw new IllegalArgumentException("Unknown term " + term);
+      throw new IllegalArgumentException("Unknown label " + label);
     }
   }
 
   /**
-   * Provides the fixed term for a certain analysis method.
+   * Provides the abbreviation for a certain analysis method.
    * <p>
    * Example: WES for whole exome sequencing
    *
-   * @return the fixed term for an analysis method
+   * @return the fixed abbreviation for an analysis method
    * @since 1.0.0
    */
-  public String term() {
-    return this.fixedTerm;
+  public String abbreviation() {
+    return this.abbreviation;
   }
 
   /**
@@ -148,4 +146,4 @@ public enum AnalysisMethod {
   public String description() {
     return this.description;
   }
-  }
+}
