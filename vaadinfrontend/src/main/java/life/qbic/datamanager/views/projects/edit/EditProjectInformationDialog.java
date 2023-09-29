@@ -185,6 +185,9 @@ public class EditProjectInformationDialog extends DialogWindow {
     private Contact projectManager;
 
     public Optional<FundingEntry> getFundingEntry() {
+      if (fundingEntry == null || fundingEntry.isEmpty()) {
+        return Optional.empty();
+      }
       return Optional.ofNullable(fundingEntry);
     }
 

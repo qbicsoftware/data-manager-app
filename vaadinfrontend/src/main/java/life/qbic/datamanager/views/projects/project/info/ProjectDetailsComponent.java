@@ -287,9 +287,9 @@ public class ProjectDetailsComponent extends PageArea {
     projectInformationService.manageProject(projectId,
         fromContact(projectInformationContent.getProjectManager()));
 
-    projectInformationContent.getFundingEntry().ifPresent(
+    projectInformationContent.getFundingEntry().ifPresentOrElse(
         funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
-            funding.getReferenceId()));
+            funding.getReferenceId()), () -> projectInformationService.removeFunding(projectId));
 
     projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
             projectInformationService.setResponsibility(projectId, fromContact(contact)),

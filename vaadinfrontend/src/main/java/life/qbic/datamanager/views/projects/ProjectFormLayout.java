@@ -78,19 +78,20 @@ public class ProjectFormLayout extends FormLayout {
             ProjectInformation::setProjectObjective);
 
     fundingField = new FundingField("Funding Information");
-    binder.forField(fundingField)
-        .withValidator(field -> {
-              if (field == null) {
+    binder.forField(fundingField).withValidator(value -> {
+          if (value == null) {
+            return true;
+          }
+          return !value.getReferenceId().isBlank() || value.getLabel().isBlank();
+        }, "Please provide the grant ID for the given grant")
+        .withValidator(value -> {
+              if (value == null) {
                 return true;
               }
-              if (!field.getLabel().isBlank()) {
-                return !field.getReferenceId().isBlank();
-              } else if (!field.getReferenceId().isBlank()) {
-                return !field.getLabel().isBlank();
-              }
-              return true;
+              return value.getReferenceId().isBlank() || !value.getLabel().isBlank();
             },
-            "No, that is not how it works.").bind(
+            "Please provide the grant for the given grant ID.")
+        .bind(
             projectInformation -> projectInformation.getFundingEntry().orElse(null),
             ProjectInformation::setFundingEntry);
 

@@ -119,4 +119,10 @@ public class ProjectInformationService {
     projectRepository.update(project);
 
   }
+
+  public void removeFunding(ProjectId projectId) {
+    var project = loadProject(projectId);
+    project.removeFunding();
+    projectRepository.update(project);
+  }
 }

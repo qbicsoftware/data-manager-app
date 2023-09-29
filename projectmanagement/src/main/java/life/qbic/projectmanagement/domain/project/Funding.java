@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.project;
 
 import jakarta.persistence.Embeddable;
+import java.util.Objects;
 
 /**
  * A small business value object representing information about funding.
@@ -41,5 +42,23 @@ public class Funding {
 
   public String grantId() {
     return this.grantId;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Funding funding = (Funding) o;
+    return Objects.equals(grant, funding.grant) && Objects.equals(grantId,
+        funding.grantId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(grant, grantId);
   }
 }

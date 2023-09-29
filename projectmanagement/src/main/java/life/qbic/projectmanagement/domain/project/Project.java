@@ -291,4 +291,8 @@ public class Project {
   public int hashCode() {
     return projectId.hashCode();
   }
+
+  public void removeFunding() {
+    funding = null;
+  }
 }
