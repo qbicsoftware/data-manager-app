@@ -381,7 +381,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
-    analysisMethods = generateGenomicsAnalysisMethods(); // 16S amplicon sequencing... label
+    analysisMethods = generateGenomicsAnalysisMethods(); 
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
