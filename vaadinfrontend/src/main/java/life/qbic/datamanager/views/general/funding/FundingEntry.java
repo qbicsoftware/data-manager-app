@@ -3,11 +3,11 @@ package life.qbic.datamanager.views.general.funding;
 import java.util.Objects;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Funding DTO</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Form input information about funding</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class FundingEntry {
 

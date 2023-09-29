@@ -3,15 +3,15 @@ package life.qbic.datamanager.views.general.funding;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Funding information field</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A custom field with to input fields where users can enter a grant label and grant ID for a
+ * project</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class FundingField extends CustomField<FundingEntry> {
 
@@ -19,30 +19,23 @@ public class FundingField extends CustomField<FundingEntry> {
   private static final long serialVersionUID = 839203706554301417L;
   private final TextField label;
   private final TextField referenceId;
-  private final Binder<FundingEntry> binder;
 
   public FundingField(String fieldLabel) {
     super();
     setLabel(fieldLabel);
     this.label = new TextField("Grant", "e.g. SFB");
     this.referenceId = new TextField("Grant ID", "e.g. SFB 1101");
-    this.binder = new Binder<>();
     layoutComponent();
-    configureBinder();
-  }
-
-  private void configureBinder() {
-
-  }
-
-  private void layoutComponent() {
-    add(layoutFundingInput(label, referenceId));
   }
 
   private static Div layoutFundingInput(TextField label, TextField referenceId) {
     var layout = new Div(label, referenceId);
     layout.addClassName("input-fields");
     return layout;
+  }
+
+  private void layoutComponent() {
+    add(layoutFundingInput(label, referenceId));
   }
 
   @Override
@@ -58,7 +51,7 @@ public class FundingField extends CustomField<FundingEntry> {
 
 
   @Override
-  public FundingEntry getEmptyValue(){
+  public FundingEntry getEmptyValue() {
     return new FundingEntry(label.getEmptyValue(), referenceId.getEmptyValue());
   }
 
