@@ -22,6 +22,7 @@ public class FundingField extends CustomField<FundingEntry> {
 
   public FundingField(String fieldLabel) {
     super();
+    addClassName("funding-field");
     setLabel(fieldLabel);
     this.label = new TextField("Grant", "e.g. SFB");
     this.referenceId = new TextField("Grant ID", "e.g. SFB 1101");
