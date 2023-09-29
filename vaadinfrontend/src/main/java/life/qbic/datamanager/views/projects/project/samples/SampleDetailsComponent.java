@@ -333,8 +333,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .setSortProperty("specimen").setTooltipGenerator(SamplePreview::specimen);
       sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
           .setTooltipGenerator(SamplePreview::analyte);
-      sampleGrid.addColumn(SamplePreview::analysisType).setHeader("Analysis to Perform")
-          .setSortProperty("analysisType").setTooltipGenerator(SamplePreview::analysisType);
+      sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
+          .setSortProperty("analysisType").setTooltipGenerator(SamplePreview::analysisMethod);
       sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
           .setTooltipGenerator(SamplePreview::comment);
       sampleGrid.addClassName("sample-grid");
@@ -431,7 +431,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                 experimentId,
                 sampleRegistrationContent.experimentalGroupId(),
                 sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
-                sampleRegistrationContent.analysisType(), sampleRegistrationContent.comment());
+                sampleRegistrationContent.analysisMethod(), sampleRegistrationContent.comment());
           }).toList();
     }
 

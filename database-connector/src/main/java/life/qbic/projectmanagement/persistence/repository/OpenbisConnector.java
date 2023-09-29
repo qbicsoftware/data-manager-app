@@ -72,7 +72,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
 
-  private final AnalyteToOpenbisSampleTypeMapper analyteMapper = new AnalyteToOpenbisSampleTypeMapperImpl();
+  private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
@@ -211,7 +211,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
         String analyteValue = sample.sampleOrigin().getAnalyte().value();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-                () -> analyteMapper.translateSampleTypeString(analyteValue))
+                () -> analyteMapper.mapFrom(analyteValue))
             .orElseThrow(() -> {
               logger("No mapping was found for " + analyteValue);
               return new MappingNotFoundException();
@@ -383,28 +383,5 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   static class MappingNotFoundException extends RuntimeException {
 
-  }
-
-  public interface AnalyteToOpenbisSampleTypeMapper {
-
-    Optional<String> translateSampleTypeString(String analyte);
-  }
-
-  private class AnalyteToOpenbisSampleTypeMapperImpl implements
-      AnalyteToOpenbisSampleTypeMapper {
-
-    // dummy map needed once ontologies outside openBIS are used
-    private static final Map<String, String> analyteToSampleType;
-
-    static {
-      analyteToSampleType = new HashMap<>();
-      analyteToSampleType.put("RNA", "RNA");
-      analyteToSampleType.put("DNA", "DNA");
-    }
-
-    @Override
-    public Optional<String> translateSampleTypeString(String analyte) {
-      return Optional.ofNullable(analyte);
-    }
   }
 }

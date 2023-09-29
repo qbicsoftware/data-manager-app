@@ -45,8 +45,8 @@ public class SamplePreview {
   @Column(name = "label")
   private String sampleLabel;
   private String comment;
-  @Column(name = "analysis_type")
-  private String analysisType;
+  @Column(name = "analysis_method")
+  private String analysisMethod;
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
@@ -61,7 +61,7 @@ public class SamplePreview {
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String bioReplicateLabel,
       String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisType, String comment) {
+      String analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -82,9 +82,9 @@ public class SamplePreview {
     this.species = species;
     this.specimen = specimen;
     this.analyte = analyte;
+    this.analysisMethod = analysisMethod;
     // optional columns
     this.comment = comment;
-    this.analysisType = analysisType;
   }
 
   /**
@@ -106,7 +106,7 @@ public class SamplePreview {
    *                          preview
    * @param analyte           the {@link Analyte} for the {@link Sample} associated with this
    *                          preview
-   * @param analysisType      the type of analysis to be performed for this {@link Sample}
+   * @param analysisMethod    the analysis method to be performed for this {@link Sample}
    * @param comment           an optional comment pertaining to the associated {@link Sample}
    * @return the sample preview
    */
@@ -114,9 +114,9 @@ public class SamplePreview {
       String sampleCode,
       String batchLabel, String bioReplicateLabel,
       String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisType, String comment) {
+      String analyte, String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
-        sampleLabel, experimentalGroup, species, specimen, analyte, analysisType, comment);
+        sampleLabel, experimentalGroup, species, specimen, analyte, analysisMethod, comment);
   }
 
   public ExperimentId experimentId() {
@@ -154,9 +154,11 @@ public class SamplePreview {
   public String analyte() {
     return analyte;
   }
-  public String analysisType() {
-    return analysisType;
+
+  public String analysisMethod() {
+    return analysisMethod;
   }
+
   public String comment() {
     return comment;
   }
@@ -181,15 +183,15 @@ public class SamplePreview {
         that.sampleLabel)
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
-        experimentalGroup, that.experimentalGroup) && Objects.equals(analysisType,
-        that.analysisType) && Objects.equals(comment, that.comment);
+        experimentalGroup, that.experimentalGroup) && Objects.equals(analysisMethod,
+        that.analysisMethod) && Objects.equals(comment, that.comment);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
         sampleLabel,
-        species, specimen, analyte, experimentalGroup, analysisType, comment);
+        species, specimen, analyte, experimentalGroup, analysisMethod, comment);
   }
 
   @Override
@@ -204,7 +206,7 @@ public class SamplePreview {
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +
         ", analyte='" + analyte + '\'' +
-        ", analysisType='" + analysisType + '\'' +
+        ", analysisType='" + analysisMethod + '\'' +
         ", comment='" + comment + '\'' +
         ", conditions=" + experimentalGroup +
         '}';

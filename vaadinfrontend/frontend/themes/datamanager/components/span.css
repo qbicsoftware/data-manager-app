@@ -54,3 +54,10 @@ span.title {
   color: var(--lumo-contrast-80pct);
   background-color: var(--lumo-contrast-5pct);
 }
+
+.spreadsheet-list-item {
+  display: inline-flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
