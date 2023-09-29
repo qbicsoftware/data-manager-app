@@ -11,6 +11,7 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Contact;
+import life.qbic.projectmanagement.domain.project.Funding;
 import life.qbic.projectmanagement.domain.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
@@ -55,7 +56,8 @@ public class ProjectCreationService {
       String objective,
       Contact principalInvestigator,
       Contact responsiblePerson,
-      Contact projectManager) {
+      Contact projectManager,
+      Funding funding) {
     if (Objects.isNull(principalInvestigator)) {
       return Result.fromError(new ApplicationException("principal investigator is null"));
     }
@@ -65,7 +67,7 @@ public class ProjectCreationService {
 
     try {
       Project project = createProject(code, title, objective, projectManager,
-          principalInvestigator, responsiblePerson);
+          principalInvestigator, responsiblePerson, funding);
       Optional.ofNullable(sourceOffer)
           .flatMap(it -> it.isBlank() ? Optional.empty() : Optional.of(it))
           .ifPresent(offerIdentifier -> project.linkOffer(OfferIdentifier.of(offerIdentifier)));
@@ -77,7 +79,7 @@ public class ProjectCreationService {
 
   private Project createProject(String code, String title, String objective,
       Contact projectManager,
-      Contact principalInvestigator, Contact responsiblePerson) {
+      Contact principalInvestigator, Contact responsiblePerson, Funding funding) {
     ProjectIntent intent = getProjectIntent(title, objective);
     ProjectCode projectCode;
     try {
@@ -93,7 +95,7 @@ public class ProjectCreationService {
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
 
-    var registrationResult = projectDomainService.registerProject(intent, projectCode, projectManager, principalInvestigator, responsiblePerson);
+    var registrationResult = projectDomainService.registerProject(intent, projectCode, projectManager, principalInvestigator, responsiblePerson, funding);
 
     if (registrationResult.isError() && registrationResult.getError().equals(ResponseCode.PROJECT_REGISTRATION_FAILED)) {
       throw new ApplicationException("Project registration failed.", ErrorCode.GENERAL, ErrorParameters.of(code));
