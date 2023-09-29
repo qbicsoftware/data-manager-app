@@ -21,8 +21,8 @@ import life.qbic.authentication.persistence.SidRepository;
 import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.security.QbicUserDetails;
 import life.qbic.datamanager.security.UserPermissions;
-import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.service.AccessDomainService;
@@ -34,7 +34,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  * A component that allows to manage project access
  */
 
-@Route(value = "projects/:projectId?/access", layout = MainLayout.class)
+@Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
 @PermitAll
 public class ProjectAccessComponent extends PageArea implements BeforeEnterObserver {
 

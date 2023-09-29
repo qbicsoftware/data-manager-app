@@ -1,9 +1,7 @@
 package life.qbic.datamanager.views.navigation;
 
-import static life.qbic.datamanager.views.projects.project.info.ProjectInformationMain.EXPERIMENT_ID_ROUTE_PARAMETER;
-import static life.qbic.datamanager.views.projects.project.info.ProjectInformationMain.PROJECT_ID_ROUTE_PARAMETER;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -11,22 +9,27 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.function.SerializableBiConsumer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -41,17 +44,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver {
 
+  private static final Logger log = getLogger(ProjectNavigationDrawer.class);
   private final Div projectSection = new Div();
   private final SideNavItem projectSectionHeader = new SideNavItem("");
   private final Div experimentSection = new Div();
   private final SideNavItem experimentSectionHeader = new SideNavItem("");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final Select<Project> projectSelect = new Select<>();
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  private transient Context context = new Context();
 
   public ProjectNavigationDrawer(@Autowired ProjectInformationService projectInformationService,
-      @Autowired
-      ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.addClassName("project-navigation-drawer");
@@ -60,34 +64,31 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     projectSection.addClassName("project-section");
     experimentSection.addClassName("experiment-section");
     add(projectSection, experimentSection);
+    log.debug(String.format(
+        "New instance for ProjectNavigationDrawer (#%s) was created",
+        System.identityHashCode(this))
+    );
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     resetDrawers();
-    Optional<String> projectIdOpt = beforeEnterEvent.getRouteParameters()
-        .get(PROJECT_ID_ROUTE_PARAMETER);
-    if (projectIdOpt.isEmpty()) {
-      return;
-    }
-    ProjectId projectId = ProjectId.parse(projectIdOpt.get());
-    initializeProjectDrawerSection(projectId);
-    initializeExperimentDrawerSection(projectId);
-    Optional<String> experimentIdOpt = beforeEnterEvent.getRouteParameters()
-        .get(EXPERIMENT_ID_ROUTE_PARAMETER);
-    if (experimentIdOpt.isEmpty()) {
-      return;
-    }
-    ExperimentId parsedExperimentId = ExperimentId.parse(experimentIdOpt.get());
+    String projectId = beforeEnterEvent.getRouteParameters()
+        .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
+    ProjectId parsedProjectId = ProjectId.parse(projectId);
+    this.context = new Context().with(parsedProjectId);
+    setContext();
   }
 
+  private void setContext() {
+    initializeProjectDrawerSection(context.projectId().orElseThrow());
+    initializeExperimentDrawerSection(context.projectId().orElseThrow());
+  }
 
-  //ToDo Load Project Information in Combobox
   private void initializeProjectDrawerSection(ProjectId projectId) {
     projectSectionHeader.setLabel("PROJECT");
     projectSectionHeader.setPrefixComponent(VaadinIcon.BOOK.create());
     projectSectionHeader.addClassName("primary");
-    initProjectSelect(projectId);
     String projectInformationPath = String.format(Projects.PROJECT_INFO, projectId.value());
     String projectAccessPath = String.format(Projects.ACCESS, projectId.value());
     SideNavItem projectInformationItem = new SideNavItem("PROJECT INFORMATION",
@@ -95,44 +96,54 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     SideNavItem projectAccessItem = new SideNavItem("PROJECT ACCESS MANAGEMENT", projectAccessPath,
         VaadinIcon.USERS.create());
     projectSection.addComponentAsFirst(projectSectionHeader);
-    projectSection.add(projectSelect, new Hr(), projectInformationItem,
+    Select<ProjectPreview> projectSelect = createProjectSelect(projectId);
+    projectSection.add(projectSelect, generateLineDivider(), projectInformationItem,
         projectAccessItem);
   }
 
-
-  //Todo add last modified projects
-  private void initProjectSelect(ProjectId projectId) {
-    projectSelect.removeAll();
-    projectSelect.setEmptySelectionCaption("Go To Projects");
-    Span routeToOverView = new Span("Go To Projects");
-    routeToOverView.addClassName("overview-route");
-    routeToOverView.addClickListener(
-        spanClickEvent -> UI.getCurrent().navigate(ProjectOverviewPage.class));
-    Optional<Project> projectOptional = projectInformationService.find(projectId);
-    projectOptional.ifPresent(projectSelect::setValue);
-    projectOptional.ifPresent(projectSelect::setItems);
-    projectSelect.setItemLabelGenerator(
-        project -> project.getProjectIntent().projectTitle().title());
-    projectSelect.addComponentAsFirst(routeToOverView);
-    projectSelect.addComponentAtIndex(1, new Hr());
+  private Select<ProjectPreview> createProjectSelect(ProjectId projectId) {
+    Select<ProjectPreview> projectSelect = new Select<>();
+    projectSelect.addClassName("project-select");
+    projectSelect.setItemLabelGenerator(ProjectPreview::projectTitle);
     Span recentProjectsHeader = new Span("Recent Projects");
     recentProjectsHeader.addClassName("recent-projects-header");
+    projectSelect.setRenderer(new ComponentRenderer<>(preview -> {
+      Div projectItem = new Div();
+      projectItem.addClassName("project-item");
+      String projectItemString = String.format("%s - %s", preview.projectCode(),
+          preview.projectTitle());
+      projectItem.add(projectItemString);
+      return projectItem;
+    }));
+    Project project = projectInformationService.find(projectId).orElseThrow();
+    ProjectPreview projectPreview = ProjectPreview.from(project.getProjectIntent().projectTitle());
+    projectSelect.setValue(projectPreview);
+    projectSelect.setItems(retrieveLastModifiedProjects());
+    projectSelect.addComponentAsFirst(generateRouteToProjectOverViewSpan());
+    projectSelect.addComponentAtIndex(1, generateLineDivider());
     projectSelect.addComponentAtIndex(2, recentProjectsHeader);
-    projectSelect.setRenderer(projectComponentRenderer());
+    projectSelect.addValueChangeListener(valueChangeEvent -> {
+      if (valueChangeEvent.isFromClient() && !valueChangeEvent.getValue()
+          .equals(valueChangeEvent.getOldValue())) {
+        routeToProject(valueChangeEvent.getValue().projectId());
+      }
+    });
+    return projectSelect;
   }
 
-  private static ComponentRenderer<Div, Project> projectComponentRenderer() {
-    return new ComponentRenderer<>(Div::new, styleProjectItem);
+  private List<ProjectPreview> retrieveLastModifiedProjects() {
+    List<SortOrder> sortOrders = Collections.singletonList(
+        SortOrder.of("lastModified").descending());
+    return projectInformationService.queryPreview("", 0, 3, sortOrders);
   }
 
-  private static final SerializableBiConsumer<Div, Project> styleProjectItem = (div, project) -> {
-    div.addClassName("project-item");
-    Span projectCodeSpan = new Span(project.getProjectCode().value());
-    projectCodeSpan.addClassName("project-item-code");
-    Span projectTitle = new Span(project.getProjectIntent().projectTitle().title());
-    projectTitle.addClassName("project-item-title");
-    div.add(projectCodeSpan, projectTitle);
-  };
+  private Span generateRouteToProjectOverViewSpan() {
+    Span projectOverviewRouteComponent = new Span("Go To Projects");
+    projectOverviewRouteComponent.addClassName("overview-route");
+    projectOverviewRouteComponent.addClickListener(
+        event -> routeToProjectOverview());
+    return projectOverviewRouteComponent;
+  }
 
   private void initializeExperimentDrawerSection(ProjectId projectId) {
     experimentSectionHeader.removeAll();
@@ -148,7 +159,13 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
   private SideNavItem createExperimentItem(ProjectId projectId, Experiment experiment) {
     String experimentPath = String.format(Projects.EXPERIMENT, projectId.value(),
         experiment.experimentId().value());
-    return new SideNavItem(experiment.getName(), experimentPath);
+    SideNavItem sideNavItem = new SideNavItem(experiment.getName(), experimentPath);
+    sideNavItem.addClassName("hoverable");
+    return sideNavItem;
+  }
+
+  private Hr generateLineDivider() {
+    return new Hr();
   }
 
   private void resetDrawers() {
@@ -156,4 +173,15 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     experimentSection.removeAll();
   }
 
+  private void routeToProject(ProjectId projectId) {
+    RouteParameters routeParameters = new RouteParameters(
+        new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
+    getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class, routeParameters));
+    log.debug("Routing to ProjectInformation page for project " + projectId.value());
+  }
+
+  private void routeToProjectOverview() {
+    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
+    log.debug("Routing to ProjectOverview page");
+  }
 }
