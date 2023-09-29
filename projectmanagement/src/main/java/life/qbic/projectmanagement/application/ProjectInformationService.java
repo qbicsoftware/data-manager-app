@@ -9,6 +9,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import life.qbic.projectmanagement.domain.project.Contact;
+import life.qbic.projectmanagement.domain.project.Funding;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.ProjectObjective;
@@ -108,6 +109,20 @@ public class ProjectInformationService {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);
+    projectRepository.update(project);
+  }
+
+  public void addFunding(ProjectId projectId, String label, String referenceId) {
+    Funding funding = Funding.of(label, referenceId);
+    var project = loadProject(projectId);
+    project.setFunding(funding);
+    projectRepository.update(project);
+
+  }
+
+  public void removeFunding(ProjectId projectId) {
+    var project = loadProject(projectId);
+    project.removeFunding();
     projectRepository.update(project);
   }
 }

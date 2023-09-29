@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
@@ -23,6 +24,7 @@ import life.qbic.datamanager.views.projects.project.info.InformationComponent.En
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.Contact;
+import life.qbic.projectmanagement.domain.project.Funding;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.experiment.Experiment;
@@ -117,11 +119,26 @@ public class ProjectDetailsComponent extends PageArea {
   private static List<Entry> extractFundingInfo(Project project) {
     List<Entry> entries = new ArrayList<>();
 
-    var disclaimer = new Div();
-    disclaimer.setText("No funding information provided.");
-    entries.add(new Entry("Grant", disclaimer));
+    project.funding().ifPresentOrElse(funding -> entries.addAll(fromFunding(funding)), () -> {
+      var disclaimer = new Div();
+      disclaimer.setText("No funding information provided.");
+      entries.add(new Entry("Grant", disclaimer));
+    });
 
-    //TODO load funding information about project
+    return entries;
+  }
+
+  private static List<Entry> fromFunding(Funding funding) {
+    List<Entry> entries = new ArrayList<>();
+    var grantLabel = "Grant";
+    var info = new Div();
+    info.setText(funding.grant());
+    entries.add(new Entry(grantLabel, info));
+
+    var grantIdLabel = "Grant ID";
+    var grantId = new Div();
+    grantId.setText(funding.grantId());
+    entries.add(new Entry(grantIdLabel, grantId));
 
     return entries;
   }
@@ -237,6 +254,8 @@ public class ProjectDetailsComponent extends PageArea {
             new life.qbic.datamanager.views.general.contact.Contact(it.fullName(),
                 it.emailAddress()))
     );
+    project.funding().ifPresent(funding -> projectInformation.setFundingEntry(
+        new FundingEntry(funding.grant(), funding.grantId())));
 
     projectInformation.setProjectManager(
         new life.qbic.datamanager.views.general.contact.Contact(
@@ -267,6 +286,11 @@ public class ProjectDetailsComponent extends PageArea {
         fromContact(projectInformationContent.getPrincipalInvestigator()));
     projectInformationService.manageProject(projectId,
         fromContact(projectInformationContent.getProjectManager()));
+
+    projectInformationContent.getFundingEntry().ifPresentOrElse(
+        funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
+            funding.getReferenceId()), () -> projectInformationService.removeFunding(projectId));
+
     projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
             projectInformationService.setResponsibility(projectId, fromContact(contact)),
         () -> projectInformationService.setResponsibility(projectId, null));
