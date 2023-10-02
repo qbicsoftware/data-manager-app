@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -365,7 +366,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
       return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-          .getValue().isEmpty();
+          .map(Collection::isEmpty)
+          .onError(error -> {
+            throw new ApplicationException("Unexpected response code : " + error);
+          })
+          .isValue();
     }
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
