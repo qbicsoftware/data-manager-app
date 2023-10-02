@@ -370,7 +370,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .onError(error -> {
             throw new ApplicationException("Unexpected response code : " + error);
           })
-          .isValue();
+          .getValue();
     }
 
     private Disclaimer createNoGroupsDefinedDisclaimer(Experiment experiment) {
