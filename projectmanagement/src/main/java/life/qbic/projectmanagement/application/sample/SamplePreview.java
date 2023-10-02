@@ -206,7 +206,7 @@ public class SamplePreview {
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +
         ", analyte='" + analyte + '\'' +
-        ", analysisType='" + analysisMethod + '\'' +
+        ", analysisMethod='" + analysisMethod + '\'' +
         ", comment='" + comment + '\'' +
         ", conditions=" + experimentalGroup +
         '}';
