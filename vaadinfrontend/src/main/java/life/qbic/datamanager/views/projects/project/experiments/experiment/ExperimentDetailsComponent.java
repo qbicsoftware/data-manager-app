@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -193,6 +192,7 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentUpdateDialog.setConfirmButtonLabel("Save");
 
       experimentUpdateDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
+      experimentUpdateDialog.addCancelListener(event -> event.getSource().close());
       experimentUpdateDialog.open();
     });
   }
@@ -206,14 +206,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
         experimentDraft.getAnalytes());
-    event.getOldDraft().ifPresent(
-        oldDraft -> {
-          if (!oldDraft.getExperimentName().equals(experimentDraft.getExperimentName())) {
-            fireEvent(new ExperimentNameChangedEvent(experimentId, oldDraft.getExperimentName(),
-                experimentDraft.getExperimentName(), this, event.isFromClient()));
-          }
-        }
-    );
+    reloadExperimentInfo(experimentId);
     event.getSource().close();
   }
 
@@ -572,22 +565,4 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalGroups.add(experimentalGroupsCollection);
   }
 
-  public static class ExperimentNameChangedEvent extends
-      ComponentEvent<ExperimentDetailsComponent> {
-
-    private final ExperimentId experimentId;
-    public final String oldValue;
-    public final String newValue;
-
-    public ExperimentNameChangedEvent(ExperimentId experimentId, String oldValue, String newValue,
-        ExperimentDetailsComponent source, boolean fromClient) {
-      super(source, fromClient);
-      this.oldValue = oldValue;
-      this.newValue = newValue;
-      this.experimentId = experimentId;
-    }
-    public ExperimentId experimentId() {
-      return experimentId;
-    }
-  }
 }
