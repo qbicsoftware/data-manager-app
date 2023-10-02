@@ -106,7 +106,10 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     Span toggleAndTitleBar = new Span();
     toggleAndTitleBar.addClassName("project-navbar-drawer-bar");
     DrawerToggle drawerToggle = new DrawerToggle();
-    addToDrawer(projectNavigationDrawer);
+    Span drawerTitle = new Span("Data Manager");
+    drawerTitle.addClassName("project-navigation-drawer-title");
+    addToDrawer(drawerTitle, projectNavigationDrawer);
+    setPrimarySection(Section.DRAWER);
     toggleAndTitleBar.add(drawerToggle, projectTitle);
     projectTitle.setClassName("project-navbar-title");
     return toggleAndTitleBar;

@@ -6,6 +6,14 @@
   gap: var(--lumo-space-m);
 }
 
+.project-navigation-drawer-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-xl);
+  margin-left: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  margin-bottom: var(--lumo-space-l);
+}
+
 /*In order: Style in primary color: sideNav title (without it's children), prefix component (icon), suffix component and toggle button(only present if children are present) */
 .project-navigation-drawer vaadin-side-nav-item.primary::part(item),
 .project-navigation-drawer vaadin-side-nav-item.primary [slot="prefix"],
@@ -24,18 +32,6 @@
   gap: var(--lumo-space-s);
 }
 
-/*ToDo Encapsulate this */
-.recent-projects-header {
-  color: var(--lumo-tertiary-text-color);
-  margin-left: var(--lumo-space-l);
-}
-
-/*ToDo Encapsulate this */
-vaadin-select-list-box {
-  margin-left: var(--lumo-space-l);
-  margin-top: var(--lumo-space-s);
-}
-
 .project-navigation-drawer .project-section .project-item {
   display: inline-flex;
   gap: var(--lumo-space-m);
@@ -51,6 +47,11 @@ vaadin-select-list-box {
   padding-left: var(--lumo-space-s);
   padding-right: var(--lumo-space-s);
   width: 100%;
+}
+
+.recent-projects-header {
+  color: var(--lumo-tertiary-text-color);
+  margin-left: var(--lumo-space-l);
 }
 
 .selected-project {
