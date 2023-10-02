@@ -187,8 +187,7 @@ public class ProjectDetailsComponent extends PageArea {
     return experiments.stream()
         .flatMap(experiment -> experiment.getSpecimens().stream())
         .map(Specimen::label)
-        .collect(Collectors.toSet())
-        .stream()
+        .distinct()
         .sorted()
         .map(Tag::new)
         .toList();
