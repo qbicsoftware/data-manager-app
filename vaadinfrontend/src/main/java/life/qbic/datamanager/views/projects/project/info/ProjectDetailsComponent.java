@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
@@ -53,9 +52,6 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div content = new Div();
   private final Span projectTitleField = new Span();
   private final Span projectObjectiveField = new Span();
-  private final Div speciesField = new Div();
-  private final Div specimensField = new Div();
-  private final Div analytesField = new Div();
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
@@ -103,12 +99,10 @@ public class ProjectDetailsComponent extends PageArea {
     species.addClassName(TAG_COLLECTION_CSS_CLASS);
     speciesTags(experiments).forEach(species::add);
     entries.add(new Entry("Species", species));
-
     var specimen = new Div();
     specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
     specimenTags(experiments).forEach(specimen::add);
     entries.add(new Entry("Specimen", specimen));
-
     var analyte = new Div();
     analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
     analyteTags(experiments).forEach(analyte::add);
@@ -181,20 +175,35 @@ public class ProjectDetailsComponent extends PageArea {
 
   private static List<Tag> speciesTags(List<Experiment> experiments) {
     return experiments.stream()
-        .flatMap(experiment -> experiment.getSpecies().stream()).map(Species::label).sorted()
-        .map(Tag::new).toList();
+        .flatMap(experiment -> experiment.getSpecies().stream())
+        .map(Species::label)
+        .collect(Collectors.toSet())
+        .stream()
+        .sorted()
+        .map(Tag::new)
+        .toList();
   }
 
   private static List<Tag> specimenTags(List<Experiment> experiments) {
     return experiments.stream()
-        .flatMap(experiment -> experiment.getSpecimens().stream()).map(Specimen::label).sorted()
-        .map(Tag::new).toList();
+        .flatMap(experiment -> experiment.getSpecimens().stream())
+        .map(Specimen::label)
+        .collect(Collectors.toSet())
+        .stream()
+        .sorted()
+        .map(Tag::new)
+        .toList();
   }
 
   private static List<Tag> analyteTags(List<Experiment> experiments) {
     return experiments.stream()
-        .flatMap(experiment -> experiment.getAnalytes().stream()).map(Analyte::label).sorted()
-        .map(Tag::new).toList();
+        .flatMap(experiment -> experiment.getAnalytes().stream())
+        .map(Analyte::label)
+        .collect(Collectors.toSet())
+        .stream()
+        .sorted()
+        .map(Tag::new)
+        .toList();
   }
 
   public void setContext(Context context) {
@@ -333,33 +342,10 @@ public class ProjectDetailsComponent extends PageArea {
     projectInformationSection.clearContent();
     fundingInformationSection.clearContent();
     collaboratorSection.clearContent();
-
     projectTitleField.removeAll();
     projectObjectiveField.removeAll();
-    speciesField.removeAll();
-    specimensField.removeAll();
-    analytesField.removeAll();
     projectManagerField.removeAll();
     principalInvestigatorField.removeAll();
     responsiblePersonField.removeAll();
-  }
-
-  private void setGroupedExperimentInformation(ProjectId projectId) {
-    List<Experiment> experiments = experimentInformationService.findAllForProject(projectId);
-    generateExperimentInformationTags(experiments);
-  }
-
-  private void generateExperimentInformationTags(List<Experiment> experiments) {
-    TreeSet<String> speciesSet = new TreeSet<>();
-    TreeSet<String> specimenSet = new TreeSet<>();
-    TreeSet<String> analysisSet = new TreeSet<>();
-    experiments.forEach(experiment -> {
-      speciesSet.addAll(experiment.getSpecies().stream().map(Species::value).toList());
-      specimenSet.addAll(experiment.getSpecimens().stream().map(Specimen::value).toList());
-      analysisSet.addAll(experiment.getAnalytes().stream().map(Analyte::value).toList());
-    });
-    speciesField.add(speciesSet.stream().map(Tag::new).collect(Collectors.toList()));
-    specimensField.add(specimenSet.stream().map(Tag::new).collect(Collectors.toList()));
-    analytesField.add(analysisSet.stream().map(Tag::new).collect(Collectors.toList()));
   }
 }
