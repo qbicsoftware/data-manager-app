@@ -83,7 +83,7 @@ public class SampleRepositoryImpl implements SampleRepository {
       samples = qbicSampleRepository.findAllByExperimentId(experimentId);
     } catch (Exception e) {
       log.error(
-          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e);
+          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e, e);
       return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
     }
     return Result.fromValue(samples);
