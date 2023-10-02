@@ -29,6 +29,7 @@ public class EmailCommunicationService implements CommunicationService {
   private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
 
   private static final String SIGNATURE = """
+      
       With kind regards,
             
       Your QBiC team
@@ -61,7 +62,7 @@ public class EmailCommunicationService implements CommunicationService {
       throws MessagingException {
     var message = this.mailServerConfiguration.mimeMessage();
     message.setFrom(new InternetAddress(NO_REPLY_ADDRESS));
-    message.setContent(combineMessageWithRegards(content), "text/plain");
+    message.setContent(combineMessageWithRegards(content).content(), "text/plain");
     message.setRecipient(RecipientType.TO, new InternetAddress(recipient.address()));
     message.setSubject(subject.content());
     return message;
