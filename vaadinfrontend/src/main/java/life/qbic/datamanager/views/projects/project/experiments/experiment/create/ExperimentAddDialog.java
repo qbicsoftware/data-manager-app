@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment;
+package life.qbic.datamanager.views.projects.project.experiments.experiment.create;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -17,24 +17,23 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>ExperimentInformationDialog</b>
  *
- * <p>Dialog to create or edit experiment information by providing the minimal required information</p>
+ * <p>Dialog to create or edit experiment information by providing the minimal required
+ * information</p>
  *
  * @since 1.0.0
  */
 
-public class ExperimentInformationDialog extends DialogWindow {
+public class ExperimentAddDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
@@ -44,7 +43,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
-  public ExperimentInformationDialog(
+  public ExperimentAddDialog(
       ExperimentalDesignSearchService experimentalDesignSearchService) {
 
     Span experimentHeader = new Span("Experiment");
@@ -117,15 +116,11 @@ public class ExperimentInformationDialog extends DialogWindow {
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
     if (isValid) {
       fireEvent(new ExperimentAddEvent(this, clickEvent.isFromClient(), experimentDraft));
-    } else {
-      binder.validate();
     }
-
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
   }
 
   public void setExperiment(ExperimentDraft experiment) {
@@ -142,29 +137,22 @@ public class ExperimentInformationDialog extends DialogWindow {
     binder.setBean(new ExperimentDraft());
   }
 
-  @Transactional
   public void addExperimentAddEventListener(ComponentEventListener<ExperimentAddEvent> listener) {
     addListener(ExperimentAddEvent.class, listener);
-  }
-
-  public void addExperimentUpdateEventListener(
-      ComponentEventListener<ExperimentUpdateEvent> listener) {
-
-    addListener(ExperimentUpdateEvent.class, listener);
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
     addListener(CancelEvent.class, listener);
   }
 
-  public static class CancelEvent extends UserCancelEvent<ExperimentInformationDialog> {
+  public static class CancelEvent extends UserCancelEvent<ExperimentAddDialog> {
 
-    public CancelEvent(ExperimentInformationDialog source, boolean fromClient) {
+    public CancelEvent(ExperimentAddDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class ExperimentAddEvent extends ComponentEvent<ExperimentInformationDialog> {
+  public static class ExperimentAddEvent extends ComponentEvent<ExperimentAddDialog> {
 
     private final ExperimentDraft experimentDraft;
 
@@ -177,7 +165,7 @@ public class ExperimentInformationDialog extends DialogWindow {
      *                        side, <code>false</code> otherwise
      * @param experimentDraft the draft for the experiment
      */
-    public ExperimentAddEvent(ExperimentInformationDialog source, boolean fromClient,
+    public ExperimentAddEvent(ExperimentAddDialog source, boolean fromClient,
         ExperimentDraft experimentDraft) {
       super(source, fromClient);
       this.experimentDraft = experimentDraft;
@@ -185,37 +173,6 @@ public class ExperimentInformationDialog extends DialogWindow {
 
     public ExperimentDraft getExperimentDraft() {
       return experimentDraft;
-    }
-  }
-
-  public static class ExperimentUpdateEvent extends ComponentEvent<ExperimentInformationDialog> {
-
-    private final ExperimentDraft oldDraft;
-    private final ExperimentDraft experimentDraft;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source          the source component
-     * @param fromClient      <code>true</code> if the event originated from the client
-     *                        side, <code>false</code> otherwise
-     * @param oldDraft the draft of the old experiment
-     * @param experimentDraft the draft for the changed experiment
-     */
-    public ExperimentUpdateEvent(ExperimentInformationDialog source, boolean fromClient,
-        ExperimentDraft oldDraft, ExperimentDraft experimentDraft) {
-      super(source, fromClient);
-      this.experimentDraft = experimentDraft;
-      this.oldDraft = oldDraft;
-    }
-
-    public ExperimentDraft getExperimentDraft() {
-      return experimentDraft;
-    }
-
-    public Optional<ExperimentDraft> getOldDraft() {
-      return Optional.ofNullable(oldDraft);
     }
   }
 

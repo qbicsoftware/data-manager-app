@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -35,8 +34,6 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentDraft;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
@@ -44,6 +41,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
@@ -168,38 +168,33 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void initButtonBar() {
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> createExperimentInformationDialog());
+    editButton.addClickListener(event -> onEditButtonClicked());
     buttonBar.add(editButton);
   }
 
-  private void createExperimentInformationDialog() {
+  private void onEditButtonClicked() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    Optional<Experiment> experiment = experimentInformationService.find(experimentId);
-    experiment.ifPresentOrElse(exp -> {
-      var experimentInformationDialog = createExperimentInformationDialog(exp);
-      experimentInformationDialog.open();
-    }, () -> {
+    Optional<Experiment> optionalExperiment = experimentInformationService.find(experimentId);
+    if (optionalExperiment.isEmpty()) {
       throw new ApplicationException(
           "Experiment information could not be retrieved from service");
+    }
+    optionalExperiment.ifPresent(experiment -> {
+      ExperimentUpdateDialog experimentUpdateDialog = new ExperimentUpdateDialog(
+          experimentalDesignSearchService);
+
+      ExperimentDraft experimentDraft = new ExperimentDraft();
+      experimentDraft.setExperimentName(experiment.getName());
+      experimentDraft.setSpecies(experiment.getSpecies());
+      experimentDraft.setSpecimens(experiment.getSpecimens());
+      experimentDraft.setAnalytes(experiment.getAnalytes());
+
+      experimentUpdateDialog.setExperiment(experimentDraft);
+      experimentUpdateDialog.setConfirmButtonLabel("Save");
+
+      experimentUpdateDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
+      experimentUpdateDialog.open();
     });
-  }
-
-  private ExperimentInformationDialog createExperimentInformationDialog(Experiment experiment) {
-    ExperimentInformationDialog experimentInformationDialog = new ExperimentInformationDialog(
-        experimentalDesignSearchService);
-
-    ExperimentDraft experimentDraft = new ExperimentDraft();
-    experimentDraft.setExperimentName(experiment.getName());
-    experimentDraft.setSpecies(experiment.getSpecies());
-    experimentDraft.setSpecimens(experiment.getSpecimens());
-    experimentDraft.setAnalytes(experiment.getAnalytes());
-
-    experimentInformationDialog.setExperiment(experimentDraft);
-    experimentInformationDialog.setConfirmButtonLabel("Save");
-
-    experimentInformationDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
-
-    return experimentInformationDialog;
   }
 
   private void onExperimentUpdateEvent(ExperimentUpdateEvent event) {
@@ -394,16 +389,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private void listenForExperimentCollectionComponentEvents() {
     experimentalGroupsCollection.addAddListener(listener -> openExperimentalGroupAddDialog());
     experimentalGroupsCollection.addEditListener(editEvent -> openExperimentalGroupEditDialog());
-  }
-
-  /**
-   * Adds a listener for an {@link ExperimentDetailsComponent.ExperimentNameChangedEvent}
-   *
-   * @param listener the listener to add
-   */
-  public void addExperimentNameChangedListener(
-      ComponentEventListener<ExperimentNameChangedEvent> listener) {
-    this.addListener(ExperimentNameChangedEvent.class, listener);
   }
 
   private void openExperimentalGroupAddDialog() {
