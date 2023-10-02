@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
@@ -32,6 +31,7 @@ import life.qbic.projectmanagement.domain.project.experiment.VariableName;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.project.sample.AnalysisMethod;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ExtendedColor;
@@ -52,7 +52,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   private static final long serialVersionUID = 573778360298068552L;
   private final SpreadsheetDropdownFactory dropdownCellFactory = new SpreadsheetDropdownFactory();
   private List<SamplesheetHeaderName> header;
-  private List<String> analysisTypes;
+  private List<String> analysisMethods;
   private List<String> species;
   private List<String> specimens;
   private List<String> analytes;
@@ -185,8 +185,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       switch (colHeader) {
         case ROW -> generateRowHeaderCell(columnIndex, increasedRowIndex);
         case SPECIES -> generatePrefilledCell(columnIndex, increasedRowIndex, species);
-        case SEQ_ANALYSIS_TYPE ->
-            generatePrefilledCell(columnIndex, increasedRowIndex, analysisTypes);
+        case SEQ_ANALYSIS_METHOD ->
+            generatePrefilledCell(columnIndex, increasedRowIndex, analysisMethods);
         case SAMPLE_LABEL, CUSTOMER_COMMENT ->
             generatePrefilledCell(columnIndex, increasedRowIndex, new ArrayList<>());
         case BIOLOGICAL_REPLICATE_ID ->
@@ -381,7 +381,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    */
   private void generateCellValueOptionsMap(
       List<SamplesheetHeaderName> headerNames) {
-    analysisTypes = generateGenomicsAnalysisTypes();
+    analysisMethods = generateGenomicsAnalysisMethods(); 
     for (SamplesheetHeaderName head : headerNames) {
       cellValueOptionsForColumnMap.put(head, new ArrayList<>());
     }
@@ -390,21 +390,21 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.ANALYTE, analytes);
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.CONDITION,
         conditionsToReplicates.keySet().stream().toList());
-    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE, analysisTypes);
+    cellValueOptionsForColumnMap.put(SamplesheetHeaderName.SEQ_ANALYSIS_METHOD, analysisMethods);
     cellValueOptionsForColumnMap.put(SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID,
         getReplicateLabels());
   }
 
   /**
-   * Collects all {@link SequenceAnalysisType} specific for the genomic {@link MetadataType}
+   * Collects all {@link AnalysisMethod} specific for the genomic {@link MetadataType}
    *
    * @return List of String labels for all genomic analysis types.
    */
-  private List<String> generateGenomicsAnalysisTypes() {
-    return Arrays.stream(SequenceAnalysisType
-            .values())
-        .map(e -> e.label)
-        .collect(Collectors.toList());
+  private List<String> generateGenomicsAnalysisMethods() {
+    return Arrays.stream(AnalysisMethod.values())
+        .map(AnalysisMethod::label)
+        .sorted(Comparator.naturalOrder())
+        .toList();
   }
 
   public List<SamplesheetHeaderName> retrieveProteomics() {
@@ -437,7 +437,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @return List of header names for the genomic {@link MetadataType} specific sheet
    */
   public List<SamplesheetHeaderName> retrieveGenomics() {
-    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SEQ_ANALYSIS_TYPE,
+    return List.of(SamplesheetHeaderName.ROW, SamplesheetHeaderName.SEQ_ANALYSIS_METHOD,
         SamplesheetHeaderName.SAMPLE_LABEL,
         SamplesheetHeaderName.BIOLOGICAL_REPLICATE_ID, SamplesheetHeaderName.CONDITION,
         SamplesheetHeaderName.SPECIES, SamplesheetHeaderName.SPECIMEN,
@@ -571,8 +571,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     for (int rowId = 1; rowId < getRows(); rowId++) {
       Row row = getActiveSheet().getRow(rowId);
 
-      String analysisTypeInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
-          header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_TYPE)));
+      String analysisMethodInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
+          header.indexOf(SamplesheetHeaderName.SEQ_ANALYSIS_METHOD)));
       String sampleLabelInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
           header.indexOf(SamplesheetHeaderName.SAMPLE_LABEL)));
       String replicateIDInput = SpreadsheetMethods.cellToStringOrNull(row.getCell(
@@ -601,7 +601,8 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
       BiologicalReplicateId biologicalReplicateId = retrieveBiologicalReplicateId(replicateIDString,
           conditionString);
       rows.add(
-          new NGSRowDTO(analysisTypeInput.trim(), sampleLabelInput.trim(), biologicalReplicateId,
+          new NGSRowDTO(AnalysisMethod.forLabel(analysisMethodInput.trim()),
+              sampleLabelInput.trim(), biologicalReplicateId,
               experimentalGroupId, speciesInput.trim(), specimenInput.trim(), analyteInput.trim(),
               commentInput.trim()));
     }
@@ -645,7 +646,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * {@link MetadataType} sheet
    */
 
-  public record NGSRowDTO(String analysisType, String sampleLabel,
+  public record NGSRowDTO(AnalysisMethod analysisMethod, String sampleLabel,
                           BiologicalReplicateId bioReplicateID,
                           Long experimentalGroupId, String species, String specimen, String analyte,
                           String customerComment) {
@@ -659,7 +660,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
    * @since 1.0.0
    */
   public enum SamplesheetHeaderName {
-    ROW("#", false), SEQ_ANALYSIS_TYPE("Analysis to be performed",
+    ROW("#", false), SEQ_ANALYSIS_METHOD("Analysis to be performed",
         true), SAMPLE_LABEL("Sample label", true),
     BIOLOGICAL_REPLICATE_ID("Biological replicate id", true),
     CONDITION("Condition", true), SPECIES("Species", true),
@@ -672,21 +673,6 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
     SamplesheetHeaderName(String label, boolean isMandatory) {
       this.label = label;
       this.isMandatory = isMandatory;
-    }
-  }
-
-  /**
-   * SequenceAnalysisType enums are used in {@link SampleSpreadsheetLayout}, to indicate which type
-   * of Analysis will be performed.
-   *
-   * @since 1.0.0
-   */
-  enum SequenceAnalysisType {
-    RNASEQ("RNA-Seq"), DNASEQ("DNA-Seq");
-    final String label;
-
-    SequenceAnalysisType(String label) {
-      this.label = label;
     }
   }
 

@@ -4,12 +4,7 @@ import life.qbic.application.commons.Result
 import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
-import life.qbic.projectmanagement.domain.project.Contact
-import life.qbic.projectmanagement.domain.project.Project
-import life.qbic.projectmanagement.domain.project.ProjectCode
-import life.qbic.projectmanagement.domain.project.ProjectIntent
-import life.qbic.projectmanagement.domain.project.ProjectObjective
-import life.qbic.projectmanagement.domain.project.ProjectTitle
+import life.qbic.projectmanagement.domain.project.*
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
@@ -31,11 +26,11 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", ""))
+        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), AnalysisMethod.WES, ""))
         Contact who = new Contact()
         Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), "DNA analysis", "")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), AnalysisMethod.WES, "")
         sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
 
         and:

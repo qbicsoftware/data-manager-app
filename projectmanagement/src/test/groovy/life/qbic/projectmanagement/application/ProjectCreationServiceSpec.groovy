@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application
 import life.qbic.application.commons.ApplicationException
 import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.domain.project.Contact
+import life.qbic.projectmanagement.domain.project.Funding
 import life.qbic.projectmanagement.domain.project.Project
 import life.qbic.projectmanagement.domain.project.ProjectId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
@@ -36,7 +37,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             personReference,
             personReference,
-            personReference)
+            personReference, Funding.of("SFB", "1234"))
     then: "an exception is thrown"
     resultWithExperimentalDesign.isError()
     resultWithExperimentalDesign.getError().errorCode() == ApplicationException.ErrorCode.INVALID_PROJECT_TITLE
@@ -54,7 +55,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             contact,
             contact,
-            null)
+            null, Funding.of("SFB", "1234"))
 
         then: "an exception is thrown"
         result.isError()
@@ -73,7 +74,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             null,
             contact,
-            contact)
+            contact, Funding.of("SFB", "1234"))
 
         then: "an exception is thrown"
         result.isError()
@@ -92,7 +93,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             contact,
             null,
-            contact)
+            contact, Funding.of("SFB", "1234"))
 
     then: "a project is returned"
     result.isValue()
@@ -112,7 +113,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             contact,
             contact,
-            contact)
+            contact, Funding.of("SFB", "1234"))
 
         then: "the created project is returned"
         result.isValue()
@@ -130,7 +131,7 @@ class ProjectCreationServiceSpec extends Specification {
             "objective",
             contact,
             contact,
-            contact)
+            contact, Funding.of("SFB", "1234"))
 
 
         then:
