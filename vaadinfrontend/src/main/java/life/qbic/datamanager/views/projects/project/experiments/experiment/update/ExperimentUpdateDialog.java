@@ -190,7 +190,7 @@ public class ExperimentUpdateDialog extends DialogWindow {
   public static class ExperimentDraft implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 8878913301284832509L;
+    private static final long serialVersionUID = 5584396740927480418L;
 
     private String experimentName;
     private final List<Species> species;
