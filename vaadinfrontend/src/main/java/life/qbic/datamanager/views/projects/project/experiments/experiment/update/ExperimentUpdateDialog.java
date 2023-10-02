@@ -26,9 +26,9 @@ import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
 
 /**
- * <b>ExperimentInformationDialog</b>
+ * <b>ExperimentUpdateDialog</b>
  *
- * <p>Dialog to create or edit experiment information by providing the minimal required
+ * <p>Dialog to edit experiment information by providing the minimal required
  * information</p>
  *
  * @since 1.0.0
