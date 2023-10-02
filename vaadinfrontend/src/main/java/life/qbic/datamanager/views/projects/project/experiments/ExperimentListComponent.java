@@ -20,7 +20,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -36,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * examined {@link life.qbic.projectmanagement.domain.project.Project}.
  * <p>
  * Additionally, it provides the possibility to create new experiments with its
- * {@link ExperimentInformationDialog} and enables the user to select an experiment of interest via
+ * {@link life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog} and enables the user to select an experiment of interest via
  * clicking on the item within {@link ListBox} associated with the experiment.
  * <p>
  * Finally, it allows components to be informed about a new experiment creation or selection via the

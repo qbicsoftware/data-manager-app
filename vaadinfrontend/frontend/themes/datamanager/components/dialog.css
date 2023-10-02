@@ -216,14 +216,14 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bold;
 }
 
-.experiment-information-dialog::part(overlay) {
+
+.add-experiment-dialog::part(overlay),
+.update-experiment-dialog::part(overlay) {
   width: 66vw;
 }
 
-/*
-Used by both project creation and experiment creation dialog, thus the unique name
- */
-.create-experiment-content {
+.update-experiment-content,
+.add-experiment-content {
   padding-top: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
@@ -233,11 +233,13 @@ Used by both project creation and experiment creation dialog, thus the unique na
   box-sizing: border-box;
 }
 
-.create-experiment-content .header {
+.update-experiment-content .header,
+.add-experiment-content . header {
   font-weight: bold;
 }
 
-.create-experiment-content .full-width-input {
+.update-experiment-content .full-width-input,
+.add-experiment-content .full-width-input {
   width: 100%;
 }
 
