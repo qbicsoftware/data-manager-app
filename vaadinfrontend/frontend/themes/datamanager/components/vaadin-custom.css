@@ -54,3 +54,8 @@ vaadin-tabsheet.minimal::part(tabs-container) {
 vaadin-list-box.transparent-icons vaadin-item::part(checkmark)::before {
   color: transparent;
 }
+
+/*Hides the icon from the listbox*/
+vaadin-menu-bar-item.transparent-icons[menu-item-checked]::part(checkmark)::before {
+  color: transparent;
+}

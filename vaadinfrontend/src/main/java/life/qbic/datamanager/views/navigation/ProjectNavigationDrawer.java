@@ -2,19 +2,25 @@ package life.qbic.datamanager.views.navigation;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.sidenav.SideNavItem;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +59,7 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
   private final transient ExperimentInformationService experimentInformationService;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private transient Context context = new Context();
+  private final MenuBar projectSelectMenu = new MenuBar();
 
   public ProjectNavigationDrawer(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -96,53 +103,51 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     SideNavItem projectAccessItem = new SideNavItem("PROJECT ACCESS MANAGEMENT", projectAccessPath,
         VaadinIcon.USERS.create());
     projectSection.addComponentAsFirst(projectSectionHeader);
-    Select<ProjectPreview> projectSelect = createProjectSelect(projectId);
+    MenuBar projectSelect = createProjectSelect(projectId);
     projectSection.add(projectSelect, generateLineDivider(), projectInformationItem,
         projectAccessItem);
   }
 
-  private Select<ProjectPreview> createProjectSelect(ProjectId projectId) {
-    Select<ProjectPreview> projectSelect = new Select<>();
-    projectSelect.addClassName("project-select");
-    projectSelect.setItemLabelGenerator(ProjectPreview::projectTitle);
+  private MenuBar createProjectSelect(ProjectId projectId) {
+    projectSelectMenu.removeAll();
+    projectSelectMenu.addClassNames("project-select-menu", "transparent-icons");
+    Span projectTitle = new Span(retrieveCurrentlySelectedProject(projectId).projectTitle());
+    Icon dropdownIcon = VaadinIcon.CHEVRON_DOWN_SMALL.create();
+    dropdownIcon.addClassName(IconSize.SMALL);
+    Span selectedProject = new Span(projectTitle, dropdownIcon);
+    selectedProject.addClassName("selected-project");
+    MenuItem item = projectSelectMenu.addItem(selectedProject);
+    SubMenu subMenu = item.getSubMenu();
     Span recentProjectsHeader = new Span("Recent Projects");
     recentProjectsHeader.addClassName("recent-projects-header");
-    projectSelect.setRenderer(new ComponentRenderer<>(preview -> {
-      Div projectItem = new Div();
-      projectItem.addClassName("project-item");
-      String projectItemString = String.format("%s - %s", preview.projectCode(),
-          preview.projectTitle());
-      projectItem.add(projectItemString);
-      return projectItem;
-    }));
+    Span projectOverviewRouteComponent = new Span("Go To Projects");
+    subMenu.addItem(projectOverviewRouteComponent, event -> routeToProjectOverview());
+    subMenu.add(generateLineDivider());
+    subMenu.add(recentProjectsHeader);
+    retrieveLastModifiedProjects().forEach(
+        preview -> subMenu.addItem(String.format("%s - %s", preview.projectCode(),
+            preview.projectTitle()), event -> routeToProject(preview.projectId())));
+    return projectSelectMenu;
+  }
+
+  private void onProjectSelectionChanged(
+      ComponentValueChangeEvent<Select<ProjectPreview>, ProjectPreview> valueChangeEvent) {
+    if (valueChangeEvent.isFromClient() && !valueChangeEvent.getValue()
+        .equals(valueChangeEvent.getOldValue())) {
+      routeToProject(valueChangeEvent.getValue().projectId());
+    }
+  }
+
+  private ProjectPreview retrieveCurrentlySelectedProject(ProjectId projectId) {
     Project project = projectInformationService.find(projectId).orElseThrow();
-    ProjectPreview projectPreview = ProjectPreview.from(project.getProjectIntent().projectTitle());
-    projectSelect.setValue(projectPreview);
-    projectSelect.setItems(retrieveLastModifiedProjects());
-    projectSelect.addComponentAsFirst(generateRouteToProjectOverViewSpan());
-    projectSelect.addComponentAtIndex(1, generateLineDivider());
-    projectSelect.addComponentAtIndex(2, recentProjectsHeader);
-    projectSelect.addValueChangeListener(valueChangeEvent -> {
-      if (valueChangeEvent.isFromClient() && !valueChangeEvent.getValue()
-          .equals(valueChangeEvent.getOldValue())) {
-        routeToProject(valueChangeEvent.getValue().projectId());
-      }
-    });
-    return projectSelect;
+    return projectInformationService.queryPreview(project.getProjectIntent().projectTitle().title(),
+        0, 1, new ArrayList<>()).stream().findFirst().orElseThrow();
   }
 
   private List<ProjectPreview> retrieveLastModifiedProjects() {
     List<SortOrder> sortOrders = Collections.singletonList(
         SortOrder.of("lastModified").descending());
     return projectInformationService.queryPreview("", 0, 3, sortOrders);
-  }
-
-  private Span generateRouteToProjectOverViewSpan() {
-    Span projectOverviewRouteComponent = new Span("Go To Projects");
-    projectOverviewRouteComponent.addClassName("overview-route");
-    projectOverviewRouteComponent.addClickListener(
-        event -> routeToProjectOverview());
-    return projectOverviewRouteComponent;
   }
 
   private void initializeExperimentDrawerSection(ProjectId projectId) {

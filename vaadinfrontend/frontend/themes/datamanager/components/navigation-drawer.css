@@ -27,20 +27,13 @@
 /*ToDo Encapsulate this */
 .recent-projects-header {
   color: var(--lumo-tertiary-text-color);
+  margin-left: var(--lumo-space-l);
 }
 
 /*ToDo Encapsulate this */
 vaadin-select-list-box {
   margin-left: var(--lumo-space-l);
   margin-top: var(--lumo-space-s);
-}
-
-/*ToDo Encapsulate this Adds same hover effect to project overview span as is set for project list items*/
-.overview-route:hover {
-  display: inline-block;
-  width: 100%;
-  background-color: var(--lumo-primary-color-10pct);
-  cursor: default;
 }
 
 .project-navigation-drawer .project-section .project-item {
@@ -54,17 +47,14 @@ vaadin-select-list-box {
   gap: var(--lumo-space-m);
 }
 
-.project-select {
+.project-select-menu {
   padding-left: var(--lumo-space-s);
   padding-right: var(--lumo-space-s);
+  width: 100%;
 }
 
-/*Highlight select box toggle button if a project has been selected*/
-vaadin-select[has-value].project-select::part(toggle-button) {
-  color: var(--lumo-primary-color);
-}
-
-/*Highlight select box background if a project has been selected*/
-vaadin-select[has-value].project-select::part(input-field) {
-  background-color: var(--lumo-primary-color-10pct);
+.selected-project {
+  width: 100%;
+  display: inline-flex;
+  gap: var(--lumo-space-s);
 }
