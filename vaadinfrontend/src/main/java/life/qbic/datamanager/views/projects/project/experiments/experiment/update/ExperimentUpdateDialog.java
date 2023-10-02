@@ -92,9 +92,9 @@ public class ExperimentUpdateDialog extends DialogWindow {
         .sorted(Comparator.comparing(Analyte::label)).toList());
     analyteBox.setItemLabelGenerator(Analyte::label);
 
-    Div createExperimentContent = new Div();
-    createExperimentContent.addClassName("create-experiment-content");
-    createExperimentContent.add(experimentHeader,
+    Div updateExperimentContent = new Div();
+    updateExperimentContent.addClassName("update-experiment-content");
+    updateExperimentContent.add(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
@@ -102,11 +102,11 @@ public class ExperimentUpdateDialog extends DialogWindow {
         specimenBox,
         analyteBox);
 
-    addClassName("experiment-information-dialog");
+    addClassName("update-experiment-dialog");
     setHeaderTitle("Experimental Design");
-    setConfirmButtonLabel("Add");
+    setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    add(createExperimentContent);
+    add(updateExperimentContent);
 
     confirmButton.addClickListener(this::onConfirmClicked);
     cancelButton.addClickListener(this::onCancelClicked);

@@ -92,7 +92,7 @@ public class ExperimentAddDialog extends DialogWindow {
     analyteBox.setItemLabelGenerator(Analyte::label);
 
     Div createExperimentContent = new Div();
-    createExperimentContent.addClassName("create-experiment-content");
+    createExperimentContent.addClassName("add-experiment-content");
     createExperimentContent.add(experimentHeader,
         experimentDescription,
         experimentNameField,
@@ -101,7 +101,7 @@ public class ExperimentAddDialog extends DialogWindow {
         specimenBox,
         analyteBox);
 
-    addClassName("experiment-information-dialog");
+    addClassName("add-experiment-dialog");
     setHeaderTitle("Experimental Design");
     setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
