@@ -72,6 +72,7 @@ public class SamplePreview {
     Objects.requireNonNull(species);
     Objects.requireNonNull(specimen);
     Objects.requireNonNull(analyte);
+    Objects.requireNonNull(analysisMethod);
     this.experimentId = experimentId;
     this.sampleId = sampleId;
     this.sampleCode = sampleCode;
