@@ -9,32 +9,17 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.Validator;
-import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
@@ -44,8 +29,6 @@ import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
 
 /**
  * <b>Project Information Dialog</b>
@@ -108,7 +91,8 @@ public class AddProjectDialog extends DialogWindow {
     add(formLayout);
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ProjectDraft projectDraft = new ProjectDraft();
     ProjectInformation projectInformation = new ProjectInformation();
     try {
@@ -126,9 +110,9 @@ public class AddProjectDialog extends DialogWindow {
     projectCodeBinder.validate();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
   }
 
   private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {

@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.access;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -118,8 +120,6 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
 
   private void configureComponent() {
     configureSearching();
-    configureCancelling();
-    configureConfirmation();
   }
 
   private void configureSearching() {
@@ -140,12 +140,14 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
     });
   }
 
-  private void configureConfirmation() {
-    this.confirmButton.addClickListener(event -> fireConfirmEvent());
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    fireConfirmEvent();
   }
 
-  private void configureCancelling() {
-    this.cancelButton.addClickListener(cancelListener -> fireCancelEvent());
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireCancelEvent();
   }
 
   private void fireConfirmEvent() {

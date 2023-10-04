@@ -20,9 +20,6 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
-import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
-import life.qbic.projectmanagement.domain.project.Funding;
-import org.apache.poi.sl.draw.geom.GuideIf.Op;
 
 /**
  * <b>Project Information Dialog</b>
@@ -49,9 +46,7 @@ public class EditProjectInformationDialog extends DialogWindow {
     addClassName("create-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
-    confirmButton.addClickListener(this::onConfirmClicked);
     setCancelButtonLabel("Cancel");
-    cancelButton.addClickListener(this::onCancelClicked);
 
     formLayout = new ProjectFormLayout().buildEditProjectLayout();
     binder = formLayout.getBinder();
@@ -75,7 +70,8 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ProjectInformation projectInformation = new ProjectInformation();
     try {
       binder.writeBean(projectInformation);
@@ -90,7 +86,8 @@ public class EditProjectInformationDialog extends DialogWindow {
     formLayout.validate();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
     close();
   }
