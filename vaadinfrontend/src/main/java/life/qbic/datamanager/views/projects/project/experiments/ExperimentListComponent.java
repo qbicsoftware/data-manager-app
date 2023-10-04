@@ -6,7 +6,10 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.ListBox;
+import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -17,7 +20,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -33,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * examined {@link life.qbic.projectmanagement.domain.project.Project}.
  * <p>
  * Additionally, it provides the possibility to create new experiments with its
- * {@link ExperimentInformationDialog} and enables the user to select an experiment of interest via
+ * {@link life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog} and enables the user to select an experiment of interest via
  * clicking on the item within {@link ListBox} associated with the experiment.
  * <p>
  * Finally, it allows components to be informed about a new experiment creation or selection via the
@@ -87,15 +89,21 @@ public class ExperimentListComponent extends PageArea {
     } else {
       addComponentAsFirst(header);
       setExperimentsInListBox(foundExperiments);
+      addExperimentSelectionListener();
       content.add(listBox);
     }
     add(content);
   }
 
   private void setExperimentsInListBox(Collection<Experiment> experiments) {
-    listBox.setItems(experiments);
+    var dataView = listBox.setItems(experiments);
+    dataView.setSortOrder(experiment -> experiment.getName().toLowerCase(),
+        SortDirection.ASCENDING);
     listBox.setRenderer(new ComponentRenderer<Component, Experiment>(
-        experiment -> new Span(experiment.getName())));
+        this::generateExperimentListItem));
+  }
+
+  private void addExperimentSelectionListener() {
     listBox.addValueChangeListener(
         listBoxExperimentComponentValueChangeEvent -> {
           if (listBoxExperimentComponentValueChangeEvent.isFromClient()) {
@@ -104,6 +112,15 @@ public class ExperimentListComponent extends PageArea {
                 listBoxExperimentComponentValueChangeEvent.isFromClient());
           }
         });
+  }
+
+  private Span generateExperimentListItem(Experiment experiment) {
+    Icon flaskIcon = new Icon(VaadinIcon.FLASK);
+    flaskIcon.setClassName("primary");
+    Span experimentListItem = new Span();
+    experimentListItem.addClassName("experiment-list-item");
+    experimentListItem.add(flaskIcon, new Span(experiment.getName()));
+    return experimentListItem;
   }
 
   public void refresh() {

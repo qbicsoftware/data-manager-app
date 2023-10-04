@@ -23,9 +23,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentAddEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentInformationDialog.ExperimentDraft;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
@@ -126,7 +124,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
         event -> showAddExperimentDialog());
   }
 
-  private void onExperimentAddEvent(ExperimentAddEvent event) {
+  private void onExperimentAddEvent(ExperimentAddDialog.ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
@@ -144,8 +142,9 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new ExperimentInformationDialog(experimentalDesignSearchService);
+    var creationDialog = new ExperimentAddDialog(experimentalDesignSearchService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
+    creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();
   }
 
@@ -155,7 +154,8 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     notification.open();
   }
 
-  private ExperimentId createExperiment(ProjectId projectId, ExperimentDraft experimentDraft) {
+  private ExperimentId createExperiment(ProjectId projectId,
+      ExperimentAddDialog.ExperimentDraft experimentDraft) {
     Result<ExperimentId, RuntimeException> result = addExperimentToProjectService.addExperimentToProject(
         projectId,
         experimentDraft.getExperimentName(),

@@ -3,8 +3,11 @@
 /*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
 @import "button.css";
 @import "card.css";
+@import "combobox.css";
 @import "dialog.css";
 @import "div.css";
+@import "info.css";
+@import "icon.css";
 @import "main.css";
 @import "navbar.css";
 @import "page-area.css";

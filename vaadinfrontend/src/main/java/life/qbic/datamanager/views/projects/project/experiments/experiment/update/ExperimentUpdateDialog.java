@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment;
+package life.qbic.datamanager.views.projects.project.experiments.experiment.update;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -24,17 +24,17 @@ import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
- * <b>ExperimentInformationDialog</b>
+ * <b>ExperimentUpdateDialog</b>
  *
- * <p>Dialog to create or edit experiment information by providing the minimal required information</p>
+ * <p>Dialog to edit experiment information by providing the minimal required
+ * information</p>
  *
  * @since 1.0.0
  */
 
-public class ExperimentInformationDialog extends DialogWindow {
+public class ExperimentUpdateDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
@@ -44,7 +44,7 @@ public class ExperimentInformationDialog extends DialogWindow {
 
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
-  public ExperimentInformationDialog(
+  public ExperimentUpdateDialog(
       ExperimentalDesignSearchService experimentalDesignSearchService) {
 
     Span experimentHeader = new Span("Experiment");
@@ -92,9 +92,9 @@ public class ExperimentInformationDialog extends DialogWindow {
         .sorted(Comparator.comparing(Analyte::label)).toList());
     analyteBox.setItemLabelGenerator(Analyte::label);
 
-    Div createExperimentContent = new Div();
-    createExperimentContent.addClassName("create-experiment-content");
-    createExperimentContent.add(experimentHeader,
+    Div updateExperimentContent = new Div();
+    updateExperimentContent.addClassName("update-experiment-content");
+    updateExperimentContent.add(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
@@ -102,11 +102,11 @@ public class ExperimentInformationDialog extends DialogWindow {
         specimenBox,
         analyteBox);
 
-    addClassName("experiment-information-dialog");
+    addClassName("update-experiment-dialog");
     setHeaderTitle("Experimental Design");
-    setConfirmButtonLabel("Add");
+    setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    add(createExperimentContent);
+    add(updateExperimentContent);
 
     confirmButton.addClickListener(this::onConfirmClicked);
     cancelButton.addClickListener(this::onCancelClicked);
@@ -114,16 +114,16 @@ public class ExperimentInformationDialog extends DialogWindow {
 
   private void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
+    ExperimentDraft oldDraft = binder.getBean();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
     if (isValid) {
-      fireEvent(new ExperimentAddEvent(this, clickEvent.isFromClient(), experimentDraft));
+      fireEvent(
+          new ExperimentUpdateEvent(this, clickEvent.isFromClient(), oldDraft, experimentDraft));
     }
-
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
   }
 
   public void setExperiment(ExperimentDraft experiment) {
@@ -140,14 +140,8 @@ public class ExperimentInformationDialog extends DialogWindow {
     binder.setBean(new ExperimentDraft());
   }
 
-  @Transactional
-  public void addExperimentAddEventListener(ComponentEventListener<ExperimentAddEvent> listener) {
-    addListener(ExperimentAddEvent.class, listener);
-  }
-
   public void addExperimentUpdateEventListener(
       ComponentEventListener<ExperimentUpdateEvent> listener) {
-
     addListener(ExperimentUpdateEvent.class, listener);
   }
 
@@ -155,38 +149,14 @@ public class ExperimentInformationDialog extends DialogWindow {
     addListener(CancelEvent.class, listener);
   }
 
-  public static class CancelEvent extends UserCancelEvent<ExperimentInformationDialog> {
+  public static class CancelEvent extends UserCancelEvent<ExperimentUpdateDialog> {
 
-    public CancelEvent(ExperimentInformationDialog source, boolean fromClient) {
+    public CancelEvent(ExperimentUpdateDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class ExperimentAddEvent extends ComponentEvent<ExperimentInformationDialog> {
-
-    private final ExperimentDraft experimentDraft;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source          the source component
-     * @param fromClient      <code>true</code> if the event originated from the client
-     *                        side, <code>false</code> otherwise
-     * @param experimentDraft the draft for the experiment
-     */
-    public ExperimentAddEvent(ExperimentInformationDialog source, boolean fromClient,
-        ExperimentDraft experimentDraft) {
-      super(source, fromClient);
-      this.experimentDraft = experimentDraft;
-    }
-
-    public ExperimentDraft getExperimentDraft() {
-      return experimentDraft;
-    }
-  }
-
-  public static class ExperimentUpdateEvent extends ComponentEvent<ExperimentInformationDialog> {
+  public static class ExperimentUpdateEvent extends ComponentEvent<ExperimentUpdateDialog> {
 
     private final ExperimentDraft oldDraft;
     private final ExperimentDraft experimentDraft;
@@ -198,10 +168,10 @@ public class ExperimentInformationDialog extends DialogWindow {
      * @param source          the source component
      * @param fromClient      <code>true</code> if the event originated from the client
      *                        side, <code>false</code> otherwise
-     * @param oldDraft the draft of the old experiment
+     * @param oldDraft        the draft of the old experiment
      * @param experimentDraft the draft for the changed experiment
      */
-    public ExperimentUpdateEvent(ExperimentInformationDialog source, boolean fromClient,
+    public ExperimentUpdateEvent(ExperimentUpdateDialog source, boolean fromClient,
         ExperimentDraft oldDraft, ExperimentDraft experimentDraft) {
       super(source, fromClient);
       this.experimentDraft = experimentDraft;
@@ -220,7 +190,7 @@ public class ExperimentInformationDialog extends DialogWindow {
   public static class ExperimentDraft implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 8878913301284832509L;
+    private static final long serialVersionUID = 5584396740927480418L;
 
     private String experimentName;
     private final List<Species> species;

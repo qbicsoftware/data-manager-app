@@ -9,9 +9,8 @@
   box-sizing: border-box;
   text-overflow: ellipsis;
   max-width: 100%;
-  max-height: 100%;
   margin: var(--lumo-space-s);
-  padding: var(--lumo-space-l);
+  padding: var(--lumo-space-xl);
 }
 
 .page-area .title {
@@ -156,10 +155,6 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-}
-
-.page-area.project-details-component {
-  height: 100%;
 }
 
 .page-area.project-details-component .details-content {

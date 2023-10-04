@@ -1,3 +1,14 @@
+.experiment-list-item {
+  display: flex;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-l)
+}
+
+.experiment-list-item vaadin-icon {
+  font-size: var(--lumo-font-size-m);
+  padding: var(--lumo-space-xs);
+}
+
 span.bold {
   font-weight: bold;
 }
@@ -42,4 +53,11 @@ span.title {
 .tag.contrast {
   color: var(--lumo-contrast-80pct);
   background-color: var(--lumo-contrast-5pct);
+}
+
+.spreadsheet-list-item {
+  display: inline-flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }
