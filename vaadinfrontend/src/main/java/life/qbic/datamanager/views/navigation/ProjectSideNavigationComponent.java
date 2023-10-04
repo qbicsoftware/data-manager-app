@@ -49,7 +49,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-public class ProjectSideNavigationComponent extends Div implements BeforeEnterObserver {
+public class ProjectSideNavigationComponent extends Div implements
+    BeforeEnterObserver {
 
   private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
   private final Div projectSection = new Div();
@@ -74,11 +75,11 @@ public class ProjectSideNavigationComponent extends Div implements BeforeEnterOb
     projectSection.addClassName("project-section");
     experimentSection.addClassName("experiment-section");
     add(projectSection, experimentSection);
-    log.debug(String.format(
-        "New instance for ProjectSideNavigationComponent (#%s) was created",
-        System.identityHashCode(this))
-    );
+    log.debug(
+        "New instance for ProjectSideNavigationComponent {} was created",
+        System.identityHashCode(this));
   }
+
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
     resetSections();
@@ -98,7 +99,7 @@ public class ProjectSideNavigationComponent extends Div implements BeforeEnterOb
 
   private void initializeProjectSection(ProjectId projectId) {
     projectSectionHeader.setLabel("PROJECT");
-    projectSectionHeader.setPrefixComponent(VaadinIcon.BOOK.create());
+    projectSectionHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
     projectSectionHeader.addClassName("primary");
     String projectInformationPath = String.format(Projects.PROJECT_INFO, projectId.value());
     String projectAccessPath = String.format(Projects.ACCESS, projectId.value());
