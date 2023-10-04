@@ -9,7 +9,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabVariant;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
@@ -76,7 +75,7 @@ public class BatchRegistrationDialog extends Dialog {
    * @param listener The {@link ComponentEventListener} to be notified
    */
   public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
+      ComponentEventListener<CancelEvent> listener) {
     registerBatchDialogHandler.addUserCancelEventListener(listener);
   }
 
@@ -104,9 +103,6 @@ public class BatchRegistrationDialog extends Dialog {
 
     @Serial
     private static final long serialVersionUID = -2692766151162405263L;
-
-    private final List<ComponentEventListener<BatchRegistrationEvent>> batchRegistrationListeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>>> cancelListeners = new ArrayList<>();
 
     public RegisterBatchDialogHandler() {
       setNavigationListeners();
@@ -183,19 +179,16 @@ public class BatchRegistrationDialog extends Dialog {
     }
 
     private void setCancelSubmission() {
-      batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(BatchRegistrationDialog.this))));
-      sampleSpreadsheetLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(BatchRegistrationDialog.this))));
+      batchInformationLayout.cancelButton.addClickListener(event ->
+          fireEvent(new UserCancelEvent<>(BatchRegistrationDialog.this)));
+      sampleSpreadsheetLayout.cancelButton.addClickListener(event ->
+          fireEvent(new UserCancelEvent<>(BatchRegistrationDialog.this)));
     }
 
     private void setBatchRegistrationSubmission() {
       sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
         if (isInputValid()) {
-          batchRegistrationListeners.forEach(listener -> listener.onComponentEvent(
-              new BatchRegistrationEvent(BatchRegistrationDialog.this, true)));
+          fireEvent(new BatchRegistrationEvent(BatchRegistrationDialog.this, true));
         }
       });
     }
@@ -206,12 +199,13 @@ public class BatchRegistrationDialog extends Dialog {
 
     public void addBatchRegistrationEventListener(
         ComponentEventListener<BatchRegistrationEvent> listener) {
-      this.batchRegistrationListeners.add(listener);
+      addListener(BatchRegistrationEvent.class, listener);
     }
 
     public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
-      this.cancelListeners.add(listener);
+        ComponentEventListener<CancelEvent> listener) {
+      addListener(CancelEvent.class, listener);
+
     }
 
     public void resetAndClose() {
@@ -240,4 +234,15 @@ public class BatchRegistrationDialog extends Dialog {
   public List<SampleRegistrationContent> sampleRegistrationContent() {
     return sampleSpreadsheetLayout.getContent();
   }
+
+  public static class CancelEvent extends UserCancelEvent<BatchRegistrationDialog> {
+
+    @Serial
+    private static final long serialVersionUID = 8348902371944310641L;
+
+    public CancelEvent(BatchRegistrationDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
 }

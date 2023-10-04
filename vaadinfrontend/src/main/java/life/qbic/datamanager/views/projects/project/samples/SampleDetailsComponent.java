@@ -259,7 +259,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       });
       registerButton.addClickListener(event -> batchRegistrationDialog.open());
       batchRegistrationDialog.addCancelEventListener(
-          event -> batchRegistrationDialog.close());
+          event -> event.getSource().close());
     }
 
     private void addExperimentTabToTabSheet(Experiment experiment) {
