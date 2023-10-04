@@ -398,7 +398,7 @@ public class SampleRegistrationSpreadsheet extends Spreadsheet implements Serial
   /**
    * Collects all {@link AnalysisMethod} specific for the genomic {@link MetadataType}
    *
-   * @return List of String labels for all genomic analysis types.
+   * @return List of String labels for all genomic analysis methods.
    */
   private List<String> generateGenomicsAnalysisMethods() {
     return Arrays.stream(AnalysisMethod.values())

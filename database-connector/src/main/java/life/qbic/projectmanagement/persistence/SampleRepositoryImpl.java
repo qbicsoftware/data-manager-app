@@ -68,7 +68,7 @@ public class SampleRepositoryImpl implements SampleRepository {
     } catch (Exception e) {
       log.error("The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
       log.error("Removing samples from repository, as well.");
-      samples.forEach(sample -> qbicSampleRepository.delete(sample));
+      qbicSampleRepository.deleteAll(samples);
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     return Result.fromValue(samples);
@@ -83,7 +83,7 @@ public class SampleRepositoryImpl implements SampleRepository {
       samples = qbicSampleRepository.findAllByExperimentId(experimentId);
     } catch (Exception e) {
       log.error(
-          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e);
+          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e, e);
       return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
     }
     return Result.fromValue(samples);
