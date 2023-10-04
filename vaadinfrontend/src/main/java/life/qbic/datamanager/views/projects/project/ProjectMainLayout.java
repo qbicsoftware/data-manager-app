@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -8,8 +9,10 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
+import life.qbic.datamanager.security.LogoutService;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.navigation.ProjectNavigationDrawer;
+import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -29,26 +32,29 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private Button homeButton;
   private Button logout;
-  private final ProjectNavigationDrawer projectNavigationDrawer;
+  private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final Span navBarContent = new Span();
+  private final LogoutService logoutService;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private Context context = new Context();
   private final Span projectTitle = new Span();
 
-  public ProjectMainLayout(@Autowired ProjectMainHandlerInterface projectMainHandlerInterface,
+  public ProjectMainLayout(@Autowired LogoutService logoutService,
       ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService) {
+    Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    this.logoutService = logoutService;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
-    this.projectNavigationDrawer = new ProjectNavigationDrawer(
+    this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService);
     initializeHeaderLayout();
     addToNavbar(navBarContent);
-    registerToHandler(projectMainHandlerInterface);
+    addClickListeners();
   }
 
   @Override
@@ -57,23 +63,14 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
         .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
     ProjectId parsedProjectId = ProjectId.parse(projectId);
     this.context = new Context().with(parsedProjectId);
-    if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isEmpty()) {
-      setContext(this.context);
-      return; // abort the before-enter event
-    }
-    String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .get();
-    ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
-    this.context = context.with(parsedExperimentId);
-    setContext(this.context);
+    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .ifPresent(experimentId -> this.context = context.with(ExperimentId.parse(experimentId)));
+    setContext();
   }
 
-  private void setContext(Context context) {
-    if (context.experimentId().isEmpty()) {
-      setProjectNameAsTitle(context.projectId().orElseThrow());
-    } else {
-      setExperimentNameAsTitle(context.experimentId().get());
-    }
+  private void setContext() {
+    context.experimentId().ifPresentOrElse(this::setExperimentNameAsTitle,
+        () -> setProjectNameAsTitle(context.projectId().orElseThrow()));
   }
 
   private void setProjectNameAsTitle(ProjectId projectId) {
@@ -90,7 +87,7 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
 
   private void initializeHeaderLayout() {
     navBarContent.addClassName("project-navbar");
-    navBarContent.add(createDrawerAndTitleBar(), createButtonBar());
+    navBarContent.add(createDrawerToggleAndTitleBar(), createButtonBar());
   }
 
   private Span createButtonBar() {
@@ -102,28 +99,26 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     return buttonBar;
   }
 
-  private Span createDrawerAndTitleBar() {
-    Span toggleAndTitleBar = new Span();
-    toggleAndTitleBar.addClassName("project-navbar-drawer-bar");
+  private Span createDrawerToggleAndTitleBar() {
+    Span drawerToggleAndTitleBar = new Span();
+    drawerToggleAndTitleBar.addClassName("project-navbar-drawer-bar");
     DrawerToggle drawerToggle = new DrawerToggle();
+    drawerToggleAndTitleBar.add(drawerToggle, projectTitle);
+    projectTitle.setClassName("project-navbar-title");
+    initializeDrawer();
+    return drawerToggleAndTitleBar;
+  }
+
+  private void initializeDrawer() {
     Span drawerTitle = new Span("Data Manager");
     drawerTitle.addClassName("project-navigation-drawer-title");
-    addToDrawer(drawerTitle, projectNavigationDrawer);
+    addToDrawer(drawerTitle, projectSideNavigationComponent);
     setPrimarySection(Section.DRAWER);
-    toggleAndTitleBar.add(drawerToggle, projectTitle);
-    projectTitle.setClassName("project-navbar-title");
-    return toggleAndTitleBar;
   }
 
-  private void registerToHandler(ProjectMainHandlerInterface startHandler) {
-    startHandler.handle(this);
-  }
-
-  public Button logout() {
-    return logout;
-  }
-
-  public Button homeButton() {
-    return homeButton;
+  private void addClickListeners() {
+    homeButton.addClickListener(event -> UI.getCurrent().getPage().setLocation(
+        Projects.PROJECTS));
+    logout.addClickListener(event -> logoutService.logout());
   }
 }

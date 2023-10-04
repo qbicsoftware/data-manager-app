@@ -25,6 +25,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -38,18 +39,19 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <class short description - One Line!>
+ * Project Side Navigation Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Allows the user to switch between the components shown in each {@link ProjectMainLayout} by
+ * clicking on the corresponding {@link SideNavItem} within Component which routes the user to the
+ * respective route defined in {@link life.qbic.datamanager.views.AppRoutes} for the component in
+ * question.
  */
 
 @SpringComponent
 @UIScope
-public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver {
+public class ProjectSideNavigationComponent extends Div implements BeforeEnterObserver {
 
-  private static final Logger log = getLogger(ProjectNavigationDrawer.class);
+  private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
   private final Div projectSection = new Div();
   private final SideNavItem projectSectionHeader = new SideNavItem("");
   private final Div experimentSection = new Div();
@@ -61,7 +63,8 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
   private transient Context context = new Context();
   private final MenuBar projectSelectMenu = new MenuBar();
 
-  public ProjectNavigationDrawer(@Autowired ProjectInformationService projectInformationService,
+  public ProjectSideNavigationComponent(
+      @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
@@ -72,33 +75,28 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     experimentSection.addClassName("experiment-section");
     add(projectSection, experimentSection);
     log.debug(String.format(
-        "New instance for ProjectNavigationDrawer (#%s) was created",
+        "New instance for ProjectSideNavigationComponent (#%s) was created",
         System.identityHashCode(this))
     );
   }
-
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    resetDrawers();
+    resetSections();
     String projectId = beforeEnterEvent.getRouteParameters()
         .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
     ProjectId parsedProjectId = ProjectId.parse(projectId);
     this.context = new Context().with(parsedProjectId);
-    if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isPresent()) {
-      String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-          .orElseThrow();
-      ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
-      this.context = context.with(parsedExperimentId);
-    }
+    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .ifPresent(experimentId -> this.context = context.with(ExperimentId.parse(experimentId)));
     setContext();
   }
 
   private void setContext() {
-    initializeProjectDrawerSection(context.projectId().orElseThrow());
-    initializeExperimentDrawerSection(context.projectId().orElseThrow());
+    initializeProjectSection(context.projectId().orElseThrow());
+    initializeExperimentSection(context.projectId().orElseThrow());
   }
 
-  private void initializeProjectDrawerSection(ProjectId projectId) {
+  private void initializeProjectSection(ProjectId projectId) {
     projectSectionHeader.setLabel("PROJECT");
     projectSectionHeader.setPrefixComponent(VaadinIcon.BOOK.create());
     projectSectionHeader.addClassName("primary");
@@ -117,13 +115,26 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
   private MenuBar createProjectSelect(ProjectId projectId) {
     projectSelectMenu.removeAll();
     projectSelectMenu.addClassNames("project-select-menu");
-    Span projectTitle = new Span(retrieveCurrentlySelectedProject(projectId).projectTitle());
+    String projectTitle = retrieveCurrentlySelectedProject(projectId).projectTitle();
+    Span currentlySelectedProject = new Span(projectTitle);
+    currentlySelectedProject.addClassName("selected-project-title");
     Icon dropdownIcon = VaadinIcon.CHEVRON_DOWN_SMALL.create();
     dropdownIcon.addClassName(IconSize.SMALL);
-    Span selectedProject = new Span(projectTitle, dropdownIcon);
+    Span selectedProject = new Span(currentlySelectedProject, dropdownIcon);
     selectedProject.addClassName("selected-project");
-    MenuItem item = projectSelectMenu.addItem(selectedProject);
-    SubMenu subMenu = item.getSubMenu();
+    MenuItem item = projectSelectMenu.addItem(selectedProject, projectTitle);
+    generateProjectMenuOptions(item);
+    return projectSelectMenu;
+  }
+
+  private ProjectPreview retrieveCurrentlySelectedProject(ProjectId projectId) {
+    Project project = projectInformationService.find(projectId).orElseThrow();
+    return projectInformationService.queryPreview(project.getProjectIntent().projectTitle().title(),
+        0, 1, new ArrayList<>()).stream().findFirst().orElseThrow();
+  }
+
+  private void generateProjectMenuOptions(MenuItem menuItem) {
+    SubMenu subMenu = menuItem.getSubMenu();
     Span recentProjectsHeader = new Span("Recent Projects");
     recentProjectsHeader.addClassName("recent-projects-header");
     Span projectOverviewRouteComponent = new Span("Go To Projects");
@@ -136,13 +147,6 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
               preview.projectTitle()), event -> routeToProject(preview.projectId()));
           recentProject.addClassName("transparent-icon");
         });
-    return projectSelectMenu;
-  }
-
-  private ProjectPreview retrieveCurrentlySelectedProject(ProjectId projectId) {
-    Project project = projectInformationService.find(projectId).orElseThrow();
-    return projectInformationService.queryPreview(project.getProjectIntent().projectTitle().title(),
-        0, 1, new ArrayList<>()).stream().findFirst().orElseThrow();
   }
 
   private List<ProjectPreview> retrieveLastModifiedProjects() {
@@ -151,7 +155,7 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     return projectInformationService.queryPreview("", 0, 3, sortOrders);
   }
 
-  private void initializeExperimentDrawerSection(ProjectId projectId) {
+  private void initializeExperimentSection(ProjectId projectId) {
     experimentSectionHeader.removeAll();
     experimentSectionHeader.setLabel("Experiments");
     experimentSectionHeader.setPrefixComponent(VaadinIcon.FLASK.create());
@@ -160,16 +164,7 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     experiments.forEach(
         experiment -> experimentSectionHeader.addItem(createExperimentItem(projectId, experiment)));
     experimentSection.addComponentAsFirst(experimentSectionHeader);
-    context.experimentId().ifPresent(this::setActiveExperimentInSideNav);
-  }
-
-  /*Highlight the experiment as active if it was navigated to outside the drawer*/
-  //ToDo Works on URL but not if clicked on experiment in ExperimentList?
-  private void setActiveExperimentInSideNav(ExperimentId experimentId) {
-    experimentSectionHeader.getItems().stream()
-        .filter(sideNavItem -> sideNavItem.getPath().contains(experimentId.value()))
-        .findFirst()
-        .ifPresent(sideNavItem -> sideNavItem.getElement().setProperty("active", true));
+    experimentSectionHeader.setExpanded(true);
   }
 
   private SideNavItem createExperimentItem(ProjectId projectId, Experiment experiment) {
@@ -184,7 +179,7 @@ public class ProjectNavigationDrawer extends Div implements BeforeEnterObserver 
     return new Hr();
   }
 
-  private void resetDrawers() {
+  private void resetSections() {
     projectSection.removeAll();
     experimentSection.removeAll();
   }
