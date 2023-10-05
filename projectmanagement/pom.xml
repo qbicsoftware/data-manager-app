@@ -77,5 +77,11 @@
       <groupId>org.jobrunr</groupId>
       <artifactId>jobrunr-spring-boot-3-starter</artifactId>
     </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>user</artifactId>
+      <version>0.25.1</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>

@@ -11,6 +11,7 @@ import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.authorization.acl.ProjectAccessService;
 import life.qbic.authorization.application.AppContextProvider;
 import life.qbic.authorization.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.authorization.application.policy.directive.InformUserAboutGrantedAccess;
@@ -23,10 +24,12 @@ import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
 import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,6 +118,14 @@ public class AppConfig {
     return new SampleRegisteredPolicy(addSampleToBatch);
   }
 
+  @Bean
+  public BatchRegisteredPolicy sampleBatchRegisteredPolicy(
+      CommunicationService communicationService, ProjectAccessService accessService,
+      UserRepository userRepository, JobScheduler jobScheduler) {
+    var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,
+        userRepository, jobScheduler);
+    return new BatchRegisteredPolicy(informUsers);
+  }
 
   @Bean
   public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,

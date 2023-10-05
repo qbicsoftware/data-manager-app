@@ -1,4 +1,4 @@
-package life.qbic.authorization.application;
+package life.qbic.projectmanagement.application;
 
 /**
  * <b>Messages</b>
@@ -14,8 +14,8 @@ public class Messages {
   }
 
   /**
-   * A pre-formatted message that informs a user about their new access grant to a project in the
-   * data manager.
+   * A pre-formatted message that informs a user about newly created samples and their identifiers
+   * in the data manager.
    *
    * @param fullNameUser the name of the user to inform for addressing them politely
    * @param projectTitle the title of the project, will be in the message to inform the user about
@@ -25,15 +25,19 @@ public class Messages {
    * @return the filled out template message
    * @since 1.0.0
    */
-  public static String projectAccessToUser(String fullNameUser, String projectTitle,
+  public static String samplesAddedToProject(String fullNameUser, String projectTitle,
       String projectUri) {
     return String.format("""
         Dear %s,
                       
-        you have been granted access to project:
+        new samples have been added to the project:
                
         '%s'
             
+        We have attached the spreadsheet containing the sample information and QBiC identifiers.
+        These identifiers uniquely characterize each added sample. They will be used to attach data
+        for each of the samples, as soon as it has been measured and uploaded.
+        
         Please click the link below to access the project after login:
             
         %s
