@@ -21,11 +21,8 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
   private final TextField label;
   private final TextField referenceId;
 
-  private boolean invalid;
-
   public FundingField(String fieldLabel) {
     super();
-    invalid = false;
     addClassName("funding-field");
     setLabel(fieldLabel);
     this.label = new TextField("Grant", "e.g. SFB");
