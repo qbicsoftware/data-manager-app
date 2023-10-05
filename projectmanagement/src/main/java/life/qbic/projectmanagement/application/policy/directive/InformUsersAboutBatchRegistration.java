@@ -98,7 +98,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
       row.add(sample.sampleCode().code());
       row.add(sample.biologicalReplicateId().toString());
       row.add(sample.sampleOrigin().toString());
-      row.add(sample.analysisType().orElse(""));
+      row.add(sample.analysisMethod().description());
       row.add(sample.comment().orElse(""));
       builder.append(String.join("\t", row));
       builder.append("\n");
