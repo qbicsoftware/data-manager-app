@@ -1,9 +1,7 @@
 package life.qbic.datamanager.views.general.funding;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.shared.ClientValidationUtil;
 import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.TextField;
 import java.io.Serial;
