@@ -3,9 +3,11 @@ package life.qbic.datamanager.views.general.spreadsheet;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.spreadsheet.Spreadsheet.CellValueChangeEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,10 +30,26 @@ public class Spreadsheet<T> extends Div {
   private final List<T> rows = new ArrayList<>();
 
   public Spreadsheet() {
+    addClassName("spreadsheet-container");
     delegateSpreadsheet.setSheetSelectionBarVisible(false);
     delegateSpreadsheet.setFunctionBarVisible(false);
     delegateSpreadsheet.setRowColHeadingsVisible(false);
+    delegateSpreadsheet.addCellValueChangeListener(this::onCellValueChanged);
+    delegateSpreadsheet.setSizeFull();
     add(delegateSpreadsheet);
+  }
+
+  private void onCellValueChanged(CellValueChangeEvent cellValueChangeEvent) {
+    List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
+        .map(changedCell -> {
+          int rowIndex = changedCell.getRow();
+          int colIndex = changedCell.getCol();
+          return delegateSpreadsheet.getCell(rowIndex, colIndex);
+        }).toList();
+    changedCells.forEach(
+        cell -> columns.get(cell.getColumnIndex()).modelEditor.accept(rows.get(cell.getRowIndex()),
+            CellFunctions.asStringValue(cell).orElse(null)));
+    delegateSpreadsheet.refreshCells(changedCells);
   }
 
   public void addRow(T rowData) {
@@ -80,13 +98,6 @@ public class Spreadsheet<T> extends Div {
 
 
   public List<T> getRows() {
-    for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-      for (int colIndex = 0; colIndex < columns.size(); colIndex++) {
-        Cell cell = delegateSpreadsheet.getCell(rowIndex, colIndex);
-        String cellValue = cell.getStringCellValue();
-        columns.get(colIndex).modelEditor.accept(rows.get(rowIndex), cellValue);
-      }
-    }
     return rows;
   }
 
@@ -100,8 +111,23 @@ public class Spreadsheet<T> extends Div {
 
   public boolean validate() {
     //todo run validators
+
     return isValid();
   }
+
+  private static class CellFunctions {
+
+    static Optional<String> asStringValue(Cell cell) {
+      return switch (cell.getCellType()) {
+        case _NONE, FORMULA, ERROR -> Optional.empty();
+        case NUMERIC -> Optional.of(String.valueOf(cell.getNumericCellValue()));
+        case STRING -> Optional.of(cell.getStringCellValue());
+        case BLANK -> Optional.of("");
+        case BOOLEAN -> Optional.of(String.valueOf(cell.getBooleanCellValue()));
+      };
+    }
+  }
+
 
   public static class Column<T, S> {
 

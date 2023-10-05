@@ -7,6 +7,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column;
 
 /**
  * TODO!
@@ -21,7 +22,6 @@ import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 public class TestView extends Div {
 
   public TestView() {
-
     MyBean bean1 = new MyBean();
     bean1.setName("tom");
     bean1.setEmail("test@test.de");
@@ -32,9 +32,14 @@ public class TestView extends Div {
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
     spreadsheet.addColumn("value", MyBean::getName, MyBean::setName);
     spreadsheet.addRow(bean1);
-    spreadsheet.addColumn("email", MyBean::getEmail, MyBean::setEmail);
+    Column<MyBean, String> emailColumn = spreadsheet.addColumn("email", MyBean::getEmail,
+        MyBean::setEmail);
+    emailColumn.withValidator(it -> it.contains("@"), "Not an email");
     spreadsheet.addRow(bean2);
     add(spreadsheet, new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
+    for (int i = 0; i < 50; i++) {
+      spreadsheet.addRow(new MyBean());
+    }
   }
 
   public static class MyBean {
