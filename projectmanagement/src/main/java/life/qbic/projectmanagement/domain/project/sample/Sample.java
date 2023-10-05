@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.domain.project.sample;
 
+import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -39,8 +41,11 @@ public class Sample {
   private SampleId id;
   private String label;
   private String comment;
-  @Column(name = "analysis_type")
-  private String analysisType;
+
+  @Column(name = "analysis_method")
+  @Convert(converter = AnalysisMethodConverter.class)
+  private AnalysisMethod analysisMethod;
+
   @Embedded
   private SampleCode sampleCode;
   @Embedded
@@ -48,7 +53,7 @@ public class Sample {
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
       ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
-      BiologicalReplicateId replicateReference, String analysisType, String comment
+      BiologicalReplicateId replicateReference, AnalysisMethod analysisMethod, String comment
   ) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
@@ -58,7 +63,7 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
     this.biologicalReplicateId = replicateReference;
     this.assignedBatch = assignedBatch;
-    this.analysisType = analysisType;
+    this.analysisMethod = analysisMethod;
     this.comment = comment;
   }
 
@@ -82,7 +87,7 @@ public class Sample {
         sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
         sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
-        sampleRegistrationRequest.analysisType(), sampleRegistrationRequest.comment());
+        sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
   }
 
   public BatchId assignedBatch() {
@@ -105,10 +110,6 @@ public class Sample {
     return this.label;
   }
 
-  public Optional<String> analysisType() {
-    return Optional.ofNullable(analysisType);
-  }
-
   public Optional<String> comment() {
     return Optional.ofNullable(comment);
   }
@@ -119,6 +120,23 @@ public class Sample {
 
   public BiologicalReplicateId biologicalReplicateId() {
     return this.biologicalReplicateId;
+  }
+
+  public AnalysisMethod analysisMethod() {
+    return this.analysisMethod;
+  }
+
+  static class AnalysisMethodConverter implements AttributeConverter<AnalysisMethod, String> {
+    
+    @Override
+    public String convertToDatabaseColumn(AnalysisMethod analysisMethod) {
+      return analysisMethod.name();
+    }
+
+    @Override
+    public AnalysisMethod convertToEntityAttribute(String s) {
+      return AnalysisMethod.valueOf(s);
+    }
   }
 
 }

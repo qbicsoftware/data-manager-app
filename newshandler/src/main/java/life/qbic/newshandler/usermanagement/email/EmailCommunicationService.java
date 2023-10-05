@@ -37,6 +37,7 @@ public class EmailCommunicationService implements CommunicationService {
   private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
 
   private static final String SIGNATURE = """
+      
       With kind regards,
             
       Your QBiC team
@@ -95,7 +96,7 @@ public class EmailCommunicationService implements CommunicationService {
   private MimeMessage setupMessage(Subject subject, Recipient recipient, Content content)
       throws MessagingException {
     var message = setupMessageWithoutContent(subject, recipient);
-    message.setContent(combineMessageWithRegards(content), "text/plain");
+    message.setContent(combineMessageWithRegards(content).content(), "text/plain");
     return message;
   }
 
@@ -106,7 +107,7 @@ public class EmailCommunicationService implements CommunicationService {
     var message = setupMessageWithoutContent(subject, recipient);
 
     BodyPart messageBodyPart = new MimeBodyPart();
-    messageBodyPart.setContent(combineMessageWithRegards(content), "text/plain");
+    messageBodyPart.setContent(combineMessageWithRegards(content).content(), "text/plain");
 
     Multipart multipart = new MimeMultipart();
     multipart.addBodyPart(messageBodyPart);

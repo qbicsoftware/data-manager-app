@@ -3,13 +3,7 @@ package life.qbic.projectmanagement.application
 import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.api.SampleCodeService
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService
-import life.qbic.projectmanagement.domain.project.Contact
-import life.qbic.projectmanagement.domain.project.Project
-import life.qbic.projectmanagement.domain.project.ProjectCode
-import life.qbic.projectmanagement.domain.project.ProjectId
-import life.qbic.projectmanagement.domain.project.ProjectIntent
-import life.qbic.projectmanagement.domain.project.ProjectObjective
-import life.qbic.projectmanagement.domain.project.ProjectTitle
+import life.qbic.projectmanagement.domain.project.*
 import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
@@ -45,7 +39,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "Invalid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 5, BiologicalReplicateId.create(), sampleOrigin, "mytype", "no comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 5, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "no comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
@@ -66,7 +60,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "Valid SampleRegistrationRequests returns a Result with the list of registered Samples"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
@@ -89,7 +83,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "If project cannot be found, valid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new Species("species"), new Specimen("specimen"), new Analyte("analyte"))
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, "this analysis type", "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)

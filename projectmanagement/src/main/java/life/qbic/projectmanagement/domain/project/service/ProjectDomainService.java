@@ -6,6 +6,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Contact;
+import life.qbic.projectmanagement.domain.project.Funding;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;
 import life.qbic.projectmanagement.domain.project.ProjectIntent;
@@ -49,10 +50,11 @@ public class ProjectDomainService {
   public Result<Project, ResponseCode> registerProject(
       ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
-      Contact responsiblePerson) {
+      Contact responsiblePerson, Funding funding) {
     var project = Project.create(projectIntent, projectCode,
         projectManager, principalInvestigator,
         responsiblePerson);
+    project.setFunding(funding);
 
     try {
       projectRepository.add(project);
