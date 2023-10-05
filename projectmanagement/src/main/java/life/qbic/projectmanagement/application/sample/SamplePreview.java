@@ -72,6 +72,7 @@ public class SamplePreview {
     Objects.requireNonNull(species);
     Objects.requireNonNull(specimen);
     Objects.requireNonNull(analyte);
+    Objects.requireNonNull(analysisMethod);
     this.experimentId = experimentId;
     this.sampleId = sampleId;
     this.sampleCode = sampleCode;
@@ -206,7 +207,7 @@ public class SamplePreview {
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +
         ", analyte='" + analyte + '\'' +
-        ", analysisType='" + analysisMethod + '\'' +
+        ", analysisMethod='" + analysisMethod + '\'' +
         ", comment='" + comment + '\'' +
         ", conditions=" + experimentalGroup +
         '}';

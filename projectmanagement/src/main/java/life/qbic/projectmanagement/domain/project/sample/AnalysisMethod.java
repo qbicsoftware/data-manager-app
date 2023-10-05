@@ -14,7 +14,7 @@ import java.util.Map;
 public enum AnalysisMethod {
 
   /*
-  NGS related analysis types
+  NGS related analysis methods
    */
 
   SIXTEEN_S("16S", "16S amplicon sequencing",
@@ -57,7 +57,7 @@ public enum AnalysisMethod {
   SEQ_ONLY("SEQ-ONLY", "Sequencing only", "Processing of ready-to-sequence pools"),
 
   /*
-  Proteomics related analysis types
+  Proteomics related analysis methods
    */
 
   PROTEOMICS("PROTEOMIICS", "Proteomics", ""),
@@ -71,7 +71,7 @@ public enum AnalysisMethod {
   PTMS("PTMS", "Posttransductional mutations", ""),
 
   /*
-  Metabolomics related analysis types
+  Metabolomics related analysis methods
    */
 
   UNTARGETED_MX("UNTARGETED-MX", "Untargeted metabolomics", ""),
