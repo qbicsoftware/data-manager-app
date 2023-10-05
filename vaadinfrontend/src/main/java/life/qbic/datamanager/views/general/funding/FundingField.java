@@ -34,6 +34,9 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
     this.label.addClassName("grant-label-field");
     this.referenceId = new TextField("Grant ID", "e.g. SFB 1101");
     this.referenceId.addClassName("grant-id-field");
+    // we need to override the text-fields internal default validation, since we do not directly add binders
+    // with validators to the encapsulated fields, which results in removal of the invalid HTML property and disabling
+    // us correctly display invalid element status
     label.addValidationStatusChangeListener(e -> validate());
     referenceId.addValidationStatusChangeListener(e -> validate());
     layoutComponent();
@@ -72,7 +75,11 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
 
   @Override
   public void setInvalid(boolean invalid) {
+    // we track the funding field element's invalid status explicitly
     super.setInvalid(invalid);
+
+    // we forward the invalid status to both fields, to get Vaadin's error rendering support for
+    // text-fields via the 'invalid' HTML property
     label.setInvalid(invalid);
     referenceId.setInvalid(invalid);
   }
