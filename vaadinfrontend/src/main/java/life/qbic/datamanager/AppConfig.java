@@ -12,9 +12,6 @@ import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.projectmanagement.application.AppContextProvider;
-import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
-import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -22,12 +19,15 @@ import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
 import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
+import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.user.api.UserInformationService;
 import org.jobrunr.scheduling.JobScheduler;
@@ -45,7 +45,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
-//@ComponentScan({"life.qbic.authentication.persistence"})
+@ComponentScan({"life.qbic.authentication.persistence"})
 public class AppConfig {
 
   /**
