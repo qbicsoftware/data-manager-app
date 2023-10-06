@@ -22,6 +22,7 @@
     <module>finances</module>
     <module>projectmanagement</module>
     <module>domain-concept</module>
+    <module>user-domain-api</module>
   </modules>
   <packaging>pom</packaging>
 

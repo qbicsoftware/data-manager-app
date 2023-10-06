@@ -15,17 +15,17 @@ import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.authentication.persistence.SidRepository;
-import life.qbic.authorization.acl.ProjectAccessService;
-import life.qbic.authorization.security.QbicUserDetails;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.service.AccessDomainService;
+import life.qbic.user.api.UserInfo;
+import life.qbic.user.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -42,7 +42,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   private final ProjectAccessService projectAccessService;
   private final UserDetailsService userDetailsService;
   private final SidRepository sidRepository;
-  private final UserRepository userRepository;
+  private final UserInformationService userInformationService;
 
   private final UserPermissions userPermissions;
   private static final Logger log = logger(ProjectAccessComponent.class);
@@ -59,19 +59,19 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserDetailsService userDetailsService,
-      @Autowired UserRepository userRepository,
+      @Autowired UserInformationService userInformationService,
       @Autowired SidRepository sidRepository,
       @Autowired UserPermissions userPermissions,
       @Autowired AccessDomainService accessDomainService) {
     this.projectAccessService = projectAccessService;
     this.userDetailsService = userDetailsService;
-    this.userRepository = userRepository;
+    this.userInformationService = userInformationService;
     this.sidRepository = sidRepository;
     this.userPermissions = userPermissions;
     this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userDetailsService, "userDetailsService must not be null");
-    requireNonNull(userRepository, "userRepository must not be null");
+    requireNonNull(userInformationService, "userRepository must not be null");
     requireNonNull(sidRepository, "sidRepository must not be null");
     layoutComponent();
     this.addClassName("project-access-component");
@@ -164,13 +164,13 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
         .distinct()
         .toList();
     var entries = users.stream()
-        .map(user -> {
-          var roles = getProjectRoles(authorities, user);
+        .map(userDetail -> {
+          var roles = getProjectRoles(authorities, userDetail);
           roles = roles.stream()
               .map(this::formatAuthorityToReadableString)
               .toList();
-          String fullName = userRepository.findById(user.getUserId()).get().fullName().get();
-          return new UserProjectAccess(fullName, user.getUsername(), String.join(", ", roles));
+          String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
+          return new UserProjectAccess(fullName, userDetail.getUsername(), String.join(", ", roles));
         })
         .toList();
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
@@ -206,7 +206,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     EditUserAccessToProjectDialog editUserAccessToProjectDialog = new EditUserAccessToProjectDialog(
         projectAccessService,
         projectId,
-        sidRepository, userRepository);
+        sidRepository, userInformationService);
     addEditUserAccessToProjectDialogListeners(editUserAccessToProjectDialog);
     editUserAccessToProjectDialog.open();
   }
@@ -216,10 +216,10 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     editUserAccessToProjectDialog.addCancelEventListener(
         addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
     editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
-      List<User> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
+      List<UserInfo> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
           .stream()
           .toList();
-      List<User> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
+      List<UserInfo> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
           .removedUsers()
           .stream().toList();
       if (!addedUsers.isEmpty()) {
@@ -233,16 +233,16 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     });
   }
 
-  private void addUsersToProject(List<User> users) {
-    for (User user : users) {
-      projectAccessService.grant(user.emailAddress().get(), projectId, BasePermission.READ);
-      accessDomainService.grantProjectAccessFor(projectId.value(), user.id().get());
+  private void addUsersToProject(List<UserInfo> users) {
+    for (UserInfo user : users) {
+      projectAccessService.grant(user.emailAddress(), projectId, BasePermission.READ);
+      accessDomainService.grantProjectAccessFor(projectId.value(), user.id());
     }
   }
 
-  private void removeUsersFromProject(List<User> users) {
-    for (User user : users) {
-      projectAccessService.denyAll(user.emailAddress().get(), projectId);
+  private void removeUsersFromProject(List<UserInfo> users) {
+    for (UserInfo user : users) {
+      projectAccessService.denyAll(user.emailAddress(), projectId);
     }
   }
 

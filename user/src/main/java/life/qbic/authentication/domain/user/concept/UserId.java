@@ -44,7 +44,7 @@ public class UserId implements Serializable {
    * @return an instance of a new user id object
    * @since 1.0.0
    */
-  public static UserId from(String s) {
+  public static UserId from(String s) throws IllegalArgumentException {
     try {
       return new UserId(UUID.fromString(s));
     } catch (IllegalArgumentException ignored) {

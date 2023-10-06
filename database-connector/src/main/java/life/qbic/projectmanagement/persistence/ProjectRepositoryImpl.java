@@ -11,8 +11,8 @@ import static org.springframework.security.acls.domain.BasePermission.WRITE;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.authorization.acl.ProjectAccessService;
-import life.qbic.authorization.authorities.aspects.CanCreateProject;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectCode;

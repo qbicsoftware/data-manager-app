@@ -4,7 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
-import life.qbic.authorization.acl.QbicPermissionEvaluator;
+import life.qbic.projectmanagement.application.authorization.acl.QbicPermissionEvaluator;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
