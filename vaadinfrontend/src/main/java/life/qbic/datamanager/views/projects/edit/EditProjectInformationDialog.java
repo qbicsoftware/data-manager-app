@@ -20,9 +20,6 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
-import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
-import life.qbic.projectmanagement.domain.project.Funding;
-import org.apache.poi.sl.draw.geom.GuideIf.Op;
 
 /**
  * <b>Project Information Dialog</b>

@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.application.policy;
 
 import java.util.Objects;
-import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 
 /**
  * <b>Policy: Project access granted</b>
