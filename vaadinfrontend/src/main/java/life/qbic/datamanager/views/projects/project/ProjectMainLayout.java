@@ -58,6 +58,7 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     initializeHeaderLayout();
     addToNavbar(navBarContent);
     addClickListeners();
+    addClassName("project-main-layout");
   }
 
   @Override

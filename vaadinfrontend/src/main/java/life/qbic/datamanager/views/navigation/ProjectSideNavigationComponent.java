@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -101,16 +102,19 @@ public class ProjectSideNavigationComponent extends Div implements
     projectSectionHeader.setLabel("PROJECT");
     projectSectionHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
     projectSectionHeader.addClassName("primary");
+    SideNav projectSideNav = new SideNav();
+    projectSideNav.addClassName("project-side-nav");
     String projectInformationPath = String.format(Projects.PROJECT_INFO, projectId.value());
     String projectAccessPath = String.format(Projects.ACCESS, projectId.value());
     SideNavItem projectInformationItem = new SideNavItem("PROJECT INFORMATION",
         projectInformationPath, VaadinIcon.DEINDENT.create());
     SideNavItem projectAccessItem = new SideNavItem("PROJECT ACCESS MANAGEMENT", projectAccessPath,
         VaadinIcon.USERS.create());
+    projectSideNav.addItem(projectInformationItem);
+    projectSideNav.addItem(projectAccessItem);
     projectSection.addComponentAsFirst(projectSectionHeader);
     MenuBar projectSelect = createProjectSelect(projectId);
-    projectSection.add(projectSelect, generateLineDivider(), projectInformationItem,
-        projectAccessItem);
+    projectSection.add(projectSelect, generateLineDivider(), projectSideNav);
   }
 
   private MenuBar createProjectSelect(ProjectId projectId) {
@@ -157,14 +161,17 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private void initializeExperimentSection(ProjectId projectId) {
+    SideNav experimentSideNav = new SideNav();
+    experimentSideNav.addClassName("experiment-side-nav");
     experimentSectionHeader.removeAll();
-    experimentSectionHeader.setLabel("Experiments");
+    experimentSectionHeader.setLabel("EXPERIMENTS");
     experimentSectionHeader.setPrefixComponent(VaadinIcon.FLASK.create());
     experimentSectionHeader.addClassName("primary");
     List<Experiment> experiments = experimentInformationService.findAllForProject(projectId);
     experiments.forEach(
         experiment -> experimentSectionHeader.addItem(createExperimentItem(projectId, experiment)));
-    experimentSection.addComponentAsFirst(experimentSectionHeader);
+    experimentSideNav.addItem(experimentSectionHeader);
+    experimentSection.addComponentAsFirst(experimentSideNav);
     experimentSectionHeader.setExpanded(true);
   }
 

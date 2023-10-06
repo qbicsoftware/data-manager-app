@@ -1,5 +1,4 @@
 /* All custom css for components within the navigation drawer go here */
-
 .project-navigation-drawer {
   display: flex;
   flex-direction: column;
@@ -33,10 +32,15 @@
   gap: var(--lumo-space-s);
 }
 
-.project-navigation-drawer.experiment-section .content {
+.project-navigation-drawer.experiment-section .experiment-side-nav {
   display: flex;
   flex-flow: column;
   gap: var(--lumo-space-m);
+}
+
+.project-select-menu {
+  margin-left: var(--lumo-space-s);
+  margin-right: var(--lumo-space-s);
 }
 
 .project-select-menu vaadin-menu-bar-button[aria-haspopup] {
