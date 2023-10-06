@@ -10,8 +10,7 @@
   <version>0.26.0</version>
   <modules>
     <module>vaadinfrontend</module>
-    <module>user</module>
-    <module>authorization</module>
+    <module>user-domain</module>
     <module>broadcasting</module>
     <module>newshandler</module>
     <module>database-connector</module>
@@ -20,7 +19,7 @@
     <module>subscription-provider</module>
     <module>subscription-api</module>
     <module>finances</module>
-    <module>projectmanagement</module>
+    <module>projectmanagement-domain</module>
     <module>domain-concept</module>
     <module>user-domain-api</module>
   </modules>

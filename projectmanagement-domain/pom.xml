@@ -7,8 +7,8 @@
     <version>0.26.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>projectmanagement</artifactId>
-  <name>projectmanagement</name>
+  <artifactId>projectmanagement-domain</artifactId>
+  <name>projectmanagement-domain</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>

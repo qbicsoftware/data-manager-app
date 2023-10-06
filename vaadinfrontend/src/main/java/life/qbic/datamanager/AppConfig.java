@@ -45,7 +45,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.authentication.persistence"})
+//@ComponentScan({"life.qbic.authentication.persistence"})
 public class AppConfig {
 
   /**

@@ -21,7 +21,7 @@
   <dependencies>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>user</artifactId>
+      <artifactId>user-domain</artifactId>
       <version>0.26.0</version>
       <scope>compile</scope>
     </dependency>
@@ -83,7 +83,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>projectmanagement</artifactId>
+      <artifactId>projectmanagement-domain</artifactId>
       <version>0.26.0</version>
       <scope>compile</scope>
     </dependency>
