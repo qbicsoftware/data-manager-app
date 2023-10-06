@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
@@ -21,6 +22,21 @@ import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column;
 @Route("test")
 public class TestView extends Div {
 
+  enum EMAIL {
+    T_KOCH("tkoch-email"),
+    QBIC_SOFTWARE("qbic-email");
+
+    private final String address;
+
+    EMAIL(String address) {
+      this.address = address;
+    }
+
+    public String getAddress() {
+      return address;
+    }
+  }
+
   public TestView() {
     MyBean bean1 = new MyBean();
     bean1.setName("tom");
@@ -32,9 +48,9 @@ public class TestView extends Div {
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
     spreadsheet.addColumn("value", MyBean::getName, MyBean::setName);
     spreadsheet.addRow(bean1);
-    Column<MyBean, String> emailColumn = spreadsheet.addColumn("email", MyBean::getEmail,
-        MyBean::setEmail);
-    emailColumn.withValidator(it -> it.contains("@"), "Not an email");
+    Column<MyBean> emailColumn = spreadsheet.addColumn("email", MyBean::getEmail,
+            MyBean::setEmail)
+        .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress);
     spreadsheet.addRow(bean2);
     add(spreadsheet, new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
     for (int i = 0; i < 50; i++) {
