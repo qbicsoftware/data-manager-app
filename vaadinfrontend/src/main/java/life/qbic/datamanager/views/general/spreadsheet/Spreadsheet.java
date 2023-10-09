@@ -12,9 +12,12 @@ import com.vaadin.flow.component.spreadsheet.Spreadsheet.CellValueChangeEvent;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -185,10 +188,12 @@ public class Spreadsheet<T> extends Div {
 
   private static class CellFunctions {
 
+    static NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+
     static Optional<String> asStringValue(Cell cell) {
       return switch (cell.getCellType()) {
         case _NONE, FORMULA, ERROR, BLANK -> Optional.empty();
-        case NUMERIC -> Optional.of(String.valueOf(cell.getNumericCellValue()));
+        case NUMERIC -> Optional.of(numberFormat.format(cell.getNumericCellValue()));
         case STRING -> Optional.of(cell.getStringCellValue());
         case BOOLEAN -> Optional.of(String.valueOf(cell.getBooleanCellValue()));
       };
@@ -196,24 +201,18 @@ public class Spreadsheet<T> extends Div {
 
     static void setCellValue(Cell cell, String value) {
       switch (cell.getCellType()) {
-        case _NONE -> {
+        case _NONE, ERROR, FORMULA -> {
         }
         case NUMERIC -> {
-          cell.setCellValue(Double.parseDouble(value));
+          try {
+            cell.setCellValue(numberFormat.parse(value).doubleValue());
+          } catch (ParseException e) {
+            throw new RuntimeException(e);
+          }
         }
-        case STRING -> {
-          cell.setCellValue(value);
-        }
-        case FORMULA -> {
-        }
-        case BLANK -> {
-          cell.setCellValue(value);
-        }
-        case BOOLEAN -> {
-          cell.setCellValue(Boolean.parseBoolean(value));
-        }
-        case ERROR -> {
-        }
+        case STRING, BLANK -> cell.setCellValue(value);
+        case BOOLEAN -> cell.setCellValue(Boolean.parseBoolean(value));
+        default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
       }
     }
   }
@@ -354,7 +353,7 @@ public class Spreadsheet<T> extends Div {
       }
 
       public String toCellValue(E value) {
-        if (Objects.isNull(value)) {
+        if (isNull(value)) {
           return null;
         }
         return toCellValue.apply(value);
