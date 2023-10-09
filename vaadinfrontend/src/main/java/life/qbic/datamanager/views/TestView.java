@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
-import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column;
 
 /**
  * TODO!
@@ -47,10 +46,10 @@ public class TestView extends Div {
 
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
     spreadsheet.addColumn("value", MyBean::getName, MyBean::setName);
-    spreadsheet.addRow(bean1);
-    Column<MyBean> emailColumn = spreadsheet.addColumn("email", MyBean::getEmail,
-            MyBean::setEmail)
+    spreadsheet.addColumn("email", MyBean::getEmail, MyBean::setEmail)
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress);
+
+    spreadsheet.addRow(bean1);
     spreadsheet.addRow(bean2);
     add(spreadsheet, new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
     for (int i = 0; i < 50; i++) {

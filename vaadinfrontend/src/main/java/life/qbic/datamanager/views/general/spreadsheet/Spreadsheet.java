@@ -9,8 +9,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet.CellValueChangeEvent;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -209,20 +209,27 @@ public class Spreadsheet<T> extends Div {
     public void onCustomEditorDisplayed(Cell cell, int rowIndex, int columnIndex,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet,
         Component customEditor) {
-      if (customEditor instanceof TextField textField) {
-        textField.setValue(CellFunctions.asStringValue(cell).orElse(null));
-        textField.addValueChangeListener(
-            event -> delegateSpreadsheet.refreshCells(
-                delegateSpreadsheet.createCell(rowIndex, columnIndex, event.getValue())));
-      }
-      if (customEditor instanceof SelectEditor selectEditor) {
-        selectEditor.setFromCellValue(CellFunctions.asStringValue(cell).orElse(null));
-        selectEditor.addValueChangeListener(event -> {
-          CellFunctions.setCellValue(cell, selectEditor.toCellValue(event.getValue()));
-          delegateSpreadsheet.refreshCells(cell);
-        });
-        //FIXME here the valud change listener stays attached. It is triggered every time if the select editor changes
-        // it should trigger only once for the given cell.
+//      if (customEditor instanceof TextField textField) {
+//        textField.setValue(CellFunctions.asStringValue(cell).orElse(null));
+//        textField.addValueChangeListener(
+//            event -> delegateSpreadsheet.refreshCells(
+//                delegateSpreadsheet.createCell(rowIndex, columnIndex, event.getValue())));
+//      }
+
+      try {
+        if (customEditor instanceof SelectEditor selectEditor) {
+          selectEditor.removeAllValueChangeListeners();
+          selectEditor.addValueChangeListener(event -> {
+            String cellValue = selectEditor.toCellValue(event.getValue());
+            delegateSpreadsheet.refreshCells(
+                delegateSpreadsheet.createCell(rowIndex, columnIndex, cellValue));
+          });
+          //FIXME here the value change listener stays attached. It is triggered every time if the select editor changes
+          // it should trigger only once for the given cell.
+          selectEditor.setFromCellValue(CellFunctions.asStringValue(cell).orElse(null));
+        }
+      } catch (ClassCastException e) {
+        log.debug("Could not determine select editor class.", e);
       }
     }
   }
@@ -275,34 +282,47 @@ public class Spreadsheet<T> extends Div {
       return this;
     }
 
+    private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer() {
+      return new ComponentRenderer<>(item -> {
+        Span listItem = new Span(item.toString());
+        listItem.addClassName("spreadsheet-list-item");
+        return listItem;
+      });
+    }
+
     public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue) {
+      return selectFrom(values, toCellValue, getDefaultComponentRenderer());
+    }
+
+    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
+        ComponentRenderer<? extends Component, E> renderer) {
       this.withValidator(
           value -> values.stream()
               .map(toCellValue)
               .anyMatch(it -> it.equals(value)),
           "{0} is not a valid option. Please choose from %s".formatted(values));
       SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
-      selectEditor.setRenderer(new ComponentRenderer<Component, E>(item -> {
-        Span listItem = new Span(item.toString());
-        listItem.addClassName("spreadsheet-list-item");
-        return listItem;
-      }));
+      selectEditor.setRenderer(renderer);
       selectEditor.setItemLabelGenerator(toCellValue::apply);
       this.editorComponent = selectEditor;
       return this;
     }
 
-    public static class SelectEditor<E> extends Select<E> {
+    public interface CellEditor {
+
+      void removeAllValueChangeListeners();
+    }
+
+    public static class SelectEditor<E> extends Select<E> implements CellEditor {
+
+      private final List<Registration> addedValueChangeListeners;
 
       private final Function<E, String> toCellValue;
 
       public SelectEditor(List<E> items, Function<E, String> toCellValue) {
+        addedValueChangeListeners = new ArrayList<>();
         setItems(items);
         this.toCellValue = toCellValue;
-      }
-
-      public String asCellValue() {
-        return toCellValue(getValue());
       }
 
       public String toCellValue(E value) {
@@ -318,33 +338,51 @@ public class Spreadsheet<T> extends Div {
             .findFirst()
             .ifPresentOrElse(this::setValue, this::clear);
       }
+
+      @Override
+      public Registration addValueChangeListener(
+          ValueChangeListener<? super ComponentValueChangeEvent<Select<E>, E>> listener) {
+        Registration registration = super.addValueChangeListener(listener);
+        // as addedValueChangeListeners is final, it is not null when called from this class
+        if (addedValueChangeListeners == null) {
+          //vaadin calls this method in the super constructor. Ignore those.
+          return registration;
+        }
+        addedValueChangeListeners.add(registration);
+        return registration;
+      }
+
+      @Override
+      public void removeAllValueChangeListeners() {
+        addedValueChangeListeners.forEach(Registration::remove);
+        addedValueChangeListeners.clear();
+      }
     }
-  }
 
-  public static class ColumnValidator<T2> {
+    public static class ColumnValidator<T2> {
 
-    private final Predicate<T2> predicate;
-    private final String errorMessage;
+      private final Predicate<T2> predicate;
+      private final String errorMessage;
 
-    ColumnValidator(Predicate<T2> predicate, String errorMessage) {
-      this.predicate = predicate;
-      this.errorMessage = errorMessage;
-    }
+      ColumnValidator(Predicate<T2> predicate, String errorMessage) {
+        this.predicate = predicate;
+        this.errorMessage = errorMessage;
+      }
 
-    public ValidationResult validate(T2 value) {
-      boolean isValid = predicate.test(value);
-      String filledErrorMessage = errorMessage.replaceAll("\\{0\\}", String.valueOf(value));
-      return new ValidationResult(isValid, filledErrorMessage);
-    }
+      public ValidationResult validate(T2 value) {
+        boolean isValid = predicate.test(value);
+        String filledErrorMessage = errorMessage.replaceAll("\\{0\\}", String.valueOf(value));
+        return new ValidationResult(isValid, filledErrorMessage);
+      }
 
-    public record ValidationResult(boolean isValid, String errorMessage) {
+      public record ValidationResult(boolean isValid, String errorMessage) {
 
-      public ValidationResult {
-        if (isValid) {
-          errorMessage = "";
+        public ValidationResult {
+          if (isValid) {
+            errorMessage = "";
+          }
         }
       }
     }
   }
-
 }
