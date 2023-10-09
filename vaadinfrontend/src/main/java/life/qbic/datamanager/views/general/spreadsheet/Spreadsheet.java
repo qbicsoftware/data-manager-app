@@ -5,9 +5,11 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet.CellValueChangeEvent;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -39,18 +41,18 @@ import org.apache.poi.ss.util.CellReference;
  *
  * @since <version tag>
  */
-public class Spreadsheet<T> extends Div {
+@Tag(Tag.DIV)
+public class Spreadsheet<T> extends Component implements HasComponents,
+    HasValidationProperties {
 
   private static final Logger log = logger(Spreadsheet.class);
 
-  private boolean valid = true;
-
+  private String errorMessage = "Please complete the missing mandatory information.";
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
   private final List<Column<T>> columns = new ArrayList<>();
   private final List<T> rows = new ArrayList<>();
 
   public Spreadsheet() {
-    setMinHeight("50vh"); //fixme
     addClassName("spreadsheet-container");
     delegateSpreadsheet.setSheetSelectionBarVisible(false);
     delegateSpreadsheet.setFunctionBarVisible(false);
@@ -131,32 +133,28 @@ public class Spreadsheet<T> extends Div {
   }
 
   public boolean isValid() {
-    return valid;
-  }
-
-  public boolean isInvalid() {
-    return !isValid();
+    return !isInvalid();
   }
 
   public ValidationResult validate() {
+    ValidationResult validationResult = new ValidationResult(true, getErrorMessage());
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
       for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
         Column<T> column = columns.get(colIndex);
         Cell cell = delegateSpreadsheet.getCell(rowIndex, colIndex);
-        Optional<ValidationResult> failingValidator = column.getValidators().stream()
+        Optional<ValidationResult> failingValidator = column.getValidators().stream().parallel()
             .map(it -> it.validate(CellFunctions.asStringValue(cell)
                 .orElse(null)))
-            .peek(System.out::println)
             .filter(ValidationResult::isInvalid)
             .findFirst();
         if (failingValidator.isPresent()) {
-          ValidationResult validationResult = failingValidator.get();
-          valid = validationResult.isValid();
-          return validationResult;
+          validationResult = failingValidator.get();
         }
       }
     }
-    return new ValidationResult(true, "");
+    setInvalid(validationResult.isInvalid());
+    setErrorMessage(validationResult.errorMessage());
+    return validationResult;
   }
 
   private List<Cell> getRow(int index) {
@@ -188,7 +186,7 @@ public class Spreadsheet<T> extends Div {
 
   private static class CellFunctions {
 
-    static NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+    static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
     static Optional<String> asStringValue(Cell cell) {
       return switch (cell.getCellType()) {
