@@ -14,19 +14,21 @@ import life.qbic.user.api.UserInfo;
 import life.qbic.user.api.UserInformationService;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Basic user information service</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link UserInformationService}, provides a OHS via a Java interface to
+ * query
+ * user information</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
-public class SimpleUserInformationService implements UserInformationService {
+public class BasicUserInformationService implements UserInformationService {
 
-  private static final Logger log = logger(SimpleUserInformationService.class);
+  private static final Logger log = logger(BasicUserInformationService.class);
 
   private final UserRepository userRepository;
 
-  public SimpleUserInformationService(UserRepository userRepository) {
+  public BasicUserInformationService(UserRepository userRepository) {
     this.userRepository = Objects.requireNonNull(userRepository);
   }
 

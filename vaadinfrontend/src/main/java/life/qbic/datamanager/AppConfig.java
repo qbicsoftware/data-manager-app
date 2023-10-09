@@ -1,7 +1,7 @@
 package life.qbic.datamanager;
 
 import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.application.service.SimpleUserInformationService;
+import life.qbic.authentication.application.service.BasicUserInformationService;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
 import life.qbic.authentication.application.user.password.PasswordResetInput;
@@ -129,7 +129,7 @@ public class AppConfig {
 
   @Bean
   public UserInformationService userInformationService(UserRepository userRepository) {
-    return new SimpleUserInformationService(userRepository);
+    return new BasicUserInformationService(userRepository);
   }
 
   @Bean
