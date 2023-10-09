@@ -42,11 +42,6 @@ public class InformUserAboutGrantedAccess implements DomainEventSubscriber<Proje
     this.appContextProvider = Objects.requireNonNull(appContextProvider);
   }
 
-  private String composeMessage(String projectId, UserInfo recipient, String projectTitle) {
-    return Messages.projectAccessToUser(recipient.fullName(), projectTitle,
-        appContextProvider.urlToProject(projectId));
-  }
-
   @Override
   public Class<? extends DomainEvent> subscribedToEventType() {
     return ProjectAccessGranted.class;
