@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.Result
+import life.qbic.domain.concepts.communication.CommunicationService
 import life.qbic.projectmanagement.application.api.SampleCodeService
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService
 import life.qbic.projectmanagement.domain.project.*
@@ -18,7 +19,8 @@ class SampleRegistrationServiceSpec extends Specification {
     SampleCodeService sampleCodeService = Mock()
     SampleDomainService sampleDomainService = Mock()
     ProjectInformationService projectInformationService = Mock()
-    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService)
+    CommunicationService communicationService = Mock()
+    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService, communicationService)
     ProjectId projectId = ProjectId.create()
     Contact who = new Contact()
     Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
