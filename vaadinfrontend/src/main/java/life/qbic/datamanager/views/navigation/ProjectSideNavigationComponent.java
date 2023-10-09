@@ -54,12 +54,12 @@ public class ProjectSideNavigationComponent extends Div implements
     BeforeEnterObserver {
 
   private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
-  private final Div content = new Div();
-  private final transient ProjectInformationService projectInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
+  private static Div content;
+  private static ProjectInformationService projectInformationService;
+  private static ExperimentInformationService experimentInformationService;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private transient Context context = new Context();
+  private static Context context = new Context();
 
   public ProjectSideNavigationComponent(
       @Autowired ProjectInformationService projectInformationService,
@@ -67,8 +67,9 @@ public class ProjectSideNavigationComponent extends Div implements
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.addClassName("project-navigation-drawer");
-    this.projectInformationService = projectInformationService;
-    this.experimentInformationService = experimentInformationService;
+    ProjectSideNavigationComponent.projectInformationService = projectInformationService;
+    ProjectSideNavigationComponent.experimentInformationService = experimentInformationService;
+    content = new Div();
     content.addClassName("content");
     add(content);
     log.debug(
@@ -82,9 +83,9 @@ public class ProjectSideNavigationComponent extends Div implements
     String projectId = beforeEnterEvent.getRouteParameters()
         .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
     ProjectId parsedProjectId = ProjectId.parse(projectId);
-    this.context = new Context().with(parsedProjectId);
+    context = new Context().with(parsedProjectId);
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .ifPresent(experimentId -> this.context = context.with(ExperimentId.parse(experimentId)));
+        .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
     loadProjectInformation();
   }
 
@@ -95,17 +96,17 @@ public class ProjectSideNavigationComponent extends Div implements
     generateNavBarContent(projectPreview, experiments);
   }
 
-  private Project loadProjectFromId() {
+  private static Project loadProjectFromId() {
     return projectInformationService.find(context.projectId().orElseThrow()).orElseThrow();
   }
 
-  private List<Experiment> loadExperimentsForProject(Project project) {
+  private static List<Experiment> loadExperimentsForProject(Project project) {
     return project.experiments().stream()
         .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
         .toList();
   }
 
-  private ProjectPreview generatePreviewFromProject(Project project) {
+  private static ProjectPreview generatePreviewFromProject(Project project) {
     return projectInformationService.queryPreview(project.getProjectIntent().projectTitle().title(),
         0, 1, new ArrayList<>()).stream().findFirst().orElseThrow();
   }
@@ -124,7 +125,7 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectSection;
   }
 
-  private SideNavItem createProjectHeader() {
+  private static SideNavItem createProjectHeader() {
     SideNavItem projectHeader = new SideNavItem("PROJECT");
     projectHeader.setLabel("PROJECT");
     projectHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
@@ -165,33 +166,33 @@ public class ProjectSideNavigationComponent extends Div implements
     recentProject.addClassName("transparent-icon");
   }
 
-  private List<ProjectPreview> retrieveLastModifiedProjects() {
+  private static List<ProjectPreview> retrieveLastModifiedProjects() {
     List<SortOrder> sortOrders = Collections.singletonList(
         SortOrder.of("lastModified").descending());
     return projectInformationService.queryPreview("", 0, 3, sortOrders);
   }
 
-  private Div createProjectItems() {
+  private static Div createProjectItems() {
     Div projectItems = new Div();
     projectItems.add(createProjectSummary(), createProjectUsers());
     projectItems.addClassName("project-items");
     return projectItems;
   }
 
-  private SideNavItem createProjectSummary() {
+  private static SideNavItem createProjectSummary() {
     String projectSummaryPath = String.format(Projects.PROJECT_INFO,
         context.projectId().orElseThrow());
     return new SideNavItem("SUMMARY",
         projectSummaryPath, VaadinIcon.DEINDENT.create());
   }
 
-  private SideNavItem createProjectUsers() {
+  private static SideNavItem createProjectUsers() {
     String projectUsersPath = String.format(Projects.ACCESS, context.projectId().orElseThrow());
     return new SideNavItem("USERS", projectUsersPath,
         VaadinIcon.USERS.create());
   }
 
-  private Div createExperimentSection(List<Experiment> experimentsList) {
+  private static Div createExperimentSection(List<Experiment> experimentsList) {
     Div experimentSection = new Div();
     SideNavItem experiments = new SideNavItem("");
     experiments.setLabel("EXPERIMENTS");
@@ -205,7 +206,7 @@ public class ProjectSideNavigationComponent extends Div implements
     return experimentSection;
   }
 
-  private SideNavItem createItemFromExperiment(Experiment experiment) {
+  private static SideNavItem createItemFromExperiment(Experiment experiment) {
     String experimentPath = String.format(Projects.EXPERIMENT, context.projectId().orElseThrow(),
         experiment.experimentId().value());
     SideNavItem sideNavItem = new SideNavItem(experiment.getName(), experimentPath);
@@ -213,13 +214,13 @@ public class ProjectSideNavigationComponent extends Div implements
     return sideNavItem;
   }
 
-  private Span generateSectionDivider() {
+  private static Span generateSectionDivider() {
     Span sectionDivider = new Span(new Hr());
     sectionDivider.addClassName("section-divider");
     return sectionDivider;
   }
 
-  private void resetContent() {
+  private static void resetContent() {
     content.removeAll();
   }
 
