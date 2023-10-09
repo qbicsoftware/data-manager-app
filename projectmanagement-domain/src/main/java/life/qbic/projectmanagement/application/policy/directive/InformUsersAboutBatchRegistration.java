@@ -19,7 +19,6 @@ import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
 import life.qbic.projectmanagement.domain.project.sample.event.SampleBatchRegistered;
-import life.qbic.user.api.UserInfo;
 import life.qbic.user.api.UserInformationService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
@@ -60,7 +59,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     jobScheduler.enqueue(() -> notifyUsersAboutSamples(event.project(), event.samples()));
   }
 
-  @Job(name = "Notify_Users_About_Batch")
+  @Job(name = "Notify users about batch registration")
   /**
    * Sends an email with attached spreadsheet of newly registered samples to the users of a project.
    * The email contains an explanation about sample identifiers and the spreadsheet the known metadata of the samples
@@ -68,20 +67,18 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
    * @param sampleBatch - the samples that were registered
    */
   public void notifyUsersAboutSamples(Project project, Collection<Sample> sampleBatch) {
-    List<UserInfo> usersWithAccess = getUsersWithAccess(project.getId());
+    List<RecipientDTO> recipientsWithAccess = getUsersWithAccess(project.getId());
     String attachmentContent = prepareSpreadsheetContent(sampleBatch);
-    for(UserInfo user : usersWithAccess) {
-      if(user.isActive()) {
-        notifyUser(user, project, attachmentContent);
-      }
+    for(RecipientDTO recipient : recipientsWithAccess) {
+        notifyRecipient(recipient, project, attachmentContent);
     }
   }
 
-  private List<UserInfo> getUsersWithAccess(ProjectId projectId) {
-    List<UserInfo> users = new ArrayList<>();
-    List<String> userIds = projectAccessService.listUsers(projectId);
+  private List<RecipientDTO> getUsersWithAccess(ProjectId projectId) {
+    List<RecipientDTO> users = new ArrayList<>();
+    List<String> userIds = projectAccessService.listActiveUsers(projectId);
     for(String id : userIds) {
-      userInformationService.findById(id).ifPresent(userInfo -> users.add(userInfo));
+      userInformationService.findById(id).ifPresent(userInfo -> users.add(new RecipientDTO(userInfo)));
     }
     return users;
   }
@@ -106,15 +103,15 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return builder.toString();
   }
 
-  private void notifyUser(UserInfo user, Project project, String attachmentContent) {
+  private void notifyRecipient(RecipientDTO recipient, Project project, String attachmentContent) {
     String subject = "New samples added to project";
     String projectUri = project.getId().toString();
     String projectTitle = project.getProjectIntent().projectTitle().title();
 
-    var message = Messages.samplesAddedToProject(user.fullName(), projectTitle, projectUri);
+    var message = Messages.samplesAddedToProject(recipient.getFullName(), projectTitle, projectUri);
 
     communicationService.send(new Subject(subject),
-        new Recipient(user.emailAddress(), user.fullName()), new Content(message),
+        new Recipient(recipient.getEmailAddress(), recipient.getFullName()), new Content(message),
         attachmentContent, "sample_sheet.tsv");
   }
 
