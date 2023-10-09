@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,6 +26,7 @@ import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.Select
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.util.CellReference;
 
 /**
  * TODO!
@@ -133,7 +135,7 @@ public class Spreadsheet<T> extends Div {
     return !isValid();
   }
 
-  public boolean validate() {
+  public ValidationResult validate() {
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
       for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
         Column<T> column = columns.get(colIndex);
@@ -147,13 +149,11 @@ public class Spreadsheet<T> extends Div {
         if (failingValidator.isPresent()) {
           ValidationResult validationResult = failingValidator.get();
           valid = validationResult.isValid();
-          log.debug("Validation for cell(" + rowIndex + "," + colIndex + ") failed: "
-              + validationResult.errorMessage());
+          return validationResult;
         }
       }
     }
-    //todo run validators
-    return isValid();
+    return new ValidationResult(true, "");
   }
 
   private List<Cell> getRow(int index) {
@@ -167,6 +167,19 @@ public class Spreadsheet<T> extends Div {
       cells.add(delegateSpreadsheet.getCell(index, colIndex));
     }
     return cells;
+  }
+
+  private void updateCell(int rowIndex, int colIndex, String value) {
+    Cell cell =
+        delegateSpreadsheet.getCell(rowIndex, colIndex) == null ? delegateSpreadsheet.createCell(
+            rowIndex, colIndex, null) : delegateSpreadsheet.getCell(rowIndex, colIndex);
+    updateCell(cell, value);
+  }
+
+  private void updateCell(Cell cell, String value) {
+    CellFunctions.setCellValue(cell, value);
+    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
+        Set.of(new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
   }
 
 
@@ -236,8 +249,8 @@ public class Spreadsheet<T> extends Div {
 
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
-            delegateSpreadsheet.refreshCells(
-                delegateSpreadsheet.createCell(rowIndex, columnIndex, cellValue));
+            updateCell(cell, cellValue);
+            delegateSpreadsheet.refreshCells(cell);
           });
         }
       } catch (ClassCastException e) {

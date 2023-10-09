@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
@@ -8,6 +9,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.ColumnValidator.ValidationResult;
 
 /**
  * TODO!
@@ -47,16 +49,22 @@ public class TestView extends Div {
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
     spreadsheet.addColumn("value", MyBean::getName, MyBean::setName);
     spreadsheet.addColumn("email", MyBean::getEmail, MyBean::setEmail)
-        .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress);
+        .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
+        .setRequired(true);
 
     spreadsheet.addRow(bean1);
     spreadsheet.addRow(bean2);
     for (int i = 0; i < 50; i++) {
       spreadsheet.addRow(new MyBean());
     }
+    Text text = new Text("");
     add(spreadsheet);
     add(new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
-    add(new Button("validates", click -> System.out.println(spreadsheet.validate())));
+    add(new Button("validates?", click -> {
+      ValidationResult validationResult = spreadsheet.validate();
+      text.setText(validationResult.isValid() ? "Good job!" : validationResult.errorMessage());
+    }));
+    add(text);
   }
 
   public static class MyBean {
