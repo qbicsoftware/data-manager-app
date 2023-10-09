@@ -51,16 +51,18 @@ public class TestView extends Div {
 
     spreadsheet.addRow(bean1);
     spreadsheet.addRow(bean2);
-    add(spreadsheet, new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
     for (int i = 0; i < 50; i++) {
       spreadsheet.addRow(new MyBean());
     }
+    add(spreadsheet);
+    add(new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
+    add(new Button("validates", click -> System.out.println(spreadsheet.validate())));
   }
 
   public static class MyBean {
 
-    private String name = "";
-    private String email = "";
+    private String name;
+    private String email;
 
     public String getName() {
       return name;

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.general.spreadsheet;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.ColumnValidator.ValidationResult;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.SelectEditor;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -132,6 +134,24 @@ public class Spreadsheet<T> extends Div {
   }
 
   public boolean validate() {
+    for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
+      for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
+        Column<T> column = columns.get(colIndex);
+        Cell cell = delegateSpreadsheet.getCell(rowIndex, colIndex);
+        Optional<ValidationResult> failingValidator = column.getValidators().stream()
+            .map(it -> it.validate(CellFunctions.asStringValue(cell)
+                .orElse(null)))
+            .peek(System.out::println)
+            .filter(ValidationResult::isInvalid)
+            .findFirst();
+        if (failingValidator.isPresent()) {
+          ValidationResult validationResult = failingValidator.get();
+          valid = validationResult.isValid();
+          log.debug("Validation for cell(" + rowIndex + "," + colIndex + ") failed: "
+              + validationResult.errorMessage());
+        }
+      }
+    }
     //todo run validators
     return isValid();
   }
@@ -154,10 +174,9 @@ public class Spreadsheet<T> extends Div {
 
     static Optional<String> asStringValue(Cell cell) {
       return switch (cell.getCellType()) {
-        case _NONE, FORMULA, ERROR -> Optional.empty();
+        case _NONE, FORMULA, ERROR, BLANK -> Optional.empty();
         case NUMERIC -> Optional.of(String.valueOf(cell.getNumericCellValue()));
         case STRING -> Optional.of(cell.getStringCellValue());
-        case BLANK -> Optional.of("");
         case BOOLEAN -> Optional.of(String.valueOf(cell.getBooleanCellValue()));
       };
     }
@@ -197,7 +216,7 @@ public class Spreadsheet<T> extends Div {
     @Override
     public Component getCustomEditorForCell(Cell cell, int rowIndex, int columnIndex,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet) {
-      //FIXME why indices = -2 sometimes ?
+      //FIXME why do indices start at -2?
       if ((columnIndex < 0 || rowIndex < 0)
           || (columnIndex >= columnCount() || rowIndex >= rowCount())) {
         return null;
@@ -209,38 +228,22 @@ public class Spreadsheet<T> extends Div {
     public void onCustomEditorDisplayed(Cell cell, int rowIndex, int columnIndex,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet,
         Component customEditor) {
-//      if (customEditor instanceof TextField textField) {
-//        textField.setValue(CellFunctions.asStringValue(cell).orElse(null));
-//        textField.addValueChangeListener(
-//            event -> delegateSpreadsheet.refreshCells(
-//                delegateSpreadsheet.createCell(rowIndex, columnIndex, event.getValue())));
-//      }
-
       try {
         if (customEditor instanceof SelectEditor selectEditor) {
+
           selectEditor.removeAllValueChangeListeners();
+          selectEditor.setFromCellValue(CellFunctions.asStringValue(cell).orElse(null));
+
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
             delegateSpreadsheet.refreshCells(
                 delegateSpreadsheet.createCell(rowIndex, columnIndex, cellValue));
           });
-          //FIXME here the value change listener stays attached. It is triggered every time if the select editor changes
-          // it should trigger only once for the given cell.
-          selectEditor.setFromCellValue(CellFunctions.asStringValue(cell).orElse(null));
         }
       } catch (ClassCastException e) {
-        log.debug("Could not determine select editor class.", e);
+        log.debug("Seems not to be a SelectEditor.", e);
       }
     }
-  }
-
-  private void updateCell(int rowIndex, int colIndex, String value) {
-    Cell cell = delegateSpreadsheet.getCell(rowIndex, colIndex);
-    if (Objects.isNull(cell)) {
-      // not known yet -> what to do when cell not exists yet?
-      return;
-    }
-
   }
 
 
@@ -253,6 +256,7 @@ public class Spreadsheet<T> extends Div {
     private final BiConsumer<T, String> modelEditor;
 
     private Component editorComponent;
+    private boolean required;
 
     public Column(String name, Function<T, String> toCellValue, BiConsumer<T, String> modelEditor) {
       requireNonNull(name, "name must not be null");
@@ -262,7 +266,14 @@ public class Spreadsheet<T> extends Div {
       this.toCellValue = toCellValue;
       this.modelEditor = modelEditor;
       editorComponent = null;
+      required = false;
       validators = new ArrayList<>();
+      withValidator(value -> Objects.nonNull(value) || !this.isRequired(),
+          "The column " + getName() + " does not allow empty values. Please enter a value.");
+    }
+
+    public boolean isRequired() {
+      return required;
     }
 
     public Optional<Component> getEditorComponent() {
@@ -294,13 +305,17 @@ public class Spreadsheet<T> extends Div {
       return selectFrom(values, toCellValue, getDefaultComponentRenderer());
     }
 
+    public Column<T> setRequired(boolean required) {
+      this.required = required;
+      return this;
+    }
     public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
         ComponentRenderer<? extends Component, E> renderer) {
-      this.withValidator(
-          value -> values.stream()
-              .map(toCellValue)
-              .anyMatch(it -> it.equals(value)),
-          "{0} is not a valid option. Please choose from %s".formatted(values));
+      List<String> possibleCellValues = values.stream()
+          .map(toCellValue).toList();
+      this.withValidator(value -> isNull(value)
+              || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
+          "{0} is not a valid option. Please choose from %s".formatted(possibleCellValues));
       SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
       selectEditor.setRenderer(renderer);
       selectEditor.setItemLabelGenerator(toCellValue::apply);
@@ -381,6 +396,10 @@ public class Spreadsheet<T> extends Div {
           if (isValid) {
             errorMessage = "";
           }
+        }
+
+        public boolean isInvalid() {
+          return !isValid();
         }
       }
     }
