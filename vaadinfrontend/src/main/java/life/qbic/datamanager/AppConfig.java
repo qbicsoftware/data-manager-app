@@ -1,6 +1,7 @@
 package life.qbic.datamanager;
 
 import life.qbic.authentication.application.notification.NotificationService;
+import life.qbic.authentication.application.service.BasicUserInformationService;
 import life.qbic.authentication.application.user.password.NewPassword;
 import life.qbic.authentication.application.user.password.NewPasswordInput;
 import life.qbic.authentication.application.user.password.PasswordResetInput;
@@ -11,10 +12,6 @@ import life.qbic.authentication.application.user.registration.Registration;
 import life.qbic.authentication.application.user.registration.UserRegistrationService;
 import life.qbic.authentication.domain.user.repository.UserDataStorage;
 import life.qbic.authentication.domain.user.repository.UserRepository;
-import life.qbic.authorization.acl.ProjectAccessService;
-import life.qbic.authorization.application.AppContextProvider;
-import life.qbic.authorization.application.policy.ProjectAccessGrantedPolicy;
-import life.qbic.authorization.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -22,15 +19,20 @@ import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
 import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
+import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
+import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.user.api.UserInformationService;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -119,15 +121,6 @@ public class AppConfig {
   }
 
   @Bean
-  public BatchRegisteredPolicy sampleBatchRegisteredPolicy(
-      CommunicationService communicationService, ProjectAccessService accessService,
-      UserRepository userRepository, JobScheduler jobScheduler) {
-    var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,
-        userRepository, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers);
-  }
-
-  @Bean
   public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
       JobScheduler jobScheduler, ProjectRepository projectRepository) {
     var createNewSampleStatisticsEntry = new CreateNewSampleStatisticsEntry(sampleCodeService,
@@ -137,12 +130,26 @@ public class AppConfig {
   }
 
   @Bean
+  public UserInformationService userInformationService(UserRepository userRepository) {
+    return new BasicUserInformationService(userRepository);
+  }
+
+  @Bean
   public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(CommunicationService communicationService,
-      JobScheduler jobScheduler, UserRepository userRepository,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
       AppContextProvider appContextProvider) {
     var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(communicationService, jobScheduler,
-        userRepository, appContextProvider);
+        userInformationService, appContextProvider);
     return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
+  }
+
+  @Bean
+  public BatchRegisteredPolicy sampleBatchRegisteredPolicy(
+      CommunicationService communicationService, ProjectAccessService accessService,
+      UserInformationService userInformationService, JobScheduler jobScheduler) {
+    var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,
+        userInformationService, jobScheduler);
+    return new BatchRegisteredPolicy(informUsers);
   }
 
   @Bean
