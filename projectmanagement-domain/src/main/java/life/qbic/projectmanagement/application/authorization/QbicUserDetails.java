@@ -51,7 +51,12 @@ public class QbicUserDetails implements UserDetails {
 
   @Override
   public String getUsername() {
-    return user.fullName();
+    // Todo fix and use user ID as user ID instead of the mutable email-address
+    // Rational: the user's email address is not guaranteed to be immutable, since we might add a feature in
+    // the future to change user's email address. That means, the identification of the user by their
+    // email address is error-prone and of risk. Since a user gets a UUID on registration, we can use this
+    // to identify the user, since this ID will never change
+    return user.emailAddress();
   }
 
   @Override
