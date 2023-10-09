@@ -26,24 +26,34 @@
   background-color: var(--lumo-primary-color-10pct);
 }
 
-.project-navigation-drawer .project-section {
+.project-navigation-drawer .content {
   display: inline-flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-l);
 }
 
-.project-navigation-drawer.experiment-section .experiment-side-nav {
+.project-navigation-drawer .project-section {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
+}
+
+.project-navigation-drawer .project-items {
+  display: flex;
+  flex-direction: column;
   gap: var(--lumo-space-m);
 }
 
-.project-select-menu {
+.project-navigation-drawer .section-divider {
+  margin-top: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);;
+}
+
+.project-selection-menu {
   margin-left: var(--lumo-space-s);
   margin-right: var(--lumo-space-s);
 }
 
-.project-select-menu vaadin-menu-bar-button[aria-haspopup] {
+.project-selection-menu vaadin-menu-bar-button[aria-haspopup] {
   overflow: hidden;
   text-overflow: ellipsis;
   /*Needs to be less then 99% to avoid automatic overflow menu bar item generation!
@@ -52,7 +62,7 @@
   width: 98%;
 }
 
-.project-select-menu vaadin-menu-bar-item::part(content) {
+.project-selection-menu vaadin-menu-bar-item::part(content) {
   width: 100%;
 }
 
@@ -61,7 +71,7 @@
   margin-left: var(--lumo-space-l);
 }
 
-.selected-project {
+.dropdown-field {
   display: inline-flex;
   justify-content: space-between;
   width: 100%;
