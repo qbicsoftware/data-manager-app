@@ -7,6 +7,7 @@ package life.qbic.user.api;
  *
  * @since 1.0.0
  */
-public record UserInfo(String id, String fullName, String emailAddress, String encryptedPassword, boolean isActive) {
+public record UserInfo(String id, String fullName, String emailAddress, String encryptedPassword,
+                       boolean isActive) {
 
 }
