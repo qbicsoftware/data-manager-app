@@ -14,6 +14,7 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
 import java.io.UnsupportedEncodingException;
 import java.util.Objects;
+import life.qbic.domain.concepts.communication.Attachment;
 import life.qbic.domain.concepts.communication.CommunicationException;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.domain.concepts.communication.Content;
@@ -67,11 +68,9 @@ public class EmailCommunicationService implements CommunicationService {
   }
 
   @Override
-  public void send(Subject subject, Recipient recipient, Content content, String attachmentContent,
-      String attachmentName) {
+  public void send(Subject subject, Recipient recipient, Content content, Attachment attachment) {
     try {
-      var message = setupMessageWithAttachment(subject, recipient, content, attachmentContent,
-          attachmentName);
+      var message = setupMessageWithAttachment(subject, recipient, content, attachment);
       Transport.send(message);
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
@@ -101,7 +100,7 @@ public class EmailCommunicationService implements CommunicationService {
   }
 
   private MimeMessage setupMessageWithAttachment(Subject subject, Recipient recipient,
-      Content content, String attachmentContent, String attachmentName)
+      Content content, Attachment attachment)
       throws MessagingException, UnsupportedEncodingException {
 
     var message = setupMessageWithoutContent(subject, recipient);
@@ -112,12 +111,12 @@ public class EmailCommunicationService implements CommunicationService {
     Multipart multipart = new MimeMultipart();
     multipart.addBodyPart(messageBodyPart);
 
-    BodyPart attachment = new MimeBodyPart();
-    DataSource dataSource = new ByteArrayDataSource(attachmentContent.getBytes("UTF-8"),
+    BodyPart attachmentPart = new MimeBodyPart();
+    DataSource dataSource = new ByteArrayDataSource(attachment.content().getBytes("UTF-8"),
         "application/octet-stream");
-    attachment.setDataHandler(new DataHandler(dataSource));
-    attachment.setFileName(attachmentName);
-    multipart.addBodyPart(attachment);
+    attachmentPart.setDataHandler(new DataHandler(dataSource));
+    attachmentPart.setFileName(attachment.name());
+    multipart.addBodyPart(attachmentPart);
 
     message.setContent(multipart);
     return message;

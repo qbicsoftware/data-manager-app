@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.communication.Attachment;
 import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.domain.concepts.communication.Content;
 import life.qbic.domain.concepts.communication.Recipient;
@@ -112,7 +113,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
 
     communicationService.send(new Subject(subject),
         new Recipient(recipient.getEmailAddress(), recipient.getFullName()), new Content(message),
-        attachmentContent, "sample_sheet.tsv");
+        new Attachment(attachmentContent, "sample_sheet.tsv"));
   }
 
 }
