@@ -59,7 +59,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private static ExperimentInformationService experimentInformationService;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private static Context context = new Context();
+  private Context context = new Context();
 
   public ProjectSideNavigationComponent(
       @Autowired ProjectInformationService projectInformationService,
@@ -96,7 +96,7 @@ public class ProjectSideNavigationComponent extends Div implements
     generateNavBarContent(projectPreview, experiments);
   }
 
-  private static Project loadProjectFromId() {
+  private Project loadProjectFromId() {
     return projectInformationService.find(context.projectId().orElseThrow()).orElseThrow();
   }
 
@@ -172,27 +172,27 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectInformationService.queryPreview("", 0, 3, sortOrders);
   }
 
-  private static Div createProjectItems() {
+  private Div createProjectItems() {
     Div projectItems = new Div();
     projectItems.add(createProjectSummary(), createProjectUsers());
     projectItems.addClassName("project-items");
     return projectItems;
   }
 
-  private static SideNavItem createProjectSummary() {
+  private SideNavItem createProjectSummary() {
     String projectSummaryPath = String.format(Projects.PROJECT_INFO,
         context.projectId().orElseThrow());
     return new SideNavItem("SUMMARY",
         projectSummaryPath, VaadinIcon.DEINDENT.create());
   }
 
-  private static SideNavItem createProjectUsers() {
+  private SideNavItem createProjectUsers() {
     String projectUsersPath = String.format(Projects.ACCESS, context.projectId().orElseThrow());
     return new SideNavItem("USERS", projectUsersPath,
         VaadinIcon.USERS.create());
   }
 
-  private static Div createExperimentSection(List<Experiment> experimentsList) {
+  private Div createExperimentSection(List<Experiment> experimentsList) {
     Div experimentSection = new Div();
     SideNavItem experiments = new SideNavItem("");
     experiments.setLabel("EXPERIMENTS");
@@ -206,7 +206,7 @@ public class ProjectSideNavigationComponent extends Div implements
     return experimentSection;
   }
 
-  private static SideNavItem createItemFromExperiment(Experiment experiment) {
+  private SideNavItem createItemFromExperiment(Experiment experiment) {
     String experimentPath = String.format(Projects.EXPERIMENT, context.projectId().orElseThrow(),
         experiment.experimentId().value());
     SideNavItem sideNavItem = new SideNavItem(experiment.getName(), experimentPath);
