@@ -69,13 +69,13 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
    * @param name - the name of the sample batch
    */
   public void notifyUsersAboutSamples(Project project, String name) {
-    List<RecipientDTO> recipientsWithAccess = getUsersWithAccess(project.getId());
-    for(RecipientDTO recipient : recipientsWithAccess) {
+    List<RecipientDTO> recipients = getRecipients(project.getId());
+    for(RecipientDTO recipient : recipients) {
         notifyRecipient(recipient, project, name);
     }
   }
 
-  private List<RecipientDTO> getUsersWithAccess(ProjectId projectId) {
+  private List<RecipientDTO> getRecipients(ProjectId projectId) {
     List<RecipientDTO> users = new ArrayList<>();
     List<String> userIds = projectAccessService.listActiveUsers(projectId);
     for(String id : userIds) {
