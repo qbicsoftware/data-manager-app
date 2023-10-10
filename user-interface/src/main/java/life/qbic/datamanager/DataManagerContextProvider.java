@@ -15,31 +15,28 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DataManagerContextProvider implements AppContextProvider {
+  private final String projectInfoEndpoint;
 
-  private final String protocol;
-  private final String host;
-  private final int port;
-  private final String context;
-  private final String endpoint;
+  private final URL baseUrlApplication;
 
   public DataManagerContextProvider(
       @Value("${service.host.protocol}") String protocol,
       @Value("${service.host.name}") String host,
       @Value("${service.host.port}") int port,
       @Value("${server.servlet.context-path}") String contextPath,
-      @Value("${project-endpoint}") String projectEndpoint) {
-    this.protocol = protocol;
-    this.host = host;
-    this.port = port;
-    this.context = contextPath;
-    this.endpoint = projectEndpoint;
+      @Value("${project-info-endpoint}") String projectEndpoint) {
+    this.projectInfoEndpoint = projectEndpoint;
+    try {
+      baseUrlApplication = new URL(protocol, host, port, contextPath);
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public String urlToProject(String projectId) {
-    var fullPath = context + endpoint + "/" + projectId + "/info";
     try {
-      return new URL(protocol, host, port, fullPath).toExternalForm();
+      return new URL(baseUrlApplication, projectInfoEndpoint.formatted(projectId)).toExternalForm();
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
