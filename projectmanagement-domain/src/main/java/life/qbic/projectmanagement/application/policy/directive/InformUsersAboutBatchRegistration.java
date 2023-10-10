@@ -84,26 +84,6 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return users;
   }
 
-  private Attachment prepareSpreadsheet(Collection<Sample> samples, String batchName) {
-    StringBuilder builder = new StringBuilder();
-    List<String> header = Arrays.asList("Label", "Sample Code", "Replicate ID", "Origin",
-        "Analysis Type", "Comment");
-    builder.append(String.join("\t", header));
-    builder.append("\n");
-    for(Sample sample : samples) {
-      List<String> row = new ArrayList<>();
-      row.add(sample.label());
-      row.add(sample.sampleCode().code());
-      row.add(sample.biologicalReplicateId().toString());
-      row.add(sample.sampleOrigin().toString());
-      row.add(sample.analysisMethod().description());
-      row.add(sample.comment().orElse(""));
-      builder.append(String.join("\t", row));
-      builder.append("\n");
-    }
-    return new Attachment(builder.toString(), "batch-"+batchName+"-samples.txt");
-  }
-
   private void notifyRecipient(RecipientDTO recipient, Project project, String batchName) {
     String subject = "New samples added to project";
     String projectUri = project.getId().toString();
