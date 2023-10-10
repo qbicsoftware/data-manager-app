@@ -20,7 +20,7 @@ class SampleRegistrationServiceSpec extends Specification {
     SampleDomainService sampleDomainService = Mock()
     ProjectInformationService projectInformationService = Mock()
     CommunicationService communicationService = Mock()
-    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService, communicationService)
+    SampleRegistrationService sampleRegistrationService = new SampleRegistrationService(sampleCodeService, sampleDomainService, projectInformationService)
     ProjectId projectId = ProjectId.create()
     Contact who = new Contact()
     Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)

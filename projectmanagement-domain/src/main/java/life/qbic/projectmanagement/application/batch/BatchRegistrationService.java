@@ -1,36 +1,66 @@
 package life.qbic.projectmanagement.application.batch;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
 import life.qbic.projectmanagement.domain.project.sample.SampleId;
+import life.qbic.projectmanagement.domain.project.service.BatchDomainService;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Batch Registration Service</b>
+ * <p>
+ * Service that handles {@link Batch} creation and deletion events, that need to dispatch domain
+ * events.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Service
 public class BatchRegistrationService {
 
   private final BatchRepository batchRepository;
+  private final BatchDomainService batchDomainService;
+  private final ProjectInformationService projectInformationService;
+  private static final Logger log = getLogger(BatchRegistrationService.class);
 
-  public BatchRegistrationService(@Autowired BatchRepository batchRepository) {
-    this.batchRepository = batchRepository;
+  @Autowired
+  public BatchRegistrationService(BatchRepository batchRepository,
+      BatchDomainService batchDomainService, ProjectInformationService projectInformationService) {
+    this.batchRepository = Objects.requireNonNull(batchRepository);
+    this.batchDomainService = Objects.requireNonNull(batchDomainService);
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
 
-  public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot) {
-    Batch batch = Batch.create(label, isPilot);
-    var result = batchRepository.add(batch);
-    if (result.isError()) {
+  /**
+   * Registers a new batch of samples that serves as reference for sample processing in the lab for
+   * measurement and analysis purposes.
+   *
+   * @param label   a human-readable semantic descriptor of the batch
+   * @param isPilot a flag that indicates the batch to describe as pilot submission batch. Pilots
+   *                are usually followed by a complete batch that represents the measurements of the
+   *                complete experiment.
+   * @param projectId id of the project this batch is added to
+   * @return a result object with the response. If the registration failed, a response code will be
+   * provided.
+   * @since 1.0.0
+   */
+  public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot,
+      ProjectId projectId) {
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      log.error("Batch registration aborted. Reason: project with id:"+projectId+" was not found");
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
-    return Result.fromValue(batch.batchId());
+    return batchDomainService.register(label, isPilot, project.get());
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
@@ -48,11 +78,12 @@ public class BatchRegistrationService {
     }
   }
 
+
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
     BATCH_NOT_FOUND,
-    BATCH_CREATION_FAILED
-
+    BATCH_CREATION_FAILED,
+    BATCH_REGISTRATION_FAILED
   }
 
 }

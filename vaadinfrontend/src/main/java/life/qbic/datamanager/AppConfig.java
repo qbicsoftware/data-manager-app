@@ -144,7 +144,7 @@ public class AppConfig {
   }
 
   @Bean
-  public BatchRegisteredPolicy sampleBatchRegisteredPolicy(
+  public BatchRegisteredPolicy batchRegisteredPolicy(
       CommunicationService communicationService, ProjectAccessService accessService,
       UserInformationService userInformationService, JobScheduler jobScheduler) {
     var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,

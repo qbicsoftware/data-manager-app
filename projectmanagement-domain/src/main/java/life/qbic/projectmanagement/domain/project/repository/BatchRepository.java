@@ -2,9 +2,9 @@ package life.qbic.projectmanagement.domain.project.repository;
 
 import java.util.Optional;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
-import life.qbic.projectmanagement.domain.project.service.BatchDomainService.ResponseCode;
 
 /**
  * Batch data storage interface

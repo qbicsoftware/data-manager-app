@@ -19,7 +19,7 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.sample.Sample;
-import life.qbic.projectmanagement.domain.project.sample.event.SampleBatchRegistered;
+import life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered;
 import life.qbic.user.api.UserInformationService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
@@ -34,7 +34,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<SampleBatchRegistered> {
+public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<BatchRegistered> {
 
   private static final Logger log = logger(InformUsersAboutBatchRegistration.class);
   private final CommunicationService communicationService;
@@ -43,7 +43,8 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
   private final JobScheduler jobScheduler;
 
   public InformUsersAboutBatchRegistration(CommunicationService communicationService,
-      ProjectAccessService projectAccessService, UserInformationService userInformationService, JobScheduler jobScheduler) {
+      ProjectAccessService projectAccessService, UserInformationService userInformationService,
+      JobScheduler jobScheduler) {
     this.projectAccessService = projectAccessService;
     this.userInformationService = userInformationService;
     this.communicationService = communicationService;
@@ -52,12 +53,12 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
 
   @Override
   public Class<? extends DomainEvent> subscribedToEventType() {
-    return SampleBatchRegistered.class;
+    return BatchRegistered.class;
   }
 
   @Override
-  public void handleEvent(SampleBatchRegistered event) {
-    jobScheduler.enqueue(() -> notifyUsersAboutSamples(event.project(), event.samples()));
+  public void handleEvent(BatchRegistered event) {
+    jobScheduler.enqueue(() -> notifyUsersAboutSamples(event.project(), event.name()));
   }
 
   @Job(name = "Notify users about batch registration")
@@ -65,13 +66,12 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
    * Sends an email with attached spreadsheet of newly registered samples to the users of a project.
    * The email contains an explanation about sample identifiers and the spreadsheet the known metadata of the samples
    * @param project - the project the sample batch was added to
-   * @param sampleBatch - the samples that were registered
+   * @param name - the name of the sample batch
    */
-  public void notifyUsersAboutSamples(Project project, Collection<Sample> sampleBatch) {
+  public void notifyUsersAboutSamples(Project project, String name) {
     List<RecipientDTO> recipientsWithAccess = getUsersWithAccess(project.getId());
-    String attachmentContent = prepareSpreadsheetContent(sampleBatch);
     for(RecipientDTO recipient : recipientsWithAccess) {
-        notifyRecipient(recipient, project, attachmentContent);
+        notifyRecipient(recipient, project, name);
     }
   }
 
@@ -84,7 +84,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return users;
   }
 
-  private String prepareSpreadsheetContent(Collection<Sample> samples) {
+  private Attachment prepareSpreadsheet(Collection<Sample> samples, String batchName) {
     StringBuilder builder = new StringBuilder();
     List<String> header = Arrays.asList("Label", "Sample Code", "Replicate ID", "Origin",
         "Analysis Type", "Comment");
@@ -101,19 +101,19 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
       builder.append(String.join("\t", row));
       builder.append("\n");
     }
-    return builder.toString();
+    return new Attachment(builder.toString(), "batch-"+batchName+"-samples.txt");
   }
 
-  private void notifyRecipient(RecipientDTO recipient, Project project, String attachmentContent) {
+  private void notifyRecipient(RecipientDTO recipient, Project project, String batchName) {
     String subject = "New samples added to project";
     String projectUri = project.getId().toString();
     String projectTitle = project.getProjectIntent().projectTitle().title();
 
-    var message = Messages.samplesAddedToProject(recipient.getFullName(), projectTitle, projectUri);
+    var message = Messages.samplesAddedToProject(recipient.getFullName(), projectTitle,
+        projectUri, batchName);
 
     communicationService.send(new Subject(subject),
-        new Recipient(recipient.getEmailAddress(), recipient.getFullName()), new Content(message),
-        new Attachment(attachmentContent, "sample_sheet.tsv"));
+        new Recipient(recipient.getEmailAddress(), recipient.getFullName()), new Content(message));
   }
 
 }

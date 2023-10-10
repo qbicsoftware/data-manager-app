@@ -8,7 +8,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
 import life.qbic.projectmanagement.domain.project.sample.BatchId;
-import life.qbic.projectmanagement.domain.project.service.BatchDomainService.ResponseCode;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
