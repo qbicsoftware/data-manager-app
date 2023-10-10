@@ -2,6 +2,7 @@ package life.qbic.datamanager;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class DataManagerContextProvider implements AppContextProvider {
     try {
       baseUrlApplication = new URL(protocol, host, port, contextPath);
     } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
+      throw new ApplicationException("Initialization of context provider failed.", e);
     }
   }
 
@@ -38,7 +39,7 @@ public class DataManagerContextProvider implements AppContextProvider {
     try {
       return new URL(baseUrlApplication, projectInfoEndpoint.formatted(projectId)).toExternalForm();
     } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
+      throw new ApplicationException("Data Manager context creation failed.", e);
     }
   }
 }
