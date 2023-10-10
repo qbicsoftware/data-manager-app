@@ -49,13 +49,13 @@ public class BatchDomainService {
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     } else {
-      dispatchSuccessfulSampleBatchRegistration(label, batch.batchId(), project);
+      dispatchRegistration(label, batch.batchId(), project);
     }
     return Result.fromValue(result.getValue().batchId());
   }
 
 
-  private void dispatchSuccessfulSampleBatchRegistration(String name, BatchId id, Project project) {
+  private void dispatchRegistration(String name, BatchId id, Project project) {
     BatchRegistered batchRegistered = BatchRegistered.create(name, id, project);
     DomainEventDispatcher.instance().dispatch(batchRegistered);
   }
