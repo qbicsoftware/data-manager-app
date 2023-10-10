@@ -84,7 +84,7 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>user-domain-api</artifactId>
-      <version>0.26.0</version>
+      <version>0.26.1</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
