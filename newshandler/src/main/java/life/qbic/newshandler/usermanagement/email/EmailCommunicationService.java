@@ -36,7 +36,7 @@ public class EmailCommunicationService implements CommunicationService {
   private static final Logger log = LoggerFactory.logger(
       EmailCommunicationService.class);
   private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
-
+  private static final String NOTIFICATION_FAILED = "Notification of recipient failed!";
   private static final String SIGNATURE = """
       
       With kind regards,
@@ -63,7 +63,7 @@ public class EmailCommunicationService implements CommunicationService {
           "Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
     } catch (MessagingException e) {
       log.error("Could not send email to " + recipient.address(), e);
-      throw new CommunicationException("Notification of recipient failed!");
+      throw new CommunicationException(NOTIFICATION_FAILED);
     }
   }
 
@@ -76,10 +76,10 @@ public class EmailCommunicationService implements CommunicationService {
           "Sending email with subject %s to %s".formatted(subject.content(), recipient.address()));
     } catch (MessagingException e) {
       log.error("Could not send email to " + recipient.address(), e);
-      throw new CommunicationException("Notification of recipient failed!");
+      throw new CommunicationException(NOTIFICATION_FAILED);
     } catch (UnsupportedEncodingException e) {
       log.error("Could not create attachment for email to " + recipient.address(), e);
-      throw new CommunicationException("Notification of recipient failed!");
+      throw new CommunicationException(NOTIFICATION_FAILED);
     }
   }
 
