@@ -190,7 +190,7 @@ public class ProjectSideNavigationComponent extends Div implements
     recentProjectsHeader.addClassName("recent-projects-header");
     Span projectOverviewRouteComponent = new Span("Go To Projects");
     projectSelectionSubMenu.addItem(projectOverviewRouteComponent,
-        event -> fireNavigationEvent(event.getSource(), Optional.empty(), event.isFromClient()));
+        event -> fireNavigationEvent(event.getSource(), null, event.isFromClient()));
     projectSelectionSubMenu.add(generateSectionDivider());
     projectSelectionSubMenu.add(recentProjectsHeader);
     retrieveLastModifiedProjects().forEach(
@@ -202,7 +202,7 @@ public class ProjectSideNavigationComponent extends Div implements
     MenuItem recentProject = subMenu.addItem(String.format("%s - %s", preview.projectCode(),
             preview.projectTitle()),
         (ComponentEventListener<ClickEvent<MenuItem>>) menuItemClickEvent -> fireNavigationEvent(
-            menuItemClickEvent.getSource(), Optional.of(preview.projectId()),
+            menuItemClickEvent.getSource(), preview.projectId(),
             menuItemClickEvent.isFromClient()));
     recentProject.addClassName("transparent-icon");
   }
@@ -233,8 +233,9 @@ public class ProjectSideNavigationComponent extends Div implements
     addListener(ProjectNavigationEvent.class, this::addNavigationListener);
   }
 
-  private void fireNavigationEvent(Component component, Optional<ProjectId> projectId,
+  private void fireNavigationEvent(Component component, ProjectId projectId,
       boolean fromClient) {
+
     var projectNavigationEvent = new ProjectNavigationEvent(component, projectId, fromClient);
     fireEvent(projectNavigationEvent);
   }
@@ -253,7 +254,7 @@ public class ProjectSideNavigationComponent extends Div implements
 
     @Serial
     private static final long serialVersionUID = 7399764169934605506L;
-    private final Optional<ProjectId> projectId;
+    private final ProjectId projectId;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -264,14 +265,14 @@ public class ProjectSideNavigationComponent extends Div implements
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ProjectNavigationEvent(Component source, Optional<ProjectId> projectId,
+    public ProjectNavigationEvent(Component source, ProjectId projectId,
         boolean fromClient) {
       super(source, fromClient);
       this.projectId = projectId;
     }
 
     Optional<ProjectId> projectId() {
-      return projectId;
+      return Optional.ofNullable(projectId);
     }
   }
 }
