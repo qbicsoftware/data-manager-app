@@ -5,7 +5,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.project.sample.Batch;
@@ -60,7 +59,8 @@ public class BatchRegistrationService {
       log.error("Batch registration aborted. Reason: project with id:"+projectId+" was not found");
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
-    return batchDomainService.register(label, isPilot, project.get());
+    String projectTitle = project.get().getProjectIntent().projectTitle().title();
+    return batchDomainService.register(label, isPilot, projectTitle, projectId);
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {

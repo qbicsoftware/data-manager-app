@@ -58,7 +58,7 @@ class BatchDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(batchRegistered)
 
         when:
-        domainService.register("test", false, project)
+        domainService.register("test", false, project.projectIntent.projectTitle().title(), project.getId())
 
         then:
         batchRegistered.eventReceived

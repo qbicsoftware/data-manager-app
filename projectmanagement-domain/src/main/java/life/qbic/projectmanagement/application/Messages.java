@@ -20,14 +20,14 @@ public class Messages {
    * @param fullNameUser the name of the user to inform for addressing them politely
    * @param projectTitle the title of the project, will be in the message to inform the user about
    *                     which project they have been granted access with
-   * @param projectUri   a uniform resource identifier of the project, that the user can use to
-   *                     access the project
    * @param batchName    the name of the batch that was added
+   * @param sampleUri   a uniform resource identifier of the sample page of this project, that the
+   *                    recipient can use to access the newly registered samples
    * @return the filled out template message
    * @since 1.0.0
    */
   public static String samplesAddedToProject(String fullNameUser, String projectTitle,
-      String projectUri, String batchName) {
+      String batchName, String sampleUri) {
     return String.format("""
         Dear %s,
                       
@@ -42,7 +42,7 @@ public class Messages {
         Please click the link below to access the sample information after login:
             
         %s
-        """, fullNameUser, batchName, projectTitle, projectUri);
+        """, fullNameUser, batchName, projectTitle, sampleUri);
   }
 
   /**
