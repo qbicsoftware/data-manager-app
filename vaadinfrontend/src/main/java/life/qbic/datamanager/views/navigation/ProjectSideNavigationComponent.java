@@ -58,9 +58,9 @@ public class ProjectSideNavigationComponent extends Div implements
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
-  private static Div content;
-  private static ProjectInformationService projectInformationService;
-  private static ExperimentInformationService experimentInformationService;
+  private static final Div content = new Div();
+  private final transient ProjectInformationService projectInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
@@ -68,10 +68,9 @@ public class ProjectSideNavigationComponent extends Div implements
       @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.addClassName("project-navigation-drawer");
-    ProjectSideNavigationComponent.projectInformationService = projectInformationService;
-    ProjectSideNavigationComponent.experimentInformationService = experimentInformationService;
-    content = new Div();
+    addClassName("project-navigation-drawer");
+    this.projectInformationService = projectInformationService;
+    this.experimentInformationService = experimentInformationService;
     content.addClassName("content");
     add(content);
     log.debug(
@@ -89,7 +88,9 @@ public class ProjectSideNavigationComponent extends Div implements
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
     var project = loadProject(parsedProjectId);
-    generateNavigationSections(project);
+    List<Experiment> experiments = loadExperimentsForProject(project);
+    List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
+    generateNavigationSections(project, lastModifiedProjects, experiments);
     addListener(ProjectNavigationEvent.class,
         ProjectSideNavigationComponent::addProjectNavigationListener);
   }
@@ -98,22 +99,36 @@ public class ProjectSideNavigationComponent extends Div implements
     content.removeAll();
   }
 
-  private static Project loadProject(ProjectId id) {
+  private Project loadProject(ProjectId id) {
     return projectInformationService.find(id).orElseThrow();
   }
 
-  private static void generateNavigationSections(Project project) {
-    Div projectSection = createProjectSection(project.getId().value(),
-        project.getProjectIntent().projectTitle().title());
-    List<Experiment> experiments = loadExperimentsForProject(project);
+  private List<Experiment> loadExperimentsForProject(Project project) {
+    return project.experiments().stream()
+        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
+        .toList();
+  }
+
+  private List<ProjectPreview> retrieveLastModifiedProjects() {
+    List<SortOrder> sortOrders = Collections.singletonList(
+        SortOrder.of("lastModified").descending());
+    return projectInformationService.queryPreview("", 0, 4, sortOrders);
+  }
+
+  private static void generateNavigationSections(Project project,
+      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments) {
+    Div projectSection = createProjectSection(project, lastModifiedProjects);
     Div experimentSection = createExperimentSection(project.getId().value(), experiments);
     content.add(projectSection, experimentSection);
   }
 
-  private static Div createProjectSection(String projectId, String projectTitle) {
+  private static Div createProjectSection(Project project,
+      List<ProjectPreview> lastModifiedProjects) {
     Div projectSection = new Div();
-    projectSection.add(createProjectHeader(), createProjectSelection(projectTitle),
-        generateSectionDivider(), createProjectItems(projectId));
+    projectSection.add(createProjectHeader(),
+        createProjectSelection(project.getProjectIntent().projectTitle().title(),
+            lastModifiedProjects),
+        generateSectionDivider(), createProjectItems(project.getId().value()));
     projectSection.addClassName("project-section");
     return projectSection;
   }
@@ -126,7 +141,8 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectHeader;
   }
 
-  private static MenuBar createProjectSelection(String projectTitle) {
+  private static MenuBar createProjectSelection(String projectTitle,
+      List<ProjectPreview> projectPreviews) {
     MenuBar projectSelection = new MenuBar();
     projectSelection.addClassNames("project-selection-menu");
     Span selectedProjectTitle = new Span(projectTitle);
@@ -137,7 +153,7 @@ public class ProjectSideNavigationComponent extends Div implements
     dropDownField.addClassName("dropdown-field");
     MenuItem item = projectSelection.addItem(dropDownField, projectTitle);
     SubMenu subMenu = createProjectSelectionSubMenu(item);
-    addRecentlyModifiedProjectsToSubMenu(subMenu);
+    projectPreviews.forEach(preview -> addRecentProjectItemToSubMenu(preview, subMenu));
     return projectSelection;
   }
 
@@ -154,19 +170,11 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectSelectionSubMenu;
   }
 
-  private static void addRecentlyModifiedProjectsToSubMenu(SubMenu subMenu) {
-    retrieveLastModifiedProjects().forEach(preview -> {
-      MenuItem projectItem = subMenu.addItem(
-          createRecentProjectItem(preview.projectCode(), preview.projectTitle()));
-      projectItem.addClassName("transparent-icon");
-      projectItem.addSingleClickListener(event -> routeToProject(preview.projectId()));
-    });
-  }
-
-  private static List<ProjectPreview> retrieveLastModifiedProjects() {
-    List<SortOrder> sortOrders = Collections.singletonList(
-        SortOrder.of("lastModified").descending());
-    return projectInformationService.queryPreview("", 0, 4, sortOrders);
+  private static void addRecentProjectItemToSubMenu(ProjectPreview preview, SubMenu subMenu) {
+    MenuItem projectItem = subMenu.addItem(
+        createRecentProjectItem(preview.projectCode(), preview.projectTitle()));
+    projectItem.addClassName("transparent-icon");
+    projectItem.addSingleClickListener(event -> routeToProject(preview.projectId()));
   }
 
   private static Span createRecentProjectItem(String projectCode, String projectTitle) {
@@ -197,12 +205,6 @@ public class ProjectSideNavigationComponent extends Div implements
     String projectUsersPath = String.format(Projects.ACCESS, projectId);
     return new SideNavItem("USERS", projectUsersPath,
         VaadinIcon.USERS.create());
-  }
-
-  private static List<Experiment> loadExperimentsForProject(Project project) {
-    return project.experiments().stream()
-        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
-        .toList();
   }
 
   private static Div createExperimentSection(String projectId, List<Experiment> experimentsList) {
@@ -237,7 +239,7 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static void routeToProjectOverview() {
-    //getUI is not possible on the navigationComponent directly in a static context
+    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
     content.getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
     log.debug("Routing to ProjectOverview page");
   }
@@ -245,13 +247,12 @@ public class ProjectSideNavigationComponent extends Div implements
   private static void routeToProject(ProjectId projectId) {
     RouteParameters routeParameters = new RouteParameters(
         new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
-    //getUI is not possible on the navigationComponent directly in a static context
+    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
     content.getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class, routeParameters));
     log.debug("Routing to ProjectInformation page for project " + projectId.value());
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {
-
     @Serial
     private static final long serialVersionUID = 7399764169934605506L;
     private final ProjectId projectId;
@@ -261,7 +262,7 @@ public class ProjectSideNavigationComponent extends Div implements
      * the client side or the server side.
      *
      * @param source     the source component
-     * @param projectId  the {@link ProjectId} of the project to be navigated
+     * @param projectId  the {@link ProjectId} of the project to be navigated to
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
