@@ -2,10 +2,8 @@ package life.qbic.datamanager.views.navigation;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
@@ -81,30 +79,19 @@ public class ProjectSideNavigationComponent extends Div implements
         System.identityHashCode(this));
   }
 
-  private static List<Experiment> loadExperimentsForProject(Project project) {
-    return project.experiments().stream()
-        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
-        .toList();
-  }
-
-  private static SideNavItem createProjectHeader() {
-    SideNavItem projectHeader = new SideNavItem("PROJECT");
-    projectHeader.setLabel("PROJECT");
-    projectHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
-    projectHeader.addClassName("primary");
-    return projectHeader;
-  }
-
-  private static List<ProjectPreview> retrieveLastModifiedProjects() {
-    List<SortOrder> sortOrders = Collections.singletonList(
-        SortOrder.of("lastModified").descending());
-    return projectInformationService.queryPreview("", 0, 3, sortOrders);
-  }
-
-  private static Span generateSectionDivider() {
-    Span sectionDivider = new Span(new Hr());
-    sectionDivider.addClassName("section-divider");
-    return sectionDivider;
+  @Override
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    resetContent();
+    String projectId = beforeEnterEvent.getRouteParameters()
+        .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
+    ProjectId parsedProjectId = ProjectId.parse(projectId);
+    context = new Context().with(parsedProjectId);
+    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
+    var project = loadProject(parsedProjectId);
+    generateNavigationSections(project);
+    addListener(ProjectNavigationEvent.class,
+        ProjectSideNavigationComponent::addProjectNavigationListener);
   }
 
   private static void resetContent() {
@@ -115,12 +102,81 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectInformationService.find(id).orElseThrow();
   }
 
-  private Div createProjectSection(String projectId, String projectTitle) {
+  private static void generateNavigationSections(Project project) {
+    Div projectSection = createProjectSection(project.getId().value(),
+        project.getProjectIntent().projectTitle().title());
+    List<Experiment> experiments = loadExperimentsForProject(project);
+    Div experimentSection = createExperimentSection(project.getId().value(), experiments);
+    content.add(projectSection, experimentSection);
+  }
+
+  private static Div createProjectSection(String projectId, String projectTitle) {
     Div projectSection = new Div();
     projectSection.add(createProjectHeader(), createProjectSelection(projectTitle),
         generateSectionDivider(), createProjectItems(projectId));
     projectSection.addClassName("project-section");
     return projectSection;
+  }
+
+  private static SideNavItem createProjectHeader() {
+    SideNavItem projectHeader = new SideNavItem("PROJECT");
+    projectHeader.setLabel("PROJECT");
+    projectHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
+    projectHeader.addClassName("primary");
+    return projectHeader;
+  }
+
+  private static MenuBar createProjectSelection(String projectTitle) {
+    MenuBar projectSelection = new MenuBar();
+    projectSelection.addClassNames("project-selection-menu");
+    Span selectedProjectTitle = new Span(projectTitle);
+    selectedProjectTitle.addClassName("selected-project-title");
+    Icon dropdownIcon = VaadinIcon.CHEVRON_DOWN_SMALL.create();
+    dropdownIcon.addClassName(IconSize.SMALL);
+    Span dropDownField = new Span(selectedProjectTitle, dropdownIcon);
+    dropDownField.addClassName("dropdown-field");
+    MenuItem item = projectSelection.addItem(dropDownField, projectTitle);
+    SubMenu subMenu = createProjectSelectionSubMenu(item);
+    addRecentlyModifiedProjectsToSubMenu(subMenu);
+    return projectSelection;
+  }
+
+  private static SubMenu createProjectSelectionSubMenu(MenuItem menuItem) {
+    SubMenu projectSelectionSubMenu = menuItem.getSubMenu();
+    Span recentProjectsHeader = new Span("Recent Projects");
+    recentProjectsHeader.addClassName("recent-projects-header");
+    Span projectOverview = new Span("Go to Projects");
+    MenuItem projectOverviewItem = projectSelectionSubMenu.addItem(projectOverview);
+    projectOverviewItem.addClassName("transparent-icon");
+    projectOverviewItem.addSingleClickListener(event -> routeToProjectOverview());
+    projectSelectionSubMenu.add(generateSectionDivider());
+    projectSelectionSubMenu.add(recentProjectsHeader);
+    return projectSelectionSubMenu;
+  }
+
+  private static void addRecentlyModifiedProjectsToSubMenu(SubMenu subMenu) {
+    retrieveLastModifiedProjects().forEach(preview -> {
+      MenuItem projectItem = subMenu.addItem(
+          createRecentProjectItem(preview.projectCode(), preview.projectTitle()));
+      projectItem.addClassName("transparent-icon");
+      projectItem.addSingleClickListener(event -> routeToProject(preview.projectId()));
+    });
+  }
+
+  private static List<ProjectPreview> retrieveLastModifiedProjects() {
+    List<SortOrder> sortOrders = Collections.singletonList(
+        SortOrder.of("lastModified").descending());
+    return projectInformationService.queryPreview("", 0, 4, sortOrders);
+  }
+
+  private static Span createRecentProjectItem(String projectCode, String projectTitle) {
+    return new Span(String.format("%s - %s", projectCode, projectTitle));
+  }
+
+  private static Span generateSectionDivider() {
+    Span sectionDivider = new Span(new Hr());
+    sectionDivider.addClassName("section-divider");
+    return sectionDivider;
   }
 
   private static Div createProjectItems(String projectId) {
@@ -141,6 +197,12 @@ public class ProjectSideNavigationComponent extends Div implements
     String projectUsersPath = String.format(Projects.ACCESS, projectId);
     return new SideNavItem("USERS", projectUsersPath,
         VaadinIcon.USERS.create());
+  }
+
+  private static List<Experiment> loadExperimentsForProject(Project project) {
+    return project.experiments().stream()
+        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
+        .toList();
   }
 
   private static Div createExperimentSection(String projectId, List<Experiment> experimentsList) {
@@ -168,86 +230,24 @@ public class ProjectSideNavigationComponent extends Div implements
     return sideNavItem;
   }
 
-  //ToDo Make static and move NavigationEventTriggering to director class
-  private MenuBar createProjectSelection(String projectTitle) {
-    MenuBar projectSelection = new MenuBar();
-    projectSelection.addClassNames("project-selection-menu");
-    Span selectedProjectTitle = new Span(projectTitle);
-    selectedProjectTitle.addClassName("selected-project-title");
-    Icon dropdownIcon = VaadinIcon.CHEVRON_DOWN_SMALL.create();
-    dropdownIcon.addClassName(IconSize.SMALL);
-    Span dropDownField = new Span(selectedProjectTitle, dropdownIcon);
-    dropDownField.addClassName("dropdown-field");
-    MenuItem item = projectSelection.addItem(dropDownField, projectTitle);
-    addSelectionOptions(item);
-    return projectSelection;
+  private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
+    projectNavigationEvent.projectId().ifPresentOrElse(
+        ProjectSideNavigationComponent::routeToProject,
+        ProjectSideNavigationComponent::routeToProjectOverview);
   }
 
-  //ToDo Make static and move NavigationEventTriggering to director class
-  private void addSelectionOptions(MenuItem menuItem) {
-    SubMenu projectSelectionSubMenu = menuItem.getSubMenu();
-    Span recentProjectsHeader = new Span("Recent Projects");
-    recentProjectsHeader.addClassName("recent-projects-header");
-    Span projectOverviewRouteComponent = new Span("Go To Projects");
-    projectSelectionSubMenu.addItem(projectOverviewRouteComponent,
-        event -> fireNavigationEvent(event.getSource(), null, event.isFromClient()));
-    projectSelectionSubMenu.add(generateSectionDivider());
-    projectSelectionSubMenu.add(recentProjectsHeader);
-    retrieveLastModifiedProjects().forEach(
-        preview -> addRecentProjectItem(projectSelectionSubMenu, preview));
+  private static void routeToProjectOverview() {
+    //getUI is not possible on the navigationComponent directly in a static context
+    content.getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
+    log.debug("Routing to ProjectOverview page");
   }
 
-  //ToDo Make static and move NavigationEventTriggering to director class
-  private void addRecentProjectItem(SubMenu subMenu, ProjectPreview preview) {
-    MenuItem recentProject = subMenu.addItem(String.format("%s - %s", preview.projectCode(),
-            preview.projectTitle()),
-        (ComponentEventListener<ClickEvent<MenuItem>>) menuItemClickEvent -> fireNavigationEvent(
-            menuItemClickEvent.getSource(), preview.projectId(),
-            menuItemClickEvent.isFromClient()));
-    recentProject.addClassName("transparent-icon");
-  }
-
-  private void routeToProject(ProjectId projectId) {
+  private static void routeToProject(ProjectId projectId) {
     RouteParameters routeParameters = new RouteParameters(
         new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
-    getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class, routeParameters));
+    //getUI is not possible on the navigationComponent directly in a static context
+    content.getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class, routeParameters));
     log.debug("Routing to ProjectInformation page for project " + projectId.value());
-  }
-
-  @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    resetContent();
-    String projectId = beforeEnterEvent.getRouteParameters()
-        .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
-    ProjectId parsedProjectId = ProjectId.parse(projectId);
-    context = new Context().with(parsedProjectId);
-    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
-    var project = loadProject(parsedProjectId);
-    List<Experiment> experiments = loadExperimentsForProject(project);
-    //Todo generate director class handling building of each component section
-    content.add(
-        createProjectSection(parsedProjectId.value(),
-            project.getProjectIntent().projectTitle().title()),
-        createExperimentSection(parsedProjectId.value(), experiments));
-    addListener(ProjectNavigationEvent.class, this::addNavigationListener);
-  }
-
-  private void fireNavigationEvent(Component component, ProjectId projectId,
-      boolean fromClient) {
-
-    var projectNavigationEvent = new ProjectNavigationEvent(component, projectId, fromClient);
-    fireEvent(projectNavigationEvent);
-  }
-
-  private void addNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
-    projectNavigationEvent.projectId().ifPresentOrElse(this::routeToProject,
-        this::routeToProjectOverview);
-  }
-
-  private void routeToProjectOverview() {
-    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
-    log.debug("Routing to ProjectOverview page");
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {
@@ -275,4 +275,5 @@ public class ProjectSideNavigationComponent extends Div implements
       return Optional.ofNullable(projectId);
     }
   }
+
 }
