@@ -45,7 +45,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .filter(it -> it instanceof QbicUserDetails)
         .map(it -> (QbicUserDetails) it)
         .map(QbicUserDetails::getUserId)
-        .toList();
+        .distinct().toList();
   }
 
   @Transactional
@@ -56,7 +56,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .map(it -> (QbicUserDetails) it)
         .filter(QbicUserDetails::isEnabled)
         .map(QbicUserDetails::getUserId)
-        .toList();
+        .distinct().toList();
   }
 
   @Transactional
