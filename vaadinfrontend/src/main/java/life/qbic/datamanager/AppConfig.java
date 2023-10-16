@@ -21,12 +21,15 @@ import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
 import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
 import life.qbic.user.api.UserInformationService;
@@ -117,7 +120,6 @@ public class AppConfig {
     return new SampleRegisteredPolicy(addSampleToBatch);
   }
 
-
   @Bean
   public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
       JobScheduler jobScheduler, ProjectRepository projectRepository) {
@@ -139,6 +141,16 @@ public class AppConfig {
     var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(communicationService, jobScheduler,
         userInformationService, appContextProvider);
     return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
+  }
+
+  @Bean
+  public BatchRegisteredPolicy batchRegisteredPolicy(
+      CommunicationService communicationService, ProjectAccessService accessService,
+      UserInformationService userInformationService, AppContextProvider appContextProvider,
+      JobScheduler jobScheduler) {
+    var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,
+        userInformationService, appContextProvider, jobScheduler);
+    return new BatchRegisteredPolicy(informUsers);
   }
 
   @Bean

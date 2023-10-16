@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.authorization.acl;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -19,6 +20,7 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +45,18 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .filter(it -> it instanceof QbicUserDetails)
         .map(it -> (QbicUserDetails) it)
         .map(QbicUserDetails::getUserId)
-        .toList();
+        .distinct().toList();
+  }
+
+  @Transactional
+  @Override
+  public List<String> listActiveUsers(ProjectId projectId) {
+    return listUsernames(projectId).stream().map(userDetailsService::loadUserByUsername)
+        .filter(it -> it instanceof QbicUserDetails)
+        .map(it -> (QbicUserDetails) it)
+        .filter(QbicUserDetails::isEnabled)
+        .map(QbicUserDetails::getUserId)
+        .distinct().toList();
   }
 
   @Transactional

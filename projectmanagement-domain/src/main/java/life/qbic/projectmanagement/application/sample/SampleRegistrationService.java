@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.communication.CommunicationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
@@ -57,7 +58,8 @@ public class SampleRegistrationService {
         sampleRegistrationRequests.forEach(sampleRegistrationRequest -> sampleCodeService.generateFor(projectId)
                 .onValue(sampleCode -> sampleCodesToRegistrationRequests.put(sampleCode, sampleRegistrationRequest))
                 .onError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED)));
-        var result = sampleDomainService.registerSamples(project.get(), sampleCodesToRegistrationRequests);
+        var result = sampleDomainService.registerSamples(project.get(),
+            sampleCodesToRegistrationRequests);
         return result.onValue(Result::fromValue).flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
     }
 
