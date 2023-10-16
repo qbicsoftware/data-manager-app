@@ -54,3 +54,7 @@ vaadin-tabsheet.minimal::part(tabs-container) {
 vaadin-list-box.transparent-icons vaadin-item::part(checkmark)::before {
   display: none;
 }
+
+vaadin-menu-bar-item.transparent-icon::part(checkmark)::before {
+  color: transparent;
+}

@@ -37,11 +37,25 @@ public class DataManagerContextProvider implements AppContextProvider {
 
   @Override
   public String urlToProject(String projectId) {
-    var fullPath = context + endpoint + "/" + projectId + "/info";
+    var fullPath = basePathForProject(projectId) + "/info";
+    return formURL(fullPath);
+  }
+
+  private String basePathForProject(String projectId) {
+    return context + endpoint + "/" + projectId;
+  }
+
+  private String formURL(String path) {
     try {
-      return new URL(protocol, host, port, fullPath).toExternalForm();
+      return new URL(protocol, host, port, path).toExternalForm();
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public String urlToSamplePage(String projectId) {
+    var fullPath = basePathForProject(projectId) + "/samples";
+    return formURL(fullPath);
   }
 }

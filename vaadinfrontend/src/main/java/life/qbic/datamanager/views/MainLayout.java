@@ -3,6 +3,9 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
+import java.util.Objects;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -16,7 +19,11 @@ public class MainLayout extends DataManagerLayout {
   private Button homeButton;
   private Button logout;
 
-  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface) {
+  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface,
+      ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService) {
+    Objects.requireNonNull(projectInformationService);
+    Objects.requireNonNull(experimentInformationService);
     createNavBarContent();
     registerToHandler(startHandlerInterface);
   }
@@ -36,7 +43,11 @@ public class MainLayout extends DataManagerLayout {
     return new HorizontalLayout(homeButton, logout);
   }
 
-  public Button logout() { return logout; }
+  public Button logout() {
+    return logout;
+  }
 
-  public Button homeButton() { return homeButton; }
+  public Button homeButton() {
+    return homeButton;
+  }
 }

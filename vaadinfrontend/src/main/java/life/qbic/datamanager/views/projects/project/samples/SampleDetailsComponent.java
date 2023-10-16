@@ -420,7 +420,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private Result<BatchId, ResponseCode> registerBatchInformation(
         BatchRegistrationContent batchRegistrationContent) {
       return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
-          batchRegistrationContent.isPilot()).onError(responseCode -> displayRegistrationFailure());
+          batchRegistrationContent.isPilot(), projectId)
+          .onError(responseCode -> displayRegistrationFailure());
     }
 
     private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
