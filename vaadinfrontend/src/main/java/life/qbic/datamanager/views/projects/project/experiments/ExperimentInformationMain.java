@@ -16,8 +16,8 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.MainComponent;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -38,7 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = MainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ProjectMainLayout.class)
 @PermitAll
 public class ExperimentInformationMain extends MainComponent implements BeforeEnterObserver,
     RouterLayout {

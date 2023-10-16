@@ -1,0 +1,22 @@
+.project-navbar {
+  width: 100%;
+  display: inline-flex;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.project-navbar-buttonbar {
+  display: inline-flex;
+  gap: var(--lumo-space-m);
+  align-items: center;
+}
+
+.project-navbar-drawer-bar {
+  display: inline-flex;
+  align-items: center;
+}
+
+.project-navbar-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-l);
+}
