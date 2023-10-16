@@ -53,13 +53,14 @@ import life.qbic.projectmanagement.domain.project.sample.SampleCode;
 import life.qbic.projectmanagement.experiment.persistence.QbicSampleDataRepo;
 import life.qbic.projectmanagement.persistence.QbicProjectDataRepo;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Basic implementation to query project preview information
  *
  * @since 1.0.0
  */
-//@Component
+@Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     QbicProjectDataRepo, QbicSampleDataRepo {
 

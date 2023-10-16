@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
-import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.ColumnValidator.ValidationResult;
 
 /**
  * TODO!
@@ -24,8 +23,8 @@ import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.Column.Column
 public class TestView extends Div {
 
   enum EMAIL {
-    T_KOCH("tkoch-email"),
-    QBIC_SOFTWARE("qbic-email");
+    T_KOCH("tobias.koch@qbic.uni-tuebingen.de"),
+    QBIC_SOFTWARE("no-reply@qbic.uni-tuebingen.de");
 
     private final String address;
 
@@ -39,6 +38,7 @@ public class TestView extends Div {
   }
 
   public TestView() {
+    addClassName("batch-registration-dialog");
     MyBean bean1 = new MyBean();
     bean1.setName("tom");
     bean1.setEmail("test@test.de");
@@ -47,24 +47,28 @@ public class TestView extends Div {
     bean2.setEmail("mampf@mouse.de");
 
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
-    spreadsheet.addColumn("value", MyBean::getName, MyBean::setName);
+    spreadsheet.addColumn("name", MyBean::getName, MyBean::setName)
+        .setRequired();
     spreadsheet.addColumn("email", MyBean::getEmail, MyBean::setEmail)
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
-        .setRequired(true);
+        .setRequired();
 
-    spreadsheet.addRow(bean1);
-    spreadsheet.addRow(bean2);
-    for (int i = 0; i < 50; i++) {
-      spreadsheet.addRow(new MyBean());
-    }
-    Text text = new Text("");
+    spreadsheet.addRow(new MyBean());
+
+    Text validationText = new Text("");
+    Text output = new Text("");
     add(spreadsheet);
-    add(new Button("get rows", click -> System.out.println(spreadsheet.getRows())));
+    add(new Button("add row", click -> spreadsheet.addRow(new MyBean())));
+    add(new Button("remove last row", click -> spreadsheet.removeLastRow()));
+    add(new Button("get rows", click -> output.setText(spreadsheet.getRows().toString())));
     add(new Button("validates?", click -> {
-      ValidationResult validationResult = spreadsheet.validate();
-      text.setText(validationResult.isValid() ? "Good job!" : validationResult.errorMessage());
+      spreadsheet.validate();
+      validationText.setText(spreadsheet.isValid() ? "Good job!" : spreadsheet.getErrorMessage());
     }));
-    add(text);
+    add(validationText);
+    add(output);
+    setSizeFull();
+    setHeight("80%");
   }
 
   public static class MyBean {
