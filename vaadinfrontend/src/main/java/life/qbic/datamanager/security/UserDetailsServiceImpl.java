@@ -28,9 +28,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   }
 
   @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+  /**
+   * In our case the mail address is the username
+   */
+  public UserDetails loadUserByUsername(String mailAddress) throws UsernameNotFoundException {
     // Then search for a user with the provided mail address
-    var userInfo = userInformationService.findByEmail(username)
+    var userInfo = userInformationService.findByEmail(mailAddress)
         .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
     List<GrantedAuthority> authorities = userAuthorityProvider.getAuthoritiesByUserId(
         userInfo.id());

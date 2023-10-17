@@ -14,6 +14,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.authentication.persistence.SidRepository;
 import life.qbic.datamanager.security.UserPermissions;
@@ -154,28 +155,30 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     loadProjectAccessibleRoles(projectId);
   }
 
+  //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
-    List<String> usernames = projectAccessService.listUsernames(projectId);
-    List<QbicUserDetails> users = usernames.stream()
-        .map(it -> (QbicUserDetails) userDetailsService.loadUserByUsername(it))
-        .distinct()
+    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
+    List<QbicUserDetails> users = new ArrayList<>();
+    for(String id : userIds) {
+      Optional<UserInfo> optionalInfo = userInformationService.findById(id);
+      if(optionalInfo.isPresent()) {
+        QbicUserDetails userDetails = (QbicUserDetails) userDetailsService.
+            loadUserByUsername(optionalInfo.get().emailAddress());
+        users.add(userDetails);
+      }
+    }
+    List<String> authorities = projectAccessService.listAuthorities(projectId).stream().distinct()
         .toList();
-    List<String> authorities = projectAccessService.listAuthorities(projectId).stream()
-        .distinct()
-        .toList();
-    var entries = users.stream()
-        .map(userDetail -> {
-          var roles = getProjectRoles(authorities, userDetail);
-          roles = roles.stream()
-              .map(this::formatAuthorityToReadableString)
-              .toList();
-          String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
-          return new UserProjectAccess(fullName, userDetail.getUsername(), String.join(", ", roles));
-        })
-        .toList();
+    var entries = users.stream().map(userDetail -> {
+      var roles = getProjectRoles(authorities, userDetail);
+      roles = roles.stream()
+          .map(this::formatAuthorityToReadableString)
+          .toList();
+      String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
+      return new UserProjectAccess(fullName, userDetail.getUsername(), String.join(", ", roles));
+    }).toList();
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
-    setUserProjectAccessGridData(
-        userProjectAccesses.stream().distinct().collect(Collectors.toList()));
+    setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
   }
 
   private String formatAuthorityToReadableString(String authority) {

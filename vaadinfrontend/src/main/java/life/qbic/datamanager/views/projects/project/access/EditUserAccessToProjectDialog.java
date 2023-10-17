@@ -85,7 +85,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
 
   private void setPreselectedUsers() {
     userGrid.deselectAll();
-    List<String> addedUserIdsInProject = projectAccessService.listUsers(projectId);
+    List<String> addedUserIdsInProject = projectAccessService.listUserIds(projectId);
     originalUsersInProject = addedUserIdsInProject.stream().map(userInformationService::findById)
         .filter(Optional::isPresent).map(Optional::get)
         .collect(Collectors.toUnmodifiableSet());
