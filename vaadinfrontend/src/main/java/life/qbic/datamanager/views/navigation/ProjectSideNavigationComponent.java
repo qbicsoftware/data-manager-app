@@ -78,6 +78,7 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug(
         "New instance for ProjectSideNavigationComponent {} was created",
         System.identityHashCode(this));
+    add(content);
   }
 
   @Override
