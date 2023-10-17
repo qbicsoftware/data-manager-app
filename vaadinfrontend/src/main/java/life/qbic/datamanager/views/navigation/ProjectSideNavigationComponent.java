@@ -2,8 +2,6 @@ package life.qbic.datamanager.views.navigation;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
@@ -20,7 +18,6 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
-import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -91,8 +88,6 @@ public class ProjectSideNavigationComponent extends Div implements
     List<Experiment> experiments = loadExperimentsForProject(project);
     List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
     generateNavigationSections(project, lastModifiedProjects, experiments);
-    addListener(ProjectNavigationEvent.class,
-        ProjectSideNavigationComponent::addProjectNavigationListener);
   }
 
   private static void resetContent() {
@@ -232,12 +227,6 @@ public class ProjectSideNavigationComponent extends Div implements
     return sideNavItem;
   }
 
-  private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
-    projectNavigationEvent.projectId().ifPresentOrElse(
-        ProjectSideNavigationComponent::routeToProject,
-        ProjectSideNavigationComponent::routeToProjectOverview);
-  }
-
   private static void routeToProjectOverview() {
     //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
     content.getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
@@ -252,29 +241,5 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug("Routing to ProjectInformation page for project " + projectId.value());
   }
 
-  private static class ProjectNavigationEvent extends ComponentEvent<Component> {
-    @Serial
-    private static final long serialVersionUID = 7399764169934605506L;
-    private final ProjectId projectId;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param projectId  the {@link ProjectId} of the project to be navigated to
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public ProjectNavigationEvent(Component source, ProjectId projectId,
-        boolean fromClient) {
-      super(source, fromClient);
-      this.projectId = projectId;
-    }
-
-    Optional<ProjectId> projectId() {
-      return Optional.ofNullable(projectId);
-    }
-  }
 
 }

@@ -39,7 +39,6 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   private final Span navBarContent = new Span();
   private final LogoutService logoutService;
   private final transient ProjectInformationService projectInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
   private Context context = new Context();
   private final Span projectTitle = new Span();
 
@@ -51,7 +50,6 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     Objects.requireNonNull(experimentInformationService);
     this.logoutService = logoutService;
     this.projectInformationService = projectInformationService;
-    this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService);
@@ -69,24 +67,13 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     this.context = new Context().with(parsedProjectId);
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .ifPresent(experimentId -> this.context = context.with(ExperimentId.parse(experimentId)));
-    setContext();
-  }
-
-  private void setContext() {
-    context.experimentId().ifPresentOrElse(this::setExperimentNameAsTitle,
-        () -> setProjectNameAsTitle(context.projectId().orElseThrow()));
+    setProjectNameAsTitle(context.projectId().orElseThrow());
   }
 
   private void setProjectNameAsTitle(ProjectId projectId) {
     projectInformationService.find(projectId)
         .ifPresent(
             project -> projectTitle.setText(project.getProjectIntent().projectTitle().title()));
-  }
-
-  private void setExperimentNameAsTitle(ExperimentId experimentId) {
-    experimentInformationService.find(experimentId)
-        .ifPresent(
-            experiment -> projectTitle.setText(experiment.getName()));
   }
 
   private void initializeHeaderLayout() {

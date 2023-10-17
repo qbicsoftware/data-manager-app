@@ -12,8 +12,8 @@ import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
-import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.project.ProjectId;
@@ -29,7 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * via the provided {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
  */
 
-@Route(value = "projects/:projectId?/samples", layout = ProjectMainLayout.class)
+@Route(value = "projects/:projectId?/samples", layout = ExperimentMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
