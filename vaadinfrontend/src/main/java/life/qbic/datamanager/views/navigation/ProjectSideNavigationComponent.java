@@ -58,7 +58,7 @@ public class ProjectSideNavigationComponent extends Div implements
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
-  private static final Div content = new Div();
+  private static Div content = new Div();
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private Context context = new Context();
@@ -71,8 +71,8 @@ public class ProjectSideNavigationComponent extends Div implements
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    resetContent();
     content.addClassName("content");
-    add(content);
     log.debug(
         "New instance for ProjectSideNavigationComponent {} was created",
         System.identityHashCode(this));
@@ -95,8 +95,14 @@ public class ProjectSideNavigationComponent extends Div implements
         ProjectSideNavigationComponent::addProjectNavigationListener);
   }
 
-  private static void resetContent() {
-    content.removeAll();
+  private void resetContent() {
+    //Since content is static vaadin complains if one moves it from one state tree to another
+    if (getChildren().toList().contains(content)) {
+      this.remove(content);
+    }
+    content = new Div();
+    content.addClassName("content");
+    add(content);
   }
 
   private Project loadProject(ProjectId id) {
