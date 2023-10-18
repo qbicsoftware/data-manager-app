@@ -16,17 +16,21 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DataManagerContextProvider implements AppContextProvider {
+
   private final String projectInfoEndpoint;
 
   private final URL baseUrlApplication;
+  private final String samplesEndpoint;
 
   public DataManagerContextProvider(
       @Value("${service.host.protocol}") String protocol,
       @Value("${service.host.name}") String host,
       @Value("${service.host.port}") int port,
       @Value("${server.servlet.context-path}") String contextPath,
-      @Value("${project-info-endpoint}") String projectEndpoint) {
+      @Value("${project-info-endpoint}") String projectEndpoint,
+      @Value("${project-samples-endpoint}") String samplesEndpoint) {
     this.projectInfoEndpoint = projectEndpoint;
+    this.samplesEndpoint = samplesEndpoint;
     try {
       baseUrlApplication = new URL(protocol, host, port, contextPath);
     } catch (MalformedURLException e) {
@@ -45,7 +49,10 @@ public class DataManagerContextProvider implements AppContextProvider {
 
   @Override
   public String urlToSamplePage(String projectId) {
-    var fullPath = basePathForProject(projectId) + "/samples";
-    return formURL(fullPath);
+    try {
+      return new URL(baseUrlApplication, samplesEndpoint.formatted(projectId)).toExternalForm();
+    } catch (MalformedURLException e) {
+      throw new ApplicationException("Data Manager context creation failed.", e);
+    }
   }
 }
