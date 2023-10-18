@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Span;
@@ -16,19 +15,15 @@ import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.awt.Color;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ColumnValidator.ValidationResult;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -70,6 +65,13 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final CreationHelper creationHelper;
   private final Drawing<?> drawingPatriarch;
 
+  private ValidationMode validationMode;
+
+  public enum ValidationMode {
+    LAZY,
+    EAGER
+  }
+
   public Spreadsheet() {
     addClassName("spreadsheet-container");
     delegateSpreadsheet.setActiveSheetProtected("");
@@ -96,6 +98,48 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
     delegateSpreadsheet.setMaxRows(rowCount());
     add(delegateSpreadsheet);
+    validationMode = ValidationMode.LAZY;
+  }
+
+  public void validate() {
+    List<Cell> cells = cells();
+    updateValidation(cells);
+    delegateSpreadsheet.refreshCells(cells);
+  }
+
+  public void addRow(T rowData) {
+    int previousRowCount = rowCount();
+    rows.add(rowData);
+    createCellsForRow(previousRowCount, rowData);
+    delegateSpreadsheet.setMaxRows(previousRowCount + 1);
+  }
+
+  public Column<T> addColumn(String name, Function<T, String> toCellValue,
+      BiConsumer<T, String> modelEditor) {
+    Column<T> column = new Column<>(name, toCellValue, modelEditor);
+    columns.add(column);
+    delegateSpreadsheet.refreshCells(createCellsForColumn(column));
+    delegateSpreadsheet.setMaxColumns(columnCount());
+    return column;
+  }
+
+  public void removeLastRow() {
+    if (rowCount() == 0) {
+      return;
+    }
+    deleteRow(rowCount() - 1);
+  }
+
+  public void setValidationMode(ValidationMode validationMode) {
+    this.validationMode = validationMode;
+  }
+
+  public List<T> getRows() {
+    return rows;
+  }
+
+  public boolean isValid() {
+    return !isInvalid();
   }
 
   private CellStyle createColumnNameStyle(Workbook workbook) {
@@ -128,32 +172,62 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private CellStyle createInvalidCellStyle(Workbook workbook) {
     CellStyle invalidCellStyle = workbook.createCellStyle();
-    invalidCellStyle.setFillBackgroundColor(toSpreadsheetColor(getErrorBackgroundColor()));
+    invalidCellStyle.setFillBackgroundColor(new XSSFColor(getErrorBackgroundColor(), null));
     invalidCellStyle.setLocked(false);
     return invalidCellStyle;
   }
 
   private void onCellValueChanged(CellValueChangeEvent cellValueChangeEvent) {
     List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
-        .map(changedCell -> {
-          int rowIndex = changedCell.getRow();
-          int colIndex = changedCell.getCol();
-          return delegateSpreadsheet.getCell(rowIndex, colIndex);
-        }).toList();
-    changedCells.forEach(
-        cell -> columns.get(cell.getColumnIndex()).modelEditor.accept(rows.get(cell.getRowIndex()),
-            delegateSpreadsheet.getCellValue(cell)));
+        .map(this::getCell)
+        .toList();
+    updateModel(changedCells);
+    if (validationMode == ValidationMode.EAGER) {
+      updateValidation(changedCells);
+    }
+    autofitColumns(changedCells);
     delegateSpreadsheet.refreshCells(changedCells);
   }
 
-  public void addRow(T rowData) {
-    createCellsForRow(rowData);
-    rows.add(rowData);
-    delegateSpreadsheet.setMaxRows(rowCount());
+  private Cell getCell(org.apache.poi.ss.util.CellReference cellReference) {
+    return getCell(cellReference.getRow(), cellReference.getCol());
   }
 
-  private void createCellsForRow(T rowData) {
-    int rowIndex = rowCount();
+  private Cell getCell(int rowIndex, int colIndex) {
+    return delegateSpreadsheet.getCell(rowIndex, colIndex);
+  }
+
+  private T getRow(int rowIndex) {
+    return rows.get(rowIndex);
+  }
+
+  private void updateModel(List<Cell> changedCells) {
+    changedCells.forEach(
+        cell -> columns.get(cell.getColumnIndex()).modelEditor.accept(getRow(cell.getRowIndex()),
+            getCellValue(cell)));
+  }
+
+  private void autofitColumns(List<Cell> changedCells) {
+    changedCells.stream().map(Cell::getColumnIndex)
+        .distinct()
+        .forEach(this::autoFitColumnWidth);
+  }
+
+  private void updateValidation(List<Cell> changedCells) {
+    this.setInvalid(false);
+    for (Cell changedCell : changedCells) {
+      ValidationResult validationResult = validateCell(changedCell);
+      if (validationResult.isInvalid()) {
+        this.setInvalid(true);
+      }
+      if (hasCellValidationChanged(changedCell, validationResult)) {
+        updateCellValidationStatus(changedCell, validationResult);
+      }
+    }
+  }
+
+
+  private void createCellsForRow(int rowIndex, T rowData) {
     List<Cell> cellsInRow = new ArrayList<>();
     for (Column<T> column : columns) {
       int colIndex = columns.indexOf(column);
@@ -179,23 +253,15 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return dirtyCells;
   }
 
-  private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
-    Cell cell = Optional.ofNullable(delegateSpreadsheet.getCell(rowIndex, colIndex))
-        .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
-    CellFunctions.setCellValue(cell, cellValue);
-    cell.setCellStyle(cellStyle);
+
+  private void autoFitColumnWidth(int colIndex) {
     delegateSpreadsheet.autofitColumn(colIndex);
-    return cell;
+    int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
+        colIndex);
+    int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
+    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
   }
 
-
-
-  public void removeLastRow() {
-    if (rowCount() == 0) {
-      return;
-    }
-    deleteRow(rowCount() - 1);
-  }
 
   private void deleteRow(int index) {
     int lastRowIndex = rowCount() - 1;
@@ -219,71 +285,43 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setMaxRows(lastRowIndex);
   }
 
-  public Column<T> addColumn(String name, Function<T, String> toCellValue,
-      BiConsumer<T, String> modelEditor) {
-    Column<T> column = new Column<>(name, toCellValue, modelEditor);
-    columns.add(column);
-    delegateSpreadsheet.refreshCells(createCellsForColumn(column));
-    delegateSpreadsheet.setMaxColumns(columnCount());
-    return column;
-  }
 
   private int rowCount() {
     return rows.size();
   }
+
   private int columnCount() {
     return columns.size();
   }
 
-  public List<T> getRows() {
-    return rows;
-  }
-
-  public boolean isValid() {
-    return !isInvalid();
-  }
-
-  record CellReference(int rowIndex, int colIndex) {
-
-  }
-
   private List<Cell> cells() {
-    List<CellReference> cellReferences = new ArrayList<>();
+    List<Cell> cells = new ArrayList<>();
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
       for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
-        cellReferences.add(new CellReference(rowIndex, colIndex));
+        cells.add(getCell(rowIndex, colIndex));
       }
     }
-    return cellReferences.stream()
-        .map(cellReference -> delegateSpreadsheet.getCell(cellReference.rowIndex(),
-            cellReference.colIndex()))
-        .toList();
+    return cells.stream().toList();
   }
 
-  private boolean markCellAsInvalid(Cell cell, String errorMessage) {
-    if (invalidCellStyle.equals(cell.getCellStyle())) {
-      return false; // already invalid
-    }
+  private void markCellAsInvalid(Cell cell, String errorMessage) {
     if (rowNumberStyle.equals(cell.getCellStyle())) {
-      return false; // does not apply to row numbers
+      return; // does not apply to row numbers
     }
     if (columnHeaderStyle.equals(cell.getCellStyle())) {
-      return false; // does not apply to column headers
+      return; // does not apply to column headers
     }
-
-    cell.setCellStyle(invalidCellStyle);
     Comment cellComment = createComment(errorMessage);
     cell.setCellComment(cellComment);
-    return true;
+    cell.setCellStyle(invalidCellStyle);
   }
 
-  private boolean markCellAsValid(Cell cell) {
+  private void markCellAsValid(Cell cell) {
     if (!invalidCellStyle.equals(cell.getCellStyle())) {
-      return false; // only apply to invalid cells
+      return; // only apply to invalid cells
     }
     cell.setCellStyle(defaultCellStyle);
     cell.setCellComment(null);
-    return true;
   }
 
   private Comment createComment(String comment) {
@@ -292,25 +330,34 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return cellComment;
   }
 
-  public void validate() {
-
-    List<Cell> updatedCells = new ArrayList<>();
-    ValidationResult result = ValidationResult.valid();
-    for (Cell cell : cells()) {
-      ValidationResult validationResult = validateCell(cell);
-      boolean wasCellUpdated;
-      if (validationResult.isValid()) {
-        wasCellUpdated = markCellAsValid(cell);
-      } else {
-        wasCellUpdated = markCellAsInvalid(cell, validationResult.errorMessage());
-        result = validationResult;
-      }
-      if (wasCellUpdated) {
-        updatedCells.add(cell);
-      }
+  private void updateCellValidationStatus(Cell cell, ValidationResult validationResult) {
+    if (validationResult.isValid()) {
+      markCellAsValid(cell);
+    } else {
+      markCellAsInvalid(cell, validationResult.errorMessage());
     }
-    this.setInvalid(result.isInvalid());
-    delegateSpreadsheet.refreshCells(updatedCells);
+  }
+
+  private boolean hasCellValidationChanged(Cell cell, ValidationResult validationResult) {
+    if (isCellValid(cell) && validationResult.isValid()) {
+      return false;
+    }
+    Comment existingComment = cell.getCellComment();
+    if (isNull(existingComment)) {
+      return true;
+    }
+    boolean validationMessageChanged = !validationResult.errorMessage()
+        .equals(existingComment.getString().getString());
+    return isCellValid(cell) || validationMessageChanged;
+  }
+
+
+  private boolean isCellValid(Cell cell) {
+    return !isCellInvalid(cell);
+  }
+
+  private boolean isCellInvalid(Cell cell) {
+    return invalidCellStyle.equals(cell.getCellStyle());
   }
 
   private static Color getErrorBackgroundColor() {
@@ -320,56 +367,125 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return Color.getHSBColor(hueAngle, alpha, brightness);
   }
 
-  private static org.apache.poi.ss.usermodel.Color toSpreadsheetColor(Color color) {
-    return new XSSFColor(color, null);
-  }
-
-
   private ValidationResult validateCell(Cell cell) {
     Column<T> column = columns.get(cell.getColumnIndex());
     List<ColumnValidator<String>> validators = column.getValidators();
-    Stream<ValidationResult> validationResultStream = validators.stream()
-        .map(it -> {
-          return it.validate(delegateSpreadsheet.getCellValue(cell));
-        });
-    ValidationResult validationResult = validationResultStream.filter(
-            ValidationResult::isInvalid).findAny()
+    return validators.stream()
+        .map(it -> it.validate(getCellValue(cell)))
+        .filter(ValidationResult::isInvalid)
+        .findAny()
         .orElse(ValidationResult.valid());
-    fireEvent(new CellValidationEvent(this, false, cell.getRowIndex(), cell.getColumnIndex(),
-        validationResult));
-    return validationResult;
   }
 
-  private void updateCell(Cell cell, String value) {
-    CellFunctions.setCellValue(cell, value);
+  private String getCellValue(Cell cell) {
+    return delegateSpreadsheet.getCellValue(cell);
+  }
+
+  private void setCell(Cell cell, String cellValue) {
+    setCell(cell.getRowIndex(), cell.getColumnIndex(), cellValue, cell.getCellStyle());
+  }
+
+  private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
+    Cell cell = Optional.ofNullable(getCell(rowIndex, colIndex))
+        .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
+    CellFunctions.setCellValue(cell, cellValue);
+    cell.setCellStyle(cellStyle);
+
     //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
-    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated
-    // Therefore when implementing a custom editor, call this method!
+    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
     onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
         Set.of(
             new org.apache.poi.ss.util.CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
+    return cell;
   }
 
+  public static class Column<T> {
 
-  private static class CellFunctions {
+    private final String name;
+    private final List<ColumnValidator<String>> validators;
 
-    static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+    private final Function<T, String> toCellValue;
+    private final BiConsumer<T, String> modelEditor;
 
-    static void setCellValue(Cell cell, String value) {
-      switch (cell.getCellType()) {
-        case _NONE, ERROR, FORMULA -> {
-        }
-        case NUMERIC -> {
-          try {
-            cell.setCellValue(numberFormat.parse(value).doubleValue());
-          } catch (ParseException e) {
-            throw new RuntimeException(e);
-          }
-        }
-        case STRING, BLANK -> cell.setCellValue(value);
-        case BOOLEAN -> cell.setCellValue(Boolean.parseBoolean(value));
-        default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
-      }
+    private Component editorComponent;
+    private boolean required;
+    private CellStyle cellStyle;
+
+    public Column(String name, Function<T, String> toCellValue, BiConsumer<T, String> modelEditor) {
+      requireNonNull(name, "name must not be null");
+      requireNonNull(toCellValue, "toCellValue must not be null");
+      requireNonNull(modelEditor, "modelEditor must not be null");
+      this.name = name;
+      this.toCellValue = toCellValue;
+      this.modelEditor = modelEditor;
+      editorComponent = null;
+      required = false;
+      validators = new ArrayList<>();
+    }
+
+    public boolean isRequired() {
+      return required;
+    }
+
+    public Optional<Component> getEditorComponent() {
+      return Optional.ofNullable(editorComponent);
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    List<ColumnValidator<String>> getValidators() {
+      return Collections.unmodifiableList(validators);
+    }
+
+    public Optional<CellStyle> getCellStyle() {
+      return Optional.ofNullable(cellStyle);
+    }
+
+    public Column<T> withValidator(Predicate<String> predicate, String errorMessage) {
+      validators.add(new ColumnValidator<>(predicate, errorMessage));
+      return this;
+    }
+
+    private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer() {
+      return new ComponentRenderer<>(item -> {
+        Span listItem = new Span(item.toString());
+        listItem.addClassName("spreadsheet-list-item");
+        return listItem;
+      });
+    }
+
+    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue) {
+      return selectFrom(values, toCellValue, getDefaultComponentRenderer());
+    }
+
+    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
+        ComponentRenderer<? extends Component, E> renderer) {
+      List<String> possibleCellValues = values.stream()
+          .map(toCellValue).toList();
+      this.withValidator(value -> isNull(value) || value.isBlank()
+              || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
+          "{0} is not a valid option for column %s. Please choose from %s".formatted(getName(),
+              possibleCellValues));
+      SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
+      selectEditor.setRenderer(renderer);
+      selectEditor.setItemLabelGenerator(toCellValue::apply);
+      this.editorComponent = selectEditor;
+      return this;
+    }
+
+    public Column<T> withCellStyle(CellStyle cellStyle) {
+      this.cellStyle = cellStyle;
+      return this;
+    }
+
+    public Column<T> setRequired() {
+      this.required = true;
+      validators.add(0, new ColumnValidator<>(
+          object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
+          "The column '" + getName() + "' does not allow empty values. Please enter a value."));
+      return this;
     }
   }
 
@@ -487,11 +603,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
           selectEditor.removeAllValueChangeListeners();
 
-          selectEditor.setFromCellValue(delegateSpreadsheet.getCellValue(cell));
+          selectEditor.setFromCellValue(getCellValue(cell));
 
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
-            updateCell(cell, cellValue);
+            setCell(cell, cellValue);
             delegateSpreadsheet.refreshCells(cell);
           });
         }
@@ -501,131 +617,17 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
+  private static final class CellFunctions {
 
-  public static class Column<T> {
-
-    private final String name;
-    private final List<ColumnValidator<String>> validators;
-
-    private final Function<T, String> toCellValue;
-    private final BiConsumer<T, String> modelEditor;
-
-    private Component editorComponent;
-    private boolean required;
-    private CellStyle cellStyle;
-
-    public Column(String name, Function<T, String> toCellValue, BiConsumer<T, String> modelEditor) {
-      requireNonNull(name, "name must not be null");
-      requireNonNull(toCellValue, "toCellValue must not be null");
-      requireNonNull(modelEditor, "modelEditor must not be null");
-      this.name = name;
-      this.toCellValue = toCellValue;
-      this.modelEditor = modelEditor;
-      editorComponent = null;
-      required = false;
-      validators = new ArrayList<>();
-    }
-
-    public boolean isRequired() {
-      return required;
-    }
-
-    public Optional<Component> getEditorComponent() {
-      return Optional.ofNullable(editorComponent);
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    List<ColumnValidator<String>> getValidators() {
-      return Collections.unmodifiableList(validators);
-    }
-
-    public Optional<CellStyle> getCellStyle() {
-      return Optional.ofNullable(cellStyle);
-    }
-
-    public Column<T> withValidator(Predicate<String> predicate, String errorMessage) {
-      validators.add(new ColumnValidator<>(predicate, errorMessage));
-      return this;
-    }
-
-    private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer() {
-      return new ComponentRenderer<>(item -> {
-        Span listItem = new Span(item.toString());
-        listItem.addClassName("spreadsheet-list-item");
-        return listItem;
-      });
-    }
-
-    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue) {
-      return selectFrom(values, toCellValue, getDefaultComponentRenderer());
-    }
-
-    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
-        ComponentRenderer<? extends Component, E> renderer) {
-      List<String> possibleCellValues = values.stream()
-          .map(toCellValue).toList();
-      this.withValidator(value -> isNull(value) || value.isBlank()
-              || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
-          "{0} is not a valid option for column %s. Please choose from %s".formatted(getName(),
-              possibleCellValues));
-      SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
-      selectEditor.setRenderer(renderer);
-      selectEditor.setItemLabelGenerator(toCellValue::apply);
-      this.editorComponent = selectEditor;
-      return this;
-    }
-
-    public Column<T> withCellStyle(CellStyle cellStyle) {
-      this.cellStyle = cellStyle;
-      return this;
-    }
-
-    public Column<T> setRequired() {
-      this.required = true;
-      validators.add(0, new ColumnValidator<>(
-          object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
-          "The column " + getName() + " does not allow empty values. Please enter a value."));
-      return this;
-    }
-
-  }
-
-  public static class CellValidationEvent extends ComponentEvent<Spreadsheet<?>> {
-
-    private final int rowIndex;
-    private final int colIndex;
-    private final ValidationResult validationResult;
-
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public CellValidationEvent(Spreadsheet<?> source, boolean fromClient, int rowIndex,
-        int colIndex, ValidationResult validationResult) {
-      super(source, fromClient);
-      this.rowIndex = rowIndex;
-      this.colIndex = colIndex;
-      this.validationResult = validationResult;
-    }
-
-    public int rowIndex() {
-      return rowIndex;
-    }
-
-    public int colIndex() {
-      return colIndex;
-    }
-
-    public ValidationResult validationResult() {
-      return validationResult;
+    static void setCellValue(Cell cell, String value) {
+      switch (cell.getCellType()) {
+        case _NONE, ERROR, FORMULA -> {
+        }
+        case NUMERIC -> cell.setCellValue(Double.parseDouble(value));
+        case STRING, BLANK -> cell.setCellValue(value);
+        case BOOLEAN -> cell.setCellValue(Boolean.parseBoolean(value));
+        default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
+      }
     }
   }
 }

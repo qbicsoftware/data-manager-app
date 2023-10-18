@@ -2,13 +2,16 @@ package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 
 /**
  * TODO!
@@ -53,20 +56,31 @@ public class TestView extends Div {
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
         .setRequired();
 
-    spreadsheet.addRow(new MyBean());
+//    spreadsheet.addRow(new MyBean());
 
     Text validationText = new Text("");
     Text output = new Text("");
     add(spreadsheet);
+    spreadsheet.addRow(bean1);
+    spreadsheet.addRow(bean2);
+
     add(new Button("add row", click -> spreadsheet.addRow(new MyBean())));
     add(new Button("remove last row", click -> spreadsheet.removeLastRow()));
-    add(new Button("get rows", click -> output.setText(spreadsheet.getRows().toString())));
+    add(new Button("get rows", click -> {
+      output.setText(spreadsheet.getRows().toString());
+      System.out.println("bean1 = " + bean1);
+      System.out.println("bean2 = " + bean2);
+    }));
     add(new Button("validates?", click -> {
       spreadsheet.validate();
       validationText.setText(spreadsheet.isValid() ? "Good job!" : spreadsheet.getErrorMessage());
     }));
     add(validationText);
-    add(output);
+    add(new Checkbox("instant validation?", event -> {
+      boolean eventValue = event.getValue();
+      spreadsheet.setValidationMode(eventValue ? ValidationMode.EAGER : ValidationMode.LAZY);
+    }));
+    add(new HorizontalLayout(output));
     setSizeFull();
     setHeight("80%");
   }
