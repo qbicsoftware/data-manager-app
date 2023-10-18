@@ -11,7 +11,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>0.27.0</version>
+    <version>0.28.2</version>
   </parent>
 
   <repositories>
@@ -170,31 +170,31 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>user-domain</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>newsreader</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -204,24 +204,24 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>projectmanagement-domain</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>database-connector</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>0.27.0</version>
+      <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
