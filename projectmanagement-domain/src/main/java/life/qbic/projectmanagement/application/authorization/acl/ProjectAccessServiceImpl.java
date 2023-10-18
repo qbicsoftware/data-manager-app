@@ -9,21 +9,27 @@ import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
+import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
+import org.springframework.security.acls.model.AlreadyExistsException;
 import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.NotFoundException;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 @Service
 public class ProjectAccessServiceImpl implements ProjectAccessService {
@@ -31,7 +37,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private final MutableAclService aclService;
   private final UserDetailsService userDetailsService;
 
-  public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
+  public ProjectAccessServiceImpl(@Autowired @Qualifier("qbic") MutableAclService aclService,
       @Autowired UserDetailsService userDetailsService) {
     this.aclService = aclService;
     this.userDetailsService = userDetailsService;
@@ -156,14 +162,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   }
 
   private MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids) {
+    System.err.println(sids);
+    System.err.println(sids.get(0));
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     MutableAcl acl;
     try {
       acl = (MutableAcl) aclService.readAclById(objectIdentity, sids);
     } catch (NotFoundException e) {
-      acl = aclService.createAcl(objectIdentity);
+      System.err.println("not found");
+      QbicJdbcMutableAclService qbicAclService = (QbicJdbcMutableAclService) aclService;
+      acl = qbicAclService.createAcl(objectIdentity, sids);
     }
     return acl;
   }
-
 }

@@ -238,14 +238,14 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
 
   private void addUsersToProject(List<UserInfo> users) {
     for (UserInfo user : users) {
-      projectAccessService.grant(user.emailAddress(), projectId, BasePermission.READ);
+      projectAccessService.grant(user.id(), projectId, BasePermission.READ);
       accessDomainService.grantProjectAccessFor(projectId.value(), user.id());
     }
   }
 
   private void removeUsersFromProject(List<UserInfo> users) {
     for (UserInfo user : users) {
-      projectAccessService.denyAll(user.emailAddress(), projectId);
+      projectAccessService.denyAll(user.id(), projectId);
     }
   }
 
