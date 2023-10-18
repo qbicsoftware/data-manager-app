@@ -42,4 +42,10 @@ public class DataManagerContextProvider implements AppContextProvider {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
   }
+
+  @Override
+  public String urlToSamplePage(String projectId) {
+    var fullPath = basePathForProject(projectId) + "/samples";
+    return formURL(fullPath);
+  }
 }

@@ -16,6 +16,14 @@ public interface AppContextProvider {
    * @return a fully resolvable URL
    * @since 1.0.0
    */
-  String urlToProject(String projectId);
 
+  String urlToProject(String projectId);
+  /**
+   * Returns a resolvable URL to the target project's sample page resource in the application.
+   *
+   * @param projectId the project id
+   * @return a fully resolvable URL
+   * @since 1.0.0
+   */
+  String urlToSamplePage(String projectId);
 }
