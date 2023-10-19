@@ -9,7 +9,7 @@
   <name>Data Manager</name>
   <version>0.28.2</version>
   <modules>
-    <module>vaadinfrontend</module>
+    <module>user-interface</module>
     <module>user-domain</module>
     <module>broadcasting</module>
     <module>newshandler</module>
