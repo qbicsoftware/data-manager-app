@@ -608,7 +608,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
     public Column<T> setRequired() {
       this.required = true;
-      validators.addFirst(new ColumnValidator<>(
+      validators.add(0, new ColumnValidator<>(
           object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
           "The column '" + getName() + "' does not allow empty values. Please enter a value."));
       return this;
