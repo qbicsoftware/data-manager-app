@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.policy.directive;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.domain.concepts.DomainEvent;
@@ -79,7 +78,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
 
   private List<RecipientDTO> getRecipients(ProjectId projectId) {
     List<RecipientDTO> users = new ArrayList<>();
-    List<String> userIds = projectAccessService.listActiveUsers(projectId);
+    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
     for(String id : userIds) {
       userInformationService.findById(id).ifPresent(userInfo -> users.add(new RecipientDTO(userInfo)));
     }

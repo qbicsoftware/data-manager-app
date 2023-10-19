@@ -49,14 +49,12 @@ public class QbicUserDetails implements UserDetails {
     return user.encryptedPassword();
   }
 
+  public String getEmailAddress() { return user.emailAddress(); }
   @Override
   public String getUsername() {
-    // Todo fix and use user ID as user ID instead of the mutable email-address
-    // Rational: the user's email address is not guaranteed to be immutable, since we might add a feature in
-    // the future to change user's email address. That means, the identification of the user by their
-    // email address is error-prone and of risk. Since a user gets a UUID on registration, we can use this
-    // to identify the user, since this ID will never change
-    return user.emailAddress();
+    // This is what is returned by the authentication module and used by ACL classes
+    // We want the id instead of email address
+    return user.id();
   }
 
   @Override

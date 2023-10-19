@@ -2,10 +2,8 @@ package life.qbic.projectmanagement.application.authorization.acl;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.domain.project.Project;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,6 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,29 +36,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Transactional
   @Override
-  public List<String> listUsers(ProjectId projectId) {
-    List<String> userNames = listUsernames(projectId);
-    return userNames.stream().map(userDetailsService::loadUserByUsername)
-        .filter(it -> it instanceof QbicUserDetails)
-        .map(it -> (QbicUserDetails) it)
-        .map(QbicUserDetails::getUserId)
-        .distinct().toList();
-  }
-
-  @Transactional
-  @Override
-  public List<String> listActiveUsers(ProjectId projectId) {
-    return listUsernames(projectId).stream().map(userDetailsService::loadUserByUsername)
-        .filter(it -> it instanceof QbicUserDetails)
-        .map(it -> (QbicUserDetails) it)
-        .filter(QbicUserDetails::isEnabled)
-        .map(QbicUserDetails::getUserId)
-        .distinct().toList();
-  }
-
-  @Transactional
-  @Override
-  public List<String> listUsernames(ProjectId projectId) {
+  public List<String> listUserIds(ProjectId projectId) {
     Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
     return acl.getEntries().stream()
         .map(AccessControlEntry::getSid)
@@ -73,14 +48,20 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Transactional
   @Override
-  public void grant(String username, ProjectId projectId, Permission permission) {
-    grant(username, projectId, List.of(permission));
+  public List<String> listActiveUserIds(ProjectId projectId) {
+    return listUserIds(projectId).stream().distinct().toList();
   }
 
   @Transactional
   @Override
-  public void grant(String username, ProjectId projectId, List<Permission> permissions) {
-    PrincipalSid principalSid = new PrincipalSid(username);
+  public void grant(String userID, ProjectId projectId, Permission permission) {
+    grant(userID, projectId, List.of(permission));
+  }
+
+  @Transactional
+  @Override
+  public void grant(String userID, ProjectId projectId, List<Permission> permissions) {
+    PrincipalSid principalSid = new PrincipalSid(userID);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     for (Permission permission : permissions) {
       acl.insertAce(acl.getEntries().size(), permission, principalSid, true);
@@ -109,17 +90,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Transactional
   @Override
-  public void deny(String username, ProjectId projectId, Permission permission) {
-    deny(username, projectId, List.of(permission));
+  public void deny(String userID, ProjectId projectId, Permission permission) {
+    deny(userID, projectId, List.of(permission));
   }
 
   @Transactional
   @Override
-  public void deny(String username, ProjectId projectId, List<Permission> permissions) {
-    requireNonNull(username, "username must not be null");
+  public void deny(String userID, ProjectId projectId, List<Permission> permissions) {
+    requireNonNull(userID, "userId must not be null");
     requireNonNull(projectId, "projectId must not be null");
     requireNonNull(permissions, "permissions must not be null");
-    PrincipalSid principalSid = new PrincipalSid(username);
+    PrincipalSid principalSid = new PrincipalSid(userID);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     Predicate<AccessControlEntry> accessControlEntryPredicate = accessControlEntry ->
         accessControlEntry.getSid().equals(principalSid)
@@ -129,10 +110,10 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Transactional
   @Override
-  public void denyAll(String username, ProjectId projectId) {
-    requireNonNull(username, "username must not be null");
+  public void denyAll(String userID, ProjectId projectId) {
+    requireNonNull(userID, "userId must not be null");
     requireNonNull(projectId, "projectId must not be null");
-    PrincipalSid principalSid = new PrincipalSid(username);
+    PrincipalSid principalSid = new PrincipalSid(userID);
     MutableAcl acl = getAclForProject(projectId, List.of(principalSid));
     deleteAces(acl, accessControlEntry -> accessControlEntry.getSid().equals(principalSid));
   }
