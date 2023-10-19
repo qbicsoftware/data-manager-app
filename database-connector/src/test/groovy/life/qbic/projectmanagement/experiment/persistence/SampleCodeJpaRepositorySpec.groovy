@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.experiment.persistence
 
-import life.qbic.projectmanagement.domain.project.ProjectCode
-import life.qbic.projectmanagement.domain.project.ProjectId
+import life.qbic.projectmanagement.domain.model.project.ProjectCode
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import spock.lang.Specification
 
 /**

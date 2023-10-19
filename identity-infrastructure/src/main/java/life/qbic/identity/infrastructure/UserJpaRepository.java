@@ -5,8 +5,7 @@ import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
-import life.qbic.projectmanagement.infrastructure.QBiCSid;
-import life.qbic.projectmanagement.infrastructure.SidRepository;
+import life.qbic.identity.domain.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,15 +26,13 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class UserJpaRepository implements UserDataStorage, SidDataStorage {
+public class UserJpaRepository implements UserDataStorage {
 
   private final QbicUserRepo userRepo;
-  private final SidRepository sidRepository;
 
   @Autowired
-  public UserJpaRepository(QbicUserRepo userRepo, SidRepository sidRepository) {
+  public UserJpaRepository(QbicUserRepo userRepo) {
     this.userRepo = userRepo;
-    this.sidRepository = sidRepository;
   }
 
   @Override
@@ -46,10 +43,13 @@ public class UserJpaRepository implements UserDataStorage, SidDataStorage {
   @Override
   public void save(User user) {
     userRepo.save(user);
-    if (!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(user.emailAddress().get(),
-        true)) {
-      addSid(user.id().get(), true);
-    }
+    // TODO: we need to broadcast the user registered event and consume it in the project management
+    // domain, such that need to add the SID entry, which is project management concern
+    //
+    // if (!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(user.emailAddress().get(),
+    //    true)) {
+    //  addSid(user.id().get(), true);
+   // }
   }
 
   @Override
@@ -60,10 +60,5 @@ public class UserJpaRepository implements UserDataStorage, SidDataStorage {
   @Override
   public List<User> findAllActiveUsers() {
     return userRepo.findUsersByActiveTrue();
-  }
-
-  @Override
-  public void addSid(String sid, boolean principal) {
-    sidRepository.save(new QBiCSid(principal, sid));
   }
 }

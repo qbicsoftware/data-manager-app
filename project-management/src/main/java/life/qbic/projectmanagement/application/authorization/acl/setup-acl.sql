@@ -44,4 +44,4 @@ CREATE TABLE acl_entry
 ) ENGINE = InnoDB;
 
 INSERT INTO acl_class(id, class, class_id_type)
-VALUES (1, 'life.qbic.projectmanagement.domain.project.Project', 'java.lang.String');
+VALUES (1, 'life.qbic.projectmanagement.domain.project.model.project.Project', 'java.lang.String');

@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.application.policy;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered;
 
 /**
  * <b>Policy: Batch Registered</b>
@@ -10,7 +12,7 @@ import life.qbic.projectmanagement.application.policy.directive.InformUsersAbout
  * samples has been registered for measurement.
  * <p>
  * The policy subscribes to events of type
- * {@link life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered} and ensures the
+ * {@link BatchRegistered} and ensures the
  * registration of all business required directives.
  *
  * @since 1.0.0
@@ -25,7 +27,7 @@ public class BatchRegisteredPolicy {
    * All directives will be created and subscribed upon instantiation.
    *
    * @param informUsers directive to inform users of a project about the new samples of a batch
-   *                         {@link life.qbic.projectmanagement.domain.project.sample.Batch}
+   *                         {@link Batch}
    * @since 1.0.0
    */
   public BatchRegisteredPolicy(InformUsersAboutBatchRegistration informUsers) {

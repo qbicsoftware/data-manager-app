@@ -4,9 +4,9 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.repository.BatchRepository;
-import life.qbic.projectmanagement.domain.project.sample.Batch;
-import life.qbic.projectmanagement.domain.project.sample.BatchId;
+import life.qbic.projectmanagement.domain.repository.BatchRepository;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

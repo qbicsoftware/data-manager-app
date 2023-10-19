@@ -10,7 +10,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.HashMap;
 import java.util.List;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationSpreadsheet.SamplesheetHeaderName;
-import life.qbic.projectmanagement.domain.project.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 

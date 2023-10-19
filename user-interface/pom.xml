@@ -234,6 +234,12 @@
       <groupId>com.vaadin</groupId>
       <artifactId>vaadin-spreadsheet-flow</artifactId>
     </dependency>
+    <dependency>
+      <groupId>life.qbic.identity</groupId>
+      <artifactId>project-management-infrastructure</artifactId>
+      <version>0.28.2</version>
+      <scope>compile</scope>
+    </dependency>
 
 
   </dependencies>

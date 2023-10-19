@@ -13,13 +13,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 
 /**
  * <b>Sample Registration Dialog</b>
  *
- * <p>Component to register {@link life.qbic.projectmanagement.domain.project.sample.Sample} with
+ * <p>Component to register {@link Sample} with
  * their associated metadata information</p>
  */
 public class BatchRegistrationDialog extends Dialog {

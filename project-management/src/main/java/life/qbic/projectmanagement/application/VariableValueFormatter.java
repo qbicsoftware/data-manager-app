@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application;
 
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 
 public class VariableValueFormatter {
 

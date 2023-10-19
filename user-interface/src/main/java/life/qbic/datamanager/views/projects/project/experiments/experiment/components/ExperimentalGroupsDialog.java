@@ -16,7 +16,7 @@ import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 
 /**
  * <b>Experimental Groups Dialog</b>

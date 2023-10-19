@@ -10,7 +10,7 @@ import life.qbic.identity.application.user.registration.EmailAddressConfirmation
 import life.qbic.identity.application.user.registration.RegisterUserInput;
 import life.qbic.identity.application.user.registration.Registration;
 import life.qbic.identity.application.user.IdentityService;
-import life.qbic.identity.infrastructure.UserDataStorage;
+import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
@@ -31,7 +31,7 @@ import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.identity.api.UserInformationService;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 
 /**
  * A layout containing rows for experimental variable input

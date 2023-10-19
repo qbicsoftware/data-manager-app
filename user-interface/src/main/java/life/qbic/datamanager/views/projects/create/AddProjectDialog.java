@@ -28,7 +28,7 @@ import life.qbic.projectmanagement.application.finances.offer.OfferLookupService
 import life.qbic.projectmanagement.domain.finances.offer.Offer;
 import life.qbic.projectmanagement.domain.finances.offer.OfferId;
 import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 
 /**
  * <b>Project Information Dialog</b>

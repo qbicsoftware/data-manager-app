@@ -2,9 +2,9 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
-import life.qbic.projectmanagement.domain.project.sample.BatchId
-import life.qbic.projectmanagement.domain.project.sample.SampleId
-import life.qbic.projectmanagement.domain.project.sample.event.SampleRegistered
+import life.qbic.projectmanagement.domain.model.batch.BatchId
+import life.qbic.projectmanagement.domain.model.sample.SampleId
+import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered
 import spock.lang.Specification
 
 /**

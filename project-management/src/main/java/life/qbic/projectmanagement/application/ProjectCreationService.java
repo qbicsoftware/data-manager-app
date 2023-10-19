@@ -10,17 +10,17 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.project.Contact;
-import life.qbic.projectmanagement.domain.project.Funding;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.ProjectIntent;
-import life.qbic.projectmanagement.domain.project.ProjectObjective;
-import life.qbic.projectmanagement.domain.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import life.qbic.projectmanagement.domain.project.service.ProjectDomainService;
-import life.qbic.projectmanagement.domain.project.service.ProjectDomainService.ResponseCode;
+import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Funding;
+import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
+import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.service.ProjectDomainService;
+import life.qbic.projectmanagement.domain.service.ProjectDomainService.ResponseCode;
 import org.springframework.stereotype.Service;
 
 /**

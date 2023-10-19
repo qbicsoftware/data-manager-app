@@ -16,15 +16,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import life.qbic.projectmanagement.infrastructure.SidRepository;
+import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.service.AccessDomainService;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.service.AccessDomainService;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,7 +132,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .map(life.qbic.projectmanagement.domain.project.ProjectId::parse).orElseThrow();
+        .map(ProjectId::parse).orElseThrow();
     if (userPermissions.changeProjectAccess(projectId)) {
       loadInformationForProject(projectId);
     } else {

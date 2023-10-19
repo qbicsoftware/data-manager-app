@@ -27,8 +27,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -36,8 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Project Information Main Component
  * <p>
  * This component hosts the components necessary to show and update the
- * {@link life.qbic.projectmanagement.domain.project.Project} information via the provided
- * {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
+ * {@link Project} information via the provided
+ * {@link ProjectId} in the URL
  */
 
 @SpringComponent

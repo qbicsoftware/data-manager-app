@@ -2,16 +2,16 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.ApplicationException
 import life.qbic.application.commons.Result
-import life.qbic.projectmanagement.domain.project.Contact
-import life.qbic.projectmanagement.domain.project.Funding
-import life.qbic.projectmanagement.domain.project.Project
-import life.qbic.projectmanagement.domain.project.ProjectId
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
-import life.qbic.projectmanagement.domain.project.service.ProjectDomainService
+import life.qbic.projectmanagement.domain.model.project.Contact
+import life.qbic.projectmanagement.domain.model.project.Funding
+import life.qbic.projectmanagement.domain.model.project.Project
+import life.qbic.projectmanagement.domain.model.project.ProjectId
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
+import life.qbic.projectmanagement.domain.repository.ProjectRepository
+import life.qbic.projectmanagement.domain.service.ProjectDomainService
 import spock.lang.Specification
 
 import static java.util.Objects.nonNull

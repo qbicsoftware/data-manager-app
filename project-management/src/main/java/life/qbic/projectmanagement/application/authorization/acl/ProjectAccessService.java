@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.application.authorization.acl;
 
 import java.util.List;
-import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.transaction.annotation.Transactional;

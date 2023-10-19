@@ -16,6 +16,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BoxShadow;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 
 /**
  * <b>Experimental Design Add Card</b>
@@ -23,7 +24,7 @@ import java.io.Serial;
  * <p>A PageComponent based Component which is simliarly structured as the
  * {@link ExperimentalDesignCard}. However it's content is fixed and it's purpose is to allow for a
  * user to click on the card to create a new
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign}.
+ * {@link ExperimentalDesign}.
  */
 public class ExperimentalDesignAddCard extends Composite<VerticalLayout> {
 

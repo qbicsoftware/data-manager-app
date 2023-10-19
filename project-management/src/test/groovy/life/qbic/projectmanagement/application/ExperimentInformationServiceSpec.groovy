@@ -1,15 +1,15 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO
-import life.qbic.projectmanagement.domain.project.experiment.Experiment
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalValue
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable
-import life.qbic.projectmanagement.domain.project.experiment.repository.ExperimentRepository
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen
-import life.qbic.projectmanagement.domain.project.repository.ProjectRepository
+import life.qbic.projectmanagement.domain.model.experiment.Experiment
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
+import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
+import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
 
 class ExperimentInformationServiceSpec extends Specification {

@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.application.api;
 
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
  * A sample code service offers functionality within the scope of sample code handling in projects.

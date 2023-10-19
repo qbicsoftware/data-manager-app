@@ -9,7 +9,7 @@ import life.qbic.domain.concepts.communication.Recipient;
 import life.qbic.domain.concepts.communication.Subject;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.Messages;
-import life.qbic.projectmanagement.domain.project.service.event.ProjectAccessGranted;
+import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
 import life.qbic.identity.api.UserInformationService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;

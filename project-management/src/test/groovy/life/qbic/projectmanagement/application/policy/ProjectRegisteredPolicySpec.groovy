@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry
-import life.qbic.projectmanagement.domain.project.ProjectId
-import life.qbic.projectmanagement.domain.project.event.ProjectRegisteredEvent
+import life.qbic.projectmanagement.domain.model.project.ProjectId
+import life.qbic.projectmanagement.domain.model.project.event.ProjectRegisteredEvent
 import spock.lang.Specification
 
 /**

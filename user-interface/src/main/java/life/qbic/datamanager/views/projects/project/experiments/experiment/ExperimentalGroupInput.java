@@ -23,12 +23,12 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
-import life.qbic.projectmanagement.domain.project.experiment.BiologicalReplicate;
-import life.qbic.projectmanagement.domain.project.experiment.Condition;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.project.experiment.VariableName;
+import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.model.experiment.Condition;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 
 /**
  * <b>ExperimentalGroupInput Field</b>

@@ -23,6 +23,7 @@
     <module>domain-concept</module>
     <module>identity-api</module>
     <module>identity-infrastructure</module>
+    <module>project-management-infrastructure</module>
   </modules>
   <packaging>pom</packaging>
 

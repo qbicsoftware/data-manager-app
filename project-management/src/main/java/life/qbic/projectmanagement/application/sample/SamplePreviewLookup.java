@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.sample;
 
 import java.util.List;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 
 public interface SamplePreviewLookup {
 
