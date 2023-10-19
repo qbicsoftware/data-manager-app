@@ -107,7 +107,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
     List<UserInfo> users = new ArrayList<>();
     sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
     userSids.forEach(
-        sId -> users.add(userInformationService.findByEmail(sId).get()));
+        sId -> users.add(userInformationService.findById(sId).get()));
     userGrid.setItems(users);
 
   }

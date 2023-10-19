@@ -175,7 +175,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
           .map(this::formatAuthorityToReadableString)
           .toList();
       String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
-      return new UserProjectAccess(fullName, userDetail.getUsername(), String.join(", ", roles));
+      return new UserProjectAccess(fullName, userDetail.getEmailAddress(), String.join(", ", roles));
     }).toList();
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
     setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
