@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -34,6 +35,7 @@ import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
@@ -53,7 +55,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
   private final List<Column<T>> columns = new ArrayList<>();
-  private final List<T> rows = new ArrayList<>();
+  private final List<Row> rows = new ArrayList<>();
+  private final List<T> model = new ArrayList<>();
 
   // cell styles
   private final CellStyle defaultCellStyle;
@@ -92,7 +95,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     setErrorMessage("Please complete the missing mandatory information.");
 
     Column<T> rowNumberColumn = addColumn("",
-        rowValue -> String.valueOf(rowCount()),
+        rowValue -> String.valueOf(dataRowCount()),
         (rowValue, cellValue) -> {/* do nothing */})
         .withCellStyle(rowNumberStyle);
 
@@ -109,8 +112,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   public void addRow(T rowData) {
     int previousRowCount = rowCount();
-    rows.add(rowData);
-    createCellsForRow(previousRowCount, rowData);
+    var dataRow = new DataRow(rowData);
+    rows.add(dataRow);
+    createCellsForRow(dataRow);
     delegateSpreadsheet.setMaxRows(previousRowCount + 1);
   }
 
@@ -135,7 +139,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   public List<T> getRows() {
-    return rows;
+    return rows.stream()
+        .filter(row -> row instanceof DataRow)
+        .map(row -> (DataRow) row)
+        .map(DataRow::data)
+        .toList();
   }
 
   public boolean isValid() {
@@ -189,7 +197,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.refreshCells(changedCells);
   }
 
-  private Cell getCell(org.apache.poi.ss.util.CellReference cellReference) {
+  private Cell getCell(CellReference cellReference) {
     return getCell(cellReference.getRow(), cellReference.getCol());
   }
 
@@ -197,14 +205,34 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return delegateSpreadsheet.getCell(rowIndex, colIndex);
   }
 
-  private T getRow(int rowIndex) {
+  private int rowIndex(Row row) {
+    int rowIndex = rows.indexOf(row);
+    if (rowIndex < 0) {
+      throw new IllegalArgumentException("Row " + row + " is not contained.");
+    }
+    return rowIndex;
+  }
+
+  private Row getRow(int rowIndex) {
     return rows.get(rowIndex);
   }
 
   private void updateModel(List<Cell> changedCells) {
-    changedCells.forEach(
-        cell -> columns.get(cell.getColumnIndex()).modelEditor.accept(getRow(cell.getRowIndex()),
-            getCellValue(cell)));
+    for (Cell cell : changedCells) {
+      Column<T> column = columns.get(cell.getColumnIndex());
+      var row = getRow(cell.getRowIndex());
+      BiConsumer<T, String> modelUpdater = column.modelUpdater;
+      //FIXME in Java21 this if-else can be replace by switch expression
+      T data;
+      if (row instanceof DataRow dataRow) {
+        data = dataRow.data();
+      } else if (row instanceof HeaderRow headerRow) {
+        data = null;
+      } else {
+        throw new IllegalStateException("Unexpected value: " + row);
+      }
+      modelUpdater.accept(data, getCellValue(cell));
+    }
   }
 
   private void autofitColumns(List<Cell> changedCells) {
@@ -227,13 +255,20 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
 
-  private void createCellsForRow(int rowIndex, T rowData) {
+  private void createCellsForRow(Row row) {
     List<Cell> cellsInRow = new ArrayList<>();
     for (Column<T> column : columns) {
       int colIndex = columns.indexOf(column);
-
-      String cellValue = column.toCellValue.apply(rowData);
-      Cell cell = setCell(rowIndex, colIndex, cellValue,
+      //FIXME in Java21 this if-else can be replace by switch expression
+      String cellValue;
+      if (row instanceof DataRow dataRow) {
+        cellValue = column.toCellValue.apply(dataRow.data());
+      } else if (row instanceof HeaderRow headerRow) {
+        cellValue = headerRow.name();
+      } else {
+        throw new IllegalStateException("Unexpected class of row: " + row);
+      }
+      Cell cell = setCell(rowIndex(row), colIndex, cellValue,
           column.getCellStyle().orElse(defaultCellStyle));
       cellsInRow.add(cell);
     }
@@ -245,7 +280,16 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     List<Cell> dirtyCells = new ArrayList<>();
 
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
-      String cellValue = column.toCellValue.apply(rows.get(rowIndex));
+      Row row = getRow(rowIndex);
+      //FIXME in Java21 this if-else can be replace by switch expression
+      String cellValue;
+      if (row instanceof DataRow dataRow) {
+        cellValue = column.toCellValue.apply(dataRow.data());
+      } else if (row instanceof HeaderRow headerRow) {
+        cellValue = headerRow.name();
+      } else {
+        throw new IllegalStateException("Unexpected class of row: " + row);
+      }
       Cell cell = setCell(rowIndex, colIndex, cellValue,
           column.getCellStyle().orElse(defaultCellStyle));
       dirtyCells.add(cell);
@@ -276,7 +320,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
           "The row at index " + index
               + " cannot be removed. Please provide any index greater than 0");
     }
-
+    Row row = getRow(index);
+    if (row instanceof HeaderRow headerRow) {
+      log.debug("Will not remove header row " + headerRow);
+      return;
+    }
     delegateSpreadsheet.deleteRows(index, index);
     if (nextRowIndex <= lastRowIndex) {
       delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -1, true, true);
@@ -285,6 +333,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setMaxRows(lastRowIndex);
   }
 
+
+  private int dataRowCount() {
+    return Math.toIntExact(rows.stream().filter(DataRow.class::isInstance).count());
+  }
 
   private int rowCount() {
     return rows.size();
@@ -395,8 +447,93 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
     onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
         Set.of(
-            new org.apache.poi.ss.util.CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
+            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
     return cell;
+  }
+
+  private abstract class Row {
+
+  }
+
+  private final class DataRow extends Row {
+
+    private final T data;
+
+    private DataRow(T data) {
+      requireNonNull(data, "data must not be null");
+      this.data = data;
+    }
+
+    public T data() {
+      return data;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      DataRow dataRow = (DataRow) object;
+
+      return Objects.equals(data, dataRow.data);
+    }
+
+    @Override
+    public int hashCode() {
+      return data != null ? data.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", DataRow.class.getSimpleName() + "[", "]")
+          .add("data=" + data)
+          .toString();
+    }
+  }
+
+  private final class HeaderRow extends Row {
+
+    private final String name;
+
+
+    private HeaderRow(String name) {
+      requireNonNull(name, "name must not be null");
+      this.name = name;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      HeaderRow headerRow = (HeaderRow) object;
+
+      return Objects.equals(name, headerRow.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return name != null ? name.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", HeaderRow.class.getSimpleName() + "[", "]")
+          .add("name='" + name + "'")
+          .toString();
+    }
   }
 
   public static class Column<T> {
@@ -405,19 +542,20 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     private final List<ColumnValidator<String>> validators;
 
     private final Function<T, String> toCellValue;
-    private final BiConsumer<T, String> modelEditor;
+    private final BiConsumer<T, String> modelUpdater;
 
     private Component editorComponent;
     private boolean required;
     private CellStyle cellStyle;
 
-    public Column(String name, Function<T, String> toCellValue, BiConsumer<T, String> modelEditor) {
+    public Column(String name, Function<T, String> toCellValue,
+        BiConsumer<T, String> modelUpdater) {
       requireNonNull(name, "name must not be null");
       requireNonNull(toCellValue, "toCellValue must not be null");
-      requireNonNull(modelEditor, "modelEditor must not be null");
+      requireNonNull(modelUpdater, "modelUpdater must not be null");
       this.name = name;
       this.toCellValue = toCellValue;
-      this.modelEditor = modelEditor;
+      this.modelUpdater = modelUpdater;
       editorComponent = null;
       required = false;
       validators = new ArrayList<>();
@@ -586,7 +724,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     @Override
     public Component getCustomEditorForCell(Cell cell, int rowIndex, int columnIndex,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet) {
-      //FIXME why do indices start at -2?
+      //FIXME why do indices start at -2 in the default vaadin implementation?
       if ((columnIndex < 0 || rowIndex < 0)
           || (columnIndex >= columnCount() || rowIndex >= rowCount())) {
         return null;

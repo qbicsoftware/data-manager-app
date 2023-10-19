@@ -52,6 +52,9 @@ public class TestView extends Div {
     Spreadsheet<MyBean> spreadsheet = new Spreadsheet<>();
     spreadsheet.addColumn("name", MyBean::getName, MyBean::setName)
         .setRequired();
+
+    spreadsheet.addRow(bean1);
+
     spreadsheet.addColumn("email", MyBean::getEmail, MyBean::setEmail)
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
         .setRequired();
@@ -61,7 +64,6 @@ public class TestView extends Div {
     Text validationText = new Text("");
     Text output = new Text("");
     add(spreadsheet);
-    spreadsheet.addRow(bean1);
     spreadsheet.addRow(bean2);
 
     add(new Button("add row", click -> spreadsheet.addRow(new MyBean())));
