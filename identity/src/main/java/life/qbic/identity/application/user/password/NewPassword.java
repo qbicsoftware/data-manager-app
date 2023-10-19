@@ -2,7 +2,7 @@ package life.qbic.identity.application.user.password;
 
 import java.util.function.Predicate;
 import life.qbic.application.commons.Result;
-import life.qbic.identity.application.user.registration.UserRegistrationService;
+import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.EncryptedPassword;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.logging.api.Logger;
@@ -18,12 +18,12 @@ import life.qbic.logging.service.LoggerFactory;
 public class NewPassword implements NewPasswordInput {
 
   private static final Logger log = LoggerFactory.logger(NewPassword.class.getName());
-  private final UserRegistrationService userRegistrationService;
+  private final IdentityService identityService;
   private NewPasswordOutput useCaseOutput;
 
-  public NewPassword(UserRegistrationService userRegistrationService) {
+  public NewPassword(IdentityService identityService) {
     super();
-    this.userRegistrationService = userRegistrationService;
+    this.identityService = identityService;
   }
 
   public void setUseCaseOutput(NewPasswordOutput useCaseOutput) {
@@ -37,7 +37,7 @@ public class NewPassword implements NewPasswordInput {
       return;
     }
 
-    Result<EncryptedPassword, RuntimeException> response = userRegistrationService.newUserPassword(
+    Result<EncryptedPassword, RuntimeException> response = identityService.newUserPassword(
         userId, newRawPassword);
     Predicate<RuntimeException> isPasswordValidationException = e -> e instanceof PasswordValidationException;
     response

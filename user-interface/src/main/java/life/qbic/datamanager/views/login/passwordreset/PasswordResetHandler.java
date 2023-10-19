@@ -4,7 +4,7 @@ import com.vaadin.flow.component.Key;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.identity.application.user.password.PasswordResetInput;
 import life.qbic.identity.application.user.password.PasswordResetOutput;
-import life.qbic.identity.application.user.registration.UserRegistrationService;
+import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -83,7 +83,7 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
       } else if (failure instanceof UserNotFoundException) {
         showPasswordResetFailedError(
             "User not found", "No user with the provided mail address is known.");
-      } else if (failure instanceof UserRegistrationService.UserNotActivatedException) {
+      } else if (failure instanceof IdentityService.UserNotActivatedException) {
         showPasswordResetFailedError("User not active",
             "Please activate your account first to reset the password.");
       } else {

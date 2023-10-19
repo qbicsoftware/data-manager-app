@@ -1,4 +1,4 @@
-package life.qbic.identity.application.user.registration;
+package life.qbic.identity.application.user;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -21,7 +21,6 @@ import life.qbic.identity.domain.model.FullName;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
-import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.domain.concepts.DomainEvent;
 
@@ -33,25 +32,13 @@ import life.qbic.domain.concepts.DomainEvent;
  *
  * @since 1.0.0
  */
-public final class UserRegistrationService {
+public final class IdentityService {
 
   private final UserRepository userRepository;
 
-  public UserRegistrationService(UserRepository userRepository) {
+  public IdentityService(UserRepository userRepository) {
     super();
     this.userRepository = userRepository;
-  }
-
-  private static void sendNotification(DomainEvent event, NotificationService notificationService) {
-  Objects.requireNonNull(notificationService);
-    var notificationId = notificationService.newNotificationId();
-    var notification =
-        Notification.create(
-            event.getClass().getSimpleName(),
-            event.occurredOn(),
-            notificationId,
-            event);
-    notificationService.send(notification);
   }
 
   /**

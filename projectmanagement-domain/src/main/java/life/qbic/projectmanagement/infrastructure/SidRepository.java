@@ -1,4 +1,4 @@
-package life.qbic.authentication.persistence;
+package life.qbic.projectmanagement.infrastructure;
 
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;

@@ -4,7 +4,7 @@ package life.qbic.identity.domain.usermanagement.registration
 import life.qbic.identity.application.user.registration.RegisterUserOutput
 import life.qbic.identity.application.user.registration.Registration
 import life.qbic.identity.application.user.registration.UserRegistrationException
-import life.qbic.identity.application.user.registration.UserRegistrationService
+import life.qbic.identity.application.user.IdentityService
 import life.qbic.identity.domain.registry.DomainRegistry
 import life.qbic.identity.domain.model.EmailAddress
 import life.qbic.identity.domain.model.EncryptedPassword
@@ -25,7 +25,7 @@ import spock.lang.Specification
 class RegistrationSpec extends Specification {
 
     @Shared
-    public UserRegistrationService userRegistrationService
+    public IdentityService userRegistrationService
 
     @Shared
     public TestStorage testStorage
@@ -34,7 +34,7 @@ class RegistrationSpec extends Specification {
         testStorage = new TestStorage()
         DomainRegistry domainRegistry = DomainRegistry.instance()
         domainRegistry.registerService(new UserDomainService(UserRepository.getInstance(testStorage)))
-        userRegistrationService = new UserRegistrationService(UserRepository.getInstance(testStorage))
+        userRegistrationService = new IdentityService(UserRepository.getInstance(testStorage))
     }
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
@@ -49,7 +49,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService(UserRepository.getInstance(testStorage)))
+        def registration = new Registration(new IdentityService(UserRepository.getInstance(testStorage)))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
@@ -74,7 +74,7 @@ class RegistrationSpec extends Specification {
         def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), EncryptedPassword.from("test1234".toCharArray()))
 
         and: "a the use case with output"
-        def registration = new Registration(new UserRegistrationService(UserRepository.getInstance(Mock(UserDataStorage))))
+        def registration = new Registration(new IdentityService(UserRepository.getInstance(Mock(UserDataStorage))))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"

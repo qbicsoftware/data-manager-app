@@ -1,4 +1,4 @@
-package life.qbic.authentication.persistence;
+package life.qbic.identity.infrastructure;
 
 
 import java.util.List;

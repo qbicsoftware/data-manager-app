@@ -1,12 +1,12 @@
-package life.qbic.authentication.persistence;
+package life.qbic.identity.infrastructure;
 
 import java.util.List;
 import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
-import life.qbic.identity.infrastructure.SidDataStorage;
-import life.qbic.identity.infrastructure.UserDataStorage;
+import life.qbic.projectmanagement.infrastructure.QBiCSid;
+import life.qbic.projectmanagement.infrastructure.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,7 +1,8 @@
 package life.qbic.identity.application.user.registration;
 
 import life.qbic.application.commons.ApplicationResponse;
-import life.qbic.identity.application.user.registration.UserRegistrationService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
@@ -24,7 +25,7 @@ public class Registration implements RegisterUserInput {
 
   private RegisterUserOutput registerUserOutput;
 
-  private final UserRegistrationService userRegistrationService;
+  private final IdentityService identityService;
 
   /**
    * Creates the registration use case.
@@ -36,11 +37,11 @@ public class Registration implements RegisterUserInput {
    * after the use case has been executed via
    * {@link Registration#register(String, String, char[])}.
    *
-   * @param userRegistrationService the user registration service to save the new user to.
+   * @param identityService the user registration service to save the new user to.
    * @since 1.0.0
    */
-  public Registration(UserRegistrationService userRegistrationService) {
-    this.userRegistrationService = userRegistrationService;
+  public Registration(IdentityService identityService) {
+    this.identityService = identityService;
   }
 
   /**
@@ -64,7 +65,7 @@ public class Registration implements RegisterUserInput {
       return;
     }
     try {
-      userRegistrationService.registerUser(fullName, email, rawPassword)
+      identityService.registerUser(fullName, email, rawPassword)
           .ifSuccessOrElse(this::reportSuccess,
               response -> registerUserOutput.onUnexpectedFailure(build(response)));
     } catch (Exception e) {

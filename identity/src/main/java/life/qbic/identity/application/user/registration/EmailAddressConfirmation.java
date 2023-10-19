@@ -2,6 +2,7 @@ package life.qbic.identity.application.user.registration;
 
 import java.util.Objects;
 import life.qbic.identity.application.user.UserNotFoundException;
+import life.qbic.identity.application.user.IdentityService;
 
 /**
  * <b>Email Address Confirmation use case</b>
@@ -14,10 +15,10 @@ public class EmailAddressConfirmation implements ConfirmEmailInput {
 
   private ConfirmEmailOutput confirmEmailOutput;
 
-  private final UserRegistrationService userRegistrationService;
+  private final IdentityService identityService;
 
-  public EmailAddressConfirmation(UserRegistrationService userRegistrationService) {
-    this.userRegistrationService = Objects.requireNonNull(userRegistrationService);
+  public EmailAddressConfirmation(IdentityService identityService) {
+    this.identityService = Objects.requireNonNull(identityService);
   }
 
   public void setConfirmEmailOutput(ConfirmEmailOutput confirmEmailOutput) {
@@ -28,7 +29,7 @@ public class EmailAddressConfirmation implements ConfirmEmailInput {
   public void confirmEmailAddress(String userID) {
     Objects.requireNonNull(confirmEmailOutput, "No use case output was set yet");
     try {
-      userRegistrationService.confirmUserEmail(userID);
+      identityService.confirmUserEmail(userID);
       confirmEmailOutput.onEmailConfirmationSuccess();
     } catch (UserNotFoundException e) {
       confirmEmailOutput.onEmailConfirmationFailure("Unknown user");

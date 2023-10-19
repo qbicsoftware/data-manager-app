@@ -1,4 +1,4 @@
-package life.qbic.authentication.persistence;
+package life.qbic.projectmanagement.infrastructure;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

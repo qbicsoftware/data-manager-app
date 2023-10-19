@@ -175,6 +175,12 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
+      <artifactId>identity-infrastructure</artifactId>
+      <version>0.28.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>

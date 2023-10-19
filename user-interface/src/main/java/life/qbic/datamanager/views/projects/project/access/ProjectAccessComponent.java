@@ -15,7 +15,7 @@ import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import life.qbic.authentication.persistence.SidRepository;
+import life.qbic.projectmanagement.infrastructure.SidRepository;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;

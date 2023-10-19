@@ -3,7 +3,7 @@ package life.qbic.identity.application.user.registration;
 import java.io.Serial;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.identity.application.user.registration.UserRegistrationService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;

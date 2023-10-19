@@ -2,7 +2,7 @@ package life.qbic.identity.application.user.password;
 
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationResponse;
-import life.qbic.identity.application.user.registration.UserRegistrationService;
+import life.qbic.identity.application.user.IdentityService;
 
 /**
  * <b>Password Reset Use Case</b>
@@ -15,9 +15,9 @@ public class PasswordResetRequest implements PasswordResetInput {
 
   private PasswordResetOutput output;
 
-  private final UserRegistrationService registrationService;
+  private final IdentityService registrationService;
 
-  public PasswordResetRequest(UserRegistrationService registrationService) {
+  public PasswordResetRequest(IdentityService registrationService) {
     super();
     this.registrationService = registrationService;
   }
