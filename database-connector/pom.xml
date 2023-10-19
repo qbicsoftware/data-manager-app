@@ -77,7 +77,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>projectmanagement-domain</artifactId>
+      <artifactId>project-management</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>

@@ -19,7 +19,7 @@
     <module>subscription-provider</module>
     <module>subscription-api</module>
     <module>finances</module>
-    <module>projectmanagement-domain</module>
+    <module>project-management</module>
     <module>domain-concept</module>
     <module>identity-api</module>
     <module>identity-infrastructure</module>
