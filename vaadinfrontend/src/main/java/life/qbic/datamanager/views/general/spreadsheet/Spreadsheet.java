@@ -56,7 +56,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
   private final List<Column<T>> columns = new ArrayList<>();
   private final List<Row> rows = new ArrayList<>();
-  private final List<T> model = new ArrayList<>();
 
   // cell styles
   private final CellStyle defaultCellStyle;
@@ -94,14 +93,15 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setSpreadsheetComponentFactory(new MyComponentFactory());
     setErrorMessage("Please complete the missing mandatory information.");
 
+    delegateSpreadsheet.setMaxRows(rowCount());
+    add(delegateSpreadsheet);
+
+    validationMode = ValidationMode.LAZY;
     Column<T> rowNumberColumn = addColumn("",
         rowValue -> String.valueOf(dataRowCount()),
         (rowValue, cellValue) -> {/* do nothing */})
         .withCellStyle(rowNumberStyle);
-
-    delegateSpreadsheet.setMaxRows(rowCount());
-    add(delegateSpreadsheet);
-    validationMode = ValidationMode.LAZY;
+    addHeaderRow();
   }
 
   public void validate() {
@@ -115,6 +115,14 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     var dataRow = new DataRow(rowData);
     rows.add(dataRow);
     createCellsForRow(dataRow);
+    delegateSpreadsheet.setMaxRows(previousRowCount + 1);
+  }
+
+  private void addHeaderRow() {
+    int previousRowCount = rowCount();
+    var headerRow = new HeaderRow();
+    rows.add(headerRow);
+    createCellsForRow(headerRow);
     delegateSpreadsheet.setMaxRows(previousRowCount + 1);
   }
 
@@ -138,7 +146,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     this.validationMode = validationMode;
   }
 
-  public List<T> getRows() {
+  public List<T> getData() {
     return rows.stream()
         .filter(row -> row instanceof DataRow)
         .map(row -> (DataRow) row)
@@ -217,21 +225,26 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return rows.get(rowIndex);
   }
 
+  private int colIndex(Column<T> column) {
+    int colIndex = columns.indexOf(column);
+    if (colIndex < 0) {
+      throw new IllegalArgumentException("Column " + column + " is not contained.");
+    }
+    return colIndex;
+  }
+
+  private Column<T> getColumn(int colIndex) {
+    return columns.get(colIndex);
+  }
+
   private void updateModel(List<Cell> changedCells) {
     for (Cell cell : changedCells) {
-      Column<T> column = columns.get(cell.getColumnIndex());
+      Column<T> column = getColumn(cell.getColumnIndex());
       var row = getRow(cell.getRowIndex());
       BiConsumer<T, String> modelUpdater = column.modelUpdater;
-      //FIXME in Java21 this if-else can be replace by switch expression
-      T data;
       if (row instanceof DataRow dataRow) {
-        data = dataRow.data();
-      } else if (row instanceof HeaderRow headerRow) {
-        data = null;
-      } else {
-        throw new IllegalStateException("Unexpected value: " + row);
+        modelUpdater.accept(dataRow.data(), getCellValue(cell));
       }
-      modelUpdater.accept(data, getCellValue(cell));
     }
   }
 
@@ -257,44 +270,39 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private void createCellsForRow(Row row) {
     List<Cell> cellsInRow = new ArrayList<>();
-    for (Column<T> column : columns) {
-      int colIndex = columns.indexOf(column);
-      //FIXME in Java21 this if-else can be replace by switch expression
-      String cellValue;
-      if (row instanceof DataRow dataRow) {
-        cellValue = column.toCellValue.apply(dataRow.data());
-      } else if (row instanceof HeaderRow headerRow) {
-        cellValue = headerRow.name();
-      } else {
-        throw new IllegalStateException("Unexpected class of row: " + row);
-      }
-      Cell cell = setCell(rowIndex(row), colIndex, cellValue,
-          column.getCellStyle().orElse(defaultCellStyle));
+    for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
+      Cell cell = createCell(rowIndex(row), colIndex);
       cellsInRow.add(cell);
     }
     delegateSpreadsheet.refreshCells(cellsInRow);
   }
 
   private List<Cell> createCellsForColumn(Column<T> column) {
-    int colIndex = columns.indexOf(column);
+    int colIndex = colIndex(column);
     List<Cell> dirtyCells = new ArrayList<>();
 
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
-      Row row = getRow(rowIndex);
       //FIXME in Java21 this if-else can be replace by switch expression
-      String cellValue;
-      if (row instanceof DataRow dataRow) {
-        cellValue = column.toCellValue.apply(dataRow.data());
-      } else if (row instanceof HeaderRow headerRow) {
-        cellValue = headerRow.name();
-      } else {
-        throw new IllegalStateException("Unexpected class of row: " + row);
-      }
-      Cell cell = setCell(rowIndex, colIndex, cellValue,
-          column.getCellStyle().orElse(defaultCellStyle));
+      Cell cell = createCell(rowIndex, colIndex);
       dirtyCells.add(cell);
     }
     return dirtyCells;
+  }
+
+  private Cell createCell(int rowIndex, int colIndex) {
+    Column<T> column = getColumn(colIndex);
+    Row row = getRow(rowIndex);
+    //FIXME in Java 21 this can be replaced by a switch expression
+    Cell cell;
+    if (row instanceof HeaderRow) {
+      cell = setCell(rowIndex, colIndex, column.getName(), columnHeaderStyle);
+    } else if (row instanceof DataRow dataRow) {
+      cell = setCell(rowIndex, colIndex, column.toCellValue.apply(dataRow.data()),
+          column.getCellStyle().orElse(defaultCellStyle));
+    } else {
+      throw new IllegalStateException("Unexpected class of row: " + row);
+    }
+    return cell;
   }
 
 
@@ -335,7 +343,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
 
   private int dataRowCount() {
-    return Math.toIntExact(rows.stream().filter(DataRow.class::isInstance).count());
+    return getData().size();
   }
 
   private int rowCount() {
@@ -420,7 +428,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private ValidationResult validateCell(Cell cell) {
-    Column<T> column = columns.get(cell.getColumnIndex());
+    Column<T> column = getColumn(cell.getColumnIndex());
     List<ColumnValidator<String>> validators = column.getValidators();
     return validators.stream()
         .map(it -> it.validate(getCellValue(cell)))
@@ -452,7 +460,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private abstract class Row {
-
   }
 
   private final class DataRow extends Row {
@@ -495,45 +502,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
-  private final class HeaderRow extends Row {
-
-    private final String name;
-
-
-    private HeaderRow(String name) {
-      requireNonNull(name, "name must not be null");
-      this.name = name;
-    }
-
-    public String name() {
-      return name;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      if (this == object) {
-        return true;
-      }
-      if (object == null || getClass() != object.getClass()) {
-        return false;
-      }
-
-      HeaderRow headerRow = (HeaderRow) object;
-
-      return Objects.equals(name, headerRow.name);
-    }
-
-    @Override
-    public int hashCode() {
-      return name != null ? name.hashCode() : 0;
-    }
-
-    @Override
-    public String toString() {
-      return new StringJoiner(", ", HeaderRow.class.getSimpleName() + "[", "]")
-          .add("name='" + name + "'")
-          .toString();
-    }
+  private class HeaderRow extends Row {
   }
 
   public static class Column<T> {
@@ -620,7 +589,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
     public Column<T> setRequired() {
       this.required = true;
-      validators.add(0, new ColumnValidator<>(
+      validators.addFirst(new ColumnValidator<>(
           object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
           "The column '" + getName() + "' does not allow empty values. Please enter a value."));
       return this;
@@ -729,7 +698,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
           || (columnIndex >= columnCount() || rowIndex >= rowCount())) {
         return null;
       }
-      return columns.get(columnIndex).getEditorComponent().orElse(null);
+      return getColumn(columnIndex).getEditorComponent().orElse(null);
     }
 
     @Override

@@ -59,7 +59,10 @@ public class TestView extends Div {
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
         .setRequired();
 
-//    spreadsheet.addRow(new MyBean());
+    for (int i = 0; i < 50; i++) {
+      spreadsheet.addRow(new MyBean());
+    }
+
 
     Text validationText = new Text("");
     Text output = new Text("");
@@ -69,7 +72,7 @@ public class TestView extends Div {
     add(new Button("add row", click -> spreadsheet.addRow(new MyBean())));
     add(new Button("remove last row", click -> spreadsheet.removeLastRow()));
     add(new Button("get rows", click -> {
-      output.setText(spreadsheet.getRows().toString());
+      output.setText(spreadsheet.getData().toString());
       System.out.println("bean1 = " + bean1);
       System.out.println("bean2 = " + bean2);
     }));
