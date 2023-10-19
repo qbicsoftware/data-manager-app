@@ -5,9 +5,9 @@ import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
 import java.util.Comparator;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.controlling.domain.model.experiment.ExperimentalValue;
+import life.qbic.controlling.domain.model.experiment.ExperimentalVariable;
+import life.qbic.controlling.domain.model.experiment.VariableLevel;
 
 /**
  * A fact sheet displaying information on an experimental variable.

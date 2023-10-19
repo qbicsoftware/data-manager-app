@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
+import life.qbic.controlling.domain.model.experiment.ExperimentalVariable;
 
 /**
  * <b>Add Experimental Variables Dialog</b>

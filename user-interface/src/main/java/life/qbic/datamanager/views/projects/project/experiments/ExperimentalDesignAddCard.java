@@ -16,7 +16,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BoxShadow;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
+import life.qbic.controlling.domain.model.experiment.ExperimentalDesign;
 
 /**
  * <b>Experimental Design Add Card</b>

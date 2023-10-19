@@ -25,11 +25,11 @@ import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.controlling.application.AddExperimentToProjectService;
+import life.qbic.controlling.application.ExperimentalDesignSearchService;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
+import life.qbic.controlling.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 

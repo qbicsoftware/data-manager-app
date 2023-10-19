@@ -14,10 +14,10 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.controlling.application.ExperimentInformationService;
+import life.qbic.controlling.application.ProjectInformationService;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

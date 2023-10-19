@@ -12,7 +12,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentListCo
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentSelectionEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.experiment.Experiment;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

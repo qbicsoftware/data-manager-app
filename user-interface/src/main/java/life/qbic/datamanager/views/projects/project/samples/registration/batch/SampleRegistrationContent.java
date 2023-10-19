@@ -1,10 +1,10 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
-import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.controlling.domain.model.experiment.BiologicalReplicateId;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.controlling.domain.model.sample.AnalysisMethod;
 
 /**
  * <p> SampleRegistrationContent contains the sample information provided by the user during sample batch creation in the {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog}

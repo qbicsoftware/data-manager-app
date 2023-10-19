@@ -15,13 +15,13 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.BatchRegistrationListener;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.controlling.application.ExperimentInformationService;
+import life.qbic.controlling.application.ProjectInformationService;
+import life.qbic.controlling.domain.model.project.Project;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.batch.Batch;
+import life.qbic.controlling.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

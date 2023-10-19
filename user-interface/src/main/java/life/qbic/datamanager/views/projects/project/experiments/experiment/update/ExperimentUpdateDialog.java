@@ -20,10 +20,10 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.controlling.application.ExperimentalDesignSearchService;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
 
 /**
  * <b>ExperimentUpdateDialog</b>

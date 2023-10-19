@@ -44,6 +44,10 @@
       <version>1.6.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+    </dependency>
   </dependencies>
 
 </project>

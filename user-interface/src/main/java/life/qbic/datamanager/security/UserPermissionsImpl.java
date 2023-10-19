@@ -1,6 +1,6 @@
 package life.qbic.datamanager.security;
 
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.AclPermissionEvaluator;
 import org.springframework.security.core.Authentication;

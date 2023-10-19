@@ -16,7 +16,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;

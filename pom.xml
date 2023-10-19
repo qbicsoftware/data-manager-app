@@ -13,7 +13,6 @@
     <module>identity</module>
     <module>broadcasting</module>
     <module>newshandler</module>
-    <module>database-connector</module>
     <module>application-commons</module>
     <module>logging</module>
     <module>subscription-provider</module>
