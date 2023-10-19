@@ -89,10 +89,9 @@ public class TestView extends Div {
       System.out.println("bean1 = " + bean1);
       System.out.println("bean2 = " + bean2);
     }));
-    add(new Button("validates?", click -> {
-      spreadsheet.validate();
-      validationText.setText(spreadsheet.isValid() ? "Good job!" : spreadsheet.getErrorMessage());
-    }));
+    add(new Button("validate spreadsheet", click -> spreadsheet.validate()));
+    spreadsheet.addValidationChangeListener(event -> validationText.setText(
+        event.value() ? "Good Job!" : event.getSource().getErrorMessage()));
     add(validationText);
     add(new Checkbox("instant validation?", event -> {
       boolean eventValue = event.getValue();

@@ -5,6 +5,8 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Span;
@@ -107,6 +109,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   public void validate() {
     List<Cell> cells = cells();
     updateValidation(cells);
+    updateSpreadsheetValidity();
     delegateSpreadsheet.refreshCells(cells);
   }
 
@@ -198,17 +201,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
         .map(this::getCell)
         .toList();
-    onSilentCellUpdate(changedCells);
+    refreshCellData(changedCells);
     delegateSpreadsheet.refreshCells(changedCells);
-  }
-
-  //FIXME clear up rename merge method add javadoc
-  private void onSilentCellUpdate(List<Cell> changedCells) {
-    updateModel(changedCells);
-    if (validationMode == ValidationMode.EAGER) {
-      updateValidation(changedCells);
-    }
-    autofitColumns(changedCells);
   }
 
   private Cell getCell(CellReference cellReference) {
@@ -243,6 +237,33 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return columns.get(colIndex);
   }
 
+  //<editor-fold desc="Content manipulation">
+
+  /**
+   * Refreshes the background information on a cell. Does not redraw the cell.
+   * <p>
+   * Background data in this case are
+   * <ul>
+   *   <li/> model data, e.g. the bean values
+   *   <li/> validation status if eagerly evaluated
+   *   <li/> column width
+   *
+   * @param cells the cells for which to refresh the background data.
+   */
+  private void refreshCellData(List<Cell> cells) {
+    updateModel(cells);
+    if (validationMode == ValidationMode.EAGER) {
+      updateValidation(cells);
+      updateSpreadsheetValidity();
+    }
+    autofitColumns(cells);
+  }
+
+  /**
+   * Updates the underlying data structure in case the cell is in a {@link DataRow}.
+   *
+   * @param changedCells the cells for which to trigger the data update.
+   */
   private void updateModel(List<Cell> changedCells) {
     for (Cell cell : changedCells) {
       Column<T> column = getColumn(cell.getColumnIndex());
@@ -254,25 +275,38 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
+  /**
+   * Fits the columns for the cells to the content
+   * @param changedCells the cells for which to fit the column width
+   */
   private void autofitColumns(List<Cell> changedCells) {
     changedCells.stream().map(Cell::getColumnIndex)
         .distinct()
         .forEach(this::autoFitColumnWidth);
   }
 
+  /**
+   * Runs validation on the provided cells. If all cells are valid, sets the spreadsheet to be valid as well; otherwise sets the spreadsheet to be invalid.
+   *
+   * @param changedCells the cells to validate
+   */
   private void updateValidation(List<Cell> changedCells) {
-    this.setInvalid(false);
     for (Cell changedCell : changedCells) {
       ValidationResult validationResult = validateCell(changedCell);
-      if (validationResult.isInvalid()) {
-        this.setInvalid(true);
-      }
       if (hasCellValidationChanged(changedCell, validationResult)) {
         updateCellValidationStatus(changedCell, validationResult);
       }
     }
   }
 
+  private void updateSpreadsheetValidity() {
+    boolean wasInvalid = isInvalid();
+    boolean willBeInvalid = cells().stream().anyMatch(this::isCellInvalid);
+    setInvalid(willBeInvalid);
+    if (wasInvalid != willBeInvalid) {
+      fireEvent(new ValidationChangeEvent(this, false, !wasInvalid, !willBeInvalid));
+    }
+  }
 
   private void createCellsForRow(Row row) {
     List<Cell> cellsInRow = new ArrayList<>();
@@ -308,28 +342,53 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     } else {
       throw new IllegalStateException("Unexpected class of row: " + row);
     }
-    onSilentCellUpdate(List.of(cell));
+    refreshCellData(List.of(cell));
     return cell;
+  }
+
+  private void updateCell(Cell cell, String value) {
+    updateCell(cell.getRowIndex(), cell.getColumnIndex(), value, cell.getCellStyle());
   }
 
   private Cell updateCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
     Cell cell = setCell(rowIndex, colIndex, cellValue, cellStyle);
     //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
-    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
-    onSilentCellUpdate(List.of(cell));
+    // thus we need to run all corresponding actions here as well.
+    refreshCellData(List.of(cell));
     return cell;
   }
 
+  private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
+    Cell cell = Optional.ofNullable(getCell(rowIndex, colIndex))
+        .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
+    setCellValue(cell, cellValue);
+    cell.setCellStyle(cellStyle);
 
-  private void autoFitColumnWidth(int colIndex) {
-    delegateSpreadsheet.autofitColumn(colIndex);
-    int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
-        colIndex);
-    int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
-    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
+//    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
+//    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
+//    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
+//        Set.of(
+//            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
+    return cell;
   }
 
+  private static void setCellValue(Cell cell, String cellValue) {
+    switch (cell.getCellType()) {
+      case _NONE, ERROR, FORMULA -> {
+      }
+      case NUMERIC -> cell.setCellValue(Double.parseDouble(cellValue));
+      case STRING, BLANK -> cell.setCellValue(cellValue);
+      case BOOLEAN -> cell.setCellValue(Boolean.parseBoolean(cellValue));
+      default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
+    }
+  }
 
+  /**
+   * Deletes a row at the given index if the row is a {@link DataRow}. Does nothing if the row is a
+   * {@link HeaderRow}. Shifts following rows up if any exist.
+   *
+   * @param index the index of the row to remove
+   */
   private void deleteRow(int index) {
     int lastRowIndex = rowCount() - 1;
     int nextRowIndex = index + 1;
@@ -356,19 +415,36 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setMaxRows(lastRowIndex);
   }
 
-
+  /**
+   * @return count the rows containing data.
+   */
   private int dataRowCount() {
     return getData().size();
   }
 
+  /**
+   * @return the total number of rows including header rows.
+   */
   private int rowCount() {
     return rows.size();
   }
 
+  /**
+   * @return the total number of columns in the spreadsheet
+   */
   private int columnCount() {
     return columns.size();
   }
+  //</editor-fold>
 
+  //<editor-fold desc="Read content">
+  private String getCellValue(Cell cell) {
+    return delegateSpreadsheet.getCellValue(cell);
+  }
+
+  /**
+   * @return all cells in the spreadsheet
+   */
   private List<Cell> cells() {
     List<Cell> cells = new ArrayList<>();
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
@@ -377,6 +453,47 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       }
     }
     return cells.stream().toList();
+  }
+
+  //</editor-fold>
+
+  //<editor-fold desc="styling">
+  private void autoFitColumnWidth(int colIndex) {
+    delegateSpreadsheet.autofitColumn(colIndex);
+    int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
+        colIndex);
+    int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
+    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
+  }
+
+  private Comment createComment(String comment) {
+    Comment cellComment = drawingPatriarch.createCellComment(creationHelper.createClientAnchor());
+    cellComment.setString(new XSSFRichTextString(comment));
+    return cellComment;
+  }
+
+  private static Color getErrorBackgroundColor() {
+    float alpha = 0.1f;
+    float hueAngle = 0f; // 0: red; 120: green, 240: blue
+    float brightness = 1f; // blended with white
+    return Color.getHSBColor(hueAngle, alpha, brightness);
+  }
+  //</editor-fold>
+
+  //<editor-fold desc="cell validation">
+
+  private ValidationResult validateCell(Cell cell) {
+    Column<T> column = getColumn(cell.getColumnIndex());
+    Row row = getRow(cell.getRowIndex());
+    if (row instanceof HeaderRow) {
+      return ValidationResult.valid();
+    }
+    List<ColumnValidator<String>> validators = column.getValidators();
+    return validators.stream()
+        .map(it -> it.validate(getCellValue(cell)))
+        .filter(ValidationResult::isInvalid)
+        .findAny()
+        .orElse(ValidationResult.valid());
   }
 
   private void markCellAsInvalid(Cell cell, String errorMessage) {
@@ -396,13 +513,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       return; // only apply to invalid cells
     }
     cell.setCellStyle(defaultCellStyle);
-    cell.setCellComment(null);
-  }
-
-  private Comment createComment(String comment) {
-    Comment cellComment = drawingPatriarch.createCellComment(creationHelper.createClientAnchor());
-    cellComment.setString(new XSSFRichTextString(comment));
-    return cellComment;
+    cell.removeCellComment();
   }
 
   private void updateCellValidationStatus(Cell cell, ValidationResult validationResult) {
@@ -417,15 +528,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     if (isCellValid(cell) && validationResult.isValid()) {
       return false;
     }
-    Comment existingComment = cell.getCellComment();
-    if (isNull(existingComment)) {
-      return true;
+    if (isCellInvalid(cell) && validationResult.isInvalid()) {
+      Comment existingComment = cell.getCellComment();
+      assert Objects.nonNull(validationResult.errorMessage()) : "error message is never null";
+      if (Objects.isNull(existingComment)) {
+        // error message is never null
+        return true;
+      }
+      return !validationResult.errorMessage()
+          .equals(existingComment.getString().getString());
     }
-    boolean validationMessageChanged = !validationResult.errorMessage()
-        .equals(existingComment.getString().getString());
-    return isCellValid(cell) || validationMessageChanged;
+    return true;
   }
-
 
   private boolean isCellValid(Cell cell) {
     return !isCellInvalid(cell);
@@ -435,50 +549,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return invalidCellStyle.equals(cell.getCellStyle());
   }
 
-  private static Color getErrorBackgroundColor() {
-    float alpha = 0.1f;
-    float hueAngle = 0f; // 0: red; 120: green, 240: blue
-    float brightness = 1f; // blended with white
-    return Color.getHSBColor(hueAngle, alpha, brightness);
-  }
+  //</editor-fold>
 
-  private ValidationResult validateCell(Cell cell) {
-    Column<T> column = getColumn(cell.getColumnIndex());
-    Row row = getRow(cell.getRowIndex());
-    if (row instanceof HeaderRow) {
-      return ValidationResult.valid();
-    }
-    List<ColumnValidator<String>> validators = column.getValidators();
-    return validators.stream()
-        .map(it -> it.validate(getCellValue(cell)))
-        .filter(ValidationResult::isInvalid)
-        .findAny()
-        .orElse(ValidationResult.valid());
-  }
-
-  private String getCellValue(Cell cell) {
-    return delegateSpreadsheet.getCellValue(cell);
-  }
-
-  private void updateCell(Cell cell, String value) {
-    updateCell(cell.getRowIndex(), cell.getColumnIndex(), value, cell.getCellStyle());
-  }
-
-  private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
-    Cell cell = Optional.ofNullable(getCell(rowIndex, colIndex))
-        .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
-    CellFunctions.setCellValue(cell, cellValue);
-    cell.setCellStyle(cellStyle);
-
-//    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
-//    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
-//    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
-//        Set.of(
-//            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
-    return cell;
-  }
-
+  //<editor-fold desc="row classes">
   private abstract class Row {
+
   }
 
   private final class DataRow extends Row {
@@ -522,7 +597,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private class HeaderRow extends Row {
+
   }
+  //</editor-fold>
 
   public static class Column<T> {
 
@@ -532,9 +609,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     private final Function<T, String> toCellValue;
     private final BiConsumer<T, String> modelUpdater;
 
+    private CellStyle cellStyle;
     private Component editorComponent;
     private boolean required;
-    private CellStyle cellStyle;
 
     public Column(String name, Function<T, String> toCellValue,
         BiConsumer<T, String> modelUpdater) {
@@ -561,7 +638,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       return name;
     }
 
-    List<ColumnValidator<String>> getValidators() {
+    public List<ColumnValidator<String>> getValidators() {
       return Collections.unmodifiableList(validators);
     }
 
@@ -701,7 +778,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
-  private class MyComponentFactory implements SpreadsheetComponentFactory {
+  /**
+   * This SpreadsheetComponentFactory handles components in the spreadsheet. When a custom editor is
+   * retrieved, the editor is taken from the corresponding column.
+   */
+  private final class MyComponentFactory implements SpreadsheetComponentFactory {
 
     @Override
     public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
@@ -712,7 +793,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     @Override
     public Component getCustomEditorForCell(Cell cell, int rowIndex, int columnIndex,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet) {
-      //FIXME why do indices start at -2 in the default vaadin implementation?
+      //We need this as indices start at -2 in the default vaadin implementation.
       if ((columnIndex < 0 || rowIndex < 0)
           || (columnIndex >= columnCount() || rowIndex >= rowCount())) {
         return null;
@@ -726,15 +807,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         Component customEditor) {
       try {
         if (customEditor instanceof SelectEditor selectEditor) {
-
           selectEditor.removeAllValueChangeListeners();
-
           selectEditor.setFromCellValue(getCellValue(cell));
-
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
             updateCell(cell, cellValue);
-            delegateSpreadsheet.refreshCells(cell);
+            spreadsheet.refreshCells(cell);
           });
         }
       } catch (ClassCastException e) {
@@ -743,17 +821,37 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
-  private static final class CellFunctions {
+  public Registration addValidationChangeListener(
+      ComponentEventListener<ValidationChangeEvent> listener) {
+    return addListener(ValidationChangeEvent.class, listener);
+  }
 
-    static void setCellValue(Cell cell, String value) {
-      switch (cell.getCellType()) {
-        case _NONE, ERROR, FORMULA -> {
-        }
-        case NUMERIC -> cell.setCellValue(Double.parseDouble(value));
-        case STRING, BLANK -> cell.setCellValue(value);
-        case BOOLEAN -> cell.setCellValue(Boolean.parseBoolean(value));
-        default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
-      }
+  public static class ValidationChangeEvent extends ComponentEvent<Spreadsheet<?>> {
+
+    private final boolean oldValue;
+    private final boolean value;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public ValidationChangeEvent(Spreadsheet source, boolean fromClient, boolean oldValue,
+        boolean value) {
+      super(source, fromClient);
+      this.oldValue = oldValue;
+      this.value = value;
+    }
+
+    public boolean oldValue() {
+      return oldValue;
+    }
+
+    public boolean value() {
+      return value;
     }
   }
 }
