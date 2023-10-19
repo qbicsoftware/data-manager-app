@@ -10,7 +10,7 @@
   <version>0.28.2</version>
   <modules>
     <module>user-interface</module>
-    <module>user-domain</module>
+    <module>identity</module>
     <module>broadcasting</module>
     <module>newshandler</module>
     <module>database-connector</module>
@@ -21,7 +21,8 @@
     <module>finances</module>
     <module>projectmanagement-domain</module>
     <module>domain-concept</module>
-    <module>user-domain-api</module>
+    <module>identity-api</module>
+    <module>identity-infrastructure</module>
   </modules>
   <packaging>pom</packaging>
 

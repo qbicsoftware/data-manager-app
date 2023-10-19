@@ -1,17 +1,17 @@
 package life.qbic.datamanager;
 
-import life.qbic.authentication.application.notification.NotificationService;
-import life.qbic.authentication.application.service.BasicUserInformationService;
-import life.qbic.authentication.application.user.password.NewPassword;
-import life.qbic.authentication.application.user.password.NewPasswordInput;
-import life.qbic.authentication.application.user.password.PasswordResetInput;
-import life.qbic.authentication.application.user.password.PasswordResetRequest;
-import life.qbic.authentication.application.user.registration.EmailAddressConfirmation;
-import life.qbic.authentication.application.user.registration.RegisterUserInput;
-import life.qbic.authentication.application.user.registration.Registration;
-import life.qbic.authentication.application.user.registration.UserRegistrationService;
-import life.qbic.authentication.domain.user.repository.UserDataStorage;
-import life.qbic.authentication.domain.user.repository.UserRepository;
+import life.qbic.identity.application.notification.NotificationService;
+import life.qbic.identity.application.service.BasicUserInformationService;
+import life.qbic.identity.application.user.password.NewPassword;
+import life.qbic.identity.application.user.password.NewPasswordInput;
+import life.qbic.identity.application.user.password.PasswordResetInput;
+import life.qbic.identity.application.user.password.PasswordResetRequest;
+import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
+import life.qbic.identity.application.user.registration.RegisterUserInput;
+import life.qbic.identity.application.user.registration.Registration;
+import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.infrastructure.UserDataStorage;
+import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -32,7 +32,7 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import life.qbic.user.api.UserInformationService;
+import life.qbic.identity.api.UserInformationService;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -48,25 +48,25 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.authentication.persistence"})
+@ComponentScan({"life.qbic.identity.infrastructure"})
 public class AppConfig {
 
   /**
    * Creates the registration use case.
    *
-   * @param userRegistrationService the user registration services used by this use case
+   * @param identityService the user registration services used by this use case
    * @return the use case input
    * @since 1.0.0
    */
   @Bean
-  public RegisterUserInput registerUserInput(UserRegistrationService userRegistrationService) {
-    return new Registration(userRegistrationService);
+  public RegisterUserInput registerUserInput(IdentityService identityService) {
+    return new Registration(identityService);
   }
 
   @Bean
   public EmailAddressConfirmation confirmEmailInput(
-      UserRegistrationService userRegistrationService) {
-    return new EmailAddressConfirmation(userRegistrationService);
+      IdentityService identityService) {
+    return new EmailAddressConfirmation(identityService);
   }
 
   /**
@@ -82,10 +82,10 @@ public class AppConfig {
   }
 
   @Bean
-  public UserRegistrationService userRegistrationService(
+  public IdentityService userRegistrationService(
       UserRepository userRepository
   ) {
-    return new UserRegistrationService(userRepository);
+    return new IdentityService(userRepository);
   }
 
   @Bean
@@ -104,13 +104,13 @@ public class AppConfig {
   }
 
   @Bean
-  public PasswordResetInput passwordResetInput(UserRegistrationService userRegistrationService) {
-    return new PasswordResetRequest(userRegistrationService);
+  public PasswordResetInput passwordResetInput(IdentityService identityService) {
+    return new PasswordResetRequest(identityService);
   }
 
   @Bean
-  public NewPasswordInput newPasswordInput(UserRegistrationService userRegistrationService) {
-    return new NewPassword(userRegistrationService);
+  public NewPasswordInput newPasswordInput(IdentityService identityService) {
+    return new NewPassword(identityService);
   }
 
   @Bean

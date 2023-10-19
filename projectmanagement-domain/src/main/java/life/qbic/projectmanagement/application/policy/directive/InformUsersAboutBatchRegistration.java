@@ -16,7 +16,7 @@ import life.qbic.projectmanagement.application.Messages;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
 import life.qbic.projectmanagement.domain.project.sample.event.BatchRegistered;
-import life.qbic.user.api.UserInformationService;
+import life.qbic.identity.api.UserInformationService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
