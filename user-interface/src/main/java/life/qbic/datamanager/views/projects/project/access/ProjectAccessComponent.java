@@ -112,7 +112,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     Span userProjectAccessDescription = new Span("Users with access to this project");
     content.add(userProjectAccessDescription);
     userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
-    userProjectAccessGrid.addColumn(UserProjectAccess::userName).setHeader("Email Address");
+    userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
     userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
     content.add(userProjectAccessGrid);
   }
@@ -249,7 +249,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     }
   }
 
-  private record UserProjectAccess(String fullName, String userName, String projectRole) {
+  private record UserProjectAccess(String fullName, String emailAddress, String projectRole) {
 
   }
 
