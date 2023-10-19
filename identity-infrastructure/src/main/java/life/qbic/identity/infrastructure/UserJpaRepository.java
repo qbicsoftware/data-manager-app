@@ -48,7 +48,7 @@ public class UserJpaRepository implements UserDataStorage, SidDataStorage {
     userRepo.save(user);
     if (!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(user.emailAddress().get(),
         true)) {
-      addSid(user.emailAddress().get(), true);
+      addSid(user.id().get(), true);
     }
   }
 

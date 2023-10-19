@@ -78,7 +78,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
 
   private List<RecipientDTO> getRecipients(ProjectId projectId) {
     List<RecipientDTO> users = new ArrayList<>();
-    List<String> userIds = projectAccessService.listActiveUsers(projectId);
+    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
     for(String id : userIds) {
       userInformationService.findById(id).ifPresent(userInfo -> users.add(new RecipientDTO(userInfo)));
     }

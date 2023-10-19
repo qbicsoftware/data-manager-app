@@ -85,7 +85,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
 
   private void setPreselectedUsers() {
     userGrid.deselectAll();
-    List<String> addedUserIdsInProject = projectAccessService.listUsers(projectId);
+    List<String> addedUserIdsInProject = projectAccessService.listUserIds(projectId);
     originalUsersInProject = addedUserIdsInProject.stream().map(userInformationService::findById)
         .filter(Optional::isPresent).map(Optional::get)
         .collect(Collectors.toUnmodifiableSet());
@@ -107,7 +107,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
     List<UserInfo> users = new ArrayList<>();
     sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
     userSids.forEach(
-        sId -> users.add(userInformationService.findByEmail(sId).get()));
+        sId -> users.add(userInformationService.findById(sId).get()));
     userGrid.setItems(users);
 
   }

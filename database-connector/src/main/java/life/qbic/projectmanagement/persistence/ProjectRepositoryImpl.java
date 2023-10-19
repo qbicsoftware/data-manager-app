@@ -12,6 +12,7 @@ import static org.springframework.security.acls.domain.BasePermission.WRITE;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.projectmanagement.domain.project.Project;
@@ -72,7 +73,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     }
     projectRepo.save(project);
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    projectAccessService.grant(authentication.getName(), project.getId(),
+    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    projectAccessService.grant(details.getUserId(), project.getId(),
         List.of(READ, WRITE));
     projectAccessService.grantToAuthority(ADMIN.auth(), project.getId(), ADMIN.permissions());
     projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
