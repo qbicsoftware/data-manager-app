@@ -21,12 +21,6 @@
   <dependencies>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>user-domain</artifactId>
-      <version>0.28.2</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
       <artifactId>openbis-client-lib</artifactId>
       <version>1.6.0</version>
       <exclusions>

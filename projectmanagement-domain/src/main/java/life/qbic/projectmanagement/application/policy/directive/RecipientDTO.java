@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
-import life.qbic.user.api.UserInfo;
+import life.qbic.identity.api.UserInfo;
 
 public class RecipientDTO {
 
