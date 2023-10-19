@@ -33,6 +33,7 @@ import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
@@ -165,6 +166,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFillBackgroundColor(null);
     cellStyle.setFont(columnNameFont);
+    cellStyle.setAlignment(HorizontalAlignment.CENTER);
 
     cellStyle.setLocked(true);
     return cellStyle;
