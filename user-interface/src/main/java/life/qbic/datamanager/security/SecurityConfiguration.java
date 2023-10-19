@@ -1,7 +1,7 @@
 package life.qbic.datamanager.security;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
-import life.qbic.authentication.application.security.QBiCPasswordEncoder;
+import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.datamanager.views.login.LoginLayout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

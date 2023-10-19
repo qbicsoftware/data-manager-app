@@ -2,9 +2,9 @@ package life.qbic.authentication.persistence;
 
 
 import java.util.List;
-import life.qbic.authentication.domain.user.concept.EmailAddress;
-import life.qbic.authentication.domain.user.concept.User;
-import life.qbic.authentication.domain.user.concept.UserId;
+import life.qbic.identity.domain.model.EmailAddress;
+import life.qbic.identity.domain.model.User;
+import life.qbic.identity.domain.model.UserId;
 import org.springframework.data.repository.CrudRepository;
 
 /**
