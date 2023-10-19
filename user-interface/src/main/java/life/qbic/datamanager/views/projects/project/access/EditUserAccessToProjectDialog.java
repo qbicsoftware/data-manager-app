@@ -20,8 +20,8 @@ import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.user.api.UserInfo;
-import life.qbic.user.api.UserInformationService;
+import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

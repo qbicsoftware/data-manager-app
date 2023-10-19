@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>user-domain</artifactId>
+  <artifactId>identity</artifactId>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -85,7 +85,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
-      <artifactId>user-domain-api</artifactId>
+      <artifactId>identity-api</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>

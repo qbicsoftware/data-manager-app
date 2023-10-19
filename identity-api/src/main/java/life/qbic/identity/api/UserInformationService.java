@@ -1,11 +1,11 @@
-package life.qbic.user.api;
+package life.qbic.identity.api;
 
 import java.util.Optional;
 
 /**
  * <b>User information service</b>
  *
- * <p>This Java interface serves as an OHS offering clients from other domains
+ * <p>This Java interface serves as an access facade, offering clients from other QBiC domains
  * to query user information, without exposing any internal domain model details outside the context
  * boundary of the user domain.</p>
  *

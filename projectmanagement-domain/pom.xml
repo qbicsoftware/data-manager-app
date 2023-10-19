@@ -83,7 +83,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
-      <artifactId>user-domain-api</artifactId>
+      <artifactId>identity-api</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>

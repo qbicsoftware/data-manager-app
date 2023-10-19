@@ -32,7 +32,7 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.domain.project.repository.ProjectRepository;
-import life.qbic.user.api.UserInformationService;
+import life.qbic.identity.api.UserInformationService;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

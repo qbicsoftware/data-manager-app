@@ -169,7 +169,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>user-domain</artifactId>
+      <artifactId>identity</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>

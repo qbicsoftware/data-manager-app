@@ -1,4 +1,4 @@
-package life.qbic.user.api;
+package life.qbic.identity.api;
 
 /**
  * <b>User Information DTO</b>

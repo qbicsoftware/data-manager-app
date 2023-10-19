@@ -10,7 +10,7 @@
   </parent>
 
   <groupId>life.qbic.datamanager</groupId>
-  <artifactId>user-domain-api</artifactId>
+  <artifactId>identity-api</artifactId>
 
   <properties>
     <maven.compiler.source>17</maven.compiler.source>

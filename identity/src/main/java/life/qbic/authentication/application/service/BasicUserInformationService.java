@@ -10,8 +10,8 @@ import life.qbic.authentication.domain.user.concept.User;
 import life.qbic.authentication.domain.user.concept.UserId;
 import life.qbic.authentication.domain.user.repository.UserRepository;
 import life.qbic.logging.api.Logger;
-import life.qbic.user.api.UserInfo;
-import life.qbic.user.api.UserInformationService;
+import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserInformationService;
 
 /**
  * <b>Basic user information service</b>
