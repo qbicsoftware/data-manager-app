@@ -9,6 +9,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Random;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
@@ -59,17 +60,29 @@ public class TestView extends Div {
         .selectFrom(Arrays.stream(EMAIL.values()).toList(), EMAIL::getAddress)
         .setRequired();
 
-    for (int i = 0; i < 50; i++) {
-      spreadsheet.addRow(new MyBean());
-    }
-
-
     Text validationText = new Text("");
     Text output = new Text("");
     add(spreadsheet);
     spreadsheet.addRow(bean2);
 
+    Random random = new Random(1234);
     add(new Button("add row", click -> spreadsheet.addRow(new MyBean())));
+    add(new Button("add 50 rows", click -> {
+      for (int i = 0; i < 50; i++) {
+        MyBean bean = new MyBean();
+        bean.setName("random name + " + random.nextLong());
+        bean.setEmail("test@" + random.nextInt() + "number.test");
+        spreadsheet.addRow(bean);
+      }
+    }));
+    add(new Button("add random column",
+        click -> spreadsheet.addColumn("column" + random.nextDouble(), MyBean::getEmail,
+            MyBean::setEmail)));
+    add(new Button("add 10 random columns", click -> {
+      for (int i = 0; i < 10; i++) {
+        spreadsheet.addColumn("column" + random.nextDouble(), MyBean::getEmail, MyBean::setEmail);
+      }
+    }));
     add(new Button("remove last row", click -> spreadsheet.removeLastRow()));
     add(new Button("get rows", click -> {
       output.setText(spreadsheet.getData().toString());

@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -199,12 +198,17 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
         .map(this::getCell)
         .toList();
+    onSilentCellUpdate(changedCells);
+    delegateSpreadsheet.refreshCells(changedCells);
+  }
+
+  //FIXME clear up rename merge method add javadoc
+  private void onSilentCellUpdate(List<Cell> changedCells) {
     updateModel(changedCells);
     if (validationMode == ValidationMode.EAGER) {
       updateValidation(changedCells);
     }
     autofitColumns(changedCells);
-    delegateSpreadsheet.refreshCells(changedCells);
   }
 
   private Cell getCell(CellReference cellReference) {
@@ -304,6 +308,15 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     } else {
       throw new IllegalStateException("Unexpected class of row: " + row);
     }
+    onSilentCellUpdate(List.of(cell));
+    return cell;
+  }
+
+  private Cell updateCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
+    Cell cell = setCell(rowIndex, colIndex, cellValue, cellStyle);
+    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
+    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
+    onSilentCellUpdate(List.of(cell));
     return cell;
   }
 
@@ -431,6 +444,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private ValidationResult validateCell(Cell cell) {
     Column<T> column = getColumn(cell.getColumnIndex());
+    Row row = getRow(cell.getRowIndex());
+    if (row instanceof HeaderRow) {
+      return ValidationResult.valid();
+    }
     List<ColumnValidator<String>> validators = column.getValidators();
     return validators.stream()
         .map(it -> it.validate(getCellValue(cell)))
@@ -443,8 +460,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return delegateSpreadsheet.getCellValue(cell);
   }
 
-  private void setCell(Cell cell, String cellValue) {
-    setCell(cell.getRowIndex(), cell.getColumnIndex(), cellValue, cell.getCellStyle());
+  private void updateCell(Cell cell, String value) {
+    updateCell(cell.getRowIndex(), cell.getColumnIndex(), value, cell.getCellStyle());
   }
 
   private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
@@ -453,11 +470,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     CellFunctions.setCellValue(cell, cellValue);
     cell.setCellStyle(cellStyle);
 
-    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
-    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
-    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
-        Set.of(
-            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
+//    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
+//    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
+//    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
+//        Set.of(
+//            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
     return cell;
   }
 
@@ -716,7 +733,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
-            setCell(cell, cellValue);
+            updateCell(cell, cellValue);
             delegateSpreadsheet.refreshCells(cell);
           });
         }
