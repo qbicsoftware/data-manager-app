@@ -71,11 +71,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private ValidationMode validationMode;
 
-  public enum ValidationMode {
-    LAZY,
-    EAGER
-  }
-
   public Spreadsheet() {
     addClassName("spreadsheet-container");
     delegateSpreadsheet.setActiveSheetProtected("");
@@ -106,26 +101,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     addHeaderRow();
   }
 
-  public void validate() {
-    List<Cell> cells = cells();
-    updateValidation(cells);
-    updateSpreadsheetValidity();
-    delegateSpreadsheet.refreshCells(cells);
-  }
-
   public void addRow(T rowData) {
     int previousRowCount = rowCount();
     var dataRow = new DataRow(rowData);
     rows.add(dataRow);
     createCellsForRow(dataRow);
-    delegateSpreadsheet.setMaxRows(previousRowCount + 1);
-  }
-
-  private void addHeaderRow() {
-    int previousRowCount = rowCount();
-    var headerRow = new HeaderRow();
-    rows.add(headerRow);
-    createCellsForRow(headerRow);
     delegateSpreadsheet.setMaxRows(previousRowCount + 1);
   }
 
@@ -159,6 +139,40 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   public boolean isValid() {
     return !isInvalid();
+  }
+
+  public Registration addValidationChangeListener(
+      ComponentEventListener<ValidationChangeEvent> listener) {
+    return addListener(ValidationChangeEvent.class, listener);
+  }
+
+  public static class ValidationChangeEvent extends ComponentEvent<Spreadsheet<?>> {
+
+    private final boolean oldValue;
+    private final boolean value;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public ValidationChangeEvent(Spreadsheet source, boolean fromClient, boolean oldValue,
+        boolean value) {
+      super(source, fromClient);
+      this.oldValue = oldValue;
+      this.value = value;
+    }
+
+    public boolean oldValue() {
+      return oldValue;
+    }
+
+    public boolean value() {
+      return value;
+    }
   }
 
   private CellStyle createColumnNameStyle(Workbook workbook) {
@@ -205,39 +219,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.refreshCells(changedCells);
   }
 
-  private Cell getCell(CellReference cellReference) {
-    return getCell(cellReference.getRow(), cellReference.getCol());
-  }
 
-  private Cell getCell(int rowIndex, int colIndex) {
-    return delegateSpreadsheet.getCell(rowIndex, colIndex);
-  }
 
-  private int rowIndex(Row row) {
-    int rowIndex = rows.indexOf(row);
-    if (rowIndex < 0) {
-      throw new IllegalArgumentException("Row " + row + " is not contained.");
-    }
-    return rowIndex;
-  }
-
-  private Row getRow(int rowIndex) {
-    return rows.get(rowIndex);
-  }
-
-  private int colIndex(Column<T> column) {
-    int colIndex = columns.indexOf(column);
-    if (colIndex < 0) {
-      throw new IllegalArgumentException("Column " + column + " is not contained.");
-    }
-    return colIndex;
-  }
-
-  private Column<T> getColumn(int colIndex) {
-    return columns.get(colIndex);
-  }
 
   //<editor-fold desc="Content manipulation">
+
+  private void addHeaderRow() {
+    int previousRowCount = rowCount();
+    var headerRow = new HeaderRow();
+    rows.add(headerRow);
+    createCellsForRow(headerRow);
+    delegateSpreadsheet.setMaxRows(previousRowCount + 1);
+  }
 
   /**
    * Refreshes the background information on a cell. Does not redraw the cell.
@@ -438,10 +431,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   //</editor-fold>
 
   //<editor-fold desc="Read content">
+
   private String getCellValue(Cell cell) {
     return delegateSpreadsheet.getCellValue(cell);
   }
 
+  private Cell getCell(CellReference cellReference) {
+    return getCell(cellReference.getRow(), cellReference.getCol());
+  }
+
+  private Cell getCell(int rowIndex, int colIndex) {
+    return delegateSpreadsheet.getCell(rowIndex, colIndex);
+  }
   /**
    * @return all cells in the spreadsheet
    */
@@ -453,6 +454,30 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       }
     }
     return cells.stream().toList();
+  }
+
+  private int rowIndex(Row row) {
+    int rowIndex = rows.indexOf(row);
+    if (rowIndex < 0) {
+      throw new IllegalArgumentException("Row " + row + " is not contained.");
+    }
+    return rowIndex;
+  }
+
+  private Row getRow(int rowIndex) {
+    return rows.get(rowIndex);
+  }
+
+  private int colIndex(Column<T> column) {
+    int colIndex = columns.indexOf(column);
+    if (colIndex < 0) {
+      throw new IllegalArgumentException("Column " + column + " is not contained.");
+    }
+    return colIndex;
+  }
+
+  private Column<T> getColumn(int colIndex) {
+    return columns.get(colIndex);
   }
 
   //</editor-fold>
@@ -481,6 +506,13 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   //</editor-fold>
 
   //<editor-fold desc="cell validation">
+
+  public void validate() {
+    List<Cell> cells = cells();
+    updateValidation(cells);
+    updateSpreadsheetValidity();
+    delegateSpreadsheet.refreshCells(cells);
+  }
 
   private ValidationResult validateCell(Cell cell) {
     Column<T> column = getColumn(cell.getColumnIndex());
@@ -550,6 +582,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   //</editor-fold>
+
+
+  public enum ValidationMode {
+    LAZY,
+    EAGER
+  }
 
   //<editor-fold desc="row classes">
   private abstract class Row {
@@ -818,40 +856,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       } catch (ClassCastException e) {
         log.debug("Seems not to be a SelectEditor.", e);
       }
-    }
-  }
-
-  public Registration addValidationChangeListener(
-      ComponentEventListener<ValidationChangeEvent> listener) {
-    return addListener(ValidationChangeEvent.class, listener);
-  }
-
-  public static class ValidationChangeEvent extends ComponentEvent<Spreadsheet<?>> {
-
-    private final boolean oldValue;
-    private final boolean value;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public ValidationChangeEvent(Spreadsheet source, boolean fromClient, boolean oldValue,
-        boolean value) {
-      super(source, fromClient);
-      this.oldValue = oldValue;
-      this.value = value;
-    }
-
-    public boolean oldValue() {
-      return oldValue;
-    }
-
-    public boolean value() {
-      return value;
     }
   }
 }
