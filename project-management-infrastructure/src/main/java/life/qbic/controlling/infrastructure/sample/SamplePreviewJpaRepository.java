@@ -97,7 +97,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     //If no filter was provided return all SamplePreviews
     public static Specification<SamplePreview> isBlank(String filter) {
       return (root, query, builder) -> {
-        if (filter.isBlank()) {
+        if (filter != null && filter.isBlank()) {
           return builder.conjunction();
         }
         return null;
@@ -105,8 +105,9 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     }
 
     public static Specification<SamplePreview> experimentIdEquals(ExperimentId experimentId) {
+      var id = experimentId == null ? "" : experimentId.value();
       return (root, query, builder) ->
-          experimentId.value().isBlank() ?
+          id.isBlank() ?
               builder.conjunction() :
               builder.equal(root.get("experimentId"), experimentId);
     }
