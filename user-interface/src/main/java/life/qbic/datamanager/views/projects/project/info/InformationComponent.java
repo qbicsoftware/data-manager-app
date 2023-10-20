@@ -16,7 +16,6 @@ public class InformationComponent extends Div {
   @Serial
   private static final long serialVersionUID = -926153591514170945L;
   private final Div title;
-
   private final Div content;
 
   private InformationComponent() {
@@ -29,19 +28,27 @@ public class InformationComponent extends Div {
   }
 
   /**
-   * Creates an information component with a title
+   * Creates an information component with a title and optional tooltip
    *
    * @param title the title of the information component
+   * @param tooltip a tooltip for the title to explain this information section (can be empty)
    * @return a new instance of the component
    * @since 1.0.0
    */
-  public static InformationComponent create(String title) {
+  public static InformationComponent create(String title, String tooltip) {
     var component = new InformationComponent();
-    component.setTitle(title);
+    component.initializeTitle(title, tooltip);
     return component;
   }
 
-  private static Div styleRow(String label, Component content) {
+  private void initializeTitle(String title, String tooltip) {
+    setTitle(title);
+    if(!tooltip.isBlank()) {
+      this.title.getElement().setAttribute("title", tooltip);
+    }
+  }
+
+  private static Div styleRow(String label, String tooltip, Component content) {
     var rowEntry = new Div();
     rowEntry.setClassName("info-entry");
     var rowLabel = new Div();
@@ -51,17 +58,22 @@ public class InformationComponent extends Div {
     rowContent.setClassName("info-entry-content");
     rowContent.add(content);
     rowEntry.add(rowLabel, rowContent);
+
+    if(!tooltip.isBlank()) {
+      rowLabel.getElement().setAttribute("title", tooltip);
+    }
+
     return rowEntry;
   }
 
   /**
    * Appends a new {@link Entry} with the default rendering of the information component.
    *
-   * @param entry the entry to append, containing a label and content
+   * @param entry the entry to append, containing a label, content and tooltip
    * @since 1.0.0
    */
   public void add(Entry entry) {
-    this.content.add(styleRow(entry.label(), entry.content()));
+    this.content.add(styleRow(entry.label(), entry.tooltip(), entry.content()));
   }
 
   /**
@@ -86,13 +98,14 @@ public class InformationComponent extends Div {
 
   /**
    * A row entry for the information component, contains a label and a Vaadin {@link Component},
-   * that will be shown next to the label.
+   * that will be shown next to the label, as well as an optional tooltip.
    *
    * @param label   a descriptive label about the content
+   * @param tooltip the tooltip being shown when hovering over the label
    * @param content the content to display
    * @since 1.0.0
    */
-  public record Entry(String label, Component content) {
+  public record Entry(String label, String tooltip, Component content) {
 
   }
 
