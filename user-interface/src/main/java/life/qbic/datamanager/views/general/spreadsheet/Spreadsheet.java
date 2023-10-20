@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.general.spreadsheet;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -9,24 +8,19 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.spreadsheet.Spreadsheet.CellValueChangeEvent;
 import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ColumnValidator.ValidationResult;
+import life.qbic.datamanager.views.general.spreadsheet.ColumnValidator.ValidationResult;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -219,9 +213,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.refreshCells(changedCells);
   }
 
-
-
-
   //<editor-fold desc="Content manipulation">
 
   private void addHeaderRow() {
@@ -261,7 +252,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     for (Cell cell : changedCells) {
       Column<T> column = getColumn(cell.getColumnIndex());
       var row = getRow(cell.getRowIndex());
-      BiConsumer<T, String> modelUpdater = column.modelUpdater;
+      BiConsumer<T, String> modelUpdater = column.modelUpdater();
       if (row instanceof DataRow dataRow) {
         modelUpdater.accept(dataRow.data(), getCellValue(cell));
       }
@@ -270,6 +261,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   /**
    * Fits the columns for the cells to the content
+   *
    * @param changedCells the cells for which to fit the column width
    */
   private void autofitColumns(List<Cell> changedCells) {
@@ -279,7 +271,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   /**
-   * Runs validation on the provided cells. If all cells are valid, sets the spreadsheet to be valid as well; otherwise sets the spreadsheet to be invalid.
+   * Runs validation on the provided cells. If all cells are valid, sets the spreadsheet to be valid
+   * as well; otherwise sets the spreadsheet to be invalid.
    *
    * @param changedCells the cells to validate
    */
@@ -330,7 +323,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     if (row instanceof HeaderRow) {
       cell = setCell(rowIndex, colIndex, column.getName(), columnHeaderStyle);
     } else if (row instanceof DataRow dataRow) {
-      cell = setCell(rowIndex, colIndex, column.toCellValue.apply(dataRow.data()),
+      cell = setCell(rowIndex, colIndex, column.toCellValue(dataRow.data()),
           column.getCellStyle().orElse(defaultCellStyle));
     } else {
       throw new IllegalStateException("Unexpected class of row: " + row);
@@ -428,9 +421,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private int columnCount() {
     return columns.size();
   }
-  //</editor-fold>
 
-  //<editor-fold desc="Read content">
 
   private String getCellValue(Cell cell) {
     return delegateSpreadsheet.getCellValue(cell);
@@ -443,6 +434,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private Cell getCell(int rowIndex, int colIndex) {
     return delegateSpreadsheet.getCell(rowIndex, colIndex);
   }
+
   /**
    * @return all cells in the spreadsheet
    */
@@ -480,9 +472,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return columns.get(colIndex);
   }
 
-  //</editor-fold>
 
-  //<editor-fold desc="styling">
   private void autoFitColumnWidth(int colIndex) {
     delegateSpreadsheet.autofitColumn(colIndex);
     int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
@@ -503,9 +493,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     float brightness = 1f; // blended with white
     return Color.getHSBColor(hueAngle, alpha, brightness);
   }
-  //</editor-fold>
 
-  //<editor-fold desc="cell validation">
 
   public void validate() {
     List<Cell> cells = cells();
@@ -581,15 +569,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return invalidCellStyle.equals(cell.getCellStyle());
   }
 
-  //</editor-fold>
-
 
   public enum ValidationMode {
     LAZY,
     EAGER
   }
 
-  //<editor-fold desc="row classes">
   private abstract class Row {
 
   }
@@ -636,184 +621,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private class HeaderRow extends Row {
 
-  }
-  //</editor-fold>
-
-  public static class Column<T> {
-
-    private final String name;
-    private final List<ColumnValidator<String>> validators;
-
-    private final Function<T, String> toCellValue;
-    private final BiConsumer<T, String> modelUpdater;
-
-    private CellStyle cellStyle;
-    private Component editorComponent;
-    private boolean required;
-
-    public Column(String name, Function<T, String> toCellValue,
-        BiConsumer<T, String> modelUpdater) {
-      requireNonNull(name, "name must not be null");
-      requireNonNull(toCellValue, "toCellValue must not be null");
-      requireNonNull(modelUpdater, "modelUpdater must not be null");
-      this.name = name;
-      this.toCellValue = toCellValue;
-      this.modelUpdater = modelUpdater;
-      editorComponent = null;
-      required = false;
-      validators = new ArrayList<>();
-    }
-
-    public boolean isRequired() {
-      return required;
-    }
-
-    public Optional<Component> getEditorComponent() {
-      return Optional.ofNullable(editorComponent);
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public List<ColumnValidator<String>> getValidators() {
-      return Collections.unmodifiableList(validators);
-    }
-
-    public Optional<CellStyle> getCellStyle() {
-      return Optional.ofNullable(cellStyle);
-    }
-
-    public Column<T> withValidator(Predicate<String> predicate, String errorMessage) {
-      validators.add(new ColumnValidator<>(predicate, errorMessage));
-      return this;
-    }
-
-    private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer() {
-      return new ComponentRenderer<>(item -> {
-        Span listItem = new Span(item.toString());
-        listItem.addClassName("spreadsheet-list-item");
-        return listItem;
-      });
-    }
-
-    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue) {
-      return selectFrom(values, toCellValue, getDefaultComponentRenderer());
-    }
-
-    public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
-        ComponentRenderer<? extends Component, E> renderer) {
-      List<String> possibleCellValues = values.stream()
-          .map(toCellValue).toList();
-      this.withValidator(value -> isNull(value) || value.isBlank()
-              || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
-          "{0} is not a valid option for column %s. Please choose from %s".formatted(getName(),
-              possibleCellValues));
-      SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
-      selectEditor.setRenderer(renderer);
-      selectEditor.setItemLabelGenerator(toCellValue::apply);
-      this.editorComponent = selectEditor;
-      return this;
-    }
-
-    public Column<T> withCellStyle(CellStyle cellStyle) {
-      this.cellStyle = cellStyle;
-      return this;
-    }
-
-    public Column<T> setRequired() {
-      this.required = true;
-      validators.add(0, new ColumnValidator<>(
-          object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
-          "The column '" + getName() + "' does not allow empty values. Please enter a value."));
-      return this;
-    }
-  }
-
-  public static class ColumnValidator<T2> {
-
-    private final Predicate<T2> predicate;
-    private final String errorMessage;
-
-    ColumnValidator(Predicate<T2> predicate, String errorMessage) {
-      this.predicate = predicate;
-      this.errorMessage = errorMessage;
-    }
-
-    public ValidationResult validate(T2 value) {
-      boolean isValid = predicate.test(value);
-      String filledErrorMessage = errorMessage.replaceAll("\\{0\\}", String.valueOf(value));
-      return isValid ? ValidationResult.valid() : ValidationResult.invalid(filledErrorMessage);
-    }
-
-    public record ValidationResult(boolean isValid, String errorMessage) {
-
-      public ValidationResult {
-        if (isValid) {
-          errorMessage = "";
-        }
-      }
-
-      public static ValidationResult valid() {
-        return new ValidationResult(true, "");
-      }
-
-      public static ValidationResult invalid(String errorMessage) {
-        return new ValidationResult(false, errorMessage);
-      }
-
-      public boolean isInvalid() {
-        return !isValid();
-      }
-    }
-  }
-
-  public static class SelectEditor<E> extends Select<E> {
-
-    private final List<Registration> addedValueChangeListeners;
-
-    private final Function<E, String> toCellValue;
-
-    public SelectEditor(List<E> items, Function<E, String> toCellValue) {
-      addedValueChangeListeners = new ArrayList<>();
-      setItems(items);
-      this.toCellValue = toCellValue;
-      addValueChangeListener(event -> {
-
-      });
-    }
-
-    public String toCellValue(E value) {
-      if (isNull(value)) {
-        return null;
-      }
-      return toCellValue.apply(value);
-    }
-
-    public void setFromCellValue(String cellValue) {
-      getListDataView().getItems()
-          .filter(it -> toCellValue.apply(it).equals(cellValue))
-          .findFirst()
-          .ifPresentOrElse(this::setValue, this::clear);
-    }
-
-    @Override
-    public Registration addValueChangeListener(
-        ValueChangeListener<? super ComponentValueChangeEvent<Select<E>, E>> listener) {
-      Registration registration = super.addValueChangeListener(listener);
-      // as addedValueChangeListeners is final, it is not null when called from this class
-      if (addedValueChangeListeners == null) {
-        //vaadin calls this method in the super constructor. Ignore those.
-        return registration;
-      }
-      addedValueChangeListeners.add(registration);
-      return registration;
-    }
-
-    public void removeAllValueChangeListeners() {
-      addedValueChangeListeners.forEach(Registration::remove);
-      addedValueChangeListeners.clear();
-    }
   }
 
   /**
