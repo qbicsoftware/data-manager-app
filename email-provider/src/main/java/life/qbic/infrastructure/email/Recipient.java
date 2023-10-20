@@ -1,11 +1,9 @@
 package life.qbic.infrastructure.email;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Email recipient</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record Recipient(String name, String address) {
 

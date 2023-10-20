@@ -9,15 +9,13 @@ import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.infrastructure.email.EmailProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Identity Email Provider</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link EmailService} interface to support the identity application.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class IdentityEmailProvider implements EmailService {
 

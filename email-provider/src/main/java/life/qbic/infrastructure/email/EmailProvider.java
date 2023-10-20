@@ -21,11 +21,11 @@ import life.qbic.logging.service.LoggerFactory;
 
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Email provider</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Provides email infrastructure to send emails.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailProvider {
 
@@ -65,12 +65,15 @@ public class EmailProvider {
   public void send(Subject subject, Recipient recipient, Content content, Attachment attachment)
       throws EmailSubmissionException {
     try {
-      var message = setupMessage(subject, recipient, content);
+      var message = setupMessageWithAttachment(subject, recipient, content, attachment);
       Transport.send(message);
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
     } catch (MessagingException e) {
       log.error("Could not send email to " + recipient.address(), e);
+      throw new CommunicationException(NOTIFICATION_FAILED);
+    } catch (UnsupportedEncodingException e) {
+      log.error("Unsupported encoding: " + attachment.content(), e);
       throw new CommunicationException(NOTIFICATION_FAILED);
     }
   }

@@ -3,11 +3,9 @@ package life.qbic.infrastructure.email;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Email Submission Exception</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EmailSubmissionException extends RuntimeException {
 

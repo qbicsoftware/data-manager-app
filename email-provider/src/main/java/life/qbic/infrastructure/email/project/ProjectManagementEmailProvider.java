@@ -11,11 +11,11 @@ import life.qbic.projectmanagement.application.communication.Recipient;
 import life.qbic.projectmanagement.application.communication.Subject;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Management Email Provider</b>
+ * <p>
+ * Implementation of the {@link EmailService} interface for the project management application.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class ProjectManagementEmailProvider implements EmailService {
 
