@@ -14,6 +14,7 @@ import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.shared.Registration;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -107,7 +108,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       BiConsumer<T, String> modelEditor) {
     Column<T> column = new Column<>(name, toCellValue, modelEditor);
     columns.add(column);
-    delegateSpreadsheet.refreshCells(createCellsForColumn(column));
+    List<Cell> cellsForColumn = createCellsForColumn(column);
+    refreshCells(cellsForColumn);
     delegateSpreadsheet.setMaxColumns(columnCount());
     return column;
   }
@@ -117,6 +119,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       return;
     }
     deleteRow(rowCount() - 1);
+    if (validationMode == ValidationMode.EAGER) {
+      updateSpreadsheetValidity();
+    }
   }
 
   public void setValidationMode(ValidationMode validationMode) {
@@ -210,7 +215,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         .map(this::getCell)
         .toList();
     refreshCellData(changedCells);
-    delegateSpreadsheet.refreshCells(changedCells);
+    refreshCells(changedCells);
   }
 
   //<editor-fold desc="Content manipulation">
@@ -238,7 +243,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     updateModel(cells);
     if (validationMode == ValidationMode.EAGER) {
       updateValidation(cells);
-      updateSpreadsheetValidity();
     }
     autofitColumns(cells);
   }
@@ -300,7 +304,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       Cell cell = createCell(rowIndex(row), colIndex);
       cellsInRow.add(cell);
     }
-    delegateSpreadsheet.refreshCells(cellsInRow);
+    refreshCells(cellsInRow);
+  }
+
+  private void refreshCells(Collection<Cell> cells) {
+    updateSpreadsheetValidity();
+    delegateSpreadsheet.refreshCells(cells);
   }
 
   private List<Cell> createCellsForColumn(Column<T> column) {
@@ -349,12 +358,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
     setCellValue(cell, cellValue);
     cell.setCellStyle(cellStyle);
-
-//    //Please note: By default vaadin only fires CellValueChangeEvent when editing using the default inline editor
-//    // we fire an appropriate event here as we want to make sure it is thrown when a cell is updated using a custom editor as well
-//    onCellValueChanged(new CellValueChangeEvent(delegateSpreadsheet,
-//        Set.of(
-//            new CellReference(cell.getRowIndex(), cell.getColumnIndex()))));
     return cell;
   }
 
@@ -498,8 +501,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   public void validate() {
     List<Cell> cells = cells();
     updateValidation(cells);
-    updateSpreadsheetValidity();
-    delegateSpreadsheet.refreshCells(cells);
+    refreshCells(cells);
   }
 
   private ValidationResult validateCell(Cell cell) {
@@ -657,6 +659,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
             updateCell(cell, cellValue);
+            updateSpreadsheetValidity();
             spreadsheet.refreshCells(cell);
           });
         }
