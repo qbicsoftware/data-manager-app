@@ -1,8 +1,12 @@
 package life.qbic.infrastructure.email.project;
 
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Objects;
 import life.qbic.infrastructure.email.EmailProvider;
+import life.qbic.infrastructure.email.EmailSubmissionException;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.communication.Attachment;
 import life.qbic.projectmanagement.application.communication.CommunicationException;
 import life.qbic.projectmanagement.application.communication.Content;
@@ -19,6 +23,7 @@ import life.qbic.projectmanagement.application.communication.Subject;
  */
 public class ProjectManagementEmailProvider implements EmailService {
 
+  private static final Logger log = logger(ProjectManagementEmailProvider.class);
 
   private final EmailProvider emailProvider;
 
@@ -29,15 +34,25 @@ public class ProjectManagementEmailProvider implements EmailService {
   @Override
   public void send(Subject subject, Recipient recipient, Content content)
       throws CommunicationException {
-    emailProvider.send(Translator.translate(subject), Translator.translate(recipient),
-        Translator.translate(content));
+    try {
+      emailProvider.send(Translator.translate(subject), Translator.translate(recipient),
+          Translator.translate(content));
+    } catch (EmailSubmissionException e) {
+      log.error("Email submission failed!", e);
+      throw new CommunicationException("Email submission failed");
+    }
   }
 
   @Override
   public void send(Subject subject, Recipient recipient, Content content, Attachment attachment)
       throws CommunicationException {
-    emailProvider.send(Translator.translate(subject), Translator.translate(recipient),
-        Translator.translate(content), Translator.translate(attachment));
+    try {
+      emailProvider.send(Translator.translate(subject), Translator.translate(recipient),
+          Translator.translate(content), Translator.translate(attachment));
+    } catch (EmailSubmissionException e) {
+      log.error("Email submission failed", e);
+      throw new CommunicationException("Email submission failed");
+    }
   }
 
   private static class Translator {

@@ -1,5 +1,7 @@
 package life.qbic.infrastructure.email.identity;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.identity.application.communication.CommunicationException;
@@ -9,6 +11,7 @@ import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.infrastructure.email.EmailProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
+import life.qbic.logging.api.Logger;
 
 /**
  * <b>Identity Email Provider</b>
@@ -18,6 +21,8 @@ import life.qbic.infrastructure.email.EmailSubmissionException;
  * @since 1.0.0
  */
 public class IdentityEmailProvider implements EmailService {
+
+  private static final Logger log = logger(IdentityEmailProvider.class);
 
   private final EmailProvider emailProvider;
 
@@ -39,7 +44,7 @@ public class IdentityEmailProvider implements EmailService {
       emailProvider.send(Translator.translate(subject), Translator.translate(recipient),
           Translator.translate(content));
     } catch (EmailSubmissionException e) {
-      // TODO log
+      log.error("Email submission failed!", e);
       throw new CommunicationException("Email submission failed");
     }
   }
