@@ -1,9 +1,9 @@
 package life.qbic.controlling.infrastructure.experiment;
 
 import java.util.Optional;
-import life.qbic.controlling.domain.model.experiment.Experiment;
-import life.qbic.controlling.domain.model.experiment.ExperimentId;
-import life.qbic.controlling.domain.model.experiment.repository.ExperimentRepository;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

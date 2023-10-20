@@ -1,8 +1,8 @@
 package life.qbic.controlling.infrastructure.experiment;
 
 import java.util.List;
-import life.qbic.controlling.domain.model.experiment.Experiment;
-import life.qbic.controlling.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

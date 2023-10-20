@@ -43,13 +43,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.project.ProjectCode;
-import life.qbic.controlling.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
-import life.qbic.controlling.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.controlling.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.controlling.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.controlling.infrastructure.sample.translation.SimpleOpenBisTermMapper;
@@ -192,7 +192,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * @since 1.0.0
    */
   public void addSamplesToProject(Project project,
-      List<life.qbic.controlling.domain.model.sample.Sample> samples) {
+      List<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
     String projectCodeString = project.getProjectCode().value();
     List<SampleCreation> samplesToRegister = new ArrayList<>();
 

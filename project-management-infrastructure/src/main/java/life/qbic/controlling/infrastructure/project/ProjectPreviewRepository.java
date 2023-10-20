@@ -1,7 +1,7 @@
 package life.qbic.controlling.infrastructure.project;
 
-import life.qbic.controlling.application.ProjectPreview;
-import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;

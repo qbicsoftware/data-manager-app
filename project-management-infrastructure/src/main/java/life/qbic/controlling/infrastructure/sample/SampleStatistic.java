@@ -1,7 +1,7 @@
 package life.qbic.controlling.infrastructure.sample;
 
 import java.util.List;
-import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SampleStatistic extends JpaRepository<SampleStatisticEntry, Integer> {

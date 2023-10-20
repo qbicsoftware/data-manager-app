@@ -1,7 +1,7 @@
 package life.qbic.controlling.infrastructure.sample
 
-import life.qbic.controlling.domain.model.project.ProjectCode
-import life.qbic.controlling.domain.model.project.ProjectId
+import life.qbic.projectmanagement.domain.model.project.ProjectCode
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import spock.lang.Specification
 
 /**

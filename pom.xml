@@ -12,7 +12,6 @@
     <module>user-interface</module>
     <module>identity</module>
     <module>broadcasting</module>
-    <module>newshandler</module>
     <module>application-commons</module>
     <module>logging</module>
     <module>subscription-provider</module>

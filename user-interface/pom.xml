@@ -193,12 +193,6 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>newsreader</artifactId>
-      <version>0.28.2</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
@@ -234,7 +228,12 @@
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
-
+    <dependency>
+      <groupId>life.qbic.infrastructure</groupId>
+      <artifactId>email-provider</artifactId>
+      <version>0.28.2</version>
+      <scope>compile</scope>
+    </dependency>
 
   </dependencies>
 

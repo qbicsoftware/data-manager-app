@@ -2,9 +2,9 @@ package life.qbic.controlling.infrastructure.project;
 
 import java.util.List;
 import java.util.Objects;
-import life.qbic.controlling.application.ProjectPreview;
-import life.qbic.controlling.application.SortOrder;
-import life.qbic.controlling.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
 import life.qbic.controlling.infrastructure.OffsetBasedRequest;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;

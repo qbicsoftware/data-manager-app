@@ -5,10 +5,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.controlling.domain.repository.BatchRepository;
-import life.qbic.controlling.domain.model.batch.Batch;
-import life.qbic.controlling.domain.model.batch.BatchId;
-import life.qbic.controlling.application.batch.BatchRegistrationService.ResponseCode;
+import life.qbic.projectmanagement.domain.repository.BatchRepository;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

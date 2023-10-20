@@ -23,9 +23,9 @@ import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.controlling.domain.finances.offer.Offer;
 import life.qbic.controlling.domain.finances.offer.OfferPreview;
-import life.qbic.controlling.domain.model.project.ProjectCode;
-import life.qbic.controlling.domain.model.project.ProjectObjective;
-import life.qbic.controlling.domain.model.project.ProjectTitle;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
+import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 
 /**
  * <b>Project Form Layout</b>

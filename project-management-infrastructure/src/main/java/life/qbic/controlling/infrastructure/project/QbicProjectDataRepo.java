@@ -1,7 +1,7 @@
 package life.qbic.controlling.infrastructure.project;
 
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 
 
 /**

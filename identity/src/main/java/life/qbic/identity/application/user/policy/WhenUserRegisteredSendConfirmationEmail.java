@@ -1,17 +1,17 @@
 package life.qbic.identity.application.user.policy;
 
-import life.qbic.identity.application.communication.Messages;
-import life.qbic.identity.domain.model.User;
-import life.qbic.identity.domain.model.UserId;
-import life.qbic.identity.domain.event.UserRegistered;
-import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
-import life.qbic.domain.concepts.communication.CommunicationService;
-import life.qbic.domain.concepts.communication.Content;
-import life.qbic.domain.concepts.communication.Recipient;
-import life.qbic.domain.concepts.communication.Subject;
+import life.qbic.identity.application.communication.Content;
+import life.qbic.identity.application.communication.EmailService;
+import life.qbic.identity.application.communication.Messages;
+import life.qbic.identity.application.communication.Recipient;
+import life.qbic.identity.application.communication.Subject;
+import life.qbic.identity.domain.event.UserRegistered;
+import life.qbic.identity.domain.model.User;
+import life.qbic.identity.domain.model.UserId;
+import life.qbic.identity.domain.repository.UserRepository;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,17 +26,17 @@ import org.springframework.stereotype.Component;
 public class WhenUserRegisteredSendConfirmationEmail implements
     DomainEventSubscriber<UserRegistered> {
 
-  private final CommunicationService communicationService;
+  private final EmailService emailService;
 
   private final JobScheduler jobScheduler;
   private final UserRepository userRepository;
   private final EmailConfirmationLinkSupplier emailConfirmationLinkSupplier;
 
   public WhenUserRegisteredSendConfirmationEmail(
-      @Autowired CommunicationService communicationService,
+      @Autowired EmailService emailService,
       @Autowired JobScheduler jobScheduler, @Autowired UserRepository userRepository,
       @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier) {
-    this.communicationService = communicationService;
+    this.emailService = emailService;
     this.userRepository = userRepository;
     this.emailConfirmationLinkSupplier = emailConfirmationLinkSupplier;
     DomainEventDispatcher.instance().subscribe(this);
@@ -61,7 +61,7 @@ public class WhenUserRegisteredSendConfirmationEmail implements
   }
 
   private void notifyUser(User user) {
-    communicationService.send(new Subject("Please confirm your email address"),
+    emailService.send(new Subject("Please confirm your email address"),
         new Recipient(user.emailAddress().get(), user.fullName().get()),
         new Content(Messages.formatRegistrationEmailContent(user.fullName().get(),
             emailConfirmationLinkSupplier.emailConfirmationUrl(user.id().get()))));

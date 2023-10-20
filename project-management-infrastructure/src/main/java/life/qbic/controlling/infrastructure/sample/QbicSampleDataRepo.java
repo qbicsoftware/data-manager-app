@@ -1,9 +1,9 @@
 package life.qbic.controlling.infrastructure.sample;
 
 import java.util.List;
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.sample.Sample;
-import life.qbic.controlling.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 
 /**

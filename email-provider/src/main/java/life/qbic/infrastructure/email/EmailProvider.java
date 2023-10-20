@@ -1,14 +1,24 @@
 package life.qbic.infrastructure.email;
 
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.mail.BodyPart;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import life.qbic.domain.concepts.communication.CommunicationException;
+import life.qbic.identity.application.communication.CommunicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -34,7 +44,13 @@ public class EmailProvider {
     this.mailServerConfiguration = Objects.requireNonNull(mailServerConfiguration);
   }
 
-  void send(Subject subject, Recipient recipient, Content content) throws EmailSubmissionException {
+  private static Content combineMessageWithRegards(
+      Content message) {
+    return new Content(message.value() + SIGNATURE);
+  }
+
+  public void send(Subject subject, Recipient recipient, Content content)
+      throws EmailSubmissionException {
     try {
       var message = setupMessage(subject, recipient, content);
       Transport.send(message);
@@ -45,6 +61,20 @@ public class EmailProvider {
       throw new CommunicationException(NOTIFICATION_FAILED);
     }
   }
+
+  public void send(Subject subject, Recipient recipient, Content content, Attachment attachment)
+      throws EmailSubmissionException {
+    try {
+      var message = setupMessage(subject, recipient, content);
+      Transport.send(message);
+      log.debug(
+          "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
+    } catch (MessagingException e) {
+      log.error("Could not send email to " + recipient.address(), e);
+      throw new CommunicationException(NOTIFICATION_FAILED);
+    }
+  }
+
   private MimeMessage setupMessageWithoutContent(
       Subject subject,
       Recipient recipient)
@@ -66,9 +96,28 @@ public class EmailProvider {
     return message;
   }
 
-  private static Content combineMessageWithRegards(
-      Content message) {
-    return new Content(message.value() + SIGNATURE);
+  private MimeMessage setupMessageWithAttachment(Subject subject, Recipient recipient,
+      Content content, Attachment attachment)
+      throws MessagingException, UnsupportedEncodingException {
+
+    var message = setupMessageWithoutContent(subject, recipient);
+
+    BodyPart messageBodyPart = new MimeBodyPart();
+    messageBodyPart.setContent(combineMessageWithRegards(content).value(), "text/plain");
+
+    Multipart multipart = new MimeMultipart();
+    multipart.addBodyPart(messageBodyPart);
+
+    BodyPart attachmentPart = new MimeBodyPart();
+    DataSource dataSource = new ByteArrayDataSource(attachment.content().getBytes(
+        StandardCharsets.UTF_8),
+        "application/octet-stream");
+    attachmentPart.setDataHandler(new DataHandler(dataSource));
+    attachmentPart.setFileName(attachment.name());
+    multipart.addBodyPart(attachmentPart);
+
+    message.setContent(multipart);
+    return message;
   }
 
 }

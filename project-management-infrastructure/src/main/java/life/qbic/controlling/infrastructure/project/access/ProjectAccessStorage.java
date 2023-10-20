@@ -1,7 +1,7 @@
 package life.qbic.controlling.infrastructure.project.access;
 
 import java.util.Objects;
-import life.qbic.controlling.application.authorization.SidDataStorage;
+import life.qbic.projectmanagement.application.authorization.SidDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

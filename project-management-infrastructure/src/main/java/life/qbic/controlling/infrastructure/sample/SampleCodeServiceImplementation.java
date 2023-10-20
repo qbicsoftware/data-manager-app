@@ -3,10 +3,10 @@ package life.qbic.controlling.infrastructure.sample;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
-import life.qbic.controlling.application.api.SampleCodeService;
-import life.qbic.controlling.domain.model.project.ProjectCode;
-import life.qbic.controlling.domain.model.project.ProjectId;
-import life.qbic.controlling.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

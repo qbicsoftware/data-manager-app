@@ -9,8 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
-import life.qbic.controlling.domain.model.project.ProjectCode;
-import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * Sample Statistics Entry

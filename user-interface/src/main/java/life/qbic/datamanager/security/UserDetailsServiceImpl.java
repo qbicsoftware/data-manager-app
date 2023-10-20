@@ -1,9 +1,9 @@
 package life.qbic.datamanager.security;
 
 import java.util.List;
-import life.qbic.controlling.application.authorization.QbicUserDetails;
-import life.qbic.controlling.application.authorization.User;
-import life.qbic.controlling.application.authorization.authorities.UserAuthorityProvider;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.authorization.User;
+import life.qbic.projectmanagement.application.authorization.authorities.UserAuthorityProvider;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;

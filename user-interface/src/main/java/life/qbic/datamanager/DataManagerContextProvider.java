@@ -3,7 +3,7 @@ package life.qbic.datamanager;
 import java.net.MalformedURLException;
 import java.net.URL;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.controlling.application.AppContextProvider;
+import life.qbic.projectmanagement.application.AppContextProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
