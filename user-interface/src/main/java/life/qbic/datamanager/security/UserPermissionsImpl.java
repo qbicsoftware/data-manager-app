@@ -21,14 +21,14 @@ public class UserPermissionsImpl implements UserPermissions {
   public boolean readProject(ProjectId projectId) {
     return aclPermissionEvaluator.hasPermission(
         SecurityContextHolder.getContext().getAuthentication(), projectId,
-        "life.qbic.projectmanagement.domain.project.Project", "READ");
+        "life.qbic.controlling.domain.model.project.Project", "READ");
   }
 
   @Override
   public boolean changeProjectAccess(ProjectId projectId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     boolean hasReadPermission = aclPermissionEvaluator.hasPermission(authentication, projectId,
-        "life.qbic.projectmanagement.domain.project.Project", "READ");
+        "life.qbic.controlling.domain.model.project.Project", "READ");
     boolean canChangeAclAccess = authentication.getAuthorities().stream()
         .anyMatch(it -> it.getAuthority().equals("acl:change-access"));
     return (hasReadPermission && canChangeAclAccess);
