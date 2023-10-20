@@ -16,17 +16,19 @@ import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
+import life.qbic.controlling.domain.model.project.Project;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Sample Information Main Component
  * <p>
  * This component hosts the components necessary to show and update the information for all
- * {@link life.qbic.projectmanagement.domain.project.sample.Sample} associated with all
- * {@link Experiment} of a {@link life.qbic.projectmanagement.domain.project.Project} information
- * via the provided {@link life.qbic.projectmanagement.domain.project.ProjectId} in the URL
+ * {@link Sample} associated with all
+ * {@link Experiment} of a {@link Project} information
+ * via the provided {@link ProjectId} in the URL
  */
 
 @Route(value = "projects/:projectId?/samples", layout = ProjectMainLayout.class)

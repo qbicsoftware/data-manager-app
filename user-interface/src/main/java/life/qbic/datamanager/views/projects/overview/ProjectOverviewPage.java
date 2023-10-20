@@ -16,9 +16,9 @@ import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
-import life.qbic.projectmanagement.application.ProjectCreationService;
-import life.qbic.projectmanagement.domain.project.Funding;
-import life.qbic.projectmanagement.domain.project.Project;
+import life.qbic.controlling.application.ProjectCreationService;
+import life.qbic.controlling.domain.model.project.Funding;
+import life.qbic.controlling.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

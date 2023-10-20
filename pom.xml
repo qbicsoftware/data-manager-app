@@ -13,16 +13,16 @@
     <module>identity</module>
     <module>broadcasting</module>
     <module>newshandler</module>
-    <module>database-connector</module>
     <module>application-commons</module>
     <module>logging</module>
     <module>subscription-provider</module>
     <module>subscription-api</module>
     <module>finances</module>
-    <module>projectmanagement-domain</module>
+    <module>project-management</module>
     <module>domain-concept</module>
     <module>identity-api</module>
     <module>identity-infrastructure</module>
+    <module>project-management-infrastructure</module>
   </modules>
   <packaging>pom</packaging>
 

@@ -15,9 +15,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Card;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
 
 /**
  * <b>Experiment Info Component</b>

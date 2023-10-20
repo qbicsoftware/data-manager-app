@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
 
 /**
  * <p> BatchRegistrationContent contains the batch specific information provided by the user during

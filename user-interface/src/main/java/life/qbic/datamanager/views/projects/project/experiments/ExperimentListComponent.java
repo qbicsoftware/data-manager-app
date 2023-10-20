@@ -20,11 +20,12 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
+import life.qbic.controlling.application.ExperimentInformationService;
+import life.qbic.controlling.application.ExperimentalDesignSearchService;
+import life.qbic.controlling.domain.model.project.Project;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -32,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * The list component is a {@link PageArea} component, which is responsible for showing the
  * {@link Experiment} information for all experiments in its {@link ListBox} within the currently
- * examined {@link life.qbic.projectmanagement.domain.project.Project}.
+ * examined {@link Project}.
  * <p>
  * Additionally, it provides the possibility to create new experiments with its
  * {@link life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog} and enables the user to select an experiment of interest via

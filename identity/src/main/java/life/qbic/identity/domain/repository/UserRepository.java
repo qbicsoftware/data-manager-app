@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
-import life.qbic.identity.infrastructure.UserDataStorage;
 import life.qbic.identity.domain.model.UserId;
 
 /**

@@ -209,7 +209,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>projectmanagement-domain</artifactId>
+      <artifactId>project-management</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>
@@ -233,6 +233,12 @@
     <dependency>
       <groupId>com.vaadin</groupId>
       <artifactId>vaadin-spreadsheet-flow</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.identity</groupId>
+      <artifactId>project-management-infrastructure</artifactId>
+      <version>0.28.2</version>
+      <scope>compile</scope>
     </dependency>
 
 

@@ -39,24 +39,25 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.B
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
-import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.project.experiment.vocabulary.Specimen;
-import life.qbic.projectmanagement.domain.project.sample.Batch;
-import life.qbic.projectmanagement.domain.project.sample.BatchId;
-import life.qbic.projectmanagement.domain.project.sample.Sample;
-import life.qbic.projectmanagement.domain.project.sample.SampleOrigin;
-import life.qbic.projectmanagement.domain.project.sample.SampleRegistrationRequest;
+import life.qbic.controlling.application.SortOrder;
+import life.qbic.controlling.application.batch.BatchRegistrationService;
+import life.qbic.controlling.application.batch.BatchRegistrationService.ResponseCode;
+import life.qbic.controlling.application.sample.SampleInformationService;
+import life.qbic.controlling.application.sample.SamplePreview;
+import life.qbic.controlling.application.sample.SampleRegistrationService;
+import life.qbic.controlling.domain.model.project.Project;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
+import life.qbic.controlling.domain.model.experiment.ExperimentalGroup;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
+import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.controlling.domain.model.batch.Batch;
+import life.qbic.controlling.domain.model.batch.BatchId;
+import life.qbic.controlling.domain.model.sample.Sample;
+import life.qbic.controlling.domain.model.sample.SampleOrigin;
+import life.qbic.controlling.domain.model.sample.SampleRegistrationRequest;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -65,7 +66,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
  * information associated for all {@link Batch} and {@link Sample} of each
- * {@link Experiment within a {@link life.qbic.projectmanagement.domain.project.Project}
+ * {@link Experiment within a {@link Project }
  * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
  * contained {@link BatchRegistrationDialog} and propagates the successful registration to the
  * registered {@link BatchRegistrationListener} within this component.
@@ -174,7 +175,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * Provides the collection of {@link Experiment} to this component
    * <p>
    * This method should be used to provide the experiments within the
-   * {@link life.qbic.projectmanagement.domain.project.Project} to this component
+   * {@link Project} to this component
    *
    * @param experiments collection of experiments to be shown as tabs in the {@link TabSheet} within
    *                    this component
