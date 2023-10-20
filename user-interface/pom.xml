@@ -220,12 +220,6 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>database-connector</artifactId>
-      <version>0.28.2</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
