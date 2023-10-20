@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
+import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.MutableAcl;
@@ -26,12 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   private final MutableAclService aclService;
-  private final UserDetailsService userDetailsService;
 
-  public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
-      @Autowired UserDetailsService userDetailsService) {
+  public ProjectAccessServiceImpl(@Autowired MutableAclService aclService) {
     this.aclService = aclService;
-    this.userDetailsService = userDetailsService;
   }
 
   @Transactional
@@ -155,10 +153,14 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids) {
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     MutableAcl acl;
+    JdbcMutableAclService serviceImpl = (JdbcMutableAclService) aclService;
+    // these settings are necessary for MySQL to return several types of exceptions
+    serviceImpl.setClassIdentityQuery("SELECT @@IDENTITY");
+    serviceImpl.setSidIdentityQuery("SELECT @@IDENTITY");
     try {
-      acl = (MutableAcl) aclService.readAclById(objectIdentity, sids);
+      acl = (MutableAcl) serviceImpl.readAclById(objectIdentity, sids);
     } catch (NotFoundException e) {
-      acl = aclService.createAcl(objectIdentity);
+      acl = serviceImpl.createAcl(objectIdentity);
     }
     return acl;
   }
