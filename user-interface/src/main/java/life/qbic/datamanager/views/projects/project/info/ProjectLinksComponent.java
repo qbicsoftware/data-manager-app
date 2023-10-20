@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.projectmanagement.application.ProjectLinkingService;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.OfferId;
-import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
-import life.qbic.projectmanagement.domain.project.OfferIdentifier;
-import life.qbic.projectmanagement.domain.project.ProjectId;
+import life.qbic.controlling.application.ProjectLinkingService;
+import life.qbic.controlling.application.finances.offer.OfferLookupService;
+import life.qbic.controlling.domain.finances.offer.OfferId;
+import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.controlling.domain.model.project.OfferIdentifier;
+import life.qbic.controlling.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

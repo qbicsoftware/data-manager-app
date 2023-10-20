@@ -24,11 +24,11 @@ import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.finances.offer.OfferLookupService;
-import life.qbic.projectmanagement.domain.finances.offer.Offer;
-import life.qbic.projectmanagement.domain.finances.offer.OfferId;
-import life.qbic.projectmanagement.domain.finances.offer.OfferPreview;
-import life.qbic.projectmanagement.domain.project.ProjectCode;
+import life.qbic.controlling.application.finances.offer.OfferLookupService;
+import life.qbic.controlling.domain.finances.offer.Offer;
+import life.qbic.controlling.domain.finances.offer.OfferId;
+import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.controlling.domain.model.project.ProjectCode;
 
 /**
  * <b>Project Information Dialog</b>

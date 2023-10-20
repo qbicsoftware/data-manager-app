@@ -43,26 +43,27 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
-import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.project.Project;
-import life.qbic.projectmanagement.domain.project.ProjectId;
-import life.qbic.projectmanagement.domain.project.experiment.Experiment;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.project.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.project.experiment.VariableLevel;
+import life.qbic.controlling.application.DeletionService;
+import life.qbic.controlling.application.ExperimentInformationService;
+import life.qbic.controlling.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.controlling.application.ExperimentalDesignSearchService;
+import life.qbic.controlling.application.sample.SampleInformationService;
+import life.qbic.controlling.domain.model.experiment.ExperimentalDesign;
+import life.qbic.controlling.domain.model.project.Project;
+import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.controlling.domain.model.experiment.ExperimentId;
+import life.qbic.controlling.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.controlling.domain.model.experiment.ExperimentalGroup;
+import life.qbic.controlling.domain.model.experiment.ExperimentalVariable;
+import life.qbic.controlling.domain.model.experiment.VariableLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b>Experimental Details Component</b>
  *
  * <p>A PageComponent based Composite showing the information stored in the
- * {@link life.qbic.projectmanagement.domain.project.experiment.ExperimentalDesign} associated with
+ * {@link ExperimentalDesign} associated with
  * a {@link Project} within the {@link ExperimentInformationMain}
  */
 @UIScope
