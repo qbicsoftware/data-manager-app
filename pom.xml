@@ -23,6 +23,7 @@
     <module>identity-api</module>
     <module>identity-infrastructure</module>
     <module>project-management-infrastructure</module>
+    <module>email-provider</module>
   </modules>
   <packaging>pom</packaging>
 

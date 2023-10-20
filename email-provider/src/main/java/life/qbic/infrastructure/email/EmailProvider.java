@@ -1,0 +1,74 @@
+package life.qbic.infrastructure.email;
+
+import jakarta.mail.Message.RecipientType;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Objects;
+import life.qbic.domain.concepts.communication.CommunicationException;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
+
+/**
+ * <b><class short description - 1 Line!></b>
+ *
+ * <p><More detailed description - When to use, what it solves, etc.></p>
+ *
+ * @since <version tag>
+ */
+public class EmailProvider {
+
+  private static final Logger log = LoggerFactory.logger(EmailProvider.class);
+  private static final String NO_REPLY_ADDRESS = "no-reply@qbic.uni-tuebingen.de";
+  private static final String NOTIFICATION_FAILED = "Notification of recipient failed!";
+  private static final String SIGNATURE = """
+            
+      With kind regards,
+            
+      Your QBiC team
+      """;
+  private final MailServerConfiguration mailServerConfiguration;
+
+  public EmailProvider(MailServerConfiguration mailServerConfiguration) {
+    this.mailServerConfiguration = Objects.requireNonNull(mailServerConfiguration);
+  }
+
+  void send(Subject subject, Recipient recipient, Content content) throws EmailSubmissionException {
+    try {
+      var message = setupMessage(subject, recipient, content);
+      Transport.send(message);
+      log.debug(
+          "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
+    } catch (MessagingException e) {
+      log.error("Could not send email to " + recipient.address(), e);
+      throw new CommunicationException(NOTIFICATION_FAILED);
+    }
+  }
+  private MimeMessage setupMessageWithoutContent(
+      Subject subject,
+      Recipient recipient)
+      throws MessagingException {
+    var message = this.mailServerConfiguration.mimeMessage();
+    message.setFrom(new InternetAddress(NO_REPLY_ADDRESS));
+    message.setRecipient(RecipientType.TO, new InternetAddress(recipient.address()));
+    message.setSubject(subject.value());
+    return message;
+  }
+
+  private MimeMessage setupMessage(
+      Subject subject,
+      Recipient recipient,
+      Content content)
+      throws MessagingException {
+    var message = setupMessageWithoutContent(subject, recipient);
+    message.setContent(combineMessageWithRegards(content).value(), "text/plain");
+    return message;
+  }
+
+  private static Content combineMessageWithRegards(
+      Content message) {
+    return new Content(message.value() + SIGNATURE);
+  }
+
+}
