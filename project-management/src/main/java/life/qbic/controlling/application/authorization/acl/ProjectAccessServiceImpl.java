@@ -154,7 +154,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     MutableAcl acl;
     JdbcMutableAclService serviceImpl = (JdbcMutableAclService) aclService;
-    // these settings are necessary for MySQL to return several types of exceptions
+    // these settings are necessary for MySQL to correctly throw several types of exceptions
+    // instead of an unrelated exception related to the identity function
     serviceImpl.setClassIdentityQuery("SELECT @@IDENTITY");
     serviceImpl.setSidIdentityQuery("SELECT @@IDENTITY");
     try {
