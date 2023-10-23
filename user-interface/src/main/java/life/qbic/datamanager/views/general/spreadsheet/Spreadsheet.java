@@ -58,14 +58,14 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final List<Row> rows = new ArrayList<>();
 
   // cell styles
-  private final CellStyle defaultCellStyle;
-  private final CellStyle invalidCellStyle;
-  private final CellStyle rowNumberStyle;
-  private final CellStyle columnHeaderStyle;
+  private transient final CellStyle defaultCellStyle;
+  private transient final CellStyle invalidCellStyle;
+  private transient final CellStyle rowNumberStyle;
+  private transient final CellStyle columnHeaderStyle;
 
   // apache helpers
-  private final CreationHelper creationHelper;
-  private final Drawing<?> drawingPatriarch;
+  private transient final CreationHelper creationHelper;
+  private transient final Drawing<?> drawingPatriarch;
 
   private ValidationMode validationMode;
 
@@ -161,7 +161,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ValidationChangeEvent(Spreadsheet source, boolean fromClient, boolean oldValue,
+    public ValidationChangeEvent(Spreadsheet<?> source, boolean fromClient, boolean oldValue,
         boolean value) {
       super(source, fromClient);
       this.oldValue = oldValue;
@@ -207,10 +207,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private CellStyle createInvalidCellStyle(Workbook workbook) {
-    CellStyle invalidCellStyle = workbook.createCellStyle();
-    invalidCellStyle.setFillBackgroundColor(new XSSFColor(getErrorBackgroundColor(), null));
-    invalidCellStyle.setLocked(false);
-    return invalidCellStyle;
+    CellStyle cellStyle = workbook.createCellStyle();
+    cellStyle.setFillBackgroundColor(new XSSFColor(getErrorBackgroundColor(), null));
+    cellStyle.setLocked(false);
+    return cellStyle;
   }
 
   private void onCellValueChanged(CellValueChangeEvent cellValueChangeEvent) {
@@ -367,6 +367,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private static void setCellValue(Cell cell, String cellValue) {
     switch (cell.getCellType()) {
       case _NONE, ERROR, FORMULA -> {
+        /* do nothing */
       }
       case NUMERIC -> cell.setCellValue(Double.parseDouble(cellValue));
       case STRING, BLANK -> cell.setCellValue(cellValue);
