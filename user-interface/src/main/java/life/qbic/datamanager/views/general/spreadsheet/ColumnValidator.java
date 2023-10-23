@@ -7,18 +7,20 @@ import java.util.function.Predicate;
  * <p>
  * One column can have multiple validators. The spreadsheet can use the validators to evaluate the
  * validity of cells in the column.
+ *
+ * @param <T> the type this validator can validate
  */
-public class ColumnValidator<T2> {
+public class ColumnValidator<T> {
 
-  private final Predicate<T2> predicate;
+  private final Predicate<T> predicate;
   private final String errorMessage;
 
-  ColumnValidator(Predicate<T2> predicate, String errorMessage) {
+  ColumnValidator(Predicate<T> predicate, String errorMessage) {
     this.predicate = predicate;
     this.errorMessage = errorMessage;
   }
 
-  public ValidationResult validate(T2 value) {
+  public ValidationResult validate(T value) {
     boolean isValid = predicate.test(value);
     String filledErrorMessage = errorMessage.replaceAll("\\{0\\}", String.valueOf(value));
     return isValid ? ValidationResult.valid() : ValidationResult.invalid(filledErrorMessage);
