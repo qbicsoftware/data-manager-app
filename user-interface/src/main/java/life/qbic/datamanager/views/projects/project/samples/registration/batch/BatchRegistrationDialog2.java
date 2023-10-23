@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.TextField;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 
 /**
  * TODO!
@@ -21,17 +22,37 @@ import life.qbic.datamanager.views.general.DialogWindow;
 public class BatchRegistrationDialog2 extends DialogWindow {
 
   private final Text userHelpText = new Text("Please register your samples.");
+  private final Spreadsheet<SampleInfo> spreadsheet;
 
   public BatchRegistrationDialog2() {
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
+
+    spreadsheet = new Spreadsheet<>();
+    spreadsheet.addColumn("Analysis to be performed", SampleInfo::getAnalysisToBePerformed,
+        SampleInfo::setAnalysisToBePerformed);
+    spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
+        SampleInfo::setSampleLabel);
+    spreadsheet.addColumn("Biological replicate ID", SampleInfo::getBioReplicateId,
+        SampleInfo::setBioReplicateId);
+    spreadsheet.addColumn("Condition", SampleInfo::getCondition,
+        SampleInfo::setCondition);
+    spreadsheet.addColumn("Species", SampleInfo::getSpecies,
+        SampleInfo::setSpecies);
+    spreadsheet.addColumn("Specimen", SampleInfo::getSpecimen,
+        SampleInfo::setSpecimen);
+    spreadsheet.addColumn("Analyte", SampleInfo::getAnalysisToBePerformed,
+        SampleInfo::setAnalysisToBePerformed);
+    spreadsheet.addColumn("Customer comment", SampleInfo::getAnalysisToBePerformed,
+        SampleInfo::setAnalysisToBePerformed);
+
     TextField batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
     batchNameField.addValueChangeListener(
         this::onBatchNameChanged);
 
     Button prefillSpreadsheet = new Button();
-    prefillSpreadsheet.setText("Do it");
+    prefillSpreadsheet.setText("Prefill Spreadsheet");
     prefillSpreadsheet.setAriaLabel("Prefill complete sample batch");
     prefillSpreadsheet.addClickListener(this::onPrefillClicked);
     prefillSpreadsheet.addClassName("prefill-batch");
@@ -46,9 +67,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     removeLastRow.addClickListener(this::onRemoveLastRowClicked);
     removeLastRow.addClassName("remove-batch-row");
 
-    Div spreadsheet = new Div(
-        new Text("Spreadsheet goes here")); //FIXME replace by real spreadsheet
-    spreadsheet.setSizeFull(); //FIXME remove once real spreadsheet is in here
 
     // Register Batch
     //-------------------------
@@ -80,19 +98,23 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.removeLastRow();
     //TODO remove the last row from the spreadsheet
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.addRow(new SampleInfo());
     //TODO add a row to the spreadsheet
   }
 
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.clear();
     //TODO prefill spreadsheet
   }
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    System.out.println("spreadsheet.getData() = " + spreadsheet.getData());
     //TODO
   }
 
@@ -127,6 +149,82 @@ public class BatchRegistrationDialog2 extends DialogWindow {
      */
     public CancelEvent(BatchRegistrationDialog2 source, boolean fromClient) {
       super(source, fromClient);
+    }
+  }
+
+  private static class SampleInfo {
+
+    String analysisToBePerformed;
+    String sampleLabel;
+    String bioReplicateId;
+    String condition;
+    String species;
+    String specimen;
+    String analyte;
+    String customerComment;
+
+    public String getAnalysisToBePerformed() {
+      return analysisToBePerformed;
+    }
+
+    public void setAnalysisToBePerformed(String analysisToBePerformed) {
+      this.analysisToBePerformed = analysisToBePerformed;
+    }
+
+    public String getSampleLabel() {
+      return sampleLabel;
+    }
+
+    public void setSampleLabel(String sampleLabel) {
+      this.sampleLabel = sampleLabel;
+    }
+
+    public String getBioReplicateId() {
+      return bioReplicateId;
+    }
+
+    public void setBioReplicateId(String bioReplicateId) {
+      this.bioReplicateId = bioReplicateId;
+    }
+
+    public String getCondition() {
+      return condition;
+    }
+
+    public void setCondition(String condition) {
+      this.condition = condition;
+    }
+
+    public String getSpecies() {
+      return species;
+    }
+
+    public void setSpecies(String species) {
+      this.species = species;
+    }
+
+    public String getSpecimen() {
+      return specimen;
+    }
+
+    public void setSpecimen(String specimen) {
+      this.specimen = specimen;
+    }
+
+    public String getAnalyte() {
+      return analyte;
+    }
+
+    public void setAnalyte(String analyte) {
+      this.analyte = analyte;
+    }
+
+    public String getCustomerComment() {
+      return customerComment;
+    }
+
+    public void setCustomerComment(String customerComment) {
+      this.customerComment = customerComment;
     }
   }
 

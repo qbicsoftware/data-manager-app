@@ -107,6 +107,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setMaxRows(previousRowCount + 1);
   }
 
+  /**
+   * Clears the content of the spreadsheet. Removes all rows.
+   */
+  public void clear() {
+    // as delete modifies the rows, we make a copy
+    ArrayList<Row> rowCopy = new ArrayList<>(rows);
+    for (Row row : rowCopy) {
+      deleteRow(rowIndex(row));
+    }
+    updateSpreadsheetValidity();
+  }
+
   public Column<T> addColumn(String name, Function<T, String> toCellValue,
       BiConsumer<T, String> modelEditor) {
     Column<T> column = new Column<>(name, toCellValue, modelEditor);
@@ -397,7 +409,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
     Row row = getRow(index);
     if (row instanceof HeaderRow headerRow) {
-      log.debug("Will not remove header row " + headerRow);
+      log.debug("Will not remove header row " + headerRow + " at " + index);
       return;
     }
     delegateSpreadsheet.deleteRows(index, index);
