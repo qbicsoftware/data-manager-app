@@ -85,7 +85,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setRowColHeadingsVisible(false);
     delegateSpreadsheet.addCellValueChangeListener(this::onCellValueChanged);
     delegateSpreadsheet.setSizeFull();
-    delegateSpreadsheet.setSpreadsheetComponentFactory(new MyComponentFactory());
+    delegateSpreadsheet.setSpreadsheetComponentFactory(new SpreadsheetEditorComponentFactory());
     setErrorMessage("Please complete the missing mandatory information.");
 
     delegateSpreadsheet.setMaxRows(rowCount());
@@ -633,7 +633,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
    * This SpreadsheetComponentFactory handles components in the spreadsheet. When a custom editor is
    * retrieved, the editor is taken from the corresponding column.
    */
-  private final class MyComponentFactory implements SpreadsheetComponentFactory {
+  private final class SpreadsheetEditorComponentFactory implements SpreadsheetComponentFactory {
 
     @Override
     public Component getCustomComponentForCell(Cell cell, int rowIndex, int columnIndex,
