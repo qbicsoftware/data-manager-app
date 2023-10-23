@@ -58,14 +58,14 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final List<Row> rows = new ArrayList<>();
 
   // cell styles
-  private transient final CellStyle defaultCellStyle;
-  private transient final CellStyle invalidCellStyle;
-  private transient final CellStyle rowNumberStyle;
-  private transient final CellStyle columnHeaderStyle;
+  private final transient CellStyle defaultCellStyle;
+  private final transient CellStyle invalidCellStyle;
+  private final transient CellStyle rowNumberStyle;
+  private final transient CellStyle columnHeaderStyle;
 
   // apache helpers
-  private transient final CreationHelper creationHelper;
-  private transient final Drawing<?> drawingPatriarch;
+  private final transient CreationHelper creationHelper;
+  private final transient Drawing<?> drawingPatriarch;
 
   private ValidationMode validationMode;
 
