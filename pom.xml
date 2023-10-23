@@ -7,21 +7,22 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>0.26.0</version>
+  <version>0.28.2</version>
   <modules>
-    <module>vaadinfrontend</module>
-    <module>user</module>
-    <module>authorization</module>
+    <module>user-interface</module>
+    <module>identity</module>
     <module>broadcasting</module>
     <module>newshandler</module>
-    <module>database-connector</module>
     <module>application-commons</module>
     <module>logging</module>
     <module>subscription-provider</module>
     <module>subscription-api</module>
     <module>finances</module>
-    <module>projectmanagement</module>
+    <module>project-management</module>
     <module>domain-concept</module>
+    <module>identity-api</module>
+    <module>identity-infrastructure</module>
+    <module>project-management-infrastructure</module>
   </modules>
   <packaging>pom</packaging>
 
