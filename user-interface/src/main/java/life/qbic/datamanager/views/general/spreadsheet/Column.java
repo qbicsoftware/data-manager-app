@@ -17,12 +17,15 @@ import java.util.function.Predicate;
 import org.apache.poi.ss.usermodel.CellStyle;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * A spreadsheet column.
+ * <p/>
+ * The spreadsheet column provides information about how the content of a column in the spreadsheet
+ * is handeled. Next to custom validation logice, it can provide a custom editor component as well
+ * as a column name.
+ * <p/>
+ * Columns themselves do not hold any data. They act only in describing data in a specific column,
+ * how it can be derived from a bean and how the bean will be modified when the value in cells
+ * within the column changes.
  */
 public class Column<T> {
 
