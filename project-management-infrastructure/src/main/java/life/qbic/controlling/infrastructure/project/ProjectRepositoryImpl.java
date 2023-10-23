@@ -89,7 +89,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  @PreAuthorize("hasPermission(#project.id, 'life.qbic.projectmanagement.domain.project.Project', 'WRITE')")
+  @PreAuthorize("hasPermission(#project.id, 'life.qbic.controlling.domain.model.project.Project', 'WRITE')")
   public void update(Project project) {
     if (!doesProjectExistWithId(project.getId())) {
       throw new ProjectNotFoundException();

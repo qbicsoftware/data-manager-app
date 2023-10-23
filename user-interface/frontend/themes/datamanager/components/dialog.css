@@ -151,12 +151,12 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-s);
 }
 
-.batch-registration-dialog .sample-spreadsheet-container {
+.batch-registration-dialog .spreadsheet-container {
   width: 100%;
   height: 100%;
 }
 
-.batch-registration-dialog .sample-spreadsheet {
+.batch-registration-dialog .spreadsheet {
   width: 100%;
   height: 100%;
 }
