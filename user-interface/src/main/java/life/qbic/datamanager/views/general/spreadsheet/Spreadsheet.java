@@ -37,12 +37,15 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * This spreadsheet component can be used to show data beans in configurable rows.
+ * <p>
+ * It offers several features:
+ * <ul>
+ *   <li> a validation mode EAGER (validation after cell change) or LAZY (validation only when calling {@link #validate()}
+ *   <li> adding and removing rows
+ *   <li> adding configurable columns
+ * </ul>
+ * The spreadsheet itself provides validation information, and an error message.
  */
 @Tag(Tag.DIV)
 public final class Spreadsheet<T> extends Component implements HasComponents,
