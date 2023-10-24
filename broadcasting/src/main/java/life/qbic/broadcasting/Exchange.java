@@ -150,6 +150,7 @@ public class Exchange implements MessageBusSubmission, MessageSubscription {
    */
   @Override
   public void subscribe(MessageSubscriber subscriber, String topic) {
+    System.err.println("subscribe to "+topic);
     Topic matchingTopic = null;
     for (Topic availableTopic : topics) {
       if (availableTopic.matchesTopic(topic)) {
@@ -202,12 +203,16 @@ public class Exchange implements MessageBusSubmission, MessageSubscription {
     }
 
     synchronized void informAllSubscribers(String message, MessageParameters messageParameters) {
+      System.err.println("inform all");
+
       if (messageParameters.messageType.equalsIgnoreCase(topic)) {
         informSubscribers(message, messageParameters);
       }
     }
 
     private void informSubscribers(String message, MessageParameters messageParameters) {
+      System.err.println("inform");
+
       subscribers.forEach(it -> it.receive(message, messageParameters));
     }
   }
