@@ -71,6 +71,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
+    // TODO replace message bus with infrastructure implementation
     var messageBus = appContext.getBean(MessageSubscription.class);
     var sidRepository = appContext.getBean(SidRepository.class);
 
