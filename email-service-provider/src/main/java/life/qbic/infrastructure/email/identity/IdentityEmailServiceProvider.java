@@ -41,15 +41,15 @@ public class IdentityEmailServiceProvider implements EmailService {
         .orElseThrow(() -> new CommunicationException("No content provided."));
 
     try {
-      emailServiceProvider.send(Translator.translate(subject), Translator.translate(recipient),
-          Translator.translate(content));
+      emailServiceProvider.send(MessageTranslator.translate(subject), MessageTranslator.translate(recipient),
+          MessageTranslator.translate(content));
     } catch (EmailSubmissionException e) {
       log.error("Email submission failed!", e);
       throw new CommunicationException("Email submission failed");
     }
   }
 
-  private static class Translator {
+  private static class MessageTranslator {
 
     static life.qbic.infrastructure.email.Subject translate(Subject subject) {
       return new life.qbic.infrastructure.email.Subject(subject.content());
