@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import life.qbic.controlling.infrastructure.project.access.SidRepository;
+import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;

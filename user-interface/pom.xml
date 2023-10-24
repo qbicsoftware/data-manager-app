@@ -230,7 +230,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.infrastructure</groupId>
-      <artifactId>email-provider</artifactId>
+      <artifactId>email-service-provider</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
     </dependency>

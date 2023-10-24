@@ -18,9 +18,9 @@ import life.qbic.identity.application.user.registration.RegisterUserInput;
 import life.qbic.identity.application.user.registration.Registration;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
-import life.qbic.infrastructure.email.EmailProvider;
-import life.qbic.infrastructure.email.identity.IdentityEmailProvider;
-import life.qbic.infrastructure.email.project.ProjectManagementEmailProvider;
+import life.qbic.infrastructure.email.EmailServiceProvider;
+import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
+import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -157,22 +157,23 @@ public class AppConfig {
   }
 
   @Bean
-  public EmailProvider emailProvider(@Value("${spring.mail.host}") String host,
+  public EmailServiceProvider emailProvider(@Value("${spring.mail.host}") String host,
       @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
       @Value("${spring.mail.password}") String mailUserPassword) {
     var mailServerConfiguration = new life.qbic.infrastructure.email.MailServerConfiguration(
         host, port,
         mailUserName, mailUserPassword);
-    return new EmailProvider(mailServerConfiguration);
+    return new EmailServiceProvider(mailServerConfiguration);
   }
 
   @Bean
-  public EmailService identityEmailService(EmailProvider emailProvider) {
-    return new IdentityEmailProvider(emailProvider);
+  public EmailService identityEmailService(EmailServiceProvider emailServiceProvider) {
+    return new IdentityEmailServiceProvider(emailServiceProvider);
   }
 
   @Bean
-  public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(EmailProvider emailProvider){
-    return new ProjectManagementEmailProvider(emailProvider);
+  public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(
+      EmailServiceProvider emailServiceProvider){
+    return new ProjectManagementEmailServiceProvider(emailServiceProvider);
   }
 }
