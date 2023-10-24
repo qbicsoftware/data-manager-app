@@ -108,7 +108,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   }
 
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
-    spreadsheet.clear();
+    spreadsheet.resetRows();
     //TODO prefill spreadsheet
   }
 

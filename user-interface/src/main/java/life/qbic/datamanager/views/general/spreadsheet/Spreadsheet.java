@@ -110,12 +110,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   /**
    * Clears the content of the spreadsheet. Removes all rows.
    */
-  public void clear() {
-    // as delete modifies the rows, we make a copy
-    ArrayList<Row> rowCopy = new ArrayList<>(rows);
-    for (Row row : rowCopy) {
-      deleteRow(rowIndex(row));
-    }
+  public void resetRows() {
+    int lastRowIndex = rowCount() - 1;
+    deleteRows(0, lastRowIndex);
+    addHeaderRow();
     updateSpreadsheetValidity();
   }
 
@@ -133,7 +131,13 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     if (rowCount() == 0) {
       return;
     }
-    deleteRow(rowCount() - 1);
+    int lastRowIndex = rowCount() - 1;
+    Row lastRow = getRow(lastRowIndex);
+    if (lastRow instanceof HeaderRow headerRow) {
+      log.debug("Will not remove header row " + headerRow + " at " + lastRowIndex);
+      return;
+    }
+    deleteRow(lastRowIndex);
     if (validationMode == ValidationMode.EAGER) {
       updateSpreadsheetValidity();
     }
@@ -407,17 +411,54 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
           "The row at index " + index
               + " cannot be removed. Please provide any index greater than 0");
     }
-    Row row = getRow(index);
-    if (row instanceof HeaderRow headerRow) {
-      log.debug("Will not remove header row " + headerRow + " at " + index);
-      return;
+//    Row row = getRow(index);
+//    if (row instanceof HeaderRow headerRow) {
+//      log.debug("Will not remove header row " + headerRow + " at " + index);
+//      return;
+//    }
+    deleteRows(index, index);
+//    delegateSpreadsheet.deleteRows(index, index);
+//    if (nextRowIndex <= lastRowIndex) {
+//      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -1, true, true);
+//    }
+//    rows.remove(index);
+//    delegateSpreadsheet.setMaxRows(lastRowIndex);
+  }
+
+  /**
+   * Deletes all rows starting with startIndex inclusive up to endIndex inclusive.
+   *
+   * @param startIndex the index where to start from
+   * @param endIndex   the index where to stop (inclusive)
+   */
+  private void deleteRows(int startIndex, int endIndex) {
+    int numberOfRowsBeforeRemoval = rowCount();
+    int lastRowIndex = numberOfRowsBeforeRemoval - 1;
+    int nextRowIndex = endIndex + 1;
+    if (startIndex > endIndex) {
+      throw new IllegalArgumentException(
+          "The start index " + startIndex + " must be greater or equal to the end index "
+              + endIndex);
     }
-    delegateSpreadsheet.deleteRows(index, index);
+    if (endIndex > lastRowIndex) {
+      throw new IllegalArgumentException(
+          "There is no row at index " + endIndex + ". There are only rows with index up to "
+              + lastRowIndex);
+    }
+    if (startIndex < 0) {
+      throw new IllegalArgumentException(
+          "The row at index " + startIndex
+              + " cannot be removed. Please provide any index greater than 0");
+    }
+
+    delegateSpreadsheet.deleteRows(startIndex, endIndex);
+    int numberOfRemovedRows = endIndex + 1 - startIndex;
     if (nextRowIndex <= lastRowIndex) {
-      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -1, true, true);
+      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -numberOfRemovedRows, true, true);
     }
-    rows.remove(index);
-    delegateSpreadsheet.setMaxRows(lastRowIndex);
+    int numberOfRowsAfterRemoval = numberOfRowsBeforeRemoval - numberOfRemovedRows;
+    rows.removeAll(rows.subList(startIndex, endIndex + 1));
+    delegateSpreadsheet.setMaxRows(numberOfRowsAfterRemoval);
   }
 
   /**
