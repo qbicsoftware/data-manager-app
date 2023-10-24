@@ -2,6 +2,9 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 
 /**
@@ -51,7 +54,7 @@ public class InformationComponent extends Div {
   private static Div styleRow(String label, String tooltip, Component content) {
     var rowEntry = new Div();
     rowEntry.setClassName("info-entry");
-    var rowLabel = new Div();
+    var rowLabel = new Span();
     rowLabel.setClassName("info-entry-label");
     rowLabel.add(label);
     var rowContent = new Div();
@@ -60,9 +63,11 @@ public class InformationComponent extends Div {
     rowEntry.add(rowLabel, rowContent);
 
     if(!tooltip.isBlank()) {
-      rowLabel.getElement().setAttribute("title", tooltip);
+      Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
+      infoIcon.addClassName("info-icon");
+      infoIcon.setTooltipText(tooltip);
+      rowLabel.add(infoIcon);
     }
-
     return rowEntry;
   }
 
