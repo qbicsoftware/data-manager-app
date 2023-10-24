@@ -39,6 +39,7 @@ error-screenshots/
 /frontend/generated/vaadin-featureflags.ts
 /vaadinfrontend/vite.config.ts
 /vaadinfrontend/src/main/dev-bundle/
+/user-interface/src/main/dev-bundle/
 
 # Empty file that is created when changing css?
 /vaadinfrontend/frontend/themes/datamanager/theme-editor.css

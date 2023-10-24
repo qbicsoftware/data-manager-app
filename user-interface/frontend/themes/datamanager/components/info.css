@@ -14,6 +14,8 @@
   font-weight: bold;
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+  display: flex;
+  gap: var(--lumo-space-s);
 }
 
 .info-entry {
