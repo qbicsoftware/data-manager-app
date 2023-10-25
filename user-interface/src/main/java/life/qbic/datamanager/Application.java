@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.util.Base64;
+import life.qbic.controlling.infrastructure.project.access.QBiCSid;
+import life.qbic.controlling.infrastructure.project.access.SidRepository;
 import life.qbic.identity.application.user.password.NewPassword;
 import life.qbic.identity.application.user.password.NewPasswordOutput;
 import life.qbic.identity.application.user.password.PasswordResetOutput;
@@ -27,6 +29,7 @@ import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -68,7 +71,11 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
 
+    // TODO replace message bus with infrastructure implementation
     var messageBus = appContext.getBean(MessageSubscription.class);
+    var sidRepository = appContext.getBean(SidRepository.class);
+
+    messageBus.subscribe(whenUserRegisteredAddSid(sidRepository), USER_REGISTERED);
     messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
 
     setupUseCases(appContext);
@@ -86,6 +93,24 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPassword = context.getBean(NewPassword.class);
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
+  }
+
+  //TODO this needs to be moved out of the Application class, once we have the means to do so
+  private static MessageSubscriber whenUserRegisteredAddSid(SidRepository sidRepository) {
+    return (message, messageParams) -> {
+      try {
+        UserRegistered userRegistered = deserializeUserRegistered(message);
+        String id = userRegistered.userId();
+
+        if(!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(id, true)) {
+          sidRepository.save(new QBiCSid(true, id));
+        }
+
+        logger.info(String.valueOf(userRegistered));
+      } catch (IOException | ClassNotFoundException e) {
+        logger.error(e.getMessage(), e);
+      }
+    };
   }
 
   private static MessageSubscriber whenUserRegisteredLogUserInfo() {
