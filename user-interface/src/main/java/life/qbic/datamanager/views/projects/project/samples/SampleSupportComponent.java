@@ -6,7 +6,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * Sample support component

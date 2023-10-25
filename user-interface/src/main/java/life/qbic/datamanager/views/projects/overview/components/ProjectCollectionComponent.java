@@ -27,9 +27,9 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.controlling.application.ProjectInformationService;
-import life.qbic.controlling.application.ProjectPreview;
-import life.qbic.controlling.application.SortOrder;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

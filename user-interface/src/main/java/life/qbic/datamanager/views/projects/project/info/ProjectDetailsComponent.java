@@ -19,16 +19,16 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
-import life.qbic.controlling.application.ExperimentInformationService;
-import life.qbic.controlling.application.ProjectInformationService;
-import life.qbic.controlling.domain.model.project.Contact;
-import life.qbic.controlling.domain.model.project.Funding;
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.project.ProjectId;
-import life.qbic.controlling.domain.model.experiment.Experiment;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Funding;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
