@@ -95,6 +95,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
     newPassword.setUseCaseOutput(newPasswordHandler);
   }
 
+  //TODO this needs to be moved out of the Application class, once we have the means to do so
   private static MessageSubscriber whenUserRegisteredAddSid(SidRepository sidRepository) {
     return (message, messageParams) -> {
       try {
