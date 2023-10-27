@@ -18,7 +18,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.controlling.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
 
 /**

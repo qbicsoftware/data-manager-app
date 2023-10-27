@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import com.vaadin.flow.component.ComponentEvent;
 import java.io.Serial;
-import life.qbic.controlling.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * <b>Project Edit Event</b>

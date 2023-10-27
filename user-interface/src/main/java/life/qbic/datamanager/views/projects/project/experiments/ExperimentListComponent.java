@@ -20,12 +20,12 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.controlling.application.ExperimentInformationService;
-import life.qbic.controlling.application.ExperimentalDesignSearchService;
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.project.ProjectId;
-import life.qbic.controlling.domain.model.experiment.Experiment;
-import life.qbic.controlling.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

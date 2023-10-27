@@ -7,8 +7,8 @@ import java.io.Serial;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
-import life.qbic.controlling.application.VariableValueFormatter;
-import life.qbic.controlling.domain.model.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.application.VariableValueFormatter;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 
 /**
  * <b>Experimental Variable Card</b>

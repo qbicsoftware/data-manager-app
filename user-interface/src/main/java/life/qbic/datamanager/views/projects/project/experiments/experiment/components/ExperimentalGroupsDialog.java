@@ -13,8 +13,8 @@ import java.util.Collection;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
-import life.qbic.controlling.application.VariableValueFormatter;
-import life.qbic.controlling.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.application.VariableValueFormatter;
+import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 
 /**
  * <b>Experimental Groups Dialog</b>

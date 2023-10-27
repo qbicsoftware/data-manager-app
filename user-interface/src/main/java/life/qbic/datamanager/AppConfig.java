@@ -1,7 +1,14 @@
 package life.qbic.datamanager;
 
+import life.qbic.broadcasting.Exchange;
+import life.qbic.broadcasting.MessageBusSubmission;
+import life.qbic.domain.concepts.SimpleEventStore;
+import life.qbic.domain.concepts.TemporaryEventRepository;
+import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.notification.NotificationService;
 import life.qbic.identity.application.service.BasicUserInformationService;
+import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.password.NewPassword;
 import life.qbic.identity.application.user.password.NewPasswordInput;
 import life.qbic.identity.application.user.password.PasswordResetInput;
@@ -9,30 +16,24 @@ import life.qbic.identity.application.user.password.PasswordResetRequest;
 import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.application.user.registration.RegisterUserInput;
 import life.qbic.identity.application.user.registration.Registration;
-import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
-import life.qbic.broadcasting.Exchange;
-import life.qbic.broadcasting.MessageBusSubmission;
-import life.qbic.domain.concepts.SimpleEventStore;
-import life.qbic.domain.concepts.TemporaryEventRepository;
-import life.qbic.domain.concepts.communication.CommunicationService;
-import life.qbic.newshandler.usermanagement.email.EmailCommunicationService;
-import life.qbic.newshandler.usermanagement.email.MailServerConfiguration;
-import life.qbic.controlling.application.AppContextProvider;
-import life.qbic.controlling.application.api.SampleCodeService;
-import life.qbic.controlling.application.authorization.acl.ProjectAccessService;
-import life.qbic.controlling.application.batch.BatchRegistrationService;
-import life.qbic.controlling.application.policy.BatchRegisteredPolicy;
-import life.qbic.controlling.application.policy.ProjectAccessGrantedPolicy;
-import life.qbic.controlling.application.policy.ProjectRegisteredPolicy;
-import life.qbic.controlling.application.policy.SampleRegisteredPolicy;
-import life.qbic.controlling.application.policy.directive.AddSampleToBatch;
-import life.qbic.controlling.application.policy.directive.CreateNewSampleStatisticsEntry;
-import life.qbic.controlling.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.controlling.application.policy.directive.InformUserAboutGrantedAccess;
-import life.qbic.controlling.domain.repository.ProjectRepository;
-import life.qbic.identity.api.UserInformationService;
+import life.qbic.infrastructure.email.EmailServiceProvider;
+import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
+import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.projectmanagement.application.AppContextProvider;
+import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
+import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
+import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -135,30 +136,44 @@ public class AppConfig {
   }
 
   @Bean
-  public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(CommunicationService communicationService,
+  public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
+      life.qbic.projectmanagement.application.communication.EmailService emailService,
       JobScheduler jobScheduler, UserInformationService userInformationService,
       AppContextProvider appContextProvider) {
-    var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(communicationService, jobScheduler,
+    var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(emailService,
+        jobScheduler,
         userInformationService, appContextProvider);
     return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
   }
 
   @Bean
   public BatchRegisteredPolicy batchRegisteredPolicy(
-      CommunicationService communicationService, ProjectAccessService accessService,
+      life.qbic.projectmanagement.application.communication.EmailService emailService, ProjectAccessService accessService,
       UserInformationService userInformationService, AppContextProvider appContextProvider,
       JobScheduler jobScheduler) {
-    var informUsers = new InformUsersAboutBatchRegistration(communicationService, accessService,
+    var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
         userInformationService, appContextProvider, jobScheduler);
     return new BatchRegisteredPolicy(informUsers);
   }
 
   @Bean
-  public CommunicationService communicationService(@Value("${spring.mail.host}") String host,
+  public EmailServiceProvider emailProvider(@Value("${spring.mail.host}") String host,
       @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
       @Value("${spring.mail.password}") String mailUserPassword) {
-    MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(host, port,
+    var mailServerConfiguration = new life.qbic.infrastructure.email.MailServerConfiguration(
+        host, port,
         mailUserName, mailUserPassword);
-    return new EmailCommunicationService(mailServerConfiguration);
+    return new EmailServiceProvider(mailServerConfiguration);
+  }
+
+  @Bean
+  public EmailService identityEmailService(EmailServiceProvider emailServiceProvider) {
+    return new IdentityEmailServiceProvider(emailServiceProvider);
+  }
+
+  @Bean
+  public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(
+      EmailServiceProvider emailServiceProvider){
+    return new ProjectManagementEmailServiceProvider(emailServiceProvider);
   }
 }

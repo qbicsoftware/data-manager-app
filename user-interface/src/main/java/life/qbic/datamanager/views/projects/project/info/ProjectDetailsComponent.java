@@ -19,16 +19,16 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
-import life.qbic.controlling.application.ExperimentInformationService;
-import life.qbic.controlling.application.ProjectInformationService;
-import life.qbic.controlling.domain.model.project.Contact;
-import life.qbic.controlling.domain.model.project.Funding;
-import life.qbic.controlling.domain.model.project.Project;
-import life.qbic.controlling.domain.model.project.ProjectId;
-import life.qbic.controlling.domain.model.experiment.Experiment;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Species;
-import life.qbic.controlling.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Funding;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -54,12 +54,11 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private final InformationComponent projectInformationSection = InformationComponent.create(
-      "Project Information");
+  private final InformationComponent projectInformationSection = InformationComponent.create("", "");
   private final InformationComponent fundingInformationSection = InformationComponent.create(
-      "Funding Information");
+      "Funding Information", "Information about project funding");
   private final InformationComponent collaboratorSection = InformationComponent.create(
-      "Collaboration Information");
+      "Project Collaborators", "Important contacts for this project");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private Context context;
@@ -84,28 +83,29 @@ public class ProjectDetailsComponent extends PageArea {
 
     var projectCode = new Div();
     projectCode.setText(project.getProjectCode().value());
-    entries.add(new Entry("Code", projectCode));
+    entries.add(new Entry("Code", "The unique identifier of the project", projectCode));
 
     var projectTitle = new Div();
     projectTitle.setText(project.getProjectIntent().projectTitle().title());
-    entries.add(new Entry("Title", projectTitle));
+    entries.add(new Entry("Title", "", projectTitle));
 
     var objective = new Div();
     objective.setText(project.getProjectIntent().objective().objective());
-    entries.add(new Entry("Objective", objective));
+    entries.add(new Entry("Objective", "The objective of the project", objective));
 
     var species = new Div();
     species.addClassName(TAG_COLLECTION_CSS_CLASS);
     speciesTags(experiments).forEach(species::add);
-    entries.add(new Entry("Species", species));
+    entries.add(new Entry("Species", "", species));
     var specimen = new Div();
     specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
     specimenTags(experiments).forEach(specimen::add);
-    entries.add(new Entry("Specimen", specimen));
+    entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
+        + "species", specimen));
     var analyte = new Div();
     analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
     analyteTags(experiments).forEach(analyte::add);
-    entries.add(new Entry("Analyte", analyte));
+    entries.add(new Entry("Analyte", "", analyte));
     return entries;
   }
 
@@ -115,7 +115,7 @@ public class ProjectDetailsComponent extends PageArea {
     project.funding().ifPresentOrElse(funding -> entries.addAll(fromFunding(funding)), () -> {
       var disclaimer = new Div();
       disclaimer.setText("No funding information provided.");
-      entries.add(new Entry("Grant", disclaimer));
+      entries.add(new Entry("Grant", "", disclaimer));
     });
 
     return entries;
@@ -126,12 +126,12 @@ public class ProjectDetailsComponent extends PageArea {
     var grantLabel = "Grant";
     var info = new Div();
     info.setText(funding.grant());
-    entries.add(new Entry(grantLabel, info));
+    entries.add(new Entry(grantLabel, "", info));
 
     var grantIdLabel = "Grant ID";
     var grantId = new Div();
     grantId.setText(funding.grantId());
-    entries.add(new Entry(grantIdLabel, grantId));
+    entries.add(new Entry(grantIdLabel, "", grantId));
 
     return entries;
   }
@@ -141,17 +141,17 @@ public class ProjectDetailsComponent extends PageArea {
 
     var principalInvestigator = new Div();
     principalInvestigator.add(generateContactContainer(project.getPrincipalInvestigator()));
-    entries.add(new Entry("Project Investigator", principalInvestigator));
+    entries.add(new Entry("Project Investigator", "", principalInvestigator));
 
     var projectResponsible = new Div();
     project.getResponsiblePerson()
         .ifPresentOrElse(person -> projectResponsible.add(generateContactContainer(person)),
             () -> projectResponsible.add(createNoPersonAssignedSpan()));
-    entries.add(new Entry("Project Responsible", projectResponsible));
+    entries.add(new Entry("Project Responsible", "", projectResponsible));
 
     var projectManager = new Div();
     projectManager.add(generateContactContainer(project.getProjectManager()));
-    entries.add(new Entry("Project Manager", projectManager));
+    entries.add(new Entry("Project Manager", "", projectManager));
 
     return entries;
   }
@@ -320,17 +320,16 @@ public class ProjectDetailsComponent extends PageArea {
   private void setProjectInformation(Project project, List<Experiment> experiments) {
     resetProjectInformation();
 
-    fillInformationSection(projectInformationSection, "",
+    fillInformationSection(projectInformationSection,
         extractProjectInfo(project, experiments));
-    fillInformationSection(fundingInformationSection, "Funding Information",
+    fillInformationSection(fundingInformationSection,
         extractFundingInfo(project));
-    fillInformationSection(collaboratorSection, "Project Contacts",
+    fillInformationSection(collaboratorSection,
         extractContactInfo(project));
   }
 
-  private void fillInformationSection(InformationComponent section, String title,
+  private void fillInformationSection(InformationComponent section,
       List<Entry> entries) {
-    section.setTitle(title);
     entries.forEach(section::add);
   }
 
