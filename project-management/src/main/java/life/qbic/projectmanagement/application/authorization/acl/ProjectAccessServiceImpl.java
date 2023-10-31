@@ -19,7 +19,6 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,7 +141,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private void deleteAces(MutableAcl mutableAcl,
       Predicate<AccessControlEntry> accessControlEntryPredicate) {
     List<AccessControlEntry> aclEntries = mutableAcl.getEntries();
-    for (int i = 0; i < aclEntries.size(); i++) {
+    for (int i = aclEntries.size() - 1; i >= 0; i--) {
       if (accessControlEntryPredicate.test(aclEntries.get(i))) {
         mutableAcl.deleteAce(i);
       }
