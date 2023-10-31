@@ -27,6 +27,19 @@ public class QbicUserAuthorityService implements UserAuthorityProvider {
     return roles.stream().flatMap(this::getAuthoritiesForRole).toList();
   }
 
+  /**
+   * Whenever a new user has been registered, a new authorization entry needs to be created for the
+   * user identified by their unique user id.
+   * <p>
+   * This method is idempotent, meaning the entry is only created once per provided user id.
+   *
+   * @param userId the user's id, uniquely identifying them
+   * @since 1.0.0
+   */
+  public void createNewAuthEntry(String userId) {
+    // TODO implement new user entry
+  }
+
   private Stream<GrantedAuthority> getAuthoritiesForRole(UserRole userRole) {
     List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
     Role role = userRole.role();

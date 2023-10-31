@@ -1,5 +1,7 @@
 package life.qbic.datamanager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
@@ -14,6 +16,7 @@ import life.qbic.broadcasting.MessageSubscription;
 import life.qbic.datamanager.views.login.LoginHandler;
 import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
+import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.identity.application.user.password.NewPassword;
 import life.qbic.identity.application.user.password.NewPasswordOutput;
 import life.qbic.identity.application.user.password.PasswordResetOutput;
@@ -37,6 +40,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jms.annotation.JmsListener;
 
 /**
  * The entry point of the Spring Boot application.
@@ -121,6 +125,19 @@ public class Application extends SpringBootServletInitializer implements AppShel
         logger.error(e.getMessage(), e);
       }
     };
+  }
+
+  @JmsListener(destination = "User")
+  static void listenToQueue(String content) {
+    System.out.println("New message: " + content);
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+      IntegrationEvent event = objectMapper.readValue(content, IntegrationEvent.class);
+      System.out.println(event.content().get("userId"));
+      System.out.println(event.type());
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   static UserRegistered deserializeUserRegistered(String event)

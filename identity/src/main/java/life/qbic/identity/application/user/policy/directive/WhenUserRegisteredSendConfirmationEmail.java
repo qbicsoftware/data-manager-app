@@ -1,4 +1,4 @@
-package life.qbic.identity.application.user.policy;
+package life.qbic.identity.application.user.policy.directive;
 
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
@@ -8,6 +8,7 @@ import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.Messages;
 import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
+import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.identity.domain.event.UserRegistered;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;

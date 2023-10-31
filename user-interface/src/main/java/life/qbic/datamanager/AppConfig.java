@@ -6,6 +6,7 @@ import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.communication.EmailService;
+import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.notification.NotificationService;
 import life.qbic.identity.application.service.BasicUserInformationService;
 import life.qbic.identity.application.user.IdentityService;
@@ -13,6 +14,8 @@ import life.qbic.identity.application.user.password.NewPassword;
 import life.qbic.identity.application.user.password.NewPasswordInput;
 import life.qbic.identity.application.user.password.PasswordResetInput;
 import life.qbic.identity.application.user.password.PasswordResetRequest;
+import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
+import life.qbic.identity.application.user.policy.UserRegisteredPolicy;
 import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.application.user.registration.RegisterUserInput;
 import life.qbic.identity.application.user.registration.Registration;
@@ -136,6 +139,15 @@ public class AppConfig {
   }
 
   @Bean
+  public UserRegisteredPolicy userRegisteredPolicy(EmailService emailService,
+      JobScheduler jobScheduler, UserRepository userRepository,
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub,
+      MessageBusSubmission messageBusSubmission) {
+    return new UserRegisteredPolicy(emailService, jobScheduler, userRepository,
+        emailConfirmationLinkSupplier, eventHub, messageBusSubmission);
+  }
+
+  @Bean
   public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
       JobScheduler jobScheduler, UserInformationService userInformationService,
@@ -148,7 +160,8 @@ public class AppConfig {
 
   @Bean
   public BatchRegisteredPolicy batchRegisteredPolicy(
-      life.qbic.projectmanagement.application.communication.EmailService emailService, ProjectAccessService accessService,
+      life.qbic.projectmanagement.application.communication.EmailService emailService,
+      ProjectAccessService accessService,
       UserInformationService userInformationService, AppContextProvider appContextProvider,
       JobScheduler jobScheduler) {
     var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
@@ -173,7 +186,7 @@ public class AppConfig {
 
   @Bean
   public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(
-      EmailServiceProvider emailServiceProvider){
+      EmailServiceProvider emailServiceProvider) {
     return new ProjectManagementEmailServiceProvider(emailServiceProvider);
   }
 }
