@@ -10,18 +10,18 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Message Dispatcher</b>
+ * <p>
+ * Implementation of the {@link EventHub} interface, broadcasting events to the messaging
+ * middleware.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class MessageDispatcher implements EventHub {
 
-  private final JmsTemplate jmsTemplate;
-
   private static final String QUEUE = "User";
+  private final JmsTemplate jmsTemplate;
 
   @Autowired
   public MessageDispatcher(JmsTemplate jmsTemplate) {

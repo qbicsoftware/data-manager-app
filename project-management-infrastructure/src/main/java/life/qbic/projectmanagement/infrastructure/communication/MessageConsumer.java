@@ -34,7 +34,7 @@ public class MessageConsumer {
   @JmsListener(destination = "User")
   public void listenToMessageBroker(String content) {
     log.debug("Incoming message with content: %s".formatted(content));
-    messageRouter.distribute(parse(content));
+    messageRouter.dispatch(parse(content));
   }
 
   private IntegrationEvent parse(String content) throws RuntimeException {

@@ -10,11 +10,19 @@ import life.qbic.identity.domain.repository.UserRepository;
 import org.jobrunr.scheduling.JobScheduler;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>User Registered Policy</b>
+ * <p>
+ * This policy executes the integration of remote domains the user confirmation, both needs to be
+ * done after a user has registered.
+ * <p>
+ * On a newly registered user tasks to be done are:
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <ol>
+ *   <li>Send out confirmation link to the provided email address</li>
+ *   <li>Broadcast registration event outside of the identity domain</li>
+ * </ol>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UserRegisteredPolicy {
 

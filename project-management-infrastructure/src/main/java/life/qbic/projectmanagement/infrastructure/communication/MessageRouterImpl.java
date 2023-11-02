@@ -29,7 +29,7 @@ public class MessageRouterImpl implements MessageRouter {
   }
 
   @Override
-  public void distribute(IntegrationEvent event) {
+  public void dispatch(IntegrationEvent event) {
     var eventType = event.type();
     subscribers.stream().filter(subscriber -> subscriber.type().equals(eventType))
         .forEach(subscriber -> subscriber.onReceive(event));
