@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.authorization.authorities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import life.qbic.projectmanagement.application.authorization.SidDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,14 @@ public class QbicUserAuthorityService implements UserAuthorityProvider {
 
   private final UserRoleRepository userRoleRepository;
 
+  private final SidDataStorage sidDataStorage;
+
   public QbicUserAuthorityService(
-      @Autowired UserRoleRepository userRoleRepository
+      @Autowired UserRoleRepository userRoleRepository,
+      @Autowired SidDataStorage sidDataStorage
   ) {
     this.userRoleRepository = userRoleRepository;
+    this.sidDataStorage = sidDataStorage;
   }
 
   @Override
@@ -37,7 +42,7 @@ public class QbicUserAuthorityService implements UserAuthorityProvider {
    * @since 1.0.0
    */
   public void createNewAuthEntry(String userId) {
-    // TODO implement new user entry
+    sidDataStorage.addSid(userId, true);
   }
 
   private Stream<GrantedAuthority> getAuthoritiesForRole(UserRole userRole) {
