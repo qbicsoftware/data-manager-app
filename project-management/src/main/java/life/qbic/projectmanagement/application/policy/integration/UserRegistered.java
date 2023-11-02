@@ -28,16 +28,19 @@ public class UserRegistered implements Subscriber {
   }
 
   @Override
-  public String topic() {
+  public String type() {
     return TOPIC;
   }
 
   @Override
-  public void onMatchingTopic(IntegrationEvent event) {
+  public void onReceive(IntegrationEvent event) {
+    if (!event.type().equals(TOPIC)) {
+      throw new WrongTypeException("Unknown type " + event.type());
+    }
     var userId = Optional.ofNullable(
         event.content().getOrDefault("userId", null));
     System.out.println("Call JobRunner");
-    //jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId.orElse(null)));
+    jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId.orElse(null)));
   }
 
   @Job(name = "create-init-auth-entry")

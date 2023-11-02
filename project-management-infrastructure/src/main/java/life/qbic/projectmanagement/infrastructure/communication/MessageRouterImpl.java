@@ -31,7 +31,7 @@ public class MessageRouterImpl implements MessageRouter {
   @Override
   public void distribute(IntegrationEvent event) {
     var eventType = event.type();
-    subscribers.stream().filter(subscriber -> subscriber.topic().equals(eventType))
-        .forEach(subscriber -> subscriber.onMatchingTopic(event));
+    subscribers.stream().filter(subscriber -> subscriber.type().equals(eventType))
+        .forEach(subscriber -> subscriber.onReceive(event));
   }
 }
