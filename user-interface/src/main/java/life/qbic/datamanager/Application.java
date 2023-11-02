@@ -64,7 +64,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
-  public static final String USER_REGISTERED = "UserRegistered";
 
   public static void main(String[] args) {
     logger.info("Starting data manager app...");
@@ -73,13 +72,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
-
-    // TODO replace message bus with infrastructure implementation
-    var messageBus = appContext.getBean(MessageSubscription.class);
-    var sidRepository = appContext.getBean(SidRepository.class);
-
-    messageBus.subscribe(whenUserRegisteredAddSid(sidRepository), USER_REGISTERED);
-    messageBus.subscribe(whenUserRegisteredLogUserInfo(), USER_REGISTERED);
 
     setupUseCases(appContext);
   }
@@ -96,61 +88,5 @@ public class Application extends SpringBootServletInitializer implements AppShel
     var newPassword = context.getBean(NewPassword.class);
     var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
     newPassword.setUseCaseOutput(newPasswordHandler);
-  }
-
-  //TODO this needs to be moved out of the Application class, once we have the means to do so
-  private static MessageSubscriber whenUserRegisteredAddSid(SidRepository sidRepository) {
-    return (message, messageParams) -> {
-      try {
-        UserRegistered userRegistered = deserializeUserRegistered(message);
-        String id = userRegistered.userId();
-
-        if(!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(id, true)) {
-          sidRepository.save(new QBiCSid(true, id));
-        }
-
-        logger.info(String.valueOf(userRegistered));
-      } catch (IOException | ClassNotFoundException e) {
-        logger.error(e.getMessage(), e);
-      }
-    };
-  }
-
-  private static MessageSubscriber whenUserRegisteredLogUserInfo() {
-    return (message, messageParams) -> {
-      try {
-        UserRegistered userRegistered = deserializeUserRegistered(message);
-        logger.info(String.valueOf(userRegistered));
-      } catch (IOException | ClassNotFoundException e) {
-        logger.error(e.getMessage(), e);
-      }
-    };
-  }
-
-  @JmsListener(destination = "User")
-  static void listenToQueue(String content) {
-    System.out.println("New message: " + content);
-    ObjectMapper objectMapper = new ObjectMapper();
-    try {
-      IntegrationEvent event = objectMapper.readValue(content, IntegrationEvent.class);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  static UserRegistered deserializeUserRegistered(String event)
-      throws IOException, ClassNotFoundException {
-    byte[] content = Base64.getDecoder().decode(event);
-    ByteArrayInputStream bais = new ByteArrayInputStream(content);
-    ObjectInputStream ois = new ObjectInputStream(bais);
-    return (UserRegistered) ois.readObject();
-  }
-
-  static PasswordResetRequested deserializePasswordReset(String event)
-      throws IOException, ClassNotFoundException {
-    byte[] content = Base64.getDecoder().decode(event);
-    ByteArrayInputStream bais = new ByteArrayInputStream(content);
-    ObjectInputStream ois = new ObjectInputStream(bais);
-    return (PasswordResetRequested) ois.readObject();
   }
 }
