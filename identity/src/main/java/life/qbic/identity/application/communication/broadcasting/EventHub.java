@@ -1,14 +1,20 @@
 package life.qbic.identity.application.communication.broadcasting;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Event Hub</b>
+ * <p>
+ * Interface to broadcast events outside the own domain.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface EventHub {
 
+  /**
+   * Sends an {@link IntegrationEvent} to the event hub, from where it will get broadcast.
+   *
+   * @param event the integration event to broadcast
+   * @since 1.0.0
+   */
   void send(IntegrationEvent event);
 
 }
