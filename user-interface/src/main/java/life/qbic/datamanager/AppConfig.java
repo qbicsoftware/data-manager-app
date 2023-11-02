@@ -1,5 +1,6 @@
 package life.qbic.datamanager;
 
+import jakarta.jms.ConnectionFactory;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -27,7 +28,9 @@ import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvi
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.authorities.QbicUserAuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
@@ -36,12 +39,19 @@ import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
+import life.qbic.projectmanagement.application.policy.integration.UserRegistered;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
 
 /**
  * <b>App bean configuration class</b>
@@ -54,6 +64,34 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ComponentScan({"life.qbic.identity.infrastructure"})
 public class AppConfig {
+
+  /*
+  Wiring up identity application core and policies
+
+  Section starts below
+  */
+  @Bean
+  public EmailAddressConfirmation confirmEmailInput(
+      IdentityService identityService) {
+    return new EmailAddressConfirmation(identityService);
+  }
+
+  @Bean
+  public IdentityService userRegistrationService(
+      UserRepository userRepository
+  ) {
+    return new IdentityService(userRepository);
+  }
+
+  @Bean
+  public NewPasswordInput newPasswordInput(IdentityService identityService) {
+    return new NewPassword(identityService);
+  }
+
+  @Bean
+  public PasswordResetInput passwordResetInput(IdentityService identityService) {
+    return new PasswordResetRequest(identityService);
+  }
 
   /**
    * Creates the registration use case.
@@ -68,9 +106,17 @@ public class AppConfig {
   }
 
   @Bean
-  public EmailAddressConfirmation confirmEmailInput(
-      IdentityService identityService) {
-    return new EmailAddressConfirmation(identityService);
+  public UserInformationService userInformationService(UserRepository userRepository) {
+    return new BasicUserInformationService(userRepository);
+  }
+
+  @Bean
+  public UserRegisteredPolicy userRegisteredPolicy(EmailService emailService,
+      JobScheduler jobScheduler, UserRepository userRepository,
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub,
+      MessageBusSubmission messageBusSubmission) {
+    return new UserRegisteredPolicy(emailService, jobScheduler, userRepository,
+        emailConfirmationLinkSupplier, eventHub, messageBusSubmission);
   }
 
   /**
@@ -84,12 +130,94 @@ public class AppConfig {
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
   }
+  /*
+  Section ends
+
+  Wiring up identity application core and policies
+   */
+
+  /*
+  Wiring up project management application core and policies
+
+  Section starts below
+  */
+  @Bean
+  public BatchRegisteredPolicy batchRegisteredPolicy(
+      life.qbic.projectmanagement.application.communication.EmailService emailService,
+      ProjectAccessService accessService,
+      UserInformationService userInformationService, AppContextProvider appContextProvider,
+      JobScheduler jobScheduler) {
+    var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
+        userInformationService, appContextProvider, jobScheduler);
+    return new BatchRegisteredPolicy(informUsers);
+  }
 
   @Bean
-  public IdentityService userRegistrationService(
-      UserRepository userRepository
-  ) {
-    return new IdentityService(userRepository);
+  public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
+      life.qbic.projectmanagement.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      AppContextProvider appContextProvider) {
+    var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(emailService,
+        jobScheduler,
+        userInformationService, appContextProvider);
+    return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
+  }
+
+  @Bean
+  public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
+      JobScheduler jobScheduler, ProjectRepository projectRepository) {
+    var createNewSampleStatisticsEntry = new CreateNewSampleStatisticsEntry(sampleCodeService,
+        jobScheduler,
+        projectRepository);
+    return new ProjectRegisteredPolicy(createNewSampleStatisticsEntry);
+  }
+
+  @Bean
+  public SampleRegisteredPolicy sampleRegisteredPolicy(
+      BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
+    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
+    return new SampleRegisteredPolicy(addSampleToBatch);
+  }
+
+  @Bean
+  public UserRegistered userRegisteredIntegration(
+      JobScheduler jobScheduler, QbicUserAuthorityService authorityService,
+      MessageRouter messageRouter) {
+    UserRegistered userRegistered = new UserRegistered(jobScheduler, authorityService);
+    messageRouter.register(userRegistered);
+    return userRegistered;
+  }
+
+  /*
+  Section ends
+
+  Wiring up project management application core and policies
+  */
+
+  /*
+  Infrastructure wiring and setup
+
+  Section starts below
+   */
+  @Bean
+  public EmailService identityEmailService(EmailServiceProvider emailServiceProvider) {
+    return new IdentityEmailServiceProvider(emailServiceProvider);
+  }
+
+  @Bean
+  public EmailServiceProvider emailProvider(@Value("${spring.mail.host}") String host,
+      @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
+      @Value("${spring.mail.password}") String mailUserPassword) {
+    var mailServerConfiguration = new life.qbic.infrastructure.email.MailServerConfiguration(
+        host, port,
+        mailUserName, mailUserPassword);
+    return new EmailServiceProvider(mailServerConfiguration);
+  }
+
+  @Bean
+  public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(
+      EmailServiceProvider emailServiceProvider) {
+    return new ProjectManagementEmailServiceProvider(emailServiceProvider);
   }
 
   @Bean
@@ -107,86 +235,9 @@ public class AppConfig {
     return Exchange.instance();
   }
 
-  @Bean
-  public PasswordResetInput passwordResetInput(IdentityService identityService) {
-    return new PasswordResetRequest(identityService);
-  }
+   /*
+   Section ends
 
-  @Bean
-  public NewPasswordInput newPasswordInput(IdentityService identityService) {
-    return new NewPassword(identityService);
-  }
-
-  @Bean
-  public SampleRegisteredPolicy sampleRegisteredPolicy(
-      BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
-    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
-    return new SampleRegisteredPolicy(addSampleToBatch);
-  }
-
-  @Bean
-  public ProjectRegisteredPolicy projectRegisteredPolicy(SampleCodeService sampleCodeService,
-      JobScheduler jobScheduler, ProjectRepository projectRepository) {
-    var createNewSampleStatisticsEntry = new CreateNewSampleStatisticsEntry(sampleCodeService,
-        jobScheduler,
-        projectRepository);
-    return new ProjectRegisteredPolicy(createNewSampleStatisticsEntry);
-  }
-
-  @Bean
-  public UserInformationService userInformationService(UserRepository userRepository) {
-    return new BasicUserInformationService(userRepository);
-  }
-
-  @Bean
-  public UserRegisteredPolicy userRegisteredPolicy(EmailService emailService,
-      JobScheduler jobScheduler, UserRepository userRepository,
-      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub,
-      MessageBusSubmission messageBusSubmission) {
-    return new UserRegisteredPolicy(emailService, jobScheduler, userRepository,
-        emailConfirmationLinkSupplier, eventHub, messageBusSubmission);
-  }
-
-  @Bean
-  public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
-      life.qbic.projectmanagement.application.communication.EmailService emailService,
-      JobScheduler jobScheduler, UserInformationService userInformationService,
-      AppContextProvider appContextProvider) {
-    var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(emailService,
-        jobScheduler,
-        userInformationService, appContextProvider);
-    return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
-  }
-
-  @Bean
-  public BatchRegisteredPolicy batchRegisteredPolicy(
-      life.qbic.projectmanagement.application.communication.EmailService emailService,
-      ProjectAccessService accessService,
-      UserInformationService userInformationService, AppContextProvider appContextProvider,
-      JobScheduler jobScheduler) {
-    var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
-        userInformationService, appContextProvider, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers);
-  }
-
-  @Bean
-  public EmailServiceProvider emailProvider(@Value("${spring.mail.host}") String host,
-      @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
-      @Value("${spring.mail.password}") String mailUserPassword) {
-    var mailServerConfiguration = new life.qbic.infrastructure.email.MailServerConfiguration(
-        host, port,
-        mailUserName, mailUserPassword);
-    return new EmailServiceProvider(mailServerConfiguration);
-  }
-
-  @Bean
-  public EmailService identityEmailService(EmailServiceProvider emailServiceProvider) {
-    return new IdentityEmailServiceProvider(emailServiceProvider);
-  }
-
-  @Bean
-  public life.qbic.projectmanagement.application.communication.EmailService projectEmailService(
-      EmailServiceProvider emailServiceProvider) {
-    return new ProjectManagementEmailServiceProvider(emailServiceProvider);
-  }
+   Infrastructure wiring and setup
+   */
 }

@@ -9,7 +9,7 @@ package life.qbic.identity.application.communication.broadcasting;
  */
 public interface MessageRouter {
 
-  void register(MessageTypeSubscriber messageTypeSubscriber);
+  void register(Subscriber subscriber);
 
   void dispatch(IntegrationEvent event);
 

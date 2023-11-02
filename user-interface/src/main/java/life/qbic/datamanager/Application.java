@@ -133,8 +133,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     ObjectMapper objectMapper = new ObjectMapper();
     try {
       IntegrationEvent event = objectMapper.readValue(content, IntegrationEvent.class);
-      System.out.println(event.content().get("userId"));
-      System.out.println(event.type());
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

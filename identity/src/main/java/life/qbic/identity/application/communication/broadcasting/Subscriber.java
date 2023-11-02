@@ -7,7 +7,7 @@ package life.qbic.identity.application.communication.broadcasting;
  *
  * @since <version tag>
  */
-public interface MessageTypeSubscriber {
+public interface Subscriber {
 
   String subscribedType();
 
