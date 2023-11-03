@@ -39,7 +39,6 @@ public class UserRegistered implements Subscriber {
     }
     var userId = Optional.ofNullable(
         event.content().getOrDefault("userId", null));
-    System.out.println("Call JobRunner");
     jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId.orElse(null)));
   }
 

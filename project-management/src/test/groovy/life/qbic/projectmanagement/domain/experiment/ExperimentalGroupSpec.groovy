@@ -1,10 +1,6 @@
 package life.qbic.projectmanagement.domain.experiment
 
-import life.qbic.projectmanagement.domain.model.experiment.Condition
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel
-import life.qbic.projectmanagement.domain.model.experiment.VariableName
+import life.qbic.projectmanagement.domain.model.experiment.*
 import org.spockframework.util.Nullable
 import spock.lang.Specification
 

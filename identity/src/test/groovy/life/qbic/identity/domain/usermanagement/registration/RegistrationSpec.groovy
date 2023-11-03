@@ -1,19 +1,14 @@
 package life.qbic.identity.domain.usermanagement.registration
 
-
+import life.qbic.identity.application.user.IdentityService
 import life.qbic.identity.application.user.registration.RegisterUserOutput
 import life.qbic.identity.application.user.registration.Registration
 import life.qbic.identity.application.user.registration.UserRegistrationException
-import life.qbic.identity.application.user.IdentityService
+import life.qbic.identity.domain.model.*
 import life.qbic.identity.domain.registry.DomainRegistry
-import life.qbic.identity.domain.model.EmailAddress
-import life.qbic.identity.domain.model.EncryptedPassword
-import life.qbic.identity.domain.model.FullName
-import life.qbic.identity.domain.model.User
-import life.qbic.identity.domain.model.UserId
 import life.qbic.identity.domain.repository.UserDataStorage
-import life.qbic.identity.domain.service.UserDomainService
 import life.qbic.identity.domain.repository.UserRepository
+import life.qbic.identity.domain.service.UserDomainService
 import spock.lang.Shared
 import spock.lang.Specification
 

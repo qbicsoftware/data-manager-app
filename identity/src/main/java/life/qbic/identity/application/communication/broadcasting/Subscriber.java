@@ -39,7 +39,7 @@ public interface Subscriber {
   void onReceive(IntegrationEvent event) throws WrongTypeException;
 
   /**
-   * Exception that indicates, that the subscriber receveived an integration event of the wrong
+   * Exception that indicates, that the subscriber received an integration event of the wrong
    * type
    *
    * @since 1.0.0

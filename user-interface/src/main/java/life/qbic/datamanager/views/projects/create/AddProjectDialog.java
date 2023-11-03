@@ -19,15 +19,15 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Optional;
+import life.qbic.controlling.application.finances.offer.OfferLookupService;
+import life.qbic.controlling.domain.finances.offer.Offer;
+import life.qbic.controlling.domain.finances.offer.OfferId;
+import life.qbic.controlling.domain.finances.offer.OfferPreview;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.logging.api.Logger;
-import life.qbic.controlling.application.finances.offer.OfferLookupService;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 
 /**
