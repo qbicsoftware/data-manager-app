@@ -28,11 +28,10 @@ public class UserRegisteredPolicy {
 
   public UserRegisteredPolicy(EmailService emailService, JobScheduler jobScheduler,
       UserRepository userRepository, EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
-      EventHub eventHub, MessageBusSubmission messageBusSubmission) {
+      EventHub eventHub) {
     var confirmationEmail = new WhenUserRegisteredSendConfirmationEmail(emailService, jobScheduler,
         userRepository, emailConfirmationLinkSupplier);
-    var submitIntegrationEvent = new WhenUserRegisteredSubmitIntegrationEvent(messageBusSubmission,
-        eventHub, jobScheduler);
+    var submitIntegrationEvent = new WhenUserRegisteredSubmitIntegrationEvent(eventHub, jobScheduler);
 
     DomainEventDispatcher.instance().subscribe(confirmationEmail);
     DomainEventDispatcher.instance().subscribe(submitIntegrationEvent);

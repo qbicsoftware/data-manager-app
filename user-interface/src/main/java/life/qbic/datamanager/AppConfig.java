@@ -106,10 +106,9 @@ public class AppConfig {
   @Bean
   public UserRegisteredPolicy userRegisteredPolicy(EmailService emailService,
       JobScheduler jobScheduler, UserRepository userRepository,
-      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub,
-      MessageBusSubmission messageBusSubmission) {
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub) {
     return new UserRegisteredPolicy(emailService, jobScheduler, userRepository,
-        emailConfirmationLinkSupplier, eventHub, messageBusSubmission);
+        emailConfirmationLinkSupplier, eventHub);
   }
 
   /**

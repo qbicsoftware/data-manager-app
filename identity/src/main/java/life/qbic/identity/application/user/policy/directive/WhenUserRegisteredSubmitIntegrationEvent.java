@@ -26,17 +26,13 @@ import org.springframework.stereotype.Component;
 public class WhenUserRegisteredSubmitIntegrationEvent implements
     DomainEventSubscriber<UserRegistered> {
 
-  private final MessageBusSubmission messageBusSubmission;
-
   private final EventHub eventHub;
 
   private final JobScheduler jobScheduler;
 
   public WhenUserRegisteredSubmitIntegrationEvent(
-      @Autowired MessageBusSubmission messageBusSubmission,
       @Autowired EventHub eventHub,
       @Autowired JobScheduler jobScheduler) {
-    this.messageBusSubmission = messageBusSubmission;
     this.jobScheduler = jobScheduler;
     this.eventHub = eventHub;
   }
@@ -48,17 +44,10 @@ public class WhenUserRegisteredSubmitIntegrationEvent implements
 
   @Override
   public void handleEvent(UserRegistered event) {
-    this.jobScheduler.enqueue(() -> notifyMessageBus(event));
-    dispatchEvent(event);
+    this.jobScheduler.enqueue(() -> dispatchEvent(event));
   }
 
-  @Job(name = "Notify message bus about user registration")
-  public void notifyMessageBus(UserRegistered event) {
-    messageBusSubmission.submit(new DomainEventSerializer().serialize(event),
-        MessageParameters.durableTextParameters("UserRegistered", UUID.randomUUID().toString(),
-            Instant.now()));
-  }
-
+  @Job(name = "Broadcast event about user registration")
   public void dispatchEvent(UserRegistered event) {
     Map<String, String> content = new HashMap<>();
     content.put("userId", event.userId());

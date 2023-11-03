@@ -40,7 +40,6 @@ public class WhenUserRegisteredSendConfirmationEmail implements
     this.emailService = emailService;
     this.userRepository = userRepository;
     this.emailConfirmationLinkSupplier = emailConfirmationLinkSupplier;
-    DomainEventDispatcher.instance().subscribe(this);
     this.jobScheduler = jobScheduler;
   }
 
