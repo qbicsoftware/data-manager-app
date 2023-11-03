@@ -21,13 +21,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageDispatcher implements EventHub {
 
-  @Value("${qbic.broadcasting.identity.topic}")
   private static String IDENTITY_TOPIC;
   private final JmsTemplate jmsTemplate;
 
   @Autowired
-  public MessageDispatcher(JmsTemplate jmsTemplate) {
+  public MessageDispatcher(JmsTemplate jmsTemplate,
+      @Value("${qbic.broadcasting.identity.topic}") String topic) {
     this.jmsTemplate = Objects.requireNonNull(jmsTemplate);
+    IDENTITY_TOPIC = topic;
   }
 
   @Override

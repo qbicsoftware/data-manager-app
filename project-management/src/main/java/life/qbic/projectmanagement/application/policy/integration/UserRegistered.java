@@ -22,7 +22,7 @@ import org.jobrunr.scheduling.JobScheduler;
  */
 public class UserRegistered implements Subscriber {
 
-  private static final String TOPIC = "userRegistered";
+  private static final String TOPIC = "User";
 
   private final JobScheduler jobScheduler;
 
