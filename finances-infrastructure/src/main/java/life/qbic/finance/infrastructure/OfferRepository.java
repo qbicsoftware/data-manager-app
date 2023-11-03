@@ -1,7 +1,7 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.finance.infrastructure;
 
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferId;
+import life.qbic.finance.domain.model.Offer;
+import life.qbic.finance.domain.model.OfferId;
 import org.springframework.data.repository.CrudRepository;
 
 /**

@@ -1,7 +1,7 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.finance.infrastructure;
 
 import java.util.List;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finance.domain.model.OfferPreview;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;

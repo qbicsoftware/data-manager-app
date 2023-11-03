@@ -1,10 +1,10 @@
-package life.qbic.controlling.application.finances.offer;
+package life.qbic.finance.application;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finance.domain.model.Offer;
+import life.qbic.finance.domain.model.OfferId;
+import life.qbic.finance.domain.model.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +16,12 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class OfferLookupService {
+public class OfferService {
 
   private final OfferSearchService offerSearchService;
 
   @Autowired
-  public OfferLookupService(
+  public OfferService(
       OfferSearchService offerSearchService) {
     this.offerSearchService = offerSearchService;
   }

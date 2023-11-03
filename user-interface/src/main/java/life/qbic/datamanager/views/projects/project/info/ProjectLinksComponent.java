@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.finance.application.OfferService;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
-import life.qbic.controlling.application.finances.offer.OfferLookupService;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finance.domain.model.OfferId;
+import life.qbic.finance.domain.model.OfferPreview;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,12 +44,12 @@ public class ProjectLinksComponent extends PageArea {
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
-      @Autowired OfferLookupService offerLookupService) {
-    Objects.requireNonNull(offerLookupService);
+      @Autowired OfferService offerService) {
+    Objects.requireNonNull(offerService);
     Objects.requireNonNull(projectLinkingService);
     addClassName("attachments-area");
 
-    initOfferSearch(offerLookupService);
+    initOfferSearch(offerService);
     initProjectLinksGrid();
 
     initLayout();
@@ -75,8 +75,8 @@ public class ProjectLinksComponent extends PageArea {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
 
-  private void initOfferSearch(OfferLookupService offerLookupService) {
-    offerSearch = new OfferSearch(offerLookupService);
+  private void initOfferSearch(OfferService offerService) {
+    offerSearch = new OfferSearch(offerService);
     offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
@@ -153,7 +153,7 @@ public class ProjectLinksComponent extends PageArea {
 
   private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
 
-    private final transient OfferLookupService offerLookupService;
+    private final transient OfferService offerService;
 
     public static class SelectedOfferChangeEvent extends
         ComponentValueChangeEvent<OfferSearch, OfferPreview> {
@@ -173,9 +173,9 @@ public class ProjectLinksComponent extends PageArea {
     }
 
 
-    public OfferSearch(@Autowired OfferLookupService offerLookupService) {
-      Objects.requireNonNull(offerLookupService);
-      this.offerLookupService = offerLookupService;
+    public OfferSearch(@Autowired OfferService offerService) {
+      Objects.requireNonNull(offerService);
+      this.offerService = offerService;
       setItems();
       setRenderer();
       setLabels();
@@ -210,7 +210,7 @@ public class ProjectLinksComponent extends PageArea {
     }
 
     private void setItems() {
-      getContent().setItems(query -> offerLookupService.findOfferContainingProjectTitleOrId(
+      getContent().setItems(query -> offerService.findOfferContainingProjectTitleOrId(
           query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
           query.getLimit()).stream());
     }

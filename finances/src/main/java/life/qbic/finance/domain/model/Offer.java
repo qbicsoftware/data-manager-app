@@ -1,4 +1,4 @@
-package life.qbic.controlling.domain.finances.offer;
+package life.qbic.finance.domain.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
