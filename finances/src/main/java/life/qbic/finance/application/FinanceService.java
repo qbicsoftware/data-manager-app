@@ -3,7 +3,6 @@ package life.qbic.finance.application;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.finance.domain.model.OfferPreview;
-import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.finances.api.OfferSummary;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +16,12 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class FinanceServiceImpl implements FinanceService {
+public class FinanceService implements life.qbic.finances.api.FinanceService {
 
   private final OfferSearchService offerSearchService;
 
   @Autowired
-  public FinanceServiceImpl(
+  public FinanceService(
       OfferSearchService offerSearchService) {
     this.offerSearchService = offerSearchService;
   }
@@ -43,7 +42,7 @@ public class FinanceServiceImpl implements FinanceService {
   public List<OfferSummary> findOfferContainingProjectTitleOrId(String projectTitle,
       String offerId) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId).stream()
-        .map(FinanceServiceImpl::convert).toList();
+        .map(FinanceService::convert).toList();
   }
 
   /**
@@ -53,7 +52,7 @@ public class FinanceServiceImpl implements FinanceService {
   public List<OfferSummary> findOfferContainingProjectTitleOrId(String projectTitle, String offerId,
       int offset, int limit) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId, offset, limit)
-        .stream().map(FinanceServiceImpl::convert).toList();
+        .stream().map(FinanceService::convert).toList();
   }
 
   /**
@@ -61,7 +60,7 @@ public class FinanceServiceImpl implements FinanceService {
    */
   @Override
   public Optional<life.qbic.finances.api.Offer> findOfferById(String offerId) {
-    return offerSearchService.findByOfferId(offerId).map(FinanceServiceImpl::convert);
+    return offerSearchService.findByOfferId(offerId).map(FinanceService::convert);
   }
 
 }
