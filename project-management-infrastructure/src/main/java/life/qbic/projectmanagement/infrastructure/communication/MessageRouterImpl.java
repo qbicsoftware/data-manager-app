@@ -8,11 +8,14 @@ import life.qbic.projectmanagement.application.communication.broadcasting.Subscr
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Message Router implementation</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link MessageRouter} interface.</p>
+ * <p>
+ * Manages the registered subscribers and dispatches events to interested subscribers based on the
+ * event type they are interested in.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class MessageRouterImpl implements MessageRouter {
@@ -23,11 +26,17 @@ public class MessageRouterImpl implements MessageRouter {
     this.subscribers = new LinkedList<>();
   }
 
+  /**
+   * @inheritDocs
+   */
   @Override
   public void register(Subscriber subscriber) {
     this.subscribers.add(subscriber);
   }
 
+  /**
+   * @inheritDocs
+   */
   @Override
   public void dispatch(IntegrationEvent event) {
     var eventType = event.type();

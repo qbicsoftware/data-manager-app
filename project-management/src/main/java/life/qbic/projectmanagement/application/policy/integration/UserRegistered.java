@@ -8,11 +8,17 @@ import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>User registered integration</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Policy that is executed to integrate the received integration event about a new user
+ * that has registered.</p>
+ * <p>
+ * The current implementation makes sure, that a new user has an authorization entry that can be
+ * further used to provide users with access to any project.
+ * <p>
+ * To achieve this, the policy interacts with the {@link QbicUserAuthorityService}.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UserRegistered implements Subscriber {
 
@@ -42,6 +48,13 @@ public class UserRegistered implements Subscriber {
     jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId.orElse(null)));
   }
 
+  /**
+   * Creates a new auth entry for a user with a given ID.
+   *
+   * @param userId the user's unique identifier
+   * @throws RuntimeException if the user id is empty or null
+   * @since 1.0.0
+   */
   @Job(name = "create-init-auth-entry")
   public void createInitAuthorizationEntry(String userId) throws RuntimeException {
     if (userId == null || userId.isBlank()) {
