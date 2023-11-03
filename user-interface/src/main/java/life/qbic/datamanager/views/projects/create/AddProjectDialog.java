@@ -23,7 +23,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.finance.application.OfferService;
+import life.qbic.finance.application.FinanceServiceImpl;
 import life.qbic.logging.api.Logger;
 import life.qbic.finance.domain.model.Offer;
 import life.qbic.finance.domain.model.OfferId;
@@ -47,13 +47,13 @@ public class AddProjectDialog extends DialogWindow {
   private final Binder<ProjectInformation> binder;
   private final Binder<String> projectCodeBinder;
   private final ProjectFormLayout formLayout;
-  private final OfferService offerService;
+  private final FinanceServiceImpl financeServiceImpl;
   public final ComboBox<OfferPreview> offerSearchField;
   private final TextField codeField;
 
-  public AddProjectDialog(OfferService offerService) {
+  public AddProjectDialog(FinanceServiceImpl financeServiceImpl) {
     super();
-    this.offerService = requireNonNull(offerService,
+    this.financeServiceImpl = requireNonNull(financeServiceImpl,
         "offerLookupService must not be null");
 
     addClassName("create-project-dialog");
@@ -63,7 +63,7 @@ public class AddProjectDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     cancelButton.addClickListener(this::onCancelClicked);
 
-    offerSearchField = createOfferSearch(this.offerService);
+    offerSearchField = createOfferSearch(this.financeServiceImpl);
 
     codeField = new TextField("Code");
     codeField.addClassName("code");
@@ -114,14 +114,14 @@ public class AddProjectDialog extends DialogWindow {
     close();
   }
 
-  private ComboBox<OfferPreview> createOfferSearch(OfferService offerService) {
+  private ComboBox<OfferPreview> createOfferSearch(FinanceServiceImpl financeServiceImpl) {
     final ComboBox<OfferPreview> searchField = new ComboBox<>("Offer");
     searchField.setClassName("search-field");
     searchField.setPlaceholder("Search");
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
     searchField.setItems(
-        query -> offerService.findOfferContainingProjectTitleOrId(
+        query -> financeServiceImpl.findOfferContainingProjectTitleOrId(
             query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
             query.getLimit()).stream());
 
@@ -143,7 +143,7 @@ public class AddProjectDialog extends DialogWindow {
 
   private void setOffer(String offerId) {
     OfferId id = OfferId.from(offerId);
-    Optional<Offer> offer = offerService.findOfferById(id);
+    Optional<Offer> offer = financeServiceImpl.findOfferById(id);
     offer.ifPresentOrElse(this::fillProjectInformationFromOffer,
         () -> log.error("No offer found with id: " + offerId));
   }

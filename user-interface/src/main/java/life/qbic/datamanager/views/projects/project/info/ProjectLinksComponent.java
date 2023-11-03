@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.finance.application.OfferService;
+import life.qbic.finance.application.FinanceServiceImpl;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
 import life.qbic.finance.domain.model.OfferId;
 import life.qbic.finance.domain.model.OfferPreview;
@@ -44,12 +44,12 @@ public class ProjectLinksComponent extends PageArea {
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
-      @Autowired OfferService offerService) {
-    Objects.requireNonNull(offerService);
+      @Autowired FinanceServiceImpl financeServiceImpl) {
+    Objects.requireNonNull(financeServiceImpl);
     Objects.requireNonNull(projectLinkingService);
     addClassName("attachments-area");
 
-    initOfferSearch(offerService);
+    initOfferSearch(financeServiceImpl);
     initProjectLinksGrid();
 
     initLayout();
@@ -75,8 +75,8 @@ public class ProjectLinksComponent extends PageArea {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
 
-  private void initOfferSearch(OfferService offerService) {
-    offerSearch = new OfferSearch(offerService);
+  private void initOfferSearch(FinanceServiceImpl financeServiceImpl) {
+    offerSearch = new OfferSearch(financeServiceImpl);
     offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
@@ -153,7 +153,7 @@ public class ProjectLinksComponent extends PageArea {
 
   private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
 
-    private final transient OfferService offerService;
+    private final transient FinanceServiceImpl financeServiceImpl;
 
     public static class SelectedOfferChangeEvent extends
         ComponentValueChangeEvent<OfferSearch, OfferPreview> {
@@ -173,9 +173,9 @@ public class ProjectLinksComponent extends PageArea {
     }
 
 
-    public OfferSearch(@Autowired OfferService offerService) {
-      Objects.requireNonNull(offerService);
-      this.offerService = offerService;
+    public OfferSearch(@Autowired FinanceServiceImpl financeServiceImpl) {
+      Objects.requireNonNull(financeServiceImpl);
+      this.financeServiceImpl = financeServiceImpl;
       setItems();
       setRenderer();
       setLabels();
@@ -210,7 +210,7 @@ public class ProjectLinksComponent extends PageArea {
     }
 
     private void setItems() {
-      getContent().setItems(query -> offerService.findOfferContainingProjectTitleOrId(
+      getContent().setItems(query -> financeServiceImpl.findOfferContainingProjectTitleOrId(
           query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
           query.getLimit()).stream());
     }

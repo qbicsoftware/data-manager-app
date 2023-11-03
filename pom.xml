@@ -24,6 +24,7 @@
     <module>project-management-infrastructure</module>
     <module>email-service-provider</module>
     <module>finances-infrastructure</module>
+    <module>finances-api</module>
   </modules>
   <packaging>pom</packaging>
 
