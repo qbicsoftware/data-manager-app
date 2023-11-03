@@ -12,11 +12,12 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Message Consumer</b>
+ * <p>
+ * Consumes incoming messages from a message broker, converts the content into a POJO
+ * ({@link IntegrationEvent}) and forwards the event to the local message router.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class MessageConsumer {
@@ -28,7 +29,7 @@ public class MessageConsumer {
   @Autowired
   public MessageConsumer(MessageRouter messageRouter) {
     this.messageRouter = messageRouter;
-    log.info("Build Message Consumer");
+    log.debug("Created project management message consumer");
   }
 
   @JmsListener(destination = "User")
