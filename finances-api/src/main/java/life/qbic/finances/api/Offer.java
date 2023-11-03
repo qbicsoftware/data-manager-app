@@ -1,11 +1,18 @@
 package life.qbic.finances.api;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Holds offer information such as:</p>
  *
- * @since <version tag>
+ * <ul>
+ *   <li>offer id</li>
+ *   <li>title</li>
+ *   <li>objective</li>
+ *   <li>experimental design</li>
+ * </ul>
+ *
+ * @since 1.0.0
  */
 public record Offer(String id, String title, String objective, String experimentDescription) {
 

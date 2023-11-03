@@ -1,11 +1,11 @@
 package life.qbic.finances.api;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Offer summary</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Holds title and id of an offer</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record OfferSummary(String title, String offerId) {
 
