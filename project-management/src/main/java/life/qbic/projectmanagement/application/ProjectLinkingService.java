@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.finances.api.FinanceService;
+import life.qbic.finances.api.Offer;
 import life.qbic.logging.api.Logger;
-import life.qbic.finance.application.OfferSearchService;
-import life.qbic.finance.domain.model.Offer;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -27,13 +27,13 @@ public class ProjectLinkingService {
 
   private static final Logger log = logger(ProjectLinkingService.class);
   private final ProjectRepository projectRepository;
-  private final OfferSearchService offerSearchService;
+  private final FinanceService financeService;
 
   public ProjectLinkingService(
       @Autowired ProjectRepository projectRepository,
-      @Autowired OfferSearchService offerSearchService) {
+      @Autowired FinanceService financeService) {
     this.projectRepository = projectRepository;
-    this.offerSearchService = offerSearchService;
+    this.financeService = financeService;
   }
 
   public void linkOfferToProject(String offerIdentifier, String projectIdentifier) {
@@ -53,7 +53,7 @@ public class ProjectLinkingService {
   }
 
   private Offer loadOfferOrThrow(String offerIdentifier) throws ApplicationException {
-    Optional<Offer> offerSearchResult = offerSearchService.findByOfferId(offerIdentifier);
+    Optional<Offer> offerSearchResult = financeService.findOfferById(offerIdentifier);
     if (offerSearchResult.isEmpty()) {
       throw new ApplicationException(
           "No offer with identifier " + offerIdentifier + " exists.");

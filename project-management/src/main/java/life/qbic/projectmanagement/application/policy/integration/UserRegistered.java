@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.application.policy.integration;
 
 import java.util.Optional;
-import life.qbic.projectmanagement.application.authorization.authorities.QbicUserAuthorityService;
+import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.projectmanagement.application.communication.broadcasting.Subscriber;
 import org.jobrunr.jobs.annotations.Job;
@@ -16,7 +16,7 @@ import org.jobrunr.scheduling.JobScheduler;
  * The current implementation makes sure, that a new user has an authorization entry that can be
  * further used to provide users with access to any project.
  * <p>
- * To achieve this, the policy interacts with the {@link QbicUserAuthorityService}.
+ * To achieve this, the policy interacts with the {@link AuthorityService}.
  *
  * @since 1.0.0
  */
@@ -26,9 +26,9 @@ public class UserRegistered implements Subscriber {
 
   private final JobScheduler jobScheduler;
 
-  private final QbicUserAuthorityService authorityService;
+  private final AuthorityService authorityService;
 
-  public UserRegistered(JobScheduler jobScheduler, QbicUserAuthorityService authorityService) {
+  public UserRegistered(JobScheduler jobScheduler, AuthorityService authorityService) {
     this.jobScheduler = jobScheduler;
     this.authorityService = authorityService;
   }
