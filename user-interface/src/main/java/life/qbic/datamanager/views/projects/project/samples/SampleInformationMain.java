@@ -16,9 +16,9 @@ import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponen
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
