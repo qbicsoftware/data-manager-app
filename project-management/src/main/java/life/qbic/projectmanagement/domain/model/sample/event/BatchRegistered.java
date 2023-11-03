@@ -4,8 +4,8 @@ import java.io.Serial;
 import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * <b>Batch Registered Event</b>

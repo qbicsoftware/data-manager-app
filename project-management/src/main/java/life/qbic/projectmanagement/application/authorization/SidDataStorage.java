@@ -6,9 +6,9 @@ package life.qbic.projectmanagement.application.authorization;
 public interface SidDataStorage {
 
   /**
-   * adds an entry for sid
+   * Adds an entry for sid
    *
-   * @param sid       the username or role
+   * @param sid       the user id or role
    * @param principal whether the sid is for a principal or a role
    */
   void addSid(String sid, boolean principal);

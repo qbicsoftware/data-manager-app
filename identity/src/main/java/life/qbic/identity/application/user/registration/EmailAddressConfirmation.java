@@ -1,8 +1,8 @@
 package life.qbic.identity.application.user.registration;
 
 import java.util.Objects;
-import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.application.user.UserNotFoundException;
 
 /**
  * <b>Email Address Confirmation use case</b>

@@ -4,15 +4,10 @@ import life.qbic.application.commons.Result
 import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
-import life.qbic.projectmanagement.domain.model.project.Contact
-import life.qbic.projectmanagement.domain.model.project.Project
-import life.qbic.projectmanagement.domain.model.project.ProjectCode
-import life.qbic.projectmanagement.domain.model.project.ProjectIntent
-import life.qbic.projectmanagement.domain.model.project.ProjectObjective
-import life.qbic.projectmanagement.domain.model.project.ProjectTitle
-import life.qbic.projectmanagement.domain.repository.BatchRepository
-import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered
 import life.qbic.projectmanagement.domain.model.batch.Batch
+import life.qbic.projectmanagement.domain.model.project.*
+import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered
+import life.qbic.projectmanagement.domain.repository.BatchRepository
 import spock.lang.Specification
 
 /**
