@@ -1,11 +1,10 @@
 package life.qbic.identity.domain.user
 
-
-import life.qbic.identity.domain.model.EncryptedPassword
-import life.qbic.identity.domain.event.PasswordResetRequested
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
+import life.qbic.identity.domain.event.PasswordResetRequested
 import life.qbic.identity.domain.model.EmailAddress
+import life.qbic.identity.domain.model.EncryptedPassword
 import life.qbic.identity.domain.model.FullName
 import life.qbic.identity.domain.model.User
 import spock.lang.Shared

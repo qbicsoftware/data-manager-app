@@ -24,6 +24,9 @@ public class ProjectAccessStorage implements SidDataStorage {
 
   @Override
   public void addSid(String sid, boolean principal) {
+    if (sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(sid, principal)) {
+      return;
+    }
     sidRepository.save(new QBiCSid(principal, sid));
   }
 }
