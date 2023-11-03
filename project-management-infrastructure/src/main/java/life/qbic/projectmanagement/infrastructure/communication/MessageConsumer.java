@@ -32,7 +32,7 @@ public class MessageConsumer {
     log.debug("Created project management message consumer");
   }
 
-  @JmsListener(destination = "User")
+  @JmsListener(destination = "${qbic.broadcasting.identity.topic}")
   public void listenToMessageBroker(String content) {
     log.debug("Incoming message with content: %s".formatted(content));
     messageRouter.dispatch(parse(content));

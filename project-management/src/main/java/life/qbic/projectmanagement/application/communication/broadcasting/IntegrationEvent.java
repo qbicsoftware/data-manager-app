@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * <b>Integration Event</b>
  * <p>
- * Integration events can be used to broadcast events from on domain to multiple other domains.
+ * Integration events can be used to broadcast events from one domain to multiple other domains.
  * <p>
  * Integration event have types. Types are describing concisely what the event is about. For example
  * if a user has registered, the type can be "userRegistered". Types can be used to provide some

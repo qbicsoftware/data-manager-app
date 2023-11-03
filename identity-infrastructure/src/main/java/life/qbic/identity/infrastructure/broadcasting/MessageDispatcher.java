@@ -6,6 +6,7 @@ import java.util.Objects;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageDispatcher implements EventHub {
 
-  private static final String QUEUE = "User";
+  @Value("${qbic.broadcasting.identity.topic}")
+  private static String IDENTITY_TOPIC;
   private final JmsTemplate jmsTemplate;
 
   @Autowired
@@ -32,7 +34,7 @@ public class MessageDispatcher implements EventHub {
   public void send(IntegrationEvent event) {
     ObjectMapper mapper = new ObjectMapper();
     try {
-      jmsTemplate.convertAndSend(QUEUE, mapper.writeValueAsString(event));
+      jmsTemplate.convertAndSend(IDENTITY_TOPIC, mapper.writeValueAsString(event));
     } catch (JsonProcessingException e) {
       throw new RuntimeException("Event broadcasting failed!", e);
     }
