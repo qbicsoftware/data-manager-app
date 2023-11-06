@@ -13,7 +13,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
