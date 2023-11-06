@@ -79,6 +79,8 @@ public class ProjectSideNavigationComponent extends Div implements
         "New instance for ProjectSideNavigationComponent {} was created",
         System.identityHashCode(this));
     add(content);
+    addListener(ProjectNavigationEvent.class,
+        ProjectSideNavigationComponent::addProjectNavigationListener);
   }
 
   @Override
@@ -95,8 +97,6 @@ public class ProjectSideNavigationComponent extends Div implements
     List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
     content.add(generateNavigationSections(project, lastModifiedProjects, experiments).toArray(
         Component[]::new));
-    addListener(ProjectNavigationEvent.class,
-        ProjectSideNavigationComponent::addProjectNavigationListener);
   }
 
   private Project loadProject(ProjectId id) {

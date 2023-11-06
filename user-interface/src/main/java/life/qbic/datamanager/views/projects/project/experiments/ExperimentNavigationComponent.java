@@ -70,7 +70,8 @@ public class ExperimentNavigationComponent extends Div {
   }
 
   /**
-   * Add a listener that is called, when a new {@link ExperimentNavigationTriggeredEvent event} is emitted.
+   * Add a listener that is called, when a new {@link ExperimentNavigationTriggeredEvent event} is
+   * emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0

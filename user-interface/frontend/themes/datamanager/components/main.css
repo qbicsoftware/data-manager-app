@@ -5,9 +5,9 @@
 }
 
 .main.experiment {
-  grid-template-rows: minmax(130px, auto) 1fr;
+  grid-template-columns: minmax(max-content, 100%);
+  grid-template-rows: 1fr;
   grid-template-areas:
-    "navbar"
     "content";
   height: 100%;
 }
@@ -35,11 +35,10 @@
 }
 
 .main.sample {
-  grid-template-columns: minmax(max-content, 100%) minmax(min-content, 20%);
-  grid-template-rows: minmax(130px, auto) 1fr;
+  grid-template-columns: minmax(max-content, 100%);
+  grid-template-rows: 1fr;
   grid-template-areas:
-    "navbar support"
-    "content content";
+    "content";
   height: 100%;
 }
 
@@ -57,7 +56,6 @@
   .main.experiment {
     grid-template-columns: minmax(1200px, 1fr);
     grid-template-areas:
-        "navbar"
     "content";
     grid-auto-rows: auto;
   }
@@ -74,7 +72,6 @@
   .main.sample {
     grid-template-columns: minmax(1200px, 1fr);
     grid-template-areas:
-        "navbar"
     "content"
     "support";
     grid-auto-rows: auto;

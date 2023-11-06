@@ -20,3 +20,31 @@
   font-weight: bold;
   font-size: var(--lumo-font-size-l);
 }
+
+.experiment-app-navbar {
+  width: 100%;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  background-image: linear-gradient(var(--lumo-shade-5pct), var(--lumo-shade-5pct));
+}
+
+.experiment-navbar {
+  width: 100%;
+}
+
+.experiment-navbar-buttonbar {
+  display: inline-flex;
+  gap: var(--lumo-space-m);
+  align-items: center;
+}
+
+.experiment-navbar-drawer-bar {
+  display: inline-flex;
+  align-items: center;
+}
+
+.experiment-navbar-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-l);
+}

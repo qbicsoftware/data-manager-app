@@ -40,6 +40,15 @@
   flex-flow: column;
 }
 
+.experiment-navigation-component {
+  width: 100%;
+
+}
+
+.experiment-navigation-component .experiment-navigation-tabs {
+  width: 100%;
+}
+
 .project-collection {
   display: flex;
   gap: 1rem;
