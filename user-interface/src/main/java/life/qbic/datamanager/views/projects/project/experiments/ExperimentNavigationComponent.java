@@ -24,7 +24,7 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
  * <p>
  * Allows the user to switch between the components shown in each {@link ExperimentMainLayout} by
  * clicking on the corresponding {@link RoutingTab} within Component which routes the user to the
- * respective route defined within their respective compontents.
+ * respective route defined within their respective components.
  */
 public class ExperimentNavigationComponent extends Div {
 
