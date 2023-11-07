@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service;
  * Provides granted authorities given a user
  */
 @Service
-public class QbicUserAuthorityService implements UserAuthorityProvider {
+public class AuthorityService implements UserAuthorityProvider {
 
   private final UserRoleRepository userRoleRepository;
 
   private final SidDataStorage sidDataStorage;
 
-  public QbicUserAuthorityService(
+  public AuthorityService(
       @Autowired UserRoleRepository userRoleRepository,
       @Autowired SidDataStorage sidDataStorage
   ) {

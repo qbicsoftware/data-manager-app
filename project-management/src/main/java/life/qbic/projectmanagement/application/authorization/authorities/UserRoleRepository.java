@@ -1,21 +1,16 @@
 package life.qbic.projectmanagement.application.authorization.authorities;
 
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * <b>Project Role Storage Interface</b>
+ * <b>User Role Repository</b>
  * <p>
- * Provides access to persistent system roles.
+ * Enables queries of user roles for a given user.
+ *
+ * @since 1.0.0
  */
-public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
+public interface UserRoleRepository {
 
-  /**
-   * Find a user role in the system context.
-   *
-   * @param userId the user for which to search the project role
-   * @return the role of a user
-   */
   List<UserRole> findAllByUserId(String userId);
 
 }

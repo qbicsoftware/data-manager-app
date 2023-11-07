@@ -1,9 +1,9 @@
-package life.qbic.controlling.application.finances.offer;
+package life.qbic.finance.application;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finance.domain.model.Offer;
+import life.qbic.finance.domain.model.OfferPreview;
 
 /**
  * <b>OfferPreview Search Service</b>
