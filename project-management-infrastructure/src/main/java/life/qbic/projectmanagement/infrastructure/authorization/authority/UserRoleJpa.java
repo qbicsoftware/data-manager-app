@@ -5,9 +5,9 @@ import life.qbic.projectmanagement.application.authorization.authorities.UserRol
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * <b>Project Role Storage Interface</b>
+ * <b>User Role Persistence Interface</b>
  * <p>
- * Provides access to persistent system roles.
+ * Provides access to persistent user roles.
  */
 public interface UserRoleJpa extends JpaRepository<UserRole, Long> {
 
