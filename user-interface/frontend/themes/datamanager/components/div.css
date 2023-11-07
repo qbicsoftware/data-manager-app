@@ -42,7 +42,7 @@
 
 .experiment-navigation-component {
   width: 100%;
-
+  margin: var(--lumo-space-s);
 }
 
 .experiment-navigation-component .experiment-navigation-tabs {

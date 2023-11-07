@@ -27,6 +27,7 @@
   align-items: start;
   justify-content: space-between;
   background-image: linear-gradient(var(--lumo-shade-5pct), var(--lumo-shade-5pct));
+  padding: var(--lumo-space-s);
 }
 
 .experiment-navbar {
