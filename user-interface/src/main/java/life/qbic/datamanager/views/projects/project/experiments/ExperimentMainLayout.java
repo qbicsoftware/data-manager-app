@@ -146,10 +146,10 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   /**
-   * Sets the experiment tab within the tabsheet to the navigation target provided by the
-   * beforeEnterEvent
+   * Sets the experiment tab within the {@link com.vaadin.flow.component.tabs.TabSheet}to the navigation target provided by the
+   * {@link BeforeEnterEvent}
    *
-   * @param navigationTarget {@link Class} java class containing the route to which the selected tab
+   * @param navigationTarget java {@link Class} containing the route to which the selected tab
    *                         leads.
    */
 
@@ -157,7 +157,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     List<RoutingTab> routingTabList = experimentNavigationComponent.experimentNavigationTabs.getChildren()
         .filter(component -> component instanceof RoutingTab<?>)
         .map(component -> (RoutingTab) component).toList();
-    RoutingTab selectedRoutingTab = routingTabList.stream()
+    RoutingTab<?> selectedRoutingTab = routingTabList.stream()
         .filter(routingTab -> routingTab.navigationTarget().equals(navigationTarget))
         .findFirst().orElseThrow();
     experimentNavigationComponent.experimentNavigationTabs.setSelectedTab(selectedRoutingTab);
@@ -176,12 +176,11 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void routeToProjectOverview() {
-    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
-    navBarContent.getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
+    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
     log.debug("Routing to ProjectOverview page");
   }
 
-  private class LogoutTriggeredEvent extends ComponentEvent<Component> {
+  private static class LogoutTriggeredEvent extends ComponentEvent<Component> {
 
     @Serial
     private static final long serialVersionUID = 5541927397309901474L;
