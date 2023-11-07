@@ -20,11 +20,11 @@ import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 
 /**
- * <class short description - One Line!>
+ * Project Side Navigation Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Allows the user to switch between the components shown in each {@link ExperimentMainLayout} by
+ * clicking on the corresponding {@link RoutingTab} within Component which routes the user to the
+ * respective route defined within their respective compontents.
  */
 public class ExperimentNavigationComponent extends Div {
 

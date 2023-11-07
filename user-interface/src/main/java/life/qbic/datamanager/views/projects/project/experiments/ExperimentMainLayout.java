@@ -22,7 +22,6 @@ import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
-import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -33,10 +32,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b> The ExperimentMainLayout functions as a layout which contains all views related to managing
- * a project. It provides an app drawer within which the {@link ProjectNavigationBarComponent}
+ * a project. It provides an app drawer within which the {@link ProjectSideNavigationComponent}
  * allows the user to navigate within the selected project. </b> Additionally it provides a navbar
  * which provides buttons to toggle the app drawer, for logout purposes and for routing back to the
- * home {@link ProjectOverviewPage} view
+ * home {@link ProjectOverviewPage} view. Finally, it provides a dedicated navbar
+ * {@link ExperimentNavigationComponent} which allows the user to navigate within the pages of an
+ * experiment.
  */
 @PageTitle("Data Manager")
 public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserver {

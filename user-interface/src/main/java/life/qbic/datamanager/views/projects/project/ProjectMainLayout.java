@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <b> The ProjectMainLayout functions as a layout which contains all views related to managing a
- * project. It provides an app drawer within which the {@link ProjectNavigationBarComponent} allows
+ * project. It provides an app drawer within which the {@link ProjectSideNavigationComponent} allows
  * the user to navigate within the selected project. </b> Additionally it provides a navbar which
  * provides buttons to toggle the app drawer, for logout purposes and for routing back to the home
  * {@link ProjectOverviewPage} view
