@@ -1,4 +1,4 @@
-package life.qbic.controlling.domain.finances.offer;
+package life.qbic.finance.domain.model;
 
 import static java.util.Objects.requireNonNull;
 

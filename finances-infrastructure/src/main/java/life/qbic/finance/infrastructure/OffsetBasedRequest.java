@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.finance.infrastructure;
 
 import java.util.Objects;
 import org.springframework.data.domain.Pageable;

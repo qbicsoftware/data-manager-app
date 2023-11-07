@@ -1,11 +1,11 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.finance.infrastructure;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.controlling.application.finances.offer.OfferSearchService;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finance.application.OfferSearchService;
+import life.qbic.finance.domain.model.Offer;
+import life.qbic.finance.domain.model.OfferId;
+import life.qbic.finance.domain.model.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
