@@ -20,11 +20,9 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.finance.application.FinanceService;
+import life.qbic.finance.application.FinanceServiceImpl;
 import life.qbic.finances.api.OfferSummary;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
-import life.qbic.finance.domain.model.OfferId;
-import life.qbic.finance.domain.model.OfferPreview;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +43,7 @@ public class ProjectLinksComponent extends PageArea {
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
-      @Autowired FinanceService financeService) {
+      @Autowired FinanceServiceImpl financeService) {
     Objects.requireNonNull(financeService);
     Objects.requireNonNull(projectLinkingService);
     addClassName("attachments-area");
@@ -76,7 +74,7 @@ public class ProjectLinksComponent extends PageArea {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
 
-  private void initOfferSearch(FinanceService financeService) {
+  private void initOfferSearch(FinanceServiceImpl financeService) {
     offerSearch = new OfferSearch(financeService);
     offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
@@ -154,7 +152,7 @@ public class ProjectLinksComponent extends PageArea {
 
   private static class OfferSearch extends Composite<ComboBox<OfferSummary>> {
 
-    private final transient FinanceService financeService;
+    private final transient FinanceServiceImpl financeService;
 
     public static class SelectedOfferChangeEvent extends
         ComponentValueChangeEvent<OfferSearch, OfferSummary> {
@@ -174,7 +172,7 @@ public class ProjectLinksComponent extends PageArea {
     }
 
 
-    public OfferSearch(@Autowired FinanceService financeService) {
+    public OfferSearch(@Autowired FinanceServiceImpl financeService) {
       Objects.requireNonNull(financeService);
       this.financeService = financeService;
       setItems();

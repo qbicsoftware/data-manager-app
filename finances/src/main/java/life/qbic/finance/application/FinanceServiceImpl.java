@@ -3,25 +3,26 @@ package life.qbic.finance.application;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.finance.domain.model.OfferPreview;
+import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.finances.api.OfferSummary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b>OfferPreview Search Service</b>
+ * <b>Finance Service</b>
  * <p>
  * Enables search queries for offers.
  *
  * @since 1.0.0
  */
 @Service
-public class FinanceService implements life.qbic.finances.api.FinanceService {
+public class FinanceServiceImpl implements FinanceService {
 
   private final OfferSearchService offerSearchService;
 
   @Autowired
-  public FinanceService(
+  public FinanceServiceImpl(
       OfferSearchService offerSearchService) {
     this.offerSearchService = offerSearchService;
   }
@@ -42,7 +43,7 @@ public class FinanceService implements life.qbic.finances.api.FinanceService {
   public List<OfferSummary> findOfferContainingProjectTitleOrId(String projectTitle,
       String offerId) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId).stream()
-        .map(FinanceService::convert).toList();
+        .map(FinanceServiceImpl::convert).toList();
   }
 
   /**
@@ -52,7 +53,7 @@ public class FinanceService implements life.qbic.finances.api.FinanceService {
   public List<OfferSummary> findOfferContainingProjectTitleOrId(String projectTitle, String offerId,
       int offset, int limit) {
     return offerSearchService.findByProjectTitleOrOfferId(projectTitle, offerId, offset, limit)
-        .stream().map(FinanceService::convert).toList();
+        .stream().map(FinanceServiceImpl::convert).toList();
   }
 
   /**
@@ -60,7 +61,7 @@ public class FinanceService implements life.qbic.finances.api.FinanceService {
    */
   @Override
   public Optional<life.qbic.finances.api.Offer> findOfferById(String offerId) {
-    return offerSearchService.findByOfferId(offerId).map(FinanceService::convert);
+    return offerSearchService.findByOfferId(offerId).map(FinanceServiceImpl::convert);
   }
 
 }
