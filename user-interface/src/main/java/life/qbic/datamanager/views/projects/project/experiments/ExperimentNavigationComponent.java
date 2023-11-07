@@ -6,12 +6,12 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
-import com.vaadin.flow.theme.lumo.LumoUtility.AlignItems;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,9 +90,10 @@ public class ExperimentNavigationComponent extends Div {
   }
 
   private Tab createArrowTab() {
-    Tab arrow = new Tab(VaadinIcon.ARROW_RIGHT.create());
+    Icon arrowIcon = VaadinIcon.ARROW_RIGHT.create();
+    Tab arrow = new Tab(arrowIcon);
+    arrow.addClassName("arrow-tab");
     arrow.setEnabled(false);
-    arrow.addClassName(AlignItems.END);
     return arrow;
   }
 

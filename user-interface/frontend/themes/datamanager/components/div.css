@@ -49,6 +49,11 @@
   width: 100%;
 }
 
+.experiment-navigation-component .experiment-navigation-tabs .arrow-tab {
+  align-items: end;
+  color: var(--lumo-contrast-60pct);
+}
+
 .project-collection {
   display: flex;
   gap: 1rem;
