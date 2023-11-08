@@ -455,7 +455,7 @@ public class ExperimentDetailsComponent extends PageArea {
             ErrorParameters.empty());
       }
       if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
-        throw new ApplicationException(ErrorCode.NO_CONDITION_SELECTED,
+        throw new ApplicationException("No experimental variable was selected", ErrorCode.NO_CONDITION_SELECTED,
             ErrorParameters.empty());
       } else {
         throw new ApplicationException(
