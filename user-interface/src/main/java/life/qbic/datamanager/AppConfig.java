@@ -27,7 +27,7 @@ import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvi
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.application.authorization.authorities.QbicUserAuthorityService;
+import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
@@ -173,7 +173,7 @@ public class AppConfig {
 
   @Bean
   public UserRegistered userRegisteredIntegration(
-      JobScheduler jobScheduler, QbicUserAuthorityService authorityService,
+      JobScheduler jobScheduler, AuthorityService authorityService,
       MessageRouter messageRouter) {
     UserRegistered userRegistered = new UserRegistered(jobScheduler, authorityService);
     messageRouter.register(userRegistered);
