@@ -451,7 +451,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentId, experimentalGroupDTOS);
     if(result.isError()) {
       if (result.getError().equals(ResponseCode.CONDITION_EXISTS)) {
-        throw new ApplicationException(ErrorCode.DUPLICATE_GROUP_SELECTED,
+        throw new ApplicationException("Duplicate experimental group was selected", ErrorCode.DUPLICATE_GROUP_SELECTED,
             ErrorParameters.empty());
       }
       if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
