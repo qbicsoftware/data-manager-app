@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
+import org.slf4j.Logger;
 
 /**
  * Project Side Navigation Component
@@ -28,6 +31,7 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
  */
 public class ExperimentNavigationComponent extends Div {
 
+  private static final Logger log = getLogger(ExperimentNavigationComponent.class);
   Tabs experimentNavigationTabs = new Tabs();
   RoutingTab<ExperimentInformationMain> designExperiment = new RoutingTab<>(
       VaadinIcon.USER.create(),
@@ -47,6 +51,9 @@ public class ExperimentNavigationComponent extends Div {
     disableUnusedSteps();
     addTabSelectionListeners();
     addClassName("experiment-navigation-component");
+    log.debug(
+        String.format("New instance for %s(#%s) created",
+            this.getClass().getSimpleName(), System.identityHashCode(this)));
   }
 
   private void initializeSteps() {

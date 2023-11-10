@@ -53,9 +53,11 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     this.experimentSupportComponent = experimentSupportComponent;
     addClassName("experiment");
     log.debug(String.format(
-        "New instance for ExperimentInformationMain (#%s) created with an ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
-        System.identityHashCode(this),
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        experimentContentComponent.getClass().getSimpleName(),
         System.identityHashCode(experimentContentComponent),
+        experimentSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(experimentSupportComponent))
     );
   }

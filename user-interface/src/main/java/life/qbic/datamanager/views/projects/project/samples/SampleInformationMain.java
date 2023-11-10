@@ -56,8 +56,11 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
     this.sampleSupportComponent = sampleSupportComponent;
     layoutComponent();
     log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with a Sample Content Component (#%s) and Sample Support Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(sampleContentComponent),
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        sampleContentComponent.getClass().getSimpleName(),
+        System.identityHashCode(sampleContentComponent),
+        sampleSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleSupportComponent)));
   }
 

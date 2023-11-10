@@ -75,12 +75,12 @@ public class ProjectSideNavigationComponent extends Div implements
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     content.addClassName("content");
-    log.debug(
-        "New instance for ProjectSideNavigationComponent {} was created",
-        System.identityHashCode(this));
     add(content);
     addListener(ProjectNavigationEvent.class,
         ProjectSideNavigationComponent::addProjectNavigationListener);
+    log.debug(
+        String.format("New instance for %s(#%s) created",
+            this.getClass().getSimpleName(), System.identityHashCode(this)));
   }
 
   @Override
