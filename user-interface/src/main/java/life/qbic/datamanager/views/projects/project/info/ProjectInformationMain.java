@@ -36,9 +36,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Project Information Main Component
  * <p>
- * This component hosts the components necessary to show and update the
- * {@link Project} information via the provided
- * {@link ProjectId} in the URL
+ * This component hosts the components necessary to show and update the {@link Project} information
+ * via the provided {@link ProjectId} in the URL
  */
 
 @SpringComponent
@@ -80,9 +79,11 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     layoutComponent();
     addListeners();
     log.debug(String.format(
-        "New instance for project Information Page (#%s) created with Project Content Component (#%s) and Project Support Component (#%s)",
-        System.identityHashCode(this),
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        projectContentComponent.getClass().getSimpleName(),
         System.identityHashCode(projectContentComponent),
+        projectSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(projectSupportComponent)));
   }
 
@@ -94,7 +95,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
    * Extracts {@link ExperimentId} from the provided URL before the user accesses the page
    * <p>
    * This method is responsible for checking if the provided {@link ExperimentId} is valid and
-   * triggering its propagation to the components within the {@link ExperimentInformationMain}
+   * triggering its propagation to the components within the {@link ProjectInformationMain}
    */
 
   @Override

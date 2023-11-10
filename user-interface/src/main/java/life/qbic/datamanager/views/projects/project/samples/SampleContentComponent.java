@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.BatchRegistrationListener;
@@ -40,7 +41,7 @@ public class SampleContentComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
-  private ProjectId projectId;
+  private Context context;
   private static final Logger log = LoggerFactory.logger(SampleContentComponent.class);
   private final SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
@@ -56,33 +57,33 @@ public class SampleContentComponent extends Div {
   }
 
   /**
-   * Provides the {@link ProjectId} to the components within this container
+   * Provides the {@link Context} to the components within this container
    * <p>
    * This method serves as an entry point providing the necessary {@link ProjectId} to components
    * within this container
    *
-   * @param projectId projectId of the selected project
+   * @param context projectId of the selected project
    */
-  public void projectId(ProjectId projectId) {
-    this.projectId = projectId;
+  public void setContext(Context context) {
+    this.context = context;
+    ProjectId projectId = context.projectId().orElseThrow();
     projectInformationService.find(projectId)
         .ifPresentOrElse(project -> {
-          propagateProjectInformation(projectId);
-          propagateExperimentInformation(projectId);
+          sampleDetailsComponent.setContext(context);
+          propagateExperimentInformation(context);
         }, this::displayProjectNotFound);
   }
 
-  private void propagateProjectInformation(ProjectId projectId) {
-    sampleDetailsComponent.setProject(projectId);
-  }
 
-  private void propagateExperimentInformation(ProjectId projectId) {
-    Collection<Experiment> experiments = getExperimentsForProject(projectId);
+  private void propagateExperimentInformation(Context context) {
+    Collection<Experiment> experiments = getExperimentsForProject(
+        context.projectId().orElseThrow());
     if (experiments.isEmpty()) {
       displayNoExperimentsFound();
     } else {
       displayComponentInContent(sampleDetailsComponent);
       sampleDetailsComponent.setExperiments(experiments);
+      sampleDetailsComponent.setSelectedExperiment(context.experimentId().orElseThrow());
     }
   }
 
@@ -117,7 +118,7 @@ public class SampleContentComponent extends Div {
 
   private void reloadOnBatchRegistration() {
     sampleDetailsComponent.addBatchRegistrationListener(
-        event -> propagateExperimentInformation(projectId));
+        event -> propagateExperimentInformation(context));
   }
 
   private void displayNoExperimentsFound() {

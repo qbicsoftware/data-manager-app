@@ -12,11 +12,11 @@ import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
-import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
-import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -26,12 +26,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Sample Information Main Component
  * <p>
  * This component hosts the components necessary to show and update the information for all
- * {@link Sample} associated with all
- * {@link Experiment} of a {@link Project} information
- * via the provided {@link ProjectId} in the URL
+ * {@link Sample} associated with all {@link Experiment} of a {@link Project} information via the
+ * provided {@link ProjectId} in the URL
  */
 
-@Route(value = "projects/:projectId?/samples", layout = ProjectMainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?/samples", layout = ExperimentMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
@@ -41,34 +40,32 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final SampleContentComponent sampleContentComponent;
   private final SampleSupportComponent sampleSupportComponent;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private transient Context context;
 
   public SampleInformationMain(
-      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
       @Autowired SampleContentComponent sampleContentComponent,
       @Autowired SampleSupportComponent sampleSupportComponent) {
     super(sampleContentComponent, sampleSupportComponent);
-    Objects.requireNonNull(projectNavigationBarComponent);
     Objects.requireNonNull(sampleContentComponent);
     Objects.requireNonNull(sampleSupportComponent);
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.sampleContentComponent = sampleContentComponent;
     this.sampleSupportComponent = sampleSupportComponent;
     layoutComponent();
     log.debug(String.format(
-        "\"New instance for Sample Information page (#%s) created with Project Navigation Bar Component (#%s), Sample Content Component (#%s) and Sample Support Component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        sampleContentComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleContentComponent),
+        sampleSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleSupportComponent)));
   }
 
   private void layoutComponent() {
     addClassName("sample");
-    addComponentAsFirst(projectNavigationBarComponent);
   }
 
   /**
@@ -80,10 +77,8 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
    * @param context Context containing the projectId of the selected project
    */
   public void setContext(Context context) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    projectNavigationBarComponent.setContext(context);
-    sampleContentComponent.projectId(projectId);
-    sampleSupportComponent.projectId(projectId);
+    sampleContentComponent.setContext(context);
+    sampleSupportComponent.projectId(context.projectId().orElseThrow());
   }
 
   /**
@@ -98,9 +93,15 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
     if (!ProjectId.isValid(projectID)) {
       throw new ApplicationException("invalid project id " + projectID);
     }
-
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     context = new Context().with(parsedProjectId);
+    String experimentId = event.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .orElseThrow();
+    if (!ExperimentId.isValid(experimentId)) {
+      throw new ApplicationException("invalid experiment id " + experimentId);
+    }
+    ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
+    this.context = context.with(parsedExperimentId);
     setContext(context);
   }
 }
