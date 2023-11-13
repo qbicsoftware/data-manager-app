@@ -92,7 +92,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     add(delegateSpreadsheet);
 
     validationMode = ValidationMode.LAZY;
-    Column<T> rowNumberColumn = addColumn("",
+    Column<T> rowNumberColumn = addColumn("#",
         rowValue -> String.valueOf(dataRowCount()),
         (rowValue, cellValue) -> {/* do nothing */})
         .withCellStyle(rowNumberStyle);

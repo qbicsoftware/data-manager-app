@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import static java.util.Objects.isNull;
+
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -7,9 +9,17 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 
 /**
  * TODO!
@@ -29,8 +39,20 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     setConfirmButtonLabel("Register");
 
     spreadsheet = new Spreadsheet<>();
-    spreadsheet.addColumn("Analysis to be performed", SampleInfo::getAnalysisToBePerformed,
-        SampleInfo::setAnalysisToBePerformed);
+
+    List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
+        .sorted(Comparator.naturalOrder())
+        .toList();
+    spreadsheet.addColumn("Analysis to be performed",
+            sampleInfo -> isNull(sampleInfo.getAnalysisToBePerformed()) ? null
+                : sampleInfo.getAnalysisToBePerformed().label(),
+            (sampleInfo, analysisToBePerformed) -> sampleInfo.setAnalysisToBePerformed(
+                AnalysisMethod.forLabel(analysisToBePerformed)))
+        .selectFrom(sortedAnalysisMethods,
+            AnalysisMethod::label,
+            getAnalysisMethodItemRenderer())
+        .setRequired();
+
     spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
         SampleInfo::setSampleLabel);
     spreadsheet.addColumn("Biological replicate ID", SampleInfo::getBioReplicateId,
@@ -41,10 +63,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         SampleInfo::setSpecies);
     spreadsheet.addColumn("Specimen", SampleInfo::getSpecimen,
         SampleInfo::setSpecimen);
-    spreadsheet.addColumn("Analyte", SampleInfo::getAnalysisToBePerformed,
-        SampleInfo::setAnalysisToBePerformed);
-    spreadsheet.addColumn("Customer comment", SampleInfo::getAnalysisToBePerformed,
-        SampleInfo::setAnalysisToBePerformed);
+    spreadsheet.addColumn("Analyte", SampleInfo::getAnalyte,
+        SampleInfo::setAnalyte);
+    spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
+        SampleInfo::setCustomerComment);
 
     TextField batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
@@ -90,6 +112,19 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         userHelpText,
         spreadsheetControls,
         spreadsheet);
+  }
+
+  private static ComponentRenderer<Span, AnalysisMethod> getAnalysisMethodItemRenderer() {
+    return new ComponentRenderer<>(analysisMethod -> {
+      var listItem = new Span();
+      listItem.addClassName("spreadsheet-list-item");
+      Span label = new Span(analysisMethod.label());
+      label.setText(analysisMethod.label());
+      var questionMarkIcon = VaadinIcon.QUESTION_CIRCLE_O.create();
+      questionMarkIcon.setTooltipText(analysisMethod.description());
+      listItem.add(label, questionMarkIcon);
+      return listItem;
+    });
   }
 
   private void onBatchNameChanged(ComponentValueChangeEvent<TextField, String> batchName) {
@@ -154,7 +189,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private static class SampleInfo {
 
-    String analysisToBePerformed;
+    AnalysisMethod analysisToBePerformed;
     String sampleLabel;
     String bioReplicateId;
     String condition;
@@ -163,11 +198,11 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     String analyte;
     String customerComment;
 
-    public String getAnalysisToBePerformed() {
+    public AnalysisMethod getAnalysisToBePerformed() {
       return analysisToBePerformed;
     }
 
-    public void setAnalysisToBePerformed(String analysisToBePerformed) {
+    public void setAnalysisToBePerformed(AnalysisMethod analysisToBePerformed) {
       this.analysisToBePerformed = analysisToBePerformed;
     }
 
@@ -225,6 +260,20 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     public void setCustomerComment(String customerComment) {
       this.customerComment = customerComment;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]")
+          .add("analysisToBePerformed=" + analysisToBePerformed)
+          .add("sampleLabel='" + sampleLabel + "'")
+          .add("bioReplicateId='" + bioReplicateId + "'")
+          .add("condition='" + condition + "'")
+          .add("species='" + species + "'")
+          .add("specimen='" + specimen + "'")
+          .add("analyte='" + analyte + "'")
+          .add("customerComment='" + customerComment + "'")
+          .toString();
     }
   }
 
