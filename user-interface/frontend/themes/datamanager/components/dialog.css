@@ -161,6 +161,16 @@ vaadin-dialog-overlay::part(title) {
   height: 100%;
 }
 
+.batch-registration-dialog .spreadsheet-controls {
+  display: flex;
+  column-gap: 0.5em;
+  justify-content: end;
+}
+
+.spreadsheet-overlays > div {
+  z-index: 200; /* display the spreadsheet comments on top of a dialog */
+}
+
 .create-project-dialog .content {
   max-width: 60vw;
   padding-bottom: 1em;
