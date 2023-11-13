@@ -87,7 +87,7 @@ public class Column<T> {
         .map(toCellValue).toList();
     this.withValidator(value -> isNull(value) || value.isBlank()
             || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
-        "{0} is not a valid option for column %s. Please choose from %s".formatted(getName(),
+        "'{0}' is not a valid option for column %s. Please choose from %s".formatted(getName(),
             possibleCellValues));
     SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
     selectEditor.setRenderer(renderer);

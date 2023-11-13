@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 
 /**
@@ -34,7 +37,9 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   private final Text userHelpText = new Text("Please register your samples.");
   private final Spreadsheet<SampleInfo> spreadsheet;
 
-  public BatchRegistrationDialog2() {
+  public BatchRegistrationDialog2(List<Species> species, List<Specimen> specimen,
+      List<Analyte> analytes) {
+
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
 
@@ -60,9 +65,13 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     spreadsheet.addColumn("Condition", SampleInfo::getCondition,
         SampleInfo::setCondition);
     spreadsheet.addColumn("Species", SampleInfo::getSpecies,
-        SampleInfo::setSpecies);
+            SampleInfo::setSpecies)
+        .selectFrom(analytes, Analyte::label)
+        .setRequired();
     spreadsheet.addColumn("Specimen", SampleInfo::getSpecimen,
-        SampleInfo::setSpecimen);
+            SampleInfo::setSpecimen)
+        .selectFrom(specimen, Specimen::label)
+        .setRequired();
     spreadsheet.addColumn("Analyte", SampleInfo::getAnalyte,
         SampleInfo::setAnalyte);
     spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
@@ -89,7 +98,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     removeLastRow.addClickListener(this::onRemoveLastRowClicked);
     removeLastRow.addClassName("remove-batch-row");
 
-
     // Register Batch
     //-------------------------
     // batchName -> prefillButton
@@ -103,15 +111,16 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     Div batchControls = new Div();
     batchControls.addClassName("batch-controls");
-    batchControls.add(batchNameField, prefillSpreadsheet);
+    batchControls.add(batchNameField);
     Div spreadsheetControls = new Div();
     spreadsheetControls.addClassName("spreadsheet-controls");
-    spreadsheetControls.add(addRow, removeLastRow);
+    spreadsheetControls.add(prefillSpreadsheet, addRow, removeLastRow);
 
     add(batchControls,
         userHelpText,
         spreadsheetControls,
         spreadsheet);
+    setResizable(true); //FIXME remove
   }
 
   private static ComponentRenderer<Span, AnalysisMethod> getAnalysisMethodItemRenderer() {
@@ -154,12 +163,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.removeLastRow();
-    //TODO remove the last row from the spreadsheet
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.addRow(new SampleInfo());
-    //TODO add a row to the spreadsheet
   }
 
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
@@ -171,6 +178,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.validate();
     System.out.println("spreadsheet.getData() = " + spreadsheet.getData());
     //TODO
   }
