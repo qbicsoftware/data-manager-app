@@ -51,7 +51,7 @@ public class ExperimentAddDialog extends DialogWindow {
 
     TextField experimentNameField = new TextField("Experiment Name");
     experimentNameField.addClassName(WIDTH_INPUT);
-    binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
+    binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
     Span experimentDescription = new Span(

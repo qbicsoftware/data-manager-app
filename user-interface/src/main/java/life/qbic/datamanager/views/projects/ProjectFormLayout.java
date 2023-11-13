@@ -42,7 +42,6 @@ public class ProjectFormLayout extends FormLayout {
   @Serial
   private static final long serialVersionUID = 972380320581239752L;
   private final Div projectContactsLayout = new Div();
-
   private final Binder<ProjectInformation> binder;
   private final TextField titleField;
   private final TextArea projectObjective;

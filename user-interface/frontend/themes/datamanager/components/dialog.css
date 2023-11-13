@@ -161,62 +161,6 @@ vaadin-dialog-overlay::part(title) {
   height: 100%;
 }
 
-.create-project-dialog .content {
-  max-width: 60vw;
-  padding-bottom: 1em;
-}
-
-.create-project-dialog::part(overlay) {
-  width: 66vw;
-}
-
-.create-project-dialog .form-content {
-  max-width: 60vw;
-  padding-bottom: 1em;
-}
-
-.create-project-dialog .code-and-title,
-.funding-field .input-fields,
-.contact-field .input-fields {
-  display: flex;
-  gap: 1em;
-  align-items: baseline;
-}
-
-.create-project-dialog .form-content .contact-field .name-field {
-  flex-grow: 1;
-}
-
-.create-project-dialog .form-content .contact-field .email-field {
-  flex-grow: 1;
-}
-
-.create-project-dialog .code-and-title .code {
-  max-width: 20vw;
-}
-
-.create-project-dialog .code-and-title .title {
-  width: 100%;
-}
-
-.create-project-dialog .search-field {
-  max-width: 30vw;
-}
-
-.create-project-dialog .project-contacts {
-  display: flex;
-  gap: 1em;
-  flex-direction: column;
-  flex-wrap: wrap;
-  margin: 0;
-  padding: var(--lumo-space-m) 0 0;
-}
-
-.create-project-dialog .project-contacts .title {
-  font-weight: bold;
-}
-
-
 .add-experiment-dialog::part(overlay),
 .update-experiment-dialog::part(overlay) {
   width: 66vw;
@@ -319,6 +263,43 @@ vaadin-dialog-overlay::part(title) {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-l);
+}
+
+.project-creation-dialog::part(overlay) {
+  width: 100%;
+  height: 100%;
+}
+
+.project-creation-dialog .collaborators-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .experiment-information-layout{
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .funding-information-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .project-design-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-information-dialog::part(overlay) {

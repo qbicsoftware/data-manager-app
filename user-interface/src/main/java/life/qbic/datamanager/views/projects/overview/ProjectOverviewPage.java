@@ -17,8 +17,11 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
+import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
+import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -34,19 +37,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = Projects.PROJECTS, layout = MainLayout.class)
 @PermitAll
 public class ProjectOverviewPage extends Div {
-
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
   private static final Logger log = logger(ProjectOverviewPage.class);
   private final ProjectCollectionComponent projectCollectionComponent;
-  private final AddProjectDialog addProjectDialog;
+  private final ProjectCreationDialog projectCreationDialog;
   private final ProjectCreationService projectCreationService;
 
   public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
-      AddProjectDialog addProjectDialog,
-      ProjectCreationService projectCreationService) {
+      ProjectCreationService projectCreationService, FinanceService financeService,
+      ExperimentalDesignSearchService experimentalDesignSearchService) {
     this.projectCollectionComponent = projectCollectionComponent;
-    this.addProjectDialog = addProjectDialog;
+    this.projectCreationDialog = new ProjectCreationDialog(financeService,
+        experimentalDesignSearchService);
     this.projectCreationService = projectCreationService;
     layoutPage();
     configurePage();
@@ -64,11 +67,9 @@ public class ProjectOverviewPage extends Div {
 
   private void configurePage() {
     projectCollectionComponent.addListener(projectCreationClickedEvent ->
-        addProjectDialog.open()
+        projectCreationDialog.open()
     );
-    addProjectDialog.addCancelListener(
-        cancelEvent -> cancelEvent.getSource().close());
-    addProjectDialog.addProjectAddEventListener(this::createProject);
+    //ToDo add Cancel and close listeners
   }
 
   private void stylePage() {
