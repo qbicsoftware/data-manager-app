@@ -16,14 +16,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import life.qbic.datamanager.views.general.CancelEvent;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

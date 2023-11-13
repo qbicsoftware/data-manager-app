@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
@@ -48,15 +50,15 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
-import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -447,12 +449,21 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     Result<Collection<ExperimentalGroup>, ResponseCode> result = experimentInformationService.addExperimentalGroupsToExperiment(
         experimentId, experimentalGroupDTOS);
-    result.onError(error -> {
-      throw new ApplicationException(
-          "Could not save one or more experimental groups %s %nReason: %s".formatted(
-              Arrays.toString(
-                  experimentalGroupContents.toArray()), error));
-    });
+    if(result.isError()) {
+      if (result.getError().equals(ResponseCode.CONDITION_EXISTS)) {
+        throw new ApplicationException("Duplicate experimental group was selected", ErrorCode.DUPLICATE_GROUP_SELECTED,
+            ErrorParameters.empty());
+      }
+      if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
+        throw new ApplicationException("No experimental variable was selected", ErrorCode.NO_CONDITION_SELECTED,
+            ErrorParameters.empty());
+      } else {
+        throw new ApplicationException(
+            "Could not save one or more experimental groups %s %nReason: %s".formatted(
+                Arrays.toString(
+                    experimentalGroupContents.toArray()), result.getError()));
+      }
+    }
   }
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(

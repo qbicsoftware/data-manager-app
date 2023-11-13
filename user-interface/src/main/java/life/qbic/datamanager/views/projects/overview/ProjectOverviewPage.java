@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.overview;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -16,6 +18,7 @@ import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -34,7 +37,7 @@ public class ProjectOverviewPage extends Div {
 
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
-
+  private static final Logger log = logger(ProjectOverviewPage.class);
   private final ProjectCollectionComponent projectCollectionComponent;
   private final AddProjectDialog addProjectDialog;
   private final ProjectCreationService projectCreationService;
@@ -47,8 +50,12 @@ public class ProjectOverviewPage extends Div {
     this.projectCreationService = projectCreationService;
     layoutPage();
     configurePage();
-
     stylePage();
+    log.debug(String.format(
+        "New instance for %s(#%s) created with %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        projectCollectionComponent.getClass().getSimpleName(),
+        System.identityHashCode(projectCollectionComponent)));
   }
 
   private void layoutPage() {

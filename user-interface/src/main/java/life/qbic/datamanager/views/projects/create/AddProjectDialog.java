@@ -23,11 +23,10 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.ProjectFormLayout;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.finances.api.FinanceService;
+import life.qbic.finances.api.Offer;
+import life.qbic.finances.api.OfferSummary;
 import life.qbic.logging.api.Logger;
-import life.qbic.controlling.application.finances.offer.OfferLookupService;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 
 /**
@@ -47,13 +46,13 @@ public class AddProjectDialog extends DialogWindow {
   private final Binder<ProjectInformation> binder;
   private final Binder<String> projectCodeBinder;
   private final ProjectFormLayout formLayout;
-  private final OfferLookupService offerLookupService;
-  public final ComboBox<OfferPreview> offerSearchField;
+  private final FinanceService financeService;
+  public final ComboBox<OfferSummary> offerSearchField;
   private final TextField codeField;
 
-  public AddProjectDialog(OfferLookupService offerLookupService) {
+  public AddProjectDialog(FinanceService financeService) {
     super();
-    this.offerLookupService = requireNonNull(offerLookupService,
+    this.financeService = requireNonNull(financeService,
         "offerLookupService must not be null");
 
     addClassName("create-project-dialog");
@@ -63,7 +62,7 @@ public class AddProjectDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     cancelButton.addClickListener(this::onCancelClicked);
 
-    offerSearchField = createOfferSearch(this.offerLookupService);
+    offerSearchField = createOfferSearch(this.financeService);
 
     codeField = new TextField("Code");
     codeField.addClassName("code");
@@ -115,14 +114,14 @@ public class AddProjectDialog extends DialogWindow {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
-  private ComboBox<OfferPreview> createOfferSearch(OfferLookupService offerLookupService) {
-    final ComboBox<OfferPreview> searchField = new ComboBox<>("Offer");
+  private ComboBox<OfferSummary> createOfferSearch(FinanceService financeService) {
+    final ComboBox<OfferSummary> searchField = new ComboBox<>("Offer");
     searchField.setClassName("search-field");
     searchField.setPlaceholder("Search");
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
 
     searchField.setItems(
-        query -> offerLookupService.findOfferContainingProjectTitleOrId(
+        query -> financeService.findOfferContainingProjectTitleOrId(
             query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
             query.getLimit()).stream());
 
@@ -132,19 +131,18 @@ public class AddProjectDialog extends DialogWindow {
 
     // Generate labels like the rendering
     searchField.setItemLabelGenerator(
-        (ItemLabelGenerator<OfferPreview>) it -> it.offerId().id());
+        (ItemLabelGenerator<OfferSummary>) OfferSummary::offerId);
 
     searchField.addValueChangeListener(e -> {
       if (searchField.getValue() != null) {
-        setOffer(searchField.getValue().offerId().id());
+        setOffer(searchField.getValue().offerId());
       }
     });
     return searchField;
   }
 
   private void setOffer(String offerId) {
-    OfferId id = OfferId.from(offerId);
-    Optional<Offer> offer = offerLookupService.findOfferById(id);
+    Optional<Offer> offer = financeService.findOfferById(offerId);
     offer.ifPresentOrElse(this::fillProjectInformationFromOffer,
         () -> log.error("No offer found with id: " + offerId));
   }
@@ -171,12 +169,12 @@ public class AddProjectDialog extends DialogWindow {
   /**
    * Render the preview like `#offer-id, #project title`
    *
-   * @param offerPreview the offer preview
+   * @param offerSummary the offer preview
    * @return the formatted String representation
    * @since 1.0.0
    */
-  private static String previewToString(OfferPreview offerPreview) {
-    return offerPreview.offerId().id() + ", " + offerPreview.getProjectTitle().title();
+  private static String previewToString(OfferSummary offerSummary) {
+    return offerSummary.offerId() + ", " + offerSummary.title();
   }
 
   public void addProjectAddEventListener(ComponentEventListener<ProjectAddEvent> listener) {

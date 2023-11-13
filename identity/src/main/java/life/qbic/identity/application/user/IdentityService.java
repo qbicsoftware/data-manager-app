@@ -4,15 +4,11 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.application.commons.Result;
 import life.qbic.identity.application.ServiceException;
-import life.qbic.identity.application.notification.Notification;
-import life.qbic.identity.application.notification.NotificationService;
-import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword;
@@ -21,8 +17,8 @@ import life.qbic.identity.domain.model.FullName;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
+import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
-import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>User Registration Service</b>

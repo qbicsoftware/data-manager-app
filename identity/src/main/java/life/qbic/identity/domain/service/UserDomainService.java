@@ -1,12 +1,12 @@
 package life.qbic.identity.domain.service;
 
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.identity.domain.event.UserRegistered;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.EncryptedPassword;
 import life.qbic.identity.domain.model.FullName;
 import life.qbic.identity.domain.model.User;
-import life.qbic.identity.domain.event.UserRegistered;
-import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.identity.domain.repository.UserRepository;
 
 /**

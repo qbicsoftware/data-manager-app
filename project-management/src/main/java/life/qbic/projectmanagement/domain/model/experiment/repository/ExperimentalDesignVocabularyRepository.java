@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.domain.model.experiment.repository;
 
 import java.util.List;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 
 /**
