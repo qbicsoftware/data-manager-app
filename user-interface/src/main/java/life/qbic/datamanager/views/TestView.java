@@ -21,8 +21,12 @@ public class TestView extends HorizontalLayout {
   //FIXME REMOVE THIS AGAIN
   public TestView() {
     setSizeFull();
-    BatchRegistrationDialog2 batchRegistrationDialog2 = new BatchRegistrationDialog2();
-    batchRegistrationDialog2.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    add(new Button("open dialog", event -> batchRegistrationDialog2.open()));
+    add(new Button("open dialog", event -> getBatchRegistrationDialog().open()));
+  }
+
+  private static BatchRegistrationDialog2 getBatchRegistrationDialog() {
+    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2();
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    return dialog;
   }
 }
