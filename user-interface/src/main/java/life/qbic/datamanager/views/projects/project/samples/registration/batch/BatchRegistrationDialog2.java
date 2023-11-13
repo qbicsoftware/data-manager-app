@@ -41,7 +41,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     spreadsheet = new Spreadsheet<>();
 
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
-        .sorted(Comparator.naturalOrder())
+        .sorted(Comparator.comparing(AnalysisMethod::label))
         .toList();
     spreadsheet.addColumn("Analysis to be performed",
             sampleInfo -> isNull(sampleInfo.getAnalysisToBePerformed()) ? null
@@ -127,6 +127,26 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     });
   }
 
+  private List<SampleInfo> generatePrefilledSampleInformation() {
+    //TODO replace with actual data
+    return List.of(
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 1", "bio-replicate 1", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 2", "bio-replicate 2", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 3", "bio-replicate 3", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 4", "bio-replicate 4", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 5", "bio-replicate 5", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 6", "bio-replicate 6", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time"),
+        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 7", "bio-replicate 7", "bla condition",
+            "some species", "some specimen", "some analyte", "no comment at this time")
+    );
+  }
+
   private void onBatchNameChanged(ComponentValueChangeEvent<TextField, String> batchName) {
     this.userHelpText.setText(
         "Please register your samples for batch " + batchName.getValue() + ".");
@@ -144,7 +164,9 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.resetRows();
-    //TODO prefill spreadsheet
+    for (SampleInfo sampleInfo : generatePrefilledSampleInformation()) {
+      spreadsheet.addRow(sampleInfo);
+    }
   }
 
   @Override
@@ -189,14 +211,34 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private static class SampleInfo {
 
-    AnalysisMethod analysisToBePerformed;
-    String sampleLabel;
-    String bioReplicateId;
-    String condition;
-    String species;
-    String specimen;
-    String analyte;
-    String customerComment;
+    private AnalysisMethod analysisToBePerformed;
+    private String sampleLabel;
+    private String bioReplicateId;
+    private String condition;
+    private String species;
+    private String specimen;
+    private String analyte;
+    private String customerComment;
+
+    public static SampleInfo create(AnalysisMethod analysisMethod,
+        String sampleLabel,
+        String bioReplicateId,
+        String condition,
+        String species,
+        String specimen,
+        String analyte,
+        String customerComment) {
+      SampleInfo sampleInfo = new SampleInfo();
+      sampleInfo.setAnalysisToBePerformed(analysisMethod);
+      sampleInfo.setSampleLabel(sampleLabel);
+      sampleInfo.setBioReplicateId(bioReplicateId);
+      sampleInfo.setCondition(condition);
+      sampleInfo.setSpecies(species);
+      sampleInfo.setSpecimen(specimen);
+      sampleInfo.setAnalyte(analyte);
+      sampleInfo.setCustomerComment(customerComment);
+      return sampleInfo;
+    }
 
     public AnalysisMethod getAnalysisToBePerformed() {
       return analysisToBePerformed;
