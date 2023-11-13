@@ -218,6 +218,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFont(rowNumberFont);
+    cellStyle.setAlignment(HorizontalAlignment.CENTER);
     cellStyle.setLocked(true);
     return cellStyle;
   }
