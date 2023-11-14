@@ -93,7 +93,7 @@ vaadin-dialog-overlay::part(title) {
 }
 
 .batch-registration-dialog::part(overlay) {
-  min-width: 66vw;
+  min-width: 80vw;
   height: 100%;
 }
 
@@ -153,6 +153,16 @@ vaadin-dialog-overlay::part(title) {
 
 .batch-registration-dialog .spreadsheet-controls {
   display: flex;
+  justify-content: space-between;
+  align-content: baseline;
+}
+
+.batch-registration-dialog .spreadsheet-controls .error-text {
+  color: var(--lumo-error-text-color);
+}
+
+.batch-registration-dialog .spreadsheet-controls .row-controls {
+  display: inline-flex;
   column-gap: 0.5em;
   justify-content: end;
 }

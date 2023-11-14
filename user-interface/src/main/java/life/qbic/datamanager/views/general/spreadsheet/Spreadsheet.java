@@ -177,19 +177,27 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ValidationChangeEvent(Spreadsheet<?> source, boolean fromClient, boolean oldValue,
-        boolean value) {
+    public ValidationChangeEvent(Spreadsheet<?> source, boolean fromClient, boolean wasValid,
+        boolean isValid) {
       super(source, fromClient);
-      this.oldValue = oldValue;
-      this.value = value;
+      this.oldValue = wasValid;
+      this.value = isValid;
     }
 
-    public boolean oldValue() {
+    public boolean wasValid() {
       return oldValue;
     }
 
-    public boolean value() {
+    public boolean wasInvalid() {
+      return !wasValid();
+    }
+
+    public boolean isValid() {
       return value;
+    }
+
+    public boolean isInvalid() {
+      return !isValid();
     }
   }
 

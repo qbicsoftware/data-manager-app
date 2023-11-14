@@ -80,7 +80,7 @@ public class Column<T> {
   }
 
   public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue) {
-    return selectFrom(values, toCellValue, getDefaultComponentRenderer());
+    return selectFrom(values, toCellValue, getDefaultComponentRenderer(toCellValue));
   }
 
   public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
@@ -144,9 +144,10 @@ public class Column<T> {
     return toCellValue.apply(t);
   }
 
-  private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer() {
+  private static <E> ComponentRenderer<Component, E> getDefaultComponentRenderer(
+      Function<E, String> toCellValue) {
     return new ComponentRenderer<>(item -> {
-      Span listItem = new Span(item.toString());
+      Span listItem = new Span(toCellValue.apply(item));
       listItem.addClassName("spreadsheet-list-item");
       return listItem;
     });

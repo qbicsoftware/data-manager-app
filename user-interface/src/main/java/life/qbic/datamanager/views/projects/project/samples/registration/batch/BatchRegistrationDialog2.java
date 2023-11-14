@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -59,28 +60,37 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         .setRequired();
 
     spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
-        SampleInfo::setSampleLabel);
+            SampleInfo::setSampleLabel)
+        .setRequired();
     spreadsheet.addColumn("Biological replicate ID", SampleInfo::getBioReplicateId,
-        SampleInfo::setBioReplicateId);
+            SampleInfo::setBioReplicateId)
+        .setRequired();
     spreadsheet.addColumn("Condition", SampleInfo::getCondition,
         SampleInfo::setCondition);
     spreadsheet.addColumn("Species", SampleInfo::getSpecies,
             SampleInfo::setSpecies)
-        .selectFrom(analytes, Analyte::label)
+        .selectFrom(species, Species::label)
         .setRequired();
     spreadsheet.addColumn("Specimen", SampleInfo::getSpecimen,
             SampleInfo::setSpecimen)
         .selectFrom(specimen, Specimen::label)
         .setRequired();
     spreadsheet.addColumn("Analyte", SampleInfo::getAnalyte,
-        SampleInfo::setAnalyte);
+            SampleInfo::setAnalyte)
+        .selectFrom(analytes, Analyte::label)
+        .setRequired();
     spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
         SampleInfo::setCustomerComment);
+
+    spreadsheet.setValidationMode(ValidationMode.EAGER);
+
 
     TextField batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
     batchNameField.addValueChangeListener(
         this::onBatchNameChanged);
+    batchNameField.setLabel("Batch Name");
+    batchNameField.setRequired(true);
 
     Button prefillSpreadsheet = new Button();
     prefillSpreadsheet.setText("Prefill Spreadsheet");
@@ -98,29 +108,41 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     removeLastRow.addClickListener(this::onRemoveLastRowClicked);
     removeLastRow.addClassName("remove-batch-row");
 
-    // Register Batch
-    //-------------------------
-    // batchName -> prefillButton
-    // please register your samples
-    // ->     delete row -> add row
-    // spreadsheet
-    //-------------------------
-    // -> cancel -> register
     setHeaderTitle("Register Batch");
     setResizable(true);
 
     Div batchControls = new Div();
     batchControls.addClassName("batch-controls");
     batchControls.add(batchNameField);
+
     Div spreadsheetControls = new Div();
     spreadsheetControls.addClassName("spreadsheet-controls");
-    spreadsheetControls.add(prefillSpreadsheet, addRow, removeLastRow);
+
+    Span rowControls = new Span();
+    rowControls.addClassName("row-controls");
+    rowControls.add(addRow, removeLastRow);
+
+    Span errorText = new Span("Unspecific Error message");
+    errorText.addClassName("error-text");
+    errorText.setVisible(false);
+
+    spreadsheet.addValidationChangeListener(
+        validationChangeEvent -> {
+          if (validationChangeEvent.isInvalid()) {
+            errorText.setText(validationChangeEvent.getSource().getErrorMessage());
+            errorText.setVisible(true);
+          } else {
+            errorText.setVisible(false);
+          }
+        });
+
+    spreadsheetControls.add(prefillSpreadsheet, errorText, rowControls);
 
     add(batchControls,
         userHelpText,
         spreadsheetControls,
         spreadsheet);
-    setResizable(true); //FIXME remove
+    batchNameField.focus();
   }
 
   private static ComponentRenderer<Span, AnalysisMethod> getAnalysisMethodItemRenderer() {
@@ -156,9 +178,12 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     );
   }
 
-  private void onBatchNameChanged(ComponentValueChangeEvent<TextField, String> batchName) {
-    this.userHelpText.setText(
-        "Please register your samples for batch " + batchName.getValue() + ".");
+  private void onBatchNameChanged(
+      ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
+    String text = batchNameChangedEvent.getValue().isBlank()
+        ? "Please name your batch."
+        : "Please register your samples for batch '" + batchNameChangedEvent.getValue() + "'.";
+    this.userHelpText.setText(text);
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
@@ -166,14 +191,18 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.setValidationMode(ValidationMode.LAZY);
     spreadsheet.addRow(new SampleInfo());
+    spreadsheet.setValidationMode(ValidationMode.EAGER);
   }
 
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.setValidationMode(ValidationMode.LAZY);
     spreadsheet.resetRows();
     for (SampleInfo sampleInfo : generatePrefilledSampleInformation()) {
       spreadsheet.addRow(sampleInfo);
     }
+    spreadsheet.setValidationMode(ValidationMode.EAGER);
   }
 
   @Override
@@ -186,16 +215,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-  }
-
-  @Override
-  public void close() {
-    super.close();
-    reset();
-  }
-
-  protected void reset() {
-    //TODO implement
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
