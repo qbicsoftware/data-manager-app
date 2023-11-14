@@ -21,6 +21,7 @@ import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -38,6 +39,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private final Text userHelpText = new Text("");
   private final Spreadsheet<SampleInfo> spreadsheet;
+  private final TextField batchNameField;
 
   public BatchRegistrationDialog2(List<Species> species, List<Specimen> specimen,
       List<Analyte> analytes) {
@@ -60,54 +62,54 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             getAnalysisMethodItemRenderer())
         .setRequired();
 
-    spreadsheet.addColumn("Analysis to be performed",
-            sampleInfo -> Optional.ofNullable(sampleInfo.getAnalysisToBePerformed())
-                .map(AnalysisMethod::label)
-                .orElse(null),
-            (sampleInfo, label) -> sampleInfo.setAnalysisToBePerformed(AnalysisMethod.forLabel(label)))
-        .selectFrom(sortedAnalysisMethods, AnalysisMethod::label,
-            getAnalysisMethodItemRenderer())
-        .setRequired();
     spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
             SampleInfo::setSampleLabel)
         .setRequired();
+
     spreadsheet.addColumn("Biological replicate ID", SampleInfo::getBioReplicateId,
             SampleInfo::setBioReplicateId)
         .setRequired();
+
     spreadsheet.addColumn("Condition", SampleInfo::getCondition,
-        SampleInfo::setCondition);
+            SampleInfo::setCondition)
+        .setRequired();
+
     spreadsheet.addColumn("Species",
             sampleInfo -> Optional.ofNullable(sampleInfo.getSpecies())
                 .map(Species::label)
                 .orElse(null),
-            (sampleInfo, label) -> sampleInfo.setSpecies(Species.create(label)))
+            SampleInfo::setSpecies)
         .selectFrom(species, Species::label)
         .setRequired();
+
     spreadsheet.addColumn("Specimen",
             sampleInfo -> Optional.ofNullable(sampleInfo.getSpecimen())
                 .map(Specimen::label)
                 .orElse(null),
-            (sampleInfo, label) -> sampleInfo.setSpecimen(Specimen.create(label)))
+            SampleInfo::setSpecimen)
         .selectFrom(specimen, Specimen::label)
         .setRequired();
+
     spreadsheet.addColumn("Analyte",
             sampleInfo -> Optional.ofNullable(sampleInfo.getAnalyte())
                 .map(Analyte::label)
                 .orElse(null),
-            (sampleInfo, label) -> sampleInfo.setAnalyte(Analyte.create(label)))
+            SampleInfo::setAnalyte)
         .selectFrom(analytes, Analyte::label)
         .setRequired();
+
     spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
         SampleInfo::setCustomerComment);
 
     spreadsheet.setValidationMode(ValidationMode.EAGER);
 
-    TextField batchNameField = new TextField();
+    batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
     batchNameField.addValueChangeListener(
         this::onBatchNameChanged);
     batchNameField.setLabel("Batch Name");
     batchNameField.setRequired(true);
+    batchNameField.setPattern(".*\\S+.*"); // must contain at least one non-whitespace character
 
     Button prefillSpreadsheet = new Button();
     prefillSpreadsheet.setText("Prefill Spreadsheet");
@@ -212,8 +214,14 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.validate();
-    System.out.println("spreadsheet.getData() = " + spreadsheet.getData());
-    //TODO
+    if (spreadsheet.isInvalid()) {
+      return;
+    }
+    if (batchNameField.isInvalid()) {
+      return;
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
+        new Data(batchNameField.getValue(), spreadsheet.getData())));
   }
 
   @Override
@@ -223,6 +231,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
     addListener(CancelEvent.class, listener);
+  }
+
+  public void addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
+    addListener(ConfirmEvent.class, listener);
   }
 
   public static class CancelEvent extends ComponentEvent<BatchRegistrationDialog2> {
@@ -240,7 +252,33 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     }
   }
 
-  private static class SampleInfo {
+  public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog2> {
+
+    public record Data(String batchName, List<SampleInfo> samples) {
+
+    }
+
+    private final Data data;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public ConfirmEvent(BatchRegistrationDialog2 source, boolean fromClient, Data data) {
+      super(source, fromClient);
+      this.data = data;
+    }
+
+    public Data getData() {
+      return data;
+    }
+  }
+
+  public static class SampleInfo {
 
     private AnalysisMethod analysisToBePerformed;
     private String sampleLabel;
@@ -311,6 +349,18 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       this.species = species;
     }
 
+    public void setSpecies(String label) {
+      if (isNull(label)) {
+        this.species = null;
+        return;
+      }
+      if (label.isBlank()) {
+        this.species = null;
+        return;
+      }
+      this.species = Species.create(label);
+    }
+
     public Specimen getSpecimen() {
       return specimen;
     }
@@ -319,12 +369,36 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       this.specimen = specimen;
     }
 
+    public void setSpecimen(String label) {
+      if (isNull(label)) {
+        this.specimen = null;
+        return;
+      }
+      if (label.isBlank()) {
+        this.specimen = null;
+        return;
+      }
+      this.specimen = Specimen.create(label);
+    }
+
     public Analyte getAnalyte() {
       return analyte;
     }
 
     public void setAnalyte(Analyte analyte) {
       this.analyte = analyte;
+    }
+
+    public void setAnalyte(String label) {
+      if (isNull(label)) {
+        this.analyte = null;
+        return;
+      }
+      if (label.isBlank()) {
+        this.analyte = null;
+        return;
+      }
+      this.analyte = Analyte.create(label);
     }
 
     public String getCustomerComment() {

@@ -35,6 +35,7 @@ public class TestView extends HorizontalLayout {
         List.of(Analyte.create("Test analyte 2"), Analyte.create("Test analyte 1")));
 
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmListener(confirmEvent -> System.out.println(confirmEvent.getData()));
     return dialog;
   }
 }
