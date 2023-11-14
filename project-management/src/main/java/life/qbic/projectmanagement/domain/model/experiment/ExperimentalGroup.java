@@ -70,9 +70,8 @@ public class ExperimentalGroup {
 
   private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
     List<BiologicalReplicate> replicates = new ArrayList<>(amount);
-    BiologicalReplicate.resetReplicateCounter();
     for (int i = 1; i <= amount; i++) {
-      replicates.add(BiologicalReplicate.create());
+      replicates.add(BiologicalReplicate.create("biol-rep-" + i));
     }
     return replicates;
   }
