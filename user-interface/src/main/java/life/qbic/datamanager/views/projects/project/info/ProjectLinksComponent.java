@@ -20,10 +20,9 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.finance.application.FinanceServiceImpl;
+import life.qbic.finances.api.OfferSummary;
 import life.qbic.projectmanagement.application.ProjectLinkingService;
-import life.qbic.controlling.application.finances.offer.OfferLookupService;
-import life.qbic.controlling.domain.finances.offer.OfferId;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,12 +43,12 @@ public class ProjectLinksComponent extends PageArea {
   private final ProjectLinksComponentHandler projectLinksComponentHandler;
 
   public ProjectLinksComponent(@Autowired ProjectLinkingService projectLinkingService,
-      @Autowired OfferLookupService offerLookupService) {
-    Objects.requireNonNull(offerLookupService);
+      @Autowired FinanceServiceImpl financeService) {
+    Objects.requireNonNull(financeService);
     Objects.requireNonNull(projectLinkingService);
     addClassName("attachments-area");
 
-    initOfferSearch(offerLookupService);
+    initOfferSearch(financeService);
     initProjectLinksGrid();
 
     initLayout();
@@ -75,8 +74,8 @@ public class ProjectLinksComponent extends PageArea {
     return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.value());
   }
 
-  private void initOfferSearch(OfferLookupService offerLookupService) {
-    offerSearch = new OfferSearch(offerLookupService);
+  private void initOfferSearch(FinanceServiceImpl financeService) {
+    offerSearch = new OfferSearch(financeService);
     offerSearch.addSelectedOfferChangeListener(it -> {
       if (Objects.isNull(it.getValue())) {
         return;
@@ -103,8 +102,8 @@ public class ProjectLinksComponent extends PageArea {
   }
 
 
-  private static ProjectLink offerLink(OfferId offerIdentifier) {
-    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier.id());
+  private static ProjectLink offerLink(String offerIdentifier) {
+    return ProjectLink.of(OFFER_TYPE_NAME, offerIdentifier);
   }
 
   public List<String> linkedOffers() {
@@ -151,12 +150,12 @@ public class ProjectLinksComponent extends PageArea {
 
   }
 
-  private static class OfferSearch extends Composite<ComboBox<OfferPreview>> {
+  private static class OfferSearch extends Composite<ComboBox<OfferSummary>> {
 
-    private final transient OfferLookupService offerLookupService;
+    private final transient FinanceServiceImpl financeService;
 
     public static class SelectedOfferChangeEvent extends
-        ComponentValueChangeEvent<OfferSearch, OfferPreview> {
+        ComponentValueChangeEvent<OfferSearch, OfferSummary> {
 
       /**
        * Creates a new component value change event.
@@ -166,16 +165,16 @@ public class ProjectLinksComponent extends PageArea {
        * @param oldValue   the old value
        * @param fromClient whether the value change originated from the client
        */
-      public SelectedOfferChangeEvent(OfferSearch source, HasValue<?, OfferPreview> hasValue,
-          OfferPreview oldValue, boolean fromClient) {
+      public SelectedOfferChangeEvent(OfferSearch source, HasValue<?, OfferSummary> hasValue,
+          OfferSummary oldValue, boolean fromClient) {
         super(source, hasValue, oldValue, fromClient);
       }
     }
 
 
-    public OfferSearch(@Autowired OfferLookupService offerLookupService) {
-      Objects.requireNonNull(offerLookupService);
-      this.offerLookupService = offerLookupService;
+    public OfferSearch(@Autowired FinanceServiceImpl financeService) {
+      Objects.requireNonNull(financeService);
+      this.financeService = financeService;
       setItems();
       setRenderer();
       setLabels();
@@ -198,19 +197,19 @@ public class ProjectLinksComponent extends PageArea {
     }
 
     private void setLabels() {
-      getContent().setItemLabelGenerator(it -> it.offerId().id());
+      getContent().setItemLabelGenerator(OfferSummary::offerId);
     }
 
     private void setRenderer() {
       getContent().setRenderer(new ComponentRenderer<>(OfferSearch::textFromPreview));
     }
 
-    private static Text textFromPreview(OfferPreview preview) {
-      return new Text(preview.offerId().id() + ", " + preview.getProjectTitle().title());
+    private static Text textFromPreview(OfferSummary summary) {
+      return new Text(summary.offerId() + ", " + summary.title());
     }
 
     private void setItems() {
-      getContent().setItems(query -> offerLookupService.findOfferContainingProjectTitleOrId(
+      getContent().setItems(query -> financeService.findOfferContainingProjectTitleOrId(
           query.getFilter().orElse(""), query.getFilter().orElse(""), query.getOffset(),
           query.getLimit()).stream());
     }

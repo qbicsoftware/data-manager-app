@@ -21,8 +21,8 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.controlling.domain.finances.offer.Offer;
-import life.qbic.controlling.domain.finances.offer.OfferPreview;
+import life.qbic.finances.api.Offer;
+import life.qbic.finances.api.OfferSummary;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
@@ -166,7 +166,7 @@ public class ProjectFormLayout extends FormLayout {
     return this;
   }
 
-  public ProjectFormLayout buildAddProjectLayout(ComboBox<OfferPreview> offerSearchField,
+  public ProjectFormLayout buildAddProjectLayout(ComboBox<OfferSummary> offerSearchField,
       TextField codeField) {
 
     Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
@@ -202,8 +202,8 @@ public class ProjectFormLayout extends FormLayout {
   }
 
   public void fillProjectInformationFromOffer(Offer offer) {
-    titleField.setValue(offer.projectTitle().title());
-    projectObjective.setValue(offer.projectObjective().objective().replace("\n", " "));
+    titleField.setValue(offer.title());
+    projectObjective.setValue(offer.objective().replace("\n", " "));
   }
 
   public void validate() {
