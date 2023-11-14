@@ -55,7 +55,7 @@ class SampleSpreadsheetLayout extends Div {
   private void initContent() {
     initHeaderAndInstruction();
     Div sampleSpreadSheetContainer = new Div();
-    sampleSpreadSheetContainer.addClassName("sample-spreadsheet-container");
+    sampleSpreadSheetContainer.addClassName("spreadsheet-container");
     sampleSpreadSheetContainer.add(sampleRegistrationSpreadsheet);
     add(sampleSpreadSheetContainer);
     styleSampleRegistrationSpreadSheet();
