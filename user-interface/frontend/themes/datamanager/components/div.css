@@ -79,7 +79,6 @@
 
 .project-creation-stepper {
   width: 100%;
-  margin: var(--lumo-space-s);
 }
 
 .project-creation-stepper .arrow-tab {

@@ -49,7 +49,7 @@ public class ExperimentalInformationLayout extends Div {
     Span experimentInformationDescription = new Span(
         "The experiment name and sample origin information of the samples");
     experimentInformationTitle.addClassName("title");
-    experimentNameField.addClassName(WIDTH_INPUT);
+    experimentNameField.addClassName("experiment-name-field");
     experimentNameField.setPlaceholder("Please enter a name for your experiment");
     speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     speciesBox.setPlaceholder("Please select one or more species for your samples");

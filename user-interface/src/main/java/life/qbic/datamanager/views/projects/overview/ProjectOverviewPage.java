@@ -15,7 +15,6 @@ import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;

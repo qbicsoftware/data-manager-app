@@ -58,17 +58,21 @@ public class ProjectDesignLayout extends Div {
 
   private void initLayout() {
     Span projectDesignTitle = new Span(TITLE);
-    projectDesignTitle.addClassNames("title");
+    projectDesignTitle.addClassName("title");
     Span projectDesignDescription = new Span("Description text");
     offerSearchField.setClassName("search-field");
     offerSearchField.setPlaceholder("Search for offers");
     offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     codeField.setHelperText("Q and 4 letters/numbers");
     codeField.setValue(ProjectCode.random().value());
+    codeField.addClassName("code-field");
     initCodeGenerationButton();
     titleField.setPlaceholder("Please enter a title for your project");
+    titleField.addClassName("title-field");
     Span codeTitleAndButtonSpan = new Span(codeField, generateCodeButton, titleField);
+    codeTitleAndButtonSpan.addClassNames("code-and-title");
     projectDescription.setPlaceholder("Please enter a description for your project");
+    projectDescription.addClassName("description-field");
     add(projectDesignTitle, projectDesignDescription, offerSearchField, codeTitleAndButtonSpan,
         projectDescription);
     addClassName("project-design-layout");

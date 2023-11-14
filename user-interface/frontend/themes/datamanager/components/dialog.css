@@ -265,6 +265,14 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-l);
 }
 
+.project-creation-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: var(--lumo-space-l);
+}
+
 .project-creation-dialog::part(overlay) {
   width: 100%;
   height: 100%;
@@ -278,12 +286,29 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
+.project-creation-dialog .collaborators-layout .contact-field .input-fields {
+  gap: var(--lumo-space-m);
+  display: inline-flex;
+}
+
+.project-creation-dialog .collaborators-layout .contact-field .name-field {
+  min-width: 45vw;
+}
+
+.project-creation-dialog .collaborators-layout .contact-field .email-field {
+  min-width: 45vw;
+}
+
 .project-creation-dialog .experiment-information-layout{
   width: 100%;
   height: 100%;
   gap: 1em;
   display: flex;
   flex-direction: column;
+}
+
+.project-creation-dialog .experiment-information-layout .experiment-name-field {
+  width: 50%
 }
 
 .project-creation-dialog .funding-information-layout {
@@ -294,12 +319,48 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
+.project-creation-dialog .funding-information-layout .funding-field .grant-label-field {
+  min-width: 15vw;
+}
+
+.project-creation-dialog .funding-information-layout .funding-field .input-fields {
+  width: 100%;
+  gap: var(--lumo-space-xl);
+  display: inline-flex;
+}
+
 .project-creation-dialog .project-design-layout {
   width: 100%;
   height: 100%;
   gap: 1em;
   display: flex;
   flex-direction: column;
+}
+
+.project-creation-dialog .project-design-layout .description-field {
+  height: 100%;
+  width: 100%;
+  min-height: 15vh;
+}
+
+.project-creation-dialog .project-design-layout .title-field {
+  width: 100%;
+  margin-left: var(--lumo-space-m);
+}
+
+.project-creation-dialog .project-design-layout .code-field {
+  max-width: 20%;
+}
+
+.project-creation-dialog .project-design-layout .search-field {
+  max-width: 30%;
+}
+
+.project-creation-dialog .project-design-layout .code-and-title {
+  width: 100%;
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .project-information-dialog::part(overlay) {

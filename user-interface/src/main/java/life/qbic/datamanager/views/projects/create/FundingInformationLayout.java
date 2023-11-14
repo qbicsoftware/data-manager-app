@@ -17,7 +17,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class FundingInformationLayout extends Div {
-  private final FundingField fundingField = new FundingField("Funding Information");
+
+  private final FundingField fundingField = new FundingField("");
   private final Binder<FundingEntry> fundingEntryBinder = new Binder<>();
   private static final String TITLE = "Funding Information";
 

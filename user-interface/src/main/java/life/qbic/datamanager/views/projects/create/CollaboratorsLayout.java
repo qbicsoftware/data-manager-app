@@ -35,7 +35,6 @@ public class CollaboratorsLayout extends Div {
   }
 
   private void initLayout() {
-
     Span projectContactsTitle = new Span(TITLE);
     projectContactsTitle.addClassName("title");
     Span projectContactsDescription = new Span("Important contact people of the project");
@@ -49,13 +48,11 @@ public class CollaboratorsLayout extends Div {
 
   private void initValidation() {
     principalInvestigatorField.setRequired(true);
-    principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
         .bind((ProjectCollaborators::getPrincipalInvestigator),
             ProjectCollaborators::setPrincipalInvestigator);
 
     responsiblePersonField.setRequired(false);
-    responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
         .bind(projectCollaborators -> projectCollaborators.getResponsiblePerson().orElse(null),
@@ -67,7 +64,6 @@ public class CollaboratorsLayout extends Div {
               }
             });
     projectManagerField.setRequired(true);
-    projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
         .bind((ProjectCollaborators::getProjectManager),
             ProjectCollaborators::setProjectManager);
