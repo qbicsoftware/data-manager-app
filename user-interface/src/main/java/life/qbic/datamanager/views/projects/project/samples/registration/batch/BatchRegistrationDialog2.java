@@ -16,6 +16,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
@@ -59,6 +60,14 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             getAnalysisMethodItemRenderer())
         .setRequired();
 
+    spreadsheet.addColumn("Analysis to be performed",
+            sampleInfo -> Optional.ofNullable(sampleInfo.getAnalysisToBePerformed())
+                .map(AnalysisMethod::label)
+                .orElse(null),
+            (sampleInfo, label) -> sampleInfo.setAnalysisToBePerformed(AnalysisMethod.forLabel(label)))
+        .selectFrom(sortedAnalysisMethods, AnalysisMethod::label,
+            getAnalysisMethodItemRenderer())
+        .setRequired();
     spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
             SampleInfo::setSampleLabel)
         .setRequired();
@@ -67,23 +76,31 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         .setRequired();
     spreadsheet.addColumn("Condition", SampleInfo::getCondition,
         SampleInfo::setCondition);
-    spreadsheet.addColumn("Species", SampleInfo::getSpecies,
-            SampleInfo::setSpecies)
+    spreadsheet.addColumn("Species",
+            sampleInfo -> Optional.ofNullable(sampleInfo.getSpecies())
+                .map(Species::label)
+                .orElse(null),
+            (sampleInfo, label) -> sampleInfo.setSpecies(Species.create(label)))
         .selectFrom(species, Species::label)
         .setRequired();
-    spreadsheet.addColumn("Specimen", SampleInfo::getSpecimen,
-            SampleInfo::setSpecimen)
+    spreadsheet.addColumn("Specimen",
+            sampleInfo -> Optional.ofNullable(sampleInfo.getSpecimen())
+                .map(Specimen::label)
+                .orElse(null),
+            (sampleInfo, label) -> sampleInfo.setSpecimen(Specimen.create(label)))
         .selectFrom(specimen, Specimen::label)
         .setRequired();
-    spreadsheet.addColumn("Analyte", SampleInfo::getAnalyte,
-            SampleInfo::setAnalyte)
+    spreadsheet.addColumn("Analyte",
+            sampleInfo -> Optional.ofNullable(sampleInfo.getAnalyte())
+                .map(Analyte::label)
+                .orElse(null),
+            (sampleInfo, label) -> sampleInfo.setAnalyte(Analyte.create(label)))
         .selectFrom(analytes, Analyte::label)
         .setRequired();
     spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
         SampleInfo::setCustomerComment);
 
     spreadsheet.setValidationMode(ValidationMode.EAGER);
-
 
     TextField batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
@@ -160,26 +177,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     });
   }
 
-  private List<SampleInfo> generatePrefilledSampleInformation() {
-    //TODO replace with actual data
-    return List.of(
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 1", "bio-replicate 1", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 2", "bio-replicate 2", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 3", "bio-replicate 3", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 4", "bio-replicate 4", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 5", "bio-replicate 5", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 6", "bio-replicate 6", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time"),
-        SampleInfo.create(AnalysisMethod.SIXTEEN_S, "sample 7", "bio-replicate 7", "bla condition",
-            "some species", "some specimen", "some analyte", "no comment at this time")
-    );
-  }
-
   private void onBatchNameChanged(
       ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
     updateUserHelpText(batchNameChangedEvent.getValue());
@@ -205,7 +202,8 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.setValidationMode(ValidationMode.LAZY);
     spreadsheet.resetRows();
-    for (SampleInfo sampleInfo : generatePrefilledSampleInformation()) {
+    for (SampleInfo sampleInfo : List.of(new SampleInfo(),
+        new SampleInfo())) { //FIXME replace with actual prefilled model
       spreadsheet.addRow(sampleInfo);
     }
     spreadsheet.setValidationMode(ValidationMode.EAGER);
@@ -248,18 +246,18 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     private String sampleLabel;
     private String bioReplicateId;
     private String condition;
-    private String species;
-    private String specimen;
-    private String analyte;
+    private Species species;
+    private Specimen specimen;
+    private Analyte analyte;
     private String customerComment;
 
     public static SampleInfo create(AnalysisMethod analysisMethod,
         String sampleLabel,
         String bioReplicateId,
         String condition,
-        String species,
-        String specimen,
-        String analyte,
+        Species species,
+        Specimen specimen,
+        Analyte analyte,
         String customerComment) {
       SampleInfo sampleInfo = new SampleInfo();
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
@@ -305,27 +303,27 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       this.condition = condition;
     }
 
-    public String getSpecies() {
+    public Species getSpecies() {
       return species;
     }
 
-    public void setSpecies(String species) {
+    public void setSpecies(Species species) {
       this.species = species;
     }
 
-    public String getSpecimen() {
+    public Specimen getSpecimen() {
       return specimen;
     }
 
-    public void setSpecimen(String specimen) {
+    public void setSpecimen(Specimen specimen) {
       this.specimen = specimen;
     }
 
-    public String getAnalyte() {
+    public Analyte getAnalyte() {
       return analyte;
     }
 
-    public void setAnalyte(String analyte) {
+    public void setAnalyte(Analyte analyte) {
       this.analyte = analyte;
     }
 
