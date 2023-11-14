@@ -410,20 +410,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     if (index < 0) {
       throw new IllegalArgumentException(
           "The row at index " + index
-              + " cannot be removed. Please provide any index greater than 0");
+              + " cannot be removed. Please provide any index greater or equal to 0");
     }
-//    Row row = getRow(index);
-//    if (row instanceof HeaderRow headerRow) {
-//      log.debug("Will not remove header row " + headerRow + " at " + index);
-//      return;
-//    }
     deleteRows(index, index);
-//    delegateSpreadsheet.deleteRows(index, index);
-//    if (nextRowIndex <= lastRowIndex) {
-//      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -1, true, true);
-//    }
-//    rows.remove(index);
-//    delegateSpreadsheet.setMaxRows(lastRowIndex);
   }
 
   /**

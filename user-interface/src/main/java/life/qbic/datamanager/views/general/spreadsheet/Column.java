@@ -8,12 +8,14 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.CellStyle;
 
 /**
@@ -83,17 +85,42 @@ public class Column<T> {
 
   public <E> Column<T> selectFrom(List<E> values, Function<E, String> toCellValue,
       ComponentRenderer<? extends Component, E> renderer) {
+    if (isNull(values) || values.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Nothing provided to select from. Please provide a list of possible values.");
+    }
     List<String> possibleCellValues = values.stream()
         .map(toCellValue).toList();
+
     this.withValidator(value -> isNull(value) || value.isBlank()
             || possibleCellValues.stream().anyMatch(it -> it.equals(value)),
-        "'{0}' is not a valid option for column %s. Please choose from %s".formatted(getName(),
-            possibleCellValues));
+        getSelectionErrorMessage(possibleCellValues));
     SelectEditor<E> selectEditor = new SelectEditor<>(values, toCellValue);
     selectEditor.setRenderer(renderer);
     selectEditor.setItemLabelGenerator(toCellValue::apply);
     this.editorComponent = selectEditor;
     return this;
+  }
+
+  private String getSelectionErrorMessage(List<String> possibleCellValues) {
+    String possibleCellValuesHelpText = possibleCellValues.stream()
+        .sorted(Comparator.naturalOrder())
+        .map(value -> "- " + value)
+        .collect(Collectors.joining("\n"));
+
+    String errorMessageWithSuggestion = """
+        '{0}' is not a valid option for column %s.
+        Please choose from:
+        %s
+        """.formatted(getName(), possibleCellValuesHelpText);
+
+    String shortErrorMessage = ("'{0}' is not a valid option for column %s.")
+        .formatted(getName());
+
+    int maximalNumberOfDisplayedOptions = 5;
+    return possibleCellValues.size() > maximalNumberOfDisplayedOptions
+        ? shortErrorMessage
+        : errorMessageWithSuggestion;
   }
 
   public Column<T> withCellStyle(CellStyle cellStyle) {
@@ -105,7 +132,7 @@ public class Column<T> {
     this.required = true;
     validators.add(0, new ColumnValidator<>(
         object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
-        "The column '" + getName() + "' does not allow empty values. Please enter a value."));
+        "The column '" + getName() + "' does not allow empty values.\nPlease enter a value."));
     return this;
   }
 
