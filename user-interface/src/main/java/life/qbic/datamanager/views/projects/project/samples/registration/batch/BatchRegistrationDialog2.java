@@ -35,7 +35,7 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
  */
 public class BatchRegistrationDialog2 extends DialogWindow {
 
-  private final Text userHelpText = new Text("Please register your samples.");
+  private final Text userHelpText = new Text("");
   private final Spreadsheet<SampleInfo> spreadsheet;
 
   public BatchRegistrationDialog2(List<Species> species, List<Specimen> specimen,
@@ -126,6 +126,16 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
+    spreadsheetControls.add(prefillSpreadsheet, errorText, rowControls);
+
+    add(batchControls,
+        userHelpText,
+        spreadsheetControls,
+        spreadsheet);
+
+    updateUserHelpText(batchNameField.getValue());
+    batchNameField.focus();
+
     spreadsheet.addValidationChangeListener(
         validationChangeEvent -> {
           if (validationChangeEvent.isInvalid()) {
@@ -135,14 +145,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             errorText.setVisible(false);
           }
         });
-
-    spreadsheetControls.add(prefillSpreadsheet, errorText, rowControls);
-
-    add(batchControls,
-        userHelpText,
-        spreadsheetControls,
-        spreadsheet);
-    batchNameField.focus();
   }
 
   private static ComponentRenderer<Span, AnalysisMethod> getAnalysisMethodItemRenderer() {
@@ -180,9 +182,13 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private void onBatchNameChanged(
       ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
-    String text = batchNameChangedEvent.getValue().isBlank()
+    updateUserHelpText(batchNameChangedEvent.getValue());
+  }
+
+  private void updateUserHelpText(String batchName) {
+    String text = batchName.isBlank()
         ? "Please name your batch."
-        : "Please register your samples for batch '" + batchNameChangedEvent.getValue() + "'.";
+        : "Please register your samples for batch '" + batchName + "'.";
     this.userHelpText.setText(text);
   }
 
