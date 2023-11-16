@@ -1,27 +1,32 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import static java.util.Objects.isNull;
+import static java.util.function.Function.identity;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
+import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.model.experiment.Condition;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -37,65 +42,86 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
  */
 public class BatchRegistrationDialog2 extends DialogWindow {
 
-  private final Text userHelpText = new Text("");
   private final Spreadsheet<SampleInfo> spreadsheet;
+
   private final TextField batchNameField;
 
-  public BatchRegistrationDialog2(List<Species> species, List<Specimen> specimen,
-      List<Analyte> analytes) {
+  private final List<ExperimentalGroup> experimentalGroups;
+  private final List<Species> species;
+  private final List<Specimen> specimen;
+  private final List<Analyte> analytes;
+
+
+  public BatchRegistrationDialog2(String experimentName,
+      List<Species> species,
+      List<Specimen> specimen,
+      List<Analyte> analytes,
+      List<ExperimentalGroup> experimentalGroups) {
 
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
 
-    spreadsheet = new Spreadsheet<>();
+    this.experimentalGroups = new ArrayList<>(experimentalGroups);
 
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
         .sorted(Comparator.comparing(AnalysisMethod::label))
         .toList();
+
+    spreadsheet = new Spreadsheet<>();
+
+
     spreadsheet.addColumn("Analysis to be performed",
-            sampleInfo -> isNull(sampleInfo.getAnalysisToBePerformed()) ? null
-                : sampleInfo.getAnalysisToBePerformed().label(),
+            SampleInfo::getAnalysisToBePerformed,
+            AnalysisMethod::label,
             (sampleInfo, analysisToBePerformed) -> sampleInfo.setAnalysisToBePerformed(
                 AnalysisMethod.forLabel(analysisToBePerformed)))
         .selectFrom(sortedAnalysisMethods,
-            AnalysisMethod::label,
+            identity(),
             getAnalysisMethodItemRenderer())
         .setRequired();
 
     spreadsheet.addColumn("Sample label", SampleInfo::getSampleLabel,
             SampleInfo::setSampleLabel)
+        .requireDistinctValues()
         .setRequired();
 
-    spreadsheet.addColumn("Biological replicate ID", SampleInfo::getBioReplicateId,
-            SampleInfo::setBioReplicateId)
-        .setRequired();
+//    spreadsheet.addColumn("Biological replicate ID",
+//            sampleInfo -> Optional.ofNullable(sampleInfo.getBioReplicate())
+//                .map(BiologicalReplicate::label)
+//                .orElse(null),
+//            SampleInfo::setBioReplicateLabel)
+//        .selectFrom(replicatesWithCondition,
+//            biologicalReplicateWithCondition -> biologicalReplicateWithCondition.biologicalReplicate()
+//                .label())
+//        .setRequired();
+//
+//    spreadsheet.addColumn("Condition", SampleInfo::getCondition,
+//            SampleInfo::setCondition)
+//        .setRequired();
 
-    spreadsheet.addColumn("Condition", SampleInfo::getCondition,
-            SampleInfo::setCondition)
-        .setRequired();
-
+    this.species = species;
     spreadsheet.addColumn("Species",
-            sampleInfo -> Optional.ofNullable(sampleInfo.getSpecies())
-                .map(Species::label)
-                .orElse(null),
+            SampleInfo::getSpecies,
+            Species::label,
             SampleInfo::setSpecies)
-        .selectFrom(species, Species::label)
+        .selectFrom(this.species, identity())
         .setRequired();
 
+    this.specimen = specimen;
     spreadsheet.addColumn("Specimen",
-            sampleInfo -> Optional.ofNullable(sampleInfo.getSpecimen())
-                .map(Specimen::label)
-                .orElse(null),
+            SampleInfo::getSpecimen,
+            Specimen::label,
             SampleInfo::setSpecimen)
-        .selectFrom(specimen, Specimen::label)
+        .selectFrom(this.specimen, identity())
         .setRequired();
 
+    this.analytes = analytes;
     spreadsheet.addColumn("Analyte",
             sampleInfo -> Optional.ofNullable(sampleInfo.getAnalyte())
                 .map(Analyte::label)
                 .orElse(null),
             SampleInfo::setAnalyte)
-        .selectFrom(analytes, Analyte::label)
+        .selectFrom(this.analytes, Analyte::label)
         .setRequired();
 
     spreadsheet.addColumn("Customer comment", SampleInfo::getCustomerComment,
@@ -105,17 +131,26 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
-    batchNameField.addValueChangeListener(
-        this::onBatchNameChanged);
     batchNameField.setLabel("Batch Name");
+    batchNameField.setPlaceholder("Please enter a name for this batch");
     batchNameField.setRequired(true);
-    batchNameField.setPattern(".*\\S+.*"); // must contain at least one non-whitespace character
+    // must contain at least one non-whitespace character and no leading/tailing whitespace.
+    batchNameField.setPattern("^\\S+(.*\\S)*$");
+    batchNameField.setErrorMessage(
+        "The batch name must not be empty. It must not start nor end with whitespace.");
+    batchNameField.addValueChangeListener(this::onBatchNameChanged);
 
+    Div prefillSection = new Div();
     Button prefillSpreadsheet = new Button();
     prefillSpreadsheet.setText("Prefill Spreadsheet");
     prefillSpreadsheet.setAriaLabel("Prefill complete sample batch");
     prefillSpreadsheet.addClickListener(this::onPrefillClicked);
     prefillSpreadsheet.addClassName("prefill-batch");
+
+    Span prefillText = new Span(
+        "Do you want to register a batch containing all biological replicates? You can prefill information already know to the system."
+    );
+    prefillSection.add(prefillText, prefillSpreadsheet);
 
     Button addRow = new Button();
     addRow.setText("Add Row");
@@ -134,6 +169,13 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     batchControls.addClassName("batch-controls");
     batchControls.add(batchNameField);
 
+    Span pleaseRegisterText = new Span("Please register your samples for experiment:");
+    Span experimentNameText = new Span(experimentName);
+    experimentNameText.setClassName("experiment-name");
+    Div userHelpText = new Div(pleaseRegisterText, experimentNameText);
+    userHelpText.addClassName("user-help-text");
+
+
     Div spreadsheetControls = new Div();
     spreadsheetControls.addClassName("spreadsheet-controls");
 
@@ -145,14 +187,14 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
-    spreadsheetControls.add(prefillSpreadsheet, errorText, rowControls);
+    spreadsheetControls.add(rowControls, errorText);
 
     add(batchControls,
         userHelpText,
+        prefillSection,
         spreadsheetControls,
         spreadsheet);
 
-    updateUserHelpText(batchNameField.getValue());
     batchNameField.focus();
 
     spreadsheet.addValidationChangeListener(
@@ -164,6 +206,46 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             errorText.setVisible(false);
           }
         });
+  }
+
+  private List<SampleInfo> prefilledSampleInfos() {
+    return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
+  }
+
+  private static List<SampleInfo> prefilledSampleInfos(List<Species> species,
+      List<Specimen> specimen, List<Analyte> analytes, List<ExperimentalGroup> experimentalGroups) {
+
+    List<SampleInfo> sampleInfos = new ArrayList<>();
+    for (ExperimentalGroup experimentalGroup : experimentalGroups) {
+      for (BiologicalReplicate biologicalReplicate : experimentalGroup.biologicalReplicates()) {
+        // new sampleInfo
+        SampleInfo sampleInfo = new SampleInfo();
+        sampleInfo.biologicalReplicate = biologicalReplicate;
+        sampleInfo.experimentalGroup = experimentalGroup;
+        if (species.size() == 1) {
+          sampleInfo.setSpecies(species.get(0));
+        }
+        if (specimen.size() == 1) {
+          sampleInfo.setSpecimen(specimen.get(0));
+        }
+        if (analytes.size() == 1) {
+          sampleInfo.setAnalyte(analytes.get(0));
+        }
+        sampleInfos.add(sampleInfo);
+      }
+    }
+    return sampleInfos;
+  }
+
+  private static String formatConditionString(Condition condition) {
+    return condition.getVariableLevels().parallelStream()
+        .map(variableLevel -> "%s:%s %s"
+            .formatted(variableLevel.variableName().value(),
+                variableLevel.experimentalValue().value(),
+                variableLevel.experimentalValue().unit().orElse(""))
+            .trim())
+        .sorted()
+        .collect(Collectors.joining("; "));
   }
 
   private static ComponentRenderer<Span, AnalysisMethod> getAnalysisMethodItemRenderer() {
@@ -181,14 +263,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
   private void onBatchNameChanged(
       ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
-    updateUserHelpText(batchNameChangedEvent.getValue());
-  }
-
-  private void updateUserHelpText(String batchName) {
-    String text = batchName.isBlank()
-        ? "Please name your batch."
-        : "Please register your samples for batch '" + batchName + "'.";
-    this.userHelpText.setText(text);
+    /* do nothing */
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
@@ -204,8 +279,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   private void onPrefillClicked(ClickEvent<Button> clickEvent) {
     spreadsheet.setValidationMode(ValidationMode.LAZY);
     spreadsheet.resetRows();
-    for (SampleInfo sampleInfo : List.of(new SampleInfo(),
-        new SampleInfo())) { //FIXME replace with actual prefilled model
+    for (SampleInfo sampleInfo : prefilledSampleInfos()) {
       spreadsheet.addRow(sampleInfo);
     }
     spreadsheet.setValidationMode(ValidationMode.EAGER);
@@ -282,8 +356,8 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     private AnalysisMethod analysisToBePerformed;
     private String sampleLabel;
-    private String bioReplicateId;
-    private String condition;
+    private BiologicalReplicate biologicalReplicate;
+    private ExperimentalGroup experimentalGroup;
     private Species species;
     private Specimen specimen;
     private Analyte analyte;
@@ -291,8 +365,8 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     public static SampleInfo create(AnalysisMethod analysisMethod,
         String sampleLabel,
-        String bioReplicateId,
-        String condition,
+        BiologicalReplicate biologicalReplicate,
+        ExperimentalGroup experimentalGroup,
         Species species,
         Specimen specimen,
         Analyte analyte,
@@ -300,8 +374,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       SampleInfo sampleInfo = new SampleInfo();
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
       sampleInfo.setSampleLabel(sampleLabel);
-      sampleInfo.setBioReplicateId(bioReplicateId);
-      sampleInfo.setCondition(condition);
       sampleInfo.setSpecies(species);
       sampleInfo.setSpecimen(specimen);
       sampleInfo.setAnalyte(analyte);
@@ -323,22 +395,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     public void setSampleLabel(String sampleLabel) {
       this.sampleLabel = sampleLabel;
-    }
-
-    public String getBioReplicateId() {
-      return bioReplicateId;
-    }
-
-    public void setBioReplicateId(String bioReplicateId) {
-      this.bioReplicateId = bioReplicateId;
-    }
-
-    public String getCondition() {
-      return condition;
-    }
-
-    public void setCondition(String condition) {
-      this.condition = condition;
     }
 
     public Species getSpecies() {
@@ -381,6 +437,23 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       this.specimen = Specimen.create(label);
     }
 
+    public void setBiologicalReplicate(
+        BiologicalReplicate biologicalReplicate) {
+      this.biologicalReplicate = biologicalReplicate;
+    }
+
+    public void setBiologicalReplicate(String biologicalReplicateLabel) {
+      this.biologicalReplicate = this.experimentalGroup.biologicalReplicates().stream()
+          .filter(it -> it.label().equals(biologicalReplicateLabel))
+          .findFirst()
+          .orElse(null);
+    }
+
+    public void setExperimentalGroup(
+        ExperimentalGroup experimentalGroup) {
+      this.experimentalGroup = experimentalGroup;
+    }
+
     public Analyte getAnalyte() {
       return analyte;
     }
@@ -414,8 +487,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]")
           .add("analysisToBePerformed=" + analysisToBePerformed)
           .add("sampleLabel='" + sampleLabel + "'")
-          .add("bioReplicateId='" + bioReplicateId + "'")
-          .add("condition='" + condition + "'")
           .add("species='" + species + "'")
           .add("specimen='" + specimen + "'")
           .add("analyte='" + analyte + "'")
@@ -424,4 +495,8 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     }
   }
 
+  public record BiologicalReplicateWithCondition(BiologicalReplicate biologicalReplicate,
+                                                 Condition condition) {
+
+  }
 }

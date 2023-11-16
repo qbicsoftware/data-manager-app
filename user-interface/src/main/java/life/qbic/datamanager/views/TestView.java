@@ -29,11 +29,10 @@ public class TestView extends HorizontalLayout {
   }
 
   private static BatchRegistrationDialog2 getBatchRegistrationDialog() {
-    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2(
+    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2("My awesome experiment",
         List.of(Species.create("Test Species 1"), Species.create("Test Species 2")),
         List.of(Specimen.create("Test specimen 1"), Specimen.create("Test specimen 2")),
-        List.of(Analyte.create("Test analyte 2"), Analyte.create("Test analyte 1")));
-
+        List.of(Analyte.create("Test analyte 2"), Analyte.create("Test analyte 1")), List.of());
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> System.out.println(confirmEvent.getData()));
     return dialog;

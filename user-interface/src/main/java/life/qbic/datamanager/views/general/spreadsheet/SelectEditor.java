@@ -6,24 +6,38 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
  * A cell value editor enabling the user to make a selection.
  */
-class SelectEditor<E> extends Select<E> {
+class SelectEditor<T, E> extends Select<E> {
 
   private final List<Registration> addedValueChangeListeners;
 
   private final Function<E, String> toCellValue;
+  private final Function<T, List<E>> toItems;
+
+  // not necessarily edits the model
+  private final BiConsumer<E, T> modelUpdater;
 
   public SelectEditor(List<E> items, Function<E, String> toCellValue) {
-    addedValueChangeListeners = new ArrayList<>();
+    this(it -> items, toCellValue, (e, t) -> {/* do nothing */});
     setItems(items);
-    this.toCellValue = toCellValue;
-    addValueChangeListener(event -> {
+  }
 
-    });
+  public SelectEditor(Function<T, List<E>> toItems, Function<E, String> toCellValue,
+      BiConsumer<E, T> modelUpdater) {
+    this.toItems = toItems;
+    this.modelUpdater = modelUpdater;
+    addedValueChangeListeners = new ArrayList<>();
+    this.toCellValue = toCellValue;
+    setItems(new ArrayList<>());
+  }
+
+  public void updateItems(T origin) {
+    setItems(toItems.apply(origin));
   }
 
   public String toCellValue(E value) {

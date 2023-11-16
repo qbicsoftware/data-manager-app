@@ -97,6 +97,11 @@ vaadin-dialog-overlay::part(title) {
   height: 100%;
 }
 
+.batch-registration-dialog .experiment-name {
+  margin-left: 1ch;
+  font-weight: bolder;
+}
+
 .batch-registration-dialog .stepper vaadin-tabs {
   display: inline-flex;
 }
@@ -155,16 +160,25 @@ vaadin-dialog-overlay::part(title) {
   display: flex;
   justify-content: space-between;
   align-content: baseline;
+  flex-direction: row-reverse;
 }
 
 .batch-registration-dialog .spreadsheet-controls .error-text {
   color: var(--lumo-error-text-color);
 }
 
+.batch-registration-dialog .batch-controls > .batch-name-field {
+  width: calc(100% / 3);
+}
+
 .batch-registration-dialog .spreadsheet-controls .row-controls {
   display: inline-flex;
   column-gap: 0.5em;
   justify-content: end;
+}
+
+.batch-registration-dialog > .section {
+  margin-top: 2em;
 }
 
 .create-project-dialog .content {
