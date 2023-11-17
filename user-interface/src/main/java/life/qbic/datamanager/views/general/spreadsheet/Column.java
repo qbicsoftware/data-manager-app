@@ -46,21 +46,6 @@ public class Column<T, C> {
   private Component editorComponent;
   private boolean required;
 
-//  public Column(String name, Function<T, String> toCellValue,
-//      BiConsumer<T, String> modelUpdater) {
-//    requireNonNull(name, "name must not be null");
-//    requireNonNull(toCellValue, "toCellValue must not be null");
-//    requireNonNull(modelUpdater, "modelUpdater must not be null");
-//    this.name = name;
-//    this.toCellValue = toCellValue;
-//    this.modelUpdater = modelUpdater;
-//    this.editorComponent = null;
-//    this.required = false;
-//    this.cellValidators = new ArrayList<>();
-//    toColumnValue = t -> null; //FIXME
-//    columnValueToCellValue = c -> null; //FIXME
-//  }
-
   public Column(String name, Function<T, C> toColumnValue,
       Function<C, String> columnValueToCellValue,
       BiConsumer<T, String> modelUpdater) {
@@ -84,7 +69,7 @@ public class Column<T, C> {
     return required;
   }
 
-  public Optional<Component> getEditorComponent() { //FIXME if desired re-generate the editor component
+  public Optional<Component> getEditorComponent() {
     return Optional.ofNullable(editorComponent);
   }
 
@@ -145,6 +130,12 @@ public class Column<T, C> {
   }
 
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
+      Function<E, C> toColumnValue) {
+    return selectFrom(valueProvider, toColumnValue,
+        getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue)));
+  }
+
+  public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer) {
     Function<E, String> adaptedToCellValue = toColumnValue.andThen(columnValueToCellValue);
@@ -155,7 +146,7 @@ public class Column<T, C> {
             .anyMatch(allowedValue -> isNull(allowedValue)
                 || allowedValue.isBlank()
                 || allowedValue.equals(value)),
-        "'{0}' is not a valid option for column '" + getName() + "'.");
+        "'{0}' is not a valid option for column '" + getName() + "' in this row.");
 
     SelectEditor<T, E> selectEditor = new SelectEditor<>(valueProvider, adaptedToCellValue);
     selectEditor.setRenderer(renderer);

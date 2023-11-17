@@ -85,41 +85,20 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         .requireDistinctValues()
         .setRequired();
 
-//    spreadsheet.addColumn("Biological replicate ID",
-//            sampleInfo -> Optional.ofNullable(sampleInfo.getBioReplicate())
-//                .map(BiologicalReplicate::label)
-//                .orElse(null),
-//            SampleInfo::setBioReplicateLabel)
-//        .selectFrom(replicatesWithCondition,
-//            biologicalReplicateWithCondition -> biologicalReplicateWithCondition.biologicalReplicate()
-//                .label())
-//        .setRequired();
-//
+    spreadsheet.addColumn("Biological replicate ID",
+            SampleInfo::getBiologicalReplicate,
+            BiologicalReplicate::label,
+            this::updateSampleInfoWithMatchingBiologicalReplicate)
+        .selectFrom(sampleInfo -> Optional.ofNullable(sampleInfo.getExperimentalGroup())
+            .map(ExperimentalGroup::biologicalReplicates).orElse(List.of()), identity())
+        .setRequired();
+
     spreadsheet.addColumn("Condition", SampleInfo::getExperimentalGroup,
             experimentalGroup -> formatConditionString(experimentalGroup.condition()),
             (sampleInfo, conditionString) -> updateSampleInfoWithMatchingExperimentalGroup(
                 experimentalGroups, sampleInfo, conditionString))
         .selectFrom(experimentalGroups, identity())
         .setRequired();
-
-//    spreadsheet.addColumn("Condition", SampleInfo::getExperimentalGroup,
-//            experimentalGroup -> formatConditionString(experimentalGroup.condition()),
-//            (sampleInfo, conditionString) -> {
-//              // find condition producing the same condition string
-//              Condition matchingCondition = experimentalGroups.stream()
-//                  .map(ExperimentalGroup::condition)
-//                  .filter(it -> formatConditionString(it).equals(conditionString))
-//                  .findAny().orElse(null);
-//              // find experimentalGroup with the condition
-//              Optional<ExperimentalGroup> matchingExperimentalGroup = experimentalGroups.stream()
-//                  .filter(
-//                      experimentalGroup -> experimentalGroup.condition().equals(matchingCondition))
-//                  .findAny();
-//              // set experimental group in sampleInfo
-//              matchingExperimentalGroup.ifPresent(sampleInfo::setExperimentalGroup);
-//            })
-//        .selectFrom(experimentalGroups, identity())
-//        .setRequired();
 
     this.species = species;
     spreadsheet.addColumn("Species",
@@ -228,6 +207,29 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             errorText.setVisible(false);
           }
         });
+  }
+
+  private void updateSampleInfoWithMatchingBiologicalReplicate(SampleInfo sampleInfo,
+      String value) {
+
+    Optional.ofNullable(sampleInfo.getExperimentalGroup())
+        .ifPresentOrElse(
+            experimentalGroup -> {
+              BiologicalReplicate matchingBiologicalReplicate = sampleInfo.getExperimentalGroup()
+                  .biologicalReplicates().stream()
+                  .filter(biologicalReplicate -> biologicalReplicate.label().equals(value))
+                  .findAny().orElse(null);
+              sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
+            },
+            /* It was requested that biological replicates can be entered even if they are not from the condition? */
+            () -> {
+              BiologicalReplicate matchingBiologicalReplicate = experimentalGroups.stream()
+                  .flatMap(experimentalGroup -> experimentalGroup.biologicalReplicates().stream())
+                  .filter(biologicalReplicate -> biologicalReplicate.label().equals(value))
+                  .findAny().orElse(null);
+              sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
+            }
+        );
   }
 
   private static void updateSampleInfoWithMatchingExperimentalGroup(
@@ -413,6 +415,8 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       SampleInfo sampleInfo = new SampleInfo();
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
       sampleInfo.setSampleLabel(sampleLabel);
+      sampleInfo.setExperimentalGroup(experimentalGroup);
+      sampleInfo.setBiologicalReplicate(biologicalReplicate);
       sampleInfo.setSpecies(species);
       sampleInfo.setSpecimen(specimen);
       sampleInfo.setAnalyte(analyte);
@@ -481,13 +485,6 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       this.biologicalReplicate = biologicalReplicate;
     }
 
-    public void setBiologicalReplicate(String biologicalReplicateLabel) {
-      this.biologicalReplicate = this.experimentalGroup.biologicalReplicates().stream()
-          .filter(it -> it.label().equals(biologicalReplicateLabel))
-          .findFirst()
-          .orElse(null);
-    }
-
     public BiologicalReplicate getBiologicalReplicate() {
       return biologicalReplicate;
     }
@@ -544,8 +541,4 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     }
   }
 
-  public record BiologicalReplicateWithCondition(BiologicalReplicate biologicalReplicate,
-                                                 Condition condition) {
-
-  }
 }

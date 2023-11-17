@@ -49,10 +49,10 @@ public class TestView extends HorizontalLayout {
     Condition c2 = Condition.create(List.of(v1L2, v2L1));
     Condition c3 = Condition.create(List.of(v1L1, v2L2));
     Condition c4 = Condition.create(List.of(v1L2, v2L2));
-    ExperimentalGroup eg1 = ExperimentalGroup.create(c1, 5);
-    ExperimentalGroup eg2 = ExperimentalGroup.create(c2, 5);
-    ExperimentalGroup eg3 = ExperimentalGroup.create(c3, 5);
-    ExperimentalGroup eg4 = ExperimentalGroup.create(c4, 5);
+    ExperimentalGroup eg1 = ExperimentalGroup.create(c1, 1);
+    ExperimentalGroup eg2 = ExperimentalGroup.create(c2, 2);
+    ExperimentalGroup eg3 = ExperimentalGroup.create(c3, 3);
+    ExperimentalGroup eg4 = ExperimentalGroup.create(c4, 4);
 
     BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2("My awesome experiment",
         List.of(Species.create("Test Species A"), Species.create("Test Species B")),
