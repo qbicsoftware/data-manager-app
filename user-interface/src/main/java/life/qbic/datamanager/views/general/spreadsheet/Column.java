@@ -135,24 +135,18 @@ public class Column<T, C> {
 
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue) {
     return selectFrom(values, toColumnValue,
-        getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue)),
-        (e, t) -> {/*ignored*/});
+        getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue))
+    );
   }
 
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer) {
-    return selectFrom(ignored -> values, toColumnValue, renderer, (e, t) -> {/* ignored */});
-  }
-
-  public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
-      ComponentRenderer<? extends Component, E> renderer, BiConsumer<E, T> modelUpdater) {
-    return selectFrom(ignored -> values, toColumnValue, renderer, modelUpdater);
+    return selectFrom(ignored -> values, toColumnValue, renderer);
   }
 
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue,
-      ComponentRenderer<? extends Component, E> renderer,
-      BiConsumer<E, T> modelUpdater) {
+      ComponentRenderer<? extends Component, E> renderer) {
     Function<E, String> adaptedToCellValue = toColumnValue.andThen(columnValueToCellValue);
 
     this.withValidator((object, value) -> valueProvider.apply(object)
@@ -163,8 +157,7 @@ public class Column<T, C> {
                 || allowedValue.equals(value)),
         "'{0}' is not a valid option for column '" + getName() + "'.");
 
-    SelectEditor<T, E> selectEditor = new SelectEditor<>(valueProvider, adaptedToCellValue,
-        modelUpdater);
+    SelectEditor<T, E> selectEditor = new SelectEditor<>(valueProvider, adaptedToCellValue);
     selectEditor.setRenderer(renderer);
     selectEditor.setItemLabelGenerator(adaptedToCellValue::apply);
     this.editorComponent = selectEditor;

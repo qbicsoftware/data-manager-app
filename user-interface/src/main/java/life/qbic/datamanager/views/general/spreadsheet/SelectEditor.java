@@ -6,7 +6,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -19,18 +18,13 @@ class SelectEditor<T, E> extends Select<E> {
   private final Function<E, String> toCellValue;
   private final Function<T, List<E>> toItems;
 
-  // not necessarily edits the model
-  private final BiConsumer<E, T> modelUpdater;
-
   public SelectEditor(List<E> items, Function<E, String> toCellValue) {
-    this(it -> items, toCellValue, (e, t) -> {/* do nothing */});
+    this(it -> items, toCellValue);
     setItems(items);
   }
 
-  public SelectEditor(Function<T, List<E>> toItems, Function<E, String> toCellValue,
-      BiConsumer<E, T> modelUpdater) {
+  public SelectEditor(Function<T, List<E>> toItems, Function<E, String> toCellValue) {
     this.toItems = toItems;
-    this.modelUpdater = modelUpdater;
     addedValueChangeListeners = new ArrayList<>();
     this.toCellValue = toCellValue;
     setItems(new ArrayList<>());
@@ -70,9 +64,5 @@ class SelectEditor<T, E> extends Select<E> {
   public void removeAllValueChangeListeners() {
     addedValueChangeListeners.forEach(Registration::remove);
     addedValueChangeListeners.clear();
-  }
-
-  public BiConsumer<E, T> getModelUpdater() {
-    return modelUpdater;
   }
 }
