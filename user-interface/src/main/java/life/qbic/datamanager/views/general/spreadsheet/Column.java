@@ -145,12 +145,6 @@ public class Column<T, C> {
   }
 
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
-      BiConsumer<E, T> modelUpdater) {
-    return selectFrom(values, toColumnValue,
-        getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue)), modelUpdater);
-  }
-
-  public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer, BiConsumer<E, T> modelUpdater) {
     return selectFrom(ignored -> values, toColumnValue, renderer, modelUpdater);
   }

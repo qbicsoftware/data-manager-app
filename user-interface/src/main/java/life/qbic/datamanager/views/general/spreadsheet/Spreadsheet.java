@@ -761,6 +761,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
             // overwrite model update by using T,E->T mapping
             // for this the select editor must be able to provide this mapping
             //TODO
+            T data = ((DataRow) row).data();
+            selectEditor.getModelUpdater().accept(event.getValue(), data);
             updateSpreadsheetValidity();
             spreadsheet.refreshCells(cell);
           });

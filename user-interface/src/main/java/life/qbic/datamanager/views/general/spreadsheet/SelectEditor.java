@@ -71,4 +71,8 @@ class SelectEditor<T, E> extends Select<E> {
     addedValueChangeListeners.forEach(Registration::remove);
     addedValueChangeListeners.clear();
   }
+
+  public BiConsumer<E, T> getModelUpdater() {
+    return modelUpdater;
+  }
 }

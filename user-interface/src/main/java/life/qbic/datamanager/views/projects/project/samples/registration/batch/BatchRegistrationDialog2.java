@@ -95,9 +95,24 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 //                .label())
 //        .setRequired();
 //
-//    spreadsheet.addColumn("Condition", SampleInfo::getCondition,
-//            SampleInfo::setCondition)
-//        .setRequired();
+    spreadsheet.addColumn("Condition", SampleInfo::getExperimentalGroup,
+            experimentalGroup -> formatConditionString(experimentalGroup.condition()),
+            (sampleInfo, conditionString) -> {
+              // find condition producing the same condition string
+              Condition matchingCondition = experimentalGroups.stream()
+                  .map(ExperimentalGroup::condition)
+                  .filter(it -> formatConditionString(it).equals(conditionString))
+                  .findAny().orElse(null);
+              // find experimentalGroup with the condition
+              Optional<ExperimentalGroup> matchingExperimentalGroup = experimentalGroups.stream()
+                  .filter(
+                      experimentalGroup -> experimentalGroup.condition().equals(matchingCondition))
+                  .findAny();
+              // set experimental group in sampleInfo
+              matchingExperimentalGroup.ifPresent(sampleInfo::setExperimentalGroup);
+            })
+        .selectFrom(experimentalGroups, identity())
+        .setRequired();
 
     this.species = species;
     spreadsheet.addColumn("Species",
@@ -449,6 +464,14 @@ public class BatchRegistrationDialog2 extends DialogWindow {
           .orElse(null);
     }
 
+    public BiologicalReplicate getBiologicalReplicate() {
+      return biologicalReplicate;
+    }
+
+    public ExperimentalGroup getExperimentalGroup() {
+      return experimentalGroup;
+    }
+
     public void setExperimentalGroup(
         ExperimentalGroup experimentalGroup) {
       this.experimentalGroup = experimentalGroup;
@@ -487,9 +510,11 @@ public class BatchRegistrationDialog2 extends DialogWindow {
       return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]")
           .add("analysisToBePerformed=" + analysisToBePerformed)
           .add("sampleLabel='" + sampleLabel + "'")
-          .add("species='" + species + "'")
-          .add("specimen='" + specimen + "'")
-          .add("analyte='" + analyte + "'")
+          .add("biologicalReplicate=" + biologicalReplicate)
+          .add("experimentalGroup=" + experimentalGroup)
+          .add("species=" + species)
+          .add("specimen=" + specimen)
+          .add("analyte=" + analyte)
           .add("customerComment='" + customerComment + "'")
           .toString();
     }
