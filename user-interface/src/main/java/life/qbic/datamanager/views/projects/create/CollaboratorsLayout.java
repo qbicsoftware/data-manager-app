@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.projects.create;
 
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.BinderValidationStatus;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
@@ -20,14 +20,16 @@ import org.springframework.stereotype.Component;
  * @since <version tag>
  */
 @Component
-public class CollaboratorsLayout extends Div {
+public class CollaboratorsLayout extends Div implements HasValidation {
+
   private static final String TITLE = "Project Collaborators";
   private final ContactField principalInvestigatorField = new ContactField(
       "Principal Investigator");
   private final ContactField responsiblePersonField = new ContactField(
-      "Project Responsible (optional)");
+      "Project Responsible/Core Investigator (optional)");
   private final ContactField projectManagerField = new ContactField("Project Manager");
-  private final Binder<ProjectCollaborators> binder = new Binder<>();
+  private final Binder<ProjectCollaborators> collaboratorsBinder = new Binder<>(
+      ProjectCollaborators.class);
 
   public CollaboratorsLayout() {
     initLayout();
@@ -47,30 +49,83 @@ public class CollaboratorsLayout extends Div {
   }
 
   private void initValidation() {
+    collaboratorsBinder.setBean(new ProjectCollaborators());
     principalInvestigatorField.setRequired(true);
-    binder.forField(principalInvestigatorField)
-        .bind((ProjectCollaborators::getPrincipalInvestigator),
-            ProjectCollaborators::setPrincipalInvestigator);
+    collaboratorsBinder.bind(principalInvestigatorField,
+        ProjectCollaborators::getPrincipalInvestigator,
+        ProjectCollaborators::setPrincipalInvestigator);
 
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
-    binder.forField(responsiblePersonField)
-        .bind(projectCollaborators -> projectCollaborators.getResponsiblePerson().orElse(null),
-            (projectCollaborators, contact) -> {
-              if (contact.getFullName().isEmpty() || contact.getEmail().isEmpty()) {
-                projectCollaborators.setResponsiblePerson(null);
-              } else {
-                projectCollaborators.setResponsiblePerson(contact);
-              }
-            });
+    collaboratorsBinder.forField(responsiblePersonField)
+        .bind(bean -> bean.getResponsiblePerson().orElse(null),
+            ProjectCollaborators::setResponsiblePerson);
     projectManagerField.setRequired(true);
-    binder.forField(projectManagerField)
-        .bind((ProjectCollaborators::getProjectManager),
-            ProjectCollaborators::setProjectManager);
+    collaboratorsBinder.bind(projectManagerField, (ProjectCollaborators::getProjectManager),
+        ProjectCollaborators::setProjectManager);
   }
 
-  private BinderValidationStatus<ProjectCollaborators> validateFields() {
-    return binder.validate();
+  private boolean areContactFieldsValid() {
+    projectManagerField.validate();
+    principalInvestigatorField.validate();
+    responsiblePersonField.validate();
+    return principalInvestigatorField.isValid() && responsiblePersonField.isValid()
+        && projectManagerField.isValid();
+  }
+
+  public ProjectCollaborators getCollaboratorInformation() {
+    ProjectCollaborators projectCollaborators = new ProjectCollaborators();
+    collaboratorsBinder.writeBeanIfValid(projectCollaborators);
+    return projectCollaborators;
+  }
+
+  /**
+   * Sets an error message to the component.
+   * <p>
+   * The Web Component is responsible for deciding when to show the error message to the user, and
+   * this is usually triggered by triggering the invalid state for the Web Component. Which means
+   * that there is no need to clean up the message when component becomes valid (otherwise it may
+   * lead to undesired visual effects).
+   *
+   * @param errorMessage a new error message
+   */
+  @Override
+  public void setErrorMessage(String errorMessage) {
+
+  }
+
+  /**
+   * Gets current error message from the component.
+   *
+   * @return current error message
+   */
+  @Override
+  public String getErrorMessage() {
+    return "Invalid Input found in Collaborators Layout";
+  }
+
+  /**
+   * Sets the validity of the component input.
+   * <p>
+   * When component becomes valid it hides the error message by itself, so there is no need to clean
+   * up the error message via the {@link #setErrorMessage(String)} call.
+   *
+   * @param invalid new value for component input validity
+   */
+  @Override
+  public void setInvalid(boolean invalid) {
+
+  }
+
+  /**
+   * Returns {@code true} if component input is invalid, {@code false} otherwise.
+   *
+   * @return whether the component input is valid
+   */
+  @Override
+  public boolean isInvalid() {
+    collaboratorsBinder.validate();
+    return !(areContactFieldsValid() && collaboratorsBinder.isValid());
   }
 
   public static final class ProjectCollaborators implements Serializable {

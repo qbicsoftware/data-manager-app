@@ -270,12 +270,25 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  gap: var(--lumo-space-l);
+  /*Necessary so the dividers span the whole dialog*/
+  padding: 0;
+
 }
 
 .project-creation-dialog::part(overlay) {
   width: 100%;
   height: 100%;
+}
+
+.project-creation-dialog::part(footer) {
+  background-color: transparent;
+  justify-content: space-between;
+  padding-inline: 4rem;
+}
+
+.project-creation-dialog .footer-right-buttons-container {
+  gap: var(--lumo-space-m);
+  display: inline-flex;
 }
 
 .project-creation-dialog .collaborators-layout {
@@ -284,6 +297,12 @@ vaadin-dialog-overlay::part(title) {
   gap: 1em;
   display: flex;
   flex-direction: column;
+}
+
+.project-creation-dialog .layout-container {
+  /*dialog content paddings*/
+  height: 100%;
+  padding: 1rem 4rem 3rem 4rem
 }
 
 .project-creation-dialog .collaborators-layout .contact-field .input-fields {

@@ -78,17 +78,27 @@
 }
 
 .project-creation-stepper {
-  width: 100%;
+  /*Ensure that the stepper has enough space on smaller screens*/
+  min-height: 4rem;
+  margin-top: 0.5rem;
+  display: inline-flex;
+  margin-left: 4rem;
+  margin-right: 4rem;
 }
 
-.project-creation-stepper .arrow-tab {
+.project-creation-stepper .arrow {
   align-items: end;
   color: var(--lumo-contrast-60pct);
+  display: flex;
+  margin-inline: var(--lumo-space-l);
 }
 
 .project-creation-stepper .step {
   gap: var(--lumo-space-s);
   display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: center;
 }
 
 .project-creation-stepper .step[selected] > vaadin-avatar {

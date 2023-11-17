@@ -7,15 +7,11 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabVariant;
-import com.vaadin.flow.component.tabs.Tabs;
-import com.vaadin.flow.component.tabs.TabsVariant;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -27,22 +23,25 @@ import org.slf4j.Logger;
  *
  * @since <version tag>
  */
-public class ProjectCreationStepper extends Tabs {
+public class ProjectCreationStepper extends Div {
 
   private static final Logger log = getLogger(ProjectCreationStepper.class);
-  Step designProject = createStep("Project Design", ProjectCreationSteps.DESIGN_PROJECT);
-  Step fundingInformation = createStep("Funding Information",
+  private final Step designProject = createStep("Project Design",
+      ProjectCreationSteps.DESIGN_PROJECT);
+  private final Step fundingInformation = createStep("Funding Information",
       ProjectCreationSteps.DEFINE_FUNDING);
-  Step projectCollaborators = createStep("Project Collaborators",
+  private final Step projectCollaborators = createStep("Project Collaborators",
       ProjectCreationSteps.SET_PROJECT_COLLABORATORS);
-  Step experimentalInformation = createStep("Experimental Information",
+  private final Step experimentalInformation = createStep("Experimental Information",
       ProjectCreationSteps.SET_EXPERIMENT_INFORMATION);
-  private final List<ComponentEventListener<ProjectCreationStepSelectedEvent>> projectCreationStepSelectionListeners = new ArrayList<>();
+  private final List<Step> projectCreationStepList = List.of(designProject, fundingInformation,
+      projectCollaborators, experimentalInformation);
+  private Step currentStep = designProject;
 
   public ProjectCreationStepper() {
     initLayout();
-    addTabSelectionListeners();
     addClassName("project-creation-stepper");
+    setStepAsActive(currentStep);
     log.debug(
         String.format("New instance for %s(#%s) created",
             this.getClass().getSimpleName(), System.identityHashCode(this)));
@@ -57,28 +56,63 @@ public class ProjectCreationStepper extends Tabs {
    */
   public void addListener(ComponentEventListener<ProjectCreationStepSelectedEvent> listener) {
     Objects.requireNonNull(listener);
-    projectCreationStepSelectionListeners.add(listener);
+    addListener(ProjectCreationStepSelectedEvent.class, listener);
   }
 
-  public ProjectCreationSteps getCurrentProjectCreationLayout() {
-    Step currentStep = (Step) getSelectedTab();
-    return currentStep.getProjectCreationSteps();
+  public void setSelectedStep(Step step, boolean fromClient) {
+    Step originalStep = getCurrentStep();
+    if (projectCreationStepList.contains(step)) {
+      setCurrentStep(step);
+      fireStepSelected(this, getCurrentStep(), originalStep, fromClient);
+    }
+  }
+
+  public void selectNextStep(boolean fromClient) {
+    Step originalStep = getCurrentStep();
+    int originalIndex = projectCreationStepList.indexOf(originalStep);
+    if (originalIndex < projectCreationStepList.size() - 1) {
+      setCurrentStep(projectCreationStepList.get(originalIndex + 1));
+      fireStepSelected(this, getCurrentStep(), originalStep, fromClient);
+    }
+  }
+
+  public void selectPreviousStep(boolean fromClient) {
+    Step originalStep = getCurrentStep();
+    int currentIndex = projectCreationStepList.indexOf(originalStep);
+    if (currentIndex > 0) {
+      setCurrentStep(projectCreationStepList.get(currentIndex - 1));
+      fireStepSelected(this, getCurrentStep(), originalStep, fromClient);
+    }
+  }
+
+  private void setCurrentStep(Step step) {
+    setStepAsActive(step);
+    currentStep = step;
+  }
+
+  public Step getCurrentStep() {
+    return currentStep;
+  }
+
+  private void setStepAsActive(Step activatableStep) {
+    currentStep.getElement().setAttribute("selected", false);
+    activatableStep.getElement().setAttribute("selected", true);
   }
 
   private void initLayout() {
-    add(designProject, createArrowTab(), fundingInformation, createArrowTab(), projectCollaborators,
-        createArrowTab(), experimentalInformation);
-    addThemeVariants(TabsVariant.LUMO_MINIMAL);
+    add(designProject, createArrowSpan(), fundingInformation, createArrowSpan(),
+        projectCollaborators,
+        createArrowSpan(), experimentalInformation);
   }
 
   //ToDo can this be automatized?
-  private Tab createArrowTab() {
+  private Span createArrowSpan() {
     Icon arrowIcon = VaadinIcon.ARROW_RIGHT.create();
-    Tab arrow = new Tab(arrowIcon);
-    arrow.addClassName("arrow-tab");
-    arrow.setEnabled(false);
+    Span arrow = new Span(arrowIcon);
+    arrow.addClassName("arrow");
     return arrow;
   }
+
 
   private Step createStep(String label, ProjectCreationSteps projectCreationSteps) {
     String stepNumber = String.valueOf(projectCreationSteps.ordinal() + 1);
@@ -87,23 +121,18 @@ public class ProjectCreationStepper extends Tabs {
     stepAvatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
     Step step = new Step(stepAvatar, new Span(label), projectCreationSteps);
     step.addClassName("step");
+    step.setEnabled(false);
     return step;
   }
 
-  private void addTabSelectionListeners() {
-    addSelectedChangeListener(
-        event -> fireProjectCreationStepSelected(this, (Step) event.getSelectedTab(),
-            (Step) event.getPreviousTab(), event.isFromClient()));
-  }
-
-  private void fireProjectCreationStepSelected(Tabs source, Step selectedStep, Step previousStep,
+  private void fireStepSelected(Div source, Step selectedStep, Step previousStep,
       boolean fromClient) {
     var projectCreationStepSelectedEvent = new ProjectCreationStepSelectedEvent(source,
         selectedStep, previousStep, fromClient);
-    projectCreationStepSelectionListeners.forEach(
-        listener -> listener.onComponentEvent(projectCreationStepSelectedEvent));
+    fireEvent(projectCreationStepSelectedEvent);
   }
 
+  //ToDo Replace this with method to allow user to define steps?
   public enum ProjectCreationSteps {
     DESIGN_PROJECT(ProjectDesignLayout.class), DEFINE_FUNDING(
         FundingInformationLayout.class), SET_PROJECT_COLLABORATORS(
@@ -120,7 +149,7 @@ public class ProjectCreationStepper extends Tabs {
     }
   }
 
-  public static class Step extends Tab {
+  public static class Step extends Div {
 
     private final ProjectCreationSteps projectCreationSteps;
     private final Avatar avatar;
@@ -130,7 +159,6 @@ public class ProjectCreationStepper extends Tabs {
       this.projectCreationSteps = projectCreationSteps;
       this.add(avatar);
       this.add(label);
-      this.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
     }
 
     public Avatar getAvatar() {
@@ -143,7 +171,7 @@ public class ProjectCreationStepper extends Tabs {
   }
 
   public static class ProjectCreationStepSelectedEvent extends
-      ComponentEvent<Tabs> {
+      ComponentEvent<Div> {
 
     @Serial
     private static final long serialVersionUID = -8239112805330234097L;
@@ -160,7 +188,7 @@ public class ProjectCreationStepper extends Tabs {
      *                     side, <code>false</code> otherwise
      */
 
-    public ProjectCreationStepSelectedEvent(Tabs source, Step selectedStep, Step previousStep,
+    public ProjectCreationStepSelectedEvent(Div source, Step selectedStep, Step previousStep,
         boolean fromClient) {
       super(source, fromClient);
       this.selectedStep = selectedStep;

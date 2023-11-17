@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.create;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -14,7 +15,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import jakarta.validation.constraints.NotEmpty;
@@ -38,7 +38,7 @@ import org.springframework.stereotype.Component;
  * @since <version tag>
  */
 @Component
-public class ProjectDesignLayout extends Div {
+public class ProjectDesignLayout extends Div implements HasValidation {
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
   final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");
@@ -46,7 +46,7 @@ public class ProjectDesignLayout extends Div {
   private final TextField titleField = new TextField("Title");
   private final TextArea projectDescription = new TextArea("Description");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-  private final Binder<ProjectDesign> projectDesignBinder = new Binder<>();
+  private final Binder<ProjectDesign> projectDesignBinder = new Binder<>(ProjectDesign.class);
   private final FinanceService financeService;
 
   public ProjectDesignLayout(FinanceService financeService) {
@@ -89,6 +89,7 @@ public class ProjectDesignLayout extends Div {
     codeField.setRequired(true);
     titleField.setRequired(true);
     projectDescription.setRequired(true);
+    //ToDo Do we need a binder for the OfferId?
     projectDesignBinder.forField(codeField).withValidator(ProjectCode::isValid,
             "A project code starts with Q followed by 4 letters/numbers").
         bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
@@ -131,10 +132,6 @@ public class ProjectDesignLayout extends Div {
     textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
-  private BinderValidationStatus<ProjectDesign> validateFields() {
-    return projectDesignBinder.validate();
-  }
-
   private void bindOfferDataProvider(FinanceService financeService) {
     offerSearchField.setItems(
         query -> financeService.findOfferContainingProjectTitleOrId(
@@ -174,9 +171,64 @@ public class ProjectDesignLayout extends Div {
     return offerSummary.offerId() + ", " + offerSummary.title();
   }
 
-  public void fillProjectInformationFromOffer(Offer offer) {
+  private void fillProjectInformationFromOffer(Offer offer) {
     titleField.setValue(offer.title());
     projectDescription.setValue(offer.objective().replace("\n", " "));
+  }
+
+  public ProjectDesign getProjectDesign() {
+    ProjectDesign projectDesign = new ProjectDesign();
+    projectDesignBinder.writeBeanIfValid(projectDesign);
+    return projectDesign;
+  }
+
+  /**
+   * Sets an error message to the component.
+   * <p>
+   * The Web Component is responsible for deciding when to show the error message to the user, and
+   * this is usually triggered by triggering the invalid state for the Web Component. Which means
+   * that there is no need to clean up the message when component becomes valid (otherwise it may
+   * lead to undesired visual effects).
+   *
+   * @param errorMessage a new error message
+   */
+  @Override
+  public void setErrorMessage(String errorMessage) {
+
+  }
+
+  /**
+   * Gets current error message from the component.
+   *
+   * @return current error message
+   */
+  @Override
+  public String getErrorMessage() {
+    return "Invalid Input found in Project Design";
+  }
+
+  /**
+   * Sets the validity of the component input.
+   * <p>
+   * When component becomes valid it hides the error message by itself, so there is no need to clean
+   * up the error message via the {@link #setErrorMessage(String)} call.
+   *
+   * @param invalid new value for component input validity
+   */
+  @Override
+  public void setInvalid(boolean invalid) {
+
+  }
+
+  /**
+   * Returns {@code true} if component input is invalid, {@code false} otherwise.
+   *
+   * @return whether the component input is valid
+   */
+  @Override
+  public boolean isInvalid() {
+    projectDesignBinder.validate();
+    return !projectDesignBinder.isValid();
   }
 
   public static final class ProjectDesign implements Serializable {
@@ -190,11 +242,9 @@ public class ProjectDesignLayout extends Div {
     private String projectTitle = "";
     @NotEmpty
     private String projectObjective = "";
-
     public void setOfferId(String offerId) {
       this.offerId = offerId;
     }
-
     public void setProjectTitle(String projectTitle) {
       this.projectTitle = projectTitle;
     }

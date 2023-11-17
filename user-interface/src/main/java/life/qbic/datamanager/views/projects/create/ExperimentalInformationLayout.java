@@ -1,11 +1,11 @@
 package life.qbic.datamanager.views.projects.create;
 
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.BinderValidationStatus;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,13 +25,14 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
  *
  * @since <version tag>
  */
-public class ExperimentalInformationLayout extends Div {
+public class ExperimentalInformationLayout extends Div implements HasValidation {
 
   private static final String TITLE = "Experimental Information";
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
   private final ExperimentalDesignSearchService experimentalDesignSearchService;
-  private final Binder<ExperimentalInformation> binder = new Binder<>();
+  private final Binder<ExperimentalInformation> experimentalInformationBinder = new Binder<>(
+      ExperimentalInformation.class);
   TextField experimentNameField = new TextField("Experiment Name");
   MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
   MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
@@ -67,11 +68,12 @@ public class ExperimentalInformationLayout extends Div {
   }
 
   private void initValidation() {
-    binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
+    experimentalInformationBinder.forField(experimentNameField)
+        .asRequired("Please provide a name for the experiment")
         .bind(ExperimentalInformation::getExperimentName,
             ExperimentalInformation::setExperimentName);
     speciesBox.setRequired(true);
-    binder.forField(speciesBox)
+    experimentalInformationBinder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecies()),
             ExperimentalInformation::setSpecies);
@@ -80,14 +82,14 @@ public class ExperimentalInformationLayout extends Div {
     speciesBox.setItemLabelGenerator(Species::label);
     specimenBox.setRequired(true);
     specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    binder.forField(specimenBox)
+    experimentalInformationBinder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecimens()),
             ExperimentalInformation::setSpecimens);
     specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
         .sorted(Comparator.comparing(Specimen::label)).toList());
     analyteBox.setRequired(true);
-    binder.forField(analyteBox)
+    experimentalInformationBinder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getAnalytes()),
             ExperimentalInformation::setAnalytes);
@@ -96,8 +98,59 @@ public class ExperimentalInformationLayout extends Div {
     analyteBox.setItemLabelGenerator(Analyte::label);
   }
 
-  private BinderValidationStatus<ExperimentalInformation> validateFields() {
-    return binder.validate();
+  public ExperimentalInformation getExperimentalInformation() {
+    ExperimentalInformation experimentalInformation = new ExperimentalInformation();
+    experimentalInformationBinder.writeBeanIfValid(experimentalInformation);
+    return experimentalInformation;
+  }
+
+  /**
+   * Sets an error message to the component.
+   * <p>
+   * The Web Component is responsible for deciding when to show the error message to the user, and
+   * this is usually triggered by triggering the invalid state for the Web Component. Which means
+   * that there is no need to clean up the message when component becomes valid (otherwise it may
+   * lead to undesired visual effects).
+   *
+   * @param errorMessage a new error message
+   */
+  @Override
+  public void setErrorMessage(String errorMessage) {
+
+  }
+
+  /**
+   * Gets current error message from the component.
+   *
+   * @return current error message
+   */
+  @Override
+  public String getErrorMessage() {
+    return "Invalid Input found in Experiment Information";
+  }
+
+  /**
+   * Sets the validity of the component input.
+   * <p>
+   * When component becomes valid it hides the error message by itself, so there is no need to clean
+   * up the error message via the {@link #setErrorMessage(String)} call.
+   *
+   * @param invalid new value for component input validity
+   */
+  @Override
+  public void setInvalid(boolean invalid) {
+
+  }
+
+  /**
+   * Returns {@code true} if component input is invalid, {@code false} otherwise.
+   *
+   * @return whether the component input is valid
+   */
+  @Override
+  public boolean isInvalid() {
+    experimentalInformationBinder.validate();
+    return !experimentalInformationBinder.isValid();
   }
 
   public static class ExperimentalInformation implements Serializable {

@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.general.funding;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -9,8 +11,10 @@ import java.util.Objects;
  *
  * @since 1.0.0
  */
-public class FundingEntry {
+public class FundingEntry implements Serializable {
 
+  @Serial
+  private static final long serialVersionUID = -5219063596119269722L;
   private String label;
 
   private String referenceId;
