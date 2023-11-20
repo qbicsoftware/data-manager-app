@@ -27,6 +27,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.SpeciesSearchService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -54,6 +55,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   private final ProjectSupportComponent projectSupportComponent;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ExperimentalDesignSearchService experimentalDesignSearchService;
+  private final SpeciesSearchService speciesService;
   private final UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -64,7 +66,8 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
       @Autowired ProjectSupportComponent projectSupportComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService,
+      @Autowired SpeciesSearchService speciesService) {
     super(projectContentComponent, projectSupportComponent);
     requireNonNull(userPermissions, "userPermissions must not be null");
     requireNonNull(projectContentComponent);
@@ -76,6 +79,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     this.userPermissions = userPermissions;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.experimentalDesignSearchService = experimentalDesignSearchService;
+    this.speciesService = speciesService;
     layoutComponent();
     addListeners();
     log.debug(String.format(
@@ -144,7 +148,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new ExperimentAddDialog(experimentalDesignSearchService);
+    var creationDialog = new ExperimentAddDialog(experimentalDesignSearchService, speciesService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();

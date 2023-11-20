@@ -5,10 +5,13 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.combobox.dataview.ComboBoxLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,9 +20,13 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.SpeciesSearchService;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -41,11 +48,11 @@ public class ExperimentAddDialog extends DialogWindow {
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
 
+  private ComboBoxLazyDataView<OntologyClassEntity> ontologyBoxesLazyDataView;
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public ExperimentAddDialog(
-      ExperimentalDesignSearchService experimentalDesignSearchService) {
-
+      ExperimentalDesignSearchService experimentalDesignSearchService, SpeciesSearchService service) {
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
 
@@ -65,8 +72,13 @@ public class ExperimentAddDialog extends DialogWindow {
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
-    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
-        .sorted(Comparator.comparing(Species::label)).toList());
+//    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
+  //      .sorted(Comparator.comparing(Species::label)).toList());
+
+    DataProvider<Species, String> dataProvider =
+        createSpeciesDataProvider(service);
+    speciesBox.setItems(dataProvider);
+
     speciesBox.setItemLabelGenerator(Species::label);
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
@@ -109,6 +121,18 @@ public class ExperimentAddDialog extends DialogWindow {
 
     confirmButton.addClickListener(this::onConfirmClicked);
     cancelButton.addClickListener(this::onCancelClicked);
+  }
+
+  private void createLazyOntologyView() {
+    ontologyBoxesLazyDataView = projectGrid.setItems(query -> {
+      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+          .collect(Collectors.toList());
+      // if no order is provided by the grid order by last modified (the least priority)
+      sortOrders.add(SortOrder.of("lastModified").descending());
+      return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
+          query.getLimit(), List.copyOf(sortOrders)).stream();
+    });
   }
 
   private void onConfirmClicked(ClickEvent<Button> clickEvent) {
