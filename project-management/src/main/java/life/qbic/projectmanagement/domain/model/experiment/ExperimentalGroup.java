@@ -72,7 +72,7 @@ public class ExperimentalGroup {
   private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
     List<BiologicalReplicate> replicates = new ArrayList<>(amount);
     for (int i = 1; i <= amount; i++) {
-      replicates.add(BiologicalReplicate.create("biological replicate " + i));
+      replicates.add(BiologicalReplicate.create("biol-rep-" + i));
     }
     return replicates;
   }
