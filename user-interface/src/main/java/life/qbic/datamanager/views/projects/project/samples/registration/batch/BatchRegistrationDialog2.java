@@ -258,7 +258,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
 
     List<SampleInfo> sampleInfos = new ArrayList<>();
     for (ExperimentalGroup experimentalGroup : experimentalGroups) {
-      for (BiologicalReplicate biologicalReplicate : experimentalGroup.biologicalReplicates()) {
+      List<BiologicalReplicate> sortedReplicates = experimentalGroup.biologicalReplicates().stream()
+          .sorted(Comparator.comparing(BiologicalReplicate::label))
+          .toList();
+      for (BiologicalReplicate biologicalReplicate : sortedReplicates) {
         // new sampleInfo
         SampleInfo sampleInfo = new SampleInfo();
         sampleInfo.biologicalReplicate = biologicalReplicate;
