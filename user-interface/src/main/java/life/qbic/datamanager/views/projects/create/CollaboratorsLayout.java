@@ -7,6 +7,7 @@ import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
@@ -58,7 +59,13 @@ public class CollaboratorsLayout extends Div implements HasValidation {
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
         .bind(bean -> bean.getResponsiblePerson().orElse(null),
-            ProjectCollaborators::setResponsiblePerson);
+            (projectCollaborators, contact) -> {
+              if (contact.getFullName().isEmpty() || contact.getEmail().isEmpty()) {
+                projectCollaborators.setResponsiblePerson(null);
+              } else {
+                projectCollaborators.setResponsiblePerson(contact);
+              }
+            });
     projectManagerField.setRequired(true);
     collaboratorsBinder.bind(projectManagerField, (ProjectCollaborators::getProjectManager),
         ProjectCollaborators::setProjectManager);
@@ -176,7 +183,7 @@ public class CollaboratorsLayout extends Div implements HasValidation {
       if (!principalInvestigator.equals(that.principalInvestigator)) {
         return false;
       }
-      if (!responsiblePerson.equals(that.responsiblePerson)) {
+      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
         return false;
       }
       return projectManager.equals(that.projectManager);

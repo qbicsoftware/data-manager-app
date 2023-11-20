@@ -11,6 +11,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
@@ -90,20 +91,14 @@ public class ProjectOverviewPage extends Div {
       funding = Funding.of(projectCreationEvent.getFundingEntry().getLabel(),
           projectCreationEvent.getFundingEntry().getReferenceId());
     }
-    //ToDo Better way to handle optional entry
-    life.qbic.projectmanagement.domain.model.project.Contact responsiblePerson = null;
-    if (projectCreationEvent.getProjectCollaborators().getResponsiblePerson().isPresent()) {
-      responsiblePerson = projectCreationEvent.getProjectCollaborators().getResponsiblePerson()
-          .get()
-          .toDomainContact();
-    }
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         projectCreationEvent.getProjectDesign().getOfferId(),
         projectCreationEvent.getProjectDesign().getProjectCode(),
         projectCreationEvent.getProjectDesign().getProjectTitle(),
         projectCreationEvent.getProjectDesign().getProjectObjective(),
         projectCreationEvent.getProjectCollaborators().getPrincipalInvestigator().toDomainContact(),
-        responsiblePerson,
+        projectCreationEvent.getProjectCollaborators().getResponsiblePerson()
+            .map(Contact::toDomainContact).orElse(null),
         projectCreationEvent.getProjectCollaborators().getProjectManager().toDomainContact(),
         funding);
     project
