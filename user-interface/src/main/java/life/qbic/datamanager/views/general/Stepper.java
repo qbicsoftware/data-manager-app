@@ -67,7 +67,9 @@ public class Stepper extends Div {
    * @param step the step to be removed from the stepper
    */
   public void removeStep(Step step) {
-    remove(step);
+    if (getChildren().anyMatch(component -> component.equals(step))) {
+      remove(step);
+    }
     stepList.remove(step);
   }
 
@@ -87,7 +89,9 @@ public class Stepper extends Div {
    * @param component the component to be removed from the stepper
    */
   public void removeComponent(Component component) {
-    remove(component);
+    if (getChildren().anyMatch(cmp -> cmp.equals(component))) {
+      remove(component);
+    }
   }
 
   /**
@@ -229,10 +233,16 @@ public class Stepper extends Div {
       this.previousStep = previousStep;
     }
 
+    /**
+     * Provides the step which was selected to trigger this event
+     */
     public Step getSelectedStep() {
       return selectedStep;
     }
 
+    /**
+     * Provides the step which was selected before the event was triggered
+     */
     public Step getPreviousStep() {
       return previousStep;
     }

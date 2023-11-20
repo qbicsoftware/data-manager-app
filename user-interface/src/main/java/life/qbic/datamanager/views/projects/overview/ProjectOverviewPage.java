@@ -65,6 +65,7 @@ public class ProjectOverviewPage extends Div {
         System.identityHashCode(projectCollectionComponent)));
   }
 
+
   private void layoutPage() {
     add(projectCollectionComponent);
   }
@@ -84,7 +85,6 @@ public class ProjectOverviewPage extends Div {
   }
 
   private void createProject(ProjectCreationEvent projectCreationEvent) {
-    //ToDo Better way to get funding out of funding entry?
     Funding funding = null;
     if (projectCreationEvent.getFundingEntry() != null && !projectCreationEvent.getFundingEntry()
         .isEmpty()) {
