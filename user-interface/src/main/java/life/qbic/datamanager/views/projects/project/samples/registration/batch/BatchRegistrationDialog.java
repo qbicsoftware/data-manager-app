@@ -33,12 +33,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * A dialog used for sample batch registration.
  */
 public class BatchRegistrationDialog extends DialogWindow {
 
