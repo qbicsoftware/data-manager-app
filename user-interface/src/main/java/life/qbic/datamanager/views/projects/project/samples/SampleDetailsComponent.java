@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -38,28 +37,19 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
@@ -95,9 +85,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   public final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
   private final TabSheet sampleExperimentTabSheet = new TabSheet();
-
-  //This should be rebuilt from scratch to avoid reset issues if it was opened before
-  private final BatchRegistrationDialog batchRegistrationDialog = new BatchRegistrationDialog();
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
@@ -114,11 +101,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     this.batchRegistrationService = batchRegistrationService;
     this.sampleRegistrationService = sampleRegistrationService;
     this.sampleDetailsComponentHandler = new SampleDetailsComponentHandler(
-        sampleInformationService, this.batchRegistrationService,
-        this.sampleRegistrationService);
-
-    Button registerButton2 = new Button("Register", this::onRegisterButtonClicked);
-    add(registerButton2);
+        sampleInformationService
+    );
   }
 
   private void initSampleView() {
@@ -145,7 +129,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     buttonAndFieldBar.addClassName("button-and-search-bar");
   }
 
-  private void onRegisterButtonClicked(ClickEvent<Button> clickEvent) {
+  private void onRegisterButtonClicked() {
     Experiment experiment = context.experimentId()
         .flatMap(experimentInformationService::find)
         .orElseThrow();
@@ -165,7 +149,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
             data.batchName(), false,
             context.projectId().orElseThrow())
-        .onError(responseCode -> displayRegistrationFailure())
         .map(batchId -> data.samples().stream()
             .map(sample -> new SampleRegistrationRequest(
                 data.batchName(), batchId,
@@ -175,11 +158,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                     sample.getAnalyte()),
                 sample.getAnalysisToBePerformed(), sample.getCustomerComment()))
             .toList())
+        .onError(responseCode -> displayRegistrationFailure())
         .valueOrElseThrow(() ->
             new ApplicationException("Could not create sample registration requests"));
     sampleRegistrationService.registerSamples(sampleRegistrationRequests,
             context.projectId().orElseThrow())
         .onError(responseCode -> displayRegistrationFailure())
+        .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(ignored -> confirmEvent.getSource().close())
         .onValue(batchId -> displayRegistrationSuccess());
   }
@@ -282,24 +267,18 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param batchRegistrationListener listener to be notified if a batch was registered within this
    *                                  component
    */
-  public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-    sampleDetailsComponentHandler.addBatchRegistrationListener(batchRegistrationListener);
+  public void addBatchRegistrationListener(
+      ComponentEventListener<BatchRegisteredEvent> batchRegistrationListener) {
+    addListener(BatchRegisteredEvent.class, batchRegistrationListener);
   }
 
   private final class SampleDetailsComponentHandler {
 
     private final SampleInformationService sampleInformationService;
-    private final BatchRegistrationService batchRegistrationService;
-    private final SampleRegistrationService sampleRegistrationService;
-    private final List<BatchRegistrationListener> registrationListener = new ArrayList<>();
 
-    public SampleDetailsComponentHandler(SampleInformationService sampleInformationService,
-        BatchRegistrationService batchRegistrationService,
-        SampleRegistrationService sampleRegistrationService) {
+    public SampleDetailsComponentHandler(SampleInformationService sampleInformationService) {
       this.sampleInformationService = sampleInformationService;
-      this.batchRegistrationService = batchRegistrationService;
-      this.sampleRegistrationService = sampleRegistrationService;
-      addEventListeners();
+      registerButton.addClickListener(event -> onRegisterButtonClicked());
       configureSearch();
     }
 
@@ -311,7 +290,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private void createSampleOverview(Collection<Experiment> experiments) {
       resetSampleOverview();
       experiments.forEach(this::addExperimentTabToTabSheet);
-      setExperimentsInRegistrationDialog(experiments);
       content.add(buttonAndFieldBar);
       content.add(sampleExperimentTabSheet);
     }
@@ -328,69 +306,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private void resetTabSheet() {
       sampleExperimentTabSheet.getChildren()
           .forEach(component -> component.getElement().removeAllChildren());
-    }
-
-
-    private void setExperimentsInRegistrationDialog(Collection<Experiment> experiments) {
-      List<Experiment> experimentsWithGroups = experiments.stream()
-          .filter(experiment -> !experiment.getExperimentalGroups().isEmpty()).collect(
-              Collectors.toList());
-      batchRegistrationDialog.setExperiments(experimentsWithGroups);
-    }
-
-    private void addEventListeners() {
-      batchRegistrationDialog.addBatchRegistrationEventListener(batchRegistrationEvent -> {
-        BatchRegistrationDialog batchRegistrationSource = batchRegistrationEvent.getSource();
-        registerBatchAndSamples(batchRegistrationSource.batchRegistrationContent(),
-            batchRegistrationSource.sampleRegistrationContent()).onValue(batchId -> {
-          fireBatchCreatedEvent(batchRegistrationEvent);
-          batchRegistrationDialog.resetAndClose();
-          displayRegistrationSuccess();
-        });
-      });
-      registerButton.addClickListener(SampleDetailsComponent.this::onRegisterButtonClicked);
-    }
-
-
-    private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
-        List<SampleRegistrationContent> sampleRegistrationContent) {
-      return registerBatchInformation(batchRegistrationContent).onValue(
-          batchId -> {
-            List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
-                batchId, batchRegistrationContent.experimentId(), sampleRegistrationContent);
-            registerSamples(sampleRegistrationsRequests);
-          });
-    }
-
-    private Result<BatchId, ResponseCode> registerBatchInformation(
-        BatchRegistrationContent batchRegistrationContent) {
-      return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
-              batchRegistrationContent.isPilot(), context.projectId().orElseThrow())
-          .onError(responseCode -> displayRegistrationFailure())
-          .onValue(batchId -> displayRegistrationSuccess());
-    }
-
-    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
-        ExperimentId experimentId,
-        List<SampleRegistrationContent> sampleRegistrationContents) {
-      return sampleRegistrationContents.stream()
-          .map(sampleRegistrationContent -> {
-            Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
-            Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
-            Species species = new Species(sampleRegistrationContent.species());
-            SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-            return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
-                experimentId,
-                sampleRegistrationContent.experimentalGroupId(),
-                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
-                sampleRegistrationContent.analysisMethod(), sampleRegistrationContent.comment());
-          }).toList();
-    }
-
-    private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
-      sampleRegistrationService.registerSamples(sampleRegistrationRequests, context.projectId()
-              .orElseThrow())
-          .onError(responseCode -> displayRegistrationFailure());
     }
 
     private void addExperimentTabToTabSheet(Experiment experiment) {
@@ -533,27 +448,25 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
           "Manage your samples in one place",
           "Start your project by registering the first sample batch", "Register batch");
-      noSamplesDefinedCard.addDisclaimerConfirmedListener(event -> {
-        batchRegistrationDialog.setSelectedExperiment(experiment);
-        batchRegistrationDialog.open();
-      });
+      noSamplesDefinedCard.addDisclaimerConfirmedListener(event -> onRegisterButtonClicked());
       return noSamplesDefinedCard;
-    }
-
-
-    private void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-      this.registrationListener.add(batchRegistrationListener);
-    }
-
-    private void fireBatchCreatedEvent(BatchRegistrationEvent event) {
-      registrationListener.forEach(it -> it.handle(event));
     }
   }
 
-  @FunctionalInterface
-  public interface BatchRegistrationListener {
+  public static class BatchRegisteredEvent extends ComponentEvent<SampleDetailsComponent> {
 
-    void handle(BatchRegistrationEvent event);
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public BatchRegisteredEvent(SampleDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
   public static class SampleExperimentTab extends Tab {
