@@ -5,9 +5,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.SampleInfo;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.SampleInfo;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
@@ -35,7 +35,7 @@ public class TestView extends HorizontalLayout {
     add(new Button("open dialog", event -> getBatchRegistrationDialog().open()));
   }
 
-  private static BatchRegistrationDialog2 getBatchRegistrationDialog() {
+  private static BatchRegistrationDialog getBatchRegistrationDialog() {
 
     VariableLevel v1L1 = VariableLevel.create(VariableName.create("status"),
         ExperimentalValue.create("tumor"));
@@ -54,7 +54,7 @@ public class TestView extends HorizontalLayout {
     ExperimentalGroup eg3 = ExperimentalGroup.create(c3, 3);
     ExperimentalGroup eg4 = ExperimentalGroup.create(c4, 4);
 
-    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2("My awesome experiment",
+    BatchRegistrationDialog dialog = new BatchRegistrationDialog("My awesome experiment",
         List.of(Species.create("Test Species A"), Species.create("Test Species B")),
         List.of(Specimen.create("Test specimen A")/*, Specimen.create("Test specimen B")*/),
         List.of(Analyte.create("Test analyte A")/*, Analyte.create("Test analyte B")*/),

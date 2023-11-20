@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -40,7 +40,7 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
  *
  * @since <version tag>
  */
-public class BatchRegistrationDialog2 extends DialogWindow {
+public class BatchRegistrationDialog extends DialogWindow {
 
   private final Spreadsheet<SampleInfo> spreadsheet;
 
@@ -53,7 +53,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   private static final int INITIAL_ROW_COUNT = 2;
 
 
-  public BatchRegistrationDialog2(String experimentName,
+  public BatchRegistrationDialog(String experimentName,
       List<Species> species,
       List<Specimen> specimen,
       List<Analyte> analytes,
@@ -364,7 +364,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
     addListener(ConfirmEvent.class, listener);
   }
 
-  public static class CancelEvent extends ComponentEvent<BatchRegistrationDialog2> {
+  public static class CancelEvent extends ComponentEvent<BatchRegistrationDialog> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -374,12 +374,12 @@ public class BatchRegistrationDialog2 extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public CancelEvent(BatchRegistrationDialog2 source, boolean fromClient) {
+    public CancelEvent(BatchRegistrationDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog2> {
+  public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog> {
 
     public record Data(String batchName, List<SampleInfo> samples) {
 
@@ -395,7 +395,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ConfirmEvent(BatchRegistrationDialog2 source, boolean fromClient, Data data) {
+    public ConfirmEvent(BatchRegistrationDialog source, boolean fromClient, Data data) {
       super(source, fromClient);
       this.data = data;
     }

@@ -37,9 +37,9 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
@@ -134,7 +134,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .flatMap(experimentInformationService::find)
         .orElseThrow();
 
-    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2(
+    BatchRegistrationDialog dialog = new BatchRegistrationDialog(
         experiment.getName(), new ArrayList<>(experiment.getSpecies()),
         new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
         experiment.getExperimentalGroups());
