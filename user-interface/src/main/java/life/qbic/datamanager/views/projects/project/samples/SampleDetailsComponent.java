@@ -122,7 +122,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     addComponentAsFirst(title);
 
-    //FIXME
     Div experimentTabContent = new Div();
     experimentTabContent.addClassName("sample-tab-content");
     experimentTab = new SampleExperimentTab("", 0);
@@ -136,10 +135,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     noSamplesRegisteredDisclaimer.setVisible(false);
 
     experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-    /*
-    TODO:
-    - listen to filter search field and adjust data provider in the grid
-     */
 
     TabSheet sampleExperimentTabSheet = new TabSheet();
     sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
@@ -317,6 +312,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void setExperiment(Experiment experiment) {
+    experimentTab.setExperimentName(experiment.getName());
 
     if (noExperimentGroupsInExperiment(experiment)) {
       sampleGrid.setVisible(false);
@@ -330,7 +326,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       noGroupsDefinedDisclaimer.setVisible(false);
       return;
     }
-    experimentTab.setExperimentName(experiment.getName());
     updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchField.getValue());
 
     sampleGrid.setVisible(true);
