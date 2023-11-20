@@ -3,12 +3,7 @@ package life.qbic.datamanager.views.general.spreadsheet.validation;
 import java.util.function.BiPredicate;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * A validator taking in an object and a value, returning a validation result.
  */
 public class SpreadsheetObjectValidator<S, T> {
 

@@ -1,12 +1,7 @@
 package life.qbic.datamanager.views.general.spreadsheet.validation;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * The result of a validation.
  */
 public record ValidationResult(boolean isValid, String errorMessage) {
 
