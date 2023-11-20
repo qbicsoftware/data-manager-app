@@ -104,6 +104,11 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     addHeaderRow();
   }
 
+  /**
+   * Adds a row to this spreadsheet displaying the provided data.
+   *
+   * @param rowData the data for this row
+   */
   public void addRow(T rowData) {
     int previousRowCount = rowCount();
     var dataRow = new DataRow(rowData);
@@ -122,11 +127,27 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     updateSpreadsheetValidity();
   }
 
+  /**
+   * Adds a column to the spreadsheet.
+   * @param name the name of the column
+   * @param toCellValue a function converting the row data to cell data in this column
+   * @param modelEditor a bi-function that can be used to update the row data when cell data has changed for this column
+   * @return the added column
+   */
   public Column<T, String> addColumn(String name, Function<T, String> toCellValue,
       BiConsumer<T, String> modelEditor) {
     return addColumn(name, toCellValue, identity(), modelEditor);
   }
 
+  /**
+   * Adds a column to the spreadsheet
+   * @param name the name of the column
+   * @param toColumnValue a function converting row data into data for this column
+   * @param columnValueToCellValue a function converting column data to cell data
+   * @param modelEditor a bi-function that can be used to update the row data when cell data has changed for this column
+   * @return the created column
+   * @param <C> the object type of this column
+   */
   public <C> Column<T, C> addColumn(String name, Function<T, C> toColumnValue,
       Function<C, String> columnValueToCellValue,
       BiConsumer<T, String> modelEditor) {
@@ -138,6 +159,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return column;
   }
 
+  /**
+   * Remove the last row from the spreadsheet, deleting contained information.
+   */
   public void removeLastRow() {
     if (rowCount() == 0) {
       return;
@@ -154,10 +178,21 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     }
   }
 
+  /**
+   * Changes the validation mode. If the validation mode is {@link ValidationMode#EAGER} a cell is
+   * validated after it was updated. In {@link ValidationMode#LAZY} the validation is not triggered
+   * after a cell is updated.
+   *
+   * @param validationMode the validation mode to use
+   */
   public void setValidationMode(ValidationMode validationMode) {
     this.validationMode = validationMode;
   }
 
+  /**
+   * Get the data shown in the spreadsheet
+   * @return the underlying data for every row as a List
+   */
   public List<T> getData() {
     return rows.stream()
         .filter(row -> row instanceof DataRow)
@@ -166,10 +201,19 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         .toList();
   }
 
+  /**
+   *
+   * @return true if the last validation passed; false otherwise
+   */
   public boolean isValid() {
     return !isInvalid();
   }
 
+  /**
+   * Add a listener to the validation status of this spreadsheet.
+   * @param listener the listener receiving validation changed events whenever the validation status changed.
+   * @return a registration for the listener
+   */
   public Registration addValidationChangeListener(
       ComponentEventListener<ValidationChangeEvent> listener) {
     return addListener(ValidationChangeEvent.class, listener);
@@ -564,6 +608,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
 
+  /**
+   * Validate the spreadsheet. This method performs validation and updates the current validation status.
+   *
+   */
   public void validate() {
     List<Cell> cells = cells();
     updateValidation(cells);
