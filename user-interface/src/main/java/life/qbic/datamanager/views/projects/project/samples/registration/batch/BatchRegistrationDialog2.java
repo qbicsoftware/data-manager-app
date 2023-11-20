@@ -50,6 +50,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   private final List<Species> species;
   private final List<Specimen> specimen;
   private final List<Analyte> analytes;
+  private static final int INITIAL_ROW_COUNT = 2;
 
 
   public BatchRegistrationDialog2(String experimentName,
@@ -207,6 +208,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
             errorText.setVisible(false);
           }
         });
+
+    for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
+      spreadsheet.addRow(new SampleInfo());
+    }
   }
 
   private void updateSampleInfoWithMatchingBiologicalReplicate(SampleInfo sampleInfo,
