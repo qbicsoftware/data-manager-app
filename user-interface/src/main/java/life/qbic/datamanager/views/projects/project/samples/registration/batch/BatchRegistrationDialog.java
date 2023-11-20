@@ -86,19 +86,19 @@ public class BatchRegistrationDialog extends DialogWindow {
         .requireDistinctValues()
         .setRequired();
 
+    spreadsheet.addColumn("Condition", SampleInfo::getExperimentalGroup,
+            experimentalGroup -> formatConditionString(experimentalGroup.condition()),
+            (sampleInfo, conditionString) -> updateSampleInfoWithMatchingExperimentalGroup(
+                experimentalGroups, sampleInfo, conditionString))
+        .selectFrom(experimentalGroups, identity())
+        .setRequired();
+
     spreadsheet.addColumn("Biological replicate ID",
             SampleInfo::getBiologicalReplicate,
             BiologicalReplicate::label,
             this::updateSampleInfoWithMatchingBiologicalReplicate)
         .selectFrom(sampleInfo -> Optional.ofNullable(sampleInfo.getExperimentalGroup())
             .map(ExperimentalGroup::biologicalReplicates).orElse(List.of()), identity())
-        .setRequired();
-
-    spreadsheet.addColumn("Condition", SampleInfo::getExperimentalGroup,
-            experimentalGroup -> formatConditionString(experimentalGroup.condition()),
-            (sampleInfo, conditionString) -> updateSampleInfoWithMatchingExperimentalGroup(
-                experimentalGroups, sampleInfo, conditionString))
-        .selectFrom(experimentalGroups, identity())
         .setRequired();
 
     this.species = species;
