@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
@@ -39,8 +40,12 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog2.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleRegistrationContent;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
@@ -85,6 +90,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Span fieldBar = new Span();
   private final Span buttonBar = new Span();
   private final TextField searchField = new TextField();
+  private final SampleRegistrationService sampleRegistrationService;
   private String samplePreviewFilter = "";
   public final Button registerButton = new Button("Register");
   private final Button metadataDownloadButton = new Button("Download Metadata");
@@ -96,14 +102,23 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
   private Context context;
+  private final ExperimentInformationService experimentInformationService;
+  private final BatchRegistrationService batchRegistrationService;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
-      @Autowired SampleRegistrationService sampleRegistrationService) {
+      @Autowired SampleRegistrationService sampleRegistrationService,
+      @Autowired ExperimentInformationService experimentInformationService) {
+    this.experimentInformationService = experimentInformationService;
     initSampleView();
+    this.batchRegistrationService = batchRegistrationService;
+    this.sampleRegistrationService = sampleRegistrationService;
     this.sampleDetailsComponentHandler = new SampleDetailsComponentHandler(
-        sampleInformationService, batchRegistrationService,
-        sampleRegistrationService);
+        sampleInformationService, this.batchRegistrationService,
+        this.sampleRegistrationService);
+
+    Button registerButton2 = new Button("Register", this::onRegisterButtonClicked);
+    add(registerButton2);
   }
 
   private void initSampleView() {
@@ -128,6 +143,57 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     //Moves buttonbar to right side of sample grid
     buttonAndFieldBar.add(fieldBar, buttonBar);
     buttonAndFieldBar.addClassName("button-and-search-bar");
+  }
+
+  private void onRegisterButtonClicked(ClickEvent<Button> clickEvent) {
+    Experiment experiment = context.experimentId()
+        .flatMap(experimentInformationService::find)
+        .orElseThrow();
+
+    BatchRegistrationDialog2 dialog = new BatchRegistrationDialog2(
+        experiment.getName(), new ArrayList<>(experiment.getSpecies()),
+        new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
+        experiment.getExperimentalGroups());
+
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmListener(this::onRegisterDialogConfirmed);
+    dialog.open();
+  }
+
+  private void onRegisterDialogConfirmed(ConfirmEvent confirmEvent) {
+    Data data = confirmEvent.getData();
+    List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
+            data.batchName(), false,
+            context.projectId().orElseThrow())
+        .onError(responseCode -> displayRegistrationFailure())
+        .map(batchId -> data.samples().stream()
+            .map(sample -> new SampleRegistrationRequest(
+                data.batchName(), batchId,
+                context.experimentId().orElseThrow(),
+                sample.getExperimentalGroup().id(), sample.getBiologicalReplicate().id(),
+                SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(),
+                    sample.getAnalyte()),
+                sample.getAnalysisToBePerformed(), sample.getCustomerComment()))
+            .toList())
+        .valueOrElseThrow(() ->
+            new ApplicationException("Could not create sample registration requests"));
+    sampleRegistrationService.registerSamples(sampleRegistrationRequests,
+            context.projectId().orElseThrow())
+        .onError(responseCode -> displayRegistrationFailure())
+        .onValue(ignored -> confirmEvent.getSource().close())
+        .onValue(batchId -> displayRegistrationSuccess());
+  }
+
+  private void displayRegistrationSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+  private void displayRegistrationFailure() {
+    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -282,9 +348,49 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           displayRegistrationSuccess();
         });
       });
-      registerButton.addClickListener(event -> batchRegistrationDialog.open());
-      batchRegistrationDialog.addCancelEventListener(
-          event -> batchRegistrationDialog.resetAndClose());
+      registerButton.addClickListener(SampleDetailsComponent.this::onRegisterButtonClicked);
+    }
+
+
+    private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
+        List<SampleRegistrationContent> sampleRegistrationContent) {
+      return registerBatchInformation(batchRegistrationContent).onValue(
+          batchId -> {
+            List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
+                batchId, batchRegistrationContent.experimentId(), sampleRegistrationContent);
+            registerSamples(sampleRegistrationsRequests);
+          });
+    }
+
+    private Result<BatchId, ResponseCode> registerBatchInformation(
+        BatchRegistrationContent batchRegistrationContent) {
+      return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
+              batchRegistrationContent.isPilot(), context.projectId().orElseThrow())
+          .onError(responseCode -> displayRegistrationFailure())
+          .onValue(batchId -> displayRegistrationSuccess());
+    }
+
+    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
+        ExperimentId experimentId,
+        List<SampleRegistrationContent> sampleRegistrationContents) {
+      return sampleRegistrationContents.stream()
+          .map(sampleRegistrationContent -> {
+            Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
+            Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
+            Species species = new Species(sampleRegistrationContent.species());
+            SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
+            return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
+                experimentId,
+                sampleRegistrationContent.experimentalGroupId(),
+                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
+                sampleRegistrationContent.analysisMethod(), sampleRegistrationContent.comment());
+          }).toList();
+    }
+
+    private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
+      sampleRegistrationService.registerSamples(sampleRegistrationRequests, context.projectId()
+              .orElseThrow())
+          .onError(responseCode -> displayRegistrationFailure());
     }
 
     private void addExperimentTabToTabSheet(Experiment experiment) {
@@ -434,57 +540,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       return noSamplesDefinedCard;
     }
 
-    private Result<?, ?> registerBatchAndSamples(BatchRegistrationContent batchRegistrationContent,
-        List<SampleRegistrationContent> sampleRegistrationContent) {
-      return registerBatchInformation(batchRegistrationContent).onValue(
-          batchId -> {
-            List<SampleRegistrationRequest> sampleRegistrationsRequests = createSampleRegistrationRequests(
-                batchId, batchRegistrationContent.experimentId(), sampleRegistrationContent);
-            registerSamples(sampleRegistrationsRequests);
-          });
-    }
-
-    private Result<BatchId, ResponseCode> registerBatchInformation(
-        BatchRegistrationContent batchRegistrationContent) {
-      return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
-              batchRegistrationContent.isPilot(), context.projectId().orElseThrow())
-          .onError(responseCode -> displayRegistrationFailure());
-    }
-
-    private List<SampleRegistrationRequest> createSampleRegistrationRequests(BatchId batchId,
-        ExperimentId experimentId,
-        List<SampleRegistrationContent> sampleRegistrationContents) {
-      return sampleRegistrationContents.stream()
-          .map(sampleRegistrationContent -> {
-            Analyte analyte = new Analyte(sampleRegistrationContent.analyte());
-            Specimen specimen = new Specimen(sampleRegistrationContent.specimen());
-            Species species = new Species(sampleRegistrationContent.species());
-            SampleOrigin sampleOrigin = SampleOrigin.create(species, specimen, analyte);
-            return new SampleRegistrationRequest(sampleRegistrationContent.label(), batchId,
-                experimentId,
-                sampleRegistrationContent.experimentalGroupId(),
-                sampleRegistrationContent.biologicalReplicateId(), sampleOrigin,
-                sampleRegistrationContent.analysisMethod(), sampleRegistrationContent.comment());
-          }).toList();
-    }
-
-    private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
-      sampleRegistrationService.registerSamples(sampleRegistrationRequests, context.projectId()
-              .orElseThrow())
-          .onError(responseCode -> displayRegistrationFailure());
-    }
-
-    private void displayRegistrationSuccess() {
-      SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
-      StyledNotification notification = new StyledNotification(successMessage);
-      notification.open();
-    }
-
-    private void displayRegistrationFailure() {
-      ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-      StyledNotification notification = new StyledNotification(errorMessage);
-      notification.open();
-    }
 
     private void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
       this.registrationListener.add(batchRegistrationListener);
