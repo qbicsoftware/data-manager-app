@@ -11,18 +11,21 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import org.slf4j.Logger;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * Project Creation Stepper
  *
- * @since <version tag>
+ * <p>Horizontal linear stepper component indicating progress throughout the
+ * {@link Project} creation process via predefined steps</p>
  */
+
+@SpringComponent
 public class ProjectCreationStepper extends Div {
 
   private static final Logger log = getLogger(ProjectCreationStepper.class);
@@ -52,13 +55,18 @@ public class ProjectCreationStepper extends Div {
    * emitted.
    *
    * @param listener a listener that should be called
-   * @since 1.0.0
    */
   public void addListener(ComponentEventListener<ProjectCreationStepSelectedEvent> listener) {
     Objects.requireNonNull(listener);
     addListener(ProjectCreationStepSelectedEvent.class, listener);
   }
 
+  /**
+   * Specifies to which step the stepper should be set
+   *
+   * @param step       the step to which the stepper should be set
+   * @param fromClient indicates if the step was selected by the client
+   */
   public void setSelectedStep(Step step, boolean fromClient) {
     Step originalStep = getCurrentStep();
     if (projectCreationStepList.contains(step)) {
@@ -67,6 +75,11 @@ public class ProjectCreationStepper extends Div {
     }
   }
 
+  /**
+   * Specifies that the stepper should be set to the next step if possible
+   *
+   * @param fromClient indicates if the step was selected by the client
+   */
   public void selectNextStep(boolean fromClient) {
     Step originalStep = getCurrentStep();
     int originalIndex = projectCreationStepList.indexOf(originalStep);
@@ -76,6 +89,11 @@ public class ProjectCreationStepper extends Div {
     }
   }
 
+  /**
+   * Specifies that the stepper should be set to the previous step if possible
+   *
+   * @param fromClient indicates if the step was selected by the client
+   */
   public void selectPreviousStep(boolean fromClient) {
     Step originalStep = getCurrentStep();
     int currentIndex = projectCreationStepList.indexOf(originalStep);
@@ -85,13 +103,16 @@ public class ProjectCreationStepper extends Div {
     }
   }
 
+  /**
+   * Returns the currently selected step in the Stepper component
+   */
+  public Step getCurrentStep() {
+    return currentStep;
+  }
+
   private void setCurrentStep(Step step) {
     setStepAsActive(step);
     currentStep = step;
-  }
-
-  public Step getCurrentStep() {
-    return currentStep;
   }
 
   private void setStepAsActive(Step activatableStep) {

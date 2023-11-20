@@ -13,11 +13,10 @@ import life.qbic.datamanager.views.general.contact.ContactField;
 import org.springframework.stereotype.Component;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Collaborators Layout</b>
  *
- * @since <version tag>
+ * <p>Layout which enables the user to input the information associated with the collaborators
+ * within a project during project creation and validates the provided information</p>
  */
 @Component
 public class CollaboratorsLayout extends Div implements HasValidation {

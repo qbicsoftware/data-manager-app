@@ -76,7 +76,6 @@ public class ProjectOverviewPage extends Div {
       projectCreationDialog.addListener(this::createProject);
       projectCreationDialog.open();
     });
-    //ToDo add Cancel and close listeners
   }
 
   private void stylePage() {

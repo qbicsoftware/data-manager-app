@@ -31,14 +31,14 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import org.springframework.stereotype.Component;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Project Design Layout</b>
  *
- * @since <version tag>
+ * <p>Layout which enables the user to input the information associated with the project design
+ * during project creation and validates the provided information</p>
  */
 @Component
 public class ProjectDesignLayout extends Div implements HasValidation {
+
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
   final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");
@@ -176,6 +176,7 @@ public class ProjectDesignLayout extends Div implements HasValidation {
     projectDescription.setValue(offer.objective().replace("\n", " "));
   }
 
+
   public ProjectDesign getProjectDesign() {
     ProjectDesign projectDesign = new ProjectDesign();
     projectDesignBinder.writeBeanIfValid(projectDesign);
@@ -242,9 +243,11 @@ public class ProjectDesignLayout extends Div implements HasValidation {
     private String projectTitle = "";
     @NotEmpty
     private String projectObjective = "";
+
     public void setOfferId(String offerId) {
       this.offerId = offerId;
     }
+
     public void setProjectTitle(String projectTitle) {
       this.projectTitle = projectTitle;
     }

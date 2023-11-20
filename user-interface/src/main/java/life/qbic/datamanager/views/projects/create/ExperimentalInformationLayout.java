@@ -14,16 +14,16 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Experimental Information Layout</b>
  *
- * @since <version tag>
+ * <p>Layout which enables the user to input the information associated with an {@link Experiment}
+ * during project creation and validates the provided information</p>
  */
 public class ExperimentalInformationLayout extends Div implements HasValidation {
 

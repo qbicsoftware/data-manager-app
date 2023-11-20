@@ -11,11 +11,10 @@ import life.qbic.datamanager.views.general.funding.FundingField;
 import org.springframework.stereotype.Component;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * <b>Funding Information Layout</b>
  *
- * @since <version tag>
+ * <p>Layout which enables the user to input the information associated with the funding information
+ * during project creation and validates the provided information</p>
  */
 @Component
 public class FundingInformationLayout extends Div implements HasValidation {

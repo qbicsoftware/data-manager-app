@@ -30,8 +30,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 /**
  * <b>Project Form Layout</b>
  *
- * <p>Used to style and list the common elements of Project Edit and Project Creation
- * functionality</p>
+ * <p>Used to style and list the common elements of Project Edit functionality</p>
  *
  * @since 1.0.0
  */

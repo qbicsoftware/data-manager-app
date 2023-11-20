@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.create;
 
-import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectCreationStepper.ProjectCreationSteps;
@@ -27,13 +25,13 @@ import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDe
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.domain.model.project.Project;
 
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * Project Creation Dialog
  *
- * @since <version tag>
+ * <p>Vaadin dialog component which enables the user to trigger the {@link Project}
+ * creation process</p>
  */
 
 @SpringComponent
@@ -43,7 +41,6 @@ public class ProjectCreationDialog extends Dialog {
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
   private static final Logger log = logger(ProjectCreationDialog.class);
-  private final FinanceService financeService;
   private final Div layoutContainer = new Div();
   private final String TITLE = "Create Project";
   private final ProjectCreationStepper projectCreationStepper = new ProjectCreationStepper();
@@ -60,14 +57,15 @@ public class ProjectCreationDialog extends Dialog {
   public ProjectCreationDialog(FinanceService financeService,
       ExperimentalDesignSearchService experimentalDesignSearchService) {
     super();
-    //ToDo Communicate with finance service via events instead of propagating it to the layout
+    Objects.requireNonNull(financeService,
+        financeService.getClass().getSimpleName() + " must not be null");
+    Objects.requireNonNull(experimentalDesignSearchService,
+        experimentalDesignSearchService.getClass().getSimpleName() + " must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         experimentalDesignSearchService);
-    this.financeService = requireNonNull(financeService,
-        " must not be null");
     initDialog();
     initListeners();
     addClassName("project-creation-dialog");
@@ -124,7 +122,7 @@ public class ProjectCreationDialog extends Dialog {
   }
 
   /**
-   * Add a listener that is called, when a new {@link ProjectAddEvent event} is emitted.
+   * Add a listener that is called, when a new {@link ProjectCreationEvent event} is emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
@@ -144,10 +142,12 @@ public class ProjectCreationDialog extends Dialog {
     Span rightButtonsContainer = new Span();
     rightButtonsContainer.addClassNames("footer-right-buttons-container");
     switch (projectCreationSteps) {
+      //First Step --> No Back button
       case DESIGN_PROJECT -> {
         rightButtonsContainer.add(cancelButton, nextButton);
         footer.add(new Span(), rightButtonsContainer);
       }
+      //Last Step --> Confirm Button instead of Next button
       case SET_EXPERIMENT_INFORMATION -> {
         rightButtonsContainer.add(cancelButton, confirmButton);
         footer.add(backButton, rightButtonsContainer);
@@ -178,9 +178,9 @@ public class ProjectCreationDialog extends Dialog {
   }
 
   /**
-   * <b>Project Add Event</b>
+   * <b>Project Creation Event</b>
    *
-   * <p>Indicates that a user submitted a project addition request</p>
+   * <p>Indicates that a user submitted a project creation request</p>
    *
    * @since 1.0.0
    */
