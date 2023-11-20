@@ -77,7 +77,14 @@
   width: 100%;
 }
 
-.project-creation-stepper {
+.project-creation-stepper-arrow {
+  align-items: end;
+  color: var(--lumo-contrast-60pct);
+  display: flex;
+  margin-inline: var(--lumo-space-l);
+}
+
+.stepper {
   /*Ensure that the stepper has enough space on smaller screens*/
   min-height: 4rem;
   margin-top: 0.5rem;
@@ -86,14 +93,8 @@
   margin-right: 4rem;
 }
 
-.project-creation-stepper .arrow {
-  align-items: end;
-  color: var(--lumo-contrast-60pct);
-  display: flex;
-  margin-inline: var(--lumo-space-l);
-}
 
-.project-creation-stepper .step {
+.stepper .step {
   gap: var(--lumo-space-s);
   display: flex;
   flex-direction: column;
@@ -101,12 +102,12 @@
   align-items: center;
 }
 
-.project-creation-stepper .step[selected] > vaadin-avatar {
+.stepper .step[selected] > vaadin-avatar {
   background-color: var(--lumo-primary-color-50pct);
   color: white;
 }
 
-.project-creation-stepper .step > vaadin-avatar {
+.stepper .step > vaadin-avatar {
   background-color: var(--lumo-contrast-60pct);
   color: white;
 }

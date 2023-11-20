@@ -11,16 +11,17 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.List;
 import java.util.Objects;
-import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.general.Stepper;
+import life.qbic.datamanager.views.general.Stepper.Step;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
-import life.qbic.datamanager.views.projects.create.ProjectCreationStepper.ProjectCreationSteps;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
@@ -41,18 +42,21 @@ public class ProjectCreationDialog extends Dialog {
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
   private static final Logger log = logger(ProjectCreationDialog.class);
-  private final Div layoutContainer = new Div();
+  private final Div dialogContent = new Div();
   private final String TITLE = "Create Project";
-  private final ProjectCreationStepper projectCreationStepper = new ProjectCreationStepper();
+  private final Stepper stepper = new Stepper();
   private final ProjectDesignLayout projectDesignLayout;
   private final FundingInformationLayout fundingInformationLayout;
   private final CollaboratorsLayout collaboratorsLayout;
   private final ExperimentalInformationLayout experimentalInformationLayout;
-  private Component currentLayout;
   private final Button confirmButton = new Button("Confirm");
   private final Button cancelButton = new Button("Cancel");
   private final Button backButton = new Button("Back");
   private final Button nextButton = new Button("Next");
+  private Step projectDesignStep;
+  private Step fundingInformationStep;
+  private Step projectCollaboratorsStep;
+  private Step experimentalInformationStep;
 
   public ProjectCreationDialog(FinanceService financeService,
       ExperimentalDesignSearchService experimentalDesignSearchService) {
@@ -73,52 +77,55 @@ public class ProjectCreationDialog extends Dialog {
 
   private void initDialog() {
     setHeaderTitle(TITLE);
-    add(generateSectionDivider(), projectCreationStepper, generateSectionDivider(), layoutContainer,
+    add(generateSectionDivider(), stepper, generateSectionDivider(), dialogContent,
         generateSectionDivider());
-    layoutContainer.addClassName("layout-container");
+    initStepper();
+    dialogContent.addClassName("layout-container");
     nextButton.addClassName("primary");
     confirmButton.addClassName("primary");
-    setDialogContent(ProjectCreationSteps.DESIGN_PROJECT);
-    adaptFooterButtons(ProjectCreationSteps.DESIGN_PROJECT);
+    setDialogContent(stepper.getFirstStep());
+    adaptFooterButtons(stepper.getFirstStep());
+  }
+
+  private void initStepper() {
+    projectDesignStep = stepper.addStep("Project Design");
+    stepper.addComponent(createArrowSpan());
+    fundingInformationStep = stepper.addStep("Funding Information");
+    stepper.addComponent(createArrowSpan());
+    projectCollaboratorsStep = stepper.addStep("Project Collaborators");
+    stepper.addComponent(createArrowSpan());
+    experimentalInformationStep = stepper.addStep("Experimental Information");
+  }
+
+  private Span createArrowSpan() {
+    Icon arrowIcon = VaadinIcon.ARROW_RIGHT.create();
+    Span arrow = new Span(arrowIcon);
+    arrow.addClassName("project-creation-stepper-arrow");
+    return arrow;
   }
 
   private void initListeners() {
-    projectCreationStepper.addListener(
+    stepper.addListener(
         event -> {
           if (event.isFromClient()) {
-            if (isCurrentLayoutValid()) {
-              setDialogContent(event.getSelectedStep().getProjectCreationSteps());
-              adaptFooterButtons(event.getSelectedStep().getProjectCreationSteps());
+            if (isDialogContentValid()) {
+              setDialogContent(event.getSelectedStep());
+              adaptFooterButtons(event.getSelectedStep());
             } else {
-              projectCreationStepper.setSelectedStep(event.getPreviousStep(), false);
+              stepper.setSelectedStep(event.getPreviousStep(), false);
             }
           }
         });
     cancelButton.addClickListener(event -> close());
     backButton.addClickListener(
-        event -> projectCreationStepper.selectPreviousStep(event.isFromClient()));
-    nextButton.addClickListener(event -> {
-      if (isCurrentLayoutValid()) {
-        projectCreationStepper.selectNextStep(event.isFromClient());
-      }
-    });
-    confirmButton.addClickListener(event -> {
-      //Todo can this be simplified?
-      if (projectDesignLayout.isInvalid()) {
-        throw new ApplicationException(projectDesignLayout.getErrorMessage());
-      } else if (fundingInformationLayout.isInvalid()) {
-        throw new ApplicationException(fundingInformationLayout.getErrorMessage());
-      } else if (collaboratorsLayout.isInvalid()) {
-        throw new ApplicationException(collaboratorsLayout.getErrorMessage());
-      } else if (experimentalInformationLayout.isInvalid()) {
-        throw new ApplicationException(experimentalInformationLayout.getErrorMessage());
-      } else {
-        fireEvent(new ProjectCreationEvent(this, projectDesignLayout.getProjectDesign(),
+        event -> stepper.selectPreviousStep(event.isFromClient()));
+    nextButton.addClickListener(event -> stepper.selectNextStep(event.isFromClient()));
+    confirmButton.addClickListener(
+        event -> fireEvent(new ProjectCreationEvent(this, projectDesignLayout.getProjectDesign(),
             fundingInformationLayout.getFundingInformation(),
             collaboratorsLayout.getCollaboratorInformation(),
-            experimentalInformationLayout.getExperimentalInformation(), true));
-      }
-    });
+            experimentalInformationLayout.getExperimentalInformation(), true))
+    );
   }
 
   /**
@@ -132,30 +139,27 @@ public class ProjectCreationDialog extends Dialog {
     addListener(ProjectCreationEvent.class, listener);
   }
 
-  private boolean isCurrentLayoutValid() {
-    return !((HasValidation) currentLayout).isInvalid();
+  private boolean isDialogContentValid() {
+    return dialogContent.getChildren().filter(component -> component instanceof HasValidation)
+        .map(component -> ((HasValidation) component).isInvalid()).anyMatch(aBoolean -> !aBoolean);
   }
 
-  private void adaptFooterButtons(ProjectCreationSteps projectCreationSteps) {
+  private void adaptFooterButtons(Step step) {
     DialogFooter footer = getFooter();
     footer.removeAll();
     Span rightButtonsContainer = new Span();
     rightButtonsContainer.addClassNames("footer-right-buttons-container");
-    switch (projectCreationSteps) {
-      //First Step --> No Back button
-      case DESIGN_PROJECT -> {
-        rightButtonsContainer.add(cancelButton, nextButton);
-        footer.add(new Span(), rightButtonsContainer);
-      }
+    if (stepper.getFirstStep().equals(step)) {
+      //First Step --> no back button
+      rightButtonsContainer.add(cancelButton, nextButton);
+      footer.add(new Span(), rightButtonsContainer);
+    } else if (stepper.getLastStep().equals(step)) {
       //Last Step --> Confirm Button instead of Next button
-      case SET_EXPERIMENT_INFORMATION -> {
-        rightButtonsContainer.add(cancelButton, confirmButton);
-        footer.add(backButton, rightButtonsContainer);
-      }
-      default -> {
-        rightButtonsContainer.add(cancelButton, nextButton);
-        footer.add(backButton, rightButtonsContainer);
-      }
+      rightButtonsContainer.add(cancelButton, confirmButton);
+      footer.add(backButton, rightButtonsContainer);
+    } else {
+      rightButtonsContainer.add(cancelButton, nextButton);
+      footer.add(backButton, rightButtonsContainer);
     }
   }
 
@@ -165,16 +169,19 @@ public class ProjectCreationDialog extends Dialog {
     return sectionDivider;
   }
 
-  private void setDialogContent(ProjectCreationSteps projectCreationSteps) {
-    layoutContainer.removeAll();
-    List<Component> dialogLayouts = List.of(projectDesignLayout, fundingInformationLayout,
-        collaboratorsLayout, experimentalInformationLayout);
-    Component selectedComponent = dialogLayouts.stream().filter(
-            component -> component.getClass().equals(projectCreationSteps.getProjectCreationLayout()))
-        .findFirst()
-        .orElseThrow();
-    currentLayout = selectedComponent;
-    layoutContainer.add(selectedComponent);
+  private void setDialogContent(Step step) {
+    dialogContent.removeAll();
+    Component selectedComponent = null;
+    if (step.equals(projectDesignStep)) {
+      selectedComponent = projectDesignLayout;
+    } else if (step.equals(fundingInformationStep)) {
+      selectedComponent = fundingInformationLayout;
+    } else if (step.equals(projectCollaboratorsStep)) {
+      selectedComponent = collaboratorsLayout;
+    } else if (step.equals(experimentalInformationStep)) {
+      selectedComponent = experimentalInformationLayout;
+    }
+    dialogContent.add(selectedComponent);
   }
 
   /**
