@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.BatchRegistrationListener;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -103,17 +102,6 @@ public class SampleContentComponent extends Div {
       this.removeAll();
       this.add(component);
     }
-  }
-
-  /**
-   * Propagates the listener which will retrieve notification if a new {@link Batch} was created in
-   * the {@link SampleDetailsComponent} within this container
-   *
-   * @param batchRegistrationListener listener to be notified if a batchRegistration happened in the
-   *                                  {@link SampleDetailsComponent}
-   */
-  public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-    sampleDetailsComponent.addBatchRegistrationListener(batchRegistrationListener);
   }
 
   private void reloadOnBatchRegistration() {
