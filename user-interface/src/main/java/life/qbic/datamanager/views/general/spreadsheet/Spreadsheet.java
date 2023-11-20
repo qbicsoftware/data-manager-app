@@ -545,7 +545,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private void autoFitColumnWidth(int colIndex) {
     delegateSpreadsheet.autofitColumn(colIndex);
     int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
-        colIndex);
+        colIndex) + 1;
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
     delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
   }
