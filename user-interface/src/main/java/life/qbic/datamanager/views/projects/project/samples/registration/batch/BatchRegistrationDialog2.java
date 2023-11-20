@@ -210,7 +210,7 @@ public class BatchRegistrationDialog2 extends DialogWindow {
         });
 
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
-      spreadsheet.addRow(new SampleInfo());
+      addEmptyRow();
     }
   }
 
@@ -320,6 +320,10 @@ public class BatchRegistrationDialog2 extends DialogWindow {
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
+    addEmptyRow();
+  }
+
+  private void addEmptyRow() {
     spreadsheet.setValidationMode(ValidationMode.LAZY);
     spreadsheet.addRow(new SampleInfo());
     spreadsheet.setValidationMode(ValidationMode.EAGER);
