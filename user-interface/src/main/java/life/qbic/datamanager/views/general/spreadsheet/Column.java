@@ -65,50 +65,99 @@ public class Column<T, C> {
     columnValidators = new ArrayList<>();
   }
 
+  /**
+   * @return true if the column requires input; false otherwise
+   */
   public boolean isRequired() {
     return required;
   }
 
+  /**
+   *
+   * @return the editor component of this column
+   */
   public Optional<Component> getEditorComponent() {
     return Optional.ofNullable(editorComponent);
   }
 
+  /**
+   *
+   * @return the name of the column
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   *
+   * @return the list of validators applied to a cell that do not need additional context
+   */
   public List<SpreadsheetCellValidator<String>> getValidators() {
     return Collections.unmodifiableList(cellValidators);
   }
 
+  /**
+   *
+   * @return the list of validators applied to a cell that require the row data for validation
+   */
   public List<SpreadsheetObjectValidator<T, String>> getObjectValidators() {
     return Collections.unmodifiableList(objectValidators);
   }
 
+  /**
+   *
+   * @return a list of validators applied to a cell expecting all values of a column as context
+   */
   public List<SpreadsheetObjectValidator<List<String>, String>> getColumnValidators() {
     return Collections.unmodifiableList(columnValidators);
   }
 
+  /**
+   *
+   * @return the style of cells in that column
+   */
   public Optional<CellStyle> getCellStyle() {
     return Optional.ofNullable(cellStyle);
   }
 
+  /**
+   * adds a validator
+   * @param predicate the predicate to test on the cell value
+   * @param errorMessage the error message to display in case validation fails
+   * @return the modified column
+   */
   public Column<T, C> withValidator(Predicate<String> predicate, String errorMessage) {
     cellValidators.add(new SpreadsheetCellValidator<>(predicate, errorMessage));
     return this;
   }
 
+  /**
+   * adds a validator
+   * @param predicate the predicate to test on the cell value and the row value
+   * @param errorMessage the error message to display in case validation fails
+   * @return the modified column
+   */
   public Column<T, C> withValidator(BiPredicate<T, String> predicate, String errorMessage) {
     objectValidators.add(new SpreadsheetObjectValidator<>(predicate, errorMessage));
     return this;
   }
 
+  /**
+   * adds a validator
+   * @param predicate the predicate to test on the cell value and all cell values in this column
+   * @param errorMessage the error message to display in case validation fails
+   * @return the modified column
+   */
   private Column<T, C> withColumnValidator(BiPredicate<List<String>, String> predicate,
       String errorMessage) {
     columnValidators.add(new SpreadsheetObjectValidator<>(predicate, errorMessage));
     return this;
   }
 
+  /**
+   * requires distinct/unique values in the column
+   * @return the modified column
+   */
   public Column<T, C> requireDistinctValues() {
     this.required = true;
     columnValidators.add(0, new SpreadsheetObjectValidator<>(
@@ -118,23 +167,53 @@ public class Column<T, C> {
   }
 
 
+  /**
+   * Shows a editor component to facilitate value selection
+   * @param values the values to choose from
+   * @param toColumnValue the function to be applied to the value to get the column value
+   * @return the modified column
+   * @param <E> the type of items to select from
+   */
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue) {
     return selectFrom(values, toColumnValue,
         getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue))
     );
   }
 
+  /**
+   * Shows a editor component to facilitate value selection
+   * @param values the values to choose from
+   * @param toColumnValue the function to convert the selected value to column value
+   * @param renderer the render to use to render possible values
+   * @return the modified column
+   * @param <E> the type of items to select from
+   */
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer) {
     return selectFrom(ignored -> values, toColumnValue, renderer);
   }
 
+  /**
+   * Shows a editor component facilitating value selection
+   * @param valueProvider a function taking a row value and providing a list of possible items
+   * @param toColumnValue the function to convert an option to a column value
+   * @return the modified column
+   * @param <E> the type of items to select from
+   */
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue) {
     return selectFrom(valueProvider, toColumnValue,
         getDefaultComponentRenderer(toColumnValue.andThen(columnValueToCellValue)));
   }
 
+  /**
+   * shows a editor component facilitating value selection
+   * @param valueProvider a function taking a row value and providing a list of possible items
+   * @param toColumnValue the function to convert an option to a column value
+   * @param renderer a renderer rendering an option
+   * @return the modified column
+   * @param <E> the type of items to select from
+   */
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer) {
@@ -155,11 +234,20 @@ public class Column<T, C> {
     return this;
   }
 
+  /**
+   * sets the cell style for cells in this column
+   * @param cellStyle the cell style to apply
+   * @return the modified column
+   */
   public Column<T, C> withCellStyle(CellStyle cellStyle) {
     this.cellStyle = cellStyle;
     return this;
   }
 
+  /**
+   * Sets the column to require non-empty input
+   * @return the modified column
+   */
   public Column<T, C> setRequired() {
     this.required = true;
     cellValidators.add(0, new SpreadsheetCellValidator<>(
@@ -168,10 +256,19 @@ public class Column<T, C> {
     return this;
   }
 
+  /**
+   * the model updater
+   * @return a bi-consumer applied on the model with a cell value for cells in this column
+   */
   BiConsumer<T, String> modelUpdater() {
     return modelUpdater;
   }
 
+  /**
+   * converts row values to the cell values in this column
+   * @param t the row data to convert
+   * @return the cell value
+   */
   String toCellValue(T t) {
     if (isNull(t)) {
       return null;
