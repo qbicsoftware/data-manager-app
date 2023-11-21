@@ -14,6 +14,9 @@ import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
@@ -28,7 +31,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -45,6 +47,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
+import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
@@ -58,7 +61,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -82,7 +84,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Span title = new Span();
   private final Span buttonBar = new Span();
   private final Div tagCollection = new Div();
-
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroups = new Div();
@@ -95,6 +96,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private Context context;
   private final DeletionService deletionService;
   private int experimentalGroupCount;
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
 
 
   public ExperimentDetailsComponent(
@@ -114,10 +117,15 @@ public class ExperimentDetailsComponent extends PageArea {
     configureComponent();
   }
 
-  private Notification createSampleRegistrationPossibleNotification(String projectId) {
+  private Notification createSampleRegistrationPossibleNotification() {
     Notification notification = new Notification();
 
-    String samplesUrl = Projects.SAMPLES.formatted(projectId);
+    RouteParam projectRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
+        context.projectId().orElseThrow().value());
+    RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
+        context.experimentId().orElseThrow().value());
+    String samplesUrl = RouteConfiguration.forSessionScope().getUrl(SampleInformationMain.class,
+        new RouteParameters(projectRouteParam, experimentRouteParam));
     Div text = new Div(new Text("You can now register sample batches. "),
         new Anchor(samplesUrl, new Button("Go to Samples", event -> notification.close())));
 
@@ -478,8 +486,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void showSampleRegistrationPossibleNotification() {
-    String projectId = this.context.projectId().map(ProjectId::value).orElseThrow();
-    Notification notification = createSampleRegistrationPossibleNotification(projectId);
+    Notification notification = createSampleRegistrationPossibleNotification();
     notification.open();
   }
 
