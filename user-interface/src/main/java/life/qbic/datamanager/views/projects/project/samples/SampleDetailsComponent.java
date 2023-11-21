@@ -70,23 +70,18 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
-  private final SampleInformationService sampleInformationService;
   private final SampleExperimentTab experimentTab;
   private Context context;
-  private final SampleRegistrationService sampleRegistrationService;
-  private final ExperimentInformationService experimentInformationService;
-  private final BatchRegistrationService batchRegistrationService;
-
-
-  private final Div content;
-  //  private final Div buttonAndFieldBar;
   private final TextField searchField;
   public final Button registerButton;
-  private Disclaimer noGroupsDefinedDisclaimer;
+  private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final Grid<SamplePreview> sampleGrid;
 
-
+  private final SampleRegistrationService sampleRegistrationService;
+  private final ExperimentInformationService experimentInformationService;
+  private final BatchRegistrationService batchRegistrationService;
+  private final SampleInformationService sampleInformationService;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
@@ -140,7 +135,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
     sampleExperimentTabSheet.setHeightFull();
 
-    content = new Div();
+    Div content = new Div();
     content.addClassName("sample-details-content");
 
     content.add(buttonAndFieldBar, sampleExperimentTabSheet);
@@ -289,11 +284,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   /**
-   * Adds the provided {@link BatchRegistrationListener} to the list of listeners which will
-   * retrieve notification if a new {@link Batch} was created in this component
+   * Adds the provided listener
    *
-   * @param batchRegistrationListener listener to be notified if a batch was registered within this
-   *                                  component
+   * @param batchRegistrationListener listener notified on batch registration
    */
   public void addBatchRegistrationListener(
       ComponentEventListener<BatchRegisteredEvent> batchRegistrationListener) {
