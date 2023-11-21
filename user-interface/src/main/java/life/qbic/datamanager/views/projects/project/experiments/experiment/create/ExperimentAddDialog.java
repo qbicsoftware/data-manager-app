@@ -10,26 +10,21 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.SpeciesSearchService;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 
 /**
  * <b>ExperimentAddDialog</b>
@@ -47,12 +42,13 @@ public class ExperimentAddDialog extends DialogWindow {
 
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
-
-  private ComboBoxLazyDataView<OntologyClassEntity> ontologyBoxesLazyDataView;
+  private final transient OntologyTermInformationService ontologyTermInformationService;
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public ExperimentAddDialog(
-      ExperimentalDesignSearchService experimentalDesignSearchService, SpeciesSearchService service) {
+      OntologyTermInformationService ontologyTermInformationService) {
+    this.ontologyTermInformationService = ontologyTermInformationService;
+
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
 
@@ -65,7 +61,7 @@ public class ExperimentAddDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    MultiSelectComboBox<OntologyClassEntity> speciesBox = new MultiSelectComboBox<>("Species");
     speciesBox.setRequired(true);
     speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     binder.forField(speciesBox)
@@ -74,34 +70,34 @@ public class ExperimentAddDialog extends DialogWindow {
             ExperimentDraft::setSpecies);
 //    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
   //      .sorted(Comparator.comparing(Species::label)).toList());
+    initLazyDatasource(speciesBox, Arrays.asList("NCBITaxon"));
 
-    DataProvider<Species, String> dataProvider =
-        createSpeciesDataProvider(service);
-    speciesBox.setItems(dataProvider);
+    speciesBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
 
-    speciesBox.setItemLabelGenerator(Species::label);
-
-    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+    MultiSelectComboBox<OntologyClassEntity> specimenBox = new MultiSelectComboBox<>("Specimen");
     specimenBox.setRequired(true);
     specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
-    specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
-        .sorted(Comparator.comparing(Specimen::label)).toList());
-    specimenBox.setItemLabelGenerator(Specimen::label);
+    /*specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
+        .sorted(Comparator.comparing(Specimen::label)).toList());*/
+    specimenBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
+    initLazyDatasource(specimenBox, Arrays.asList("po","bto"));
 
-    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    MultiSelectComboBox<OntologyClassEntity> analyteBox = new MultiSelectComboBox<>("Analyte");
     analyteBox.setRequired(true);
     analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
-        .sorted(Comparator.comparing(Analyte::label)).toList());
-    analyteBox.setItemLabelGenerator(Analyte::label);
+/*    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
+        .sorted(Comparator.comparing(OntologyClassEntity::label)).toList());*/
+    analyteBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
+    initLazyDatasource(analyteBox, Arrays.asList("po")); //TODO missing the correct analyte ontology
+
 
     Div createExperimentContent = new Div();
     createExperimentContent.addClassName("add-experiment-content");
@@ -123,16 +119,17 @@ public class ExperimentAddDialog extends DialogWindow {
     cancelButton.addClickListener(this::onCancelClicked);
   }
 
-  private void createLazyOntologyView() {
-    ontologyBoxesLazyDataView = projectGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (the least priority)
-      sortOrders.add(SortOrder.of("lastModified").descending());
-      return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
-          query.getLimit(), List.copyOf(sortOrders)).stream();
-    });
+  private void initLazyDatasource(MultiSelectComboBox<OntologyClassEntity> comboBox,
+      List<String> ontologies) {
+    comboBox.setItemsWithFilterConverter(
+        query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
+            ontologies,
+            query.getOffset(),
+            query.getLimit(), query.getSortOrders().stream().map(
+                    it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+                .collect(Collectors.toList())).stream(),
+        entity -> entity
+    );
   }
 
   private void onConfirmClicked(ClickEvent<Button> clickEvent) {
@@ -206,9 +203,9 @@ public class ExperimentAddDialog extends DialogWindow {
     private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
-    private final List<Species> species;
-    private final List<Specimen> specimen;
-    private final List<Analyte> analytes;
+    private final List<OntologyClassEntity> species;
+    private final List<OntologyClassEntity> specimen;
+    private final List<OntologyClassEntity> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();
@@ -224,29 +221,29 @@ public class ExperimentAddDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<Species> getSpecies() {
+    public List<OntologyClassEntity> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<Species> species) {
+    public void setSpecies(Collection<OntologyClassEntity> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<Specimen> getSpecimens() {
+    public List<OntologyClassEntity> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<Specimen> specimen) {
+    public void setSpecimens(Collection<OntologyClassEntity> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<Analyte> getAnalytes() {
+    public List<OntologyClassEntity> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<Analyte> analytes) {
+    public void setAnalytes(Collection<OntologyClassEntity> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

@@ -3,13 +3,9 @@ package life.qbic.projectmanagement.infrastructure.experiment;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
-import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.api.OntologyTermLookup;
-import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.domain.repository.OntologyTermRepository;
 import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
-import life.qbic.projectmanagement.infrastructure.project.ProjectPreviewRepository;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -36,9 +32,21 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
     return ontologyTermRepository.findAll(new OffsetBasedRequest(offset, limit)).getContent();
   }
 
+  /**
+   * The way the MyISAM engine searches the fulltext index makes it necessary to use multiple
+   * search terms that need to be found instead of one full search term.
+   */
+  private String buildSearchTerm(String searchString) {
+    String searchTerm = "";
+    for(String word : searchString.split(" ")) {
+      searchTerm += " +" + word;
+    }
+    return searchTerm+"*";
+  }
+
   @Override
-  public List<OntologyClassEntity> query(String filter, int offset, int limit,
-      List<SortOrder> sortOrders) {
+  public List<OntologyClassEntity> query(String searchString, List<String> ontologies, int offset,
+      int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
       Order order;
       if (it.isDescending()) {
@@ -48,8 +56,8 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
       }
       return order;
     }).toList();
-    return projectPreviewRepository.findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
-        filter, filter, new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+    String searchTerm = buildSearchTerm(searchString);
+    return ontologyTermRepository.findByLabelContainingIgnoreCaseAndOntologyIn(
+        searchTerm, ontologies, new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
-
 }

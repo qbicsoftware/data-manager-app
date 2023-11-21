@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.experiment;
 
-import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import java.util.List;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
@@ -12,8 +13,11 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @since 1.0.0
  */
 public interface OntologyTermRepository extends
-    PagingAndSortingRepository<ProjectPreview, ProjectId> {
+    PagingAndSortingRepository<OntologyClassEntity, Long> {
 
-  Page<ProjectPreview> findByProjectTitleContainingIgnoreCaseOrProjectCodeContainingIgnoreCase(
-      String projectTitle, String projectCode, Pageable pageable);
+  @Query(value = "SELECT * FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2) ORDER BY length(label);",
+      countQuery = "SELECT count(*) FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2);",
+      nativeQuery = true)
+  Page<OntologyClassEntity> findByLabelContainingIgnoreCaseAndOntologyIn(
+      String termFilter, List<String> ontology, Pageable pageable);
 }
