@@ -43,7 +43,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog() {
     super();
 
-    addClassName("create-project-dialog");
+    addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
     confirmButton.addClickListener(this::onConfirmClicked);
