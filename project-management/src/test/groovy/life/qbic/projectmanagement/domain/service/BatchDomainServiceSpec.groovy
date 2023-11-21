@@ -5,7 +5,9 @@ import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.batch.Batch
+import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.project.*
+import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered
 import life.qbic.projectmanagement.domain.repository.BatchRepository
 import spock.lang.Specification
@@ -51,5 +53,39 @@ class BatchDomainServiceSpec extends Specification {
 
         then:
         batchRegistered.eventReceived
+    }
+
+
+    def "When a batch has been successfully deleted, a batch deletion event is dispatched"() {
+        given:
+        Batch testBatch = Batch.create("Please set me free")
+
+        and:
+        BatchRepository testRepo = Mock(BatchRepository)
+        testRepo.deleteById(_ as BatchId) >> Result.fromValue(testBatch.batchId())
+        BatchDomainService batchDomainService = new BatchDomainService(testRepo)
+
+        and:
+        DomainEventSubscriber<BatchDeleted> batchDeleted = new DomainEventSubscriber<BatchDeleted>() {
+
+            boolean eventReceived = false
+
+            @Override
+            Class<? extends DomainEvent> subscribedToEventType() {
+                BatchDeleted.class
+            }
+
+            @Override
+            void handleEvent(BatchDeleted event) {
+                this.eventReceived = true
+            }
+        }
+        DomainEventDispatcher.instance().subscribe(batchDeleted)
+
+        when:
+        batchDomainService.deleteBatch(testBatch.batchId())
+
+        then:
+        batchDeleted.eventReceived
     }
 }

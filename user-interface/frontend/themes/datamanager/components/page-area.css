@@ -35,6 +35,15 @@
   background-color: inherit;
 }
 
+/*Todo move to div and adapt*/
+.page-area.batch-details-component {
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-m);
+  width: 50vw;
+  height: 50vh;
+}
+
 .page-area.navbar {
   justify-content: space-evenly;
   display: flex;

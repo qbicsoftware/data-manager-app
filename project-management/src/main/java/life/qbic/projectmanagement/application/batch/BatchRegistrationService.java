@@ -78,12 +78,38 @@ public class BatchRegistrationService {
     }
   }
 
+  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
+    var result = batchDomainService.deleteBatch(batchId);
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+    }
+    return Result.fromValue(batchId);
+  }
+
+  public Result<BatchId, ResponseCode> updateBatch(BatchId batchId, String batchLabel) {
+    var searchResult = batchRepository.find(batchId);
+    if (searchResult.isEmpty()) {
+      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+    } else {
+      Batch batch = searchResult.get();
+      if (!batch.label().equals(batchLabel)) {
+        batch.setLabel(batchLabel);
+      }
+      var result = batchRepository.update(batch);
+      if (result.isError()) {
+        return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
+      }
+      return Result.fromValue(batch.batchId());
+    }
+  }
+
 
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
     BATCH_NOT_FOUND,
     BATCH_CREATION_FAILED,
-    BATCH_REGISTRATION_FAILED
+    BATCH_REGISTRATION_FAILED,
+    BATCH_DELETION_FAILED,
   }
 
 }

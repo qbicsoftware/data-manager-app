@@ -36,6 +36,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationContent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -95,12 +96,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
+  private final BatchDetailsComponent batchDetailsComponent;
   private Context context;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
-      @Autowired SampleRegistrationService sampleRegistrationService) {
+      @Autowired SampleRegistrationService sampleRegistrationService,
+      @Autowired BatchDetailsComponent batchDetailsComponent) {
     initSampleView();
+    this.batchDetailsComponent = batchDetailsComponent;
     this.sampleDetailsComponentHandler = new SampleDetailsComponentHandler(
         sampleInformationService, batchRegistrationService,
         sampleRegistrationService);
@@ -186,6 +190,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   public void setExperiments(Collection<Experiment> experiments) {
     sampleDetailsComponentHandler.setExperiments(experiments);
+    batchDetailsComponent.setExperiments(experiments);
   }
 
   /**
@@ -247,6 +252,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       experiments.forEach(this::addExperimentTabToTabSheet);
       setExperimentsInRegistrationDialog(experiments);
       content.add(buttonAndFieldBar);
+      content.add(batchDetailsComponent);
       content.add(sampleExperimentTabSheet);
     }
 
