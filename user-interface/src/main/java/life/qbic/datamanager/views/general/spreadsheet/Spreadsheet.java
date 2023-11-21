@@ -259,6 +259,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private CellStyle createColumnNameStyle(Workbook workbook) {
     Font columnNameFont = workbook.createFont();
     columnNameFont.setBold(true);
+    columnNameFont.setFontName("Helvetica");
+    columnNameFont.setFontHeightInPoints((short) 11);
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFillBackgroundColor(null);
@@ -270,7 +272,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private CellStyle getDefaultCellStyle(Workbook workbook) {
+    Font defaultFont = workbook.createFont();
+    defaultFont.setFontName("Helvetica");
+    defaultFont.setFontHeightInPoints((short) 11);
+
     CellStyle cellStyle = workbook.getCellStyleAt(0);
+    cellStyle.setFont(defaultFont);
     cellStyle.setLocked(false);
     return cellStyle;
   }
@@ -278,6 +285,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private CellStyle createRowNumberStyle(Workbook workbook) {
     Font rowNumberFont = workbook.createFont();
     rowNumberFont.setBold(true);
+    rowNumberFont.setFontName("Helvetica");
+    rowNumberFont.setFontHeightInPoints((short) 11);
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFont(rowNumberFont);
@@ -589,7 +598,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private void autoFitColumnWidth(int colIndex) {
     delegateSpreadsheet.autofitColumn(colIndex);
     int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
-        colIndex) + 1;
+        colIndex);
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
     delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
   }
