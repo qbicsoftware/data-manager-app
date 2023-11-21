@@ -212,12 +212,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
             context.projectId().orElseThrow())
         .map(batchId -> samples.stream()
             .map(sample -> new SampleRegistrationRequest(
-                batchLabel, batchId,
+                sample.getSampleLabel(),
+                batchId,
                 context.experimentId().orElseThrow(),
-                sample.getExperimentalGroup().id(), sample.getBiologicalReplicate().id(),
-                SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(),
-                    sample.getAnalyte()),
-                sample.getAnalysisToBePerformed(), sample.getCustomerComment()))
+                sample.getExperimentalGroup().id(),
+                sample.getBiologicalReplicate().id(),
+                SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(), sample.getAnalyte()),
+                sample.getAnalysisToBePerformed(),
+                sample.getCustomerComment()))
             .toList())
         .onError(responseCode -> displayRegistrationFailure())
         .valueOrElseThrow(() ->
