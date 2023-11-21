@@ -50,6 +50,10 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  *   <li> adding configurable columns
  * </ul>
  * The spreadsheet itself provides validation information, and an error message.
+ * <p>
+ * PLEASE NOTE: The Calibri font needs to be installed on the system running the data-manager for
+ * the column width to be calculated correctly.
+ * @see <a href="https://learn.microsoft.com/en-us/typography/font-list/calibri">Calibri font family</a>
  */
 @Tag(Tag.DIV)
 public final class Spreadsheet<T> extends Component implements HasComponents,
@@ -72,6 +76,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final transient Drawing<?> drawingPatriarch;
 
   private ValidationMode validationMode;
+
+  //ATTENTION: we need to hard code this. as we cannot be sure Calibri is installed.
+  private static final double CHARACTER_PIXEL_WIDTH = 9.0;
 
   public Spreadsheet() {
     addClassName("spreadsheet-container");
@@ -259,8 +266,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private CellStyle createColumnNameStyle(Workbook workbook) {
     Font columnNameFont = workbook.createFont();
     columnNameFont.setBold(true);
-    columnNameFont.setFontName("Helvetica");
     columnNameFont.setFontHeightInPoints((short) 11);
+    columnNameFont.setFontName("Arial");
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFillBackgroundColor(null);
@@ -273,8 +280,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private CellStyle getDefaultCellStyle(Workbook workbook) {
     Font defaultFont = workbook.createFont();
-    defaultFont.setFontName("Helvetica");
     defaultFont.setFontHeightInPoints((short) 11);
+    defaultFont.setFontName("Arial");
 
     CellStyle cellStyle = workbook.getCellStyleAt(0);
     cellStyle.setFont(defaultFont);
@@ -285,8 +292,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private CellStyle createRowNumberStyle(Workbook workbook) {
     Font rowNumberFont = workbook.createFont();
     rowNumberFont.setBold(true);
-    rowNumberFont.setFontName("Helvetica");
     rowNumberFont.setFontHeightInPoints((short) 11);
+    rowNumberFont.setFontName("Arial");
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFont(rowNumberFont);
@@ -596,11 +603,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
 
   private void autoFitColumnWidth(int colIndex) {
-    delegateSpreadsheet.autofitColumn(colIndex);
-    int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
-        colIndex);
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
-    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
+    int longestCellValue = getColumnValues(colIndex).stream().mapToInt(String::length).max()
+        .orElse(0);
+    int requiredPixelWidth = (int) Math.ceil(CHARACTER_PIXEL_WIDTH * longestCellValue);
+    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(requiredPixelWidth, defaultColumnWidth));
+
   }
 
   private Comment createComment(String comment) {
