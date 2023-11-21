@@ -107,25 +107,30 @@ public class ProjectCreationDialog extends Dialog {
   private void initListeners() {
     stepper.addListener(
         event -> {
+          //We only want to update the view if the user triggered the step selection
           if (event.isFromClient()) {
-            if (isDialogContentValid()) {
-              setDialogContent(event.getSelectedStep());
-              adaptFooterButtons(event.getSelectedStep());
-            } else {
-              stepper.setSelectedStep(event.getPreviousStep(), false);
-            }
+            setDialogContent(event.getSelectedStep());
+            adaptFooterButtons(event.getSelectedStep());
+          } else {
+            stepper.setSelectedStep(event.getPreviousStep(), false);
           }
         });
     cancelButton.addClickListener(event -> close());
     backButton.addClickListener(
         event -> stepper.selectPreviousStep(event.isFromClient()));
-    nextButton.addClickListener(event -> stepper.selectNextStep(event.isFromClient()));
-    confirmButton.addClickListener(
-        event -> fireEvent(new ProjectCreationEvent(this, projectDesignLayout.getProjectDesign(),
+    nextButton.addClickListener(event -> {
+      if (isDialogContentValid()) {
+        stepper.selectNextStep(event.isFromClient());
+      }
+    });
+    confirmButton.addClickListener(event -> {
+      if (isDialogContentValid()) {
+        fireEvent(new ProjectCreationEvent(this, projectDesignLayout.getProjectDesign(),
             fundingInformationLayout.getFundingInformation(),
             collaboratorsLayout.getCollaboratorInformation(),
-            experimentalInformationLayout.getExperimentalInformation(), true))
-    );
+            experimentalInformationLayout.getExperimentalInformation(), true));
+      }
+    });
   }
 
   /**

@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
@@ -33,10 +34,10 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
   private final ExperimentalDesignSearchService experimentalDesignSearchService;
   private final Binder<ExperimentalInformation> experimentalInformationBinder = new Binder<>(
       ExperimentalInformation.class);
-  TextField experimentNameField = new TextField("Experiment Name");
-  MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-  MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-  MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+  private final TextField experimentNameField = new TextField("Experiment Name");
+  private final MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+  private final MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+  private final MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
 
   public ExperimentalInformationLayout(
       ExperimentalDesignSearchService experimentalDesignSearchService) {
@@ -68,8 +69,10 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
   }
 
   private void initValidation() {
+    experimentalInformationBinder.setBean(new ExperimentalInformation());
+    experimentNameField.setRequired(true);
     experimentalInformationBinder.forField(experimentNameField)
-        .asRequired("Please provide a name for the experiment")
+        .withValidator(it -> !it.isBlank(), "Please provide a name for the experiment")
         .bind(ExperimentalInformation::getExperimentName,
             ExperimentalInformation::setExperimentName);
     speciesBox.setRequired(true);
@@ -167,11 +170,9 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
       specimen = new ArrayList<>();
       analytes = new ArrayList<>();
     }
-
     public String getExperimentName() {
       return experimentName;
     }
-
     public void setExperimentName(String experimentName) {
       this.experimentName = experimentName;
     }
@@ -214,7 +215,7 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
 
       ExperimentalInformation that = (ExperimentalInformation) o;
 
-      if (!experimentName.equals(that.experimentName)) {
+      if (!Objects.equals(experimentName, that.experimentName)) {
         return false;
       }
       if (!species.equals(that.species)) {
@@ -228,7 +229,7 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
 
     @Override
     public int hashCode() {
-      int result = experimentName.hashCode();
+      int result = experimentName != null ? experimentName.hashCode() : 0;
       result = 31 * result + species.hashCode();
       result = 31 * result + specimen.hashCode();
       result = 31 * result + analytes.hashCode();

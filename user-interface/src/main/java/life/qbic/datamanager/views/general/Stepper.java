@@ -120,8 +120,7 @@ public class Stepper extends Div {
     Step originalStep = getSelectedStep();
     int originalIndex = stepList.indexOf(originalStep);
     if (originalIndex < stepList.size() - 1) {
-      setSelectedStep(stepList.get(originalIndex + 1), false);
-      fireStepSelected(this, getSelectedStep(), originalStep, fromClient);
+      setSelectedStep(stepList.get(originalIndex + 1), fromClient);
     }
   }
 
@@ -134,8 +133,7 @@ public class Stepper extends Div {
     Step originalStep = getSelectedStep();
     int currentIndex = stepList.indexOf(originalStep);
     if (currentIndex > 0) {
-      setSelectedStep(stepList.get(currentIndex - 1), false);
-      fireStepSelected(this, getSelectedStep(), originalStep, fromClient);
+      setSelectedStep(stepList.get(currentIndex - 1), fromClient);
     }
   }
 

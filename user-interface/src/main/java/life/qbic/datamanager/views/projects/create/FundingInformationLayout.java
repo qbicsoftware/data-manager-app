@@ -109,12 +109,11 @@ public class FundingInformationLayout extends Div implements HasValidation {
   @Override
   public boolean isInvalid() {
     fundingEntryBinder.validate();
-
     return !fundingEntryBinder.isValid() && fundingField.isInvalid();
   }
 
 
-  //Todo Replace with FundingEntry call directly if possible
+  /*Vaadin expects Beans with fields for its components which is why this container is necessary*/
   public static final class FundingInformationContainer implements Serializable {
 
     private FundingEntry fundingEntry;
