@@ -37,11 +37,12 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
    * search terms that need to be found instead of one full search term.
    */
   private String buildSearchTerm(String searchString) {
-    String searchTerm = "";
+    StringBuilder searchTermBuilder = new StringBuilder();
     for(String word : searchString.split(" ")) {
-      searchTerm += " +" + word;
+      searchTermBuilder.append(" +" + word);
     }
-    return searchTerm+"*";
+    searchTermBuilder.append("*");
+    return searchTermBuilder.toString();
   }
 
   @Override
