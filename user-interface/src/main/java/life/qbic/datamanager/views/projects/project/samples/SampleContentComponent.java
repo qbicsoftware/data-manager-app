@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -10,9 +11,15 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.CreateBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.ViewBatchEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -40,17 +47,21 @@ public class SampleContentComponent extends Div {
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient BatchRegistrationService batchRegistrationService;
   private final BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.batchRegistrationService = batchRegistrationService;
     this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
+    addBatchUpdateListeners();
   }
 
   /**
@@ -90,6 +101,59 @@ public class SampleContentComponent extends Div {
   private void reloadOnBatchRegistration() {
     sampleDetailsComponent.addBatchRegistrationListener(
         event -> displayComponentInContent(sampleDetailsComponent));
+  }
+
+  private void addBatchUpdateListeners() {
+    batchDetailsComponent.addBatchCreationListener(this::registerBatch);
+    batchDetailsComponent.addBatchDeletionListener(this::openBatchDeletionConfirmation);
+    batchDetailsComponent.addBatchEditListener(this::editBatch);
+    batchDetailsComponent.addBatchViewListener(this::viewBatch);
+  }
+
+  private void registerBatch(CreateBatchEvent createBatchEvent) {
+    onRegisterButtonClicked();
+  }
+
+  //Todo Determine how samples should be loaded and shown within batch
+  private void viewBatch(ViewBatchEvent viewBatchEvent) {
+    ConfirmDialog confirmDialog = new ConfirmDialog();
+    confirmDialog.setText(String.format("This is where I'd show all of my %s Samples",
+        viewBatchEvent.batchPreview().sampleCount()));
+    confirmDialog.open();
+    confirmDialog.addConfirmListener(event -> confirmDialog.close());
+  }
+
+  private void editBatch(EditBatchEvent editBatchEvent) {
+    var result = batchRegistrationService.updateBatch(editBatchEvent.batchPreview().batchId(),
+        editBatchEvent.batchPreview().batchLabel());
+    result.onValue(editedBatchId -> reload());
+  }
+
+  private void deleteBatch(BatchId batchId) {
+    var result = batchRegistrationService.deleteBatch(batchId);
+    result.onValue(deletedBatchId -> reload());
+  }
+
+
+  private void openBatchDeletionConfirmation(DeleteBatchEvent deleteBatchEvent) {
+    BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification(
+        deleteBatchEvent.batchPreview().sampleCount());
+    batchDeletionConfirmationNotification.open();
+    batchDeletionConfirmationNotification.addConfirmListener(event -> {
+      deleteBatch(deleteBatchEvent.batchPreview().batchId());
+      batchDeletionConfirmationNotification.close();
+    });
+    batchDeletionConfirmationNotification.addCancelListener(
+        event -> batchDeletionConfirmationNotification.close());
+  }
+
+  private void onRegisterButtonClicked() {
+    //ToDo Move Batch Registration from SampleDetailsComponent to here
+  }
+
+  //ToDo replace with actual reload
+  private void reload() {
+    setContext(context);
   }
 
   private void displayProjectNotFound() {
