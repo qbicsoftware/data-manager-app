@@ -30,16 +30,17 @@ import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Batch Details Component
  * <p>
  * Component embedded within the
- * {@link life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent} in the
- * {@link life.qbic.datamanager.views.projects.project.samples.SampleInformationMain} It allows the
+ * {@link SampleDetailsComponent} in the
+ * {@link SampleInformationMain} It allows the
  * user to see the information associated for each {@link Batch} of each
- * {@link Experiment within a {@link life.qbic.projectmanagement.domain.model.project.Project}
+ * {@link Experiment within a {@link Project}
  * Additionally it enables the user to trigger the edit and deletion of the {@link Batch}
  */
 @SpringComponent
