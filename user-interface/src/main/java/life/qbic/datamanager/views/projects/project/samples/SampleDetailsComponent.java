@@ -96,7 +96,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
-  private final BatchDetailsComponent batchDetailsComponent;
   private Context context;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
@@ -104,7 +103,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
     initSampleView();
-    this.batchDetailsComponent = batchDetailsComponent;
     this.sampleDetailsComponentHandler = new SampleDetailsComponentHandler(
         sampleInformationService, batchRegistrationService,
         sampleRegistrationService);
@@ -190,7 +188,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   public void setExperiments(Collection<Experiment> experiments) {
     sampleDetailsComponentHandler.setExperiments(experiments);
-    batchDetailsComponent.setExperiments(experiments);
   }
 
   /**
@@ -252,7 +249,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       experiments.forEach(this::addExperimentTabToTabSheet);
       setExperimentsInRegistrationDialog(experiments);
       content.add(buttonAndFieldBar);
-      content.add(batchDetailsComponent);
       content.add(sampleExperimentTabSheet);
     }
 
