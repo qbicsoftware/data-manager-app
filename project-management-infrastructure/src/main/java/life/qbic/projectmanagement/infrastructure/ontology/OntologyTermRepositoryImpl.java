@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.experiment;
+package life.qbic.projectmanagement.infrastructure.ontology;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -7,9 +7,6 @@ import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.domain.repository.OntologyTermRepository;
-import life.qbic.projectmanagement.domain.repository.ProjectRepository;
-import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
-import life.qbic.projectmanagement.infrastructure.project.QbicProjectRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

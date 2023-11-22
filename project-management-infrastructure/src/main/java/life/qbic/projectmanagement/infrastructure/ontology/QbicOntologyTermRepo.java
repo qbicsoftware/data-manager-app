@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.experiment;
+package life.qbic.projectmanagement.infrastructure.ontology;
 
 import java.util.List;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
