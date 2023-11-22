@@ -11,19 +11,27 @@ import java.util.function.Function;
 /**
  * A cell value editor enabling the user to make a selection.
  */
-class SelectEditor<E> extends Select<E> {
+class SelectEditor<T, E> extends Select<E> {
 
   private final List<Registration> addedValueChangeListeners;
 
   private final Function<E, String> toCellValue;
+  private final Function<T, List<E>> toItems;
 
   public SelectEditor(List<E> items, Function<E, String> toCellValue) {
-    addedValueChangeListeners = new ArrayList<>();
+    this(it -> items, toCellValue);
     setItems(items);
-    this.toCellValue = toCellValue;
-    addValueChangeListener(event -> {
+  }
 
-    });
+  public SelectEditor(Function<T, List<E>> toItems, Function<E, String> toCellValue) {
+    this.toItems = toItems;
+    addedValueChangeListeners = new ArrayList<>();
+    this.toCellValue = toCellValue;
+    setItems(new ArrayList<>());
+  }
+
+  public void updateItems(T origin) {
+    setItems(toItems.apply(origin));
   }
 
   public String toCellValue(E value) {

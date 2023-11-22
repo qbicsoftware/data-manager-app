@@ -10,13 +10,6 @@ import java.util.Objects;
 
 /**
  * Represents a biological replicate as part of an {@link ExperimentalGroup}.
- * <p>
- * Labels are generated automatically in the form of "biol-rep-[number]", where number is just a
- * numeric value. Each generation of a new biological replicate instance will increase an internal
- * counter value.
- * <p>
- * If a client wants to reset the counter, they can trigger the
- * {@link BiologicalReplicate#resetReplicateCounter()} method and the counter is reset.
  *
  * @since 1.0.0
  */
@@ -28,7 +21,6 @@ public class BiologicalReplicate implements Serializable {
   private String label;
   @Serial
   private static final long serialVersionUID = 1551778532201183788L;
-  private static int COUNTER = 0;
 
   private BiologicalReplicate(String label) {
     this.label = label;
@@ -39,26 +31,10 @@ public class BiologicalReplicate implements Serializable {
     // Needed for JPA
   }
 
-  public static BiologicalReplicate create() {
-    return new BiologicalReplicate(generateLabel());
+  public static BiologicalReplicate create(String label) {
+    return new BiologicalReplicate(label);
   }
 
-  private static String generateLabel() {
-    if (COUNTER == Integer.MAX_VALUE) {
-      COUNTER = 0;
-    }
-    COUNTER++;
-    return "biol-rep-" + COUNTER;
-  }
-
-  /**
-   * Resets the biological replicate counter to its initial value.
-   *
-   * @since 1.0.0
-   */
-  public static void resetReplicateCounter() {
-    COUNTER = 0;
-  }
 
   /**
    * Returns the biological replicate label.

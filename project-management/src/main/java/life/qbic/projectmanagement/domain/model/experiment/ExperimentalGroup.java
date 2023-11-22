@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 /**
  * <b>Experimental Group</b>
@@ -70,9 +71,8 @@ public class ExperimentalGroup {
 
   private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
     List<BiologicalReplicate> replicates = new ArrayList<>(amount);
-    BiologicalReplicate.resetReplicateCounter();
     for (int i = 1; i <= amount; i++) {
-      replicates.add(BiologicalReplicate.create());
+      replicates.add(BiologicalReplicate.create("biol-rep-" + i));
     }
     return replicates;
   }
@@ -111,4 +111,13 @@ public class ExperimentalGroup {
     return this.experimentalGroupId.equals(((ExperimentalGroup) o).experimentalGroupId);
   }
 
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", ExperimentalGroup.class.getSimpleName() + "[", "]")
+        .add("biologicalReplicates=" + biologicalReplicates)
+        .add("condition=" + condition)
+        .add("experimentalGroupId=" + experimentalGroupId)
+        .add("sampleSize=" + sampleSize)
+        .toString();
+  }
 }

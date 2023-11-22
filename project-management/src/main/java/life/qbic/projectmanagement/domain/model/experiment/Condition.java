@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
@@ -110,5 +111,12 @@ public class Condition {
   @Override
   public int hashCode() {
     return variableLevels.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", Condition.class.getSimpleName() + "[", "]")
+        .add("variableLevels=" + variableLevels)
+        .toString();
   }
 }
