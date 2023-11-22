@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.spreadsheet.validation.ValidationResult;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -451,7 +452,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
-    Cell cell = Optional.ofNullable(getCell(rowIndex, colIndex))
+    Cell cell = getCell(rowIndex, colIndex)
         .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
     setCellValue(cell, cellValue);
     cell.setCellStyle(cellStyle);
@@ -555,17 +556,17 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private Optional<Cell> getCell(CellReference cellReference) {
-    if (cellReference.getRow() < rowCount()) {
-      return Optional.empty();
-    }
-    if (cellReference.getCol() < columnCount()) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(getCell(cellReference.getRow(), cellReference.getCol()));
+    return getCell(cellReference.getRow(), cellReference.getCol());
   }
 
-  private Cell getCell(int rowIndex, int colIndex) {
-    return delegateSpreadsheet.getCell(rowIndex, colIndex);
+  private Optional<Cell> getCell(int rowIndex, int colIndex) {
+    if (rowIndex >= rowCount()) {
+      return Optional.empty();
+    }
+    if (colIndex >= columnCount()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(delegateSpreadsheet.getCell(rowIndex, colIndex));
   }
 
   /**
@@ -575,7 +576,16 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     List<Cell> cells = new ArrayList<>();
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
       for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
-        cells.add(getCell(rowIndex, colIndex));
+        final int finalRowIndex = rowIndex;
+        final int finalColIndex = colIndex;
+        getCell(rowIndex, colIndex).ifPresentOrElse(
+            cells::add,
+            () -> {
+              throw new ApplicationException(
+                  "Expected cell but found none at (row: " + finalRowIndex + "; column: "
+                      + finalColIndex + ")");
+            }
+        );
       }
     }
     return cells.stream().toList();
@@ -642,6 +652,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private List<String> getColumnValues(int columnIndex) {
     return IntStream.range(0, rowCount())
         .mapToObj(rowIndex -> getCell(rowIndex, columnIndex))
+        .filter(Optional::isPresent).map(Optional::get)
         .map(this::getCellValue)
         .collect(Collectors.toList());
   }
