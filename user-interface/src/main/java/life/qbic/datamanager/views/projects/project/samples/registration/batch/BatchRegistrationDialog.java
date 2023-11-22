@@ -175,10 +175,6 @@ public class BatchRegistrationDialog extends DialogWindow {
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
-    addEmptyRow();
-  }
-
-  private void addEmptyRow() {
     spreadsheet.addEmptyRow();
   }
 
