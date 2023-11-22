@@ -122,6 +122,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
   public static class SampleInfo {
 
+    private String sampleCode;
     private AnalysisMethod analysisToBePerformed;
     private String sampleLabel;
     private BiologicalReplicate biologicalReplicate;
@@ -131,7 +132,22 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private Analyte analyte;
     private String customerComment;
 
-    public static SampleInfo create(AnalysisMethod analysisMethod,
+    public static SampleInfo create(
+        AnalysisMethod analysisMethod,
+        String sampleLabel,
+        BiologicalReplicate biologicalReplicate,
+        ExperimentalGroup experimentalGroup,
+        Species species,
+        Specimen specimen,
+        Analyte analyte,
+        String customerComment) {
+      return create(null, analysisMethod, sampleLabel, biologicalReplicate, experimentalGroup,
+          species, specimen, analyte, customerComment);
+    }
+
+    public static SampleInfo create(
+        String sampleCode,
+        AnalysisMethod analysisMethod,
         String sampleLabel,
         BiologicalReplicate biologicalReplicate,
         ExperimentalGroup experimentalGroup,
@@ -140,6 +156,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         Analyte analyte,
         String customerComment) {
       SampleInfo sampleInfo = new SampleInfo();
+      sampleInfo.setSampleCode(sampleCode);
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
       sampleInfo.setSampleLabel(sampleLabel);
       sampleInfo.setExperimentalGroup(experimentalGroup);
@@ -149,6 +166,14 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.setAnalyte(analyte);
       sampleInfo.setCustomerComment(customerComment);
       return sampleInfo;
+    }
+
+    public Optional<String> getSampleCode() {
+      return Optional.ofNullable(sampleCode);
+    }
+
+    public void setSampleCode(String sampleCode) {
+      this.sampleCode = sampleCode;
     }
 
     public AnalysisMethod getAnalysisToBePerformed() {
