@@ -44,14 +44,15 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -78,7 +79,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
-  private final transient ExperimentalDesignSearchService experimentalDesignSearchService;
+  private final transient OntologyTermInformationService ontologyTermInformationService;
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span title = new Span();
@@ -104,11 +105,11 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired OntologyTermInformationService ontologyTermInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
-    this.experimentalDesignSearchService = Objects.requireNonNull(experimentalDesignSearchService);
+    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService);
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
@@ -191,7 +192,7 @@ public class ExperimentDetailsComponent extends PageArea {
     }
     optionalExperiment.ifPresent(experiment -> {
       ExperimentUpdateDialog experimentUpdateDialog = new ExperimentUpdateDialog(
-          experimentalDesignSearchService);
+          ontologyTermInformationService);
 
       ExperimentDraft experimentDraft = new ExperimentDraft();
       experimentDraft.setExperimentName(experiment.getName());

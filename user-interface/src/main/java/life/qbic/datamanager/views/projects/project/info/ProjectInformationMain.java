@@ -164,9 +164,9 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     Result<ExperimentId, RuntimeException> result = addExperimentToProjectService.addExperimentToProject(
         projectId,
         experimentDraft.getExperimentName(),
-        experimentDraft.getSpecies().stream().map(term -> new Species(term.getLabel())).toList(),
-        experimentDraft.getSpecimens().stream().map(term -> new Specimen(term.getLabel())).toList(),
-        experimentDraft.getAnalytes().stream().map(term -> new Analyte(term.getLabel())).toList());
+        experimentDraft.getSpecies(),
+        experimentDraft.getSpecimens(),
+        experimentDraft.getAnalytes());
     if (result.isValue()) {
       return result.getValue();
     } else {

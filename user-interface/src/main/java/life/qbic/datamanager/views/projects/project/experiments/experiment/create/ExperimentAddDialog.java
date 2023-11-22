@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
-import com.vaadin.flow.component.combobox.dataview.ComboBoxLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
@@ -19,12 +18,16 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 
 /**
  * <b>ExperimentAddDialog</b>
@@ -54,50 +57,39 @@ public class ExperimentAddDialog extends DialogWindow {
 
     TextField experimentNameField = new TextField("Experiment Name");
     experimentNameField.addClassName(WIDTH_INPUT);
-    binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
+    binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
     Span experimentDescription = new Span(
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<OntologyClassEntity> speciesBox = new MultiSelectComboBox<>("Species");
-    speciesBox.setRequired(true);
-    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    initComboBoxWithDatasource(speciesBox, List.of("NCBITaxon"),
+        term -> new Species(term.getLabel()));
+    speciesBox.setItemLabelGenerator(Species::label);
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
-//    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
-  //      .sorted(Comparator.comparing(Species::label)).toList());
-    initLazyDatasource(speciesBox, Arrays.asList("NCBITaxon"));
 
-    speciesBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
-
-    MultiSelectComboBox<OntologyClassEntity> specimenBox = new MultiSelectComboBox<>("Specimen");
-    specimenBox.setRequired(true);
-    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+        initComboBoxWithDatasource(specimenBox, Arrays.asList("po", "bto"),
+            term -> new Specimen(term.getLabel()));
+    specimenBox.setItemLabelGenerator(Specimen::label);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
-    /*specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
-        .sorted(Comparator.comparing(Specimen::label)).toList());*/
-    specimenBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
-    initLazyDatasource(specimenBox, Arrays.asList("po","bto"));
 
-    MultiSelectComboBox<OntologyClassEntity> analyteBox = new MultiSelectComboBox<>("Analyte");
-    analyteBox.setRequired(true);
-    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    initComboBoxWithDatasource(analyteBox, List.of("bao_complete"),
+        term -> new Analyte(term.getLabel()));
+    analyteBox.setItemLabelGenerator(Analyte::label);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-/*    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
-        .sorted(Comparator.comparing(OntologyClassEntity::label)).toList());*/
-    analyteBox.setItemLabelGenerator(OntologyClassEntity::getLabel);
-    initLazyDatasource(analyteBox, Arrays.asList("po")); //TODO missing the correct analyte ontology
-
 
     Div createExperimentContent = new Div();
     createExperimentContent.addClassName("add-experiment-content");
@@ -119,15 +111,19 @@ public class ExperimentAddDialog extends DialogWindow {
     cancelButton.addClickListener(this::onCancelClicked);
   }
 
-  private void initLazyDatasource(MultiSelectComboBox<OntologyClassEntity> comboBox,
-      List<String> ontologies) {
-    comboBox.setItemsWithFilterConverter(
+  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<String> ontologies,
+      Function<OntologyClassEntity, T> ontologyMapping) {
+
+    box.setRequired(true);
+    box.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+
+    box.setItemsWithFilterConverter(
         query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
             ontologies,
             query.getOffset(),
             query.getLimit(), query.getSortOrders().stream().map(
                     it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-                .collect(Collectors.toList())).stream(),
+                .collect(Collectors.toList())).stream().map(ontologyMapping),
         entity -> entity
     );
   }
@@ -203,9 +199,9 @@ public class ExperimentAddDialog extends DialogWindow {
     private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
-    private final List<OntologyClassEntity> species;
-    private final List<OntologyClassEntity> specimen;
-    private final List<OntologyClassEntity> analytes;
+    private final List<Species> species;
+    private final List<Specimen> specimen;
+    private final List<Analyte> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();
@@ -221,29 +217,29 @@ public class ExperimentAddDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<OntologyClassEntity> getSpecies() {
+    public List<Species> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyClassEntity> species) {
+    public void setSpecies(Collection<Species> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyClassEntity> getSpecimens() {
+    public List<Specimen> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyClassEntity> specimen) {
+    public void setSpecimens(Collection<Specimen> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyClassEntity> getAnalytes() {
+    public List<Analyte> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyClassEntity> analytes) {
+    public void setAnalytes(Collection<Analyte> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }
