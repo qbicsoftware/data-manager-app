@@ -50,10 +50,6 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  *   <li> adding configurable columns
  * </ul>
  * The spreadsheet itself provides validation information, and an error message.
- * <p>
- * PLEASE NOTE: The Calibri font needs to be installed on the system running the data-manager for
- * the column width to be calculated correctly.
- * @see <a href="https://learn.microsoft.com/en-us/typography/font-list/calibri">Calibri font family</a>
  */
 @Tag(Tag.DIV)
 public final class Spreadsheet<T> extends Component implements HasComponents,
@@ -77,7 +73,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private ValidationMode validationMode;
 
-  //ATTENTION: we need to hard code this. as we cannot be sure Calibri is installed.
+  //ATTENTION: we need to hard-code this. We cannot ensure that the Calibri font is installed.
+  // This value might need to change based on the font size or font family in the spreadsheet cells.
   private static final double CHARACTER_PIXEL_WIDTH = 9.0;
 
   public Spreadsheet() {
@@ -312,6 +309,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private void onCellValueChanged(CellValueChangeEvent cellValueChangeEvent) {
     List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
         .map(this::getCell)
+        .filter(Optional::isPresent).map(Optional::get)
         .toList();
     refreshCellData(changedCells);
     refreshCells(changedCells);
@@ -556,8 +554,14 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return delegateSpreadsheet.getCellValue(cell);
   }
 
-  private Cell getCell(CellReference cellReference) {
-    return getCell(cellReference.getRow(), cellReference.getCol());
+  private Optional<Cell> getCell(CellReference cellReference) {
+    if (cellReference.getRow() < rowCount()) {
+      return Optional.empty();
+    }
+    if (cellReference.getCol() < columnCount()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(getCell(cellReference.getRow(), cellReference.getCol()));
   }
 
   private Cell getCell(int rowIndex, int colIndex) {
