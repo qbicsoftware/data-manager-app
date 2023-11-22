@@ -160,9 +160,9 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
   }
 
-  public void setExperiments(Collection<Experiment> experiments) {
+  public void setExperiment(Experiment experiment) {
     batchPreviews.clear();
-    experiments.forEach(this::loadBatchesForExperiment);
+    loadBatchesForExperiment(experiment);
     batchGrid.setItems(batchPreviews);
   }
 

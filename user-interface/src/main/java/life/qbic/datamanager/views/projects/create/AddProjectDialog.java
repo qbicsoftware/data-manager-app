@@ -90,7 +90,8 @@ public class AddProjectDialog extends DialogWindow {
     add(formLayout);
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ProjectDraft projectDraft = new ProjectDraft();
     ProjectInformation projectInformation = new ProjectInformation();
     try {
@@ -108,9 +109,9 @@ public class AddProjectDialog extends DialogWindow {
     projectCodeBinder.validate();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
   }
 
   private ComboBox<OfferSummary> createOfferSearch(FinanceService financeService) {

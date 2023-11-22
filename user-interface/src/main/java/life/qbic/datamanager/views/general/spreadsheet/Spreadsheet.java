@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.spreadsheet;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
@@ -21,7 +22,10 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import life.qbic.datamanager.views.general.spreadsheet.ColumnValidator.ValidationResult;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import life.qbic.datamanager.views.general.spreadsheet.validation.ValidationResult;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -46,6 +50,10 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  *   <li> adding configurable columns
  * </ul>
  * The spreadsheet itself provides validation information, and an error message.
+ * <p>
+ * PLEASE NOTE: The Calibri font needs to be installed on the system running the data-manager for
+ * the column width to be calculated correctly.
+ * @see <a href="https://learn.microsoft.com/en-us/typography/font-list/calibri">Calibri font family</a>
  */
 @Tag(Tag.DIV)
 public final class Spreadsheet<T> extends Component implements HasComponents,
@@ -54,7 +62,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private static final Logger log = logger(Spreadsheet.class);
 
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
-  private final List<Column<T>> columns = new ArrayList<>();
+  private final List<Column<T, ?>> columns = new ArrayList<>();
   private final List<Row> rows = new ArrayList<>();
 
   // cell styles
@@ -68,6 +76,9 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final transient Drawing<?> drawingPatriarch;
 
   private ValidationMode validationMode;
+
+  //ATTENTION: we need to hard code this. as we cannot be sure Calibri is installed.
+  private static final double CHARACTER_PIXEL_WIDTH = 9.0;
 
   public Spreadsheet() {
     addClassName("spreadsheet-container");
@@ -92,13 +103,19 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     add(delegateSpreadsheet);
 
     validationMode = ValidationMode.LAZY;
-    Column<T> rowNumberColumn = addColumn("",
-        rowValue -> String.valueOf(dataRowCount()),
+    Column<T, Integer> rowNumberColumn = addColumn("#",
+        rowValue -> dataRowCount(),
+        String::valueOf,
         (rowValue, cellValue) -> {/* do nothing */})
         .withCellStyle(rowNumberStyle);
     addHeaderRow();
   }
 
+  /**
+   * Adds a row to this spreadsheet displaying the provided data.
+   *
+   * @param rowData the data for this row
+   */
   public void addRow(T rowData) {
     int previousRowCount = rowCount();
     var dataRow = new DataRow(rowData);
@@ -107,9 +124,45 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.setMaxRows(previousRowCount + 1);
   }
 
-  public Column<T> addColumn(String name, Function<T, String> toCellValue,
+  /**
+   * Clears the content of the spreadsheet. Removes all rows.
+   */
+  public void resetRows() {
+    int lastRowIndex = rowCount() - 1;
+    deleteRows(0, lastRowIndex);
+    addHeaderRow();
+    updateSpreadsheetValidity();
+  }
+
+  /**
+   * Adds a column to the spreadsheet.
+   *
+   * @param name        the name of the column
+   * @param toCellValue a function converting the row data to cell data in this column
+   * @param modelEditor a bi-function that can be used to update the row data when cell data has
+   *                    changed for this column
+   * @return the added column
+   */
+  public Column<T, String> addColumn(String name, Function<T, String> toCellValue,
       BiConsumer<T, String> modelEditor) {
-    Column<T> column = new Column<>(name, toCellValue, modelEditor);
+    return addColumn(name, toCellValue, identity(), modelEditor);
+  }
+
+  /**
+   * Adds a column to the spreadsheet
+   *
+   * @param name                   the name of the column
+   * @param toColumnValue          a function converting row data into data for this column
+   * @param columnValueToCellValue a function converting column data to cell data
+   * @param modelEditor            a bi-function that can be used to update the row data when cell
+   *                               data has changed for this column
+   * @param <C>                    the object type of this column
+   * @return the created column
+   */
+  public <C> Column<T, C> addColumn(String name, Function<T, C> toColumnValue,
+      Function<C, String> columnValueToCellValue,
+      BiConsumer<T, String> modelEditor) {
+    Column<T, C> column = new Column<>(name, toColumnValue, columnValueToCellValue, modelEditor);
     columns.add(column);
     List<Cell> cellsForColumn = createCellsForColumn(column);
     refreshCells(cellsForColumn);
@@ -117,20 +170,40 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return column;
   }
 
+  /**
+   * Remove the last row from the spreadsheet, deleting contained information.
+   */
   public void removeLastRow() {
     if (rowCount() == 0) {
       return;
     }
-    deleteRow(rowCount() - 1);
+    int lastRowIndex = rowCount() - 1;
+    Row lastRow = getRow(lastRowIndex);
+    if (lastRow instanceof HeaderRow headerRow) {
+      log.debug("Will not remove header row " + headerRow + " at " + lastRowIndex);
+      return;
+    }
+    deleteRow(lastRowIndex);
     if (validationMode == ValidationMode.EAGER) {
       updateSpreadsheetValidity();
     }
   }
 
+  /**
+   * Changes the validation mode. If the validation mode is {@link ValidationMode#EAGER} a cell is
+   * validated after it was updated. In {@link ValidationMode#LAZY} the validation is not triggered
+   * after a cell is updated.
+   *
+   * @param validationMode the validation mode to use
+   */
   public void setValidationMode(ValidationMode validationMode) {
     this.validationMode = validationMode;
   }
 
+  /**
+   * Get the data shown in the spreadsheet
+   * @return the underlying data for every row as a List
+   */
   public List<T> getData() {
     return rows.stream()
         .filter(row -> row instanceof DataRow)
@@ -139,10 +212,19 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         .toList();
   }
 
+  /**
+   *
+   * @return true if the last validation passed; false otherwise
+   */
   public boolean isValid() {
     return !isInvalid();
   }
 
+  /**
+   * Add a listener to the validation status of this spreadsheet.
+   * @param listener the listener receiving validation changed events whenever the validation status changed.
+   * @return a registration for the listener
+   */
   public Registration addValidationChangeListener(
       ComponentEventListener<ValidationChangeEvent> listener) {
     return addListener(ValidationChangeEvent.class, listener);
@@ -161,25 +243,35 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ValidationChangeEvent(Spreadsheet<?> source, boolean fromClient, boolean oldValue,
-        boolean value) {
+    public ValidationChangeEvent(Spreadsheet<?> source, boolean fromClient, boolean wasValid,
+        boolean isValid) {
       super(source, fromClient);
-      this.oldValue = oldValue;
-      this.value = value;
+      this.oldValue = wasValid;
+      this.value = isValid;
     }
 
-    public boolean oldValue() {
+    public boolean wasValid() {
       return oldValue;
     }
 
-    public boolean value() {
+    public boolean wasInvalid() {
+      return !wasValid();
+    }
+
+    public boolean isValid() {
       return value;
+    }
+
+    public boolean isInvalid() {
+      return !isValid();
     }
   }
 
   private CellStyle createColumnNameStyle(Workbook workbook) {
     Font columnNameFont = workbook.createFont();
     columnNameFont.setBold(true);
+    columnNameFont.setFontHeightInPoints((short) 11);
+    columnNameFont.setFontName("Arial");
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFillBackgroundColor(null);
@@ -191,7 +283,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private CellStyle getDefaultCellStyle(Workbook workbook) {
+    Font defaultFont = workbook.createFont();
+    defaultFont.setFontHeightInPoints((short) 11);
+    defaultFont.setFontName("Arial");
+
     CellStyle cellStyle = workbook.getCellStyleAt(0);
+    cellStyle.setFont(defaultFont);
     cellStyle.setLocked(false);
     return cellStyle;
   }
@@ -199,9 +296,12 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private CellStyle createRowNumberStyle(Workbook workbook) {
     Font rowNumberFont = workbook.createFont();
     rowNumberFont.setBold(true);
+    rowNumberFont.setFontHeightInPoints((short) 11);
+    rowNumberFont.setFontName("Arial");
 
     CellStyle cellStyle = workbook.createCellStyle();
     cellStyle.setFont(rowNumberFont);
+    cellStyle.setAlignment(HorizontalAlignment.CENTER);
     cellStyle.setLocked(true);
     return cellStyle;
   }
@@ -257,7 +357,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
    */
   private void updateModel(List<Cell> changedCells) {
     for (Cell cell : changedCells) {
-      Column<T> column = getColumn(cell.getColumnIndex());
+      Column<T, ?> column = getColumn(cell.getColumnIndex());
       var row = getRow(cell.getRowIndex());
       BiConsumer<T, String> modelUpdater = column.modelUpdater();
       if (row instanceof DataRow dataRow) {
@@ -315,7 +415,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     delegateSpreadsheet.refreshCells(cells);
   }
 
-  private List<Cell> createCellsForColumn(Column<T> column) {
+  private List<Cell> createCellsForColumn(Column<T, ?> column) {
     int colIndex = colIndex(column);
     List<Cell> dirtyCells = new ArrayList<>();
 
@@ -328,7 +428,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private Cell createCell(int rowIndex, int colIndex) {
-    Column<T> column = getColumn(colIndex);
+    Column<T, ?> column = getColumn(colIndex);
     Row row = getRow(rowIndex);
     //FIXME in Java 21 this can be replaced by a switch expression
     Cell cell;
@@ -393,19 +493,45 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     if (index < 0) {
       throw new IllegalArgumentException(
           "The row at index " + index
+              + " cannot be removed. Please provide any index greater or equal to 0");
+    }
+    deleteRows(index, index);
+  }
+
+  /**
+   * Deletes all rows starting with startIndex inclusive up to endIndex inclusive.
+   *
+   * @param startIndex the index where to start from
+   * @param endIndex   the index where to stop (inclusive)
+   */
+  private void deleteRows(int startIndex, int endIndex) {
+    int numberOfRowsBeforeRemoval = rowCount();
+    int lastRowIndex = numberOfRowsBeforeRemoval - 1;
+    int nextRowIndex = endIndex + 1;
+    if (startIndex > endIndex) {
+      throw new IllegalArgumentException(
+          "The start index " + startIndex + " must be greater or equal to the end index "
+              + endIndex);
+    }
+    if (endIndex > lastRowIndex) {
+      throw new IllegalArgumentException(
+          "There is no row at index " + endIndex + ". There are only rows with index up to "
+              + lastRowIndex);
+    }
+    if (startIndex < 0) {
+      throw new IllegalArgumentException(
+          "The row at index " + startIndex
               + " cannot be removed. Please provide any index greater than 0");
     }
-    Row row = getRow(index);
-    if (row instanceof HeaderRow headerRow) {
-      log.debug("Will not remove header row " + headerRow);
-      return;
-    }
-    delegateSpreadsheet.deleteRows(index, index);
+
+    delegateSpreadsheet.deleteRows(startIndex, endIndex);
+    int numberOfRemovedRows = endIndex + 1 - startIndex;
     if (nextRowIndex <= lastRowIndex) {
-      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -1, true, true);
+      delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -numberOfRemovedRows, true, true);
     }
-    rows.remove(index);
-    delegateSpreadsheet.setMaxRows(lastRowIndex);
+    int numberOfRowsAfterRemoval = numberOfRowsBeforeRemoval - numberOfRemovedRows;
+    rows.removeAll(rows.subList(startIndex, endIndex + 1));
+    delegateSpreadsheet.setMaxRows(numberOfRowsAfterRemoval);
   }
 
   /**
@@ -467,7 +593,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return rows.get(rowIndex);
   }
 
-  private int colIndex(Column<T> column) {
+  private int colIndex(Column<T, ?> column) {
     int colIndex = columns.indexOf(column);
     if (colIndex < 0) {
       throw new IllegalArgumentException("Column " + column + " is not contained.");
@@ -475,17 +601,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return colIndex;
   }
 
-  private Column<T> getColumn(int colIndex) {
+  private Column<T, ?> getColumn(int colIndex) {
     return columns.get(colIndex);
   }
 
 
   private void autoFitColumnWidth(int colIndex) {
-    delegateSpreadsheet.autofitColumn(colIndex);
-    int fittingColumnWidth = (int) delegateSpreadsheet.getActiveSheet().getColumnWidthInPixels(
-        colIndex);
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
-    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(fittingColumnWidth, defaultColumnWidth));
+    int longestCellValue = getColumnValues(colIndex).stream().mapToInt(String::length).max()
+        .orElse(0);
+    int requiredPixelWidth = (int) Math.ceil(CHARACTER_PIXEL_WIDTH * longestCellValue);
+    delegateSpreadsheet.setColumnWidth(colIndex, Math.max(requiredPixelWidth, defaultColumnWidth));
+
   }
 
   private Comment createComment(String comment) {
@@ -502,21 +629,50 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
 
+  /**
+   * Validate the spreadsheet. This method performs validation and updates the current validation status.
+   *
+   */
   public void validate() {
     List<Cell> cells = cells();
     updateValidation(cells);
     refreshCells(cells);
   }
 
+  private List<String> getColumnValues(int columnIndex) {
+    return IntStream.range(0, rowCount())
+        .mapToObj(rowIndex -> getCell(rowIndex, columnIndex))
+        .map(this::getCellValue)
+        .collect(Collectors.toList());
+  }
+
   private ValidationResult validateCell(Cell cell) {
-    Column<T> column = getColumn(cell.getColumnIndex());
+    Column<T, ?> column = getColumn(cell.getColumnIndex());
     Row row = getRow(cell.getRowIndex());
     if (row instanceof HeaderRow) {
       return ValidationResult.valid();
     }
-    List<ColumnValidator<String>> validators = column.getValidators();
-    return validators.stream()
+    List<ValidationResult> cellValidationResults = column.getValidators()
+        .stream()
         .map(it -> it.validate(getCellValue(cell)))
+        .toList();
+
+    T data = ((DataRow) row).data();
+
+    List<ValidationResult> objectValidationResults = column.getObjectValidators()
+        .stream()
+        .map(it -> it.validate(data, getCellValue(cell)))
+        .toList();
+
+    List<String> columnValues = getColumnValues(cell.getColumnIndex());
+    List<ValidationResult> columnValidationResults = column.getColumnValidators().stream()
+        .map(it -> it.validate(columnValues, getCellValue(cell)))
+        .toList();
+
+    return Stream.of(cellValidationResults,
+            objectValidationResults,
+            columnValidationResults)
+        .flatMap(List::stream)
         .filter(ValidationResult::isInvalid)
         .findAny()
         .orElse(ValidationResult.valid());
@@ -657,9 +813,17 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
         com.vaadin.flow.component.spreadsheet.Spreadsheet spreadsheet, Sheet sheet,
         Component customEditor) {
       try {
+
         if (customEditor instanceof SelectEditor selectEditor) {
           selectEditor.removeAllValueChangeListeners();
+
+          Row row = getRow(cell.getRowIndex());
+          if (row instanceof DataRow dataRow) {
+            selectEditor.updateItems(dataRow.data());
+          }
+
           selectEditor.setFromCellValue(getCellValue(cell));
+
           selectEditor.addValueChangeListener(event -> {
             String cellValue = selectEditor.toCellValue(event.getValue());
             updateCell(cell, cellValue);
@@ -668,7 +832,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
           });
         }
       } catch (ClassCastException e) {
-        log.debug("Seems not to be a SelectEditor.", e);
+        log.debug("Cannot open select editor on cell [r:%s, c:%s]".formatted(cell.getRowIndex(),
+            cell.getColumnIndex()), e);
       }
     }
   }

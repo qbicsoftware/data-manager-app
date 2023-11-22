@@ -106,12 +106,10 @@ public class ExperimentAddDialog extends DialogWindow {
     setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
     add(createExperimentContent);
-
-    confirmButton.addClickListener(this::onConfirmClicked);
-    cancelButton.addClickListener(this::onCancelClicked);
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
     if (isValid) {
@@ -119,7 +117,8 @@ public class ExperimentAddDialog extends DialogWindow {
     }
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 

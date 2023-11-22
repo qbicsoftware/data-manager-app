@@ -6,20 +6,15 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.BatchRegistrationListener;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -42,17 +37,19 @@ public class SampleContentComponent extends Div {
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
   private Context context;
-  private static final Logger log = LoggerFactory.logger(SampleContentComponent.class);
-  private final SampleDetailsComponent sampleDetailsComponent;
+  private final transient SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
+      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleDetailsComponent sampleDetailsComponent) {
+      @Autowired BatchDetailsComponent batchDetailsComponent) {
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
   }
 
@@ -67,32 +64,18 @@ public class SampleContentComponent extends Div {
   public void setContext(Context context) {
     this.context = context;
     ProjectId projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    batchDetailsComponent.setExperiment(
+        experimentInformationService.find(experimentId).orElseThrow());
     projectInformationService.find(projectId)
-        .ifPresentOrElse(project -> {
-          sampleDetailsComponent.setContext(context);
-          propagateExperimentInformation(context);
-        }, this::displayProjectNotFound);
+        .ifPresentOrElse(
+            project -> {
+              sampleDetailsComponent.setContext(context);
+              displayComponentInContent(batchDetailsComponent);
+              displayComponentInContent(sampleDetailsComponent);
+            }, this::displayProjectNotFound);
   }
 
-
-  private void propagateExperimentInformation(Context context) {
-    Collection<Experiment> experiments = getExperimentsForProject(
-        context.projectId().orElseThrow());
-    if (experiments.isEmpty()) {
-      displayNoExperimentsFound();
-    } else {
-      displayComponentInContent(sampleDetailsComponent);
-      sampleDetailsComponent.setExperiments(experiments);
-      sampleDetailsComponent.setSelectedExperiment(context.experimentId().orElseThrow());
-    }
-  }
-
-  private Collection<Experiment> getExperimentsForProject(ProjectId projectId) {
-    var project = projectInformationService.find(projectId);
-    return project.<Collection<Experiment>>map(value -> value.experiments().stream()
-        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
-        .toList()).orElseGet(ArrayList::new);
-  }
 
   private boolean isComponentInContent(Component component) {
     return this.getChildren().collect(Collectors.toSet()).contains(component);
@@ -100,33 +83,13 @@ public class SampleContentComponent extends Div {
 
   private void displayComponentInContent(Component component) {
     if (!isComponentInContent(component)) {
-      this.removeAll();
       this.add(component);
     }
   }
 
-  /**
-   * Propagates the listener which will retrieve notification if a new {@link Batch} was created in
-   * the {@link SampleDetailsComponent} within this container
-   *
-   * @param batchRegistrationListener listener to be notified if a batchRegistration happened in the
-   *                                  {@link SampleDetailsComponent}
-   */
-  public void addBatchRegistrationListener(BatchRegistrationListener batchRegistrationListener) {
-    sampleDetailsComponent.addBatchRegistrationListener(batchRegistrationListener);
-  }
-
   private void reloadOnBatchRegistration() {
     sampleDetailsComponent.addBatchRegistrationListener(
-        event -> propagateExperimentInformation(context));
-  }
-
-  private void displayNoExperimentsFound() {
-    this.removeAll();
-    ErrorMessage errorMessage = new ErrorMessage("No Experiments defined",
-        "No Experiments are defined in project");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+        event -> displayComponentInContent(sampleDetailsComponent));
   }
 
   private void displayProjectNotFound() {

@@ -1,18 +1,16 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.ItemLabelGenerator;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.CancelEvent;
-import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
@@ -34,12 +32,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 1657697182040756406L;
   private final Collection<VariableLevel> experimentalVariableLevels;
-  private final List<ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>>> cancelListeners = new ArrayList<>();
   private final Div experimentalGroupsCollection = new Div();
   private final Div content = new Div();
   private final Div addNewGroupContainer = new Div();
   private final boolean editMode;
-  private final List<ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>>> confirmListeners = new ArrayList<>();
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
       boolean editMode) {
@@ -47,7 +43,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();
-    configureComponent();
   }
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
@@ -95,31 +90,24 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         experimentalGroupInput.getCondition());
   }
 
-  private void configureComponent() {
-    cancelButton.addClickListener(event -> fireCancelEvent());
-    confirmButton.addClickListener(event -> fireConfirmEvent());
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
   }
 
-  private void fireConfirmEvent() {
-    var event = new ConfirmEvent<>(this, true);
-    confirmListeners.forEach(listener -> listener.onComponentEvent(event));
-  }
-
-  private void fireCancelEvent() {
-    CancelEvent<ExperimentalGroupsDialog> cancelEvent = new CancelEvent<>(this, true);
-    cancelListeners.forEach(
-        cancelEventComponentEventListener -> cancelEventComponentEventListener.onComponentEvent(
-            cancelEvent));
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   public void addCancelEventListener(
-      ComponentEventListener<CancelEvent<ExperimentalGroupsDialog>> listener) {
-    this.cancelListeners.add(listener);
+      ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
   }
 
   public void addConfirmEventListener(
-      ComponentEventListener<ConfirmEvent<ExperimentalGroupsDialog>> listener) {
-    this.confirmListeners.add(listener);
+      ComponentEventListener<ConfirmEvent> listener) {
+    addListener(ConfirmEvent.class, listener);
   }
 
   private void layoutComponent() {
@@ -184,5 +172,23 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {}
+
+  public static class ConfirmEvent extends
+      life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {
+
+
+    public ConfirmEvent(ExperimentalGroupsDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public static class CancelEvent extends
+      life.qbic.datamanager.views.general.CancelEvent<ExperimentalGroupsDialog> {
+
+
+    public CancelEvent(ExperimentalGroupsDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
 
 }
