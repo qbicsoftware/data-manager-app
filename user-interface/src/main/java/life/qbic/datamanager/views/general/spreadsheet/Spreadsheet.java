@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.spreadsheet.validation.ValidationResult;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -50,10 +51,6 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  *   <li> adding configurable columns
  * </ul>
  * The spreadsheet itself provides validation information, and an error message.
- * <p>
- * PLEASE NOTE: The Calibri font needs to be installed on the system running the data-manager for
- * the column width to be calculated correctly.
- * @see <a href="https://learn.microsoft.com/en-us/typography/font-list/calibri">Calibri font family</a>
  */
 @Tag(Tag.DIV)
 public final class Spreadsheet<T> extends Component implements HasComponents,
@@ -77,7 +74,8 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   private ValidationMode validationMode;
 
-  //ATTENTION: we need to hard code this. as we cannot be sure Calibri is installed.
+  //ATTENTION: we need to hard-code this. We cannot ensure that the Calibri font is installed.
+  // This value might need to change based on the font size or font family in the spreadsheet cells.
   private static final double CHARACTER_PIXEL_WIDTH = 9.0;
 
   public Spreadsheet() {
@@ -316,6 +314,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private void onCellValueChanged(CellValueChangeEvent cellValueChangeEvent) {
     List<Cell> changedCells = cellValueChangeEvent.getChangedCells().stream()
         .map(this::getCell)
+        .filter(Optional::isPresent).map(Optional::get)
         .toList();
     refreshCellData(changedCells);
     refreshCells(changedCells);
@@ -457,7 +456,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private Cell setCell(int rowIndex, int colIndex, String cellValue, CellStyle cellStyle) {
-    Cell cell = Optional.ofNullable(getCell(rowIndex, colIndex))
+    Cell cell = getCell(rowIndex, colIndex)
         .orElse(delegateSpreadsheet.createCell(rowIndex, colIndex, null));
     setCellValue(cell, cellValue);
     cell.setCellStyle(cellStyle);
@@ -560,12 +559,18 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return delegateSpreadsheet.getCellValue(cell);
   }
 
-  private Cell getCell(CellReference cellReference) {
+  private Optional<Cell> getCell(CellReference cellReference) {
     return getCell(cellReference.getRow(), cellReference.getCol());
   }
 
-  private Cell getCell(int rowIndex, int colIndex) {
-    return delegateSpreadsheet.getCell(rowIndex, colIndex);
+  private Optional<Cell> getCell(int rowIndex, int colIndex) {
+    if (rowIndex >= rowCount()) {
+      return Optional.empty();
+    }
+    if (colIndex >= columnCount()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(delegateSpreadsheet.getCell(rowIndex, colIndex));
   }
 
   /**
@@ -575,7 +580,16 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     List<Cell> cells = new ArrayList<>();
     for (int rowIndex = 0; rowIndex < rowCount(); rowIndex++) {
       for (int colIndex = 0; colIndex < columnCount(); colIndex++) {
-        cells.add(getCell(rowIndex, colIndex));
+        final int finalRowIndex = rowIndex;
+        final int finalColIndex = colIndex;
+        getCell(rowIndex, colIndex).ifPresentOrElse(
+            cells::add,
+            () -> {
+              throw new ApplicationException(
+                  "Expected cell but found none at (row: " + finalRowIndex + "; column: "
+                      + finalColIndex + ")");
+            }
+        );
       }
     }
     return cells.stream().toList();
@@ -642,6 +656,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private List<String> getColumnValues(int columnIndex) {
     return IntStream.range(0, rowCount())
         .mapToObj(rowIndex -> getCell(rowIndex, columnIndex))
+        .filter(Optional::isPresent).map(Optional::get)
         .map(this::getCellValue)
         .collect(Collectors.toList());
   }
