@@ -53,7 +53,7 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  * The spreadsheet itself provides validation information, and an error message.
  */
 @Tag(Tag.DIV)
-public final class Spreadsheet<T> extends Component implements HasComponents,
+public class Spreadsheet<T> extends Component implements HasComponents,
     HasValidationProperties {
 
   private static final Logger log = logger(Spreadsheet.class);
@@ -72,7 +72,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final transient CreationHelper creationHelper;
   private final transient Drawing<?> drawingPatriarch;
 
-  private ValidationMode validationMode;
+  protected ValidationMode validationMode;
 
   //ATTENTION: we need to hard-code this. We cannot ensure that the Calibri font is installed.
   // This value might need to change based on the font size or font family in the spreadsheet cells.
@@ -192,6 +192,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
    */
   public void setValidationMode(ValidationMode validationMode) {
     this.validationMode = validationMode;
+  }
+
+  public ValidationMode getValidationMode() {
+    return validationMode;
   }
 
   /**
