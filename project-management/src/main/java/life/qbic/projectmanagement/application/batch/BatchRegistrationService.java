@@ -78,14 +78,6 @@ public class BatchRegistrationService {
     }
   }
 
-  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
-    var result = batchDomainService.deleteBatch(batchId);
-    if (result.isError()) {
-      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
-    }
-    return Result.fromValue(batchId);
-  }
-
   public Result<BatchId, ResponseCode> updateBatch(BatchId batchId, String batchLabel) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
@@ -103,13 +95,12 @@ public class BatchRegistrationService {
     }
   }
 
-
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
     BATCH_NOT_FOUND,
     BATCH_CREATION_FAILED,
     BATCH_REGISTRATION_FAILED,
-    BATCH_DELETION_FAILED,
+    BATCH_DELETION_FAILED
   }
 
 }

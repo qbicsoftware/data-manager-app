@@ -8,6 +8,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
@@ -38,6 +39,12 @@ public class SampleInformationService {
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
     return sampleRepository.findSamplesByExperimentId(experimentId);
+  }
+
+  public Result<Collection<Sample>, ResponseCode> retrieveSamplesForBatch(
+      BatchId batchId) {
+    Objects.requireNonNull(batchId, "batch id must not be null");
+    return sampleRepository.findSamplesByBatchId(batchId);
   }
 
   /**

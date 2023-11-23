@@ -7,6 +7,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -15,6 +16,7 @@ import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponen
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.ViewBatchEvent;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
@@ -44,21 +46,30 @@ public class SampleContentComponent extends Div {
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
   private Context context;
-  private final transient SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient BatchRegistrationService batchRegistrationService;
+  private final transient DeletionService deletionService;
+  private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
+      @Autowired DeletionService deletionService,
+      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
-    this.sampleDetailsComponent = sampleDetailsComponent;
+    Objects.requireNonNull(projectInformationService);
+    Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(batchRegistrationService);
+    Objects.requireNonNull(deletionService);
+    Objects.requireNonNull(sampleDetailsComponent);
+    Objects.requireNonNull(batchDetailsComponent);
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     this.batchRegistrationService = batchRegistrationService;
+    this.deletionService = deletionService;
+    this.sampleDetailsComponent = sampleDetailsComponent;
     this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
     addBatchUpdateListeners();
@@ -130,7 +141,7 @@ public class SampleContentComponent extends Div {
   }
 
   private void deleteBatch(BatchId batchId) {
-    var result = batchRegistrationService.deleteBatch(batchId);
+    var result = deletionService.deleteBatch(batchId);
     result.onValue(deletedBatchId -> reload());
   }
 

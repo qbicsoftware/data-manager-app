@@ -17,7 +17,6 @@ import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Batch JPA Repository</b>
@@ -63,19 +62,6 @@ public class BatchJpaRepository implements BatchRepository {
   }
 
   @Override
-  @Transactional
-  public Result<BatchId, ResponseCode> deleteById(BatchId batchId) {
-    try {
-      qbicBatchRepo.deleteById(batchId);
-      qbicSampleRepository.deleteSamplesByAssignedBatchEquals(batchId);
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
-    }
-    return Result.fromValue(batchId);
-  }
-
-  @Override
   public Result<Collection<Batch>, ResponseCode> findBatchesByExperimentId(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
@@ -92,5 +78,16 @@ public class BatchJpaRepository implements BatchRepository {
       return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
     }
     return Result.fromValue(batches);
+  }
+
+  @Override
+  public Result<BatchId, ResponseCode> deleteById(BatchId batchId) {
+    try {
+      qbicBatchRepo.deleteById(batchId);
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+    }
+    return Result.fromValue(batchId);
   }
 }

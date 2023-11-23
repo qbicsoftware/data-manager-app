@@ -33,6 +33,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -171,8 +172,14 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     SampleFetchOptions childOptions = new SampleFetchOptions();
     childOptions.withDataSets();
     options.withChildrenUsing(childOptions);
-    SearchResult<Sample> searchResult =
-        openBisClient.getV3().searchSamples(openBisClient.getSessionToken(), criteria, options);
+    SearchResult<Sample> searchResult = null;
+    try {
+      searchResult = openBisClient.getV3()
+          .searchSamples(openBisClient.getSessionToken(), criteria, options);
+    } catch (Exception exception) {
+      System.out.println(exception.getMessage());
+    }
+
 
     return searchResult.getObjects();
   }
@@ -282,16 +289,29 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   /**
    * Deletes a sample with the provided code from persistence.
    *
+   * @param samples The {@link Sample}s to be deleted in the data repo
+   * @since 1.0.0
+   */
+  @Override
+  public void deleteAll(
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
+    samples.forEach(sample -> delete(sample.sampleCode()));
+  }
+
+  /**
+   * Deletes all samples from persistence.
+   *
    * @param sampleCode the {@link SampleCode} of the sample to delete
    * @since 1.0.0
    */
   @Override
-  public void delete(SampleCode sampleCode) {
+  public void delete(SampleCode sampleCode) throws SampleNotDeletedException {
     if(isSampleWithData(searchSamplesWithDescendantsAndDatasetsByCode(sampleCode.code()))) {
       throw new SampleNotDeletedException("Did not delete sample "+sampleCode+", because data is attached.");
     }
     deleteOpenbisSample(DEFAULT_SPACE_CODE, sampleCode.code());
   }
+
 
   /**
    * Recursive method checking child samples for datasets
@@ -417,7 +437,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   }
 
-  static class SampleNotDeletedException extends RuntimeException {
+  public static class SampleNotDeletedException extends RuntimeException {
 
     public SampleNotDeletedException(String s) {
       super(s);

@@ -7,7 +7,7 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.data.jpa.repository.JpaRepository;
 public interface QbicSampleRepository extends JpaRepository<Sample, SampleId> {
-
     Collection<Sample> findAllByExperimentId(ExperimentId experimentId);
-    void deleteSamplesByAssignedBatchEquals(BatchId batchId);
+
+  Collection<Sample> findAllByAssignedBatch(BatchId batchId);
 }

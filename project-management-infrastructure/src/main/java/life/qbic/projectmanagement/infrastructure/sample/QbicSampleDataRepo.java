@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.sample;
 
+import java.util.Collection;
 import java.util.List;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -32,6 +33,13 @@ public interface QbicSampleDataRepo {
    * @since 1.0.0
    */
   void delete(SampleCode sampleCode);
+
+  /**
+   * Removes the provided samples from persistence
+   *
+   * @param samples the {@link Sample} to be removed from the data repository
+   */
+  void deleteAll(Collection<Sample> samples);
 
   /**
    * Searches for samples that contain the provided sample code
