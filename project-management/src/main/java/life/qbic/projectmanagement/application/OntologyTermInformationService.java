@@ -41,8 +41,8 @@ public class OntologyTermInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<OntologyClassEntity> queryOntologyTerm(String termFilter, List<String> ontologies, int offset, int limit,
-      List<SortOrder> sortOrders) {
+  public List<OntologyClassEntity> queryOntologyTerm(String termFilter, List<String> ontologies,
+      int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<OntologyClassEntity> termList = ontologyTermLookup.query(termFilter, ontologies, offset, limit,
         sortOrders);
