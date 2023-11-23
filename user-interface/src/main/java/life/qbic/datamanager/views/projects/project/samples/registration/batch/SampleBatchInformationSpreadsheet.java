@@ -23,6 +23,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * A spreadsheet used for sample batch information
@@ -137,6 +138,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
   public static class SampleInfo {
 
+    private SampleId sampleId;
     private String sampleCode;
     private AnalysisMethod analysisToBePerformed;
     private String sampleLabel;
@@ -181,6 +183,10 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.setAnalyte(analyte);
       sampleInfo.setCustomerComment(customerComment);
       return sampleInfo;
+    }
+
+    public Optional<SampleId> getSampleId() {
+      return Optional.ofNullable(sampleId);
     }
 
     public Optional<String> getSampleCode() {
