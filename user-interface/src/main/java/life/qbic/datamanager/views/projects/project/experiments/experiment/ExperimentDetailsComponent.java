@@ -44,8 +44,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
