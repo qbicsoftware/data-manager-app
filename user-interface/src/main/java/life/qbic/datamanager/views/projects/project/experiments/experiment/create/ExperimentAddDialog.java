@@ -25,6 +25,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -65,7 +66,7 @@ public class ExperimentAddDialog extends DialogWindow {
             + "values are allowed!");
 
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-    initComboBoxWithDatasource(speciesBox, List.of("NCBITaxon"),
+    initComboBoxWithDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
         term -> new Species(term.getLabel()));
     speciesBox.setItemLabelGenerator(Species::label);
     binder.forField(speciesBox)
@@ -74,7 +75,7 @@ public class ExperimentAddDialog extends DialogWindow {
             ExperimentDraft::setSpecies);
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-        initComboBoxWithDatasource(specimenBox, Arrays.asList("po", "bto"),
+        initComboBoxWithDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY),
             term -> new Specimen(term.getLabel()));
     specimenBox.setItemLabelGenerator(Specimen::label);
     binder.forField(specimenBox)
@@ -83,7 +84,7 @@ public class ExperimentAddDialog extends DialogWindow {
             ExperimentDraft::setSpecimens);
 
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
-    initComboBoxWithDatasource(analyteBox, List.of("bao_complete"),
+    initComboBoxWithDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
         term -> new Analyte(term.getLabel()));
     analyteBox.setItemLabelGenerator(Analyte::label);
     binder.forField(analyteBox)
@@ -108,7 +109,7 @@ public class ExperimentAddDialog extends DialogWindow {
     add(createExperimentContent);
   }
 
-  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<String> ontologies,
+  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<Ontology> ontologies,
       Function<OntologyClassEntity, T> ontologyMapping) {
 
     box.setRequired(true);
@@ -116,7 +117,7 @@ public class ExperimentAddDialog extends DialogWindow {
 
     box.setItemsWithFilterConverter(
         query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
-            ontologies,
+            ontologies.stream().map(Ontology::getAbbreviation).toList(),
             query.getOffset(),
             query.getLimit(), query.getSortOrders().stream().map(
                     it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
