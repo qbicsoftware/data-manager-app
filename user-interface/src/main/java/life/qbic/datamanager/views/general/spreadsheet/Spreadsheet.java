@@ -53,7 +53,7 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
  * The spreadsheet itself provides validation information, and an error message.
  */
 @Tag(Tag.DIV)
-public final class Spreadsheet<T> extends Component implements HasComponents,
+public class Spreadsheet<T> extends Component implements HasComponents,
     HasValidationProperties {
 
   private static final Logger log = logger(Spreadsheet.class);
@@ -64,6 +64,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
 
   // cell styles
   private final transient CellStyle defaultCellStyle;
+  private final transient CellStyle lockedCellStyle;
   private final transient CellStyle invalidCellStyle;
   private final transient CellStyle rowNumberStyle;
   private final transient CellStyle columnHeaderStyle;
@@ -72,7 +73,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private final transient CreationHelper creationHelper;
   private final transient Drawing<?> drawingPatriarch;
 
-  private ValidationMode validationMode;
+  protected ValidationMode validationMode;
 
   //ATTENTION: we need to hard-code this. We cannot ensure that the Calibri font is installed.
   // This value might need to change based on the font size or font family in the spreadsheet cells.
@@ -85,6 +86,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     drawingPatriarch = delegateSpreadsheet.getActiveSheet().createDrawingPatriarch();
 
     defaultCellStyle = getDefaultCellStyle(delegateSpreadsheet.getWorkbook());
+    lockedCellStyle = createLockedCellStyle(delegateSpreadsheet.getWorkbook());
     invalidCellStyle = createInvalidCellStyle(delegateSpreadsheet.getWorkbook());
     rowNumberStyle = createRowNumberStyle(delegateSpreadsheet.getWorkbook());
     columnHeaderStyle = createColumnNameStyle(delegateSpreadsheet.getWorkbook());
@@ -157,11 +159,15 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
       Function<C, String> columnValueToCellValue,
       BiConsumer<T, String> modelEditor) {
     Column<T, C> column = new Column<>(name, toColumnValue, columnValueToCellValue, modelEditor);
+    addColumn(column);
+    return column;
+  }
+
+  private void addColumn(Column<T, ?> column) {
     columns.add(column);
     List<Cell> cellsForColumn = createCellsForColumn(column);
     refreshCells(cellsForColumn);
     delegateSpreadsheet.setMaxColumns(columnCount());
-    return column;
   }
 
   /**
@@ -192,6 +198,10 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
    */
   public void setValidationMode(ValidationMode validationMode) {
     this.validationMode = validationMode;
+  }
+
+  public ValidationMode getValidationMode() {
+    return validationMode;
   }
 
   /**
@@ -276,7 +286,7 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return cellStyle;
   }
 
-  private CellStyle getDefaultCellStyle(Workbook workbook) {
+  private static CellStyle getDefaultCellStyle(Workbook workbook) {
     Font defaultFont = workbook.createFont();
     defaultFont.setFontHeightInPoints((short) 11);
     defaultFont.setFontName("Arial");
@@ -287,7 +297,13 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return cellStyle;
   }
 
-  private CellStyle createRowNumberStyle(Workbook workbook) {
+  private static CellStyle createLockedCellStyle(Workbook workbook) {
+    CellStyle cellStyle = workbook.createCellStyle();
+    cellStyle.setLocked(true);
+    return cellStyle;
+  }
+
+  private static CellStyle createRowNumberStyle(Workbook workbook) {
     Font rowNumberFont = workbook.createFont();
     rowNumberFont.setBold(true);
     rowNumberFont.setFontHeightInPoints((short) 11);
@@ -615,6 +631,14 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
     return columns.get(colIndex);
   }
 
+  public void lockColumn(Column<T, ?> column) {
+    if (!columns.contains(column)) {
+      throw new IllegalArgumentException(
+          "Cannot lock column. The column is not part of this spreadsheet");
+    }
+    column.withCellStyle(lockedCellStyle);
+  }
+
 
   private void autoFitColumnWidth(int colIndex) {
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
@@ -741,7 +765,6 @@ public final class Spreadsheet<T> extends Component implements HasComponents,
   private boolean isCellInvalid(Cell cell) {
     return invalidCellStyle.equals(cell.getCellStyle());
   }
-
 
   public enum ValidationMode {
     LAZY,
