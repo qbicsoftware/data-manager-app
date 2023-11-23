@@ -8,11 +8,12 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchUpdateDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
@@ -24,27 +25,24 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 public class BatchUpdateDialog extends DialogWindow {
 
   private final SampleBatchInformationSpreadsheet spreadsheet;
+  private final BatchId batchId;
+  private final List<SampleInfo> existingSamples;
 
   private final TextField batchNameField;
-
-  private final List<ExperimentalGroup> experimentalGroups;
-  private final List<Species> species;
-  private final List<Specimen> specimen;
-  private final List<Analyte> analytes;
 
   public BatchUpdateDialog(String experimentName,
       List<Species> species,
       List<Specimen> specimen,
       List<Analyte> analytes,
-      List<ExperimentalGroup> experimentalGroups) {
+      List<ExperimentalGroup> experimentalGroups,
+      BatchId batchId,
+      List<SampleInfo> existingSamples) {
 
     addClassName("batch-update-dialog");
     setConfirmButtonLabel("Update Samples");
 
-    this.experimentalGroups = new ArrayList<>(experimentalGroups);
-    this.species = new ArrayList<>(species);
-    this.specimen = new ArrayList<>(specimen);
-    this.analytes = new ArrayList<>(analytes);
+    this.batchId = batchId;
+    this.existingSamples = Collections.unmodifiableList(existingSamples);
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, false);
@@ -136,8 +134,33 @@ public class BatchUpdateDialog extends DialogWindow {
     if (batchNameField.isInvalid()) {
       return;
     }
+    List<SampleInfo> sampleInfos = spreadsheet.getData();
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
-        new Data(batchNameField.getValue(), spreadsheet.getData())));
+        new Data(batchId,
+            batchNameField.getValue(),
+            extractAddedSamples(sampleInfos),
+            extractChangedSamples(existingSamples, sampleInfos),
+            extractDeletedSamples(existingSamples, sampleInfos))));
+  }
+
+  private static List<SampleInfo> extractAddedSamples(final List<SampleInfo> sampleInfos) {
+    return sampleInfos.stream()
+        .filter(it -> it.getSampleCode().isEmpty())
+        .toList();
+  }
+
+  private static List<SampleInfo> extractDeletedSamples(final List<SampleInfo> originalSampleInfos,
+      final List<SampleInfo> sampleInfos) {
+    return originalSampleInfos.stream()
+        .filter(sampleInfos::contains)
+        .toList();
+  }
+
+  private static List<SampleInfo> extractChangedSamples(final List<SampleInfo> originalSampleInfos,
+      final List<SampleInfo> sampleInfos) {
+    return sampleInfos.stream()
+        .filter(sampleInfo -> !originalSampleInfos.contains(sampleInfo))
+        .toList();
   }
 
   @Override
@@ -170,7 +193,9 @@ public class BatchUpdateDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<BatchUpdateDialog> {
 
-    public record Data(String batchName, List<SampleInfo> samples) {
+    public record Data(BatchId batchId, String batchName, List<SampleInfo> addedSamples,
+                       List<SampleInfo> changedSamples, List<SampleInfo> removedSamples) {
+
 
     }
 
