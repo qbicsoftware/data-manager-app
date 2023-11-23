@@ -43,7 +43,7 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
       searchTermBuilder.append(" +" + word);
     }
     searchTermBuilder.append("*");
-    return searchTermBuilder.toString();
+    return searchTermBuilder.toString().trim();
   }
 
   @Override
@@ -58,8 +58,19 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
       }
       return order;
     }).toList();
+    // provide a short list of initial values when no search string was provided
+    if(searchString.isBlank()) {
+      return ontologyTermRepository.findByLabelNotNullAndOntologyIn(ontologies,
+          new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+    }
+    // if the search string is shorter than 2, normal matching is faster
+    if(searchString.length()==1) {
+      return ontologyTermRepository.findByLabelStartingWithIgnoreCaseAndOntologyIn(searchString, ontologies,
+          new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+    }
+    // otherwise create a more complex search term for fulltext search
     String searchTerm = buildSearchTerm(searchString);
-    return ontologyTermRepository.findByLabelContainingIgnoreCaseAndOntologyIn(
+    return ontologyTermRepository.findByLabelFulltextMatching(
         searchTerm, ontologies, new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
 }
