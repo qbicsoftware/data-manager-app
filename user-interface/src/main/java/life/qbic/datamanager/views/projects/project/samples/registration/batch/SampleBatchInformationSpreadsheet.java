@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.general.spreadsheet.Column;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
@@ -35,6 +36,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
   private final List<Analyte> analytes;
 
   private static final int INITIAL_ROW_COUNT = 2;
+  private final Column<SampleInfo, String> sampleCodeColumn;
 
 
   public SampleBatchInformationSpreadsheet(List<ExperimentalGroup> experimentalGroups,
@@ -46,6 +48,13 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
         .sorted(Comparator.comparing(AnalysisMethod::label))
         .toList();
+
+    sampleCodeColumn = addColumn("Sample code",
+        sampleInfo -> sampleInfo.getSampleCode().orElse(""),
+        SampleInfo::setSampleCode)
+        .requireDistinctValues();
+    lockColumn(sampleCodeColumn);
+    hideColumn(sampleCodeColumn);
 
     addColumn("Analysis to be performed",
         SampleInfo::getAnalysisToBePerformed,
@@ -103,11 +112,17 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     addColumn("Customer comment", SampleInfo::getCustomerComment,
         SampleInfo::setCustomerComment);
 
-    setValidationMode(ValidationMode.EAGER);
-
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
       addEmptyRow();
     }
+  }
+
+  public void showSampleCode() {
+    showColumn(sampleCodeColumn);
+  }
+
+  public void hideSampleCode() {
+    hideColumn(sampleCodeColumn);
   }
 
   /**

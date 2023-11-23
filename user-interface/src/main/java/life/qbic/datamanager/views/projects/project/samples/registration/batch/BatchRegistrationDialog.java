@@ -67,14 +67,15 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     Div prefillSection = new Div();
     Button prefillSpreadsheet = new Button();
-    prefillSpreadsheet.setText("Prefill Spreadsheet");
-    prefillSpreadsheet.setAriaLabel("Prefill complete sample batch");
+    prefillSpreadsheet.setText("Clear and Prefill");
+    prefillSpreadsheet.setAriaLabel("Clear and Prefill");
     prefillSpreadsheet.addClickListener(this::onPrefillClicked);
     prefillSpreadsheet.addClassName("prefill-batch");
 
     Span prefillText = new Span(
-        "Do you want to register a batch containing all biological replicates? You can prefill information already know to the system."
-    );
+        "Do you want to register a batch containing all biological replicates? "
+            + "You can prefill information already know to the system. "
+            + "Please note: This will erase any information entered into the spreadsheet.");
     prefillSection.add(prefillText, prefillSpreadsheet);
 
     Button addRow = new Button();

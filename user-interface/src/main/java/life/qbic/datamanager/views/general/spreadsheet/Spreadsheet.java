@@ -64,6 +64,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
 
   // cell styles
   private final transient CellStyle defaultCellStyle;
+  private final transient CellStyle lockedCellStyle;
   private final transient CellStyle invalidCellStyle;
   private final transient CellStyle rowNumberStyle;
   private final transient CellStyle columnHeaderStyle;
@@ -85,6 +86,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     drawingPatriarch = delegateSpreadsheet.getActiveSheet().createDrawingPatriarch();
 
     defaultCellStyle = getDefaultCellStyle(delegateSpreadsheet.getWorkbook());
+    lockedCellStyle = createLockedCellStyle(delegateSpreadsheet.getWorkbook());
     invalidCellStyle = createInvalidCellStyle(delegateSpreadsheet.getWorkbook());
     rowNumberStyle = createRowNumberStyle(delegateSpreadsheet.getWorkbook());
     columnHeaderStyle = createColumnNameStyle(delegateSpreadsheet.getWorkbook());
@@ -157,11 +159,15 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       Function<C, String> columnValueToCellValue,
       BiConsumer<T, String> modelEditor) {
     Column<T, C> column = new Column<>(name, toColumnValue, columnValueToCellValue, modelEditor);
+    addColumn(column);
+    return column;
+  }
+
+  private void addColumn(Column<T, ?> column) {
     columns.add(column);
     List<Cell> cellsForColumn = createCellsForColumn(column);
     refreshCells(cellsForColumn);
     delegateSpreadsheet.setMaxColumns(columnCount());
-    return column;
   }
 
   /**
@@ -280,7 +286,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     return cellStyle;
   }
 
-  private CellStyle getDefaultCellStyle(Workbook workbook) {
+  private static CellStyle getDefaultCellStyle(Workbook workbook) {
     Font defaultFont = workbook.createFont();
     defaultFont.setFontHeightInPoints((short) 11);
     defaultFont.setFontName("Arial");
@@ -291,7 +297,13 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     return cellStyle;
   }
 
-  private CellStyle createRowNumberStyle(Workbook workbook) {
+  private static CellStyle createLockedCellStyle(Workbook workbook) {
+    CellStyle cellStyle = workbook.createCellStyle();
+    cellStyle.setLocked(true);
+    return cellStyle;
+  }
+
+  private static CellStyle createRowNumberStyle(Workbook workbook) {
     Font rowNumberFont = workbook.createFont();
     rowNumberFont.setBold(true);
     rowNumberFont.setFontHeightInPoints((short) 11);
@@ -619,6 +631,28 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     return columns.get(colIndex);
   }
 
+  public void hideColumn(Column<T, ?> column) {
+    if (!columns.contains(column)) {
+      throw new IllegalArgumentException(
+          "Cannot hide column. The column is not part of this spreadsheet");
+    }
+    column.hide();
+    delegateSpreadsheet.setColumnHidden(columns.indexOf(column), column.isHidden());
+  }
+
+  public void showColumn(Column<T, ?> column) {
+    if (!columns.contains(column)) {
+      throw new IllegalArgumentException(
+          "Cannot show column. The column is not part of this spreadsheet");
+    }
+    column.show();
+    delegateSpreadsheet.setColumnHidden(columns.indexOf(column), column.isHidden());
+  }
+
+  public void lockColumn(Column<T, ?> column) {
+    column.withCellStyle(lockedCellStyle);
+  }
+
 
   private void autoFitColumnWidth(int colIndex) {
     int defaultColumnWidth = delegateSpreadsheet.getDefaultColumnWidth();
@@ -745,7 +779,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   private boolean isCellInvalid(Cell cell) {
     return invalidCellStyle.equals(cell.getCellStyle());
   }
-
 
   public enum ValidationMode {
     LAZY,
