@@ -218,7 +218,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         props.put("Q_SAMPLE_TYPE", openBisSampleType);
         if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
           logger("No mapping was found for " + analyteValue);
-          logger("Using default value and adding unknown value to Q_DETAILED_ANALYTE_TYPE.");
+          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
           props.put("Q_DETAILED_ANALYTE_TYPE", analyteValue);
         }
         sampleCreation.setProperties(props);
