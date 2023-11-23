@@ -35,6 +35,7 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
   /**
    * The way the MyISAM engine searches the fulltext index makes it necessary to use multiple
    * search terms that need to be found instead of one full search term.
+   * The asterisk suffix is needed so incomplete words are found (mu for musculus).
    */
   private String buildSearchTerm(String searchString) {
     StringBuilder searchTermBuilder = new StringBuilder();
