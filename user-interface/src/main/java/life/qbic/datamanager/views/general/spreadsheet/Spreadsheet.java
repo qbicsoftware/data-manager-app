@@ -634,7 +634,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   public void lockColumn(Column<T, ?> column) {
     if (!columns.contains(column)) {
       throw new IllegalArgumentException(
-          "Cannot hide column. The column is not part of this spreadsheet");
+          "Cannot lock column. The column is not part of this spreadsheet");
     }
     column.withCellStyle(lockedCellStyle);
   }
