@@ -6,7 +6,6 @@ import static java.util.function.Function.identity;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -30,32 +29,23 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  */
 public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
-
-  private final List<ExperimentalGroup> experimentalGroups;
-  private final List<Species> species;
-  private final List<Specimen> specimens;
-  private final List<Analyte> analytes;
-
   private static final int INITIAL_ROW_COUNT = 2;
-  private final Column<SampleInfo, String> sampleCodeColumn;
 
 
   public SampleBatchInformationSpreadsheet(List<ExperimentalGroup> experimentalGroups,
-      List<Species> species, List<Specimen> specimens, List<Analyte> analytes) {
-    this.experimentalGroups = new ArrayList<>(experimentalGroups);
-    this.species = new ArrayList<>(species);
-    this.specimens = new ArrayList<>(specimens);
-    this.analytes = new ArrayList<>(analytes);
+      List<Species> species, List<Specimen> specimens, List<Analyte> analytes,
+      boolean showSampleCode) {
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
         .sorted(Comparator.comparing(AnalysisMethod::label))
         .toList();
 
-    sampleCodeColumn = addColumn("Sample code",
-        sampleInfo -> sampleInfo.getSampleCode().orElse(""),
-        SampleInfo::setSampleCode)
-        .requireDistinctValues();
-    lockColumn(sampleCodeColumn);
-    hideColumn(sampleCodeColumn);
+    if (showSampleCode) {
+      Column<SampleInfo, String> sampleCodeColumn = addColumn("Sample code",
+          sampleInfo -> sampleInfo.getSampleCode().orElse(""),
+          SampleInfo::setSampleCode)
+          .requireDistinctValues();
+      lockColumn(sampleCodeColumn);
+    }
 
     addColumn("Analysis to be performed",
         SampleInfo::getAnalysisToBePerformed,
@@ -92,14 +82,14 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         SampleInfo::getSpecies,
         Species::label,
         SampleInfo::setSpecies)
-        .selectFrom(this.species, identity())
+        .selectFrom(species, identity())
         .setRequired();
 
     addColumn("Specimen",
         SampleInfo::getSpecimen,
         Specimen::label,
         SampleInfo::setSpecimen)
-        .selectFrom(this.specimens, identity())
+        .selectFrom(specimens, identity())
         .setRequired();
 
     addColumn("Analyte",
@@ -107,7 +97,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
             .map(Analyte::label)
             .orElse(null),
         SampleInfo::setAnalyte)
-        .selectFrom(this.analytes, Analyte::label)
+        .selectFrom(analytes, Analyte::label)
         .setRequired();
 
     addColumn("Customer comment", SampleInfo::getCustomerComment,
@@ -116,14 +106,6 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
       addEmptyRow();
     }
-  }
-
-  public void showSampleCode() {
-    showColumn(sampleCodeColumn);
-  }
-
-  public void hideSampleCode() {
-    hideColumn(sampleCodeColumn);
   }
 
   /**
@@ -183,6 +165,10 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.setAnalyte(analyte);
       sampleInfo.setCustomerComment(customerComment);
       return sampleInfo;
+    }
+
+    public void setSampleId(SampleId sampleId) {
+      this.sampleId = sampleId;
     }
 
     public Optional<SampleId> getSampleId() {

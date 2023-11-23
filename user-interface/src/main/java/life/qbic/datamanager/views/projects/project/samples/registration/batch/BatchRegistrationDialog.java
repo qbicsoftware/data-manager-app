@@ -51,8 +51,7 @@ public class BatchRegistrationDialog extends DialogWindow {
     this.analytes = new ArrayList<>(analytes);
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
-        analytes);
-
+        analytes, false);
 
     batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");

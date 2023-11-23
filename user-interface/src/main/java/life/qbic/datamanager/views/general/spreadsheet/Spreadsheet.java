@@ -631,24 +631,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     return columns.get(colIndex);
   }
 
-  public void hideColumn(Column<T, ?> column) {
-    if (!columns.contains(column)) {
-      throw new IllegalArgumentException(
-          "Cannot hide column. The column is not part of this spreadsheet");
-    }
-    column.hide();
-    delegateSpreadsheet.setColumnHidden(columns.indexOf(column), column.isHidden());
-  }
-
-  public void showColumn(Column<T, ?> column) {
-    if (!columns.contains(column)) {
-      throw new IllegalArgumentException(
-          "Cannot show column. The column is not part of this spreadsheet");
-    }
-    column.show();
-    delegateSpreadsheet.setColumnHidden(columns.indexOf(column), column.isHidden());
-  }
-
   public void lockColumn(Column<T, ?> column) {
     if (!columns.contains(column)) {
       throw new IllegalArgumentException(
