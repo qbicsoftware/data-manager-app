@@ -42,8 +42,12 @@ class SelectEditor<T, E> extends Select<E> {
   }
 
   public void setFromCellValue(String cellValue) {
+    if (isNull(cellValue)) {
+      clear();
+      return;
+    }
     getListDataView().getItems()
-        .filter(it -> toCellValue.apply(it).equals(cellValue))
+        .filter(it -> cellValue.equals(toCellValue(it)))
         .findFirst()
         .ifPresentOrElse(this::setValue, this::clear);
   }
