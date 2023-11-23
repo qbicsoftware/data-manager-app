@@ -162,6 +162,21 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     return searchResult.getObjects();
   }
 
+  private List<Sample> searchSamplesWithDescendantsAndDatasetsByCode(String code) {
+    SampleSearchCriteria criteria = new SampleSearchCriteria();
+    criteria.withCode().thatEquals(code);
+
+    SampleFetchOptions options = new SampleFetchOptions();
+    options.withDataSets();
+    SampleFetchOptions childOptions = new SampleFetchOptions();
+    childOptions.withDataSets();
+    options.withChildrenUsing(childOptions);
+    SearchResult<Sample> searchResult =
+        openBisClient.getV3().searchSamples(openBisClient.getSessionToken(), criteria, options);
+
+    return searchResult.getObjects();
+  }
+
   @Override
   public List<Species> retrieveSpecies() {
     return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
@@ -272,7 +287,22 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    */
   @Override
   public void delete(SampleCode sampleCode) {
+    if(isSampleWithData(searchSamplesWithDescendantsAndDatasetsByCode(sampleCode.code()))) {
+      throw new SampleNotDeletedException("Did not delete sample "+sampleCode+", because data is attached.");
+    }
     deleteOpenbisSample(DEFAULT_SPACE_CODE, sampleCode.code());
+  }
+
+  /**
+   * Recursive method checking child samples for datasets
+   */
+  private boolean isSampleWithData(List<Sample> samples) {
+    boolean hasData = false;
+    for(Sample sample : samples) {
+      hasData |= !sample.getDataSets().isEmpty();
+      hasData |= isSampleWithData(sample.getChildren());
+    }
+    return hasData;
   }
 
   /**
@@ -385,5 +415,12 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   static class MappingNotFoundException extends RuntimeException {
 
+  }
+
+  static class SampleNotDeletedException extends RuntimeException {
+
+    public SampleNotDeletedException(String s) {
+      super(s);
+    }
   }
 }
