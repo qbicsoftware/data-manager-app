@@ -29,6 +29,8 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOpti
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
@@ -73,6 +75,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String DEFAULT_ANALYTE_TYPE = "OTHER";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
 
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
@@ -172,13 +175,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     SampleFetchOptions childOptions = new SampleFetchOptions();
     childOptions.withDataSets();
     options.withChildrenUsing(childOptions);
-    SearchResult<Sample> searchResult = null;
-    try {
-      searchResult = openBisClient.getV3()
+    SearchResult<Sample> searchResult = openBisClient.getV3()
           .searchSamples(openBisClient.getSessionToken(), criteria, options);
-    } catch (Exception exception) {
-      System.out.println(exception.getMessage());
-    }
 
 
     return searchResult.getObjects();
@@ -253,6 +251,43 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     }
   }
 
+  /**
+   * Updates the reference to one or more {@link Sample}s in the data repository to connect project
+   * data. Samples with metadata must be provided. Since no batch information is stored, changes in
+   * the batch are not reflected.
+   *
+   * @param samples the batch of {@link Sample}s to be updated in the data repo
+   * @since 1.0.0
+   */
+  public void updateSampleMetadata(List<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
+    List<SampleUpdate> samplesToUpdate = new ArrayList<>();
+
+    try {
+      samples.forEach(sample -> {
+        SampleUpdate sampleUpdate = new SampleUpdate();
+        String sampleId = "/"+DEFAULT_SPACE_CODE+"/"+sample.sampleCode().code();
+        sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
+        sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
+        sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
+
+        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+
+        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
+            () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
+        sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
+        if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+          logger("No mapping was found for " + analyteValue+ " when updating sample.");
+          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+          sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+        }
+        samplesToUpdate.add(sampleUpdate);
+      });
+      updateOpenbisSamples(samplesToUpdate);
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
   private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
     return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
         .filter(vocabularyTerm -> vocabularyTerm.label.equals(analyteLabel))
@@ -283,6 +318,11 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private void createOpenbisSamples(List<SampleCreation> samplesToRegister) {
     IOperation operation = new CreateSamplesOperation(samplesToRegister);
+    handleOperations(operation);
+  }
+
+  private void updateOpenbisSamples(List<SampleUpdate> samplesToUpdate) {
+    IOperation operation = new UpdateSamplesOperation(samplesToUpdate);
     handleOperations(operation);
   }
 
