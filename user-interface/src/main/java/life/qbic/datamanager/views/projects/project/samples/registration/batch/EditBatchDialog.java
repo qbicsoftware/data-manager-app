@@ -11,7 +11,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import java.util.Collections;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchUpdateDialog.ConfirmEvent.Data;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -22,7 +22,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 /**
  * A dialog used for sample batch registration.
  */
-public class BatchUpdateDialog extends DialogWindow {
+public class EditBatchDialog extends DialogWindow {
 
   private final SampleBatchInformationSpreadsheet spreadsheet;
   private final BatchId batchId;
@@ -30,7 +30,7 @@ public class BatchUpdateDialog extends DialogWindow {
 
   private final TextField batchNameField;
 
-  public BatchUpdateDialog(String experimentName,
+  public EditBatchDialog(String experimentName,
       List<Species> species,
       List<Specimen> specimen,
       List<Analyte> analytes,
@@ -176,7 +176,7 @@ public class BatchUpdateDialog extends DialogWindow {
     addListener(ConfirmEvent.class, listener);
   }
 
-  public static class CancelEvent extends ComponentEvent<BatchUpdateDialog> {
+  public static class CancelEvent extends ComponentEvent<EditBatchDialog> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -186,12 +186,12 @@ public class BatchUpdateDialog extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public CancelEvent(BatchUpdateDialog source, boolean fromClient) {
+    public CancelEvent(EditBatchDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class ConfirmEvent extends ComponentEvent<BatchUpdateDialog> {
+  public static class ConfirmEvent extends ComponentEvent<EditBatchDialog> {
 
     public record Data(BatchId batchId, String batchName, List<SampleInfo> addedSamples,
                        List<SampleInfo> changedSamples, List<SampleInfo> removedSamples) {
@@ -209,7 +209,7 @@ public class BatchUpdateDialog extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ConfirmEvent(BatchUpdateDialog source, boolean fromClient, Data data) {
+    public ConfirmEvent(EditBatchDialog source, boolean fromClient, Data data) {
       super(source, fromClient);
       this.data = data;
     }
