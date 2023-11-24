@@ -91,7 +91,7 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(ResponseCode.DELETION_FAILED);
     }
     try {
-      sampleDataRepo.deleteAll(samples);
+      sampleDataRepo.deleteAll(samples);//TODO where to get project code?
     } catch (SampleNotDeletedException sampleNotDeletedException) {
       log.error("The samples:" + commaSeperatedSampleIds
               + "could not be deleted from openBis since there is data attached to them",
