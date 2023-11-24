@@ -19,7 +19,6 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -124,14 +123,11 @@ public class SampleContentComponent extends Div {
   }
 
   private void editBatch(EditBatchEvent editBatchEvent) {
-    var result = batchRegistrationService.updateBatch(editBatchEvent.batchPreview().batchId(),
-        editBatchEvent.batchPreview().batchLabel());
-    result.onValue(editedBatchId -> reload());
+    //Todo Delete Batch in openBis and Database
   }
 
-  private void deleteBatch(BatchId batchId) {
-    var result = batchRegistrationService.deleteBatch(batchId);
-    result.onValue(deletedBatchId -> reload());
+  private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
+    //Todo Delete Batch in openBis and Database
   }
 
 
@@ -140,7 +136,7 @@ public class SampleContentComponent extends Div {
         deleteBatchEvent.batchPreview().sampleCount());
     batchDeletionConfirmationNotification.open();
     batchDeletionConfirmationNotification.addConfirmListener(event -> {
-      deleteBatch(deleteBatchEvent.batchPreview().batchId());
+      deleteBatch(deleteBatchEvent);
       batchDeletionConfirmationNotification.close();
     });
     batchDeletionConfirmationNotification.addCancelListener(
