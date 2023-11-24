@@ -8,7 +8,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
-import java.util.Collections;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
@@ -43,7 +42,7 @@ public class EditBatchDialog extends DialogWindow {
     setConfirmButtonLabel("Update Samples");
 
     this.batchId = batchId;
-    this.existingSamples = Collections.unmodifiableList(existingSamples);
+    this.existingSamples = existingSamples.stream().map(SampleInfo::clone).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, false);
@@ -108,6 +107,11 @@ public class EditBatchDialog extends DialogWindow {
             errorText.setVisible(false);
           }
         });
+
+    spreadsheet.resetRows();
+    for (SampleInfo existingSample : existingSamples) {
+      spreadsheet.addRow(existingSample);
+    }
   }
 
   private TextField createBatchNameField() {
@@ -163,14 +167,18 @@ public class EditBatchDialog extends DialogWindow {
   private static List<SampleInfo> extractDeletedSamples(final List<SampleInfo> originalSampleInfos,
       final List<SampleInfo> sampleInfos) {
     return originalSampleInfos.stream()
-        .filter(sampleInfos::contains)
+        .filter(originalSampleInfo -> sampleInfos.stream()
+            .noneMatch(it -> it.getSampleId().equals(originalSampleInfo.getSampleId())))
         .toList();
   }
 
   private static List<SampleInfo> extractChangedSamples(final List<SampleInfo> originalSampleInfos,
       final List<SampleInfo> sampleInfos) {
     return sampleInfos.stream()
-        .filter(sampleInfo -> !originalSampleInfos.contains(sampleInfo))
+        .filter(sampleInfo -> originalSampleInfos.stream()
+            .anyMatch(
+                it -> it.getSampleId().equals(sampleInfo.getSampleId())
+                    && !it.equals(sampleInfo)))
         .toList();
   }
 

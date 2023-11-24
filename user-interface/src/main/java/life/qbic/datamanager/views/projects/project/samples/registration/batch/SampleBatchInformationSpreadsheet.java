@@ -9,6 +9,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -118,7 +119,8 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     setValidationMode(validationMode);
   }
 
-  public static class SampleInfo {
+  public static class SampleInfo implements Cloneable {
+
 
     private SampleId sampleId;
     private String sampleCode;
@@ -298,6 +300,83 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
           .add("analyte=" + analyte)
           .add("customerComment='" + customerComment + "'")
           .toString();
+    }
+
+    @Override
+    public SampleInfo clone() {
+      try {
+        SampleInfo clone = (SampleInfo) super.clone();
+        // TODO: copy mutable state here, so the clone can't change the internals of the original
+        clone.analysisToBePerformed = analysisToBePerformed;
+        clone.analyte = analyte;
+        clone.biologicalReplicate = biologicalReplicate;
+        clone.customerComment = customerComment;
+        clone.experimentalGroup = experimentalGroup;
+        clone.sampleCode = sampleCode;
+        clone.sampleId = sampleId;
+        clone.sampleLabel = sampleLabel;
+        clone.species = species;
+        clone.specimen = specimen;
+        return clone;
+      } catch (CloneNotSupportedException e) {
+        throw new AssertionError();
+      }
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+
+      SampleInfo that = (SampleInfo) object;
+
+      if (!Objects.equals(sampleId, that.sampleId)) {
+        return false;
+      }
+      if (!Objects.equals(sampleCode, that.sampleCode)) {
+        return false;
+      }
+      if (analysisToBePerformed != that.analysisToBePerformed) {
+        return false;
+      }
+      if (!Objects.equals(sampleLabel, that.sampleLabel)) {
+        return false;
+      }
+      if (!Objects.equals(biologicalReplicate, that.biologicalReplicate)) {
+        return false;
+      }
+      if (!Objects.equals(experimentalGroup, that.experimentalGroup)) {
+        return false;
+      }
+      if (!Objects.equals(species, that.species)) {
+        return false;
+      }
+      if (!Objects.equals(specimen, that.specimen)) {
+        return false;
+      }
+      if (!Objects.equals(analyte, that.analyte)) {
+        return false;
+      }
+      return Objects.equals(customerComment, that.customerComment);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = sampleId != null ? sampleId.hashCode() : 0;
+      result = 31 * result + (sampleCode != null ? sampleCode.hashCode() : 0);
+      result = 31 * result + (analysisToBePerformed != null ? analysisToBePerformed.hashCode() : 0);
+      result = 31 * result + (sampleLabel != null ? sampleLabel.hashCode() : 0);
+      result = 31 * result + (biologicalReplicate != null ? biologicalReplicate.hashCode() : 0);
+      result = 31 * result + (experimentalGroup != null ? experimentalGroup.hashCode() : 0);
+      result = 31 * result + (species != null ? species.hashCode() : 0);
+      result = 31 * result + (specimen != null ? specimen.hashCode() : 0);
+      result = 31 * result + (analyte != null ? analyte.hashCode() : 0);
+      result = 31 * result + (customerComment != null ? customerComment.hashCode() : 0);
+      return result;
     }
   }
 
