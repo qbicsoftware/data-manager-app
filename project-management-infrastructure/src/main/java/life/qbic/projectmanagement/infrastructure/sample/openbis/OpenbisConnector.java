@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.openbis.openbisclient.helper.OpenBisClientHelper.fetchSamplesCompletely;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
@@ -26,9 +27,8 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.CreateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOptions;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.ISampleId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
@@ -42,8 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
@@ -132,13 +134,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         .toList();
   }
 
-  private List<Experiment> searchExperimentsByCode(String projectCode) {
+  private List<Experiment> searchExperimentsByProjectCode(String projectCode,
+      ExperimentFetchOptions fetchOptions) {
     ExperimentSearchCriteria criteria = new ExperimentSearchCriteria();
     criteria.withProject().withCode().thatEquals(projectCode);
 
-    ExperimentFetchOptions options = new ExperimentFetchOptions();
     SearchResult<Experiment> searchResult =
-        openBisClient.getV3().searchExperiments(openBisClient.getSessionToken(), criteria, options);
+        openBisClient.getV3().searchExperiments(openBisClient.getSessionToken(), criteria, fetchOptions);
 
     return searchResult.getObjects();
   }
@@ -155,31 +157,10 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     return searchResult.getObjects();
   }
 
-  private List<Sample> searchSamplesByCode(String code) {
-    SampleSearchCriteria criteria = new SampleSearchCriteria();
-    criteria.withCode().thatEquals(code);
-
-    SampleFetchOptions options = new SampleFetchOptions();
-    SearchResult<Sample> searchResult =
-        openBisClient.getV3().searchSamples(openBisClient.getSessionToken(), criteria, options);
-
-    return searchResult.getObjects();
-  }
-
-  private List<Sample> searchSamplesWithDescendantsAndDatasetsByCode(String code) {
-    SampleSearchCriteria criteria = new SampleSearchCriteria();
-    criteria.withCode().thatEquals(code);
-
-    SampleFetchOptions options = new SampleFetchOptions();
-    options.withDataSets();
-    SampleFetchOptions childOptions = new SampleFetchOptions();
-    childOptions.withDataSets();
-    options.withChildrenUsing(childOptions);
-    SearchResult<Sample> searchResult = openBisClient.getV3()
-          .searchSamples(openBisClient.getSessionToken(), criteria, options);
-
-
-    return searchResult.getObjects();
+  private List<Sample> listSamplesByCode(String code) {
+    List<ISampleId> ids = List.of(new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code));
+    return new ArrayList<>(openBisClient.getV3().getSamples(openBisClient.getSessionToken(), ids,
+        fetchSamplesCompletely()).values());
   }
 
   @Override
@@ -295,7 +276,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   private String findFreeExperimentCode(String projectCode) {
-    List<Experiment> experiments = searchExperimentsByCode(projectCode);
+    List<Experiment> experiments = searchExperimentsByProjectCode(projectCode, new ExperimentFetchOptions());
     int lastExperimentNumber = 0;
     for (Experiment experiment : experiments) {
       lastExperimentNumber = Integer.max(lastExperimentNumber,
@@ -327,31 +308,37 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   /**
-   * Deletes a sample with the provided code from persistence.
+   * Deletes a collection of samples with the provided codes from persistence. Checks if any of the
+   * samples has attached data and fails the deletion of the sample batch, if so.
    *
    * @param samples The {@link Sample}s to be deleted in the data repo
+   * @param projectCode the {@link ProjectCode} of the project these samples belong to
    * @since 1.0.0
    */
   @Override
   public void deleteAll(
-      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
-    samples.forEach(sample -> delete(sample.sampleCode()));
-  }
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples, ProjectCode projectCode) {
 
-  /**
-   * Deletes all samples from persistence.
-   *
-   * @param sampleCode the {@link SampleCode} of the sample to delete
-   * @since 1.0.0
-   */
-  @Override
-  public void delete(SampleCode sampleCode) throws SampleNotDeletedException {
-    if(isSampleWithData(searchSamplesWithDescendantsAndDatasetsByCode(sampleCode.code()))) {
-      throw new SampleNotDeletedException("Did not delete sample "+sampleCode+", because data is attached.");
+    Set<String> sampleCodesToDelete = samples.stream().map(sample -> sample.sampleCode().code())
+        .collect(Collectors.toSet());
+    ;
+    //Fetch samples with potential data - sample search is not working, sorry you have to see this
+    ExperimentFetchOptions fetchOptions = new ExperimentFetchOptions();
+    fetchOptions.withSamplesUsing(fetchSamplesCompletely());
+    for (Experiment experiment : searchExperimentsByProjectCode(projectCode.value(), fetchOptions)) {
+      for (Sample sample : experiment.getSamples()) {
+        String sampleCode = sample.getCode();
+        if (sampleCodesToDelete.contains(sampleCode)) {
+          if (isSampleWithData(List.of(sample))) {
+            throw new SampleNotDeletedException(
+                "Did not delete sample " + sampleCode + ", because data is attached.");
+          }
+        }
+      }
     }
-    deleteOpenbisSample(DEFAULT_SPACE_CODE, sampleCode.code());
+    // no data found, we can safely delete all samples
+    sampleCodesToDelete.forEach(code -> deleteOpenbisSample(DEFAULT_SPACE_CODE, code));
   }
-
 
   /**
    * Recursive method checking child samples for datasets
@@ -374,7 +361,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    */
   @Override
   public boolean sampleExists(SampleCode sampleCode) {
-    return !searchSamplesByCode(sampleCode.code()).isEmpty();
+    return !listSamplesByCode(sampleCode.code()).isEmpty();
   }
 
   record VocabularyTerm(String code, String label, String description) {
