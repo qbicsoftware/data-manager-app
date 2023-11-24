@@ -306,7 +306,6 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     public SampleInfo clone() {
       try {
         SampleInfo clone = (SampleInfo) super.clone();
-        // TODO: copy mutable state here, so the clone can't change the internals of the original
         clone.analysisToBePerformed = analysisToBePerformed;
         clone.analyte = analyte;
         clone.biologicalReplicate = biologicalReplicate;
