@@ -95,7 +95,6 @@ public class DeletionService {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     }
     var sampleDeletionResult = deleteSamples(queryResult.getValue());
-    //Todo Should this be propagated as well?
     if (sampleDeletionResult.isError()) {
       log.debug("Samples for batch %s could not be deleted due to %s".formatted(batchId,
           sampleDeletionResult.getError()));
@@ -104,15 +103,17 @@ public class DeletionService {
     return Result.fromValue(batchId);
   }
 
+  @Transactional
   public Result<Collection<Sample>, ResponseCode> deleteSamples(
       Collection<Sample> samplesCollection) {
     var result = sampleDomainService.deleteSamples(samplesCollection.stream().toList());
+    //Todo this seems wrong how to best propagate why this failed since currently there is no data object in the application?
+    if (result.isError() && result.getError()
+        .equals(SampleDomainService.ResponseCode.DATA_ATTACHED_TO_SAMPLES)) {
+      return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);
+    }
     if (result.isError()) {
       return Result.fromError(ResponseCode.SAMPLE_DELETION_FAILED);
-    }
-    //Todo this seems wrong how to best propagate why this failed since currently there is no data object in the application?
-    if (result.getError().equals(SampleDomainService.ResponseCode.DATA_ATTACHED_TO_SAMPLES)) {
-      return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);
     }
     return Result.fromValue(result.getValue());
   }

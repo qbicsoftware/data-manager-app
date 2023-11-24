@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnecto
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 
 /**
@@ -75,8 +76,8 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Result.fromValue(samples);
   }
 
-  @Override
   @Transactional
+  @Override
   public Result<Collection<Sample>, ResponseCode> deleteAll(Collection<Sample> samples) {
     Collection<SampleId> sampleIds = new ArrayList<>();
     samples.forEach(sample -> sampleIds.add(sample.sampleId()));
@@ -86,14 +87,20 @@ public class SampleRepositoryImpl implements SampleRepository {
       this.qbicSampleRepository.deleteAll(samples);
     } catch (Exception e) {
       log.error("The samples:" + commaSeperatedSampleIds + "could not be deleted", e);
+      rollBackCurrentTransaction();
       return Result.fromError(ResponseCode.DELETION_FAILED);
     }
     try {
       sampleDataRepo.deleteAll(samples);
     } catch (SampleNotDeletedException sampleNotDeletedException) {
+      log.error("The samples:" + commaSeperatedSampleIds
+              + "could not be deleted from openBis since there is data attached to them",
+          sampleNotDeletedException);
+      rollBackCurrentTransaction();
       return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);
     } catch (Exception e) {
       log.error("The samples:" + commaSeperatedSampleIds + "could not be deleted from openBIS", e);
+      rollBackCurrentTransaction();
       return Result.fromError(ResponseCode.DELETION_FAILED);
     }
     return Result.fromValue(samples);
@@ -127,6 +134,40 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
     }
     return Result.fromValue(samples);
+  }
+
+  @Transactional
+  @Override
+  public Result<Collection<Sample>, ResponseCode> updateAll(Collection<Sample> updatedSamples) {
+    Collection<SampleId> sampleIds = new ArrayList<>();
+    updatedSamples.forEach(sample -> sampleIds.add(sample.sampleId()));
+    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
+        Collectors.joining(", "));
+    try {
+      this.qbicSampleRepository.saveAll(updatedSamples);
+    } catch (Exception e) {
+      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated", e);
+      rollBackCurrentTransaction();
+      return Result.fromError(ResponseCode.UPDATE_FAILED);
+    }
+    try {
+      sampleDataRepo.updateAll(updatedSamples);
+    } catch (Exception e) {
+      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated in openBIS", e);
+      rollBackCurrentTransaction();
+      return Result.fromError(ResponseCode.UPDATE_FAILED);
+    }
+    return Result.fromValue(updatedSamples);
+  }
+
+
+  /**
+   * Spring Transactional annotation based rollback only works if the current transaction throws an
+   * exception. Since we want to return result objects instead of throwing exceptions we have to
+   * programmatically mark the current transaction as rollback to ensure data validity.
+   */
+  private void rollBackCurrentTransaction() {
+    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
   }
 
 }

@@ -35,13 +35,6 @@ public interface QbicSampleDataRepo {
    */
   void deleteAll(Collection<Sample> samples, ProjectCode projectCode);
 
-  /**
-   * Searches for samples that contain the provided sample code
-   *
-   * @param sampleCode the {@link SampleCode} to search for in the data repository
-   * @return true, if a sample with that code already exists in the system, false if not
-   * @since 1.0.0
-   */
-  boolean sampleExists(SampleCode sampleCode);
+  void updateAll(Collection<Sample> samples);
 
 }
