@@ -179,10 +179,19 @@ public class EditBatchDialog extends DialogWindow {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
+  /**
+   * Adds a listener for user cancellation.
+   *
+   * @param listener the listener to add
+   */
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
     addListener(CancelEvent.class, listener);
   }
 
+  /**
+   * Adds a listener for user confirmation
+   * @param listener the listener to add
+   */
   public void addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     addListener(ConfirmEvent.class, listener);
   }
@@ -204,6 +213,14 @@ public class EditBatchDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<EditBatchDialog> {
 
+    /**
+     * The data the user confirmed
+     * @param batchId the batch id
+     * @param batchName the batch name
+     * @param addedSamples the information of samples added
+     * @param changedSamples the information of samples changed
+     * @param removedSamples the information of samples removed
+     */
     public record Data(BatchId batchId, String batchName, List<SampleInfo> addedSamples,
                        List<SampleInfo> changedSamples, List<SampleInfo> removedSamples) {
 
