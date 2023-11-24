@@ -35,5 +35,6 @@ public interface SampleRepository {
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByBatchId(
       BatchId batchId);
 
+  Result<Collection<Sample>, ResponseCode> updateAll(Collection<Sample> updatedSamples);
 
 }

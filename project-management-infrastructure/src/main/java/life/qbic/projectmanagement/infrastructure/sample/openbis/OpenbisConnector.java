@@ -176,8 +176,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     childOptions.withDataSets();
     options.withChildrenUsing(childOptions);
     SearchResult<Sample> searchResult = openBisClient.getV3()
-          .searchSamples(openBisClient.getSessionToken(), criteria, options);
-
+        .searchSamples(openBisClient.getSessionToken(), criteria, options);
 
     return searchResult.getObjects();
   }
@@ -251,43 +250,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     }
   }
 
-  /**
-   * Updates the reference to one or more {@link Sample}s in the data repository to connect project
-   * data. Samples with metadata must be provided. Since no batch information is stored, changes in
-   * the batch are not reflected.
-   *
-   * @param samples the batch of {@link Sample}s to be updated in the data repo
-   * @since 1.0.0
-   */
-  public void updateSampleMetadata(List<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
-    List<SampleUpdate> samplesToUpdate = new ArrayList<>();
-
-    try {
-      samples.forEach(sample -> {
-        SampleUpdate sampleUpdate = new SampleUpdate();
-        String sampleId = "/"+DEFAULT_SPACE_CODE+"/"+sample.sampleCode().code();
-        sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
-        sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
-        sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
-
-        String analyteValue = sample.sampleOrigin().getAnalyte().value();
-
-        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-            () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
-        sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
-        if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
-          logger("No mapping was found for " + analyteValue+ " when updating sample.");
-          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
-          sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
-        }
-        samplesToUpdate.add(sampleUpdate);
-      });
-      updateOpenbisSamples(samplesToUpdate);
-    } catch (Exception e) {
-      throw e;
-    }
-  }
-
   private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
     return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
         .filter(vocabularyTerm -> vocabularyTerm.label.equals(analyteLabel))
@@ -327,7 +289,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   /**
-   * Deletes a sample with the provided code from persistence.
+   * Deletes all samples from persistence.
    *
    * @param samples The {@link Sample}s to be deleted in the data repo
    * @since 1.0.0
@@ -339,15 +301,16 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   }
 
   /**
-   * Deletes all samples from persistence.
+   * Deletes a sample with the provided code from persistence.
    *
    * @param sampleCode the {@link SampleCode} of the sample to delete
    * @since 1.0.0
    */
   @Override
   public void delete(SampleCode sampleCode) throws SampleNotDeletedException {
-    if(isSampleWithData(searchSamplesWithDescendantsAndDatasetsByCode(sampleCode.code()))) {
-      throw new SampleNotDeletedException("Did not delete sample "+sampleCode+", because data is attached.");
+    if (isSampleWithData(searchSamplesWithDescendantsAndDatasetsByCode(sampleCode.code()))) {
+      throw new SampleNotDeletedException(
+          "Did not delete sample " + sampleCode + ", because data is attached.");
     }
     deleteOpenbisSample(DEFAULT_SPACE_CODE, sampleCode.code());
   }
@@ -358,11 +321,60 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    */
   private boolean isSampleWithData(List<Sample> samples) {
     boolean hasData = false;
-    for(Sample sample : samples) {
+    for (Sample sample : samples) {
       hasData |= !sample.getDataSets().isEmpty();
       hasData |= isSampleWithData(sample.getChildren());
     }
     return hasData;
+  }
+
+  /**
+   * Updates the reference to one or more {@link Sample}s in the data repository to connect project
+   * data. Samples with metadata must be provided. Since no batch information is stored, changes in
+   * the batch are not reflected.
+   *
+   * @param samples the batch of {@link Sample}s to be updated in the data repo
+   * @since 1.0.0
+   */
+  @Override
+  public void updateAll(
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
+      throws SampleNotUpdatedException {
+    try {
+      updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
+    } catch (Exception e) {
+      throw new SampleNotUpdatedException(
+          "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
+    }
+  }
+
+  private List<SampleUpdate> convertSamplesToSampleUpdates(
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
+    List<SampleUpdate> updatedSamplesList = new ArrayList<>();
+    try {
+      updatedSamples.forEach(sample -> {
+        SampleUpdate sampleUpdate = new SampleUpdate();
+        String sampleId = "/" + DEFAULT_SPACE_CODE + "/" + sample.sampleCode().code();
+        sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
+        sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
+        sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
+
+        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+
+        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
+            () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
+        sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
+        if (openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+          logger("No mapping was found for " + analyteValue + " when updating sample.");
+          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+          sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+        }
+        updatedSamplesList.add(sampleUpdate);
+      });
+      return updatedSamplesList;
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   /**
@@ -480,6 +492,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   public static class SampleNotDeletedException extends RuntimeException {
 
     public SampleNotDeletedException(String s) {
+      super(s);
+    }
+  }
+
+  public static class SampleNotUpdatedException extends RuntimeException {
+
+    public SampleNotUpdatedException(String s) {
       super(s);
     }
   }

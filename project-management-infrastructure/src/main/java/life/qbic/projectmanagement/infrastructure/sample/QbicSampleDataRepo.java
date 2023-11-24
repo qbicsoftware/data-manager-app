@@ -50,4 +50,6 @@ public interface QbicSampleDataRepo {
    */
   boolean sampleExists(SampleCode sampleCode);
 
+  void updateAll(Collection<Sample> samples);
+
 }

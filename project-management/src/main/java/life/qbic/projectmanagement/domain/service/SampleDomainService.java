@@ -46,7 +46,19 @@ public class SampleDomainService {
         Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(project,
             samplesToRegister);
         result.onValue(createdSamples ->
-                createdSamples.forEach(this::dispatchSuccessfulSampleRegistration)).onError(Result::fromError);
+                createdSamples.forEach(this::dispatchSuccessfulSampleRegistration))
+            .onError(Result::fromError);
+        return result;
+    }
+
+    public Result<Collection<Sample>, ResponseCode> updateSamples(
+        Collection<Sample> updatedSamples) {
+        Objects.requireNonNull(updatedSamples);
+        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.updateAll(
+            updatedSamples);
+        result.onValue(createdSamples ->
+                createdSamples.forEach(this::dispatchSuccessfulSampleRegistration))
+            .onError(Result::fromError);
         return result;
     }
 
@@ -76,7 +88,7 @@ public class SampleDomainService {
      * @since 1.0.0
      */
     public enum ResponseCode {
-        REGISTRATION_FAILED, DELETION_FAILED, DATA_ATTACHED_TO_SAMPLES
+        REGISTRATION_FAILED, DELETION_FAILED, DATA_ATTACHED_TO_SAMPLES, UPDATE_FAILED
     }
 
 }

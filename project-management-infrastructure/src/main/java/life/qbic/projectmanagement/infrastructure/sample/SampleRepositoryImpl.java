@@ -136,6 +136,30 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Result.fromValue(samples);
   }
 
+  @Transactional
+  @Override
+  public Result<Collection<Sample>, ResponseCode> updateAll(Collection<Sample> updatedSamples) {
+    Collection<SampleId> sampleIds = new ArrayList<>();
+    updatedSamples.forEach(sample -> sampleIds.add(sample.sampleId()));
+    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
+        Collectors.joining(", "));
+    try {
+      this.qbicSampleRepository.saveAll(updatedSamples);
+    } catch (Exception e) {
+      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated", e);
+      rollBackCurrentTransaction();
+      return Result.fromError(ResponseCode.UPDATE_FAILED);
+    }
+    try {
+      sampleDataRepo.updateAll(updatedSamples);
+    } catch (Exception e) {
+      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated in openBIS", e);
+      rollBackCurrentTransaction();
+      return Result.fromError(ResponseCode.UPDATE_FAILED);
+    }
+    return Result.fromValue(updatedSamples);
+  }
+
 
   /**
    * Spring Transactional annotation based rollback only works if the current transaction throws an
