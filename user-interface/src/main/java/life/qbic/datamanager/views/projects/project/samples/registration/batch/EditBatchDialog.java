@@ -18,9 +18,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
-
 /**
- * A dialog used for sample batch registration.
+ * A dialog used for editing sample and batch information within an experiment
  */
 public class EditBatchDialog extends DialogWindow {
 
