@@ -29,6 +29,7 @@ public class EditBatchDialog extends DialogWindow {
   private final List<SampleInfo> existingSamples;
 
   private final TextField batchNameField;
+  private final Span batchNameText;
 
   public EditBatchDialog(String experimentName,
       List<Species> species,
@@ -36,6 +37,7 @@ public class EditBatchDialog extends DialogWindow {
       List<Analyte> analytes,
       List<ExperimentalGroup> experimentalGroups,
       BatchId batchId,
+      String batchName,
       List<SampleInfo> existingSamples) {
 
     addClassName("batch-update-dialog");
@@ -56,6 +58,7 @@ public class EditBatchDialog extends DialogWindow {
     batchNameField.setPattern("^\\S+(.*\\S)*$");
     batchNameField.setErrorMessage(
         "The batch name must not be empty. It must not start nor end with whitespace.");
+    batchNameField.setValue(batchName);
     batchNameField.addValueChangeListener(this::onBatchNameChanged);
 
     Button addRow = new Button();
@@ -75,10 +78,13 @@ public class EditBatchDialog extends DialogWindow {
     batchControls.addClassName("batch-controls");
     batchControls.add(batchNameField);
 
-    Span pleaseRegisterText = new Span("Please register your samples for experiment:");
+    Span userHelp1 = new Span("You are editing samples for batch");
     Span experimentNameText = new Span(experimentName);
-    experimentNameText.setClassName("experiment-name");
-    Div userHelpText = new Div(pleaseRegisterText, experimentNameText);
+    experimentNameText.addClassName("experiment-name");
+    Span userHelp2 = new Span("and experiment");
+    batchNameText = new Span(batchName);
+    batchNameText.addClassName("batch-name");
+    Div userHelpText = new Div(userHelp1, batchNameText, userHelp2, experimentNameText);
     userHelpText.addClassName("user-help-text");
 
     Div spreadsheetControls = new Div();
@@ -114,7 +120,7 @@ public class EditBatchDialog extends DialogWindow {
 
   private void onBatchNameChanged(
       ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
-    /* do nothing */
+    batchNameText.setText(batchNameChangedEvent.getValue());
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
