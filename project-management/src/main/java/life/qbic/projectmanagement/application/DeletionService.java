@@ -95,7 +95,6 @@ public class DeletionService {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     }
     var sampleDeletionResult = deleteSamples(queryResult.getValue());
-    //Todo Should this be propagated as well?
     if (sampleDeletionResult.isError()) {
       log.debug("Samples for batch %s could not be deleted due to %s".formatted(batchId,
           sampleDeletionResult.getError()));
