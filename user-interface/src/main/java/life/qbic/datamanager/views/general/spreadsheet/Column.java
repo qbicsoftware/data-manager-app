@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.spreadsheet;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
@@ -45,6 +46,7 @@ public class Column<T, C> {
   private CellStyle cellStyle;
   private Component editorComponent;
   private boolean required;
+  private boolean hidden;
 
   public Column(String name, Function<T, C> toColumnValue,
       Function<C, String> columnValueToCellValue,
@@ -63,6 +65,18 @@ public class Column<T, C> {
     cellValidators = new ArrayList<>();
     objectValidators = new ArrayList<>();
     columnValidators = new ArrayList<>();
+  }
+
+  void hide() {
+    this.hidden = true;
+  }
+
+  void show() {
+    this.hidden = false;
+  }
+
+  public boolean isHidden() {
+    return hidden;
   }
 
   /**
@@ -160,7 +174,10 @@ public class Column<T, C> {
   public Column<T, C> requireDistinctValues() {
     this.required = true;
     columnValidators.add(0, new SpreadsheetObjectValidator<>(
-        (object, value) -> object.stream().filter(it -> it.equals(value)).count() <= 1,
+        (object, value) -> object.stream().filter(it -> nonNull(it)
+                && !it.isBlank()
+                && it.equals(value))
+            .count() <= 1,
         "The column '" + getName() + "' does not allow duplicate values."));
     return this;
   }

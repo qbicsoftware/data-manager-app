@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 /**
@@ -89,7 +90,11 @@ public class ExperimentalGroup {
     return this.experimentalGroupId;
   }
 
-  public List<BiologicalReplicate> biologicalReplicates() { return new ArrayList<>(biologicalReplicates); }
+  public List<BiologicalReplicate> biologicalReplicates() {
+    return Optional.ofNullable(biologicalReplicates)
+        .map(ArrayList::new)
+        .orElse(new ArrayList<>());
+  }
 
   @Override
   public int hashCode() {
