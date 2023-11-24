@@ -48,15 +48,8 @@ public class EditBatchDialog extends DialogWindow {
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, false);
 
-    batchNameField = new TextField();
+    batchNameField = createBatchNameField();
     batchNameField.addClassName("batch-name-field");
-    batchNameField.setLabel("Batch Name");
-    batchNameField.setPlaceholder("Please enter a name for this batch");
-    batchNameField.setRequired(true);
-    // must contain at least one non-whitespace character and no leading/tailing whitespace.
-    batchNameField.setPattern("^\\S+(.*\\S)*$");
-    batchNameField.setErrorMessage(
-        "The batch name must not be empty. It must not start nor end with whitespace.");
     batchNameField.setValue(batchName);
     batchNameField.addValueChangeListener(this::onBatchNameChanged);
 
@@ -115,6 +108,19 @@ public class EditBatchDialog extends DialogWindow {
             errorText.setVisible(false);
           }
         });
+  }
+
+  private TextField createBatchNameField() {
+    final TextField batchNameField;
+    batchNameField = new TextField();
+    batchNameField.setLabel("Batch Name");
+    batchNameField.setPlaceholder("Please enter a name for this batch");
+    batchNameField.setRequired(true);
+    // must contain at least one non-whitespace character and no leading/tailing whitespace.
+    batchNameField.setPattern("^\\S+(.*\\S)*$");
+    batchNameField.setErrorMessage(
+        "The batch name must not be empty. It must not start nor end with whitespace.");
+    return batchNameField;
   }
 
   private void onBatchNameChanged(

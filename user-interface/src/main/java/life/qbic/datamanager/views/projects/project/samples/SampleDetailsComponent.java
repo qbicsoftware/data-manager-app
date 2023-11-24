@@ -94,10 +94,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addClassName("sample-details-component");
 
     this.searchField = createSearchField();
-    searchField.addValueChangeListener(valueChangeEvent -> {
+    searchField.addValueChangeListener(this::onSearchFieldChanged);
 
-    });
     this.registerButton = createRegisterButton();
+    registerButton.addClickListener(event -> onRegisterButtonClicked());
+
 
     Span fieldBar = new Span();
     fieldBar.addClassName("search-bar");
@@ -141,7 +142,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     content.add(buttonAndFieldBar, sampleExperimentTabSheet);
     add(content);
 
-    searchField.addValueChangeListener(this::onSearchFieldChanged);
   }
 
   private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
@@ -168,7 +168,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private Button createRegisterButton() {
     Button button = new Button("Register");
     button.addClassName("primary");
-    button.addClickListener(event -> onRegisterButtonClicked());
     return button;
   }
 
