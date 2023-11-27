@@ -553,7 +553,15 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -numberOfRemovedRows, true, true);
     }
     int numberOfRowsAfterRemoval = numberOfRowsBeforeRemoval - numberOfRemovedRows;
-    rows.removeAll(rows.subList(startIndex, endIndex + 1));
+    for (int index = 0; index <= endIndex - startIndex; index++) {
+      /*
+      We cannot use removeAll as the equals method fits all empty rows equally.
+      Thus, we need to delete using indices.
+      When using indices to remove from a list all content to the right is shifted left.
+      We need to remove from the same position again and again until we deleted the number of elements we wanted to delete.
+       */
+      rows.remove(startIndex);
+    }
     delegateSpreadsheet.setMaxRows(numberOfRowsAfterRemoval);
   }
 
