@@ -332,30 +332,26 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
     List<SampleUpdate> updatedSamplesList = new ArrayList<>();
-    try {
-      updatedSamples.forEach(sample -> {
-        SampleUpdate sampleUpdate = new SampleUpdate();
-        String sampleId = "/" + DEFAULT_SPACE_CODE + "/" + sample.sampleCode().code();
-        sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
-        sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
-        sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
+    updatedSamples.forEach(sample -> {
+      SampleUpdate sampleUpdate = new SampleUpdate();
+      String sampleId = "/" + DEFAULT_SPACE_CODE + "/" + sample.sampleCode().code();
+      sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
+      sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
+      sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
 
-        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+      String analyteValue = sample.sampleOrigin().getAnalyte().value();
 
-        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-            () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
-        sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
-        if (openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
-          logger("No mapping was found for " + analyteValue + " when updating sample.");
-          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
-          sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
-        }
-        updatedSamplesList.add(sampleUpdate);
-      });
-      return updatedSamplesList;
-    } catch (Exception e) {
-      throw e;
-    }
+      String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
+          () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
+      sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
+      if (openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+        logger("No mapping was found for " + analyteValue + " when updating sample.");
+        logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+        sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+      }
+      updatedSamplesList.add(sampleUpdate);
+    });
+    return updatedSamplesList;
   }
 
   record VocabularyTerm(String code, String label, String description) {
