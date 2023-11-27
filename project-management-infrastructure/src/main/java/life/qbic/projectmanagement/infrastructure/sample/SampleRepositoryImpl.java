@@ -55,10 +55,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Result<Collection<Sample>, ResponseCode> addAll(Project project,
       Collection<Sample> samples) {
-    Collection<SampleId> sampleIds = new ArrayList<>();
-    samples.forEach(sample -> sampleIds.add(sample.sampleId()));
-    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
-        Collectors.joining(", "));
+    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(samples);
     try {
       this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
@@ -76,14 +73,16 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Result.fromValue(samples);
   }
 
+  private String buildCommaSeparatedSampleIds(Collection<Sample> samples) {
+    return samples.stream().map(sample -> sample.sampleId().toString()).collect(
+        Collectors.joining(", "));
+  }
+
   @Transactional
   @Override
   public Result<Collection<Sample>, ResponseCode> deleteAll(Project project,
       Collection<Sample> samples) {
-    Collection<SampleId> sampleIds = new ArrayList<>();
-    samples.forEach(sample -> sampleIds.add(sample.sampleId()));
-    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
-        Collectors.joining(", "));
+    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(samples);
     try {
       this.qbicSampleRepository.deleteAll(samples);
     } catch (Exception e) {
@@ -141,10 +140,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Result<Collection<Sample>, ResponseCode> updateAll(Project project,
       Collection<Sample> updatedSamples) {
-    Collection<SampleId> sampleIds = new ArrayList<>();
-    updatedSamples.forEach(sample -> sampleIds.add(sample.sampleId()));
-    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
-        Collectors.joining(", "));
+    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(updatedSamples);
     try {
       this.qbicSampleRepository.saveAll(updatedSamples);
     } catch (Exception e) {
