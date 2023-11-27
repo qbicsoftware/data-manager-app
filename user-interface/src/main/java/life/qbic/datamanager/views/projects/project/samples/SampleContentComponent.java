@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -10,10 +11,15 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.ViewBatchEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -39,14 +45,24 @@ public class SampleContentComponent extends Div {
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient BatchRegistrationService batchRegistrationService;
+  private final BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
+      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleDetailsComponent sampleDetailsComponent) {
+      @Autowired BatchRegistrationService batchRegistrationService,
+      @Autowired BatchDetailsComponent batchDetailsComponent) {
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.batchRegistrationService = batchRegistrationService;
+    this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
+    batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
+    batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
+    batchDetailsComponent.addBatchEditListener(this::editBatch);
+    batchDetailsComponent.addBatchViewListener(this::viewBatch);
   }
 
   /**
@@ -60,10 +76,14 @@ public class SampleContentComponent extends Div {
   public void setContext(Context context) {
     this.context = context;
     ProjectId projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    batchDetailsComponent.setExperiment(
+        experimentInformationService.find(experimentId).orElseThrow());
     projectInformationService.find(projectId)
         .ifPresentOrElse(
             project -> {
               sampleDetailsComponent.setContext(context);
+              displayComponentInContent(batchDetailsComponent);
               displayComponentInContent(sampleDetailsComponent);
             }, this::displayProjectNotFound);
   }
@@ -75,7 +95,6 @@ public class SampleContentComponent extends Div {
 
   private void displayComponentInContent(Component component) {
     if (!isComponentInContent(component)) {
-      this.removeAll();
       this.add(component);
     }
   }
@@ -83,6 +102,37 @@ public class SampleContentComponent extends Div {
   private void reloadOnBatchRegistration() {
     sampleDetailsComponent.addBatchRegistrationListener(
         event -> displayComponentInContent(sampleDetailsComponent));
+  }
+
+  private void viewBatch(ViewBatchEvent viewBatchEvent) {
+    ConfirmDialog confirmDialog = new ConfirmDialog();
+    confirmDialog.setText(("This is where I'd show all of my Samples"));
+    confirmDialog.open();
+    confirmDialog.addConfirmListener(event -> confirmDialog.close());
+  }
+
+  private void editBatch(EditBatchEvent editBatchEvent) {
+    //Todo Delete Batch in openBis and Database
+  }
+
+  private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
+    //Todo Delete Batch in openBis and Database
+  }
+
+
+  private void onDeleteBatchClicked(DeleteBatchEvent deleteBatchEvent) {
+    BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification();
+    batchDeletionConfirmationNotification.open();
+    batchDeletionConfirmationNotification.addConfirmListener(event -> {
+      deleteBatch(deleteBatchEvent);
+      batchDeletionConfirmationNotification.close();
+    });
+    batchDeletionConfirmationNotification.addCancelListener(
+        event -> batchDeletionConfirmationNotification.close());
+  }
+
+  private void onRegisterBatchClicked() {
+    //ToDo Move Batch Registration from SampleDetailsComponent to here
   }
 
   private void displayProjectNotFound() {

@@ -43,10 +43,10 @@ public class BatchRegistrationService {
    * Registers a new batch of samples that serves as reference for sample processing in the lab for
    * measurement and analysis purposes.
    *
-   * @param label   a human-readable semantic descriptor of the batch
-   * @param isPilot a flag that indicates the batch to describe as pilot submission batch. Pilots
-   *                are usually followed by a complete batch that represents the measurements of the
-   *                complete experiment.
+   * @param label     a human-readable semantic descriptor of the batch
+   * @param isPilot   a flag that indicates the batch to describe as pilot submission batch. Pilots
+   *                  are usually followed by a complete batch that represents the measurements of
+   *                  the complete experiment.
    * @param projectId id of the project this batch is added to
    * @return a result object with the response. If the registration failed, a response code will be
    * provided.
@@ -56,17 +56,22 @@ public class BatchRegistrationService {
       ProjectId projectId) {
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
-      log.error("Batch registration aborted. Reason: project with id:"+projectId+" was not found");
+      log.error(
+          "Batch registration aborted. Reason: project with id:" + projectId + " was not found");
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
     String projectTitle = project.get().getProjectIntent().projectTitle().title();
-    return batchDomainService.register(label, isPilot, projectTitle, projectId);
+    var result = batchDomainService.register(label, isPilot, projectTitle, projectId);
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
+    }
+    return Result.fromValue(result.getValue());
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     } else {
       Batch batch = searchResult.get();
       batch.addSample(sampleId);
@@ -78,10 +83,9 @@ public class BatchRegistrationService {
     }
   }
 
-
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
-    BATCH_NOT_FOUND,
+    BATCHES_COULD_NOT_BE_RETRIEVED,
     BATCH_CREATION_FAILED,
     BATCH_REGISTRATION_FAILED
   }
