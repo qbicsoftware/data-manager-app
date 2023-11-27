@@ -96,7 +96,7 @@ vaadin-dialog-overlay::part(title) {
 .batch-update-dialog .batch-name,
 .batch-update-dialog .experiment-name,
 .batch-registration-dialog .experiment-name {
-  margin-left: 1ch;
+  margin: auto 0.3em;
   font-weight: bolder;
 }
 
