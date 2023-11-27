@@ -84,6 +84,14 @@ public class Batch {
     this.sampleIds.remove(sampleToRemove);
   }
 
+  public void setLabel(String label) {
+    this.label = label;
+  }
+  public void setPilot(boolean pilot) {
+    this.pilot = pilot;
+  }
+
+
   public BatchId batchId() {
     return this.id;
   }
