@@ -87,21 +87,20 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
-.batch-registration-dialog vaadin-tabsheet {
-  height: 100%;
-  width: 100%;
-}
-
+.batch-update-dialog::part(overlay),
 .batch-registration-dialog::part(overlay) {
   min-width: 80vw;
   height: 100%;
 }
 
+.batch-update-dialog .batch-name,
+.batch-update-dialog .experiment-name,
 .batch-registration-dialog .experiment-name {
-  margin-left: 1ch;
+  margin: auto 0.3em;
   font-weight: bolder;
 }
 
+.batch-update-dialog .spreadsheet-controls,
 .batch-registration-dialog .spreadsheet-controls {
   display: flex;
   justify-content: space-between;
@@ -109,14 +108,17 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: row-reverse;
 }
 
+.batch-update-dialog .spreadsheet-controls .error-text,
 .batch-registration-dialog .spreadsheet-controls .error-text {
   color: var(--lumo-error-text-color);
 }
 
+.batch-update-dialog .batch-controls > .batch-name-field,
 .batch-registration-dialog .batch-controls > .batch-name-field {
   width: calc(100% / 3);
 }
 
+.batch-update-dialog .spreadsheet-controls .row-controls,
 .batch-registration-dialog .spreadsheet-controls .row-controls {
   display: inline-flex;
   column-gap: 0.5em;

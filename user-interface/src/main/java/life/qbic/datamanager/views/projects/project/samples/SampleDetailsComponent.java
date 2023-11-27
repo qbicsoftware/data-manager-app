@@ -37,6 +37,8 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -46,10 +48,16 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +79,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
   private final SampleExperimentTab experimentTab;
+  private final Button temporaryButton;
   private Context context;
   private final TextField searchField;
   public final Button registerButton;
@@ -94,10 +103,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addClassName("sample-details-component");
 
     this.searchField = createSearchField();
-    searchField.addValueChangeListener(valueChangeEvent -> {
+    searchField.addValueChangeListener(this::onSearchFieldChanged);
 
-    });
     this.registerButton = createRegisterButton();
+    registerButton.addClickListener(event -> onRegisterButtonClicked());
+
+    //FIXME remove
+    temporaryButton = new Button("Edit first batch");
+    //end FIXME remove
 
     Span fieldBar = new Span();
     fieldBar.addClassName("search-bar");
@@ -107,6 +120,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     buttonBar.addClassName("button-bar");
     Button metadataDownloadButton = new Button("Download Metadata");
     buttonBar.add(registerButton, metadataDownloadButton);
+    buttonBar.add(temporaryButton); //FIXME remove
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -141,7 +155,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     content.add(buttonAndFieldBar, sampleExperimentTabSheet);
     add(content);
 
-    searchField.addValueChangeListener(this::onSearchFieldChanged);
   }
 
   private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
@@ -168,7 +181,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private Button createRegisterButton() {
     Button button = new Button("Register");
     button.addClassName("primary");
-    button.addClickListener(event -> onRegisterButtonClicked());
     return button;
   }
 
@@ -326,6 +338,46 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.setVisible(true);
     noSamplesRegisteredDisclaimer.setVisible(false);
     noGroupsDefinedDisclaimer.setVisible(false);
+
+    //region fixme remove this is only for testing
+    List<SampleInfo> existingSamples = new ArrayList<>();
+    SampleInfo sampleInfo1 = SampleInfo.create("QABCD", AnalysisMethod.CUSTOM_AMPLICON,
+        "my fake sample",
+        experiment.getExperimentalGroups().get(0).biologicalReplicates().get(0),
+        experiment.getExperimentalGroups().get(0),
+        ((List<Species>) experiment.getSpecies()).get(0),
+        ((List<Specimen>) experiment.getSpecimens()).get(0),
+        ((List<Analyte>) experiment.getAnalytes()).get(0), "");
+    sampleInfo1.setSampleId(SampleId.create());
+    SampleInfo sampleInfo2 = SampleInfo.create("QABCD2", AnalysisMethod.CUSTOM_AMPLICON,
+        "my fake sample 2",
+        experiment.getExperimentalGroups().get(0).biologicalReplicates().get(0),
+        experiment.getExperimentalGroups().get(0),
+        ((List<Species>) experiment.getSpecies()).get(0),
+        ((List<Specimen>) experiment.getSpecimens()).get(0),
+        ((List<Analyte>) experiment.getAnalytes()).get(0), "");
+    sampleInfo2.setSampleId(SampleId.create());
+    existingSamples.add(sampleInfo1);
+    existingSamples.add(sampleInfo2);
+
+    temporaryButton.addClickListener(clickEvent -> {
+      EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
+          (List<Species>) experiment.getSpecies(),
+          (List<Specimen>) experiment.getSpecimens(),
+          (List<Analyte>) experiment.getAnalytes(), experiment.getExperimentalGroups(),
+          BatchId.create(), "my fake batch",
+          existingSamples);
+      editBatchDialog.addCancelListener(it -> it.getSource().close());
+      editBatchDialog.addConfirmListener(confirmEvent -> {
+        Data data = confirmEvent.getData();
+        System.out.println("data.addedSamples() = " + data.addedSamples());
+        System.out.println("data.removedSamples() = " + data.removedSamples());
+        System.out.println("data.changedSamples() = " + data.changedSamples());
+        System.out.println("data.batchName() = " + data.batchName());
+      });
+      editBatchDialog.open();
+    });
+    //endregion
   }
 
   private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
