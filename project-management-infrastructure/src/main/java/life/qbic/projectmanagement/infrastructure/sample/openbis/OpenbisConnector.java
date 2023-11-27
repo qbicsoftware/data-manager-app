@@ -55,14 +55,13 @@ import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
 import life.qbic.projectmanagement.infrastructure.sample.translation.VocabularyCode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /**
  * Basic implementation to query project preview information
  *
  * @since 1.0.0
  */
-@Component
+//@Component
 public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     QbicProjectDataRepo, QbicSampleDataRepo {
 
@@ -78,7 +77,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
-  private OpenbisConnector(@Value("${openbis.user.name}") String userName,
+  public OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
       @Value("${openbis.datasource.url}") String url) {
     openBisClient = new OpenBisClient(

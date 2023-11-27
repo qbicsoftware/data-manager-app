@@ -1,5 +1,8 @@
 package life.qbic.datamanager;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import java.util.List;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -24,6 +27,7 @@ import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -39,12 +43,24 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.integration.UserRegistered;
+import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
+import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
+import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnector;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * <b>App bean configuration class</b>
@@ -58,6 +74,7 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan({"life.qbic.identity.infrastructure"})
 public class AppConfig {
 
+  private static final Logger log = logger(AppConfig.class);
   /*
   Wiring up identity application core and policies
 
@@ -204,6 +221,95 @@ public class AppConfig {
         host, port,
         mailUserName, mailUserPassword);
     return new EmailServiceProvider(mailServerConfiguration);
+  }
+
+
+  @Bean(name = "experimentalDesignVocabularyRespository")
+  public ExperimentalDesignVocabularyRepository experimentalDesignVocabularyRepository(
+      @Value("${openbis.user.name}") String userName,
+      @Value("${openbis.user.password}") String password,
+      @Value("${openbis.datasource.url}") String url) {
+    try {
+      return new OpenbisConnector(userName, password, url);
+    } catch (RuntimeException runtimeException) {
+      log.error(runtimeException.getMessage(), runtimeException);
+      return new ExperimentalDesignVocabularyRepository() {
+        @Override
+        public List<Specimen> retrieveSpecimens() {
+          return List.of(Specimen.create("specimen 1"), Specimen.create("Specimen 2"),
+              Specimen.create("Specimen 3"));
+        }
+
+        @Override
+        public List<Analyte> retrieveAnalytes() {
+          return List.of(Analyte.create("Analyte 1"), Analyte.create("Analyte 2"),
+              Analyte.create("Analyte 3"));
+        }
+
+        @Override
+        public List<Species> retrieveSpecies() {
+          return List.of(Species.create("Species 1"), Species.create("Species 2"),
+              Species.create("Species 3"));
+        }
+      };
+    }
+  }
+
+  @Bean(name = "qbicProjectDataRepo")
+  @Primary
+  public QbicProjectDataRepo qbicProjectDataRepo(
+      @Value("${openbis.user.name}") String userName,
+      @Value("${openbis.user.password}") String password,
+      @Value("${openbis.datasource.url}") String url) {
+    try {
+      return (QbicProjectDataRepo) new OpenbisConnector(userName, password, url);
+    } catch (RuntimeException runtimeException) {
+      log.error(runtimeException.getMessage(), runtimeException);
+      return new QbicProjectDataRepo() {
+        @Override
+        public void add(Project project) {
+
+        }
+
+        @Override
+        public void delete(ProjectCode projectCode) {
+
+        }
+
+        @Override
+        public boolean projectExists(ProjectCode projectCode) {
+          return false;
+        }
+      };
+    }
+  }
+
+  @Bean(name = "qbicSampleDataRepo")
+  public QbicSampleDataRepo qbicSampleDataRepo(
+      @Value("${openbis.user.name}") String userName,
+      @Value("${openbis.user.password}") String password,
+      @Value("${openbis.datasource.url}") String url) {
+    try {
+      return new OpenbisConnector(userName, password, url);
+    } catch (RuntimeException runtimeException) {
+      log.error(runtimeException.getMessage(), runtimeException);
+      return new QbicSampleDataRepo() {
+        @Override
+        public void addSamplesToProject(Project project, List<Sample> samples) {
+
+        }
+
+        @Override
+        public void delete(SampleCode sampleCode) {
+
+        }
+
+        @Override
+        public boolean sampleExists(SampleCode sampleCode) {
+          return false;
+        }
+      };
+    }
   }
 
   @Bean
