@@ -71,7 +71,7 @@ public class BatchRegistrationService {
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     } else {
       Batch batch = searchResult.get();
       batch.addSample(sampleId);
@@ -85,7 +85,7 @@ public class BatchRegistrationService {
 
   public enum ResponseCode {
     BATCH_UPDATE_FAILED,
-    BATCH_NOT_FOUND,
+    BATCHES_COULD_NOT_BE_RETRIEVED,
     BATCH_CREATION_FAILED,
     BATCH_REGISTRATION_FAILED
   }

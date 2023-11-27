@@ -75,7 +75,7 @@ public class BatchJpaRepository implements BatchRepository {
     } catch (Exception e) {
       log.error(
           "Retrieving Batches for experiment with id " + experimentId.value() + " failed: " + e);
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     }
     return Result.fromValue(batches);
   }

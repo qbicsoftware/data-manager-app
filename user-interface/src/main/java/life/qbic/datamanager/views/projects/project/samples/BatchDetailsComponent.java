@@ -9,23 +9,17 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
-import java.util.Random;
+import java.util.stream.Stream;
 import life.qbic.datamanager.ClientDetailsProvider;
-import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -36,12 +30,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Batch Details Component
  * <p>
- * Component embedded within the
- * {@link SampleDetailsComponent} in the
- * {@link SampleInformationMain} It allows the
- * user to see the information associated for each {@link Batch} of each
- * {@link Experiment within a {@link Project}
- * Additionally it enables the user to trigger the edit and deletion of the {@link Batch}
+ * Component embedded within the {@link SampleDetailsComponent} in the {@link SampleInformationMain}
+ * It allows the user to see the information associated for each {@link Batch} of each
+ * {@link Experiment within a {@link Project} Additionally it enables the user to trigger the edit
+ * and deletion of the {@link Batch}
  */
 @SpringComponent
 @UIScope
@@ -64,20 +56,17 @@ public class BatchDetailsComponent extends Div implements Serializable {
     Objects.requireNonNull(batchInformationService);
     addClassName("batch-details-component");
     layoutComponent();
+    createLayoutControls();
+    createBatchGrid();
     this.clientDetailsProvider = clientDetailsProvider;
     this.batchInformationService = batchInformationService;
   }
 
   private void layoutComponent() {
     title.addClassName("title");
-    createLayoutControls();
-    add(controls);
     titleAndControls.addClassName("title-and-controls");
     titleAndControls.add(title, controls);
     add(titleAndControls);
-    createBatchGrid();
-    content.add(batchGrid);
-    content.addClassName("content");
     add(content);
   }
 
@@ -86,24 +75,15 @@ public class BatchDetailsComponent extends Div implements Serializable {
     Button registerButton = new Button("Register");
     registerButton.addClickListener(event -> createBatch(event.isFromClient()));
     controls.add(registerButton);
+    add(controls);
   }
 
   private void createBatchGrid() {
+    content.add(batchGrid);
+    content.addClassName("content");
     batchGrid.addColumn(BatchPreview::batchLabel)
         .setHeader("Name").setSortable(true)
         .setTooltipGenerator(BatchPreview::batchLabel).setFlexGrow(1).setAutoWidth(true);
-    batchGrid.addColumn(new LocalDateTimeRenderer<>(
-            batchPreview -> asClientLocalDateTime(batchPreview.creationDate()),
-            "yyyy-MM-dd")).setKey("creationDate").setHeader("Date Created").setSortable(true)
-        .setSortProperty("creationDate").setAutoWidth(true);
-    batchGrid.addColumn(new LocalDateTimeRenderer<>(
-            batchPreview -> asClientLocalDateTime(batchPreview.modificationDate()),
-            "yyyy-MM-dd")).setKey("modificationDate").setHeader("Date Modified").setSortable(true)
-        .setSortProperty("modificationDate").setAutoWidth(true);
-    batchGrid.addColumn(BatchPreview::sampleCount).setHeader("Samples")
-        .setSortable(true)
-        .setTooltipGenerator(batchPreview -> String.valueOf(batchPreview.sampleCount()))
-        .setAutoWidth(true);
     batchGrid.addComponentColumn(this::generateEditorButtons).setAutoWidth(true);
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
@@ -122,8 +102,10 @@ public class BatchDetailsComponent extends Div implements Serializable {
     Button viewButton = new Button(viewIcon);
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
-    viewButton.addClickListener(e -> viewBatch(batchPreview, e.isFromClient()));
-    deleteButton.addClickListener(e -> removeBatch(batchPreview, e.isFromClient()));
+    viewButton.addClickListener(e -> fireEvent(new ViewBatchEvent(this, batchPreview,
+        e.isFromClient())));
+    deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
+        e.isFromClient())));
     editButton.addClickListener(e -> updateBatch(batchPreview, e.isFromClient()));
     viewButton.setTooltipText("View Samples for Batch");
     editButton.setTooltipText("Edit Batch");
@@ -134,19 +116,7 @@ public class BatchDetailsComponent extends Div implements Serializable {
   }
 
   private BatchPreview generatePreviewFromBatch(Batch batch) {
-    //Todo get Dates from Batch
-    Instant modificationDate = Instant.now();
-    Instant creationDate = Instant.now();
-    //Todo Get SampleCount from Batch
-    Random rand = new Random();
-    int sampleCount = rand.nextInt(999);
-    return new BatchPreview(batch.batchId(), batch.label(), creationDate, modificationDate,
-        sampleCount);
-  }
-
-  private void viewBatch(BatchPreview batchPreview, boolean fromClient) {
-    ViewBatchEvent viewBatchEvent = new ViewBatchEvent(this, batchPreview, fromClient);
-    fireEvent(viewBatchEvent);
+    return new BatchPreview(batch.batchId(), batch.label());
   }
 
   private void createBatch(boolean fromClient) {
@@ -159,16 +129,12 @@ public class BatchDetailsComponent extends Div implements Serializable {
     fireEvent(editBatchEvent);
   }
 
-  private void removeBatch(BatchPreview batchPreview, boolean fromClient) {
-    DeleteBatchEvent deleteBatchEvent = new DeleteBatchEvent(this, batchPreview, fromClient);
-    fireEvent(deleteBatchEvent);
-  }
-
-
   private void loadBatchesForExperiment(Experiment experiment) {
     batchInformationService.retrieveBatchesForExperiment(experiment.experimentId())
-        .onValue(batches -> batchPreviews.addAll(
-            batches.stream().map(this::generatePreviewFromBatch).toList()));
+        .map(Collection::stream)
+        .map(batchStream -> batchStream.map(this::generatePreviewFromBatch))
+        .map(Stream::toList)
+        .onValue(batchPreviews::addAll);
   }
 
   /**
@@ -214,35 +180,18 @@ public class BatchDetailsComponent extends Div implements Serializable {
     addListener(DeleteBatchEvent.class, batchDeletionListener);
   }
 
-  private LocalDateTime asClientLocalDateTime(Instant instant) {
-    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
-        this.clientDetailsProvider.latestDetails().map(ClientDetails::timeZoneId).orElse("UTC")));
-    return zonedDateTime.toLocalDateTime();
-  }
-
   public static class BatchPreview implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 5781276711398861714L;
     private BatchId batchId;
     private String batchLabel;
-    private Instant creationDate;
-    private Instant modificationDate;
 
-    //Todo replace with collection of samples?
-    private int sampleCount;
-
-    public BatchPreview(BatchId batchId, String batchLabel, Instant creationDate,
-        Instant modificationDate, int sampleCount) {
+    public BatchPreview(BatchId batchId, String batchLabel) {
       Objects.requireNonNull(batchId);
       Objects.requireNonNull(batchLabel);
-      Objects.requireNonNull(creationDate);
-      Objects.requireNonNull(modificationDate);
       this.batchId = batchId;
       this.batchLabel = batchLabel;
-      this.creationDate = creationDate;
-      this.modificationDate = modificationDate;
-      this.sampleCount = sampleCount;
     }
 
     public BatchId batchId() {
@@ -259,30 +208,6 @@ public class BatchDetailsComponent extends Div implements Serializable {
 
     public void setBatchLabel(String batchLabel) {
       this.batchLabel = batchLabel;
-    }
-
-    public Instant modificationDate() {
-      return modificationDate;
-    }
-
-    public void setModificationDate(Instant modificationDate) {
-      this.modificationDate = modificationDate;
-    }
-
-    public Instant creationDate() {
-      return creationDate;
-    }
-
-    public void setCreationDate(Instant creationDate) {
-      this.creationDate = creationDate;
-    }
-
-    public int sampleCount() {
-      return sampleCount;
-    }
-
-    public void setSampleCount(int sampleCount) {
-      this.sampleCount = sampleCount;
     }
   }
 
@@ -359,16 +284,16 @@ public class BatchDetailsComponent extends Div implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -5424056755722207848L;
-    private final BatchPreview batchPreview;
+    private final BatchId batchId;
 
-    public DeleteBatchEvent(BatchDetailsComponent source, BatchPreview batchPreview,
+    public DeleteBatchEvent(BatchDetailsComponent source, BatchId batchId,
         boolean fromClient) {
       super(source, fromClient);
-      this.batchPreview = batchPreview;
+      this.batchId = batchId;
     }
 
-    public BatchPreview batchPreview() {
-      return batchPreview;
+    public BatchId BatchId() {
+      return batchId;
     }
   }
 

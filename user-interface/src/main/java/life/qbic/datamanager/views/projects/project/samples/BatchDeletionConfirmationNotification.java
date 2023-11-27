@@ -14,10 +14,11 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
  */
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
-  public BatchDeletionConfirmationNotification(int sampleCount) {
+  public BatchDeletionConfirmationNotification() {
     addClassName("batch-deletion-confirmation");
     customizeHeader();
-    customizeContent(sampleCount);
+    content.add(new Div(new Text(
+        "Deleting this Batch will also delete the samples contained within. Proceed?")));
     setCancelable(true);
     setConfirmText("Confirm");
   }
@@ -27,11 +28,5 @@ public class BatchDeletionConfirmationNotification extends NotificationDialog {
     errorIcon.setClassName("warning-icon");
     setTitle("Samples within batch will be deleted");
     setHeaderIcon(errorIcon);
-  }
-
-  private void customizeContent(int sampleCount) {
-    content.add(new Div(new Text(String.format(
-        "Deleting this Batch will also delete the %s samples contained within. Proceed?",
-        sampleCount))));
   }
 }

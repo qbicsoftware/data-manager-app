@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.CreateBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.ViewBatchEvent;
@@ -60,7 +59,10 @@ public class SampleContentComponent extends Div {
     this.batchRegistrationService = batchRegistrationService;
     this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
-    addBatchUpdateListeners();
+    batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
+    batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
+    batchDetailsComponent.addBatchEditListener(this::editBatch);
+    batchDetailsComponent.addBatchViewListener(this::viewBatch);
   }
 
   /**
@@ -102,22 +104,9 @@ public class SampleContentComponent extends Div {
         event -> displayComponentInContent(sampleDetailsComponent));
   }
 
-  private void addBatchUpdateListeners() {
-    batchDetailsComponent.addBatchCreationListener(this::registerBatch);
-    batchDetailsComponent.addBatchDeletionListener(this::openBatchDeletionConfirmation);
-    batchDetailsComponent.addBatchEditListener(this::editBatch);
-    batchDetailsComponent.addBatchViewListener(this::viewBatch);
-  }
-
-  private void registerBatch(CreateBatchEvent createBatchEvent) {
-    onRegisterButtonClicked();
-  }
-
-  //Todo Determine how samples should be loaded and shown within batch
   private void viewBatch(ViewBatchEvent viewBatchEvent) {
     ConfirmDialog confirmDialog = new ConfirmDialog();
-    confirmDialog.setText(String.format("This is where I'd show all of my %s Samples",
-        viewBatchEvent.batchPreview().sampleCount()));
+    confirmDialog.setText(("This is where I'd show all of my Samples"));
     confirmDialog.open();
     confirmDialog.addConfirmListener(event -> confirmDialog.close());
   }
@@ -131,9 +120,8 @@ public class SampleContentComponent extends Div {
   }
 
 
-  private void openBatchDeletionConfirmation(DeleteBatchEvent deleteBatchEvent) {
-    BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification(
-        deleteBatchEvent.batchPreview().sampleCount());
+  private void onDeleteBatchClicked(DeleteBatchEvent deleteBatchEvent) {
+    BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification();
     batchDeletionConfirmationNotification.open();
     batchDeletionConfirmationNotification.addConfirmListener(event -> {
       deleteBatch(deleteBatchEvent);
@@ -143,13 +131,8 @@ public class SampleContentComponent extends Div {
         event -> batchDeletionConfirmationNotification.close());
   }
 
-  private void onRegisterButtonClicked() {
+  private void onRegisterBatchClicked() {
     //ToDo Move Batch Registration from SampleDetailsComponent to here
-  }
-
-  //ToDo replace with actual reload
-  private void reload() {
-    setContext(context);
   }
 
   private void displayProjectNotFound() {

@@ -49,7 +49,7 @@ public class BatchDomainService {
     Batch batch = Batch.create(label, isPilot);
     var result = batchRepository.add(batch);
     if (result.isError()) {
-      return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
+      return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     } else {
       dispatchRegistration(label, batch.batchId(), projectName, projectId);
     }
@@ -62,6 +62,6 @@ public class BatchDomainService {
   }
 
   public enum ResponseCode {
-    BATCH_REGISTRATION_FAILED,
+    BATCH_CREATION_FAILED,
   }
 }

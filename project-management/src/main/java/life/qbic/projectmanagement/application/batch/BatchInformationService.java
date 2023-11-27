@@ -34,10 +34,15 @@ public class BatchInformationService {
     return batchRepository.find(batchId);
   }
 
-  public Result<Collection<Batch>, BatchRegistrationService.ResponseCode> retrieveBatchesForExperiment(
+  public Result<Collection<Batch>, ResponseCode> retrieveBatchesForExperiment(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "Experiment id must not be null");
-    return batchRepository.findBatchesByExperimentId(experimentId);
+    var result = batchRepository.findBatchesByExperimentId(experimentId);
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.BATCHES_NOT_FOUND);
+    } else {
+      return Result.fromValue(result.getValue());
+    }
   }
 
   public enum ResponseCode {
