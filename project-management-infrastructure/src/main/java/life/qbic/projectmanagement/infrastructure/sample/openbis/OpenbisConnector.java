@@ -72,6 +72,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String DEFAULT_ANALYTE_TYPE = "OTHER";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
 
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
@@ -213,12 +214,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
         String analyteValue = sample.sampleOrigin().getAnalyte().value();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-                () -> analyteMapper.mapFrom(analyteValue))
-            .orElseThrow(() -> {
-              logger("No mapping was found for " + analyteValue);
-              return new MappingNotFoundException();
-            });
+                () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
         props.put("Q_SAMPLE_TYPE", openBisSampleType);
+        if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+          logger("No mapping was found for " + analyteValue);
+          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+          props.put("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+        }
         sampleCreation.setProperties(props);
 
         sampleCreation.setExperimentId(newExperimentID);
