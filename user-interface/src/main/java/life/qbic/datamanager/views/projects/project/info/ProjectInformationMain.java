@@ -26,7 +26,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentInform
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -53,7 +53,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   private final ProjectContentComponent projectContentComponent;
   private final ProjectSupportComponent projectSupportComponent;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
-  private final transient ExperimentalDesignSearchService experimentalDesignSearchService;
+  private final transient OntologyTermInformationService ontologyTermInformationService;
   private final UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -64,18 +64,18 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
       @Autowired ProjectSupportComponent projectSupportComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired OntologyTermInformationService ontologyTermInformationService) {
     super(projectContentComponent, projectSupportComponent);
     requireNonNull(userPermissions, "userPermissions must not be null");
     requireNonNull(projectContentComponent);
     requireNonNull(projectSupportComponent);
     requireNonNull(addExperimentToProjectService);
-    requireNonNull(experimentalDesignSearchService);
+    requireNonNull(ontologyTermInformationService);
     this.projectContentComponent = projectContentComponent;
     this.projectSupportComponent = projectSupportComponent;
     this.userPermissions = userPermissions;
     this.addExperimentToProjectService = addExperimentToProjectService;
-    this.experimentalDesignSearchService = experimentalDesignSearchService;
+    this.ontologyTermInformationService = ontologyTermInformationService;
     layoutComponent();
     addListeners();
     log.debug(String.format(
@@ -144,7 +144,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new ExperimentAddDialog(experimentalDesignSearchService);
+    var creationDialog = new ExperimentAddDialog(ontologyTermInformationService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();

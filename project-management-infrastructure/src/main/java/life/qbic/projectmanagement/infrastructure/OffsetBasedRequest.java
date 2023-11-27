@@ -20,7 +20,8 @@ public class OffsetBasedRequest implements Pageable {
   private final Sort sort;
 
   /**
-   * Basic constructor.
+   * Basic constructor. Using it (and not specifying a Sort option) might lead to slower queries.
+   * Your mileage may vary.
    *
    * @param offset the offset of the query result index to start
    * @param limit  the size of the query result, starting from the offset
