@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.general.spreadsheet;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -538,14 +539,33 @@ public class Spreadsheet<T> extends Component implements HasComponents,
           "The row at index " + startIndex
               + " cannot be removed. Please provide any index greater than 0");
     }
+    //FIXME currently needed due to https://github.com/vaadin/spreadsheet/issues/842
+    // we need to select a cell and de-select it again after deletion
+    CellReference selectedCellReference = delegateSpreadsheet.getSelectedCellReference();
+    if (isNull(selectedCellReference)) {
+      delegateSpreadsheet.setSelection(0, 0);
+    }
 
     delegateSpreadsheet.deleteRows(startIndex, endIndex);
+
+    if (isNull(selectedCellReference)) {
+      delegateSpreadsheet.getCellSelectionManager().clear();
+    }
+
     int numberOfRemovedRows = endIndex + 1 - startIndex;
     if (nextRowIndex <= lastRowIndex) {
       delegateSpreadsheet.shiftRows(nextRowIndex, lastRowIndex, -numberOfRemovedRows, true, true);
     }
     int numberOfRowsAfterRemoval = numberOfRowsBeforeRemoval - numberOfRemovedRows;
-    rows.removeAll(rows.subList(startIndex, endIndex + 1));
+    for (int index = 0; index <= endIndex - startIndex; index++) {
+      /*
+      We cannot use removeAll as the equals method fits all empty rows equally.
+      Thus, we need to delete using indices.
+      When using indices to remove from a list all content to the right is shifted left.
+      We need to remove from the same position again and again until we deleted the number of elements we wanted to delete.
+       */
+      rows.remove(startIndex);
+    }
     delegateSpreadsheet.setMaxRows(numberOfRowsAfterRemoval);
   }
 

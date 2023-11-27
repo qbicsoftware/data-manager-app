@@ -78,7 +78,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     this.searchField = createSearchField();
     searchField.addValueChangeListener(valueChangeEvent -> {
     });
-
+    searchField.addValueChangeListener(this::onSearchFieldChanged);
     Span fieldBar = new Span();
     fieldBar.addClassName("search-bar");
     fieldBar.add(searchField);
@@ -121,7 +121,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     content.add(buttonAndFieldBar, sampleExperimentTabSheet);
     add(content);
 
-    searchField.addValueChangeListener(this::onSearchFieldChanged);
   }
 
   private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
