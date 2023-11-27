@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import static java.util.Objects.nonNull;
+
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -9,6 +11,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
@@ -45,7 +48,7 @@ public class EditBatchDialog extends DialogWindow {
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
-        analytes, false);
+        analytes, true);
 
     batchNameField = createBatchNameField();
     batchNameField.addClassName("batch-name-field");
@@ -160,7 +163,7 @@ public class EditBatchDialog extends DialogWindow {
 
   private static List<SampleInfo> extractAddedSamples(final List<SampleInfo> sampleInfos) {
     return sampleInfos.stream()
-        .filter(it -> it.getSampleCode().isEmpty())
+        .filter(it -> Objects.isNull(it.getSampleId()))
         .toList();
   }
 
@@ -168,6 +171,7 @@ public class EditBatchDialog extends DialogWindow {
       final List<SampleInfo> sampleInfos) {
     return originalSampleInfos.stream()
         .filter(originalSampleInfo -> sampleInfos.stream()
+            .filter(sampleInfo -> nonNull(sampleInfo.getSampleId()))
             .noneMatch(it -> it.getSampleId().equals(originalSampleInfo.getSampleId())))
         .toList();
   }
@@ -175,6 +179,7 @@ public class EditBatchDialog extends DialogWindow {
   private static List<SampleInfo> extractChangedSamples(final List<SampleInfo> originalSampleInfos,
       final List<SampleInfo> sampleInfos) {
     return sampleInfos.stream()
+        .filter(sampleInfo -> nonNull(sampleInfo.getSampleId()))
         .filter(sampleInfo -> originalSampleInfos.stream()
             .anyMatch(
                 it -> it.getSampleId().equals(sampleInfo.getSampleId())

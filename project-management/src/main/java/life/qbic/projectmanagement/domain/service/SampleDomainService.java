@@ -2,13 +2,17 @@ package life.qbic.projectmanagement.domain.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
@@ -50,25 +54,34 @@ public class SampleDomainService {
         return result;
     }
 
-    public Result<Collection<Sample>, ResponseCode> updateSamples(Project project,
-        Collection<Sample> updatedSamples) {
+    public void updateSamples(Project project,
+        Collection<SampleUpdateRequest> updatedSamples) {
         Objects.requireNonNull(updatedSamples);
-        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.updateAll(project,
-            updatedSamples);
-        result.onValue(upSamples ->
-                upSamples.forEach(this::dispatchSuccessfulSampleRegistration))
-            .onError(Result::fromError);
-        return result;
+        List<SampleId> sampleIds = updatedSamples.stream().map(SampleUpdateRequest::sampleId)
+            .toList();
+        Collection<Sample> samplesToUpdate = sampleRepository.findSamplesBySampleId(
+            sampleIds);
+        for (Sample sample : samplesToUpdate) {
+            var sampleInfo = updatedSamples.stream().filter(
+                    sampleUpdateRequest -> sampleUpdateRequest.sampleId().equals(sample.sampleId()))
+                .findFirst().orElseThrow();
+            sample.setLabel(sampleInfo.sampleInformation().sampleLabel());
+            sample.setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
+            sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
+                sampleInfo.sampleInformation().specimen(),
+                sampleInfo.sampleInformation().analyte()));
+            sample.setComment(sampleInfo.sampleInformation().comment());
+            sample.setBiologicalReplicateId(sampleInfo.sampleInformation().biologicalReplicate()
+                .id());
+            sample.setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+        }
+        sampleRepository.updateAll(project, samplesToUpdate);
     }
 
-    public Result<Collection<Sample>, ResponseCode> deleteSamples(Project project,
-        Collection<Sample> samples) {
+    public void deleteSamples(Project project,
+        Collection<SampleId> samples) {
         Objects.requireNonNull(samples);
-        var result = this.sampleRepository.deleteAll(project, samples);
-        result.onValue(deletedSamples ->
-                deletedSamples.forEach(this::dispatchSuccessfulSampleDeletion))
-            .onError(Result::fromError);
-        return result;
+        sampleRepository.deleteAll(project, samples);
     }
 
     private void dispatchSuccessfulSampleRegistration(Sample sample) {

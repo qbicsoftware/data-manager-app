@@ -5,8 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -14,6 +12,7 @@ import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,51 +90,26 @@ public class DeletionService {
   }
 
   @Transactional
-  public Result<BatchId, ResponseCode> deleteBatch(ProjectId projectId, BatchId batchId) {
-    var queryResult = sampleInformationService.retrieveSamplesForBatch(batchId);
-    if (queryResult.isError()) {
-      log.debug("batch (%s) converting %s to %s".formatted(batchId, queryResult.getError(),
-          ResponseCode.QUERY_FAILED));
-      return Result.fromError(ResponseCode.QUERY_FAILED);
-    }
-    var result = batchDomainService.deleteBatch(batchId);
-    if (result.isError()) {
-      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
-    }
-    var sampleDeletionResult = deleteSamples(projectId, queryResult.getValue());
-    sampleDeletionResult.onErrorMatching(
-        responseCode -> responseCode.equals(ResponseCode.DATA_ATTACHED_TO_SAMPLES),
-        ignored -> {
-          throw new ApplicationException(ErrorCode.DATA_ATTACHED_TO_SAMPLES,
-              ErrorParameters.of(batchId));
-        });
-    if (sampleDeletionResult.isError()) {
-      log.debug("Samples for batch %s could not be deleted due to %s".formatted(batchId,
-          sampleDeletionResult.getError()));
-      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
-    }
-    return Result.fromValue(batchId);
+  public BatchId deleteBatch(ProjectId projectId, BatchId batchId) {
+    var samples = sampleInformationService.retrieveSamplesForBatch(batchId).stream()
+        .map(Sample::sampleId).toList();
+    var deletedBatchId = batchDomainService.deleteBatch(batchId);
+    deletedBatchId.onError(error -> {
+      throw new ApplicationException("Could not delete batch " + batchId);
+    });
+    deleteSamples(projectId, samples);
+    return deletedBatchId.getValue();
   }
 
+
   @Transactional
-  public Result<Collection<Sample>, ResponseCode> deleteSamples(
-      ProjectId projectId, Collection<Sample> samplesCollection) {
+  public void deleteSamples(
+      ProjectId projectId, Collection<SampleId> samplesCollection) {
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
-      log.error(
-          "Batch deletion aborted. Reason: project with id:" + projectId + " was not found");
-      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+      throw new IllegalArgumentException("Could not find project " + projectId);
     }
-    var result = sampleDomainService.deleteSamples(project.get(),
-        samplesCollection.stream().toList());
-    if (result.isError() && result.getError()
-        .equals(SampleDomainService.ResponseCode.DATA_ATTACHED_TO_SAMPLES)) {
-      return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);
-    }
-    if (result.isError()) {
-      return Result.fromError(ResponseCode.SAMPLE_DELETION_FAILED);
-    }
-    return Result.fromValue(result.getValue());
+    sampleDomainService.deleteSamples(project.get(), samplesCollection);
   }
 
 

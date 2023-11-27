@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.sample;
 
 import java.util.Collection;
+import java.util.List;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -11,5 +12,5 @@ public interface QbicSampleRepository extends JpaRepository<Sample, SampleId> {
 
   Collection<Sample> findAllByExperimentId(ExperimentId experimentId);
 
-  Collection<Sample> findAllByAssignedBatch(BatchId batchId);
+  List<Sample> findAllByAssignedBatch(BatchId batchId);
 }

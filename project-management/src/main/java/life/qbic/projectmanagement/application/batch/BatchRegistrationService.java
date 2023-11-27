@@ -137,17 +137,31 @@ public class BatchRegistrationService {
   @Transactional
   public Result<BatchId, ResponseCode> editBatch(BatchId batchId, String batchLabel,
       boolean isPilot,
-      Collection<SampleRegistrationRequest> createdSamples, Collection<Sample> editedSamples,
-      Collection<Sample> deletedSamples, ProjectId projectId) {
+      Collection<SampleRegistrationRequest> createdSamples,
+      Collection<SampleUpdateRequest> editedSamples,
+      Collection<SampleId> deletedSamples, ProjectId projectId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
       return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     }
+
+    var samplesInBatch = sampleInformationService.retrieveSamplesForBatch(batchId).stream()
+        .map(Sample::sampleId)
+        .toList();
+    if (editedSamples.stream().map(SampleUpdateRequest::sampleId)
+        .anyMatch(it -> !samplesInBatch.contains(it))) {
+      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
+    }
+
+    if (deletedSamples.stream()
+        .anyMatch(it -> !samplesInBatch.contains(it))) {
+      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
+    }
     Batch batch = searchResult.get();
     updateBatchInformation(batch, batchLabel, isPilot);
-    createSamplesInBatch(projectId, batch, createdSamples);
-    updateSamplesInBatch(projectId, batch, editedSamples);
-    deleteSamplesInBatch(projectId, batch, deletedSamples);
+    sampleRegistrationService.registerSamples(createdSamples, projectId);
+    sampleRegistrationService.updateSamples(projectId, editedSamples);
+    deletionService.deleteSamples(projectId, deletedSamples);
     return Result.fromValue(batch.batchId());
   }
 
@@ -163,64 +177,6 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
     }
   }
-
-  private Result<BatchId, ResponseCode> createSamplesInBatch(ProjectId projectId, Batch batch,
-      Collection<SampleRegistrationRequest> createdSamples) {
-    if (createdSamples.isEmpty()) {
-      return Result.fromValue(batch.batchId());
-    }
-    var result = sampleRegistrationService.registerSamples(createdSamples, projectId);
-    if (result.isValue()) {
-      return Result.fromValue(batch.batchId());
-    } else {
-      return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
-    }
-  }
-
-  private Result<BatchId, ResponseCode> updateSamplesInBatch(ProjectId projectId, Batch batch,
-      Collection<Sample> editedSamples) {
-    if (editedSamples.isEmpty()) {
-      return Result.fromValue(batch.batchId());
-    }
-    if (doSamplesBelongToBatch(batch.batchId(), editedSamples)) {
-      var result = sampleRegistrationService.updateSamples(projectId, editedSamples);
-      if (result.isValue()) {
-        return Result.fromValue(batch.batchId());
-      } else {
-        return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
-      }
-    } else {
-      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
-    }
-  }
-
-  private Result<BatchId, ResponseCode> deleteSamplesInBatch(ProjectId projectId, Batch batch,
-      Collection<Sample> deletedSamples) {
-    if (deletedSamples.isEmpty()) {
-      return Result.fromValue(batch.batchId());
-    }
-    if (doSamplesBelongToBatch(batch.batchId(), deletedSamples)) {
-      var result = deletionService.deleteSamples(projectId, deletedSamples);
-      if (result.isValue()) {
-        return Result.fromValue(batch.batchId());
-      } else {
-        return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
-      }
-    } else {
-      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
-    }
-  }
-
-  private boolean doSamplesBelongToBatch(BatchId batchId, Collection<Sample> samples) {
-    /* an alternative would be to get the IDs from the batch object directly however
-    this might not be updated to the current state */
-    var queryResult = sampleInformationService.retrieveSamplesForBatch(batchId);
-    if (queryResult.isValue()) {
-      return queryResult.getValue().containsAll(samples);
-    }
-    return false;
-  }
-
 
   public enum ResponseCode {
     QUERY_FAILED,

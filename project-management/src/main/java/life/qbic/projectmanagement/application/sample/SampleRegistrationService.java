@@ -10,6 +10,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -66,23 +67,20 @@ public class SampleRegistrationService {
         .flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
   }
 
-  public Result<Collection<Sample>, ResponseCode> updateSamples(ProjectId projectId,
-      Collection<Sample> updatedSamples) {
+  public void updateSamples(ProjectId projectId,
+      Collection<SampleUpdateRequest> updatedSamples) {
     Objects.requireNonNull(projectId);
     Objects.requireNonNull(updatedSamples);
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
-      log.error(
+      throw new IllegalArgumentException(
           "Sample registration aborted. Reason: project with id:" + projectId + " was not found");
-      return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
     }
     if (updatedSamples.isEmpty()) {
-      log.error("No samples were defined");
-      return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
+      return;
     }
-    var result = sampleDomainService.updateSamples(project.get(), updatedSamples);
-    return result.onValue(Result::fromValue)
-        .flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_UPDATE_FAILED));
+
+    sampleDomainService.updateSamples(project.get(), updatedSamples);
   }
 
   public enum ResponseCode {

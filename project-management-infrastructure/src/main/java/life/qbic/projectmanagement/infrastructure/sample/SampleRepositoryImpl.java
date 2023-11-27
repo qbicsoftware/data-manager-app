@@ -2,10 +2,13 @@ package life.qbic.projectmanagement.infrastructure.sample;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -13,6 +16,7 @@ import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
@@ -20,7 +24,6 @@ import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnecto
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 
 /**
@@ -55,7 +58,8 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Result<Collection<Sample>, ResponseCode> addAll(Project project,
       Collection<Sample> samples) {
-    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(samples);
+    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
+        samples.stream().map(Sample::sampleId).toList());
     try {
       this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
@@ -73,37 +77,24 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Result.fromValue(samples);
   }
 
-  private String buildCommaSeparatedSampleIds(Collection<Sample> samples) {
-    return samples.stream().map(sample -> sample.sampleId().toString()).collect(
-        Collectors.joining(", "));
+  private String buildCommaSeparatedSampleIds(Collection<SampleId> sampleIds) {
+    return sampleIds.stream().map(SampleId::toString).collect(Collectors.joining(", "));
   }
 
   @Transactional
   @Override
-  public Result<Collection<Sample>, ResponseCode> deleteAll(Project project,
-      Collection<Sample> samples) {
-    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(samples);
+  public void deleteAll(Project project,
+      Collection<SampleId> samples) {
+    List<SampleCode> sampleCodes = qbicSampleRepository.findAllById(samples)
+        .stream().map(Sample::sampleCode).toList();
+    this.qbicSampleRepository.deleteAllById(samples);
     try {
-      this.qbicSampleRepository.deleteAll(samples);
-    } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be deleted", e);
-      rollBackCurrentTransaction();
-      return Result.fromError(ResponseCode.DELETION_FAILED);
-    }
-    try {
-      sampleDataRepo.deleteAll(project.getProjectCode(), samples);
+      sampleDataRepo.deleteAll(project.getProjectCode(), sampleCodes);
     } catch (SampleNotDeletedException sampleNotDeletedException) {
-      log.error("The samples:" + commaSeperatedSampleIds
-              + "could not be deleted from openBis since there is data attached to them",
-          sampleNotDeletedException);
-      rollBackCurrentTransaction();
-      return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);
-    } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be deleted from openBIS", e);
-      rollBackCurrentTransaction();
-      return Result.fromError(ResponseCode.DELETION_FAILED);
+      throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
+          sampleNotDeletedException,
+          ErrorCode.DATA_ATTACHED_TO_SAMPLES, ErrorParameters.empty());
     }
-    return Result.fromValue(samples);
   }
 
   @Override
@@ -122,50 +113,23 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
-  public Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByBatchId(
+  public List<Sample> findSamplesByBatchId(
       BatchId batchId) {
-    Objects.requireNonNull(batchId);
-    Collection<Sample> samples;
-    try {
-      samples = qbicSampleRepository.findAllByAssignedBatch(batchId);
-    } catch (Exception e) {
-      log.error(
-          "Retrieving Samples for batch with id " + batchId.value() + " failed: " + e, e);
-      return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
-    }
-    return Result.fromValue(samples);
+    Objects.requireNonNull(batchId, "batchId must not be null");
+    return qbicSampleRepository.findAllByAssignedBatch(batchId);
   }
 
   @Transactional
   @Override
-  public Result<Collection<Sample>, ResponseCode> updateAll(Project project,
+  public void updateAll(Project project,
       Collection<Sample> updatedSamples) {
-    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(updatedSamples);
-    try {
-      this.qbicSampleRepository.saveAll(updatedSamples);
-    } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated", e);
-      rollBackCurrentTransaction();
-      return Result.fromError(ResponseCode.UPDATE_FAILED);
-    }
-    try {
-      sampleDataRepo.updateAll(updatedSamples);
-    } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be updated in openBIS", e);
-      rollBackCurrentTransaction();
-      return Result.fromError(ResponseCode.UPDATE_FAILED);
-    }
-    return Result.fromValue(updatedSamples);
+    qbicSampleRepository.saveAll(updatedSamples);
+    sampleDataRepo.updateAll(updatedSamples);
   }
 
-
-  /**
-   * Spring Transactional annotation based rollback only works if the current transaction throws an
-   * exception. Since we want to return result objects instead of throwing exceptions we have to
-   * programmatically mark the current transaction as rollback to ensure data validity.
-   */
-  private void rollBackCurrentTransaction() {
-    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+  @Override
+  public List<Sample> findSamplesBySampleId(List<SampleId> sampleId) {
+    return qbicSampleRepository.findAllById(sampleId);
   }
 
 }

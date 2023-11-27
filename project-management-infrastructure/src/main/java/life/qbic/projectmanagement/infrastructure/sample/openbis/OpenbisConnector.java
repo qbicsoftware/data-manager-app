@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
@@ -268,16 +269,16 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * samples has attached data and fails the deletion of the sample batch, if so.
    *
    * @param projectCode the {@link ProjectCode} of the project these samples belong to
-   * @param samples The {@link Sample}s to be deleted in the data repo
+   * @param sampleCodes The {@link SampleCode}s of the samples to be deleted in the data repo
 
    * @since 1.0.0
    */
   @Override
   public void deleteAll(ProjectCode projectCode,
-      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
+      Collection<SampleCode> sampleCodes) {
 
-    Set<String> sampleCodesToDelete = samples.stream().map(sample -> sample.sampleCode().code())
-        .collect(Collectors.toSet());
+    Set<String> sampleCodesToDelete = new HashSet<>(
+        sampleCodes.stream().map(SampleCode::code).toList());
 
     //Fetch samples with potential data - sample search is not working, sorry you have to see this
     ExperimentFetchOptions fetchOptions = new ExperimentFetchOptions();
@@ -323,7 +324,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       throws SampleNotUpdatedException {
     try {
       updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
           "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
     }
@@ -351,9 +352,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
-    List<SampleUpdate> updatedSamplesList = updatedSamples.stream().map(sample ->
-        createSampleUpdate(sample)).toList();
-    return updatedSamplesList;
+    return updatedSamples.stream().map(this::createSampleUpdate).toList();
   }
 
   record VocabularyTerm(String code, String label, String description) {
