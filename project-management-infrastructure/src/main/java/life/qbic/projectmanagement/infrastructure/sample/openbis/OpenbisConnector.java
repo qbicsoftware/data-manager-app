@@ -227,7 +227,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
     return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .filter(vocabularyTerm -> vocabularyTerm.label.equals(analyteLabel))
+        .filter(vocabularyTerm -> analyteLabel.equals(vocabularyTerm.label))
         .map(vocabularyTerm -> vocabularyTerm.code).findFirst();
   }
 
