@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.stream.Stream;
-import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -49,33 +48,23 @@ public class BatchDetailsComponent extends Div implements Serializable {
   private final Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchInformationService batchInformationService;
   private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
-  private final ClientDetailsProvider clientDetailsProvider;
 
-  public BatchDetailsComponent(ClientDetailsProvider clientDetailsProvider,
-      @Autowired BatchInformationService batchInformationService) {
+  public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService) {
     Objects.requireNonNull(batchInformationService);
     addClassName("batch-details-component");
-    layoutComponent();
-    createLayoutControls();
+    createTitleAndControls();
     createBatchGrid();
-    this.clientDetailsProvider = clientDetailsProvider;
+    add(content);
     this.batchInformationService = batchInformationService;
   }
 
-  private void layoutComponent() {
+  private void createTitleAndControls() {
     title.addClassName("title");
     titleAndControls.addClassName("title-and-controls");
-    titleAndControls.add(title, controls);
-    add(titleAndControls);
-    add(content);
-  }
-
-  private void createLayoutControls() {
-    controls.addClassName("controls");
     Button registerButton = new Button("Register");
     registerButton.addClickListener(event -> createBatch(event.isFromClient()));
-    controls.add(registerButton);
-    add(controls);
+    titleAndControls.add(title, registerButton);
+    add(titleAndControls);
   }
 
   private void createBatchGrid() {
