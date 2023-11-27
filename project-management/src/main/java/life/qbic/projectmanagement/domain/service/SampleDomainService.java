@@ -55,8 +55,8 @@ public class SampleDomainService {
         Objects.requireNonNull(updatedSamples);
         Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.updateAll(project,
             updatedSamples);
-        result.onValue(createdSamples ->
-                createdSamples.forEach(this::dispatchSuccessfulSampleRegistration))
+        result.onValue(upSamples ->
+                upSamples.forEach(this::dispatchSuccessfulSampleRegistration))
             .onError(Result::fromError);
         return result;
     }
