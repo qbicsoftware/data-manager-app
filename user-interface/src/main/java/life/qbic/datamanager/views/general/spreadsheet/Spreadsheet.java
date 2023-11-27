@@ -136,9 +136,11 @@ public class Spreadsheet<T> extends Component implements HasComponents,
 
   /**
    * Adds a column to the spreadsheet.
-   * @param name the name of the column
+   *
+   * @param name        the name of the column
    * @param toCellValue a function converting the row data to cell data in this column
-   * @param modelEditor a bi-function that can be used to update the row data when cell data has changed for this column
+   * @param modelEditor a bi-function that can be used to update the row data when cell data has
+   *                    changed for this column
    * @return the added column
    */
   public Column<T, String> addColumn(String name, Function<T, String> toCellValue,
@@ -148,12 +150,14 @@ public class Spreadsheet<T> extends Component implements HasComponents,
 
   /**
    * Adds a column to the spreadsheet
-   * @param name the name of the column
-   * @param toColumnValue a function converting row data into data for this column
+   *
+   * @param name                   the name of the column
+   * @param toColumnValue          a function converting row data into data for this column
    * @param columnValueToCellValue a function converting column data to cell data
-   * @param modelEditor a bi-function that can be used to update the row data when cell data has changed for this column
+   * @param modelEditor            a bi-function that can be used to update the row data when cell
+   *                               data has changed for this column
+   * @param <C>                    the object type of this column
    * @return the created column
-   * @param <C> the object type of this column
    */
   public <C> Column<T, C> addColumn(String name, Function<T, C> toColumnValue,
       Function<C, String> columnValueToCellValue,

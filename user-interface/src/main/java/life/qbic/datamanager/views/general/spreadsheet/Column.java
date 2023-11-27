@@ -87,7 +87,6 @@ public class Column<T, C> {
   }
 
   /**
-   *
    * @return the editor component of this column
    */
   public Optional<Component> getEditorComponent() {
@@ -111,7 +110,6 @@ public class Column<T, C> {
   }
 
   /**
-   *
    * @return the list of validators applied to a cell that require the row data for validation
    */
   public List<SpreadsheetObjectValidator<T, String>> getObjectValidators() {
@@ -119,7 +117,6 @@ public class Column<T, C> {
   }
 
   /**
-   *
    * @return a list of validators applied to a cell expecting all values of a column as context
    */
   public List<SpreadsheetObjectValidator<List<String>, String>> getColumnValidators() {
@@ -147,7 +144,8 @@ public class Column<T, C> {
 
   /**
    * adds a validator
-   * @param predicate the predicate to test on the cell value and the row value
+   *
+   * @param predicate    the predicate to test on the cell value and the row value
    * @param errorMessage the error message to display in case validation fails
    * @return the modified column
    */
@@ -170,6 +168,7 @@ public class Column<T, C> {
 
   /**
    * requires distinct/unique values in the column
+   *
    * @return the modified column
    */
   public Column<T, C> requireDistinctValues() {
@@ -186,10 +185,11 @@ public class Column<T, C> {
 
   /**
    * Shows a editor component to facilitate value selection
-   * @param values the values to choose from
+   *
+   * @param values        the values to choose from
    * @param toColumnValue the function to be applied to the value to get the column value
+   * @param <E>           the type of items to select from
    * @return the modified column
-   * @param <E> the type of items to select from
    */
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue) {
     return selectFrom(values, toColumnValue,
@@ -199,11 +199,12 @@ public class Column<T, C> {
 
   /**
    * Shows a editor component to facilitate value selection
-   * @param values the values to choose from
+   *
+   * @param values        the values to choose from
    * @param toColumnValue the function to convert the selected value to column value
-   * @param renderer the render to use to render possible values
+   * @param renderer      the render to use to render possible values
+   * @param <E>           the type of items to select from
    * @return the modified column
-   * @param <E> the type of items to select from
    */
   public <E> Column<T, C> selectFrom(List<E> values, Function<E, C> toColumnValue,
       ComponentRenderer<? extends Component, E> renderer) {
@@ -212,10 +213,11 @@ public class Column<T, C> {
 
   /**
    * Shows a editor component facilitating value selection
+   *
    * @param valueProvider a function taking a row value and providing a list of possible items
    * @param toColumnValue the function to convert an option to a column value
+   * @param <E>           the type of items to select from
    * @return the modified column
-   * @param <E> the type of items to select from
    */
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue) {
@@ -225,11 +227,12 @@ public class Column<T, C> {
 
   /**
    * shows a editor component facilitating value selection
+   *
    * @param valueProvider a function taking a row value and providing a list of possible items
    * @param toColumnValue the function to convert an option to a column value
-   * @param renderer a renderer rendering an option
+   * @param renderer      a renderer rendering an option
+   * @param <E>           the type of items to select from
    * @return the modified column
-   * @param <E> the type of items to select from
    */
   public <E> Column<T, C> selectFrom(Function<T, List<E>> valueProvider,
       Function<E, C> toColumnValue,
