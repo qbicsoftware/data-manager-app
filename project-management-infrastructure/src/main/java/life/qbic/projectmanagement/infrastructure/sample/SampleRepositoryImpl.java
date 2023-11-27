@@ -78,7 +78,8 @@ public class SampleRepositoryImpl implements SampleRepository {
 
   @Transactional
   @Override
-  public Result<Collection<Sample>, ResponseCode> deleteAll(Collection<Sample> samples) {
+  public Result<Collection<Sample>, ResponseCode> deleteAll(Project project,
+      Collection<Sample> samples) {
     Collection<SampleId> sampleIds = new ArrayList<>();
     samples.forEach(sample -> sampleIds.add(sample.sampleId()));
     String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
@@ -91,7 +92,7 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(ResponseCode.DELETION_FAILED);
     }
     try {
-      sampleDataRepo.deleteAll(samples);//TODO where to get project code?
+      sampleDataRepo.deleteAll(project.getProjectCode(), samples);
     } catch (SampleNotDeletedException sampleNotDeletedException) {
       log.error("The samples:" + commaSeperatedSampleIds
               + "could not be deleted from openBis since there is data attached to them",
@@ -138,7 +139,8 @@ public class SampleRepositoryImpl implements SampleRepository {
 
   @Transactional
   @Override
-  public Result<Collection<Sample>, ResponseCode> updateAll(Collection<Sample> updatedSamples) {
+  public Result<Collection<Sample>, ResponseCode> updateAll(Project project,
+      Collection<Sample> updatedSamples) {
     Collection<SampleId> sampleIds = new ArrayList<>();
     updatedSamples.forEach(sample -> sampleIds.add(sample.sampleId()));
     String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(

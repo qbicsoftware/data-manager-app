@@ -77,13 +77,17 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
     String projectTitle = project.get().getProjectIntent().projectTitle().title();
-    return batchDomainService.register(label, isPilot, projectTitle, projectId);
+    var result = batchDomainService.register(label, isPilot, projectTitle, projectId);
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
+    }
+    return Result.fromValue(result.getValue());
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     } else {
       Batch batch = searchResult.get();
       batch.addSample(sampleId);
@@ -94,13 +98,11 @@ public class BatchRegistrationService {
       return Result.fromValue(batch.batchId());
     }
   }
-
-
   //Todo should this be a directive or done manually (maybe remove batch is enough?)
   public Result<BatchId, ResponseCode> removeSampleFromBatch(SampleId sampleId, BatchId batchId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     } else {
       Batch batch = searchResult.get();
       batch.removeSample(sampleId);
@@ -139,13 +141,13 @@ public class BatchRegistrationService {
       Collection<Sample> deletedSamples, ProjectId projectId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
-      return Result.fromError(ResponseCode.BATCH_NOT_FOUND);
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     }
     Batch batch = searchResult.get();
     updateBatchInformation(batch, batchLabel, isPilot);
     createSamplesInBatch(projectId, batch, createdSamples);
-    updateSamplesInBatch(batch, editedSamples);
-    deleteSamplesInBatch(batch, deletedSamples);
+    updateSamplesInBatch(projectId, batch, editedSamples);
+    deleteSamplesInBatch(projectId, batch, deletedSamples);
     return Result.fromValue(batch.batchId());
   }
 
@@ -175,13 +177,13 @@ public class BatchRegistrationService {
     }
   }
 
-  private Result<BatchId, ResponseCode> updateSamplesInBatch(Batch batch,
+  private Result<BatchId, ResponseCode> updateSamplesInBatch(ProjectId projectId, Batch batch,
       Collection<Sample> editedSamples) {
     if (editedSamples.isEmpty()) {
       return Result.fromValue(batch.batchId());
     }
     if (doSamplesBelongToBatch(batch.batchId(), editedSamples)) {
-      var result = sampleRegistrationService.updateSamples(editedSamples);
+      var result = sampleRegistrationService.updateSamples(projectId, editedSamples);
       if (result.isValue()) {
         return Result.fromValue(batch.batchId());
       } else {
@@ -192,13 +194,13 @@ public class BatchRegistrationService {
     }
   }
 
-  private Result<BatchId, ResponseCode> deleteSamplesInBatch(Batch batch,
+  private Result<BatchId, ResponseCode> deleteSamplesInBatch(ProjectId projectId, Batch batch,
       Collection<Sample> deletedSamples) {
     if (deletedSamples.isEmpty()) {
       return Result.fromValue(batch.batchId());
     }
     if (doSamplesBelongToBatch(batch.batchId(), deletedSamples)) {
-      var result = deletionService.deleteSamples(deletedSamples);
+      var result = deletionService.deleteSamples(projectId, deletedSamples);
       if (result.isValue()) {
         return Result.fromValue(batch.batchId());
       } else {
@@ -221,10 +223,9 @@ public class BatchRegistrationService {
 
 
   public enum ResponseCode {
-
     QUERY_FAILED,
     BATCH_UPDATE_FAILED,
-    BATCH_NOT_FOUND,
+    BATCHES_COULD_NOT_BE_RETRIEVED,
     BATCH_CREATION_FAILED,
     BATCH_REGISTRATION_FAILED,
     BATCH_DELETION_FAILED,

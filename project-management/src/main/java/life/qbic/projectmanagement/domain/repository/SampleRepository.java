@@ -27,7 +27,7 @@ public interface SampleRepository {
    */
   Result<Collection<Sample>, ResponseCode> addAll(Project project, Collection<Sample> samples);
 
-  Result<Collection<Sample>, ResponseCode> deleteAll(Collection<Sample> samples);
+  Result<Collection<Sample>, ResponseCode> deleteAll(Project project, Collection<Sample> samples);
 
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
       ExperimentId experimentId);
@@ -35,6 +35,7 @@ public interface SampleRepository {
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByBatchId(
       BatchId batchId);
 
-  Result<Collection<Sample>, ResponseCode> updateAll(Collection<Sample> updatedSamples);
+  Result<Collection<Sample>, ResponseCode> updateAll(Project project,
+      Collection<Sample> updatedSamples);
 
 }

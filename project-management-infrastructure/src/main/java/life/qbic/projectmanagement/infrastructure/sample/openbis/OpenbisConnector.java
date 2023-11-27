@@ -27,7 +27,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.CreateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOptions;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.ISampleId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
@@ -54,7 +53,6 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
@@ -269,13 +267,14 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
    * Deletes a collection of samples with the provided codes from persistence. Checks if any of the
    * samples has attached data and fails the deletion of the sample batch, if so.
    *
-   * @param samples The {@link Sample}s to be deleted in the data repo
    * @param projectCode the {@link ProjectCode} of the project these samples belong to
+   * @param samples The {@link Sample}s to be deleted in the data repo
+
    * @since 1.0.0
    */
   @Override
-  public void deleteAll(
-      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples, ProjectCode projectCode) {
+  public void deleteAll(ProjectCode projectCode,
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples) {
 
     Set<String> sampleCodesToDelete = samples.stream().map(sample -> sample.sampleCode().code())
         .collect(Collectors.toSet());

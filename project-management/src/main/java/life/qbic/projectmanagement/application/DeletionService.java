@@ -9,6 +9,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
@@ -27,15 +28,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class DeletionService {
 
   private static final Logger log = logger(DeletionService.class);
+  private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
   private final BatchDomainService batchDomainService;
   private final SampleDomainService sampleDomainService;
 
   @Autowired
-  public DeletionService(ExperimentInformationService experimentInformationService,
+  public DeletionService(ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService, BatchDomainService batchDomainService,
       SampleDomainService sampleDomainService) {
+    this.projectInformationService = requireNonNull(projectInformationService,
+        "experimentInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
     this.sampleInformationService = requireNonNull(sampleInformationService,
@@ -83,7 +88,7 @@ public class DeletionService {
   }
 
   @Transactional
-  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
+  public Result<BatchId, ResponseCode> deleteBatch(ProjectId projectId, BatchId batchId) {
     var queryResult = sampleInformationService.retrieveSamplesForBatch(batchId);
     if (queryResult.isError()) {
       log.debug("batch (%s) converting %s to %s".formatted(batchId, queryResult.getError(),
@@ -94,7 +99,7 @@ public class DeletionService {
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     }
-    var sampleDeletionResult = deleteSamples(queryResult.getValue());
+    var sampleDeletionResult = deleteSamples(projectId, queryResult.getValue());
     if (sampleDeletionResult.isError()) {
       log.debug("Samples for batch %s could not be deleted due to %s".formatted(batchId,
           sampleDeletionResult.getError()));
@@ -105,9 +110,15 @@ public class DeletionService {
 
   @Transactional
   public Result<Collection<Sample>, ResponseCode> deleteSamples(
-      Collection<Sample> samplesCollection) {
-    var result = sampleDomainService.deleteSamples(samplesCollection.stream().toList());
-    //Todo this seems wrong how to best propagate why this failed since currently there is no data object in the application?
+      ProjectId projectId, Collection<Sample> samplesCollection) {
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      log.error(
+          "Batch deletion aborted. Reason: project with id:" + projectId + " was not found");
+      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+    }
+    var result = sampleDomainService.deleteSamples(project.get(),
+        samplesCollection.stream().toList());
     if (result.isError() && result.getError()
         .equals(SampleDomainService.ResponseCode.DATA_ATTACHED_TO_SAMPLES)) {
       return Result.fromError(ResponseCode.DATA_ATTACHED_TO_SAMPLES);

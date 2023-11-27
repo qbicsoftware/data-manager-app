@@ -5,7 +5,6 @@ import java.util.List;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 
 /**
@@ -30,10 +29,10 @@ public interface QbicSampleDataRepo {
   /**
    * Removes the provided samples from persistence
    *
-   * @param samples     the {@link Sample} to be removed from the data repository
    * @param projectCode the {@link ProjectCode} of the project these samples belong to
+   * @param samples     the {@link Sample} to be removed from the data repository
    */
-  void deleteAll(Collection<Sample> samples, ProjectCode projectCode);
+  void deleteAll(ProjectCode projectCode, Collection<Sample> samples);
 
   void updateAll(Collection<Sample> samples);
 

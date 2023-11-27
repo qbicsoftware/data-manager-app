@@ -8,12 +8,11 @@
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-m);
-  /*ToDo How to best adapt this?*/
   min-width: 500px;
   min-height: 250px;
+  margin-left: auto;
   height: 25vh;
   width: 40vw;
-  margin-left: auto;
 }
 
 .batch-details-component .content {
@@ -29,6 +28,7 @@
 .batch-details-component .editor-buttons {
   display: flex;
   gap: var(--lumo-space-s);
+  justify-content: end;
 }
 
 .batch-details-component .title-and-controls {

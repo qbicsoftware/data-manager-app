@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.domain.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
@@ -51,10 +50,10 @@ public class SampleDomainService {
         return result;
     }
 
-    public Result<Collection<Sample>, ResponseCode> updateSamples(
+    public Result<Collection<Sample>, ResponseCode> updateSamples(Project project,
         Collection<Sample> updatedSamples) {
         Objects.requireNonNull(updatedSamples);
-        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.updateAll(
+        Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.updateAll(project,
             updatedSamples);
         result.onValue(createdSamples ->
                 createdSamples.forEach(this::dispatchSuccessfulSampleRegistration))
@@ -62,9 +61,10 @@ public class SampleDomainService {
         return result;
     }
 
-    public Result<Collection<Sample>, ResponseCode> deleteSamples(List<Sample> samples) {
+    public Result<Collection<Sample>, ResponseCode> deleteSamples(Project project,
+        Collection<Sample> samples) {
         Objects.requireNonNull(samples);
-        var result = this.sampleRepository.deleteAll(samples);
+        var result = this.sampleRepository.deleteAll(project, samples);
         result.onValue(deletedSamples ->
                 deletedSamples.forEach(this::dispatchSuccessfulSampleDeletion))
             .onError(Result::fromError);

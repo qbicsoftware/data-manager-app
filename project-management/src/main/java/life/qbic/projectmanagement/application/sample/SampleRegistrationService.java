@@ -66,13 +66,21 @@ public class SampleRegistrationService {
         .flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
   }
 
-  public Result<Collection<Sample>, ResponseCode> updateSamples(Collection<Sample> updatedSamples) {
+  public Result<Collection<Sample>, ResponseCode> updateSamples(ProjectId projectId,
+      Collection<Sample> updatedSamples) {
+    Objects.requireNonNull(projectId);
     Objects.requireNonNull(updatedSamples);
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      log.error(
+          "Sample registration aborted. Reason: project with id:" + projectId + " was not found");
+      return Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED);
+    }
     if (updatedSamples.isEmpty()) {
       log.error("No samples were defined");
       return Result.fromError(ResponseCode.NO_SAMPLES_DEFINED);
     }
-    var result = sampleDomainService.updateSamples(updatedSamples);
+    var result = sampleDomainService.updateSamples(project.get(), updatedSamples);
     return result.onValue(Result::fromValue)
         .flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_UPDATE_FAILED));
   }
