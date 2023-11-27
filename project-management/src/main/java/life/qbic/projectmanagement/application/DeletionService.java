@@ -4,6 +4,9 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -100,6 +103,12 @@ public class DeletionService {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     }
     var sampleDeletionResult = deleteSamples(projectId, queryResult.getValue());
+    sampleDeletionResult.onErrorMatching(
+        responseCode -> responseCode.equals(ResponseCode.DATA_ATTACHED_TO_SAMPLES),
+        ignored -> {
+          throw new ApplicationException(ErrorCode.DATA_ATTACHED_TO_SAMPLES,
+              ErrorParameters.of(batchId));
+        });
     if (sampleDeletionResult.isError()) {
       log.debug("Samples for batch %s could not be deleted due to %s".formatted(batchId,
           sampleDeletionResult.getError()));
