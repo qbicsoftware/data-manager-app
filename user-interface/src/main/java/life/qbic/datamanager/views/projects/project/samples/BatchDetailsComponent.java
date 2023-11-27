@@ -280,7 +280,7 @@ public class BatchDetailsComponent extends Div implements Serializable {
       this.batchId = batchId;
     }
 
-    public BatchId BatchId() {
+    public BatchId batchId() {
       return batchId;
     }
   }
