@@ -119,7 +119,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     setValidationMode(validationMode);
   }
 
-  public static class SampleInfo implements Cloneable {
+  public static class SampleInfo {
 
 
     private SampleId sampleId;
@@ -302,24 +302,19 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
           .toString();
     }
 
-    @Override
-    public SampleInfo clone() {
-      try {
-        SampleInfo clone = (SampleInfo) super.clone();
-        clone.analysisToBePerformed = analysisToBePerformed;
-        clone.analyte = analyte;
-        clone.biologicalReplicate = biologicalReplicate;
-        clone.customerComment = customerComment;
-        clone.experimentalGroup = experimentalGroup;
-        clone.sampleCode = sampleCode;
-        clone.sampleId = sampleId;
-        clone.sampleLabel = sampleLabel;
-        clone.species = species;
-        clone.specimen = specimen;
-        return clone;
-      } catch (CloneNotSupportedException e) {
-        throw new AssertionError();
-      }
+    public static SampleInfo copy(SampleInfo original) {
+      SampleInfo sampleInfo = new SampleInfo();
+      sampleInfo.analysisToBePerformed = original.analysisToBePerformed;
+      sampleInfo.analyte = original.analyte;
+      sampleInfo.biologicalReplicate = original.biologicalReplicate;
+      sampleInfo.customerComment = original.customerComment;
+      sampleInfo.experimentalGroup = original.experimentalGroup;
+      sampleInfo.sampleCode = original.sampleCode;
+      sampleInfo.sampleId = original.sampleId;
+      sampleInfo.sampleLabel = original.sampleLabel;
+      sampleInfo.species = original.species;
+      sampleInfo.specimen = original.specimen;
+      return sampleInfo;
     }
 
     @Override

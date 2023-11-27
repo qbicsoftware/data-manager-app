@@ -42,7 +42,7 @@ public class EditBatchDialog extends DialogWindow {
     setConfirmButtonLabel("Update Samples");
 
     this.batchId = batchId;
-    this.existingSamples = existingSamples.stream().map(SampleInfo::clone).toList();
+    this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, false);
