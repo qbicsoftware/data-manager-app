@@ -54,6 +54,7 @@ public class BatchRegistrationDialog extends DialogWindow {
       List<Analyte> analytes,
       List<ExperimentalGroup> experimentalGroups) {
 
+
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
 
