@@ -41,7 +41,6 @@ public class BatchDetailsComponent extends Div implements Serializable {
 
   private final Span titleAndControls = new Span();
   private final Span title = new Span("Batches");
-  private final Span controls = new Span();
   @Serial
   private static final long serialVersionUID = 4047815658668024042L;
   private final Div content = new Div();
