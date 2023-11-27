@@ -1,11 +1,13 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,14 @@ public class ProjectContentComponent extends Div {
   public ProjectContentComponent(
       @Autowired ProjectDetailsComponent projectDetailsComponent) {
     Objects.requireNonNull(projectDetailsComponent);
+    UploadPurchaseDialog uploadPurchaseDialog = new UploadPurchaseDialog();
+    uploadPurchaseDialog.setOpened(false);
+    add(uploadPurchaseDialog);
+    Button uploadOffer = new Button("Upload offer");
+    uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
+
+    add(uploadOffer);
+
     this.projectDetailsComponent = projectDetailsComponent;
     layoutComponent();
   }
