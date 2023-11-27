@@ -323,7 +323,8 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
       throws SampleNotUpdatedException {
     try {
-      updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
+      //FixMe
+      // updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
     } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
           "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
