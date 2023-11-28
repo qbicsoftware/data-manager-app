@@ -323,7 +323,9 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
       throws SampleNotUpdatedException {
     try {
-      //FixMe
+      /*FixMe Throws org.springframework.remoting.RemoteAccessException: Could not access HTTP invoker remote service
+          and invalid stream header: 3C68746D
+      */
       // updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
     } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
