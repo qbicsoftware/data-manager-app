@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -45,16 +47,15 @@ import life.qbic.projectmanagement.application.batch.BatchRegistrationService.Re
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
-import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
@@ -66,10 +67,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
  * information associated for all {@link Batch} and {@link Sample} of each
- * {@link Experiment within a {@link Project }
- * Additionally it enables the user to register new {@link Batch} and {@link Sample} via the
- * contained {@link BatchRegistrationDialog} and propagates the successful registration to the
- * registered {@link BatchRegistrationListener} within this component.
+ * {@link Experiment within a {@link Project } Additionally it enables the user to register new
+ * {@link Batch} and {@link Sample} via the contained {@link BatchRegistrationDialog} and propagates
+ * the successful registration to the registered {@link BatchRegistrationListener} within this
+ * component.
  */
 
 @SpringComponent
@@ -94,7 +95,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final Logger log = getLogger(SampleDetailsComponent.class);
   private final transient SampleDetailsComponentHandler sampleDetailsComponentHandler;
   private final List<ValueChangeListener<ComponentValueChangeEvent<TextField, String>>> searchFieldListeners = new ArrayList<>();
-  private ProjectId projectId;
+  private Context context;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
@@ -161,21 +162,23 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
 
   /**
-   * Provides the {@link ProjectId} of the currently selected project to this component
-   * <p>
-   * This method provides the {@link ProjectId} necessary for routing within this component.
+   * Propagates the context to internal components.
    *
-   * @param projectId ProjectId provided to this component
+   * @param context the context in which the user is.
    */
-  public void setProject(ProjectId projectId) {
-    this.projectId = projectId;
+  public void setContext(Context context) {
+    context.experimentId()
+        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
+    context.projectId()
+        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    this.context = context;
   }
 
   /**
    * Provides the collection of {@link Experiment} to this component
    * <p>
-   * This method should be used to provide the experiments within the
-   * {@link Project} to this component
+   * This method should be used to provide the experiments within the {@link Project} to this
+   * component
    *
    * @param experiments collection of experiments to be shown as tabs in the {@link TabSheet} within
    *                    this component
@@ -183,6 +186,27 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   public void setExperiments(Collection<Experiment> experiments) {
     sampleDetailsComponentHandler.setExperiments(experiments);
+  }
+
+  /**
+   * Sets the experiment tab within the tabsheet to the experimentId
+   *
+   * @param experimentId {@link ExperimentId} id of the experiment provided within the URL linking
+   *                     to this component
+   */
+
+  public void setSelectedExperiment(ExperimentId experimentId) {
+    Tabs experimentTabs = sampleExperimentTabSheet.getChildren()
+        .filter(component -> component instanceof Tabs)
+        .map(component -> (Tabs) component)
+        .findFirst().orElseThrow();
+    List<SampleExperimentTab> sampleExperimentTabList = experimentTabs.getChildren()
+        .filter(component -> component instanceof SampleExperimentTab)
+        .map(component -> (SampleExperimentTab) component).toList();
+    SampleExperimentTab selectedSampleTab = sampleExperimentTabList.stream()
+        .filter(sampleExperimentTab -> sampleExperimentTab.experimentId.equals(experimentId))
+        .findFirst().orElseThrow();
+    sampleExperimentTabSheet.setSelectedTab(selectedSampleTab);
   }
 
   /**
@@ -266,7 +290,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private void addExperimentTabToTabSheet(Experiment experiment) {
       Div experimentTabContent = new Div();
       experimentTabContent.addClassName("sample-tab-content");
-      SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.getName(),
+      SampleExperimentTab experimentTab = new SampleExperimentTab(experiment.experimentId(),
+          experiment.getName(),
           0);
       sampleExperimentTabSheet.setHeightFull();
       if (noExperimentGroupsInExperiment(experiment)) {
@@ -389,8 +414,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         String experimentId) {
       if (componentEvent.isFromClient()) {
         log.debug(String.format("Rerouting to experiment page for experiment %s of project %s",
-            experimentId, projectId.value()));
-        String routeToExperimentPage = String.format(Projects.EXPERIMENT, projectId.value(),
+            experimentId, context.projectId().orElseThrow().value()));
+        String routeToExperimentPage = String.format(Projects.EXPERIMENT,
+            context.projectId().orElseThrow().value(),
             experimentId);
         componentEvent.getSource().getUI().ifPresent(ui ->
             ui.navigate(routeToExperimentPage));
@@ -421,7 +447,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     private Result<BatchId, ResponseCode> registerBatchInformation(
         BatchRegistrationContent batchRegistrationContent) {
       return batchRegistrationService.registerBatch(batchRegistrationContent.batchLabel(),
-          batchRegistrationContent.isPilot(), projectId)
+              batchRegistrationContent.isPilot(), context.projectId().orElseThrow())
           .onError(responseCode -> displayRegistrationFailure());
     }
 
@@ -443,7 +469,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     private void registerSamples(List<SampleRegistrationRequest> sampleRegistrationRequests) {
-      sampleRegistrationService.registerSamples(sampleRegistrationRequests, projectId)
+      sampleRegistrationService.registerSamples(sampleRegistrationRequests, context.projectId()
+              .orElseThrow())
           .onError(responseCode -> displayRegistrationFailure());
     }
 
@@ -474,13 +501,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     void handle(BatchRegistrationEvent event);
   }
 
-  private static class SampleExperimentTab extends Tab {
+  public static class SampleExperimentTab extends Tab {
 
-    private final Span sampleCountComponent;
+    private final Span sampleCountComponent = new Span();
+    private final ExperimentId experimentId;
 
-    public SampleExperimentTab(String experimentName, int sampleCount) {
+    public SampleExperimentTab(ExperimentId experimentId, String experimentName, int sampleCount) {
+      this.experimentId = experimentId;
       Span experimentNameComponent = new Span(experimentName);
-      this.sampleCountComponent = createBadge(sampleCount);
+      sampleCountComponent.add(createBadge(sampleCount));
       this.add(experimentNameComponent, sampleCountComponent);
     }
 
@@ -491,7 +520,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
      * @param sampleCount number of samples associated with the experiment shown in this component
      */
     public void setSampleCount(int sampleCount) {
-      sampleCountComponent.setText(Integer.toString(sampleCount));
+      sampleCountComponent.removeAll();
+      sampleCountComponent.add(createBadge(sampleCount));
     }
 
     /**

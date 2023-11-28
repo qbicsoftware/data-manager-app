@@ -4,14 +4,14 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.logging.api.Logger;
-import life.qbic.identity.api.UserInfo;
-import life.qbic.identity.api.UserInformationService;
 
 /**
  * <b>Basic user information service</b>

@@ -207,7 +207,8 @@ public class ExperimentalDesign {
 
     public enum ResponseCode {
       SUCCESS,
-      CONDITION_EXISTS
+      CONDITION_EXISTS,
+      EMPTY_VARIABLE
     }
   }
 
@@ -229,7 +230,7 @@ public class ExperimentalDesign {
       int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
-      throw new IllegalArgumentException("at least one variable level is required");
+      return Result.fromError(ResponseCode.EMPTY_VARIABLE);
     }
 
     for (VariableLevel level : variableLevels) {

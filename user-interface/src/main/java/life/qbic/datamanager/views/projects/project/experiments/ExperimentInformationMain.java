@@ -5,10 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteParam;
-import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -17,29 +14,23 @@ import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
-import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
-import life.qbic.datamanager.views.projects.project.ProjectNavigationBarComponent;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Experiment Information Main Component
  * <p>
- * This component hosts the components necessary to show and update the
- * {@link Experiment} information associated
- * with a {@link Project} via the provided
- * {@link ProjectId} in the URL
+ * This component hosts the components necessary to show and update the {@link Experiment}
+ * information associated with a {@link Project} via the provided {@link ProjectId} in the URL
  */
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ProjectMainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
 @PermitAll
 public class ExperimentInformationMain extends MainComponent implements BeforeEnterObserver,
     RouterLayout {
@@ -49,42 +40,26 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private static final Logger log = logger(ExperimentInformationMain.class);
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final ProjectNavigationBarComponent projectNavigationBarComponent;
   private final ExperimentContentComponent experimentContentComponent;
   private final ExperimentSupportComponent experimentSupportComponent;
-  private final transient ProjectInformationService projectInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
   private transient Context context;
 
-  public ExperimentInformationMain(
-      @Autowired ProjectNavigationBarComponent projectNavigationBarComponent,
-      @Autowired ExperimentContentComponent experimentContentComponent,
-      @Autowired ExperimentSupportComponent experimentSupportComponent,
-      @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+  public ExperimentInformationMain(@Autowired ExperimentContentComponent experimentContentComponent,
+      @Autowired ExperimentSupportComponent experimentSupportComponent) {
     super(experimentContentComponent, experimentSupportComponent);
-    requireNonNull(projectNavigationBarComponent);
     requireNonNull(experimentSupportComponent);
     requireNonNull(experimentContentComponent);
-    requireNonNull(projectInformationService);
-    requireNonNull(experimentInformationService);
-    this.projectNavigationBarComponent = projectNavigationBarComponent;
     this.experimentContentComponent = experimentContentComponent;
     this.experimentSupportComponent = experimentSupportComponent;
-    this.projectInformationService = projectInformationService;
-    this.experimentInformationService = experimentInformationService;
-    layoutComponent();
+    addClassName("experiment");
     log.debug(String.format(
-        "New instance for ExperimentInformationMain (#%s) created with ProjectNavigationBar Component (#%s), ExperimentMain component (#%s) and ExperimentSupport component (#%s)",
-        System.identityHashCode(this), System.identityHashCode(projectNavigationBarComponent),
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        experimentContentComponent.getClass().getSimpleName(),
         System.identityHashCode(experimentContentComponent),
+        experimentSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(experimentSupportComponent))
     );
-  }
-
-  private void layoutComponent() {
-    addClassName("experiment");
-    addComponentAsFirst(projectNavigationBarComponent);
   }
 
 
@@ -104,49 +79,20 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
-
-    if (beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER).isEmpty()) {
-      Project project = projectInformationService.find(parsedProjectId)
-          .orElseThrow();
-      project.experiments().stream()
-          .findFirst()
-          .ifPresent(experimentId -> forwardToExperiment(experimentId, beforeEnterEvent));
-      setContext(this.context);
-      return; // abort the before-enter event
-    }
-
     String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .orElseThrow();
-
     if (!ExperimentId.isValid(experimentId)) {
-      beforeEnterEvent.rerouteToError(NotFoundException.class);
-      return;
+      throw new ApplicationException("invalid experiment id " + experimentId);
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
-    if (experimentInformationService.find(parsedExperimentId).isEmpty()) {
-      beforeEnterEvent.rerouteToError(NotFoundException.class);
-      return;
-    }
-    this.context = this.context
-        .with(parsedExperimentId);
-
+    this.context = context.with(parsedExperimentId);
     setContext(this.context);
   }
 
+
   private void setContext(Context context) {
     experimentContentComponent.setContext(context);
-    projectNavigationBarComponent.setContext(context);
     this.context = context;
-  }
-
-  private void forwardToExperiment(ExperimentId experimentId, BeforeEnterEvent beforeEnterEvent) {
-    RouteParameters routeParameters = new RouteParameters(
-        new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
-            context.projectId().map(ProjectId::value).orElseThrow()),
-        new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId.value()));
-    log.debug("Forwarding to experiment "
-        + experimentId.value());
-    beforeEnterEvent.forwardTo(ExperimentInformationMain.class, routeParameters);
   }
 
 }

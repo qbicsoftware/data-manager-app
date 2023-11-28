@@ -31,12 +31,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>finances</artifactId>
-      <version>0.28.2</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>jakarta.persistence</groupId>
       <artifactId>jakarta.persistence-api</artifactId>
     </dependency>
@@ -86,6 +80,16 @@
       <artifactId>identity-api</artifactId>
       <version>0.28.2</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.finances</groupId>
+      <artifactId>finances-api</artifactId>
+      <version>0.28.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
     </dependency>
   </dependencies>
 </project>

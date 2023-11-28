@@ -1,9 +1,8 @@
 package life.qbic.identity.domain.usermanagement.policies
 
-
+import life.qbic.identity.domain.model.EmailFormatPolicy
 import life.qbic.identity.domain.model.policy.PolicyCheckReport
 import life.qbic.identity.domain.model.policy.PolicyStatus
-import life.qbic.identity.domain.model.EmailFormatPolicy
 import spock.lang.Specification
 
 /**

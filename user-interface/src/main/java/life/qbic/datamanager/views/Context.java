@@ -3,8 +3,8 @@ package life.qbic.datamanager.views;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * The current context information
