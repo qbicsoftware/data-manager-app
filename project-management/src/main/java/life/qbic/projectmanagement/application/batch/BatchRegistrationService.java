@@ -159,9 +159,15 @@ public class BatchRegistrationService {
     }
     Batch batch = searchResult.get();
     updateBatchInformation(batch, batchLabel, isPilot);
-    sampleRegistrationService.registerSamples(createdSamples, projectId);
-    sampleRegistrationService.updateSamples(projectId, editedSamples);
-    deletionService.deleteSamples(projectId, deletedSamples);
+    if (!createdSamples.isEmpty()) {
+      sampleRegistrationService.registerSamples(createdSamples, projectId);
+    }
+    if (!editedSamples.isEmpty()) {
+      sampleRegistrationService.updateSamples(projectId, editedSamples);
+    }
+    if (!deletedSamples.isEmpty()) {
+      deletionService.deleteSamples(projectId, deletedSamples);
+    }
     return Result.fromValue(batch.batchId());
   }
 
