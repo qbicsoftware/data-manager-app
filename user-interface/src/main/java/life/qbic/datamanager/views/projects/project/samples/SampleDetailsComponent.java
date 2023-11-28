@@ -202,8 +202,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param batchRegistrationListener listener notified if the user intends to create a batch
    */
   public void addCreateBatchListener(
-      ComponentEventListener<CreateBatchEvent> batchRegistrationListener) {
-    addListener(CreateBatchEvent.class, batchRegistrationListener);
+      ComponentEventListener<RegisterBatchClicked> batchRegistrationListener) {
+    addListener(RegisterBatchClicked.class, batchRegistrationListener);
   }
 
   private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
@@ -263,7 +263,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         "Manage your samples in one place",
         "Start your project by registering the first sample batch", "Register batch");
     noSamplesDefinedCard.addDisclaimerConfirmedListener(
-        event -> fireEvent(new CreateBatchEvent(this, event.isFromClient())));
+        event -> fireEvent(new RegisterBatchClicked(this, event.isFromClient())));
     return noSamplesDefinedCard;
   }
 
@@ -350,12 +350,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * <p>Indicates that a user wants to create a {@link Batch}
    * within the {@link SampleDetailsComponent} of a project</p>
    */
-  public static class CreateBatchEvent extends ComponentEvent<SampleDetailsComponent> {
+  public static class RegisterBatchClicked extends ComponentEvent<SampleDetailsComponent> {
 
     @Serial
     private static final long serialVersionUID = 5351296685318048598L;
 
-    public CreateBatchEvent(SampleDetailsComponent source, boolean fromClient) {
+    public RegisterBatchClicked(SampleDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }
