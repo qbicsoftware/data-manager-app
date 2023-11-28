@@ -281,7 +281,6 @@ public class SampleContentComponent extends Div {
   }
 
   private void editBatch(EditBatchDialog.ConfirmEvent confirmEvent) {
-    //ToDo the current design has no way to set the isPilot batch information?
     boolean isPilot = false;
     Collection<SampleRegistrationRequest> createdSamples = generateSampleRequestsFromSampleInfo(
         confirmEvent.getData().batchId(), confirmEvent.getData().addedSamples());
