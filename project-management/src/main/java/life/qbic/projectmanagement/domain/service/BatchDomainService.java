@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.service;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -46,12 +45,12 @@ public class BatchDomainService {
    * provided.
    * @since 1.0.0
    */
-  public Result<BatchId, BatchRegistrationService.ResponseCode> register(String label, boolean isPilot, String projectName,
+  public Result<BatchId, ResponseCode> register(String label, boolean isPilot, String projectName,
       ProjectId projectId) {
     Batch batch = Batch.create(label, isPilot);
     var result = batchRepository.add(batch);
     if (result.isError()) {
-      return Result.fromError(BatchRegistrationService.ResponseCode.BATCH_REGISTRATION_FAILED);
+      return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
     } else {
       dispatchRegistration(label, batch.batchId(), projectName, projectId);
     }
