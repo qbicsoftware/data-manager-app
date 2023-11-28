@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.stream.Stream;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -61,7 +62,8 @@ public class BatchDetailsComponent extends Div implements Serializable {
     title.addClassName("title");
     titleAndControls.addClassName("title-and-controls");
     Button registerButton = new Button("Register");
-    registerButton.addClickListener(event -> createBatch(event.isFromClient()));
+    registerButton.addClickListener(event -> fireEvent(new CreateBatchEvent(this,
+        event.isFromClient())));
     titleAndControls.add(title, registerButton);
     add(titleAndControls);
   }
@@ -94,7 +96,8 @@ public class BatchDetailsComponent extends Div implements Serializable {
         e.isFromClient())));
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));
-    editButton.addClickListener(e -> updateBatch(batchPreview, e.isFromClient()));
+    editButton.addClickListener(
+        e -> fireEvent(new EditBatchEvent(this, batchPreview, e.isFromClient())));
     viewButton.setTooltipText("View Samples for Batch");
     editButton.setTooltipText("Edit Batch");
     deleteButton.setTooltipText("Delete Batch");
@@ -107,22 +110,13 @@ public class BatchDetailsComponent extends Div implements Serializable {
     return new BatchPreview(batch.batchId(), batch.label());
   }
 
-  private void createBatch(boolean fromClient) {
-    CreateBatchEvent createBatchEvent = new CreateBatchEvent(this, fromClient);
-    fireEvent(createBatchEvent);
-  }
-
-  private void updateBatch(BatchPreview batchPreview, boolean fromClient) {
-    EditBatchEvent editBatchEvent = new EditBatchEvent(this, batchPreview, fromClient);
-    fireEvent(editBatchEvent);
-  }
-
   private void loadBatchesForExperiment(Experiment experiment) {
     batchInformationService.retrieveBatchesForExperiment(experiment.experimentId())
         .map(Collection::stream)
         .map(batchStream -> batchStream.map(this::generatePreviewFromBatch))
         .map(Stream::toList)
         .onValue(batchPreviews::addAll);
+
   }
 
   /**
@@ -197,29 +191,30 @@ public class BatchDetailsComponent extends Div implements Serializable {
     public void setBatchLabel(String batchLabel) {
       this.batchLabel = batchLabel;
     }
-  }
 
-  /**
-   * <b>View Batch Event</b>
-   *
-   * <p>Indicates that a user wants to view a {@link Batch}
-   * within the {@link BatchDetailsComponent} of a project</p>
-   */
-  public static class ViewBatchEvent extends ComponentEvent<BatchDetailsComponent> {
 
-    @Serial
-    private static final long serialVersionUID = -5108638994476271770L;
+    /**
+     * <b>View Batch Event</b>
+     *
+     * <p>Indicates that a user wants to view a {@link Batch}
+     * within the {@link BatchDetailsComponent} of a project</p>
+     */
+    public static class ViewBatchEvent extends ComponentEvent<BatchDetailsComponent> {
 
-    private final BatchPreview batchPreview;
+      @Serial
+      private static final long serialVersionUID = -5108638994476271770L;
 
-    public ViewBatchEvent(BatchDetailsComponent source, BatchPreview batchPreview,
-        boolean fromClient) {
-      super(source, fromClient);
-      this.batchPreview = batchPreview;
-    }
+      private final BatchPreview batchPreview;
 
-    public BatchPreview batchPreview() {
-      return batchPreview;
+      public ViewBatchEvent(BatchDetailsComponent source, BatchPreview batchPreview,
+          boolean fromClient) {
+        super(source, fromClient);
+        this.batchPreview = batchPreview;
+      }
+
+      public BatchPreview batchPreview() {
+        return batchPreview;
+      }
     }
   }
 
@@ -284,5 +279,4 @@ public class BatchDetailsComponent extends Div implements Serializable {
       return batchId;
     }
   }
-
 }

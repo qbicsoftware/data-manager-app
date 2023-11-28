@@ -1,28 +1,51 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.ViewBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
+import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -42,27 +65,44 @@ public class SampleContentComponent extends Div {
   @Serial
   private static final long serialVersionUID = -5431288053780884294L;
   private Context context;
-  private final transient SampleDetailsComponent sampleDetailsComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient BatchRegistrationService batchRegistrationService;
+  private final transient SampleRegistrationService sampleRegistrationService;
+  private final transient SampleInformationService sampleInformationService;
+  private final transient DeletionService deletionService;
+  private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
+      @Autowired DeletionService deletionService,
+      @Autowired SampleRegistrationService sampleRegistrationService,
+      @Autowired SampleInformationService sampleInformationService,
+      @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
-    this.sampleDetailsComponent = sampleDetailsComponent;
+    Objects.requireNonNull(projectInformationService);
+    Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(batchRegistrationService);
+    Objects.requireNonNull(sampleRegistrationService);
+    Objects.requireNonNull(sampleInformationService);
+    Objects.requireNonNull(deletionService);
+    Objects.requireNonNull(sampleDetailsComponent);
+    Objects.requireNonNull(batchDetailsComponent);
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     this.batchRegistrationService = batchRegistrationService;
+    this.sampleRegistrationService = sampleRegistrationService;
+    this.sampleInformationService = sampleInformationService;
+    this.deletionService = deletionService;
+    this.sampleDetailsComponent = sampleDetailsComponent;
     this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
-    batchDetailsComponent.addBatchEditListener(this::editBatch);
-    batchDetailsComponent.addBatchViewListener(this::viewBatch);
+    batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
+    batchDetailsComponent.addBatchViewListener(this::onViewBatchClicked);
   }
 
   /**
@@ -100,25 +140,168 @@ public class SampleContentComponent extends Div {
   }
 
   private void reloadOnBatchRegistration() {
-    sampleDetailsComponent.addBatchRegistrationListener(
+    sampleDetailsComponent.addCreateBatchListener(
         event -> displayComponentInContent(sampleDetailsComponent));
   }
 
-  private void viewBatch(ViewBatchEvent viewBatchEvent) {
+  private void onRegisterBatchClicked() {
+    Experiment experiment = context.experimentId()
+        .flatMap(experimentInformationService::find)
+        .orElseThrow();
+    if (experiment.getExperimentalGroups().isEmpty()) {
+      return;
+    }
+    BatchRegistrationDialog dialog = new BatchRegistrationDialog(
+        experiment.getName(), new ArrayList<>(experiment.getSpecies()),
+        new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
+        experiment.getExperimentalGroups());
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmListener(this::registerBatch);
+    dialog.open();
+  }
+
+  private void reload() {
+    setContext(context);
+  }
+
+
+  private void registerBatch(ConfirmEvent confirmEvent) {
+    String batchLabel = confirmEvent.getData().batchName();
+    List<SampleInfo> samples = confirmEvent.getData().samples();
+    List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
+            batchLabel, false,
+            context.projectId().orElseThrow())
+        .map(batchId -> generateSampleRequestsFromSampleInfo(batchId, samples))
+        .onError(responseCode -> displayRegistrationFailure())
+        .valueOrElseThrow(() ->
+            new ApplicationException("Could not create sample registration requests"));
+    sampleRegistrationService.registerSamples(sampleRegistrationRequests,
+            context.projectId().orElseThrow())
+        .onError(responseCode -> displayRegistrationFailure())
+        .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
+        .onValue(ignored -> confirmEvent.getSource().close())
+        .onValue(batchId -> displayRegistrationSuccess())
+        .onValue(ignored -> reload());
+  }
+
+  private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
+      List<SampleInfo> sampleInfos) {
+    List<SampleRegistrationRequest> sampleRegistrationRequests;
+    sampleRegistrationRequests = sampleInfos.stream()
+        .map(sample -> new SampleRegistrationRequest(
+            sample.getSampleLabel(),
+            batchId,
+            context.experimentId().orElseThrow(),
+            sample.getExperimentalGroup().id(),
+            sample.getBiologicalReplicate().id(),
+            SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(), sample.getAnalyte()),
+            sample.getAnalysisToBePerformed(),
+            sample.getCustomerComment()))
+        .toList();
+    return sampleRegistrationRequests;
+  }
+
+  private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
+      SampleInfo sampleInfo) {
+    return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
+        sampleInfo.getSampleLabel(), sampleInfo.getAnalysisToBePerformed(),
+        sampleInfo.getBiologicalReplicate(), sampleInfo.getExperimentalGroup(),
+        sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
+        sampleInfo.getCustomerComment()));
+  }
+
+  private void displayUpdateSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Batch update succeeded.", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+  private void displayDeletionSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Batch deletion succeeded.", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+
+  private void displayRegistrationSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+  private void displayRegistrationFailure() {
+    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
+  }
+
+  private void onViewBatchClicked(ViewBatchEvent viewBatchEvent) {
     ConfirmDialog confirmDialog = new ConfirmDialog();
     confirmDialog.setText(("This is where I'd show all of my Samples"));
     confirmDialog.open();
     confirmDialog.addConfirmListener(event -> confirmDialog.close());
   }
 
-  private void editBatch(EditBatchEvent editBatchEvent) {
-    //Todo Delete Batch in openBis and Database
+  private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
+    Experiment experiment = context.experimentId()
+        .flatMap(experimentInformationService::find)
+        .orElseThrow();
+    List<Sample> samples = sampleInformationService.retrieveSamplesForBatch(
+        editBatchEvent.batchPreview().batchId()).stream().toList();
+    var experimentalGroups = experimentInformationService.experimentalGroupsFor(
+        context.experimentId().get());
+    List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = samples.stream()
+        .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList();
+    EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
+        experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
+        experiment.getAnalytes().stream().toList(), experiment.getExperimentalGroups(),
+        editBatchEvent.batchPreview()
+            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos);
+    editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    editBatchDialog.addConfirmListener(this::editBatch);
+    editBatchDialog.open();
+  }
+
+  private SampleBatchInformationSpreadsheet.SampleInfo convertSampleToSampleInfo(Sample sample,
+      Collection<ExperimentalGroup> experimentalGroups) {
+    ExperimentalGroup experimentalGroup = experimentalGroups.stream()
+        .filter(expGrp -> expGrp.id() == sample.experimentalGroupId())
+        .findFirst().orElseThrow();
+    /*We currently allow replicates independent of experimental groups which is why we have to parse all replicates */
+    BiologicalReplicate biologicalReplicate = experimentalGroups.stream()
+        .map(ExperimentalGroup::biologicalReplicates).flatMap(Collection::stream).filter(
+            biologicalReplicate1 -> biologicalReplicate1.id()
+                .equals(sample.biologicalReplicateId())).findFirst().orElseThrow();
+    return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
+        sample.sampleCode(), sample.analysisMethod(),
+        sample.label(),
+        biologicalReplicate, experimentalGroup, sample.sampleOrigin()
+            .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
+        sample.comment().orElse(""));
+  }
+
+  private void editBatch(EditBatchDialog.ConfirmEvent confirmEvent) {
+    boolean isPilot = false;
+    Collection<SampleRegistrationRequest> createdSamples = generateSampleRequestsFromSampleInfo(
+        confirmEvent.getData().batchId(), confirmEvent.getData().addedSamples());
+    Collection<SampleUpdateRequest> editedSamples = confirmEvent.getData().changedSamples().stream()
+        .map(this::generateSampleUpdateRequestFromSampleInfo).toList();
+    Collection<SampleId> deletedSamples = confirmEvent.getData().removedSamples().stream()
+        .map(SampleInfo::getSampleId).toList();
+    var result = batchRegistrationService.editBatch(confirmEvent.getData().batchId(),
+        confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
+        deletedSamples, context.projectId().orElseThrow());
+    result.onValue(ignored -> confirmEvent.getSource().close());
+    result.onValue(batchId -> displayUpdateSuccess());
+    result.onValue(ignored -> reload());
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
-    //Todo Delete Batch in openBis and Database
+    deletionService.deleteBatch(context.projectId().orElseThrow(),
+        deleteBatchEvent.batchId());
+    displayDeletionSuccess();
+    reload();
   }
-
 
   private void onDeleteBatchClicked(DeleteBatchEvent deleteBatchEvent) {
     BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification();
@@ -131,15 +314,26 @@ public class SampleContentComponent extends Div {
         event -> batchDeletionConfirmationNotification.close());
   }
 
-  private void onRegisterBatchClicked() {
-    //ToDo Move Batch Registration from SampleDetailsComponent to here
-  }
-
   private void displayProjectNotFound() {
     this.removeAll();
     ErrorMessage errorMessage = new ErrorMessage("Project not found",
         "Please try to reload the page");
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
+  }
+
+  public static class BatchRegisteredEvent extends ComponentEvent<SampleContentComponent> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public BatchRegisteredEvent(SampleContentComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 }

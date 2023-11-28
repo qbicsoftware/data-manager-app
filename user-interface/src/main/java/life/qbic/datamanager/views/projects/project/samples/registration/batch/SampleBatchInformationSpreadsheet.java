@@ -23,6 +23,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -41,9 +42,14 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .toList();
 
     if (showSampleCode) {
-      Column<SampleInfo, String> sampleCodeColumn = addColumn("Sample code",
-          sampleInfo -> sampleInfo.getSampleCode().orElse(""),
-          SampleInfo::setSampleCode)
+      Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample code",
+          SampleInfo::getSampleCode,
+          SampleCode::code,
+          (sampleInfo, sampleCodeString) -> {
+            var sampleCode =
+                sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
+            sampleInfo.setSampleCode(sampleCode);
+          })
           .requireDistinctValues();
       lockColumn(sampleCodeColumn);
     }
@@ -123,7 +129,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
 
     private SampleId sampleId;
-    private String sampleCode;
+    private SampleCode sampleCode;
     private AnalysisMethod analysisToBePerformed;
     private String sampleLabel;
     private BiologicalReplicate biologicalReplicate;
@@ -142,12 +148,13 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         Specimen specimen,
         Analyte analyte,
         String customerComment) {
-      return create(null, analysisMethod, sampleLabel, biologicalReplicate, experimentalGroup,
+      return create(null, null, analysisMethod, sampleLabel, biologicalReplicate, experimentalGroup,
           species, specimen, analyte, customerComment);
     }
 
     public static SampleInfo create(
-        String sampleCode,
+        SampleId sampleId,
+        SampleCode sampleCode,
         AnalysisMethod analysisMethod,
         String sampleLabel,
         BiologicalReplicate biologicalReplicate,
@@ -157,6 +164,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         Analyte analyte,
         String customerComment) {
       SampleInfo sampleInfo = new SampleInfo();
+      sampleInfo.setSampleId(sampleId);
       sampleInfo.setSampleCode(sampleCode);
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
       sampleInfo.setSampleLabel(sampleLabel);
@@ -173,15 +181,15 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.sampleId = sampleId;
     }
 
-    public Optional<SampleId> getSampleId() {
-      return Optional.ofNullable(sampleId);
+    public SampleId getSampleId() {
+      return sampleId;
     }
 
-    public Optional<String> getSampleCode() {
-      return Optional.ofNullable(sampleCode);
+    public SampleCode getSampleCode() {
+      return sampleCode;
     }
 
-    public void setSampleCode(String sampleCode) {
+    public void setSampleCode(SampleCode sampleCode) {
       this.sampleCode = sampleCode;
     }
 

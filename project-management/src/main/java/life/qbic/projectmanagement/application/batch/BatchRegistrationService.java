@@ -2,18 +2,25 @@ package life.qbic.projectmanagement.application.batch;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.util.Collection;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Batch Registration Service</b>
@@ -29,14 +36,22 @@ public class BatchRegistrationService {
   private final BatchRepository batchRepository;
   private final BatchDomainService batchDomainService;
   private final ProjectInformationService projectInformationService;
+  private final SampleInformationService sampleInformationService;
+  private final SampleRegistrationService sampleRegistrationService;
+  private final DeletionService deletionService;
   private static final Logger log = getLogger(BatchRegistrationService.class);
 
   @Autowired
   public BatchRegistrationService(BatchRepository batchRepository,
-      BatchDomainService batchDomainService, ProjectInformationService projectInformationService) {
+      BatchDomainService batchDomainService, ProjectInformationService projectInformationService,
+      SampleInformationService sampleInformationService,
+      SampleRegistrationService sampleRegistrationService, DeletionService deletionService) {
     this.batchRepository = Objects.requireNonNull(batchRepository);
     this.batchDomainService = Objects.requireNonNull(batchDomainService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.sampleRegistrationService = Objects.requireNonNull(sampleRegistrationService);
+    this.deletionService = Objects.requireNonNull(deletionService);
   }
 
   /**
@@ -83,11 +98,84 @@ public class BatchRegistrationService {
     }
   }
 
+  /**
+   * Edits the information contained within a {@link Batch} and its corresponding registered
+   * {@link Sample}
+   *
+   * @param batchId        a human-readable semantic descriptor of the batch
+   * @param batchLabel     updated label of the batch
+   * @param isPilot        updated flag that indicates the batch to describe as pilot submission
+   *                       batch. Pilots are usually followed by a complete batch that represents
+   *                       the measurements of the complete experiment.
+   * @param createdSamples Collection of {@link SampleRegistrationRequest}, which do not exist and
+   *                       the corresponding {@link Sample} should be created and associated with
+   *                       the provided {@link Batch}
+   * @param editedSamples  Collection of {@link Sample}, for which the information has changed and
+   *                       should be updated within the provided {@link Batch}
+   * @param deletedSamples Collection of {@link Sample} which are to be deleted and their
+   *                       association with the provided {@link Batch} is to be deleted
+   * @param projectId      id of the project the edited {@link Batch} belongs to
+   * @return a result object with the response. If the editing failed, a response code will be
+   * provided.
+   */
+  @Transactional
+  public Result<BatchId, ResponseCode> editBatch(BatchId batchId, String batchLabel,
+      boolean isPilot,
+      Collection<SampleRegistrationRequest> createdSamples,
+      Collection<SampleUpdateRequest> editedSamples,
+      Collection<SampleId> deletedSamples, ProjectId projectId) {
+    var searchResult = batchRepository.find(batchId);
+    if (searchResult.isEmpty()) {
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
+    }
+
+    var samplesInBatch = sampleInformationService.retrieveSamplesForBatch(batchId).stream()
+        .map(Sample::sampleId)
+        .toList();
+    if (editedSamples.stream().map(SampleUpdateRequest::sampleId)
+        .anyMatch(it -> !samplesInBatch.contains(it))) {
+      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
+    }
+
+    if (deletedSamples.stream()
+        .anyMatch(it -> !samplesInBatch.contains(it))) {
+      return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
+    }
+    Batch batch = searchResult.get();
+    updateBatchInformation(batch, batchLabel, isPilot);
+    if (!createdSamples.isEmpty()) {
+      sampleRegistrationService.registerSamples(createdSamples, projectId);
+    }
+    if (!editedSamples.isEmpty()) {
+      sampleRegistrationService.updateSamples(projectId, editedSamples);
+    }
+    if (!deletedSamples.isEmpty()) {
+      deletionService.deleteSamples(projectId, deletedSamples);
+    }
+    return Result.fromValue(batch.batchId());
+  }
+
+  private Result<BatchId, ResponseCode> updateBatchInformation(Batch batch,
+      String updatedBatchLabel,
+      boolean updatedIsPilot) {
+    batch.setPilot(updatedIsPilot);
+    batch.setLabel(updatedBatchLabel);
+    var result = batchRepository.update(batch);
+    if (result.isValue()) {
+      return Result.fromValue(batch.batchId());
+    } else {
+      return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
+    }
+  }
+
   public enum ResponseCode {
+    QUERY_FAILED,
     BATCH_UPDATE_FAILED,
     BATCHES_COULD_NOT_BE_RETRIEVED,
     BATCH_CREATION_FAILED,
-    BATCH_REGISTRATION_FAILED
+    BATCH_REGISTRATION_FAILED,
+    BATCH_DELETION_FAILED,
+    SAMPLES_DONT_BELONG_TO_BATCH
   }
 
 }

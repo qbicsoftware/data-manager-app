@@ -79,4 +79,15 @@ public class BatchJpaRepository implements BatchRepository {
     }
     return Result.fromValue(batches);
   }
+
+  @Override
+  public Result<BatchId, ResponseCode> deleteById(BatchId batchId) {
+    try {
+      qbicBatchRepo.deleteById(batchId);
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
+    }
+    return Result.fromValue(batchId);
+  }
 }

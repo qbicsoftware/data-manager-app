@@ -26,21 +26,19 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
  */
 public class BatchRegistrationDialog extends DialogWindow {
 
-  private final SampleBatchInformationSpreadsheet spreadsheet;
-
   private final TextField batchNameField;
 
   private final List<ExperimentalGroup> experimentalGroups;
   private final List<Species> species;
   private final List<Specimen> specimen;
   private final List<Analyte> analytes;
+  private final SampleBatchInformationSpreadsheet spreadsheet;
 
   public BatchRegistrationDialog(String experimentName,
       List<Species> species,
       List<Specimen> specimen,
       List<Analyte> analytes,
       List<ExperimentalGroup> experimentalGroups) {
-
 
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
@@ -49,9 +47,9 @@ public class BatchRegistrationDialog extends DialogWindow {
     this.species = new ArrayList<>(species);
     this.specimen = new ArrayList<>(specimen);
     this.analytes = new ArrayList<>(analytes);
-
-    spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
-        analytes, false);
+    this.spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, this.species,
+        this.specimen,
+        this.analytes, false);
 
     batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
@@ -72,9 +70,9 @@ public class BatchRegistrationDialog extends DialogWindow {
     prefillSpreadsheet.addClassName("prefill-batch");
 
     Span prefillText = new Span(
-        "Do you want to register a batch containing all biological replicates? "
-            + "You can prefill information already know to the system. "
-            + "Please note: This will erase any information entered into the spreadsheet.");
+        "Do you want to register a batch containing all biological replicates? You can prefill information already know to the system."
+            + "Please note: this will erase all information entered into the spreadsheet"
+    );
     prefillSection.add(prefillText, prefillSpreadsheet);
 
     Button addRow = new Button();
@@ -99,7 +97,6 @@ public class BatchRegistrationDialog extends DialogWindow {
     experimentNameText.setClassName("experiment-name");
     Div userHelpText = new Div(pleaseRegisterText, experimentNameText);
     userHelpText.addClassName("user-help-text");
-
 
     Div spreadsheetControls = new Div();
     spreadsheetControls.addClassName("spreadsheet-controls");

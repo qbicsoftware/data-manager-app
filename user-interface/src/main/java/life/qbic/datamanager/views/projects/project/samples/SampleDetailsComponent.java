@@ -21,7 +21,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,35 +30,18 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -67,7 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
  * information associated for all {@link Batch} and {@link Sample} of each
- * {@link Experiment within a {@link Project } Additionally it enables the user to register new
+ * {@link Experiment within a {@link Project} Additionally it enables the user to register new
  * {@link Batch} and {@link Sample} via the contained {@link BatchRegistrationDialog}.
  */
 
@@ -79,39 +61,24 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
   private final SampleExperimentTab experimentTab;
-  private final Button temporaryButton;
   private Context context;
   private final TextField searchField;
-  public final Button registerButton;
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final Grid<SamplePreview> sampleGrid;
-
-  private final SampleRegistrationService sampleRegistrationService;
   private final ExperimentInformationService experimentInformationService;
-  private final BatchRegistrationService batchRegistrationService;
   private final SampleInformationService sampleInformationService;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
-      @Autowired BatchRegistrationService batchRegistrationService,
-      @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired ExperimentInformationService experimentInformationService) {
     this.experimentInformationService = experimentInformationService;
-    this.batchRegistrationService = batchRegistrationService;
-    this.sampleRegistrationService = sampleRegistrationService;
     this.sampleInformationService = sampleInformationService;
     addClassName("sample-details-component");
 
     this.searchField = createSearchField();
+    searchField.addValueChangeListener(valueChangeEvent -> {
+    });
     searchField.addValueChangeListener(this::onSearchFieldChanged);
-
-    this.registerButton = createRegisterButton();
-    registerButton.addClickListener(event -> onRegisterButtonClicked());
-
-    //FIXME remove
-    temporaryButton = new Button("Edit first batch");
-    //end FIXME remove
-
     Span fieldBar = new Span();
     fieldBar.addClassName("search-bar");
     fieldBar.add(searchField);
@@ -119,8 +86,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     Span buttonBar = new Span();
     buttonBar.addClassName("button-bar");
     Button metadataDownloadButton = new Button("Download Metadata");
-    buttonBar.add(registerButton, metadataDownloadButton);
-    buttonBar.add(temporaryButton); //FIXME remove
+    buttonBar.add(metadataDownloadButton);
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -178,77 +144,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
             countChangeEvent -> experimentTab.setSampleCount(countChangeEvent.getItemCount()));
   }
 
-  private Button createRegisterButton() {
-    Button button = new Button("Register");
-    button.addClassName("primary");
-    return button;
-  }
-
   private static TextField createSearchField() {
     TextField textField = new TextField();
     textField.setPlaceholder("Search");
     textField.setPrefixComponent(VaadinIcon.SEARCH.create());
     textField.setValueChangeMode(ValueChangeMode.EAGER);
     return textField;
-  }
-
-  private void onRegisterButtonClicked() {
-    Experiment experiment = context.experimentId()
-        .flatMap(experimentInformationService::find)
-        .orElseThrow();
-
-    if (noExperimentGroupsInExperiment(experiment)) {
-      return;
-    }
-
-    BatchRegistrationDialog dialog = new BatchRegistrationDialog(
-        experiment.getName(), new ArrayList<>(experiment.getSpecies()),
-        new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
-        experiment.getExperimentalGroups());
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(this::onRegisterDialogConfirmed);
-    dialog.open();
-  }
-
-  private void onRegisterDialogConfirmed(ConfirmEvent confirmEvent) {
-    String batchLabel = confirmEvent.getData().batchName();
-    List<SampleInfo> samples = confirmEvent.getData().samples();
-
-    List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
-            batchLabel, false,
-            context.projectId().orElseThrow())
-        .map(batchId -> samples.stream()
-            .map(sample -> new SampleRegistrationRequest(
-                sample.getSampleLabel(),
-                batchId,
-                context.experimentId().orElseThrow(),
-                sample.getExperimentalGroup().id(),
-                sample.getBiologicalReplicate().id(),
-                SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(), sample.getAnalyte()),
-                sample.getAnalysisToBePerformed(),
-                sample.getCustomerComment()))
-            .toList())
-        .onError(responseCode -> displayRegistrationFailure())
-        .valueOrElseThrow(() ->
-            new ApplicationException("Could not create sample registration requests"));
-    sampleRegistrationService.registerSamples(sampleRegistrationRequests,
-            context.projectId().orElseThrow())
-        .onError(responseCode -> displayRegistrationFailure())
-        .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
-        .onValue(ignored -> confirmEvent.getSource().close())
-        .onValue(batchId -> displayRegistrationSuccess());
-  }
-
-  private void displayRegistrationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
-  }
-
-  private void displayRegistrationFailure() {
-    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -298,11 +199,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   /**
    * Adds the provided listener
    *
-   * @param batchRegistrationListener listener notified on batch registration
+   * @param batchRegistrationListener listener notified if the user intends to create a batch
    */
-  public void addBatchRegistrationListener(
-      ComponentEventListener<BatchRegisteredEvent> batchRegistrationListener) {
-    addListener(BatchRegisteredEvent.class, batchRegistrationListener);
+  public void addCreateBatchListener(
+      ComponentEventListener<RegisterBatchClicked> batchRegistrationListener) {
+    addListener(RegisterBatchClicked.class, batchRegistrationListener);
   }
 
   private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
@@ -338,46 +239,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.setVisible(true);
     noSamplesRegisteredDisclaimer.setVisible(false);
     noGroupsDefinedDisclaimer.setVisible(false);
-
-    //region fixme remove this is only for testing
-    List<SampleInfo> existingSamples = new ArrayList<>();
-    SampleInfo sampleInfo1 = SampleInfo.create("QABCD", AnalysisMethod.CUSTOM_AMPLICON,
-        "my fake sample",
-        experiment.getExperimentalGroups().get(0).biologicalReplicates().get(0),
-        experiment.getExperimentalGroups().get(0),
-        ((List<Species>) experiment.getSpecies()).get(0),
-        ((List<Specimen>) experiment.getSpecimens()).get(0),
-        ((List<Analyte>) experiment.getAnalytes()).get(0), "");
-    sampleInfo1.setSampleId(SampleId.create());
-    SampleInfo sampleInfo2 = SampleInfo.create("QABCD2", AnalysisMethod.CUSTOM_AMPLICON,
-        "my fake sample 2",
-        experiment.getExperimentalGroups().get(0).biologicalReplicates().get(0),
-        experiment.getExperimentalGroups().get(0),
-        ((List<Species>) experiment.getSpecies()).get(0),
-        ((List<Specimen>) experiment.getSpecimens()).get(0),
-        ((List<Analyte>) experiment.getAnalytes()).get(0), "");
-    sampleInfo2.setSampleId(SampleId.create());
-    existingSamples.add(sampleInfo1);
-    existingSamples.add(sampleInfo2);
-
-    temporaryButton.addClickListener(clickEvent -> {
-      EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
-          (List<Species>) experiment.getSpecies(),
-          (List<Specimen>) experiment.getSpecimens(),
-          (List<Analyte>) experiment.getAnalytes(), experiment.getExperimentalGroups(),
-          BatchId.create(), "my fake batch",
-          existingSamples);
-      editBatchDialog.addCancelListener(it -> it.getSource().close());
-      editBatchDialog.addConfirmListener(confirmEvent -> {
-        Data data = confirmEvent.getData();
-        System.out.println("data.addedSamples() = " + data.addedSamples());
-        System.out.println("data.removedSamples() = " + data.removedSamples());
-        System.out.println("data.changedSamples() = " + data.changedSamples());
-        System.out.println("data.batchName() = " + data.batchName());
-      });
-      editBatchDialog.open();
-    });
-    //endregion
   }
 
   private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
@@ -401,7 +262,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
         "Manage your samples in one place",
         "Start your project by registering the first sample batch", "Register batch");
-    noSamplesDefinedCard.addDisclaimerConfirmedListener(event -> onRegisterButtonClicked());
+    noSamplesDefinedCard.addDisclaimerConfirmedListener(
+        event -> fireEvent(new RegisterBatchClicked(this, event.isFromClient())));
     return noSamplesDefinedCard;
   }
 
@@ -442,22 +304,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return sampleGrid;
   }
 
-  public static class BatchRegisteredEvent extends ComponentEvent<SampleDetailsComponent> {
-
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public BatchRegisteredEvent(SampleDetailsComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
-  }
-
   public static class SampleExperimentTab extends Tab {
 
     private final Span countBadge;
@@ -495,6 +341,22 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       Tag tag = new Tag(String.valueOf(0));
       tag.addClassName("contrast");
       return tag;
+    }
+  }
+
+  /**
+   * <b>Create Batch Event</b>
+   *
+   * <p>Indicates that a user wants to create a {@link Batch}
+   * within the {@link SampleDetailsComponent} of a project</p>
+   */
+  public static class RegisterBatchClicked extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 5351296685318048598L;
+
+    public RegisterBatchClicked(SampleDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
     }
   }
 }

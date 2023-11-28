@@ -4,7 +4,6 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-
 /**
  * Sample registration request.
  * <p>
@@ -40,5 +39,6 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.comment = comment;
 
   }
+
 
 }
