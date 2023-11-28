@@ -24,8 +24,8 @@ public class ProjectPurchaseService {
   }
 
   public void addPurchase(String projectId, OfferDTO offer) {
-    var theOffer = Offer.create(offer.offerId(), offer.signed(), offer.fileName(),
-        offer.content(), offer.charset());
+    var theOffer = Offer.create( offer.signed(), offer.fileName(),
+        offer.content());
     var projectReference = ProjectId.parse(projectId);
     var purchaseDate = Instant.now();
 

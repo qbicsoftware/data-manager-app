@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application.purchase;
 
-import java.nio.charset.Charset;
-
 /**
  * <b><record short description - 1 Line!></b>
  *
@@ -9,7 +7,6 @@ import java.nio.charset.Charset;
  *
  * @since <version tag>
  */
-public record OfferDTO(String offerId, boolean signed, String fileName, Byte[] content,
-                       Charset charset) {
+public record OfferDTO(boolean signed, String fileName, byte[] content) {
 
 }

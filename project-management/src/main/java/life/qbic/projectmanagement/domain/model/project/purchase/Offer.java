@@ -1,17 +1,13 @@
 package life.qbic.projectmanagement.domain.model.project.purchase;
 
-import jakarta.persistence.Convert;
-import jakarta.persistence.Converter;
-import jakarta.persistence.Embedded;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import java.lang.annotation.Annotation;
-import java.nio.charset.Charset;
+import jakarta.persistence.Lob;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
-import life.qbic.projectmanagement.domain.model.project.translation.CharsetConverter;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -29,37 +25,30 @@ public class Offer {
 
   private Long referenceId;
 
-  private String offerId;
-
   private boolean signed;
 
   private String fileName;
 
-  private Byte[] fileContent;
-
-  @Convert(converter = CharsetConverter.class)
-  private Charset charset;
+  @Lob
+  @Column(name = "file_content", columnDefinition="BLOB")
+  private byte[] fileContent;
 
   public Offer() {
 
   }
 
-  public static Offer create(String offerId, boolean signed, String fileName,
-      Byte[] fileContent,
-      Charset charset) {
+  public static Offer create(boolean signed, String fileName,
+      byte[] fileContent) {
     var randomReferenceId = new Random().nextLong();
-    return new Offer(randomReferenceId, offerId, signed, fileName, fileContent, charset);
+    return new Offer(randomReferenceId, signed, fileName, fileContent);
   }
 
-  protected Offer(Long referenceId, String offerId, boolean signed, String fileName,
-      Byte[] fileContent,
-      Charset charset) {
+  protected Offer(Long referenceId, boolean signed, String fileName,
+      byte[] fileContent) {
     this.referenceId = referenceId;
-    this.offerId = offerId;
     this.signed = signed;
     this.fileName = fileName;
     this.fileContent = fileContent;
-    this.charset = charset;
   }
 
   @Override
@@ -73,14 +62,12 @@ public class Offer {
     Offer offer = (Offer) o;
     return signed == offer.signed && Objects.equals(id, offer.id)
         && Objects.equals(referenceId, offer.referenceId) && Objects.equals(
-        offerId, offer.offerId) && Objects.equals(fileName, offer.fileName)
-        && Arrays.equals(fileContent, offer.fileContent) && Objects.equals(
-        charset, offer.charset);
+        fileName, offer.fileName) && Arrays.equals(fileContent, offer.fileContent);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(id, referenceId, offerId, signed, fileName, charset);
+    int result = Objects.hash(id, referenceId, signed, fileName);
     result = 31 * result + Arrays.hashCode(fileContent);
     return result;
   }
