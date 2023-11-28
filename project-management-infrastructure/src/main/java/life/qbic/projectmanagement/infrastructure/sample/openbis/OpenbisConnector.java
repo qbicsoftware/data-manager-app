@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.openbis.openbisclient.helper.OpenBisClientHelper.fetchSamplesCompletely;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
@@ -26,19 +27,22 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.CreateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOptions;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
@@ -72,6 +76,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String DEFAULT_ANALYTE_TYPE = "OTHER";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
 
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
@@ -128,13 +133,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         .toList();
   }
 
-  private List<Experiment> searchExperimentsByCode(String projectCode) {
+  private List<Experiment> searchExperimentsByProjectCode(String projectCode,
+      ExperimentFetchOptions fetchOptions) {
     ExperimentSearchCriteria criteria = new ExperimentSearchCriteria();
     criteria.withProject().withCode().thatEquals(projectCode);
 
-    ExperimentFetchOptions options = new ExperimentFetchOptions();
     SearchResult<Experiment> searchResult =
-        openBisClient.getV3().searchExperiments(openBisClient.getSessionToken(), criteria, options);
+        openBisClient.getV3().searchExperiments(openBisClient.getSessionToken(), criteria, fetchOptions);
 
     return searchResult.getObjects();
   }
@@ -147,17 +152,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     ProjectFetchOptions options = new ProjectFetchOptions();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project> searchResult =
         openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
-
-    return searchResult.getObjects();
-  }
-
-  private List<Sample> searchSamplesByCode(String code) {
-    SampleSearchCriteria criteria = new SampleSearchCriteria();
-    criteria.withCode().thatEquals(code);
-
-    SampleFetchOptions options = new SampleFetchOptions();
-    SearchResult<Sample> searchResult =
-        openBisClient.getV3().searchSamples(openBisClient.getSessionToken(), criteria, options);
 
     return searchResult.getObjects();
   }
@@ -213,12 +207,13 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
         String analyteValue = sample.sampleOrigin().getAnalyte().value();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-                () -> analyteMapper.mapFrom(analyteValue))
-            .orElseThrow(() -> {
-              logger("No mapping was found for " + analyteValue);
-              return new MappingNotFoundException();
-            });
+                () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
         props.put("Q_SAMPLE_TYPE", openBisSampleType);
+        if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+          logger("No mapping was found for " + analyteValue);
+          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+          props.put("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+        }
         sampleCreation.setProperties(props);
 
         sampleCreation.setExperimentId(newExperimentID);
@@ -233,12 +228,12 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
     return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .filter(vocabularyTerm -> vocabularyTerm.label.equals(analyteLabel))
+        .filter(vocabularyTerm -> analyteLabel.equals(vocabularyTerm.label))
         .map(vocabularyTerm -> vocabularyTerm.code).findFirst();
   }
 
   private String findFreeExperimentCode(String projectCode) {
-    List<Experiment> experiments = searchExperimentsByCode(projectCode);
+    List<Experiment> experiments = searchExperimentsByProjectCode(projectCode, new ExperimentFetchOptions());
     int lastExperimentNumber = 0;
     for (Experiment experiment : experiments) {
       lastExperimentNumber = Integer.max(lastExperimentNumber,
@@ -264,27 +259,103 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     handleOperations(operation);
   }
 
-  /**
-   * Deletes a sample with the provided code from persistence.
-   *
-   * @param sampleCode the {@link SampleCode} of the sample to delete
-   * @since 1.0.0
-   */
-  @Override
-  public void delete(SampleCode sampleCode) {
-    deleteOpenbisSample(DEFAULT_SPACE_CODE, sampleCode.code());
+  private void updateOpenbisSamples(List<SampleUpdate> samplesToUpdate) {
+    IOperation operation = new UpdateSamplesOperation(samplesToUpdate);
+    handleOperations(operation);
   }
 
   /**
-   * Searches for samples that contain the provided sample code
+   * Deletes a collection of samples with the provided codes from persistence. Checks if any of the
+   * samples has attached data and fails the deletion of the sample batch, if so.
    *
-   * @param sampleCode the {@link SampleCode} to search for in the data repository
-   * @return true, if a sample with that code already exists in the system, false if not
+   * @param projectCode the {@link ProjectCode} of the project these samples belong to
+   * @param sampleCodes The {@link SampleCode}s of the samples to be deleted in the data repo
+
    * @since 1.0.0
    */
   @Override
-  public boolean sampleExists(SampleCode sampleCode) {
-    return !searchSamplesByCode(sampleCode.code()).isEmpty();
+  public void deleteAll(ProjectCode projectCode,
+      Collection<SampleCode> sampleCodes) {
+
+    Set<String> sampleCodesToDelete = new HashSet<>(
+        sampleCodes.stream().map(SampleCode::code).toList());
+
+    //Fetch samples with potential data - sample search is not working, sorry you have to see this
+    ExperimentFetchOptions fetchOptions = new ExperimentFetchOptions();
+    fetchOptions.withSamplesUsing(fetchSamplesCompletely());
+    for (Experiment experiment : searchExperimentsByProjectCode(projectCode.value(), fetchOptions)) {
+      for (Sample sample : experiment.getSamples()) {
+        String sampleCode = sample.getCode();
+        if (sampleCodesToDelete.contains(sampleCode)) {
+          if (isSampleWithData(List.of(sample))) {
+            throw new SampleNotDeletedException(
+                "Did not delete sample " + sampleCode + ", because data is attached.");
+          }
+        }
+      }
+    }
+    // no data found, we can safely delete all samples
+    sampleCodesToDelete.forEach(code -> deleteOpenbisSample(DEFAULT_SPACE_CODE, code));
+  }
+
+  /**
+   * Recursive method checking child samples for datasets
+   */
+  private boolean isSampleWithData(List<Sample> samples) {
+    boolean hasData = false;
+    for (Sample sample : samples) {
+      hasData |= !sample.getDataSets().isEmpty();
+      hasData |= isSampleWithData(sample.getChildren());
+    }
+    return hasData;
+  }
+
+  /**
+   * Updates the reference to one or more {@link Sample}s in the data repository to connect project
+   * data. Samples with metadata must be provided. Since no batch information is stored, changes in
+   * the batch are not reflected.
+   *
+   * @param samples the batch of {@link Sample}s to be updated in the data repo
+   * @since 1.0.0
+   */
+  @Override
+  public void updateAll(
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
+      throws SampleNotUpdatedException {
+    try {
+      /*FixMe Throws org.springframework.remoting.RemoteAccessException: Could not access HTTP invoker remote service
+          and invalid stream header: 3C68746D
+      */
+      // updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
+    } catch (RuntimeException e) {
+      throw new SampleNotUpdatedException(
+          "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
+    }
+  }
+
+  private SampleUpdate createSampleUpdate(life.qbic.projectmanagement.domain.model.sample.Sample sample) {
+    SampleUpdate sampleUpdate = new SampleUpdate();
+    String sampleId = "/" + DEFAULT_SPACE_CODE + "/" + sample.sampleCode().code();
+    sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
+    sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
+    sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
+
+    String analyteValue = sample.sampleOrigin().getAnalyte().value();
+
+    String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
+        () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
+    sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
+    if (openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
+      logger("No mapping was found for " + analyteValue + " when updating sample.");
+      logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
+      sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
+    }
+    return sampleUpdate;
+  }
+
+  private List<SampleUpdate> convertSamplesToSampleUpdates(
+      Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
+    return updatedSamples.stream().map(this::createSampleUpdate).toList();
   }
 
   record VocabularyTerm(String code, String label, String description) {
@@ -385,5 +456,19 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
   static class MappingNotFoundException extends RuntimeException {
 
+  }
+
+  public static class SampleNotDeletedException extends RuntimeException {
+
+    public SampleNotDeletedException(String s) {
+      super(s);
+    }
+  }
+
+  public static class SampleNotUpdatedException extends RuntimeException {
+
+    public SampleNotUpdatedException(String s) {
+      super(s);
+    }
   }
 }

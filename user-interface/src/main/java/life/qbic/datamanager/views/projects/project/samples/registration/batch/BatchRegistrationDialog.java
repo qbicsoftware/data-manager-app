@@ -1,244 +1,255 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.tabs.TabVariant;
-import java.io.Serial;
-import java.io.Serializable;
+import com.vaadin.flow.component.textfield.TextField;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
-import life.qbic.datamanager.views.events.UserCancelEvent;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 
 /**
- * <b>Sample Registration Dialog</b>
- *
- * <p>Component to register {@link Sample} with
- * their associated metadata information</p>
+ * A dialog used for sample batch registration.
  */
-public class BatchRegistrationDialog extends Dialog {
+public class BatchRegistrationDialog extends DialogWindow {
 
-  private static final String TITLE = "Register Batch";
-  private final TabSheet tabStepper = new TabSheet();
-  private final Tab batchInformationTab = createTabStep("1", "Batch Information");
-  private final Tab sampleInformationTab = createTabStep("2", "Register Samples");
-  private final BatchInformationLayout batchInformationLayout = new BatchInformationLayout();
-  private final SampleSpreadsheetLayout sampleSpreadsheetLayout = new SampleSpreadsheetLayout();
-  private final transient RegisterBatchDialogHandler registerBatchDialogHandler;
-  private boolean wasPrefillPreviouslySelected = false;
+  private final TextField batchNameField;
 
-  public BatchRegistrationDialog() {
+  private final List<ExperimentalGroup> experimentalGroups;
+  private final List<Species> species;
+  private final List<Specimen> specimen;
+  private final List<Analyte> analytes;
+  private final SampleBatchInformationSpreadsheet spreadsheet;
+
+  public BatchRegistrationDialog(String experimentName,
+      List<Species> species,
+      List<Specimen> specimen,
+      List<Analyte> analytes,
+      List<ExperimentalGroup> experimentalGroups) {
+
     addClassName("batch-registration-dialog");
+    setConfirmButtonLabel("Register");
+
+    this.experimentalGroups = new ArrayList<>(experimentalGroups);
+    this.species = new ArrayList<>(species);
+    this.specimen = new ArrayList<>(specimen);
+    this.analytes = new ArrayList<>(analytes);
+    this.spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, this.species,
+        this.specimen,
+        this.analytes, false);
+
+    batchNameField = new TextField();
+    batchNameField.addClassName("batch-name-field");
+    batchNameField.setLabel("Batch Name");
+    batchNameField.setPlaceholder("Please enter a name for this batch");
+    batchNameField.setRequired(true);
+    // must contain at least one non-whitespace character and no leading/tailing whitespace.
+    batchNameField.setPattern("^\\S+(.*\\S)*$");
+    batchNameField.setErrorMessage(
+        "The batch name must not be empty. It must not start nor end with whitespace.");
+    batchNameField.addValueChangeListener(this::onBatchNameChanged);
+
+    Div prefillSection = new Div();
+    Button prefillSpreadsheet = new Button();
+    prefillSpreadsheet.setText("Clear and Prefill");
+    prefillSpreadsheet.setAriaLabel("Clear and Prefill");
+    prefillSpreadsheet.addClickListener(this::onPrefillClicked);
+    prefillSpreadsheet.addClassName("prefill-batch");
+
+    Span prefillText = new Span(
+        "Do you want to register a batch containing all biological replicates? You can prefill information already know to the system."
+            + "Please note: this will erase all information entered into the spreadsheet"
+    );
+    prefillSection.add(prefillText, prefillSpreadsheet);
+
+    Button addRow = new Button();
+    addRow.setText("Add Row");
+    addRow.addClickListener(this::onAddRowClicked);
+    addRow.addClassName("add-batch-row");
+
+    Button removeLastRow = new Button();
+    removeLastRow.setText("Remove Row");
+    removeLastRow.addClickListener(this::onRemoveLastRowClicked);
+    removeLastRow.addClassName("remove-batch-row");
+
+    setHeaderTitle("Register Batch");
     setResizable(true);
-    setHeaderTitle(TITLE);
-    initTabStepper();
-    registerBatchDialogHandler = new RegisterBatchDialogHandler();
-  }
 
-  private void initTabStepper() {
-    tabStepper.add(batchInformationTab, batchInformationLayout);
-    tabStepper.add(sampleInformationTab, sampleSpreadsheetLayout);
-    tabStepper.addClassName("minimal");
-    tabStepper.addClassName("stepper");
-    add(tabStepper);
-  }
+    Div batchControls = new Div();
+    batchControls.addClassName("batch-controls");
+    batchControls.add(batchNameField);
 
-  private Tab createTabStep(String avatarLabel, String tabLabel) {
-    Avatar stepAvatar = new Avatar(avatarLabel);
-    stepAvatar.setColorIndex(2);
-    Span tabLabelSpan = new Span(tabLabel);
-    Tab tabStep = new Tab(stepAvatar, tabLabelSpan);
-    tabStep.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-    return tabStep;
-  }
+    Span pleaseRegisterText = new Span("Please register your samples for experiment:");
+    Span experimentNameText = new Span(experimentName);
+    experimentNameText.setClassName("experiment-name");
+    Div userHelpText = new Div(pleaseRegisterText, experimentNameText);
+    userHelpText.addClassName("user-help-text");
 
-  /**
-   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
-   * if an {@link BatchRegistrationEvent} occurs within this Dialog
-   *
-   * @param listener The {@link ComponentEventListener} to be notified
-   */
-  public void addBatchRegistrationEventListener(
-      ComponentEventListener<BatchRegistrationEvent> listener) {
-    registerBatchDialogHandler.addBatchRegistrationEventListener(listener);
-  }
+    Div spreadsheetControls = new Div();
+    spreadsheetControls.addClassName("spreadsheet-controls");
 
-  /**
-   * Adds the provided {@link ComponentEventListener} to the list of listeners that will be notified
-   * if an {@link UserCancelEvent} occurs within this Dialog
-   *
-   * @param listener The {@link ComponentEventListener} to be notified
-   */
-  public void addCancelEventListener(
-      ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
-    registerBatchDialogHandler.addUserCancelEventListener(listener);
-  }
+    Span rowControls = new Span();
+    rowControls.addClassName("row-controls");
+    rowControls.add(addRow, removeLastRow);
 
-  /**
-   * Defines the currently active {@link Experiment} within the project from which the information
-   * will be derived in the {@link SampleRegistrationSpreadsheet}
-   */
-  public void setExperiments(Collection<Experiment> experiments) {
-    batchInformationLayout.experimentSelect.setItems(experiments);
-  }
+    Span errorText = new Span("Unspecific Error message");
+    errorText.addClassName("error-text");
+    errorText.setVisible(false);
 
-  /**
-   * Sets the provided {@link Experiment} as preselected in the
-   * {@link com.vaadin.flow.component.select.Select} component
-   */
-  public void setSelectedExperiment(Experiment experiment) {
-    batchInformationLayout.experimentSelect.setValue(experiment);
-  }
+    spreadsheetControls.add(rowControls, errorText);
 
-  public void resetAndClose() {
-    registerBatchDialogHandler.resetAndClose();
-  }
+    add(batchControls,
+        userHelpText,
+        prefillSection,
+        spreadsheetControls,
+        spreadsheet);
 
-  private class RegisterBatchDialogHandler implements Serializable {
+    batchNameField.focus();
 
-    @Serial
-    private static final long serialVersionUID = -2692766151162405263L;
-
-    private final List<ComponentEventListener<BatchRegistrationEvent>> batchRegistrationListeners = new ArrayList<>();
-    private final List<ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>>> cancelListeners = new ArrayList<>();
-
-    public RegisterBatchDialogHandler() {
-      setNavigationListeners();
-      setSubmissionListeners();
-      resetDialogueUponClosure();
-    }
-
-    private void setNavigationListeners() {
-      batchInformationLayout.nextButton.addClickListener(
-          event -> tabStepper.setSelectedTab(sampleInformationTab));
-      sampleSpreadsheetLayout.backButton.addClickListener(
-          event -> tabStepper.setSelectedTab(batchInformationTab));
-      setTabSelectionListener();
-    }
-
-    private void setTabSelectionListener() {
-      tabStepper.addSelectedChangeListener(event -> {
-        if (event.getSelectedTab() == sampleInformationTab) {
-          if (batchInformationLayout.isInputValid()) {
-            generateSampleRegistrationLayout();
-            tabStepper.setSelectedTab(event.getSelectedTab());
+    spreadsheet.addValidationChangeListener(
+        validationChangeEvent -> {
+          if (validationChangeEvent.isInvalid()) {
+            errorText.setText(validationChangeEvent.getSource().getErrorMessage());
+            errorText.setVisible(true);
           } else {
-            tabStepper.setSelectedTab(event.getPreviousTab());
+            errorText.setVisible(false);
           }
-        }
-      });
-    }
+        });
+  }
 
-    private void generateSampleRegistrationLayout() {
-      //we always set the batch name, as it can change without affecting the rest of the spreadsheet
-      sampleSpreadsheetLayout.setBatchName(batchInformationLayout.batchNameField.getValue());
+  private List<SampleInfo> prefilledSampleInfos() {
+    return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
+  }
 
-      //We reset the spreadsheet independent on which selection was changed
-      if (hasPrefillStatusChanged() || hasExperimentInformationChanged()) {
-        sampleSpreadsheetLayout.resetSpreadSheet();
-        //If the user changes the experiment or selects one for the first time the spreadsheet has to be generated anew
-        if (hasExperimentInformationChanged()) {
-          sampleSpreadsheetLayout.resetExperimentInformation();
-          sampleSpreadsheetLayout.setExperiment(batchInformationLayout.experimentSelect.getValue());
-        }
-        sampleSpreadsheetLayout.generateSampleRegistrationSheet(
-            batchInformationLayout.dataTypeSelection.getValue());
-        //If the user changed the prefill selection the fields have to be filled dependent on if the checkbox was checked or not
-        if (hasPrefillStatusChanged()) {
-          boolean isPrefillSelected = batchInformationLayout.prefillSelection.getValue();
-          if (isPrefillSelected) {
-            sampleSpreadsheetLayout.prefillConditionsAndReplicates();
-          }
-          wasPrefillPreviouslySelected = isPrefillSelected;
-        }
-      }
-      //rerender spreadsheet
-      sampleSpreadsheetLayout.reloadSpreadsheet();
-    }
+  private static List<SampleInfo> prefilledSampleInfos(List<Species> species,
+      List<Specimen> specimen, List<Analyte> analytes, List<ExperimentalGroup> experimentalGroups) {
 
-    private boolean hasExperimentInformationChanged() {
-      ExperimentId previouslySelectedExperiment = sampleSpreadsheetLayout.getExperiment();
-      ExperimentId selectedExperiment = batchInformationLayout.experimentSelect.getValue()
-          .experimentId();
-      if (previouslySelectedExperiment == null) {
-        return true;
-      } else {
-        return !previouslySelectedExperiment.equals(selectedExperiment);
+    List<SampleInfo> sampleInfos = new ArrayList<>();
+    for (ExperimentalGroup experimentalGroup : experimentalGroups) {
+      List<BiologicalReplicate> sortedReplicates = experimentalGroup.biologicalReplicates().stream()
+          .sorted(Comparator.comparing(BiologicalReplicate::label))
+          .toList();
+      for (BiologicalReplicate biologicalReplicate : sortedReplicates) {
+        // new sampleInfo
+        SampleInfo sampleInfo = new SampleInfo();
+        sampleInfo.setBiologicalReplicate(biologicalReplicate);
+        sampleInfo.setExperimentalGroup(experimentalGroup);
+        if (species.size() == 1) {
+          sampleInfo.setSpecies(species.get(0));
+        }
+        if (specimen.size() == 1) {
+          sampleInfo.setSpecimen(specimen.get(0));
+        }
+        if (analytes.size() == 1) {
+          sampleInfo.setAnalyte(analytes.get(0));
+        }
+        sampleInfos.add(sampleInfo);
       }
     }
-
-    private boolean hasPrefillStatusChanged() {
-      return wasPrefillPreviouslySelected != batchInformationLayout.prefillSelection.getValue();
-    }
-
-    private void setSubmissionListeners() {
-      setCancelSubmission();
-      setBatchRegistrationSubmission();
-    }
-
-    private void setCancelSubmission() {
-      batchInformationLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(BatchRegistrationDialog.this))));
-      sampleSpreadsheetLayout.cancelButton.addClickListener(event -> cancelListeners.forEach(
-          listener -> listener.onComponentEvent(
-              new UserCancelEvent<>(BatchRegistrationDialog.this))));
-    }
-
-    private void setBatchRegistrationSubmission() {
-      sampleSpreadsheetLayout.registerButton.addClickListener(event -> {
-        if (isInputValid()) {
-          batchRegistrationListeners.forEach(listener -> listener.onComponentEvent(
-              new BatchRegistrationEvent(BatchRegistrationDialog.this, true)));
-        }
-      });
-    }
-
-    protected boolean isInputValid() {
-      return batchInformationLayout.isInputValid() && sampleSpreadsheetLayout.isInputValid();
-    }
-
-    public void addBatchRegistrationEventListener(
-        ComponentEventListener<BatchRegistrationEvent> listener) {
-      this.batchRegistrationListeners.add(listener);
-    }
-
-    public void addUserCancelEventListener(
-        ComponentEventListener<UserCancelEvent<BatchRegistrationDialog>> listener) {
-      this.cancelListeners.add(listener);
-    }
-
-    public void resetAndClose() {
-      close();
-      reset();
-    }
-
-    private void reset() {
-      batchInformationLayout.reset();
-      sampleSpreadsheetLayout.reset();
-      tabStepper.setSelectedTab(batchInformationTab);
-    }
-
-    private void resetDialogueUponClosure() {
-      // Calls the reset method for all possible closure methods of the dialogue window:
-      addDialogCloseActionListener(closeActionEvent -> resetAndClose());
-    }
-
+    return sampleInfos;
   }
 
-  public BatchRegistrationContent batchRegistrationContent() {
-    return new BatchRegistrationContent(batchInformationLayout.batchNameField.getValue(),
-        batchInformationLayout.experimentSelect.getValue().experimentId(), false);
+  private void onBatchNameChanged(
+      ComponentValueChangeEvent<TextField, String> batchNameChangedEvent) {
+    /* do nothing */
   }
 
-  public List<SampleRegistrationContent> sampleRegistrationContent() {
-    return sampleSpreadsheetLayout.getContent();
+  private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.removeLastRow();
   }
+
+  private void onAddRowClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.addEmptyRow();
+  }
+
+  private void onPrefillClicked(ClickEvent<Button> clickEvent) {
+    ValidationMode validationMode = spreadsheet.getValidationMode();
+    spreadsheet.setValidationMode(ValidationMode.LAZY);
+    spreadsheet.resetRows();
+    for (SampleInfo sampleInfo : prefilledSampleInfos()) {
+      spreadsheet.addRow(sampleInfo);
+    }
+    spreadsheet.setValidationMode(validationMode);
+  }
+
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    spreadsheet.validate();
+    if (spreadsheet.isInvalid()) {
+      return;
+    }
+    if (batchNameField.isInvalid()) {
+      return;
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
+        new Data(batchNameField.getValue(), spreadsheet.getData())));
+  }
+
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+  }
+
+  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
+  }
+
+  public void addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
+    addListener(ConfirmEvent.class, listener);
+  }
+
+  public static class CancelEvent extends ComponentEvent<BatchRegistrationDialog> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public CancelEvent(BatchRegistrationDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog> {
+
+    public record Data(String batchName, List<SampleInfo> samples) {
+
+    }
+
+    private final Data data;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public ConfirmEvent(BatchRegistrationDialog source, boolean fromClient, Data data) {
+      super(source, fromClient);
+      this.data = data;
+    }
+
+    public Data getData() {
+      return data;
+    }
+  }
+
 }

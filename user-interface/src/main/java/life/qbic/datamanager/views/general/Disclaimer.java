@@ -5,7 +5,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <b>Disclaimer</b>
@@ -28,11 +31,13 @@ public class Disclaimer extends Div {
   private final String disclaimerLabel;
   private final String title;
   private final Button confirmationElement;
+  private final List<Registration> confirmListeners;
 
   private Disclaimer(String disclaimer, String confirmationLabel, String title) {
     this.title = title;
     this.disclaimerLabel = disclaimer;
     this.confirmationElement = new Button(confirmationLabel);
+    this.confirmListeners = new ArrayList<>();
     initLayout();
     initConfirmation();
   }
@@ -89,9 +94,16 @@ public class Disclaimer extends Div {
     return new Disclaimer(disclaimer, confirmationLabel, title);
   }
 
-  public void addDisclaimerConfirmedListener(
+  public Registration addDisclaimerConfirmedListener(
       ComponentEventListener<DisclaimerConfirmedEvent> listener) {
-    addListener(DisclaimerConfirmedEvent.class, listener);
+    Registration registration = addListener(DisclaimerConfirmedEvent.class, listener);
+    confirmListeners.add(registration);
+    return registration;
+  }
+
+  public void clearConfirmListeners() {
+    confirmListeners.forEach(Registration::remove);
+    confirmListeners.clear();
   }
 
 }

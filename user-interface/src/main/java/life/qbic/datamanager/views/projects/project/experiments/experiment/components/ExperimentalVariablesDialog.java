@@ -1,7 +1,9 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.DomEvent;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -38,6 +40,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     this(false);
   }
 
+
   private ExperimentalVariablesDialog(boolean editMode) {
     super();
     mode = editMode ? MODE.EDIT : MODE.ADD;
@@ -46,7 +49,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     addClassName("experiment-variable-dialog");
     layoutComponent();
     initDialogueContent();
-    configureComponent();
   }
 
   /**
@@ -84,25 +86,16 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     return isEditing() ? "Save" : "Add";
   }
 
-  private void configureComponent() {
-    resetDialogUponClosure();
-    configureCancelling();
-    configureConfirmation();
+
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
+
   }
 
-  private void configureConfirmation() {
-    this.confirmButton.addClickListener(
-        clickEvent -> fireEvent(new ConfirmEvent(this, clickEvent.isFromClient())));
-  }
-
-  private void configureCancelling() {
-    this.cancelButton.addClickListener(
-        clickEvent -> fireEvent(new CancelEvent(this, clickEvent.isFromClient())));
-  }
-
-  private void resetDialogUponClosure() {
-    // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> close());
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   /**
