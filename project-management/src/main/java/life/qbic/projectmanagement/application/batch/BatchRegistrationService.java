@@ -69,7 +69,6 @@ public class BatchRegistrationService {
    */
   public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot,
       ProjectId projectId) {
-    //Todo move sample Registration logic in here to ensure transactional validity
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
       log.error(
