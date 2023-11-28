@@ -148,6 +148,9 @@ public class SampleContentComponent extends Div {
     Experiment experiment = context.experimentId()
         .flatMap(experimentInformationService::find)
         .orElseThrow();
+    if (experiment.getExperimentalGroups().isEmpty()) {
+      return;
+    }
     BatchRegistrationDialog dialog = new BatchRegistrationDialog(
         experiment.getName(), new ArrayList<>(experiment.getSpecies()),
         new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
