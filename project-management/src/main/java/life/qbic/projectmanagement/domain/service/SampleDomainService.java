@@ -14,7 +14,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
-import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,12 +86,6 @@ public class SampleDomainService {
     private void dispatchSuccessfulSampleRegistration(Sample sample) {
         SampleRegistered sampleRegistered = SampleRegistered.create(sample.assignedBatch(), sample.sampleId());
         DomainEventDispatcher.instance().dispatch(sampleRegistered);
-    }
-
-    private void dispatchSuccessfulSampleDeletion(Sample sample) {
-        SampleDeleted sampleDeleted = SampleDeleted.create(sample.assignedBatch(),
-            sample.sampleId());
-        DomainEventDispatcher.instance().dispatch(sampleDeleted);
     }
 
     /**
