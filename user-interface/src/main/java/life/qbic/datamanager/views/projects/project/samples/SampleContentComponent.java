@@ -99,6 +99,7 @@ public class SampleContentComponent extends Div {
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.batchDetailsComponent = batchDetailsComponent;
     reloadOnBatchRegistration();
+    sampleDetailsComponent.addCreateBatchListener(event -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
     batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
