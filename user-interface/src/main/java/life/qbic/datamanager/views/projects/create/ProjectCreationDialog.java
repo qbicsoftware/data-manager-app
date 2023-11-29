@@ -25,7 +25,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 
 /**
@@ -59,17 +59,17 @@ public class ProjectCreationDialog extends Dialog {
   private Step experimentalInformationStep;
 
   public ProjectCreationDialog(FinanceService financeService,
-      ExperimentalDesignSearchService experimentalDesignSearchService) {
+      OntologyTermInformationService ontologyTermInformationService) {
     super();
     Objects.requireNonNull(financeService,
         financeService.getClass().getSimpleName() + " must not be null");
-    Objects.requireNonNull(experimentalDesignSearchService,
-        experimentalDesignSearchService.getClass().getSimpleName() + " must not be null");
+    Objects.requireNonNull(ontologyTermInformationService,
+        ontologyTermInformationService.getClass().getSimpleName() + " must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
-        experimentalDesignSearchService);
+        ontologyTermInformationService);
     initDialog();
     initListeners();
     addClassName("project-creation-dialog");

@@ -20,7 +20,7 @@ import life.qbic.datamanager.views.projects.overview.components.ProjectCollectio
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -43,17 +43,17 @@ public class ProjectOverviewPage extends Div {
   private final ProjectCollectionComponent projectCollectionComponent;
   private final ProjectCreationService projectCreationService;
   private final FinanceService financeService;
-  private final ExperimentalDesignSearchService experimentalDesignSearchService;
+  private final OntologyTermInformationService ontologyTermInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
 
   public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
-      ExperimentalDesignSearchService experimentalDesignSearchService,
+      OntologyTermInformationService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService) {
     this.projectCollectionComponent = projectCollectionComponent;
     this.projectCreationService = projectCreationService;
     this.financeService = financeService;
-    this.experimentalDesignSearchService = experimentalDesignSearchService;
+    this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     layoutPage();
     configurePage();
@@ -73,7 +73,7 @@ public class ProjectOverviewPage extends Div {
   private void configurePage() {
     projectCollectionComponent.addListener(projectCreationClickedEvent -> {
       ProjectCreationDialog projectCreationDialog = new ProjectCreationDialog(financeService,
-          experimentalDesignSearchService);
+          ontologyTermInformationService);
       projectCreationDialog.addListener(this::createProject);
       projectCreationDialog.open();
     });

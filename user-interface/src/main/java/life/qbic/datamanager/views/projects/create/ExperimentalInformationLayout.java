@@ -6,15 +6,21 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
@@ -31,74 +37,86 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
   private static final String TITLE = "Experimental Information";
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
-  private final ExperimentalDesignSearchService experimentalDesignSearchService;
+  private final transient OntologyTermInformationService ontologyTermInformationService;
   private final Binder<ExperimentalInformation> experimentalInformationBinder = new Binder<>(
       ExperimentalInformation.class);
-  private final TextField experimentNameField = new TextField("Experiment Name");
-  private final MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-  private final MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-  private final MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
 
   public ExperimentalInformationLayout(
-      ExperimentalDesignSearchService experimentalDesignSearchService) {
-    this.experimentalDesignSearchService = experimentalDesignSearchService;
-    initLayout();
-    initValidation();
+      OntologyTermInformationService ontologyTermInformationService) {
+    this.ontologyTermInformationService = ontologyTermInformationService;
+    initTitleAndDescription();
+    initNameField();
+    initOntologyComboboxes();
+    addClassName("experiment-information-layout");
   }
 
-  private void initLayout() {
+  private void initTitleAndDescription() {
     Span experimentInformationTitle = new Span(TITLE);
     Span experimentInformationDescription = new Span(
         "The experiment name and sample origin information of the samples");
     experimentInformationTitle.addClassName("title");
-    experimentNameField.addClassName("experiment-name-field");
-    experimentNameField.setPlaceholder("Please enter a name for your experiment");
-    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    speciesBox.setPlaceholder("Please select one or more species for your samples");
-    specimenBox.setItemLabelGenerator(Specimen::label);
-    specimenBox.setPlaceholder("Please select one or more specimen for your samples");
-    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    analyteBox.setPlaceholder("Please select one or more analytes for your samples");
     add(experimentInformationTitle,
-        experimentInformationDescription,
-        experimentNameField,
-        speciesBox,
-        specimenBox,
-        analyteBox);
-    addClassName("experiment-information-layout");
+        experimentInformationDescription);
   }
 
-  private void initValidation() {
-    experimentalInformationBinder.setBean(new ExperimentalInformation());
+  private void initNameField() {
+    TextField experimentNameField = new TextField("Experiment Name");
+    experimentNameField.addClassName("experiment-name-field");
+    experimentNameField.setPlaceholder("Please enter a name for your experiment");
     experimentNameField.setRequired(true);
     experimentalInformationBinder.forField(experimentNameField)
         .withValidator(it -> !it.isBlank(), "Please provide a name for the experiment")
         .bind(ExperimentalInformation::getExperimentName,
             ExperimentalInformation::setExperimentName);
-    speciesBox.setRequired(true);
+    add(experimentNameField);
+  }
+
+  private void initOntologyComboboxes() {
+    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    initComboBoxWithDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
+        term -> new Species(term.getLabel()));
+    speciesBox.setItemLabelGenerator(Species::label);
+    speciesBox.setPlaceholder("Please select one or more species for your samples");
     experimentalInformationBinder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecies()),
             ExperimentalInformation::setSpecies);
-    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
-        .sorted(Comparator.comparing(Species::label)).toList());
-    speciesBox.setItemLabelGenerator(Species::label);
-    specimenBox.setRequired(true);
-    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+    initComboBoxWithDatasource(specimenBox,
+        Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY),
+        term -> new Specimen(term.getLabel()));
+    specimenBox.setItemLabelGenerator(Specimen::label);
+    specimenBox.setPlaceholder("Please select one or more specimen for your samples");
     experimentalInformationBinder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecimens()),
             ExperimentalInformation::setSpecimens);
-    specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
-        .sorted(Comparator.comparing(Specimen::label)).toList());
-    analyteBox.setRequired(true);
+    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    initComboBoxWithDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
+        term -> new Analyte(term.getLabel()));
+    analyteBox.setItemLabelGenerator(Analyte::label);
+    analyteBox.setPlaceholder("Please select one or more analytes for your samples");
     experimentalInformationBinder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getAnalytes()),
             ExperimentalInformation::setAnalytes);
-    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
-        .sorted(Comparator.comparing(Analyte::label)).toList());
-    analyteBox.setItemLabelGenerator(Analyte::label);
+    add(speciesBox, specimenBox, analyteBox);
+  }
+
+  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<Ontology> ontologies,
+      Function<OntologyClassEntity, T> ontologyMapping) {
+    box.setRequired(true);
+    box.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    box.setItemsWithFilterConverter(
+        query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
+            ontologies.stream().map(Ontology::getAbbreviation).toList(),
+            query.getOffset(),
+            query.getLimit(), query.getSortOrders().stream().map(
+                    it -> new SortOrder(it.getSorted(),
+                        it.getDirection().equals(SortDirection.DESCENDING)))
+                .collect(Collectors.toList())).stream().map(ontologyMapping),
+        entity -> entity
+    );
   }
 
   public ExperimentalInformation getExperimentalInformation() {
