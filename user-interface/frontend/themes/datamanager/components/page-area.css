@@ -20,15 +20,14 @@
   margin-bottom: 0.5rem;
 }
 
-.page-area.attachments-area {
+.page-area.project-links-component {
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-m);
   overflow: auto;
-  max-height: 50%;
 }
 
-.page-area.attachments-area .delete-button {
+.page-area.project-links-component .delete-button {
   color: var(--lumo-error-text-color);
   --lumo-button-size: var(--lumo-size-m);
   cursor: pointer;
@@ -116,7 +115,6 @@
   display: flex;
   gap: var(--lumo-space-m);
   overflow: auto;
-  max-height: 50%;
 }
 
 .page-area.experiment-list-component .content {

@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -18,11 +19,11 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -44,51 +45,53 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectInformationMain extends MainComponent implements BeforeEnterObserver,
+public class ProjectInformationMain extends Div implements BeforeEnterObserver,
     RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
-  private final ProjectContentComponent projectContentComponent;
-  private final ProjectSupportComponent projectSupportComponent;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient OntologyTermInformationService ontologyTermInformationService;
   private final UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  private final ProjectDetailsComponent projectDetailsComponent;
+  private final ExperimentListComponent experimentListComponent;
+  private final ProjectLinksComponent projectLinksComponent;
   private Context context;
 
-  public ProjectInformationMain(
-      @Autowired ProjectContentComponent projectContentComponent,
-      @Autowired ProjectSupportComponent projectSupportComponent,
+  public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
+      @Autowired ExperimentListComponent experimentListComponent,
+      @Autowired ProjectLinksComponent projectLinksComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired OntologyTermInformationService ontologyTermInformationService) {
-    super(projectContentComponent, projectSupportComponent);
     requireNonNull(userPermissions, "userPermissions must not be null");
-    requireNonNull(projectContentComponent);
-    requireNonNull(projectSupportComponent);
+    requireNonNull(projectDetailsComponent);
+    requireNonNull(experimentListComponent);
+    requireNonNull(projectLinksComponent);
     requireNonNull(addExperimentToProjectService);
     requireNonNull(ontologyTermInformationService);
-    this.projectContentComponent = projectContentComponent;
-    this.projectSupportComponent = projectSupportComponent;
+    this.projectDetailsComponent = projectDetailsComponent;
+    this.experimentListComponent = experimentListComponent;
+    this.projectLinksComponent = projectLinksComponent;
     this.userPermissions = userPermissions;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.ontologyTermInformationService = ontologyTermInformationService;
-    layoutComponent();
     addListeners();
-    log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
-        this.getClass().getSimpleName(), System.identityHashCode(this),
-        projectContentComponent.getClass().getSimpleName(),
-        System.identityHashCode(projectContentComponent),
-        projectSupportComponent.getClass().getSimpleName(),
-        System.identityHashCode(projectSupportComponent)));
-  }
-
-  private void layoutComponent() {
+    add(projectDetailsComponent, projectLinksComponent, experimentListComponent);
     addClassName("project");
+    addClassName("main");
+    log.debug(String.format(
+        "New instance for %s(#%s) created with %s(#%s), %s(#%s) and %s(#%s)",
+        this.getClass().getSimpleName(), System.identityHashCode(this),
+        projectDetailsComponent.getClass().getSimpleName(),
+        System.identityHashCode(projectDetailsComponent),
+        experimentListComponent.getClass().getSimpleName(),
+        System.identityHashCode(experimentListComponent),
+        projectLinksComponent.getClass().getSimpleName(),
+        System.identityHashCode(projectLinksComponent)));
   }
 
   /**
@@ -115,14 +118,15 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void setContext(Context context) {
-    projectContentComponent.setContext(context);
-    projectSupportComponent.setContext(context);
+    projectDetailsComponent.setContext(context);
+    projectLinksComponent.setContext(context);
+    experimentListComponent.setContext(context);
   }
 
   private void addListeners() {
-    projectSupportComponent.addExperimentSelectionListener(
+    experimentListComponent.addExperimentSelectionListener(
         event -> routeToExperiment(event.getExperimentId()));
-    projectSupportComponent.addExperimentAddButtonClickEventListener(
+    experimentListComponent.addAddButtonListener(
         event -> showAddExperimentDialog());
   }
 

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -11,7 +12,6 @@ import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -34,38 +34,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends MainComponent implements BeforeEnterObserver,
+public class SampleInformationMain extends Div implements BeforeEnterObserver,
     RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   private final SampleContentComponent sampleContentComponent;
-  private final SampleSupportComponent sampleSupportComponent;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private transient Context context;
 
-  public SampleInformationMain(
-      @Autowired SampleContentComponent sampleContentComponent,
-      @Autowired SampleSupportComponent sampleSupportComponent) {
-    super(sampleContentComponent, sampleSupportComponent);
+  public SampleInformationMain(@Autowired SampleContentComponent sampleContentComponent) {
     Objects.requireNonNull(sampleContentComponent);
-    Objects.requireNonNull(sampleSupportComponent);
     this.sampleContentComponent = sampleContentComponent;
-    this.sampleSupportComponent = sampleSupportComponent;
-    layoutComponent();
+    addClassName("sample");
+    addClassName("main");
+    add(sampleContentComponent);
     log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
         sampleContentComponent.getClass().getSimpleName(),
-        System.identityHashCode(sampleContentComponent),
-        sampleSupportComponent.getClass().getSimpleName(),
-        System.identityHashCode(sampleSupportComponent)));
-  }
-
-  private void layoutComponent() {
-    addClassName("sample");
+        System.identityHashCode(sampleContentComponent)));
   }
 
   /**
@@ -78,7 +68,6 @@ public class SampleInformationMain extends MainComponent implements BeforeEnterO
    */
   public void setContext(Context context) {
     sampleContentComponent.setContext(context);
-    sampleSupportComponent.projectId(context.projectId().orElseThrow());
   }
 
   /**

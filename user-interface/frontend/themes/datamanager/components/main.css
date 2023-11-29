@@ -8,30 +8,31 @@
   grid-template-columns: minmax(max-content, 100%);
   grid-template-rows: 1fr;
   grid-template-areas:
-    "content";
-  height: 100%;
+    "experimentdetails";
 }
 
-.main.experiment .content {
-  grid-area: content;
+.main.experiment .experiment-details-component {
+  grid-area: experimentdetails;
 }
 
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
-  grid-template-rows: minmax(10px, 100%);
+  grid-template-rows: auto;
   grid-template-areas:
-    "content support";
-  height: 100%;
+    "projectdetails experimentlist"
+    "projectdetails projectlinks";
 }
 
-.main.project .content {
-  grid-area: content;
-  height: 100%;
+.main.project .project-details-component {
+  grid-area: projectdetails;
 }
 
-.main.project .support {
-  grid-area: support;
-  height: 100%;
+.main.project .experiment-list-component {
+  grid-area: experimentlist;
+}
+
+.main.project .project-links-component {
+  grid-area: projectlinks;
 }
 
 .main.sample {
@@ -54,18 +55,18 @@
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
   .main.experiment {
-    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-columns: minmax(max-content, 100%);
+    grid-template-rows: 1fr;
     grid-template-areas:
-    "content";
-    grid-auto-rows: auto;
+    "experimentdetails";
   }
 
   .main.project {
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
-    "content"
-    "support";
-    height: 100%;
+    "projectdetails"
+    "experimentlist"
+    "projectlinks";
     grid-template-rows: auto;
   }
 

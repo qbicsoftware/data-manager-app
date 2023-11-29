@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -13,7 +14,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.MainComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -32,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
 @PermitAll
-public class ExperimentInformationMain extends MainComponent implements BeforeEnterObserver,
+public class ExperimentInformationMain extends Div implements BeforeEnterObserver,
     RouterLayout {
 
   @Serial
@@ -40,26 +41,22 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
   private static final Logger log = logger(ExperimentInformationMain.class);
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final ExperimentContentComponent experimentContentComponent;
-  private final ExperimentSupportComponent experimentSupportComponent;
+  private final ExperimentDetailsComponent experimentDetailsComponent;
   private transient Context context;
 
-  public ExperimentInformationMain(@Autowired ExperimentContentComponent experimentContentComponent,
-      @Autowired ExperimentSupportComponent experimentSupportComponent) {
-    super(experimentContentComponent, experimentSupportComponent);
-    requireNonNull(experimentSupportComponent);
-    requireNonNull(experimentContentComponent);
-    this.experimentContentComponent = experimentContentComponent;
-    this.experimentSupportComponent = experimentSupportComponent;
+  public ExperimentInformationMain(
+      @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
+    requireNonNull(experimentDetailsComponent);
+    this.experimentDetailsComponent = experimentDetailsComponent;
+    addClassName("main");
     addClassName("experiment");
+    add(experimentDetailsComponent);
     log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
+        "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
-        experimentContentComponent.getClass().getSimpleName(),
-        System.identityHashCode(experimentContentComponent),
-        experimentSupportComponent.getClass().getSimpleName(),
-        System.identityHashCode(experimentSupportComponent))
-    );
+        experimentDetailsComponent.getClass().getSimpleName(),
+        System.identityHashCode(experimentDetailsComponent)
+    ));
   }
 
 
@@ -86,13 +83,11 @@ public class ExperimentInformationMain extends MainComponent implements BeforeEn
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    setContext(this.context);
+    initializeComponentsWithContext();
   }
 
-
-  private void setContext(Context context) {
-    experimentContentComponent.setContext(context);
-    this.context = context;
+  private void initializeComponentsWithContext() {
+    experimentDetailsComponent.setContext(context);
+    add(experimentDetailsComponent);
   }
-
 }

@@ -46,7 +46,7 @@ public class ProjectLinksComponent extends PageArea {
       @Autowired FinanceServiceImpl financeService) {
     Objects.requireNonNull(financeService);
     Objects.requireNonNull(projectLinkingService);
-    addClassName("attachments-area");
+    addClassName("project-links-component");
 
     initOfferSearch(financeService);
     initProjectLinksGrid();
