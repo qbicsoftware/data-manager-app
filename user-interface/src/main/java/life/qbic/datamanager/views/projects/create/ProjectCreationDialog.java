@@ -43,7 +43,7 @@ public class ProjectCreationDialog extends Dialog {
   private static final long serialVersionUID = 7643754818237178416L;
   private static final Logger log = logger(ProjectCreationDialog.class);
   private final Div dialogContent = new Div();
-  private final String TITLE = "Create Project";
+  private static final String TITLE = "Create Project";
   private final Stepper stepper = new Stepper();
   private final ProjectDesignLayout projectDesignLayout;
   private final FundingInformationLayout fundingInformationLayout;

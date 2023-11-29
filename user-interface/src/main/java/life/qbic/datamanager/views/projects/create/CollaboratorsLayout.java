@@ -97,7 +97,7 @@ public class CollaboratorsLayout extends Div implements HasValidation {
    */
   @Override
   public void setErrorMessage(String errorMessage) {
-
+    /* Unused since we are only interested in the final values stored in the component*/
   }
 
   /**
@@ -120,7 +120,7 @@ public class CollaboratorsLayout extends Div implements HasValidation {
    */
   @Override
   public void setInvalid(boolean invalid) {
-
+    /* Unused since we are only interested in the final values stored in the component*/
   }
 
   /**

@@ -33,9 +33,8 @@ public class Stepper extends Div {
 
   public Stepper() {
     addClassName("stepper");
-    log.debug(
-        String.format("New instance for %s(#%s) created",
-            this.getClass().getSimpleName(), System.identityHashCode(this)));
+    log.debug("New instance for {} {}{} created", this.getClass().getSimpleName(), "#",
+        System.identityHashCode(this));
   }
 
   /**

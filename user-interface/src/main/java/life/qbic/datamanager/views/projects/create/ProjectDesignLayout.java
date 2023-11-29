@@ -89,7 +89,6 @@ public class ProjectDesignLayout extends Div implements HasValidation {
     codeField.setRequired(true);
     titleField.setRequired(true);
     projectDescription.setRequired(true);
-    //ToDo Do we need a binder for the OfferId?
     projectDesignBinder.forField(codeField).withValidator(ProjectCode::isValid,
             "A project code starts with Q followed by 4 letters/numbers").
         bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
@@ -146,7 +145,6 @@ public class ProjectDesignLayout extends Div implements HasValidation {
     offerSearchField.setItemLabelGenerator(
         (ItemLabelGenerator<OfferSummary>) OfferSummary::offerId);
 
-    //ToDo Custom Event handling?
     offerSearchField.addValueChangeListener(e -> {
       if (offerSearchField.getValue() != null) {
         setOffer(offerSearchField.getValue().offerId());
@@ -195,7 +193,7 @@ public class ProjectDesignLayout extends Div implements HasValidation {
    */
   @Override
   public void setErrorMessage(String errorMessage) {
-
+    /* Unused since we are only interested in the final values stored in the component*/
   }
 
   /**
@@ -218,7 +216,7 @@ public class ProjectDesignLayout extends Div implements HasValidation {
    */
   @Override
   public void setInvalid(boolean invalid) {
-
+    /* Unused since we are only interested in the final values stored in the component*/
   }
 
   /**
