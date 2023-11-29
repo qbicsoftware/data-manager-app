@@ -11,7 +11,8 @@ import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
 
 /**
- *
+ * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
+ * provided filter converter between OntologyClassEntity and the Combobox type
  */
 public class OntologyFilterConnector {
 
@@ -22,6 +23,14 @@ public class OntologyFilterConnector {
   }
 
 
+  /**
+   *
+   * @param box             The ComboBox that will allow selection of database terms
+   * @param ontologies      A list of Ontologies whose terms should be shown in the ComboBox
+   * @param ontologyMapping A mapping between OntologyClassEntity and the type T of the ComboBox
+   *                        (for example String)
+   * @param <T>             The Type of the ComboBox, for example String
+   */
   public <T> void initComboBoxWithOntologyDatasource(
       MultiSelectComboBox<T> box, List<Ontology> ontologies,
       Function<OntologyClassEntity, T> ontologyMapping) {
