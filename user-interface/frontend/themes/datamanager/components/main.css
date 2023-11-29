@@ -6,9 +6,11 @@
 
 .main.experiment {
   grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: 1fr;
+  grid-template-rows: auto;
   grid-template-areas:
     "experimentdetails";
+  /*Todo figure out margin and paddings triggering overflow*/
+  height: 99%;
 }
 
 .main.experiment .experiment-details-component {
@@ -36,29 +38,31 @@
 }
 
 .main.sample {
-  grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: 1fr;
+  grid-template-columns: auto;
+  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
   grid-template-areas:
-    "content";
-  height: 100%;
+    ". batchdetails"
+    "sampledetails sampledetails";
+  /*Todo figure out margin and paddings triggering overflow*/
+  height: 99%;
 }
 
-.main.sample .content {
-  grid-area: content;
+.main.sample .batch-details-component {
+  grid-area: batchdetails;
 }
 
-.sample-page .support {
-  grid-area: support;
+.main.sample .sample-details-component {
+  grid-area: sampledetails;
 }
 
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
   .main.experiment {
-    grid-template-columns: minmax(max-content, 100%);
-    grid-template-rows: 1fr;
+    grid-template-columns: minmax(max-content, 1fr);
     grid-template-areas:
     "experimentdetails";
+    grid-template-rows: 1fr;
   }
 
   .main.project {
@@ -67,14 +71,14 @@
     "projectdetails"
     "experimentlist"
     "projectlinks";
-    grid-template-rows: auto;
+    grid-template-rows: 1fr;
   }
 
   .main.sample {
-    grid-template-columns: minmax(1200px, 1fr);
+    grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
-    "content"
-    "support";
-    grid-auto-rows: auto;
+    "batchdetails"
+    "sampledetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
   }
 }
