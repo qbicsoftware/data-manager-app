@@ -50,6 +50,7 @@ public class Sample {
 
   @Embedded
   private SampleCode sampleCode;
+
   @Embedded
   private SampleOrigin sampleOrigin;
 
@@ -128,6 +129,36 @@ public class Sample {
     return this.analysisMethod;
   }
 
+  public void setAssignedBatch(BatchId assignedBatch) {
+    this.assignedBatch = assignedBatch;
+  }
+
+  public void setBiologicalReplicateId(
+      BiologicalReplicateId biologicalReplicateId) {
+    this.biologicalReplicateId = biologicalReplicateId;
+  }
+
+  public void setExperimentalGroupId(Long experimentalGroupId) {
+    this.experimentalGroupId = experimentalGroupId;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
+  }
+
+  public void setComment(String comment) {
+    this.comment = comment;
+  }
+
+  public void setAnalysisMethod(
+      AnalysisMethod analysisMethod) {
+    this.analysisMethod = analysisMethod;
+  }
+
+  public void setSampleOrigin(SampleOrigin sampleOrigin) {
+    this.sampleOrigin = sampleOrigin;
+  }
+
   static class AnalysisMethodConverter implements AttributeConverter<AnalysisMethod, String> {
     
     @Override
@@ -140,5 +171,6 @@ public class Sample {
       return AnalysisMethod.valueOf(s);
     }
   }
+
 
 }

@@ -2,21 +2,28 @@ package life.qbic.projectmanagement.infrastructure.sample;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
+import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnector.SampleNotDeletedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -51,10 +58,8 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Result<Collection<Sample>, ResponseCode> addAll(Project project,
       Collection<Sample> samples) {
-    Collection<SampleId> sampleIds = new ArrayList<>();
-    samples.forEach(sample -> sampleIds.add(sample.sampleId()));
-    String commaSeperatedSampleIds = sampleIds.stream().map(Object::toString).collect(
-        Collectors.joining(", "));
+    String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
+        samples.stream().map(Sample::sampleId).toList());
     try {
       this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
@@ -72,6 +77,26 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Result.fromValue(samples);
   }
 
+  private String buildCommaSeparatedSampleIds(Collection<SampleId> sampleIds) {
+    return sampleIds.stream().map(SampleId::toString).collect(Collectors.joining(", "));
+  }
+
+  @Transactional
+  @Override
+  public void deleteAll(Project project,
+      Collection<SampleId> samples) {
+    List<SampleCode> sampleCodes = qbicSampleRepository.findAllById(samples)
+        .stream().map(Sample::sampleCode).toList();
+    this.qbicSampleRepository.deleteAllById(samples);
+    try {
+      sampleDataRepo.deleteAll(project.getProjectCode(), sampleCodes);
+    } catch (SampleNotDeletedException sampleNotDeletedException) {
+      throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
+          sampleNotDeletedException,
+          ErrorCode.DATA_ATTACHED_TO_SAMPLES, ErrorParameters.empty());
+    }
+  }
+
   @Override
   public Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
       ExperimentId experimentId) {
@@ -85,6 +110,26 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
     }
     return Result.fromValue(samples);
+  }
+
+  @Override
+  public List<Sample> findSamplesByBatchId(
+      BatchId batchId) {
+    Objects.requireNonNull(batchId, "batchId must not be null");
+    return qbicSampleRepository.findAllByAssignedBatch(batchId);
+  }
+
+  @Transactional
+  @Override
+  public void updateAll(Project project,
+      Collection<Sample> updatedSamples) {
+    qbicSampleRepository.saveAll(updatedSamples);
+    sampleDataRepo.updateAll(updatedSamples);
+  }
+
+  @Override
+  public List<Sample> findSamplesBySampleId(List<SampleId> sampleId) {
+    return qbicSampleRepository.findAllById(sampleId);
   }
 
 }

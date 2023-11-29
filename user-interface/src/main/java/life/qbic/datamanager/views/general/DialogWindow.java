@@ -1,7 +1,9 @@
 package life.qbic.datamanager.views.general;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+
 /**
  * <b>Dialog to create something</b>
  *
@@ -11,7 +13,7 @@ import com.vaadin.flow.component.dialog.Dialog;
  *
  * @since 1.0.0
  */
-public class DialogWindow extends Dialog {
+public abstract class DialogWindow extends Dialog {
 
   protected final Button confirmButton = new Button("Confirm");
   protected final Button cancelButton = new Button("Cancel");
@@ -23,7 +25,24 @@ public class DialogWindow extends Dialog {
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
     getFooter().add(cancelButton, confirmButton);
+    cancelButton.addClickListener(this::onCancelClicked);
+    confirmButton.addClickListener(this::onConfirmClicked);
   }
+
+  /**
+   * Overwrite to change what happens on confirm button clicked
+   *
+   * @param clickEvent
+   */
+  protected abstract void onConfirmClicked(ClickEvent<Button> clickEvent);
+
+  /**
+   * Overwrite to change what happens on cancel button clicked.
+   *
+   * @param clickEvent
+   */
+  protected abstract void onCancelClicked(ClickEvent<Button> clickEvent);
+
 
   /**
    * Sets the label of the button that confirms the finished Dialog Window
@@ -40,4 +59,5 @@ public class DialogWindow extends Dialog {
   public void setCancelButtonLabel(String cancelLabel){
     cancelButton.setText(cancelLabel);
   }
+
 }

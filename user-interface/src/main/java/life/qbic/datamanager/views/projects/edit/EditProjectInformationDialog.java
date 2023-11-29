@@ -46,9 +46,7 @@ public class EditProjectInformationDialog extends DialogWindow {
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
-    confirmButton.addClickListener(this::onConfirmClicked);
     setCancelButtonLabel("Cancel");
-    cancelButton.addClickListener(this::onCancelClicked);
 
     formLayout = new ProjectFormLayout().buildEditProjectLayout();
     binder = formLayout.getBinder();
@@ -72,7 +70,8 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ProjectInformation projectInformation = new ProjectInformation();
     try {
       binder.writeBean(projectInformation);
@@ -87,7 +86,8 @@ public class EditProjectInformationDialog extends DialogWindow {
     formLayout.validate();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
     close();
   }

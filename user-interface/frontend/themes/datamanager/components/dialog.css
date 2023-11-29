@@ -87,78 +87,42 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
-.batch-registration-dialog vaadin-tabsheet {
-  height: 100%;
-  width: 100%;
-}
-
+.batch-update-dialog::part(overlay),
 .batch-registration-dialog::part(overlay) {
-  min-width: 66vw;
+  min-width: 80vw;
   height: 100%;
 }
 
-.batch-registration-dialog .stepper vaadin-tabs {
+.batch-update-dialog .batch-name,
+.batch-update-dialog .experiment-name,
+.batch-registration-dialog .experiment-name {
+  margin: auto 0.3em;
+  font-weight: bolder;
+}
+
+.batch-update-dialog .spreadsheet-controls,
+.batch-registration-dialog .spreadsheet-controls {
+  display: flex;
+  justify-content: space-between;
+  align-content: baseline;
+  flex-direction: row-reverse;
+}
+
+.batch-update-dialog .spreadsheet-controls .error-text,
+.batch-registration-dialog .spreadsheet-controls .error-text {
+  color: var(--lumo-error-text-color);
+}
+
+.batch-update-dialog .batch-controls > .batch-name-field,
+.batch-registration-dialog .batch-controls > .batch-name-field {
+  width: calc(100% / 3);
+}
+
+.batch-update-dialog .spreadsheet-controls .row-controls,
+.batch-registration-dialog .spreadsheet-controls .row-controls {
   display: inline-flex;
-}
-
-.batch-registration-dialog .stepper vaadin-tab {
-  gap: var(--lumo-space-s);
-}
-
-.batch-registration-dialog .batch-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-  height: 100%;
-}
-
-.batch-registration-dialog .batch-content .batch-information {
-  display: flex;
-  flex-direction: column;
-  width: fit-content;
-}
-
-.batch-registration-dialog .batch-content .data-type-information {
-  display: flex;
-  flex-direction: column;
-}
-
-.batch-registration-dialog .batch-content .data-type-information .title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-l);
-  margin-bottom: 0.5rem;
-}
-
-.batch-registration-dialog .batch-content .buttons {
-  display: flex;
-  flex-direction: row;
+  column-gap: 0.5em;
   justify-content: end;
-  gap: var(--lumo-space-s);
-}
-
-.batch-registration-dialog .sample-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-m);
-
-}
-
-.batch-registration-dialog .sample-content .buttons {
-  display: flex;
-  flex-direction: row;
-  justify-content: end;
-  gap: var(--lumo-space-s);
-}
-
-.batch-registration-dialog .spreadsheet-container {
-  width: 100%;
-  height: 100%;
-}
-
-.batch-registration-dialog .spreadsheet {
-  width: 100%;
-  height: 100%;
 }
 
 .add-experiment-dialog::part(overlay),
