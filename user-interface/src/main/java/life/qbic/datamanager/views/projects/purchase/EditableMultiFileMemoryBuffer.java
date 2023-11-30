@@ -48,6 +48,8 @@ public class EditableMultiFileMemoryBuffer implements MultiFileReceiver {
 
   /**
    * Clears the complete buffer and removes any content cashed in the buffer.
+   * <p>
+   * All cached files and their content are removed from the buffer.
    *
    * @since 1.0.0
    */
