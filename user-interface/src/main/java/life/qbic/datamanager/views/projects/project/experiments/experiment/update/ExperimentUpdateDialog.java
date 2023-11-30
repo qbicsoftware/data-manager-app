@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,13 +18,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
@@ -47,12 +43,12 @@ public class ExperimentUpdateDialog extends DialogWindow {
 
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
-  private final transient OntologyTermInformationService ontologyTermInformationService;
+  private final OntologyFilterConnector ontologyFilterConnector;
 
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public ExperimentUpdateDialog(OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyTermInformationService = ontologyTermInformationService;
+    this.ontologyFilterConnector = new OntologyFilterConnector(ontologyTermInformationService);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -67,7 +63,8 @@ public class ExperimentUpdateDialog extends DialogWindow {
             + "values are allowed!");
 
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-        initComboBoxWithDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
+    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
             term -> new Species(term.getLabel()));
     speciesBox.setItemLabelGenerator(Species::label);
     binder.forField(speciesBox)
@@ -76,7 +73,8 @@ public class ExperimentUpdateDialog extends DialogWindow {
             ExperimentDraft::setSpecies);
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-    initComboBoxWithDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY,
+    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY,
             Ontology.BRENDA_TISSUE_ONTOLOGY), term -> new Specimen(term.getLabel()));
     specimenBox.setItemLabelGenerator(Specimen::label);
     binder.forField(specimenBox)
@@ -85,7 +83,8 @@ public class ExperimentUpdateDialog extends DialogWindow {
             ExperimentDraft::setSpecimens);
 
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
-    initComboBoxWithDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
+    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
         term -> new Analyte(term.getLabel()));
     analyteBox.setItemLabelGenerator(Analyte::label);
     binder.forField(analyteBox)
@@ -107,23 +106,6 @@ public class ExperimentUpdateDialog extends DialogWindow {
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     add(updateExperimentContent);
-  }
-
-  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<Ontology> ontologies,
-      Function<OntologyClassEntity, T> ontologyMapping) {
-
-    box.setRequired(true);
-    box.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-
-    box.setItemsWithFilterConverter(
-        query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
-            ontologies.stream().map(Ontology::getAbbreviation).toList(),
-            query.getOffset(),
-            query.getLimit(), query.getSortOrders().stream().map(
-                    it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-                .collect(Collectors.toList())).stream().map(ontologyMapping),
-        entity -> entity
-    );
   }
 
   @Override
