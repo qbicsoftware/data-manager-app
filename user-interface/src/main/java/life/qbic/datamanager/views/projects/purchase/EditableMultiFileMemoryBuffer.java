@@ -12,11 +12,12 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Editable multi-file memory buffer</b>
+ * <p>
+ * An improved {@link MultiFileReceiver} enables removing cached file content, which Vaadin's
+ * {@link com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer} does not provide.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class EditableMultiFileMemoryBuffer implements MultiFileReceiver {
 
@@ -45,6 +46,11 @@ public class EditableMultiFileMemoryBuffer implements MultiFileReceiver {
     files.remove(fileName);
   }
 
+  /**
+   * Clears the complete buffer and removes any content cashed in the buffer.
+   *
+   * @since 1.0.0
+   */
   public void clear() {
     files.clear();
   }

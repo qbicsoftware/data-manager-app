@@ -80,7 +80,7 @@ public class UploadPurchaseDialog extends DialogWindow {
     disclaimer.add(new Paragraph("Please tick the checkbox if the offer is signed."));
 
 
-
+    // Add upload offers to the purchase item section, where users can set the signed flag
     upload.addSucceededListener(succeededEvent -> {
       var purchase = new PurchaseItem(succeededEvent.getFileName());
       uploadedPurchaseItems.add(purchase);
@@ -88,14 +88,18 @@ public class UploadPurchaseDialog extends DialogWindow {
       toggleFileSectionIfEmpty();
     });
 
+    // Synchronise the Vaadin upload component with the purchase list display
+    // When a file is removed  from the upload component, we also want to remove it properly from memory
+    // and from any additional display
     upload.getElement().addEventListener("file-remove", this::processClientFileRemoveEvent)
         .addEventData(VAADIN_FILENAME_EVENT);
 
+    // Put the elements together
     add(titleBox, upload, restrictions, disclaimer, uploadedPurchaseItems);
     addClassName("purchase-item-upload");
     confirmButton.setText("Save");
 
-
+    // Init the visibility rendering once
     toggleFileSectionIfEmpty();
   }
 
