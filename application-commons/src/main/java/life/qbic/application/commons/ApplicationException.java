@@ -144,6 +144,7 @@ public class ApplicationException extends RuntimeException {
     NO_SPECIES_DEFINED,
     NO_SPECIMEN_DEFINED,
     NO_ANALYTE_DEFINED,
+    DATA_ATTACHED_TO_SAMPLES
     ;
 
     @Override

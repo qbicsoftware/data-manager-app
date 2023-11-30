@@ -43,13 +43,6 @@ public class UserJpaRepository implements UserDataStorage {
   @Override
   public void save(User user) {
     userRepo.save(user);
-    // TODO: we need to broadcast the user registered event and consume it in the project management
-    // domain, such that need to add the SID entry, which is project management concern
-    //
-    // if (!sidRepository.existsBySidEqualsIgnoreCaseAndPrincipalEquals(user.emailAddress().get(),
-    //    true)) {
-    //  addSid(user.id().get(), true);
-   // }
   }
 
   @Override

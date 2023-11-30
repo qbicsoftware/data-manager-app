@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.policy.integration;
 
-import java.util.Optional;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.projectmanagement.application.communication.broadcasting.Subscriber;
@@ -22,7 +21,7 @@ import org.jobrunr.scheduling.JobScheduler;
  */
 public class UserRegistered implements Subscriber {
 
-  private static final String TOPIC = "User";
+  private static final String TOPIC = "userRegistered";
 
   private final JobScheduler jobScheduler;
 
@@ -43,9 +42,8 @@ public class UserRegistered implements Subscriber {
     if (!event.type().equals(TOPIC)) {
       throw new WrongTypeException("Unknown type " + event.type());
     }
-    var userId = Optional.ofNullable(
-        event.content().getOrDefault("userId", null));
-    jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId.orElse(null)));
+    var userId = event.content().getOrDefault("userId", null);
+    jobScheduler.enqueue(() -> createInitAuthorizationEntry(userId));
   }
 
   /**

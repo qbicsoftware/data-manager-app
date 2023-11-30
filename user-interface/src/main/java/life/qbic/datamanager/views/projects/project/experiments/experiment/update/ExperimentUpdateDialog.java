@@ -9,18 +9,24 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
@@ -41,18 +47,19 @@ public class ExperimentUpdateDialog extends DialogWindow {
 
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
+  private final transient OntologyTermInformationService ontologyTermInformationService;
 
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
-  public ExperimentUpdateDialog(
-      ExperimentalDesignSearchService experimentalDesignSearchService) {
+  public ExperimentUpdateDialog(OntologyTermInformationService ontologyTermInformationService) {
+    this.ontologyTermInformationService = ontologyTermInformationService;
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
 
     TextField experimentNameField = new TextField("Experiment Name");
     experimentNameField.addClassName(WIDTH_INPUT);
-    binder.forField(experimentNameField).asRequired("Please provie a name for the experiment")
+    binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
     Span experimentDescription = new Span(
@@ -60,38 +67,31 @@ public class ExperimentUpdateDialog extends DialogWindow {
             + "values are allowed!");
 
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-    speciesBox.setRequired(true);
-    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+        initComboBoxWithDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
+            term -> new Species(term.getLabel()));
+    speciesBox.setItemLabelGenerator(Species::label);
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
-    speciesBox.setItems(experimentalDesignSearchService.retrieveSpecies().stream()
-        .sorted(Comparator.comparing(Species::label)).toList());
-    speciesBox.setItemLabelGenerator(Species::label);
 
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-    specimenBox.setRequired(true);
-    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    initComboBoxWithDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY,
+            Ontology.BRENDA_TISSUE_ONTOLOGY), term -> new Specimen(term.getLabel()));
+    specimenBox.setItemLabelGenerator(Specimen::label);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
-    specimenBox.setItems(experimentalDesignSearchService.retrieveSpecimens().stream()
-        .sorted(Comparator.comparing(Specimen::label)).toList());
-    specimenBox.setItemLabelGenerator(Specimen::label);
 
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
-    analyteBox.setRequired(true);
-    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+    initComboBoxWithDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
+        term -> new Analyte(term.getLabel()));
+    analyteBox.setItemLabelGenerator(Analyte::label);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-    analyteBox.setItems(experimentalDesignSearchService.retrieveAnalytes().stream()
-        .sorted(Comparator.comparing(Analyte::label)).toList());
-    analyteBox.setItemLabelGenerator(Analyte::label);
-
     Div updateExperimentContent = new Div();
     updateExperimentContent.addClassName("update-experiment-content");
     updateExperimentContent.add(experimentHeader,
@@ -107,12 +107,27 @@ public class ExperimentUpdateDialog extends DialogWindow {
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     add(updateExperimentContent);
-
-    confirmButton.addClickListener(this::onConfirmClicked);
-    cancelButton.addClickListener(this::onCancelClicked);
   }
 
-  private void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<Ontology> ontologies,
+      Function<OntologyClassEntity, T> ontologyMapping) {
+
+    box.setRequired(true);
+    box.addClassNames(CHIP_BADGE, WIDTH_INPUT);
+
+    box.setItemsWithFilterConverter(
+        query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
+            ontologies.stream().map(Ontology::getAbbreviation).toList(),
+            query.getOffset(),
+            query.getLimit(), query.getSortOrders().stream().map(
+                    it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
+                .collect(Collectors.toList())).stream().map(ontologyMapping),
+        entity -> entity
+    );
+  }
+
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
     ExperimentDraft oldDraft = binder.getBean();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
@@ -122,7 +137,8 @@ public class ExperimentUpdateDialog extends DialogWindow {
     }
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
