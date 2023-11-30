@@ -56,10 +56,10 @@
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
   .main.experiment {
-    grid-template-columns: minmax(max-content, 1fr);
+    grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "experimentdetails";
-    grid-template-rows: 1fr;
+    grid-template-rows: minmax(min-content, 1fr);
   }
 
   .main.project {
@@ -68,7 +68,7 @@
     "projectdetails"
     "experimentlist"
     "projectlinks";
-    grid-template-rows: 1fr;
+    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
   }
 
   .main.sample {
