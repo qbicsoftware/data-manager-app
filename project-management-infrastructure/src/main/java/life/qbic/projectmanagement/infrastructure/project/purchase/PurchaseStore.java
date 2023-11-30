@@ -10,11 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Purchase Store</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link ProjectPurchaseStorage} interface.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class PurchaseStore implements ProjectPurchaseStorage {

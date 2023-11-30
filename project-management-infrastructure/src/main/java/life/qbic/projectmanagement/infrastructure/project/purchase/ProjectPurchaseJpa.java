@@ -4,11 +4,11 @@ import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase
 import org.springframework.data.repository.CrudRepository;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Project Purchase Jpa</b>
+ * <p>
+ * JPA interface for {@link ServicePurchase} items.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface ProjectPurchaseJpa extends CrudRepository<ServicePurchase, Long> {
 

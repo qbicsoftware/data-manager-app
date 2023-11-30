@@ -11,11 +11,11 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Offer</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * An offer in the context of project management, not finance and accounting.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity(name = "purchase_offer")
 public class Offer {

@@ -3,11 +3,13 @@ package life.qbic.projectmanagement.application.api;
 import java.io.Serial;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Purchase Store Exception</b>
+ * <p>
+ * Exception that shall be thrown if a
+ * {@link life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase} item cannot be
+ * stored in the persistence storage implementation.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class PurchaseStoreException extends RuntimeException {
 

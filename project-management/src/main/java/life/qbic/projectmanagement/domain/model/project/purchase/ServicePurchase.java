@@ -12,11 +12,11 @@ import java.time.Instant;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Service Purchase</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A service purchase deliverable for a project</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity
 @Table(name = "service_purchase")
@@ -26,7 +26,7 @@ public class ServicePurchase {
 
   private Instant purchasedOn;
 
-  @OneToOne(cascade= CascadeType.ALL )
+  @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "offerReference", referencedColumnName = "id")
   private Offer offer;
 
