@@ -9,8 +9,6 @@
   grid-template-rows: auto;
   grid-template-areas:
     "experimentdetails";
-  /*Todo figure out margin and paddings triggering overflow*/
-  height: 99%;
 }
 
 .main.experiment .experiment-details-component {
@@ -23,6 +21,7 @@
   grid-template-areas:
     "projectdetails experimentlist"
     "projectdetails projectlinks";
+  gap: var(--lumo-space-s);
 }
 
 .main.project .project-details-component {
@@ -43,8 +42,6 @@
   grid-template-areas:
     ". batchdetails"
     "sampledetails sampledetails";
-  /*Todo figure out margin and paddings triggering overflow*/
-  height: 99%;
 }
 
 .main.sample .batch-details-component {

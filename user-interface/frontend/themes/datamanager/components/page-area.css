@@ -9,7 +9,6 @@
   box-sizing: border-box;
   text-overflow: ellipsis;
   max-width: 100%;
-  margin: var(--lumo-space-s);
   padding: var(--lumo-space-xl);
 }
 
