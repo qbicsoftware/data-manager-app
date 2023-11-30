@@ -45,4 +45,7 @@ public class EditableMultiFileMemoryBuffer implements MultiFileReceiver {
     files.remove(fileName);
   }
 
+  public void clear() {
+    files.clear();
+  }
 }

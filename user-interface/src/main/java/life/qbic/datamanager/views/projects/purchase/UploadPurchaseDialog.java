@@ -2,7 +2,9 @@ package life.qbic.datamanager.views.projects.purchase;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -21,11 +23,11 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Upload Purchase Dialog</b>
+ * <p>
+ * A dialog window that enables uploads of purchase items such as an offer.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class UploadPurchaseDialog extends DialogWindow {
 
@@ -40,7 +42,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   private EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
   private Div uploadedPurchaseItems;
 
-  private List<PurchaseItem> purchaseItemsCache;
+  private List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
 
   private Div disclaimer;
 
@@ -49,35 +51,35 @@ public class UploadPurchaseDialog extends DialogWindow {
   private List<ComponentEventListener<ConfirmEvent<UploadPurchaseDialog>>> confirmListeners = new ArrayList<>();
 
   public UploadPurchaseDialog() {
+    // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
     upload = new Upload(multiFileMemoryBuffer);
     upload.setAcceptedFileTypes("application/pdf", ".pdf");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
-    purchaseItemsCache = new ArrayList<>();
+    // Title box configuration
     titleBox = new Div();
     var title = new Span("Upload your offer");
     title.addClassName("title");
     titleBox.add(title);
     titleBox.addClassName("title-box");
 
+    // Upload restriction display configuration
     var restrictions = new Div();
     restrictions.addClassName("restrictions");
     restrictions.add(new Span("Accepted file formats: PDF (.pdf)"));
     restrictions.add(
         new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
 
-    this.addClassName("purchase-item-upload");
-
+    // Uploaded purchase items display configuration
     uploadedPurchaseItems = new Div();
     uploadedPurchaseItems.addClassName("uploaded-documents");
-
-    this.disclaimer = new Div();
+    disclaimer = new Div();
     disclaimer.addClassName("instructions");
     disclaimer.add(new Span("Set offer signed status"));
     disclaimer.add(new Paragraph("Please tick the checkbox if the offer is signed."));
 
-    add(titleBox, upload, restrictions, disclaimer, uploadedPurchaseItems);
+
 
     upload.addSucceededListener(succeededEvent -> {
       var purchase = new PurchaseItem(succeededEvent.getFileName());
@@ -86,15 +88,25 @@ public class UploadPurchaseDialog extends DialogWindow {
       toggleFileSectionIfEmpty();
     });
 
-    this.confirmButton.setText("Save");
-
     upload.getElement().addEventListener("file-remove", this::processClientFileRemoveEvent)
-        .addEventData("event.detail.file.name");
+        .addEventData(VAADIN_FILENAME_EVENT);
 
-    this.cancelButton.addClickListener(buttonClickEvent -> this.close());
-    this.confirmButton.addClickListener(buttonClickEvent -> fireConfirmEvent());
+    add(titleBox, upload, restrictions, disclaimer, uploadedPurchaseItems);
+    addClassName("purchase-item-upload");
+    confirmButton.setText("Save");
+
 
     toggleFileSectionIfEmpty();
+  }
+
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    fireConfirmEvent();
+  }
+
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    this.close();
   }
 
   private void fireConfirmEvent() {
@@ -161,6 +173,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   public void close() {
     emptyCachedBuffer();
     removeContent();
+    toggleFileSectionIfEmpty();
     super.close();
   }
 
@@ -171,6 +184,6 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void emptyCachedBuffer() {
-    this.multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
+    this.multiFileMemoryBuffer.clear();
   }
 }
