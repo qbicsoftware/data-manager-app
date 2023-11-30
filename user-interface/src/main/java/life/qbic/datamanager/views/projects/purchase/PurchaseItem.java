@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.projects.purchase;
 
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.Objects;
 
@@ -26,11 +28,15 @@ public class PurchaseItem extends Div {
   public PurchaseItem(String fileName) {
     this.fileName = fileName;
     fileNameLabel = new Div();
-    fileNameLabel.setText(fileName);
+    fileNameLabel.add(VaadinIcon.FILE.create(), new Span(fileName));
     signedCheckBox = new Checkbox();
 
     addClassName("purchase-item");
-    add(fileNameLabel, signedCheckBox);
+    Div signatureBox = new Div();
+    signatureBox.addClassName("signature-box");
+    signatureBox.add(new Span("Signed"));
+    signatureBox.add(signedCheckBox);
+    add(fileNameLabel, signatureBox);
   }
 
   public String fileName() {

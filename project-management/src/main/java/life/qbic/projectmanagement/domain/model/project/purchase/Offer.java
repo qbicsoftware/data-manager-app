@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.model.project.purchase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import java.util.Arrays;
@@ -20,10 +21,8 @@ import java.util.Random;
 public class Offer {
 
   @Id
-  @GeneratedValue()
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  private Long referenceId;
 
   private boolean signed;
 
@@ -45,7 +44,6 @@ public class Offer {
 
   protected Offer(Long referenceId, boolean signed, String fileName,
       byte[] fileContent) {
-    this.referenceId = referenceId;
     this.signed = signed;
     this.fileName = fileName;
     this.fileContent = fileContent;
@@ -61,13 +59,13 @@ public class Offer {
     }
     Offer offer = (Offer) o;
     return signed == offer.signed && Objects.equals(id, offer.id)
-        && Objects.equals(referenceId, offer.referenceId) && Objects.equals(
-        fileName, offer.fileName) && Arrays.equals(fileContent, offer.fileContent);
+        && Objects.equals(fileName, offer.fileName) && Arrays.equals(fileContent,
+        offer.fileContent);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(id, referenceId, signed, fileName);
+    int result = Objects.hash(id, signed, fileName);
     result = 31 * result + Arrays.hashCode(fileContent);
     return result;
   }

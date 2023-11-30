@@ -49,8 +49,11 @@ public class ProjectContentComponent extends Div {
     Button uploadOffer = new Button("Upload offer");
     uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
     uploadPurchaseDialog.subscribe(
-        uploadPurchaseDialogConfirmEvent -> addPurchaseItemsToProject(
-            uploadPurchaseDialog.purchaseItems()));
+        uploadPurchaseDialogConfirmEvent -> {
+          addPurchaseItemsToProject(
+              uploadPurchaseDialog.purchaseItems());
+          uploadPurchaseDialog.close();
+        });
 
     add(uploadOffer);
 
