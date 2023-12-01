@@ -30,8 +30,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 /**
  * <b>Project Form Layout</b>
  *
- * <p>Used to style and list the common elements of Project Edit and Project Creation
- * functionality</p>
+ * <p>Used to style and list the common elements of Project Edit functionality</p>
  *
  * @since 1.0.0
  */
@@ -42,7 +41,6 @@ public class ProjectFormLayout extends FormLayout {
   @Serial
   private static final long serialVersionUID = 972380320581239752L;
   private final Div projectContactsLayout = new Div();
-
   private final Binder<ProjectInformation> binder;
   private final TextField titleField;
   private final TextArea projectObjective;
