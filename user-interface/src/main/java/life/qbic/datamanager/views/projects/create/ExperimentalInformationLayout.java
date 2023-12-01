@@ -6,7 +6,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.SortDirection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,11 +14,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
@@ -37,13 +33,13 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
   private static final String TITLE = "Experimental Information";
   private static final String CHIP_BADGE = "chip-badge";
   private static final String WIDTH_INPUT = "full-width-input";
-  private final transient OntologyTermInformationService ontologyTermInformationService;
   private final Binder<ExperimentalInformation> experimentalInformationBinder = new Binder<>(
       ExperimentalInformation.class);
+  private final transient OntologyFilterConnector ontologyFilterConnector;
 
   public ExperimentalInformationLayout(
       OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyTermInformationService = ontologyTermInformationService;
+    this.ontologyFilterConnector = new OntologyFilterConnector(ontologyTermInformationService);
     initTitleAndDescription();
     initNameField();
     initOntologyComboboxes();
@@ -73,7 +69,8 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
 
   private void initOntologyComboboxes() {
     MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
-    initComboBoxWithDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox,
+        List.of(Ontology.NCBI_TAXONOMY),
         term -> new Species(term.getLabel()));
     speciesBox.setItemLabelGenerator(Species::label);
     speciesBox.setPlaceholder("Please select one or more species for your samples");
@@ -81,8 +78,9 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
         .asRequired("Please select at least one species")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecies()),
             ExperimentalInformation::setSpecies);
+    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
-    initComboBoxWithDatasource(specimenBox,
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox,
         Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY),
         term -> new Specimen(term.getLabel()));
     specimenBox.setItemLabelGenerator(Specimen::label);
@@ -91,8 +89,10 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
         .asRequired("Please select at least one specimen")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecimens()),
             ExperimentalInformation::setSpecimens);
+    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
-    initComboBoxWithDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox,
+        List.of(Ontology.BIOASSAY_ONTOLOGY),
         term -> new Analyte(term.getLabel()));
     analyteBox.setItemLabelGenerator(Analyte::label);
     analyteBox.setPlaceholder("Please select one or more analytes for your samples");
@@ -100,24 +100,10 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
         .asRequired("Please select at least one analyte")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getAnalytes()),
             ExperimentalInformation::setAnalytes);
+    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
     add(speciesBox, specimenBox, analyteBox);
   }
 
-  private <T> void initComboBoxWithDatasource(MultiSelectComboBox<T> box, List<Ontology> ontologies,
-      Function<OntologyClassEntity, T> ontologyMapping) {
-    box.setRequired(true);
-    box.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    box.setItemsWithFilterConverter(
-        query -> ontologyTermInformationService.queryOntologyTerm(query.getFilter().orElse(""),
-            ontologies.stream().map(Ontology::getAbbreviation).toList(),
-            query.getOffset(),
-            query.getLimit(), query.getSortOrders().stream().map(
-                    it -> new SortOrder(it.getSorted(),
-                        it.getDirection().equals(SortDirection.DESCENDING)))
-                .collect(Collectors.toList())).stream().map(ontologyMapping),
-        entity -> entity
-    );
-  }
 
   public ExperimentalInformation getExperimentalInformation() {
     ExperimentalInformation experimentalInformation = new ExperimentalInformation();
@@ -188,9 +174,11 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
       specimen = new ArrayList<>();
       analytes = new ArrayList<>();
     }
+
     public String getExperimentName() {
       return experimentName;
     }
+
     public void setExperimentName(String experimentName) {
       this.experimentName = experimentName;
     }
