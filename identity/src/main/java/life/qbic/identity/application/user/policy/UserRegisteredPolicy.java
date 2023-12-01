@@ -1,9 +1,9 @@
 package life.qbic.identity.application.user.policy;
 
-import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
+import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSubmitIntegrationEvent;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
 import life.qbic.identity.domain.repository.UserRepository;
@@ -33,7 +33,11 @@ public class UserRegisteredPolicy {
         userRepository, emailConfirmationLinkSupplier);
     var submitIntegrationEvent = new WhenUserRegisteredSubmitIntegrationEvent(eventHub, jobScheduler);
 
+    var whenUserActivatedSubmitIntegrationEvent = new WhenUserActivatedSubmitIntegrationEvent(
+        eventHub, jobScheduler);
+
     DomainEventDispatcher.instance().subscribe(confirmationEmail);
     DomainEventDispatcher.instance().subscribe(submitIntegrationEvent);
+    DomainEventDispatcher.instance().subscribe(whenUserActivatedSubmitIntegrationEvent);
   }
 }

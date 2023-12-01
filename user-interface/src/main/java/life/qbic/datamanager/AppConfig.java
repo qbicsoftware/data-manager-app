@@ -38,7 +38,7 @@ import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.integration.UserRegistered;
+import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
@@ -172,12 +172,11 @@ public class AppConfig {
   }
 
   @Bean
-  public UserRegistered userRegisteredIntegration(
-      JobScheduler jobScheduler, AuthorityService authorityService,
-      MessageRouter messageRouter) {
-    UserRegistered userRegistered = new UserRegistered(jobScheduler, authorityService);
-    messageRouter.register(userRegistered);
-    return userRegistered;
+  public UserActivated userEmailConfirmedIntegration(JobScheduler jobScheduler,
+      AuthorityService authorityService, MessageRouter messageRouter) {
+    UserActivated userActivated = new UserActivated(jobScheduler, authorityService);
+    messageRouter.register(userActivated);
+    return userActivated;
   }
 
   /*
