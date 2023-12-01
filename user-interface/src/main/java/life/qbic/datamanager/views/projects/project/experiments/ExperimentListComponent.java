@@ -21,7 +21,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -56,10 +55,8 @@ public class ExperimentListComponent extends PageArea {
   private Context context;
 
   public ExperimentListComponent(
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(experimentalDesignSearchService);
     this.experimentInformationService = experimentInformationService;
     this.add(listBox);
     this.addClassName("experiment-list-component");
