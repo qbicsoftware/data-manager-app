@@ -1,9 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
 
-import jakarta.persistence.Embeddable;
 import java.util.Objects;
 
-@Embeddable
 public class OntologyClassDTO {
 
   String ontology;

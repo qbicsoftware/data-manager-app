@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.model.sample;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;

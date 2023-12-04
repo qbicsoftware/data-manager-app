@@ -289,12 +289,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
         .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
-    sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species")
-        .setTooltipGenerator(SamplePreview::species);
-    sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
-        .setSortProperty("specimen").setTooltipGenerator(SamplePreview::specimen);
-    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
-        .setTooltipGenerator(SamplePreview::analyte);
+    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species").setSortProperty("species")
+        .setTooltipGenerator(SamplePreview::speciesToolTipGenerator);
+    sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
+        .setSortProperty("specimen").setTooltipGenerator(SamplePreview::specimenToolTipGenerator);
+    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte").setSortProperty("analyte")
+        .setTooltipGenerator(SamplePreview::analyteToolTipGenerator);
     sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
     sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")

@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.sample;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -15,7 +16,9 @@ import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -50,9 +53,12 @@ public class SamplePreview {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
-  private String species;
-  private String specimen;
-  private String analyte;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO species;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO specimen;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO analyte;
 
   protected SamplePreview() {
     //needed by JPA
@@ -60,8 +66,8 @@ public class SamplePreview {
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisMethod, String comment) {
+      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
+      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -114,8 +120,8 @@ public class SamplePreview {
   public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
       String sampleCode,
       String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisMethod, String comment) {
+      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
+      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
         sampleLabel, experimentalGroup, species, specimen, analyte, analysisMethod, comment);
   }
@@ -144,15 +150,15 @@ public class SamplePreview {
     return sampleLabel;
   }
 
-  public String species() {
+  public OntologyClassDTO species() {
     return species;
   }
 
-  public String specimen() {
+  public OntologyClassDTO specimen() {
     return specimen;
   }
 
-  public String analyte() {
+  public OntologyClassDTO analyte() {
     return analyte;
   }
 
@@ -193,6 +199,28 @@ public class SamplePreview {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
         sampleLabel,
         species, specimen, analyte, experimentalGroup, analysisMethod, comment);
+  }
+
+  public String speciesToolTipGenerator() {
+    return ontologyToolTipGenerator(species);
+  }
+
+  public String specimenToolTipGenerator() {
+    return ontologyToolTipGenerator(specimen);
+  }
+
+  public String analyteToolTipGenerator() {
+    return ontologyToolTipGenerator(analyte);
+  }
+
+  private String ontologyToolTipGenerator(OntologyClassDTO ontologyClass) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("Name: "+ontologyClass.getName());
+    if(ontologyClass.getDescription()!=null) {
+      builder.append("\n");
+      builder.append(ontologyClass.getDescription());
+    }
+    return builder.toString();
   }
 
   @Override

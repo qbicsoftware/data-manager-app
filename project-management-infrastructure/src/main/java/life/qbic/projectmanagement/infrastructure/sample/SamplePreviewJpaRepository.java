@@ -149,6 +149,11 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
       };
     }
 
+    private static Specification<SamplePreview> ontologyColumnContains(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("species"), "%" + filter + "%");
+    }
+
     public static Specification<SamplePreview> speciesContains(String filter) {
       return (root, query, builder) ->
           builder.like(root.get("species"), "%" + filter + "%");
