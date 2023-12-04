@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "org.jobrunr.database.datasource.url",
+      "type": "java.lang.String",
+      "description": "The datasource url jobRunr uses."
+    },
+    {
+      "name": "org.jobrunr.database.datasource.driver-class-name",
+      "type": "java.lang.String",
+      "description": "The datasource driver class for jobRunrs datasource."
+    },
+    {
+      "name": "org.jobrunr.database.datasource.username",
+      "type": "java.lang.String",
+      "description": "The username jobRunr uses for the datasource."
+    },
+    {
+      "name": "org.jobrunr.database.datasource.password",
+      "type": "java.lang.String",
+      "description": "The password jobRunr uses for the datasource."
+    }
+  ]
+}

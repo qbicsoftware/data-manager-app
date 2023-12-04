@@ -16,6 +16,9 @@ import life.qbic.identity.application.user.password.PasswordResetInput;
 import life.qbic.identity.application.user.password.PasswordResetRequest;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.identity.application.user.policy.UserRegisteredPolicy;
+import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSubmitIntegrationEvent;
+import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
+import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
 import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.application.user.registration.RegisterUserInput;
 import life.qbic.identity.application.user.registration.Registration;
@@ -38,7 +41,7 @@ import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.integration.UserRegistered;
+import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
@@ -104,11 +107,34 @@ public class AppConfig {
   }
 
   @Bean
-  public UserRegisteredPolicy userRegisteredPolicy(EmailService emailService,
-      JobScheduler jobScheduler, UserRepository userRepository,
-      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier, EventHub eventHub) {
-    return new UserRegisteredPolicy(emailService, jobScheduler, userRepository,
-        emailConfirmationLinkSupplier, eventHub);
+  public WhenUserRegisteredSendConfirmationEmail whenUserRegisteredSendConfirmationEmail(
+      EmailService emailService, JobScheduler jobScheduler, UserRepository userRepository,
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier
+  ) {
+
+    return new WhenUserRegisteredSendConfirmationEmail(emailService, jobScheduler, userRepository,
+        emailConfirmationLinkSupplier);
+  }
+
+  @Bean
+  public WhenUserRegisteredSubmitIntegrationEvent whenUserRegisteredSubmitIntegrationEvent(
+      JobScheduler jobScheduler, EventHub eventHub) {
+    return new WhenUserRegisteredSubmitIntegrationEvent(eventHub, jobScheduler);
+  }
+
+  @Bean
+  public WhenUserActivatedSubmitIntegrationEvent whenUserActivatedSubmitIntegrationEvent(
+      JobScheduler jobScheduler, EventHub eventHub) {
+    return new WhenUserActivatedSubmitIntegrationEvent(eventHub, jobScheduler);
+  }
+
+  @Bean
+  public UserRegisteredPolicy userRegisteredPolicy(
+      WhenUserRegisteredSendConfirmationEmail whenUserRegisteredSendConfirmationEmail,
+      WhenUserRegisteredSubmitIntegrationEvent whenUserRegisteredSubmitIntegrationEvent,
+      WhenUserActivatedSubmitIntegrationEvent whenUserActivatedSubmitIntegrationEvent) {
+    return new UserRegisteredPolicy(whenUserRegisteredSendConfirmationEmail,
+        whenUserRegisteredSubmitIntegrationEvent, whenUserActivatedSubmitIntegrationEvent);
   }
 
   /**
@@ -172,12 +198,11 @@ public class AppConfig {
   }
 
   @Bean
-  public UserRegistered userRegisteredIntegration(
-      JobScheduler jobScheduler, AuthorityService authorityService,
-      MessageRouter messageRouter) {
-    UserRegistered userRegistered = new UserRegistered(jobScheduler, authorityService);
-    messageRouter.register(userRegistered);
-    return userRegistered;
+  public UserActivated userEmailConfirmedIntegration(JobScheduler jobScheduler,
+      AuthorityService authorityService, MessageRouter messageRouter) {
+    UserActivated userActivated = new UserActivated(jobScheduler, authorityService);
+    messageRouter.register(userActivated);
+    return userActivated;
   }
 
   /*
