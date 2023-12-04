@@ -38,13 +38,13 @@ public class MessageConsumer {
     messageRouter.dispatch(parse(content));
   }
 
-  private IntegrationEvent parse(String content) throws RuntimeException {
+  private IntegrationEvent parse(String content) {
     var objectMapper = new ObjectMapper();
     try {
       return objectMapper.readValue(content, IntegrationEvent.class);
     } catch (JsonProcessingException e) {
       log.error("Json to object mapping failed!", e);
-      throw new RuntimeException("Content does not seem to be an integration event.");
+      throw new IllegalArgumentException("Content does not seem to be an integration event.");
     }
   }
 }

@@ -6,45 +6,42 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;
-import life.qbic.identity.domain.event.UserRegistered;
+import life.qbic.identity.domain.event.UserActivated;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * When a user registered, broadcast an integration event to message bus
- *
+ * Subscribes to user activation. When a user was activated, publishes a corresponding integration
+ * event.
  * @since 1.0.0
  */
-public class WhenUserRegisteredSubmitIntegrationEvent implements
-    DomainEventSubscriber<UserRegistered> {
-
-  private final EventHub eventHub;
+public class WhenUserActivatedSubmitIntegrationEvent implements
+    DomainEventSubscriber<UserActivated> {
 
   private final JobScheduler jobScheduler;
+  private final EventHub eventHub;
 
-  public WhenUserRegisteredSubmitIntegrationEvent(
-      @Autowired EventHub eventHub,
-      @Autowired JobScheduler jobScheduler) {
-    this.jobScheduler = jobScheduler;
+  public WhenUserActivatedSubmitIntegrationEvent(EventHub eventHub,
+      JobScheduler jobScheduler) {
     this.eventHub = eventHub;
+    this.jobScheduler = jobScheduler;
   }
 
   @Override
   public Class<? extends DomainEvent> subscribedToEventType() {
-    return UserRegistered.class;
+    return UserActivated.class;
   }
 
   @Override
-  public void handleEvent(UserRegistered event) {
+  public void handleEvent(UserActivated event) {
     this.jobScheduler.enqueue(() -> dispatchEvent(event));
   }
 
-  @Job(name = "Broadcast user registration")
-  public void dispatchEvent(UserRegistered event) {
+  @Job(name = "Broadcast user activation")
+  public void dispatchEvent(UserActivated event) {
     Map<String, String> content = new HashMap<>();
     content.put("userId", event.userId());
-    IntegrationEvent integrationEvent = IntegrationEvent.create("userRegistered", content);
+    IntegrationEvent integrationEvent = IntegrationEvent.create("userActivated", content);
     eventHub.send(integrationEvent);
   }
 }
