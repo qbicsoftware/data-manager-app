@@ -8,11 +8,12 @@ import java.io.Serial;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Purchase Item</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Describes an uploaded purchase item (e.g. an offer) and a checkbox to indicate
+ * weather the customer has signed the purchase or not (draft).</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class PurchaseItem extends Div {
 
