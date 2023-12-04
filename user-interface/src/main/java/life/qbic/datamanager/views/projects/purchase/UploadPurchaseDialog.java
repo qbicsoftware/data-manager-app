@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.purchase;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -18,7 +19,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
@@ -49,7 +49,6 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   private Div titleBox;
 
-  private List<ComponentEventListener<ConfirmEvent<UploadPurchaseDialog>>> confirmListeners = new ArrayList<>();
 
   public UploadPurchaseDialog() {
     // Vaadin's upload component setup
@@ -107,17 +106,12 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    fireConfirmEvent();
+    fireEvent(new ConfirmEvent(this, true));
   }
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    this.close();
-  }
-
-  private void fireConfirmEvent() {
-    var confirmEvent = new ConfirmEvent<>(this, true);
-    confirmListeners.forEach(listener -> listener.onComponentEvent(confirmEvent));
+    fireEvent(new UploadPurchaseDialog.CancelEvent(this, clickEvent.isFromClient()));
   }
 
   private void processClientFileRemoveEvent(DomEvent event) {
@@ -167,8 +161,12 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   public void addConfirmListener(
-      ComponentEventListener<ConfirmEvent<UploadPurchaseDialog>> listener) {
-    this.confirmListeners.add(listener);
+      ComponentEventListener<ConfirmEvent> listener) {
+    addListener(ConfirmEvent.class, listener);
+  }
+
+  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
   }
 
   @Override
@@ -187,5 +185,35 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   private void emptyCachedBuffer() {
     this.multiFileMemoryBuffer.clear();
+  }
+
+  public static class ConfirmEvent extends ComponentEvent<UploadPurchaseDialog> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public ConfirmEvent(UploadPurchaseDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public static class CancelEvent extends ComponentEvent<UploadPurchaseDialog> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public CancelEvent(UploadPurchaseDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 }
