@@ -155,8 +155,7 @@ public class UploadPurchaseDialog extends DialogWindow {
           .orElse(new ByteArrayInputStream(new byte[]{})).readAllBytes();
       return new OfferDTO(purchaseItem.isSigned(), fileName, content);
     } catch (IOException e) {
-      log.error("Failed to read uploaded purchase item content", e);
-      throw new ApplicationException("Failed to read offer content");
+      throw new ApplicationException("Failed to read offer content", e);
     }
   }
 
