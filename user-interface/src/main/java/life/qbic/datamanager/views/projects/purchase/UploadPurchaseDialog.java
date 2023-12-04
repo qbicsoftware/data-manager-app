@@ -143,9 +143,8 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void removeFileFromDisplay(String fileName) {
-    var result = purchaseItemsCache.stream().filter(purchaseItem -> purchaseItem.fileName().equals(
-        fileName)).findAny();
-    result.ifPresent(purchaseItem -> {
+    purchaseItemsCache.stream().filter(purchaseItem -> purchaseItem.fileName().equals(
+        fileName)).findAny().ifPresent(purchaseItem -> {
       purchaseItemsCache.remove(purchaseItem);
       uploadedPurchaseItems.remove(purchaseItem);
     });
