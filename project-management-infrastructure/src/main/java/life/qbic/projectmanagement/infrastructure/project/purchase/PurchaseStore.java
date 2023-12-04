@@ -32,7 +32,7 @@ public class PurchaseStore implements ProjectPurchaseStorage {
   public void storePurchase(ServicePurchase purchase) throws PurchaseStoreException {
     try {
       persistenceStore.save(purchase);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving service purchase for project %s failed".formatted(purchase.project()), e);
       throw new PurchaseStoreException("Storing the purchase failed");
     }
