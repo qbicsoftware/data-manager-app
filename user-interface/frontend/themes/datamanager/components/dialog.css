@@ -400,3 +400,76 @@ vaadin-dialog-overlay::part(title) {
   display: flex;
   flex-direction: column;
 }
+
+
+.purchase-item-upload::part(overlay) {
+  width: 50%;
+  min-width: 400px;
+}
+
+
+vaadin-upload-file::part(meta){
+  font-size: smaller;
+}
+
+.purchase-item-upload .restrictions {
+  font-size: smaller;
+  display: flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+}
+
+.purchase-item-upload .title-box {
+  margin-bottom: 1rem;
+}
+
+.purchase-item-upload .instructions {
+  display: block;
+  margin-top: 2rem;
+  font-size: smaller;
+}
+.purchase-item-upload .instructions span{
+  font-weight: bold;
+  color: var(--lumo-contrast-80pct);
+}
+
+.purchase-item-upload .instructions.hidden {
+  visibility: hidden;
+}
+
+
+.uploaded-documents {
+  border: 1px dashed var(--lumo-contrast-20pct);
+  padding: 0.5rem 1rem 1rem 1rem;
+  border-radius: var(--lumo-border-radius-l);
+}
+
+
+.uploaded-documents.hidden{
+  visibility: hidden;
+}
+
+
+
+.uploaded-documents .purchase-item{
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+
+.uploaded-documents .purchase-item:last-child{
+  padding: 0.5rem 1rem 0 1rem;
+  border-style: none;
+}
+
+.uploaded-documents .purchase-item {
+  font-size: smaller;
+}
+
+.uploaded-documents .purchase-item vaadin-icon {
+  font-size: smaller;
+  margin-right: 0.3rem;
+  color: var(--lumo-primary-color);
+}
+
