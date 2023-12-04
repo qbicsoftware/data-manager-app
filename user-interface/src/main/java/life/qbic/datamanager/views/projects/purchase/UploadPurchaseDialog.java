@@ -3,11 +3,13 @@ package life.qbic.datamanager.views.projects.purchase;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.DomEvent;
 import elemental.json.JsonObject;
@@ -80,12 +82,7 @@ public class UploadPurchaseDialog extends DialogWindow {
     disclaimer.add(new Paragraph("Please tick the checkbox if the offer is signed."));
 
     // Add upload offers to the purchase item section, where users can set the signed flag
-    upload.addSucceededListener(succeededEvent -> {
-      var purchase = new PurchaseItem(succeededEvent.getFileName());
-      uploadedPurchaseItems.add(purchase);
-      purchaseItemsCache.add(purchase);
-      toggleFileSectionIfEmpty();
-    });
+    upload.addSucceededListener(this::onUploadSucceeded);
 
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed  from the upload component, we also want to remove it properly from memory
@@ -99,6 +96,13 @@ public class UploadPurchaseDialog extends DialogWindow {
     confirmButton.setText("Save");
 
     // Init the visibility rendering once
+    toggleFileSectionIfEmpty();
+  }
+
+  private void onUploadSucceeded(SucceededEvent succeededEvent) {
+    var purchase = new PurchaseItem(succeededEvent.getFileName());
+    uploadedPurchaseItems.add(purchase);
+    purchaseItemsCache.add(purchase);
     toggleFileSectionIfEmpty();
   }
 
