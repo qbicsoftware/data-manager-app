@@ -14,11 +14,13 @@ import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.ProjectFormLayout.ProjectDraft;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectAddEvent;
+import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
+import life.qbic.datamanager.views.projects.create.ProjectCreationDialog.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
+import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
+import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -39,15 +41,20 @@ public class ProjectOverviewPage extends Div {
   private static final long serialVersionUID = 4625607082710157069L;
   private static final Logger log = logger(ProjectOverviewPage.class);
   private final ProjectCollectionComponent projectCollectionComponent;
-  private final AddProjectDialog addProjectDialog;
   private final ProjectCreationService projectCreationService;
+  private final FinanceService financeService;
+  private final OntologyTermInformationService ontologyTermInformationService;
+  private final AddExperimentToProjectService addExperimentToProjectService;
 
   public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
-      AddProjectDialog addProjectDialog,
-      ProjectCreationService projectCreationService) {
+      ProjectCreationService projectCreationService, FinanceService financeService,
+      OntologyTermInformationService ontologyTermInformationService,
+      AddExperimentToProjectService addExperimentToProjectService) {
     this.projectCollectionComponent = projectCollectionComponent;
-    this.addProjectDialog = addProjectDialog;
     this.projectCreationService = projectCreationService;
+    this.financeService = financeService;
+    this.ontologyTermInformationService = ontologyTermInformationService;
+    this.addExperimentToProjectService = addExperimentToProjectService;
     layoutPage();
     configurePage();
     stylePage();
@@ -58,17 +65,18 @@ public class ProjectOverviewPage extends Div {
         System.identityHashCode(projectCollectionComponent)));
   }
 
+
   private void layoutPage() {
     add(projectCollectionComponent);
   }
 
   private void configurePage() {
-    projectCollectionComponent.addListener(projectCreationClickedEvent ->
-        addProjectDialog.open()
-    );
-    addProjectDialog.addCancelListener(
-        cancelEvent -> cancelEvent.getSource().close());
-    addProjectDialog.addProjectAddEventListener(this::createProject);
+    projectCollectionComponent.addListener(projectCreationClickedEvent -> {
+      ProjectCreationDialog projectCreationDialog = new ProjectCreationDialog(financeService,
+          ontologyTermInformationService);
+      projectCreationDialog.addListener(this::createProject);
+      projectCreationDialog.open();
+    });
   }
 
   private void stylePage() {
@@ -76,30 +84,42 @@ public class ProjectOverviewPage extends Div {
     this.setHeightFull();
   }
 
-  private void createProject(ProjectAddEvent projectAddEvent) {
-    ProjectDraft projectDraft = projectAddEvent.projectDraft();
+  private void createProject(ProjectCreationEvent projectCreationEvent) {
+    Funding funding = null;
+    if (projectCreationEvent.getFundingEntry() != null && !projectCreationEvent.getFundingEntry()
+        .isEmpty()) {
+      funding = Funding.of(projectCreationEvent.getFundingEntry().getLabel(),
+          projectCreationEvent.getFundingEntry().getReferenceId());
+    }
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        projectDraft.getOfferId(),
-        projectDraft.getProjectCode(),
-        projectDraft.getProjectInformation().getProjectTitle(),
-        projectDraft.getProjectInformation().getProjectObjective(),
-        projectDraft.getProjectInformation().getPrincipalInvestigator().toDomainContact(),
-        projectDraft.getProjectInformation().getResponsiblePerson().map(Contact::toDomainContact)
-            .orElse(null),
-        projectDraft.getProjectInformation().getProjectManager().toDomainContact(),
-        projectDraft.getProjectInformation().getFundingEntry()
-            .map(fundingEntry -> Funding.of(fundingEntry.getLabel(), fundingEntry.getReferenceId()))
-            .orElse(null));
+        projectCreationEvent.getProjectDesign().getOfferId(),
+        projectCreationEvent.getProjectDesign().getProjectCode(),
+        projectCreationEvent.getProjectDesign().getProjectTitle(),
+        projectCreationEvent.getProjectDesign().getProjectObjective(),
+        projectCreationEvent.getProjectCollaborators().getPrincipalInvestigator().toDomainContact(),
+        projectCreationEvent.getProjectCollaborators().getResponsiblePerson()
+            .map(Contact::toDomainContact).orElse(null),
+        projectCreationEvent.getProjectCollaborators().getProjectManager().toDomainContact(),
+        funding);
     project
-        .onValue(result -> onProjectCreated(projectAddEvent))
+        .onValue(result -> onProjectCreated(projectCreationEvent))
         .onError(e -> {
           throw e;
         });
+    var experiment = addExperimentToProjectService.addExperimentToProject(
+        project.getValue().getId(),
+        projectCreationEvent.getExperimentalInformation().getExperimentName(),
+        projectCreationEvent.getExperimentalInformation().getSpecies(),
+        projectCreationEvent.getExperimentalInformation().getSpecimens(),
+        projectCreationEvent.getExperimentalInformation().getAnalytes());
+    experiment.onError(e -> {
+      throw e;
+    });
   }
 
-  private void onProjectCreated(ProjectAddEvent projectAddEvent) {
+  private void onProjectCreated(ProjectCreationEvent projectCreationEvent) {
     displaySuccessfulProjectCreationNotification();
-    projectAddEvent.getSource().close();
+    projectCreationEvent.getSource().close();
     projectCollectionComponent.refresh();
   }
 

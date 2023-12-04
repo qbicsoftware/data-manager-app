@@ -257,7 +257,7 @@ public class ProjectSideNavigationComponent extends Div implements
         {
           throw new ApplicationException("No UI present for project navigation");
         });
-    log.debug("Routing to ProjectInformation page for project " + projectId.value());
+    log.debug("Routing to ProjectDesign page for project " + projectId.value());
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {
