@@ -1,12 +1,32 @@
 package life.qbic.projectmanagement.application.purchase;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Simple offer information exchange object</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0s
  */
 public record OfferDTO(boolean signed, String fileName, byte[] content) {
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    OfferDTO offerDTO = (OfferDTO) o;
+    return signed == offerDTO.signed && Objects.equals(fileName, offerDTO.fileName)
+        && Arrays.equals(content, offerDTO.content);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(signed, fileName);
+    result = 31 * result + Arrays.hashCode(content);
+    return result;
+  }
 }
