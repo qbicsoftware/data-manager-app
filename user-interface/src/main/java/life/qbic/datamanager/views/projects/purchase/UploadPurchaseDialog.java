@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.purchase;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -113,7 +112,7 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    this.close();
+
   }
 
   private void fireConfirmEvent() {
@@ -134,13 +133,9 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void toggleFileSectionIfEmpty() {
-    if (uploadedPurchaseItems.getChildren().toList().isEmpty()) {
-      uploadedPurchaseItems.addClassName("hidden");
-      disclaimer.addClassName("hidden");
-    } else {
-      uploadedPurchaseItems.removeClassName("hidden");
-      disclaimer.removeClassName("hidden");
-    }
+    boolean filesUploaded = uploadedPurchaseItems.getChildren().toList().isEmpty();
+    uploadedPurchaseItems.setVisible(filesUploaded);
+    disclaimer.setVisible(filesUploaded);
   }
 
   private void removeFileFromBuffer(String fileName) {
