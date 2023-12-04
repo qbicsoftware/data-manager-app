@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.domain.model.project.purchase;
 
+import static jakarta.persistence.FetchType.LAZY;
+
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,6 +33,7 @@ public class Offer {
 
   @Lob
   @Column(name = "file_content", columnDefinition="BLOB")
+  @Basic(fetch=LAZY)
   private byte[] fileContent;
 
   public Offer() {
