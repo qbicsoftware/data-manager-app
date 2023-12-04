@@ -42,11 +42,7 @@ public class ExperimentAddDialog extends DialogWindow {
   private static final String WIDTH_INPUT = "full-width-input";
   private final Binder<ExperimentDraft> binder = new Binder<>();
   private final OntologyFilterConnector ontologyFilterConnector;
-//TODO
-  //1. new class OntologyClassDTO
-  //2. replace all occurrences of OntologyClassEntity with OntologyClassDTO
-  //3. use OntologyClassEntity for lookup queries only, map to OntologyClassDTO
-  //TODO
+
   public ExperimentAddDialog(
       OntologyTermInformationService ontologyTermInformationService) {
     this.ontologyFilterConnector = new OntologyFilterConnector(ontologyTermInformationService);

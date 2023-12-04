@@ -1,14 +1,19 @@
 package life.qbic.projectmanagement.infrastructure.sample;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SamplePreviewLookup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
@@ -149,24 +154,23 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
       };
     }
 
-    private static Specification<SamplePreview> ontologyColumnContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("species"), "%" + filter + "%");
+    private static Specification<SamplePreview> ontologyColumnContains(String col, String filter) {
+      return (root, query, builder) -> {
+        return builder.like(root.get(col).as(String.class), "%"+filter+"%");
+      };
+
     }
 
     public static Specification<SamplePreview> speciesContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("species"), "%" + filter + "%");
+      return ontologyColumnContains("species", filter);
     }
 
     public static Specification<SamplePreview> specimenContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("specimen"), "%" + filter + "%");
+      return ontologyColumnContains("specimen", filter);
     }
 
     public static Specification<SamplePreview> analyteContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("analyte"), "%" + filter + "%");
+      return ontologyColumnContains("analyte", filter);
     }
 
     public static Specification<SamplePreview> analysisMethodContains(String filter) {

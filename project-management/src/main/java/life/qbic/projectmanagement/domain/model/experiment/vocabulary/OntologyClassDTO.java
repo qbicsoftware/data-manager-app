@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
 
 import java.util.Objects;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
 
 public class OntologyClassDTO {
 
@@ -10,7 +11,7 @@ public class OntologyClassDTO {
 
   String ontologyIri;
 
-  String termLabel;
+  String label;
 
   String name;
 
@@ -26,18 +27,17 @@ public class OntologyClassDTO {
     this.ontology = ontology;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
-    this.termLabel = label;
+    this.label = label;
     this.name = name;
     this.description = description;
     this.classIri = classIri;
   }
 
-  /*
-  public static OntologyClassDTO from(OntologyClassEntityTest lookupEntity) {
+  public static OntologyClassDTO from(OntologyClassEntity lookupEntity) {
     return new OntologyClassDTO(lookupEntity.getOntology(), lookupEntity.getOntologyVersion(),
         lookupEntity.getOntologyIri(), lookupEntity.getLabel(), lookupEntity.getName(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
-  }*/
+  }
 
   public String getOntology() {
     return ontology;
@@ -64,11 +64,11 @@ public class OntologyClassDTO {
   }
 
   public String getLabel() {
-    return termLabel;
+    return label;
   }
 
   public void setLabel(String termLabel) {
-    this.termLabel = termLabel;
+    this.label = termLabel;
   }
 
   public String getName() {
@@ -106,14 +106,14 @@ public class OntologyClassDTO {
     OntologyClassDTO that = (OntologyClassDTO) o;
     return Objects.equals(ontology, that.ontology) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
-        that.ontologyIri) && Objects.equals(termLabel, that.termLabel) && Objects.equals(
+        that.ontologyIri) && Objects.equals(label, that.label) && Objects.equals(
         name, that.name) && Objects.equals(description, that.description)
         && Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontology, ontologyVersion, ontologyIri, termLabel, name, description, classIri);
+    return Objects.hash(ontology, ontologyVersion, ontologyIri, label, name, description, classIri);
   }
 
 }

@@ -39,9 +39,7 @@ public class OntologyFilterConnector {
             query.getOffset(),
             query.getLimit(), query.getSortOrders().stream().map(
                     it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-                .collect(Collectors.toList())).stream().map(entity -> new OntologyClassDTO(
-            entity.getOntology(), entity.getOntologyVersion(), entity.getOntologyIri(), entity.getLabel(),
-            entity.getName(), entity.getDescription(), entity.getClassIri())),
+                .collect(Collectors.toList())).stream().map(entity -> OntologyClassDTO.from(entity)),
         entity -> entity
     );
   }

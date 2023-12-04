@@ -6,15 +6,14 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
-@Converter(autoApply = true)
+@Converter()
 public class OntologyClassAttributeConverter implements AttributeConverter<OntologyClassDTO,
     String> {
 
-  private final static ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
   public String convertToDatabaseColumn(OntologyClassDTO attribute) {
-    System.err.println(attribute);
     try {
       return objectMapper.writeValueAsString(attribute);
     } catch (JsonProcessingException e) {
@@ -24,7 +23,6 @@ public class OntologyClassAttributeConverter implements AttributeConverter<Ontol
 
   @Override
   public OntologyClassDTO convertToEntityAttribute(String dbData) {
-    System.err.println(dbData);
       try {
         return objectMapper.readValue(dbData, OntologyClassDTO.class);
       } catch (JsonProcessingException e) {
