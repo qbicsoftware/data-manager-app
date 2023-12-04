@@ -10,14 +10,12 @@ import life.qbic.identity.domain.event.UserRegistered;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * When a user registered, broadcast an integration event to message bus
  *
  * @since 1.0.0
  */
-@Component
 public class WhenUserRegisteredSubmitIntegrationEvent implements
     DomainEventSubscriber<UserRegistered> {
 

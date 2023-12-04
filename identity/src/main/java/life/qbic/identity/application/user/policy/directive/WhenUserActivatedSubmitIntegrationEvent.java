@@ -9,14 +9,12 @@ import life.qbic.identity.application.communication.broadcasting.IntegrationEven
 import life.qbic.identity.domain.event.UserActivated;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
-import org.springframework.stereotype.Component;
 
 /**
  * Subscribes to user activation. When a user was activated, publishes a corresponding integration
  * event.
  * @since 1.0.0
  */
-@Component
 public class WhenUserActivatedSubmitIntegrationEvent implements
     DomainEventSubscriber<UserActivated> {
 
