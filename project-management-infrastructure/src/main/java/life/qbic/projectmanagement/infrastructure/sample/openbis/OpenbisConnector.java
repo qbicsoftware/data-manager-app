@@ -205,7 +205,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
         props.put("Q_SECONDARY_NAME", sample.label());
         props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
-        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+        String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
                 () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
         props.put("Q_SAMPLE_TYPE", openBisSampleType);
@@ -340,7 +340,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
     sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
 
-    String analyteValue = sample.sampleOrigin().getAnalyte().value();
+    String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
 
     String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
         () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);

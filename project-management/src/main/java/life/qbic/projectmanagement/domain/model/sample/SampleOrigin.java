@@ -1,50 +1,56 @@
 package life.qbic.projectmanagement.domain.model.sample;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
  * <b>Sample Origin</b>
  * <p>
- * The sample origin contains the {@link Species}, {@link Specimen} and {@link Analyte} specified
- * for an {@link Experiment}. It's information is associated with the information stored within the
- * {@link Sample}
+ * The sample origin contains the species, specimen and analyte as {@link OntologyClassDTO} that
+ * are associated with the {@link Sample}. They are a subset of the classes that have been selected
+ * for the respective {@link Experiment}.
  * <p>
  *
  * @since 1.0.0
  */
 public class SampleOrigin {
 
-  private Species species;
-  private Specimen specimen;
-  private Analyte analyte;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO species;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO specimen;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO analyte;
 
   protected SampleOrigin() {
     //needed for JPA
   }
 
-  private SampleOrigin(Species species, Specimen specimen, Analyte analyte) {
+  private SampleOrigin(OntologyClassDTO species, OntologyClassDTO specimen,
+      OntologyClassDTO analyte) {
     this.species = Objects.requireNonNull(species);
     this.specimen = Objects.requireNonNull(specimen);
     this.analyte = Objects.requireNonNull(analyte);
   }
 
-  public static SampleOrigin create(Species species, Specimen specimen, Analyte analytes) {
+  public static SampleOrigin create(OntologyClassDTO species, OntologyClassDTO specimen,
+      OntologyClassDTO analytes) {
     return new SampleOrigin(species, specimen, analytes);
   }
 
-  public Species getSpecies() {
+  public OntologyClassDTO getSpecies() {
     return species;
   }
 
-  public Specimen getSpecimen() {
+  public OntologyClassDTO getSpecimen() {
     return specimen;
   }
 
-  public Analyte getAnalyte() {
+  public OntologyClassDTO getAnalyte() {
     return analyte;
   }
 
