@@ -48,7 +48,7 @@ public class ProjectContentComponent extends Div {
     add(uploadPurchaseDialog);
     Button uploadOffer = new Button("Upload offer");
     uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
-    uploadPurchaseDialog.subscribe(
+    uploadPurchaseDialog.addConfirmListener(
         uploadPurchaseDialogConfirmEvent -> {
           var offers = uploadPurchaseDialog.purchaseItems();
           uploadPurchaseDialog.close();
@@ -62,7 +62,7 @@ public class ProjectContentComponent extends Div {
   }
 
   private void addPurchaseItemsToProject(List<OfferDTO> offerDTOS) {
-    if (context == null) {
+    if (context == null || context.projectId().isEmpty()) {
       throw new ApplicationException("No project context found, cannot save offers");
     }
     offerDTOS.forEach(offer -> projectPurchaseService.addPurchase(context.projectId().get().toString(), offer));

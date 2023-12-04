@@ -79,7 +79,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     disclaimer.add(new Span("Set offer signed status"));
     disclaimer.add(new Paragraph("Please tick the checkbox if the offer is signed."));
 
-
     // Add upload offers to the purchase item section, where users can set the signed flag
     upload.addSucceededListener(succeededEvent -> {
       var purchase = new PurchaseItem(succeededEvent.getFileName());
@@ -169,7 +168,8 @@ public class UploadPurchaseDialog extends DialogWindow {
     }
   }
 
-  public void subscribe(ComponentEventListener<ConfirmEvent<UploadPurchaseDialog>> listener) {
+  public void addConfirmListener(
+      ComponentEventListener<ConfirmEvent<UploadPurchaseDialog>> listener) {
     this.confirmListeners.add(listener);
   }
 
