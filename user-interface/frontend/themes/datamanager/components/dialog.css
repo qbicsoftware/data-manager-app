@@ -125,62 +125,6 @@ vaadin-dialog-overlay::part(title) {
   justify-content: end;
 }
 
-.create-project-dialog .content {
-  max-width: 60vw;
-  padding-bottom: 1em;
-}
-
-.create-project-dialog::part(overlay) {
-  width: 66vw;
-}
-
-.create-project-dialog .form-content {
-  max-width: 60vw;
-  padding-bottom: 1em;
-}
-
-.create-project-dialog .code-and-title,
-.funding-field .input-fields,
-.contact-field .input-fields {
-  display: flex;
-  gap: 1em;
-  align-items: baseline;
-}
-
-.create-project-dialog .form-content .contact-field .name-field {
-  flex-grow: 1;
-}
-
-.create-project-dialog .form-content .contact-field .email-field {
-  flex-grow: 1;
-}
-
-.create-project-dialog .code-and-title .code {
-  max-width: 20vw;
-}
-
-.create-project-dialog .code-and-title .title {
-  width: 100%;
-}
-
-.create-project-dialog .search-field {
-  max-width: 30vw;
-}
-
-.create-project-dialog .project-contacts {
-  display: flex;
-  gap: 1em;
-  flex-direction: column;
-  flex-wrap: wrap;
-  margin: 0;
-  padding: var(--lumo-space-m) 0 0;
-}
-
-.create-project-dialog .project-contacts .title {
-  font-weight: bold;
-}
-
-
 .add-experiment-dialog::part(overlay),
 .update-experiment-dialog::part(overlay) {
   width: 66vw;
@@ -205,6 +149,39 @@ vaadin-dialog-overlay::part(title) {
 .update-experiment-content .full-width-input,
 .add-experiment-content .full-width-input {
   width: 100%;
+}
+
+.edit-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.edit-project-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.edit-project-dialog .funding-field .input-fields,
+.contact-field .input-fields {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+.edit-project-dialog .form-content .contact-field .name-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .form-content .contact-field .email-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--lumo-space-m) 0 0;
 }
 
 .experiment-group-dialog::part(overlay) {
@@ -285,6 +262,123 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-l);
 }
 
+.project-creation-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  /*Necessary so the dividers span the whole dialog*/
+  padding: 0;
+
+}
+
+.project-creation-dialog::part(overlay) {
+  width: 100%;
+  height: 100%;
+}
+
+.project-creation-dialog::part(footer) {
+  background-color: transparent;
+  justify-content: space-between;
+  padding-inline: 4rem;
+}
+
+.project-creation-dialog .footer-right-buttons-container {
+  gap: var(--lumo-space-m);
+  display: inline-flex;
+}
+
+.project-creation-dialog .collaborators-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .layout-container {
+  /*dialog content paddings*/
+  height: 100%;
+  padding: 1rem 4rem 3rem 4rem
+}
+
+.project-creation-dialog .collaborators-layout .contact-field .input-fields {
+  gap: var(--lumo-space-m);
+  display: inline-flex;
+}
+
+.project-creation-dialog .collaborators-layout .contact-field .name-field {
+  min-width: 45vw;
+}
+
+.project-creation-dialog .collaborators-layout .contact-field .email-field {
+  min-width: 45vw;
+}
+
+.project-creation-dialog .experiment-information-layout{
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .experiment-information-layout .experiment-name-field {
+  width: 50%
+}
+
+.project-creation-dialog .funding-information-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .funding-information-layout .funding-field .grant-label-field {
+  min-width: 15vw;
+}
+
+.project-creation-dialog .funding-information-layout .funding-field .input-fields {
+  width: 100%;
+  gap: var(--lumo-space-xl);
+  display: inline-flex;
+}
+
+.project-creation-dialog .project-design-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-dialog .project-design-layout .description-field {
+  height: 100%;
+  width: 100%;
+  min-height: 15vh;
+}
+
+.project-creation-dialog .project-design-layout .title-field {
+  width: 100%;
+  margin-left: var(--lumo-space-m);
+}
+
+.project-creation-dialog .project-design-layout .code-field {
+  max-width: 20%;
+}
+
+.project-creation-dialog .project-design-layout .search-field {
+  max-width: 30%;
+}
+
+.project-creation-dialog .project-design-layout .code-and-title {
+  width: 100%;
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+  align-items: baseline;
+}
+
 .project-information-dialog::part(overlay) {
   width: 66vw;
 }
@@ -306,3 +400,76 @@ vaadin-dialog-overlay::part(title) {
   display: flex;
   flex-direction: column;
 }
+
+
+.purchase-item-upload::part(overlay) {
+  width: 50%;
+  min-width: 400px;
+}
+
+
+vaadin-upload-file::part(meta){
+  font-size: smaller;
+}
+
+.purchase-item-upload .restrictions {
+  font-size: smaller;
+  display: flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+}
+
+.purchase-item-upload .title-box {
+  margin-bottom: 1rem;
+}
+
+.purchase-item-upload .instructions {
+  display: block;
+  margin-top: 2rem;
+  font-size: smaller;
+}
+.purchase-item-upload .instructions span{
+  font-weight: bold;
+  color: var(--lumo-contrast-80pct);
+}
+
+.purchase-item-upload .instructions.hidden {
+  visibility: hidden;
+}
+
+
+.uploaded-documents {
+  border: 1px dashed var(--lumo-contrast-20pct);
+  padding: 0.5rem 1rem 1rem 1rem;
+  border-radius: var(--lumo-border-radius-l);
+}
+
+
+.uploaded-documents.hidden{
+  visibility: hidden;
+}
+
+
+
+.uploaded-documents .purchase-item{
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+
+.uploaded-documents .purchase-item:last-child{
+  padding: 0.5rem 1rem 0 1rem;
+  border-style: none;
+}
+
+.uploaded-documents .purchase-item {
+  font-size: smaller;
+}
+
+.uploaded-documents .purchase-item vaadin-icon {
+  font-size: smaller;
+  margin-right: 0.3rem;
+  color: var(--lumo-primary-color);
+}
+

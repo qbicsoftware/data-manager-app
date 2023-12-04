@@ -47,10 +47,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -67,8 +63,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
-    QbicProjectDataRepo, QbicSampleDataRepo {
+public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -154,27 +149,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
         openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
 
     return searchResult.getObjects();
-  }
-
-  @Override
-  public List<Species> retrieveSpecies() {
-    return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Species::new).toList();
-  }
-
-  @Override
-  public List<Specimen> retrieveSpecimens() {
-    return getVocabularyTermsForCode(VocabularyCode.SPECIMEN).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Specimen::new).toList();
-  }
-
-  @Override
-  public List<Analyte> retrieveAnalytes() {
-    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Analyte::new).toList();
   }
 
   /**

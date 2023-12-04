@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * A component that displays previews of accessible project previews.
  * <p>
- * The component also fires {@link ProjectAddSubmitEvent} to all registered listeners, if a user has
+ * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a user has
  * the intend to add a new project.
  *
  * @since 1.0.0
@@ -59,7 +58,6 @@ public class ProjectCollectionComponent extends PageArea {
   private final String title;
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
-  private final List<ComponentEventListener<ProjectAddSubmitEvent>> projectCreationClickedListeners = new ArrayList<>();
 
   @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
@@ -157,8 +155,8 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void fireCreateClickedEvent() {
-    var clickedEvent = new ProjectAddSubmitEvent(this, true);
-    projectCreationClickedListeners.forEach(listener -> listener.onComponentEvent(clickedEvent));
+    var clickedEvent = new ProjectCreationSubmitEvent(this, true);
+    fireEvent(clickedEvent);
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
@@ -168,16 +166,15 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
-   * Add a listener that is called, when a new {@link ProjectAddSubmitEvent event} is emitted.
+   * Add a listener that is called, when a new {@link ProjectCreationSubmitEvent event} is emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
    */
-  public void addListener(ComponentEventListener<ProjectAddSubmitEvent> listener) {
+  public void addListener(ComponentEventListener<ProjectCreationSubmitEvent> listener) {
     Objects.requireNonNull(listener);
-    projectCreationClickedListeners.add(listener);
+    addListener(ProjectCreationSubmitEvent.class, listener);
   }
-
 
   public void refresh() {
     projectGrid.getDataProvider().refreshAll();
