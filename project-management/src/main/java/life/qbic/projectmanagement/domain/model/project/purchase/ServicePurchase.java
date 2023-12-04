@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 /**
  * <b>Service Purchase</b>
  *
- * <p>A service purchase deliverable for a project</p>
+ * <p>A cohesive collection of service items a customer has ordered for a project.</p>
  *
  * @since 1.0.0
  */
