@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
@@ -51,5 +52,24 @@ public class ServicePurchase {
 
   public ProjectId project() {
     return this.projectId;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ServicePurchase that = (ServicePurchase) o;
+    return Objects.equals(projectId, that.projectId) && Objects.equals(
+        purchasedOn, that.purchasedOn) && Objects.equals(offer, that.offer)
+        && Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(projectId, purchasedOn, offer, id);
   }
 }
