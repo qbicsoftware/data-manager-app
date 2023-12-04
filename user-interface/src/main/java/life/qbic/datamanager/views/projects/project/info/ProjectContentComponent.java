@@ -50,10 +50,11 @@ public class ProjectContentComponent extends Div {
     uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
     uploadPurchaseDialog.addConfirmListener(
         uploadPurchaseDialogConfirmEvent -> {
-          var offers = uploadPurchaseDialog.purchaseItems();
-          uploadPurchaseDialog.close();
+          var offers = uploadPurchaseDialogConfirmEvent.getSource().purchaseItems();
+          uploadPurchaseDialogConfirmEvent.getSource().close();
           addPurchaseItemsToProject(offers);
         });
+    uploadPurchaseDialog.addCancelListener(event -> event.getSource().close());
 
     add(uploadOffer);
 
