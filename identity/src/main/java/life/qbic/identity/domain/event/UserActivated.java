@@ -8,6 +8,7 @@ import life.qbic.domain.concepts.DomainEvent;
 
 /**
  * <b>A user was activated.</b>
+ * @since 1.0.0
  */
 public class UserActivated extends DomainEvent {
 

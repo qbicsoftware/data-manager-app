@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 /**
  * Subscribes to user activation. When a user was activated, publishes a corresponding integration
  * event.
+ * @since 1.0.0
  */
 @Component
 public class WhenUserActivatedSubmitIntegrationEvent implements

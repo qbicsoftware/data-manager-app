@@ -8,6 +8,7 @@ import org.jobrunr.scheduling.JobScheduler;
 
 /**
  * Subscriber to UserActivated integration events.
+ * @since 1.0.0
  */
 public class UserActivated implements Subscriber {
 
