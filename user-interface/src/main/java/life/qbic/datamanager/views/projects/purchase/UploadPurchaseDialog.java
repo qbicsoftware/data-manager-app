@@ -35,7 +35,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   private static final Logger log = logger(UploadPurchaseDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
 
-  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 14; // 14 MB
+  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 14; // 14 MiB
 
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
@@ -112,7 +112,7 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-
+    this.close();
   }
 
   private void fireConfirmEvent() {
@@ -133,7 +133,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void toggleFileSectionIfEmpty() {
-    boolean filesUploaded = uploadedPurchaseItems.getChildren().toList().isEmpty();
+    boolean filesUploaded = !uploadedPurchaseItems.getChildren().toList().isEmpty();
     uploadedPurchaseItems.setVisible(filesUploaded);
     disclaimer.setVisible(filesUploaded);
   }
