@@ -17,10 +17,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -107,12 +104,12 @@ public class SamplePreview {
    * @param sampleLabel       the label of the {@link Sample} associated with this preview
    * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                          this preview
-   * @param species           the {@link Species} for the {@link Sample} associated with this
-   *                          preview
-   * @param specimen          the {@link Specimen} for the {@link Sample} associated with this
-   *                          preview
-   * @param analyte           the {@link Analyte} for the {@link Sample} associated with this
-   *                          preview
+   * @param species           the {@link OntologyClassDTO} for the species of this {@link Sample}
+   *                          associated with this preview
+   * @param specimen          the {@link OntologyClassDTO} for the specimen of this {@link Sample}
+   *                          associated with this preview
+   * @param analyte           the {@link OntologyClassDTO} for the analyte of this {@link Sample}
+   *                          associated with this preview
    * @param analysisMethod    the analysis method to be performed for this {@link Sample}
    * @param comment           an optional comment pertaining to the associated {@link Sample}
    * @return the sample preview
