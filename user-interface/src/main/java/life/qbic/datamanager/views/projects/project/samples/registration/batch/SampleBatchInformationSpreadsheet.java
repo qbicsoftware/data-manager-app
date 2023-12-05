@@ -100,7 +100,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         sampleInfo -> Optional.ofNullable(sampleInfo.getAnalyte())
                         .map(OntologyClassDTO::getLabel)
         .orElse(null),
-        (sampleInfo, label) -> sampleInfo.setSpecimen(findOntologyForLabel(specimens, label)))
+        (sampleInfo, label) -> sampleInfo.setAnalyte(findOntologyForLabel(analytes, label)))
         .selectFrom(analytes, OntologyClassDTO::getLabel)
                 .setRequired();
 
