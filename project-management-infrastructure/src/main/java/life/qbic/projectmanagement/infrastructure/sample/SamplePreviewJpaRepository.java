@@ -150,8 +150,10 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     }
 
     private static Specification<SamplePreview> ontologyColumnContains(String col, String filter) {
-      return (root, query, builder) ->
-        builder.like(root.get(col).as(String.class), "%"+filter+"%");
+      return (root, query, builder) -> {
+        Expression<String> expression = root.get(col).as(String.class);
+        return builder.like(expression, "%label%"+filter+"%name%");
+      };
     }
 
     public static Specification<SamplePreview> speciesContains(String filter) {
