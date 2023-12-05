@@ -199,32 +199,6 @@ public class SamplePreview {
         species, specimen, analyte, experimentalGroup, analysisMethod, comment);
   }
 
-  public String speciesToolTipGenerator() {
-    return ontologyToolTipGenerator(species);
-  }
-
-  public String specimenToolTipGenerator() {
-    return ontologyToolTipGenerator(specimen);
-  }
-
-  public String analyteToolTipGenerator() {
-    return ontologyToolTipGenerator(analyte);
-  }
-
-  private String ontologyToolTipGenerator(OntologyClassDTO ontologyClass) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("Name: "+ontologyClass.getName());
-    if(Ontology.findOntologyByAbbreviation(ontologyClass.getOntology())!=null) {
-      builder.append(" - ");
-      builder.append("From: "+Ontology.findOntologyByAbbreviation(ontologyClass.getOntology()).getName());
-    }
-    if(ontologyClass.getDescription()!=null) {
-      builder.append(" - ");
-      builder.append(ontologyClass.getDescription());
-    }
-    return builder.toString();
-  }
-
   @Override
   public String toString() {
     return "SamplePreview{" +
