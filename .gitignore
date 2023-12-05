@@ -16,7 +16,7 @@ logs
 */frontend/index.html
 */pnpmfile.js
 */vite.generated.ts
-*/user-interface/vite.
+*/user-interface/vite.*
 */webapp/frontend/index.html
 */package.json
 */tsconfig.json
@@ -35,7 +35,7 @@ error-screenshots/
 # Ignore Vite generated files created since vaadin 23.2
 /frontend/index.html
 /frontend/generated/index.ts
-/vaadinfrontend/types.d.ts
+/user-interface/types.d.ts
 /frontend/generated/vaadin.ts
 /frontend/generated/vaadin-featureflags.ts
 /vaadinfrontend/vite.config.ts
