@@ -43,7 +43,6 @@ public class DefaultDatasourceConfig {
 
   @Primary
   @Bean(name = "datasource")
-//  @ConfigurationProperties(prefix = "spring.datasource")
   public DataSource jobrunrDatasource(
       @Qualifier("datasourceProperties") DataSourceProperties dataSourceProperties) {
     return dataSourceProperties.initializeDataSourceBuilder().build();
