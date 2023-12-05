@@ -33,8 +33,8 @@ public class PurchaseStore implements ProjectPurchaseStorage {
     try {
       persistenceStore.save(purchase);
     } catch (RuntimeException e) {
-      log.error("Saving service purchase for project %s failed".formatted(purchase.project()), e);
-      throw new PurchaseStoreException("Storing the purchase failed");
+      throw new PurchaseStoreException(
+          "Storing the purchase for project %s failed".formatted(purchase.project()), e);
     }
   }
 }

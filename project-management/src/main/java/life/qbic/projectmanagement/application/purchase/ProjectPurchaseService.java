@@ -47,8 +47,7 @@ public class ProjectPurchaseService {
     try {
       storage.storePurchase(purchase);
     } catch (PurchaseStoreException e) {
-      log.error("Purchase storage failed", e);
-      throw new ApplicationException("Saving the offer failed");
+      throw ApplicationException.wrapping(e);
     }
   }
 }
