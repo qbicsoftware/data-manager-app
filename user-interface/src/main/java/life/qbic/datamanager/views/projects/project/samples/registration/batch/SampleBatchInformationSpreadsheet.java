@@ -97,12 +97,11 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .setRequired();
 
     addColumn("Analyte",
-        sampleInfo -> Optional.ofNullable(sampleInfo.getAnalyte())
-                        .map(OntologyClassDTO::getLabel)
-        .orElse(null),
+        SampleInfo::getAnalyte,
+        OntologyClassDTO::getLabel,
         (sampleInfo, label) -> sampleInfo.setAnalyte(findOntologyForLabel(analytes, label)))
-        .selectFrom(analytes, OntologyClassDTO::getLabel)
-                .setRequired();
+        .selectFrom(analytes, identity())
+        .setRequired();
 
     addColumn("Customer comment", SampleInfo::getCustomerComment,
         SampleInfo::setCustomerComment);
