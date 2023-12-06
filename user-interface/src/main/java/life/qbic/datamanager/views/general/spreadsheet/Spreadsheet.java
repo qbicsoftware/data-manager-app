@@ -32,15 +32,12 @@ import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Comment;
-import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 /**
  * This spreadsheet component can be used to show data beans in configurable rows.
@@ -70,10 +67,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   private final transient CellStyle rowNumberStyle;
   private final transient CellStyle columnHeaderStyle;
 
-  // apache helpers
-  private final transient CreationHelper creationHelper;
-  private final transient Drawing<?> drawingPatriarch;
-
   protected ValidationMode validationMode;
 
   //ATTENTION: we need to hard-code this. We cannot ensure that the Calibri font is installed.
@@ -83,8 +76,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   public Spreadsheet() {
     addClassName("spreadsheet-container");
     delegateSpreadsheet.setActiveSheetProtected("");
-    creationHelper = delegateSpreadsheet.getWorkbook().getCreationHelper();
-    drawingPatriarch = delegateSpreadsheet.getActiveSheet().createDrawingPatriarch();
 
     defaultCellStyle = getDefaultCellStyle(delegateSpreadsheet.getWorkbook());
     lockedCellStyle = createLockedCellStyle(delegateSpreadsheet.getWorkbook());
@@ -673,12 +664,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
 
   }
 
-  private Comment createComment(String comment) {
-    Comment cellComment = drawingPatriarch.createCellComment(creationHelper.createClientAnchor());
-    cellComment.setString(new XSSFRichTextString(comment));
-    return cellComment;
-  }
-
   private static Color getErrorBackgroundColor() {
     float alpha = 0.1f;
     float hueAngle = 0f; // 0: red; 120: green, 240: blue
@@ -744,8 +729,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     if (columnHeaderStyle.equals(cell.getCellStyle())) {
       return; // does not apply to column headers
     }
-    Comment cellComment = createComment(errorMessage);
-    cell.setCellComment(cellComment);
     cell.setCellStyle(invalidCellStyle);
   }
 
