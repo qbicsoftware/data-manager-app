@@ -17,9 +17,7 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.B
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
  * A dialog used for sample batch registration.
@@ -29,15 +27,15 @@ public class BatchRegistrationDialog extends DialogWindow {
   private final TextField batchNameField;
 
   private final List<ExperimentalGroup> experimentalGroups;
-  private final List<Species> species;
-  private final List<Specimen> specimen;
-  private final List<Analyte> analytes;
+  private final List<OntologyClassDTO> species;
+  private final List<OntologyClassDTO> specimen;
+  private final List<OntologyClassDTO> analytes;
   private final SampleBatchInformationSpreadsheet spreadsheet;
 
   public BatchRegistrationDialog(String experimentName,
-      List<Species> species,
-      List<Specimen> specimen,
-      List<Analyte> analytes,
+      List<OntologyClassDTO> species,
+      List<OntologyClassDTO> specimen,
+      List<OntologyClassDTO> analytes,
       List<ExperimentalGroup> experimentalGroups) {
 
     addClassName("batch-registration-dialog");
@@ -134,8 +132,9 @@ public class BatchRegistrationDialog extends DialogWindow {
     return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
   }
 
-  private static List<SampleInfo> prefilledSampleInfos(List<Species> species,
-      List<Specimen> specimen, List<Analyte> analytes, List<ExperimentalGroup> experimentalGroups) {
+  private static List<SampleInfo> prefilledSampleInfos(List<OntologyClassDTO> species,
+      List<OntologyClassDTO> specimen, List<OntologyClassDTO> analytes,
+      List<ExperimentalGroup> experimentalGroups) {
 
     List<SampleInfo> sampleInfos = new ArrayList<>();
     for (ExperimentalGroup experimentalGroup : experimentalGroups) {

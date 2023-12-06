@@ -370,9 +370,9 @@ public class ExperimentDetailsComponent extends PageArea {
     List<String> speciesTags = new ArrayList<>();
     List<String> specimenTags = new ArrayList<>();
     List<String> analyteTags = new ArrayList<>();
-    experiment.getSpecies().forEach(species -> speciesTags.add(species.value()));
-    experiment.getSpecimens().forEach(specimen -> specimenTags.add(specimen.value()));
-    experiment.getAnalytes().forEach(analyte -> analyteTags.add(analyte.value()));
+    experiment.getSpecies().forEach(species -> speciesTags.add(species.getLabel()));
+    experiment.getSpecimens().forEach(specimen -> specimenTags.add(specimen.getLabel()));
+    experiment.getAnalytes().forEach(analyte -> analyteTags.add(analyte.getLabel()));
 
     sampleSourceComponent.add(
         createSampleSourceList("Species", VaadinIcon.BUG.create(), speciesTags));

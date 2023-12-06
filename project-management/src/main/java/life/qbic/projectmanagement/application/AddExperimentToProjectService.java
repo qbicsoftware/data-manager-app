@@ -10,9 +10,7 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
@@ -49,9 +47,9 @@ public class AddExperimentToProjectService {
    */
   public Result<ExperimentId, RuntimeException> addExperimentToProject(ProjectId projectId,
       String experimentName,
-      List<Species> species,
-      List<Specimen> specimens,
-      List<Analyte> analytes) {
+      List<OntologyClassDTO> species,
+      List<OntologyClassDTO> specimens,
+      List<OntologyClassDTO> analytes) {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       if (experimentName.isBlank()) {
         //ToDo Add Iterator for multiple experiments?

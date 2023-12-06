@@ -18,9 +18,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Ontol
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
  * <b>Experimental Information Layout</b>
@@ -68,33 +66,30 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
   }
 
   private void initOntologyComboboxes() {
-    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    MultiSelectComboBox<OntologyClassDTO> speciesBox = new MultiSelectComboBox<>("Species");
     ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox,
-        List.of(Ontology.NCBI_TAXONOMY),
-        term -> new Species(term.getLabel()));
-    speciesBox.setItemLabelGenerator(Species::label);
+        List.of(Ontology.NCBI_TAXONOMY));
+    speciesBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     speciesBox.setPlaceholder("Please select one or more species for your samples");
     experimentalInformationBinder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecies()),
             ExperimentalInformation::setSpecies);
     speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+    MultiSelectComboBox<OntologyClassDTO> specimenBox = new MultiSelectComboBox<>("Specimen");
     ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox,
-        Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY),
-        term -> new Specimen(term.getLabel()));
-    specimenBox.setItemLabelGenerator(Specimen::label);
+        Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY));
+    specimenBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     specimenBox.setPlaceholder("Please select one or more specimen for your samples");
     experimentalInformationBinder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecimens()),
             ExperimentalInformation::setSpecimens);
     specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    MultiSelectComboBox<OntologyClassDTO> analyteBox = new MultiSelectComboBox<>("Analyte");
     ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox,
-        List.of(Ontology.BIOASSAY_ONTOLOGY),
-        term -> new Analyte(term.getLabel()));
-    analyteBox.setItemLabelGenerator(Analyte::label);
+        List.of(Ontology.BIOASSAY_ONTOLOGY));
+    analyteBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     analyteBox.setPlaceholder("Please select one or more analytes for your samples");
     experimentalInformationBinder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
@@ -165,9 +160,9 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
     @Serial
     private static final long serialVersionUID = -2712521934990738542L;
     private String experimentName;
-    private final List<Species> species;
-    private final List<Specimen> specimen;
-    private final List<Analyte> analytes;
+    private final List<OntologyClassDTO> species;
+    private final List<OntologyClassDTO> specimen;
+    private final List<OntologyClassDTO> analytes;
 
     public ExperimentalInformation() {
       species = new ArrayList<>();
@@ -183,29 +178,29 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
       this.experimentName = experimentName;
     }
 
-    public List<Species> getSpecies() {
+    public List<OntologyClassDTO> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<Species> species) {
+    public void setSpecies(Collection<OntologyClassDTO> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<Specimen> getSpecimens() {
+    public List<OntologyClassDTO> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<Specimen> specimen) {
+    public void setSpecimens(Collection<OntologyClassDTO> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<Analyte> getAnalytes() {
+    public List<OntologyClassDTO> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<Analyte> analytes) {
+    public void setAnalytes(Collection<OntologyClassDTO> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

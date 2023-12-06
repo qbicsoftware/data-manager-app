@@ -22,9 +22,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
  * <b>ExperimentAddDialog</b>
@@ -60,31 +58,28 @@ public class ExperimentAddDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<Species> speciesBox = new MultiSelectComboBox<>("Species");
+    MultiSelectComboBox<OntologyClassDTO> speciesBox = new MultiSelectComboBox<>("Species");
     speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY),
-        term -> new Species(term.getLabel()));
-    speciesBox.setItemLabelGenerator(Species::label);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY));
+    speciesBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    MultiSelectComboBox<Specimen> specimenBox = new MultiSelectComboBox<>("Specimen");
+    MultiSelectComboBox<OntologyClassDTO> specimenBox = new MultiSelectComboBox<>("Specimen");
     specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY),
-            term -> new Specimen(term.getLabel()));
-    specimenBox.setItemLabelGenerator(Specimen::label);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY));
+    specimenBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    MultiSelectComboBox<Analyte> analyteBox = new MultiSelectComboBox<>("Analyte");
+    MultiSelectComboBox<OntologyClassDTO> analyteBox = new MultiSelectComboBox<>("Analyte");
     analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY),
-        term -> new Analyte(term.getLabel()));
-    analyteBox.setItemLabelGenerator(Analyte::label);
+    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY));
+    analyteBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
@@ -180,9 +175,9 @@ public class ExperimentAddDialog extends DialogWindow {
     private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
-    private final List<Species> species;
-    private final List<Specimen> specimen;
-    private final List<Analyte> analytes;
+    private final List<OntologyClassDTO> species;
+    private final List<OntologyClassDTO> specimen;
+    private final List<OntologyClassDTO> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();
@@ -198,29 +193,29 @@ public class ExperimentAddDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<Species> getSpecies() {
+    public List<OntologyClassDTO> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<Species> species) {
+    public void setSpecies(Collection<OntologyClassDTO> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<Specimen> getSpecimens() {
+    public List<OntologyClassDTO> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<Specimen> specimen) {
+    public void setSpecimens(Collection<OntologyClassDTO> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<Analyte> getAnalytes() {
+    public List<OntologyClassDTO> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<Analyte> analytes) {
+    public void setAnalytes(Collection<OntologyClassDTO> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

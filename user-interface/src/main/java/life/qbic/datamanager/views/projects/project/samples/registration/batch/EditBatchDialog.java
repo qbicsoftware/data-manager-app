@@ -17,9 +17,8 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.E
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+
 /**
  * A dialog used for editing sample and batch information within an experiment
  */
@@ -33,9 +32,9 @@ public class EditBatchDialog extends DialogWindow {
   private final Span batchNameText;
 
   public EditBatchDialog(String experimentName,
-      List<Species> species,
-      List<Specimen> specimen,
-      List<Analyte> analytes,
+      List<OntologyClassDTO> species,
+      List<OntologyClassDTO> specimen,
+      List<OntologyClassDTO> analytes,
       List<ExperimentalGroup> experimentalGroups,
       BatchId batchId,
       String batchName,

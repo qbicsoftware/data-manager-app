@@ -149,19 +149,26 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
       };
     }
 
+    private static Specification<SamplePreview> ontologyColumnContains(String col, String filter) {
+      return (root, query, builder) -> {
+        /*We're currently only interested in the label within the json file*/
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get(col),
+            builder.literal("$.label"));
+        return builder.like(function,
+            "%" + filter + "%");
+      };
+    }
+
     public static Specification<SamplePreview> speciesContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("species"), "%" + filter + "%");
+      return ontologyColumnContains("species", filter);
     }
 
     public static Specification<SamplePreview> specimenContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("specimen"), "%" + filter + "%");
+      return ontologyColumnContains("specimen", filter);
     }
 
     public static Specification<SamplePreview> analyteContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("analyte"), "%" + filter + "%");
+      return ontologyColumnContains("analyte", filter);
     }
 
     public static Specification<SamplePreview> analysisMethodContains(String filter) {

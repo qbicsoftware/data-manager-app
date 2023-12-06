@@ -23,6 +23,7 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -175,7 +176,7 @@ public class ProjectDetailsComponent extends PageArea {
   private static List<Tag> speciesTags(List<Experiment> experiments) {
     return experiments.stream()
         .flatMap(experiment -> experiment.getSpecies().stream())
-        .map(Species::label)
+        .map(OntologyClassDTO::getLabel)
         .distinct()
         .sorted()
         .map(Tag::new)
@@ -185,7 +186,7 @@ public class ProjectDetailsComponent extends PageArea {
   private static List<Tag> specimenTags(List<Experiment> experiments) {
     return experiments.stream()
         .flatMap(experiment -> experiment.getSpecimens().stream())
-        .map(Specimen::label)
+        .map(OntologyClassDTO::getLabel)
         .distinct()
         .sorted()
         .map(Tag::new)
@@ -195,7 +196,7 @@ public class ProjectDetailsComponent extends PageArea {
   private static List<Tag> analyteTags(List<Experiment> experiments) {
     return experiments.stream()
         .flatMap(experiment -> experiment.getAnalytes().stream())
-        .map(Analyte::label)
+        .map(OntologyClassDTO::getLabel)
         .distinct()
         .sorted()
         .map(Tag::new)

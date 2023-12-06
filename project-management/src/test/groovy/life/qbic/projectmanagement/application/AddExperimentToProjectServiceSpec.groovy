@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.model.project.*
@@ -25,9 +26,9 @@ class AddExperimentToProjectServiceSpec extends Specification {
         when: "an experiment is added to a project"
         def result = service.addExperimentToProject(project.id,
                 "Pilot",
-                [Species.create("homo sapiens")],
-                [Specimen.create("blood")],
-                [Analyte.create("DNA")])
+                [new OntologyClassDTO()],
+                [new OntologyClassDTO()],
+                [new OntologyClassDTO()])
         ExperimentId experimentId = result.getValue()
 
         then: "the project holds a reference to the created experiment"
