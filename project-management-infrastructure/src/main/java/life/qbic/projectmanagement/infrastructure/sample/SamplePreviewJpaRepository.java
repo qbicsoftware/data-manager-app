@@ -151,8 +151,11 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
 
     private static Specification<SamplePreview> ontologyColumnContains(String col, String filter) {
       return (root, query, builder) -> {
-        Expression<String> expression = root.get(col).as(String.class);
-        return builder.like(expression, "%label%"+filter+"%name%");
+        /*We're currently only interested in the label within the json file*/
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get(col),
+            builder.literal("$.label"));
+        return builder.like(function,
+            "%" + filter + "%");
       };
     }
 
