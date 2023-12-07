@@ -3,12 +3,11 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.SortDirection;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
  * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
@@ -27,13 +26,9 @@ public class OntologyFilterConnector {
    *
    * @param box             The ComboBox that will allow selection of database terms
    * @param ontologies      A list of Ontologies whose terms should be shown in the ComboBox
-   * @param ontologyMapping A mapping between OntologyClassEntity and the type T of the ComboBox
-   *                        (for example String)
-   * @param <T>             The Type of the ComboBox, for example String
    */
-  public <T> void initComboBoxWithOntologyDatasource(
-      MultiSelectComboBox<T> box, List<Ontology> ontologies,
-      Function<OntologyClassEntity, T> ontologyMapping) {
+  public void initComboBoxWithOntologyDatasource(
+      MultiSelectComboBox<OntologyClassDTO> box, List<Ontology> ontologies) {
 
     box.setRequired(true);
     box.setHelperText("Please provide at least two letters to search for entries.");
@@ -44,7 +39,7 @@ public class OntologyFilterConnector {
             query.getOffset(),
             query.getLimit(), query.getSortOrders().stream().map(
                     it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-                .collect(Collectors.toList())).stream().map(ontologyMapping),
+                .collect(Collectors.toList())).stream().map(entity -> OntologyClassDTO.from(entity)),
         entity -> entity
     );
   }
