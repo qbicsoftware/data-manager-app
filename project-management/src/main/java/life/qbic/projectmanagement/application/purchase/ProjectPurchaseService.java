@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.application.purchase;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
@@ -49,5 +51,31 @@ public class ProjectPurchaseService {
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
+  }
+
+  public void addPurchases(String projectId, List<OfferDTO> offers) {
+    var projectReference = ProjectId.parse(projectId);
+    var purchaseDate = Instant.now();
+    List<ServicePurchase> servicePurchases = offers.stream()
+        .map(it -> Offer.create(it.signed(), it.fileName(), it.content()))
+        .map(it -> ServicePurchase.create(projectReference, purchaseDate, it))
+        .toList();
+    try {
+      storage.storePurchases(servicePurchases);
+    } catch (PurchaseStoreException e) {
+      throw ApplicationException.wrapping(e);
+    }
+  }
+
+  /**
+   * Lists all offers linked to a project
+   *
+   * @param projectId the projectId for which to search offers for
+   * @return a list of all linked offers, can be empty, never null.
+   */
+  public List<Offer> linkedOffers(String projectId) {
+    ProjectId parsedId = ProjectId.parse(projectId);
+    return requireNonNull(storage.findOffersForProject(parsedId),
+        "result must not be null");
   }
 }

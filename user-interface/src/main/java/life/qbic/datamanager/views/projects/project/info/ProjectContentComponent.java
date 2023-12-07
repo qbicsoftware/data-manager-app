@@ -10,6 +10,8 @@ import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
+import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog.CancelEvent;
+import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog.ConfirmEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
@@ -48,13 +50,8 @@ public class ProjectContentComponent extends Div {
     add(uploadPurchaseDialog);
     Button uploadOffer = new Button("Upload offer");
     uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
-    uploadPurchaseDialog.addConfirmListener(
-        uploadPurchaseDialogConfirmEvent -> {
-          var offers = uploadPurchaseDialogConfirmEvent.getSource().purchaseItems();
-          uploadPurchaseDialogConfirmEvent.getSource().close();
-          addPurchaseItemsToProject(offers);
-        });
-    uploadPurchaseDialog.addCancelListener(event -> event.getSource().close());
+    uploadPurchaseDialog.addConfirmListener(this::onUploadConfirmed);
+    uploadPurchaseDialog.addCancelListener(ProjectContentComponent::onUploadCanceled);
 
     add(uploadOffer);
 
@@ -62,11 +59,20 @@ public class ProjectContentComponent extends Div {
     layoutComponent();
   }
 
+  private static void onUploadCanceled(CancelEvent event) {
+    event.getSource().close();
+  }
+
+  private void onUploadConfirmed(ConfirmEvent event) {
+    addPurchaseItemsToProject(event.getSource().purchaseItems());
+    event.getSource().close();
+  }
+
   private void addPurchaseItemsToProject(List<OfferDTO> offerDTOS) {
     if (context == null || context.projectId().isEmpty()) {
       throw new ApplicationException("No project context found, cannot save offers");
     }
-    offerDTOS.forEach(offer -> projectPurchaseService.addPurchase(context.projectId().get().toString(), offer));
+    projectPurchaseService.addPurchases(context.projectId().orElseThrow().toString(), offerDTOS);
   }
 
   private void layoutComponent() {
