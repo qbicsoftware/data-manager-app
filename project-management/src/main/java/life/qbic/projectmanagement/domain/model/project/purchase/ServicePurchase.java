@@ -58,6 +58,10 @@ public class ServicePurchase {
     return offer;
   }
 
+  public Instant purchasedOn() {
+    return purchasedOn;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

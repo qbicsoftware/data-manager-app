@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.project.purchase;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 
+import java.util.Comparator;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
@@ -55,6 +56,7 @@ public class PurchaseStore implements ProjectPurchaseStorage {
   public List<Offer> findOffersForProject(ProjectId projectId) {
     try {
       return persistenceStore.findServicePurchasesByProjectIdEquals(projectId).stream()
+          .sorted(Comparator.comparing(ServicePurchase::purchasedOn)) //ensures same ordering
           .map(ServicePurchase::getOffer).toList();
     } catch (RuntimeException e) {
       throw new ApplicationException(
