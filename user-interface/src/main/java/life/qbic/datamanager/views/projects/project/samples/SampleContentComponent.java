@@ -169,20 +169,18 @@ public class SampleContentComponent extends Div {
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();
     List<SampleInfo> samples = confirmEvent.getData().samples();
+    confirmEvent.getSource().close();
     List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
             batchLabel, false,
             context.projectId().orElseThrow())
         .map(batchId -> generateSampleRequestsFromSampleInfo(batchId, samples))
-        .onError(responseCode -> displayRegistrationFailure())
         .valueOrElseThrow(() ->
             new ApplicationException("Could not create sample registration requests"));
     sampleRegistrationService.registerSamples(sampleRegistrationRequests,
             context.projectId().orElseThrow())
-        .onError(responseCode -> displayRegistrationFailure())
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(batchId -> displayRegistrationSuccess())
         .onValue(ignored -> reload());
-    confirmEvent.getSource().close();
   }
 
   private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
@@ -227,12 +225,6 @@ public class SampleContentComponent extends Div {
   private void displayRegistrationSuccess() {
     SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
     StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
-  }
-
-  private void displayRegistrationFailure() {
-    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-    StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
   }
 
@@ -289,12 +281,12 @@ public class SampleContentComponent extends Div {
         .map(this::generateSampleUpdateRequestFromSampleInfo).toList();
     Collection<SampleId> deletedSamples = confirmEvent.getData().removedSamples().stream()
         .map(SampleInfo::getSampleId).toList();
+    confirmEvent.getSource().close();
     var result = batchRegistrationService.editBatch(confirmEvent.getData().batchId(),
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
-    result.onValue(batchId -> displayUpdateSuccess());
     result.onValue(ignored -> reload());
-    confirmEvent.getSource().close();
+    result.onValue(batchId -> displayUpdateSuccess());
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
