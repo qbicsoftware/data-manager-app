@@ -31,7 +31,6 @@ import life.qbic.datamanager.views.general.spreadsheet.validation.ValidationResu
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -722,7 +721,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
         .orElse(ValidationResult.valid());
   }
 
-  private void markCellAsInvalid(Cell cell, String errorMessage) {
+  private void markCellAsInvalid(Cell cell) {
     if (rowNumberStyle.equals(cell.getCellStyle())) {
       return; // does not apply to row numbers
     }
@@ -737,32 +736,18 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       return; // only apply to invalid cells
     }
     cell.setCellStyle(defaultCellStyle);
-    cell.removeCellComment();
   }
 
   private void updateCellValidationStatus(Cell cell, ValidationResult validationResult) {
     if (validationResult.isValid()) {
       markCellAsValid(cell);
     } else {
-      markCellAsInvalid(cell, validationResult.errorMessage());
+      markCellAsInvalid(cell);
     }
   }
 
   private boolean hasCellValidationChanged(Cell cell, ValidationResult validationResult) {
-    if (isCellValid(cell) && validationResult.isValid()) {
-      return false;
-    }
-    if (isCellInvalid(cell) && validationResult.isInvalid()) {
-      Comment existingComment = cell.getCellComment();
-      assert Objects.nonNull(validationResult.errorMessage()) : "error message is never null";
-      if (Objects.isNull(existingComment)) {
-        // error message is never null
-        return true;
-      }
-      return !validationResult.errorMessage()
-          .equals(existingComment.getString().getString());
-    }
-    return true;
+    return !isCellValid(cell) || !validationResult.isValid();
   }
 
   private boolean isCellValid(Cell cell) {
