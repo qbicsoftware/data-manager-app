@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment;
+package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.html.Span;
 
