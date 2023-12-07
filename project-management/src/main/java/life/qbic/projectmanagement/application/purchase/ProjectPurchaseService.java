@@ -78,4 +78,8 @@ public class ProjectPurchaseService {
     return requireNonNull(storage.findOffersForProject(parsedId),
         "result must not be null");
   }
+
+  public void deleteOffer(String projectId, long offerId) {
+    storage.deleteOffer(projectId, offerId);
+  }
 }

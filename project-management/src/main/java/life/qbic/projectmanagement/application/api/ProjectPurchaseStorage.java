@@ -26,4 +26,6 @@ public interface ProjectPurchaseStorage {
   void storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException;
 
   List<Offer> findOffersForProject(ProjectId projectId);
+
+  void deleteOffer(String projectId, long offerId);
 }
