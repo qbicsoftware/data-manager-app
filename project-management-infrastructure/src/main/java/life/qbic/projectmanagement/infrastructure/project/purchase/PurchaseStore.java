@@ -63,4 +63,13 @@ public class PurchaseStore implements ProjectPurchaseStorage {
           "Retrieving offers for project %s failed.".formatted(projectId), e);
     }
   }
+
+  @Override
+  public void deleteOffer(String projectId, long offerId) {
+    List<ServicePurchase> purchases = persistenceStore.findServicePurchasesByProjectIdEquals(
+        ProjectId.parse(projectId));
+    List<ServicePurchase> purchasesWithOffer = purchases.stream()
+        .filter(servicePurchase -> servicePurchase.getOffer().id().equals(offerId)).toList();
+    persistenceStore.deleteAll(purchasesWithOffer);
+  }
 }
