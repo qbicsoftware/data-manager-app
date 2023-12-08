@@ -101,13 +101,13 @@ public class ProjectDetailsComponent extends PageArea {
     var specimen = new Div();
     specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
     createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()))
-        .forEach(species::add);
+        .forEach(specimen::add);
     entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
         + "species", specimen));
     var analyte = new Div();
     analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
     createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()))
-        .forEach(species::add);
+        .forEach(analyte::add);
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
   }
