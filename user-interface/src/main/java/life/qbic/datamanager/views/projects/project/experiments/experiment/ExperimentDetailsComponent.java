@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
@@ -60,6 +61,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -349,7 +351,7 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Span createSampleSourceList(String title, Icon icon, List<String> tags) {
+  private Span createSampleSourceList(String title, Icon icon, List<OntologyClassDTO> ontologyClasses) {
     Span iconAndList = new Span();
     iconAndList.addClassName("icon-with-list");
     iconAndList.add(icon);
@@ -360,19 +362,21 @@ public class ExperimentDetailsComponent extends PageArea {
     listTitle.addClassName("title");
     list.add(listTitle);
     list.addClassName("taglist");
-    tags.forEach(name -> list.add(new Span(name)));
+    for(OntologyClassDTO ontologyClass : ontologyClasses) {
+      Span termSpan = new Span(ontologyClass.getLabel());
+      String ontologyName = Ontology.findOntologyByAbbreviation(ontologyClass.getOntology()).getName();
+      termSpan.setTitle(ontologyClass.getName()+ "("+ontologyName+")");
+      list.add(termSpan);
+    }
     iconAndList.add(list);
     return iconAndList;
   }
 
   private void loadSampleSources(Experiment experiment) {
     sampleSourceComponent.removeAll();
-    List<String> speciesTags = new ArrayList<>();
-    List<String> specimenTags = new ArrayList<>();
-    List<String> analyteTags = new ArrayList<>();
-    experiment.getSpecies().forEach(species -> speciesTags.add(species.getLabel()));
-    experiment.getSpecimens().forEach(specimen -> specimenTags.add(specimen.getLabel()));
-    experiment.getAnalytes().forEach(analyte -> analyteTags.add(analyte.getLabel()));
+    List<OntologyClassDTO> speciesTags = new ArrayList<>(experiment.getSpecies());
+    List<OntologyClassDTO> specimenTags = new ArrayList<>(experiment.getSpecimens());
+    List<OntologyClassDTO> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
     sampleSourceComponent.add(
         createSampleSourceList("Species", VaadinIcon.BUG.create(), speciesTags));
