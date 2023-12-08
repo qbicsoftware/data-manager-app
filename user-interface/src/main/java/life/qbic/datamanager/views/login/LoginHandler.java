@@ -4,10 +4,10 @@ import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.Application;
-import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.login.passwordreset.ResetPasswordLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
 import life.qbic.identity.application.user.registration.ConfirmEmailInput;
 import life.qbic.identity.application.user.registration.ConfirmEmailOutput;
 import life.qbic.logging.api.Logger;
@@ -85,13 +85,13 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
     registeredLoginView.addLoginListener(it ->
         onLoginSucceeded());
     registeredLoginView.addForgotPasswordListener(
-        it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(AppRoutes.RESET_PASSWORD)));
+        it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(ResetPasswordLayout.class)));
   }
 
   private void onLoginSucceeded() {
     clearNotifications();
     registeredLoginView.getUI().ifPresentOrElse(
-        ui -> ui.navigate(Projects.PROJECTS),
+        ui -> ui.navigate(ProjectOverviewPage.class),
         () -> logger.error("No UI found!"));
   }
 

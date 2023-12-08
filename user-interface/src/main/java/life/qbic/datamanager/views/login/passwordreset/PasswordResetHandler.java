@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.login.passwordreset;
 
 import com.vaadin.flow.component.Key;
 import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
@@ -51,7 +52,7 @@ public class PasswordResetHandler implements PasswordResetHandlerInterface, Pass
             registeredPasswordResetLayout
                 .linkSentLayout
                 .getUI()
-                .ifPresent(ui -> ui.navigate("login")));
+                .ifPresent(ui -> ui.navigate(LoginLayout.class)));
   }
 
   public void clearNotifications() {

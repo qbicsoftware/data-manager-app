@@ -10,7 +10,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
-import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
@@ -57,6 +56,7 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     addToNavbar(navBarContent);
     addClickListeners();
     addClassName("project-main-layout");
+    projectTitle.setTitle("I have a tooltip behold");
   }
 
   @Override
@@ -108,8 +108,7 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   }
 
   private void addClickListeners() {
-    homeButton.addClickListener(event -> UI.getCurrent().getPage().setLocation(
-        Projects.PROJECTS));
+    homeButton.addClickListener(event -> UI.getCurrent().navigate(ProjectOverviewPage.class));
     logout.addClickListener(event -> logoutService.logout());
   }
 }

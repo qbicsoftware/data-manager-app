@@ -14,6 +14,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
@@ -168,7 +169,8 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
         context.projectId().orElseThrow().value());
     RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
         context.experimentId().orElseThrow().value());
-    getUI().ifPresent(ui -> ui.navigate(navigationTarget, projectRouteParam, experimentRouteParam));
+    RouteParameters routeParameters = new RouteParameters(projectRouteParam, experimentRouteParam);
+    getUI().ifPresent(ui -> ui.navigate(navigationTarget, routeParameters));
   }
 
   private void logoutTriggeredListener(LogoutTriggeredEvent logoutTriggeredEvent) {

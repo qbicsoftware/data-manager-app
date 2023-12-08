@@ -12,6 +12,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.logging.api.Logger;
@@ -30,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
+@Route(value = Projects.EXPERIMENT, layout = ExperimentMainLayout.class)
 @PermitAll
 public class ExperimentInformationMain extends MainComponent implements BeforeEnterObserver,
     RouterLayout {

@@ -17,6 +17,7 @@ import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -42,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
+@Route(value = Projects.PROJECT_INFO, layout = ProjectMainLayout.class)
 @PermitAll
 public class ProjectInformationMain extends MainComponent implements BeforeEnterObserver,
     RouterLayout {

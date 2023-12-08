@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
@@ -12,6 +11,9 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -24,8 +26,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
@@ -124,21 +126,23 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void layoutGrid() {
-    projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0)
-        .setSortProperty("projectCode");
+    projectGrid.addColumn(new ComponentRenderer<>(this::getRouterLink)).setHeader("Code")
+        .setWidth("7em").setFlexGrow(0).setSortProperty("projectCode");
 
-    projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectTitle()))).setHeader("Title").setKey("projectTitle").setSortable(true)
-        .setSortProperty("projectTitle");
+    projectGrid.addColumn(new ComponentRenderer<>(this::getRouterLink)).setHeader("Title")
+        .setKey("projectTitle").setSortable(true).setSortProperty("projectTitle");
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
             projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
             "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("lastModified").setSortable(true)
         .setSortProperty("lastModified");
     projectGrid.addClassName("projects-grid");
+  }
+
+  private RouterLink getRouterLink(ProjectPreview item) {
+    RouteParameters routeParameters = new RouteParameters(
+        new RouteParam("projectId", item.projectId().value()));
+    return new RouterLink(ProjectInformationMain.class, routeParameters);
   }
 
   private void layoutTitleSection() {

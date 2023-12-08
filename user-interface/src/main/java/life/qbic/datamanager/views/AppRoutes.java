@@ -62,7 +62,7 @@ public class AppRoutes {
     /**
      * Path to list registered project samples
      */
-    public static final String SAMPLES = "projects/%s/samples";
+    public static final String SAMPLES = "projects/%s/experiments/%s/samples/";
 
     /**
      * Path to investigate a specific sample's properties within a project

@@ -2,7 +2,7 @@ package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.UI;
 import life.qbic.datamanager.security.LogoutService;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +32,8 @@ public class MainHandler implements MainHandlerInterface {
   }
 
   private void addClickListeners() {
-    registeredMainLayout.homeButton().addClickListener(event -> UI.getCurrent().getPage().setLocation(
-        Projects.PROJECTS));
+    registeredMainLayout.homeButton().addClickListener(event -> UI.getCurrent().navigate(
+        ProjectOverviewPage.class));
     registeredMainLayout.logout().addClickListener(event -> logoutService.logout());
   }
 }

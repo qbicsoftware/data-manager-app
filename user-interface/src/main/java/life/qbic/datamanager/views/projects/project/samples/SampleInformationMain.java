@@ -10,6 +10,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.MainComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -30,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * provided {@link ProjectId} in the URL
  */
 
-@Route(value = "projects/:projectId?/experiments/:experimentId?/samples", layout = ExperimentMainLayout.class)
+@Route(value = Projects.SAMPLES, layout = ExperimentMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll

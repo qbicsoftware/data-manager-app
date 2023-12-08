@@ -5,6 +5,7 @@ import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.user.password.NewPasswordInput;
 import life.qbic.identity.application.user.password.NewPasswordOutput;
 import org.apache.commons.lang3.NotImplementedException;
@@ -68,7 +69,7 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
     newPasswordLayout.newPasswordSetLayout().loginButton().addClickListener(
         buttonClickEvent ->
             newPasswordLayout.newPasswordSetLayout().getUI()
-                .ifPresent(ui -> ui.navigate("login")));
+                .ifPresent(ui -> ui.navigate(LoginLayout.class)));
   }
 
   @Override

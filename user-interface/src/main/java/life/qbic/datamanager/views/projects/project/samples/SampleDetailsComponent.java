@@ -17,6 +17,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -25,11 +27,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
@@ -70,6 +72,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Grid<SamplePreview> sampleGrid;
   private final ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -211,13 +215,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
       String experimentId) {
     if (componentEvent.isFromClient()) {
-      String routeToExperimentPage = String.format(Projects.EXPERIMENT,
-          context.projectId().orElseThrow().value(),
-          experimentId);
-      log.debug(String.format(
-          "Rerouting to experiment page for experiment %s of project %s: " + routeToExperimentPage,
-          experimentId, context.projectId().orElseThrow().value()));
-      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
+      RouteParameters routeParameters = new RouteParameters(
+          new RouteParam(PROJECT_ID_ROUTE_PARAMETER, context.projectId().orElseThrow()
+              .value()), new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId));
+      log.debug("Rerouting to experiment page for experiment %s of project %s: " + routeParameters);
+      componentEvent.getSource().getUI()
+          .ifPresent(ui -> ui.navigate(ExperimentInformationMain.class, routeParameters));
     }
   }
 
