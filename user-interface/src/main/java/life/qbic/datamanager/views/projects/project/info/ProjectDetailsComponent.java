@@ -175,6 +175,10 @@ public class ProjectDetailsComponent extends PageArea {
     return noPersonAssignedSpan;
   }
 
+  /**
+   * Creates tags for a list of ontology terms. Each tag display the term label and contains a tooltip
+   * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
+   */
   private static List<Tag> createTagsFrom(Stream<OntologyClassDTO> entries) {
     return entries.distinct().map(entry -> new Tag(entry.getLabel(),
         entry.getName()+"("+ Ontology.findOntologyByAbbreviation(entry.getOntology()).getName()+")"))

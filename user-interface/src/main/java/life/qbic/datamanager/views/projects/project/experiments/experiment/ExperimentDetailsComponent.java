@@ -365,6 +365,7 @@ public class ExperimentDetailsComponent extends PageArea {
     for(OntologyClassDTO ontologyClass : ontologyClasses) {
       Span termSpan = new Span(ontologyClass.getLabel());
       String ontologyName = Ontology.findOntologyByAbbreviation(ontologyClass.getOntology()).getName();
+      // creates a line with label and ontology name (id), e.g. "Homo sapiens (NCBITaxon_9606)"
       termSpan.setTitle(ontologyClass.getName()+ "("+ontologyName+")");
       list.add(termSpan);
     }

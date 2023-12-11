@@ -30,6 +30,16 @@ public class OntologyClassDTO {
   public OntologyClassDTO() {
   }
 
+  /**
+   *
+   * @param ontology        - the abbreviation of the ontology a class/term belongs to
+   * @param ontologyVersion - the version of the ontology
+   * @param ontologyIri     - the iri of this ontology (e.g. link to the owl)
+   * @param label           - a humanly readable label for the term
+   * @param name            - the identifier unique for this ontology and term (e.g. NCBITaxon_9606)
+   * @param description     - an optional description of the term
+   * @param classIri        - the iri where this specific class is found/described
+   */
   public OntologyClassDTO(String ontology, String ontologyVersion, String ontologyIri,
       String label, String name, String description, String classIri) {
     this.ontology = ontology;

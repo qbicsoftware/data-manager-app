@@ -16,6 +16,7 @@ public class OntologyComponent extends Component implements HasComponents {
     addClassName("ontology-component");
 
     var upperDiv = new Div();
+    // creates a line with label and ontology name (id), e.g. "Homo sapiens (NCBITaxon_9606)"
     upperDiv.add(new Span(contentDTO.getLabel()) + " (" + contentDTO.getName() + ")");
     var lowerDiv = new Div();
     Span subtitle = new Span(ontologyName);
