@@ -45,10 +45,10 @@ public class OntologyFilterConnector {
                 .collect(Collectors.toList())).stream().map(entity -> OntologyClassDTO.from(entity)),
         entity -> entity
     );
-    box.setRenderer(createRenderer());
+    box.setRenderer(ontologyComponentRenderer());
   }
 
-  private Renderer<OntologyClassDTO> createRenderer() {
+  private Renderer<OntologyClassDTO> ontologyComponentRenderer() {
       return new ComponentRenderer<OntologyComponent, OntologyClassDTO>(ontologyClassDTO ->
         new OntologyComponent(ontologyClassDTO) );
     }
