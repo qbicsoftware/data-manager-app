@@ -12,16 +12,13 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
 public class OntologyComponent extends Component implements HasComponents {
   public OntologyComponent(OntologyClassDTO contentDTO) {
     String ontologyName = Ontology.findOntologyByAbbreviation(contentDTO.getOntology()).getName();
-    styleLayout(contentDTO.getLabel(), contentDTO.getName(), ontologyName);
-  }
 
-  private void styleLayout(String label, String id, String ontology) {
     addClassName("ontology-component");
 
     var upperDiv = new Div();
-    upperDiv.add(new Span(label+ " ("+id+")"));
+    upperDiv.add(new Span(contentDTO.getLabel()) + " (" + contentDTO.getName() + ")");
     var lowerDiv = new Div();
-    Span subtitle = new Span(ontology);
+    Span subtitle = new Span(ontologyName);
     subtitle.addClassNames("subtitle");
     lowerDiv.add(subtitle);
     upperDiv.add(lowerDiv);
