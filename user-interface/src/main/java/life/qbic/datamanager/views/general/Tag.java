@@ -8,4 +8,9 @@ public class Tag extends Span {
     super(text);
     addClassName("tag");
   }
+
+  public Tag(String text, String toolTip) {
+    this(text);
+    setTitle(toolTip);
+  }
 }

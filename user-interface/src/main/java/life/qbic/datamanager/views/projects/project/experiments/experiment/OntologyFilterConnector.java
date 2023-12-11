@@ -2,12 +2,15 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.List;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import com.vaadin.flow.data.renderer.Renderer;
 
 /**
  * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
@@ -42,5 +45,12 @@ public class OntologyFilterConnector {
                 .collect(Collectors.toList())).stream().map(entity -> OntologyClassDTO.from(entity)),
         entity -> entity
     );
+    box.setRenderer(ontologyComponentRenderer());
   }
+
+  private Renderer<OntologyClassDTO> ontologyComponentRenderer() {
+      return new ComponentRenderer<OntologyComponent, OntologyClassDTO>(ontologyClassDTO ->
+        new OntologyComponent(ontologyClassDTO) );
+    }
+
 }

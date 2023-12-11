@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
@@ -21,6 +22,7 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -93,16 +95,19 @@ public class ProjectDetailsComponent extends PageArea {
 
     var species = new Div();
     species.addClassName(TAG_COLLECTION_CSS_CLASS);
-    speciesTags(experiments).forEach(species::add);
+    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()))
+        .forEach(species::add);
     entries.add(new Entry("Species", "", species));
     var specimen = new Div();
     specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
-    specimenTags(experiments).forEach(specimen::add);
+    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()))
+        .forEach(specimen::add);
     entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
         + "species", specimen));
     var analyte = new Div();
     analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
-    analyteTags(experiments).forEach(analyte::add);
+    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()))
+        .forEach(analyte::add);
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
   }
@@ -170,33 +175,13 @@ public class ProjectDetailsComponent extends PageArea {
     return noPersonAssignedSpan;
   }
 
-  private static List<Tag> speciesTags(List<Experiment> experiments) {
-    return experiments.stream()
-        .flatMap(experiment -> experiment.getSpecies().stream())
-        .map(OntologyClassDTO::getLabel)
-        .distinct()
-        .sorted()
-        .map(Tag::new)
-        .toList();
-  }
-
-  private static List<Tag> specimenTags(List<Experiment> experiments) {
-    return experiments.stream()
-        .flatMap(experiment -> experiment.getSpecimens().stream())
-        .map(OntologyClassDTO::getLabel)
-        .distinct()
-        .sorted()
-        .map(Tag::new)
-        .toList();
-  }
-
-  private static List<Tag> analyteTags(List<Experiment> experiments) {
-    return experiments.stream()
-        .flatMap(experiment -> experiment.getAnalytes().stream())
-        .map(OntologyClassDTO::getLabel)
-        .distinct()
-        .sorted()
-        .map(Tag::new)
+  /**
+   * Creates tags for a list of ontology terms. Each tag display the term label and contains a tooltip
+   * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
+   */
+  private static List<Tag> createTagsFrom(Stream<OntologyClassDTO> entries) {
+    return entries.distinct().map(entry -> new Tag(entry.getLabel(),
+        entry.getName()+"("+ Ontology.findOntologyByAbbreviation(entry.getOntology()).getName()+")"))
         .toList();
   }
 
