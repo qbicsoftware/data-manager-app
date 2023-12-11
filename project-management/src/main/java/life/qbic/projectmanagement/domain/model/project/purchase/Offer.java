@@ -58,6 +58,10 @@ public class Offer {
     return fileName;
   }
 
+  public byte[] fileContent() {
+    return Arrays.copyOf(fileContent, fileContent.length);
+  }
+
   public Long id() {
     return id;
   }

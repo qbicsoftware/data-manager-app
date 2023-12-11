@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
@@ -39,18 +40,7 @@ public class ProjectPurchaseService {
    * @since 1.0.0
    */
   public void addPurchase(String projectId, OfferDTO offer) {
-    var theOffer = Offer.create(offer.signed(), offer.fileName(),
-        offer.content());
-    var projectReference = ProjectId.parse(projectId);
-    var purchaseDate = Instant.now();
-
-    ServicePurchase purchase = ServicePurchase.create(projectReference, purchaseDate, theOffer);
-
-    try {
-      storage.storePurchase(purchase);
-    } catch (PurchaseStoreException e) {
-      throw ApplicationException.wrapping(e);
-    }
+    addPurchases(projectId, List.of(offer));
   }
 
   public void addPurchases(String projectId, List<OfferDTO> offers) {
@@ -82,4 +72,9 @@ public class ProjectPurchaseService {
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
   }
+
+  public Optional<Offer> getOfferWithContent(String projectId, Long offerId) {
+    return storage.findOfferForProject(projectId, offerId);
+  }
+
 }

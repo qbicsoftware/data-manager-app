@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
@@ -28,4 +29,7 @@ public interface ProjectPurchaseStorage {
   List<Offer> findOffersForProject(ProjectId projectId);
 
   void deleteOffer(String projectId, long offerId);
+
+  Optional<Offer> findOfferForProject(String projectId, Long offerId);
+
 }

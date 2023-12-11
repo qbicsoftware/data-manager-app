@@ -1,12 +1,12 @@
 package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
 import life.qbic.datamanager.views.projects.project.info.OfferList;
 import life.qbic.datamanager.views.projects.project.info.OfferList.DeleteOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.OfferList.DownloadOfferClickEvent;
 import life.qbic.datamanager.views.projects.project.info.OfferList.OfferInfo;
 import life.qbic.datamanager.views.projects.project.info.OfferList.UploadOfferClickEvent;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
@@ -30,29 +30,32 @@ public class TestView extends Div {
   private final ProjectPurchaseService projectPurchaseService;
 
   final String projectId = "91537201-b5ff-489a-b2b4-720aaebbfbb9"; //FIXME remove mock data
+  private OfferDownload offerDownload;
 
   public TestView(@Autowired ProjectPurchaseService projectPurchaseService) {
 
     this.projectPurchaseService = projectPurchaseService;
     offerList = new OfferList();
     offerList.addDeleteOfferClickListener(this::onDeleteOfferClicked);
-    offerList.addDownloadOfferClickListener(
-        event -> {
-          Notification notification = new Notification("download offer " + event.offerId());
-          notification.setDuration(2000);
-          notification.open();
-        }
-    );
+    offerList.addDownloadOfferClickListener(this::onDownloadOfferClicked);
     offerList.addUploadOfferClickListener(
         event -> onUploadOfferClicked(event, projectPurchaseService, projectId));
-    add(offerList);
+    offerDownload = new OfferDownload(
+        (projectId, offerId) -> projectPurchaseService.getOfferWithContent(projectId, offerId)
+            .orElseThrow());
+    add(offerList, offerDownload);
     refreshOffers(projectPurchaseService, projectId, offerList);
   }
 
+  private void onDownloadOfferClicked(DownloadOfferClickEvent downloadOfferClickEvent) {
+    offerDownload.trigger(projectId, downloadOfferClickEvent.offerId());
+    offerDownload.removeHref();
+  }
+
   private void onDeleteOfferClicked(DeleteOfferClickEvent deleteOfferClickEvent) {
-    // get the offers from the event and delete them from the project
     projectPurchaseService.deleteOffer(projectId, deleteOfferClickEvent.offerId());
     deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
+    offerDownload.removeHref();
   }
 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
@@ -79,4 +82,5 @@ public class TestView extends Div {
         .toList();
     offerList.setOffers(offers);
   }
+
 }

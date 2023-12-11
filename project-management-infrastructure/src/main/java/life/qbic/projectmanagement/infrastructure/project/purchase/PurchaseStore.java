@@ -4,6 +4,7 @@ import static org.apache.logging.log4j.LogManager.getLogger;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
@@ -71,5 +72,22 @@ public class PurchaseStore implements ProjectPurchaseStorage {
     List<ServicePurchase> purchasesWithOffer = purchases.stream()
         .filter(servicePurchase -> servicePurchase.getOffer().id().equals(offerId)).toList();
     persistenceStore.deleteAll(purchasesWithOffer);
+  }
+
+  @Override
+  public Optional<Offer> findOfferForProject(String projectId, Long offerId) {
+    try {
+      List<ServicePurchase> purchases = persistenceStore.findServicePurchasesByProjectIdEquals(
+          ProjectId.parse(projectId));
+      Optional<Offer> foundOffer = purchases.stream()
+          .filter(servicePurchase -> servicePurchase.getOffer().id().equals(offerId))
+          .map(ServicePurchase::getOffer)
+          .findFirst();
+      foundOffer.ifPresent(Offer::fileContent); // make sure it is loaded
+      return foundOffer;
+    } catch (RuntimeException e) {
+      throw new ApplicationException(
+          "Retrieving offer %d for project %s failed.".formatted(offerId, projectId), e);
+    }
   }
 }
