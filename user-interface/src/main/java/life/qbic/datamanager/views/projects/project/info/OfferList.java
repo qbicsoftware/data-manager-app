@@ -7,8 +7,8 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -16,11 +16,12 @@ import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.datamanager.views.general.PageArea;
 
 /**
  * Lists all uploaded offers. Allows users to upload and delete uploads.
  */
-public class OfferList extends Div {
+public class OfferList extends PageArea {
 
   private final VirtualList<OfferInfo> delegateList;
   private final List<OfferInfo> offers;
@@ -31,7 +32,10 @@ public class OfferList extends Div {
     delegateList.setRenderer(new ComponentRenderer<>(this::renderOffer));
     delegateList.setItems(offers);
     Button upload = new Button("Upload", this::onUploadOfferClicked);
-    add(upload, delegateList);
+    H2 title = new H2("Offers");
+    Div topBar = new Div(title, upload);
+    topBar.addClassName("top-bar");
+    add(topBar, delegateList);
   }
 
   private void onUploadOfferClicked(ClickEvent<Button> clickEvent) {
@@ -57,8 +61,6 @@ public class OfferList extends Div {
 
   private Component renderOffer(OfferInfo offer) {
 
-    var oIcon = new Icon("O");
-
     var offerFileName = new Span(offer.filename());
     offerFileName.addClassName("file-name");
 
@@ -79,7 +81,7 @@ public class OfferList extends Div {
 
     var fileInfo = new Div();
     fileInfo.addClassName("file-info");
-    fileInfo.add(oIcon, offerFileName, signedInfo);
+    fileInfo.add(offerFileName, signedInfo);
 
     Div offerListItem = new Div();
     offerListItem.addClassName("offer-info");
@@ -103,10 +105,6 @@ public class OfferList extends Div {
   }
 
   private void onDownloadOfferClicked(DownloadOfferClickEvent event) {
-    fireEvent(event);
-  }
-
-  private void onUploadOfferClickListener(UploadOfferClickEvent event) {
     fireEvent(event);
   }
 
