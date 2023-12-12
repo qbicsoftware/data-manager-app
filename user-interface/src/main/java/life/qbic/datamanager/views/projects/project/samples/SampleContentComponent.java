@@ -173,7 +173,6 @@ public class SampleContentComponent extends Div {
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();
     List<SampleInfo> samples = confirmEvent.getData().samples();
-    confirmEvent.getSource().close();
     List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
             batchLabel, false,
             context.projectId().orElseThrow())
@@ -186,7 +185,9 @@ public class SampleContentComponent extends Div {
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(batchId -> displayRegistrationSuccess())
         .onValue(ignored -> reload())
+        .onValue(ignored -> confirmEvent.getSource().close())
         .onError(error -> {
+          confirmEvent.getSource().close();
           throw new ApplicationException(
               "Could not register samples. Response code: " + error);
         });
@@ -290,12 +291,12 @@ public class SampleContentComponent extends Div {
         .map(this::generateSampleUpdateRequestFromSampleInfo).toList();
     Collection<SampleId> deletedSamples = confirmEvent.getData().removedSamples().stream()
         .map(SampleInfo::getSampleId).toList();
-    confirmEvent.getSource().close();
     var result = batchRegistrationService.editBatch(confirmEvent.getData().batchId(),
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
-    result.onValue(ignored -> reload());
-    result.onValue(batchId -> displayUpdateSuccess());
+    result.onValue(ignored -> reload())
+        .onValue(ignored -> confirmEvent.getSource().close())
+        .onValue(batchId -> displayUpdateSuccess());
     result.onError(error -> {
       confirmEvent.getSource().close();
       throw new ApplicationException("error code: " + error);
