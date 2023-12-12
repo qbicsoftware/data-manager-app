@@ -1,19 +1,13 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.List;
 import java.util.Objects;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.purchase.OfferDTO;
-import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -35,38 +29,11 @@ public class ProjectContentComponent extends Div {
   private static final long serialVersionUID = -1061134126086910532L;
   private final ProjectDetailsComponent projectDetailsComponent;
 
-  private final ProjectPurchaseService projectPurchaseService;
-  private Context context;
-
   public ProjectContentComponent(
-      @Autowired ProjectDetailsComponent projectDetailsComponent,
-      @Autowired ProjectPurchaseService projectPurchaseService) {
+      @Autowired ProjectDetailsComponent projectDetailsComponent) {
     Objects.requireNonNull(projectDetailsComponent);
-    this.projectPurchaseService = Objects.requireNonNull(projectPurchaseService);
-    UploadPurchaseDialog uploadPurchaseDialog = new UploadPurchaseDialog();
-    uploadPurchaseDialog.setOpened(false);
-    add(uploadPurchaseDialog);
-    Button uploadOffer = new Button("Upload offer");
-    uploadOffer.addClickListener(listener -> uploadPurchaseDialog.open());
-    uploadPurchaseDialog.addConfirmListener(
-        uploadPurchaseDialogConfirmEvent -> {
-          var offers = uploadPurchaseDialogConfirmEvent.getSource().purchaseItems();
-          uploadPurchaseDialogConfirmEvent.getSource().close();
-          addPurchaseItemsToProject(offers);
-        });
-    uploadPurchaseDialog.addCancelListener(event -> event.getSource().close());
-
-    add(uploadOffer);
-
     this.projectDetailsComponent = projectDetailsComponent;
     layoutComponent();
-  }
-
-  private void addPurchaseItemsToProject(List<OfferDTO> offerDTOS) {
-    if (context == null || context.projectId().isEmpty()) {
-      throw new ApplicationException("No project context found, cannot save offers");
-    }
-    offerDTOS.forEach(offer -> projectPurchaseService.addPurchase(context.projectId().get().toString(), offer));
   }
 
   private void layoutComponent() {
@@ -79,7 +46,6 @@ public class ProjectContentComponent extends Div {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    this.context = context;
     projectDetailsComponent.setContext(context);
   }
 

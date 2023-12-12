@@ -76,7 +76,8 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     this.userPermissions = userPermissions;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.ontologyTermInformationService = ontologyTermInformationService;
-    layoutComponent();
+
+    addClassName("project");
     addListeners();
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
@@ -85,10 +86,6 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
         System.identityHashCode(projectContentComponent),
         projectSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(projectSupportComponent)));
-  }
-
-  private void layoutComponent() {
-    addClassName("project");
   }
 
   /**
@@ -115,6 +112,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void setContext(Context context) {
+    this.context = context;
     projectContentComponent.setContext(context);
     projectSupportComponent.setContext(context);
   }

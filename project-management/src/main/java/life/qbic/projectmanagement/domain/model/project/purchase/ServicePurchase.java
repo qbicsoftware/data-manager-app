@@ -54,6 +54,14 @@ public class ServicePurchase {
     return this.projectId;
   }
 
+  public Offer getOffer() {
+    return offer;
+  }
+
+  public Instant purchasedOn() {
+    return purchasedOn;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
