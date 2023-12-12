@@ -37,6 +37,15 @@
   align-items: baseline;
 }
 
+.ontology-component {
+  display: flex;
+}
+
+.ontology-component .subtitle {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
 .card-deck {
   display: flex;
   align-content: space-evenly;

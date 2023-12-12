@@ -11,7 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 
 /**
  * <b>Offer</b>
@@ -42,15 +41,29 @@ public class Offer {
 
   public static Offer create(boolean signed, String fileName,
       byte[] fileContent) {
-    var randomReferenceId = new Random().nextLong();
-    return new Offer(randomReferenceId, signed, fileName, fileContent);
+    return new Offer(signed, fileName, fileContent);
   }
 
-  protected Offer(Long referenceId, boolean signed, String fileName,
-      byte[] fileContent) {
+  protected Offer(boolean signed, String fileName, byte[] fileContent) {
     this.signed = signed;
     this.fileName = fileName;
     this.fileContent = fileContent;
+  }
+
+  public boolean isSigned() {
+    return signed;
+  }
+
+  public String getFileName() {
+    return fileName;
+  }
+
+  public byte[] fileContent() {
+    return Arrays.copyOf(fileContent, fileContent.length);
+  }
+
+  public Long id() {
+    return id;
   }
 
   @Override

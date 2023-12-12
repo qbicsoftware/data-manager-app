@@ -1,0 +1,30 @@
+.offer-info {
+  border: 1px solid transparent;
+  padding: 0.5em;
+  background-color: inherit;
+  display: flex;
+  align-items: center;
+
+  gap: 0.8em;
+}
+
+.offer-info .file-info {
+  display: flex;
+  justify-content: left;
+  gap: 0.5em;
+  justify-self: left;
+  flex-grow: 1;
+}
+
+.offer-info .signed-info {
+  justify-self: right;
+}
+
+.offer-info .signed-info.signed {
+  color: var(--lumo-primary-color);
+}
+
+.offer-info .signed-info.unsigned {
+  color: gray;
+  justify-self: right;
+}

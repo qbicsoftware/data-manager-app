@@ -43,7 +43,6 @@ public class DefaultDatasourceConfig {
 
   @Primary
   @Bean(name = "datasource")
-//  @ConfigurationProperties(prefix = "spring.datasource")
   public DataSource jobrunrDatasource(
       @Qualifier("datasourceProperties") DataSourceProperties dataSourceProperties) {
     return dataSourceProperties.initializeDataSourceBuilder().build();
@@ -51,7 +50,7 @@ public class DefaultDatasourceConfig {
 
   @Primary
   @Bean(name = "entityManagerFactory")
-  public LocalContainerEntityManagerFactoryBean jobRunrEntityManagerFactory(
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory(
       EntityManagerFactoryBuilder builder,
       @Qualifier("datasource") DataSource dataSource
   ) {

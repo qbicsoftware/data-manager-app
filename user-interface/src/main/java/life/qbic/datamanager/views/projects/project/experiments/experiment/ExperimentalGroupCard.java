@@ -7,6 +7,7 @@ import java.io.Serial;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 
 /**

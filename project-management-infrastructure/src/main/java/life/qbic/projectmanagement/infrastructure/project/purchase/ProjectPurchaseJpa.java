@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.project.purchase;
 
+import java.util.List;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import org.springframework.data.repository.CrudRepository;
 
@@ -12,4 +14,5 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface ProjectPurchaseJpa extends CrudRepository<ServicePurchase, Long> {
 
+  List<ServicePurchase> findServicePurchasesByProjectIdEquals(ProjectId projectId);
 }
