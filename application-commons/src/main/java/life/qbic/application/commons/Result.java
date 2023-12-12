@@ -266,6 +266,15 @@ public abstract class Result<V, E> {
   public abstract V valueOrElseThrow(Supplier<? extends RuntimeException> supplier);
 
   /**
+   * Returns the value if the result is a value; throws the exception returned by the
+   * exceptionMapper function otherwise.
+   *
+   * @param exceptionMapper the function that maps the error to the exception to be thrown
+   * @return the stored value
+   */
+  public abstract V valueOrElseThrow(Function<E, ? extends RuntimeException> exceptionMapper);
+
+  /**
    * Returns the error or throws a {@link InvalidResultAccessException} if no error is present
    *
    * @return the error
@@ -279,10 +288,6 @@ public abstract class Result<V, E> {
 
     private Value(V value) {
       this.value = value;
-    }
-
-    private V get() {
-      return value;
     }
 
     @Override
@@ -370,6 +375,11 @@ public abstract class Result<V, E> {
     }
 
     @Override
+    public V valueOrElseThrow(Function<E, ? extends RuntimeException> exceptionMapper) {
+      return value;
+    }
+
+    @Override
     public E getError() {
       throw new InvalidResultAccessException("No error present.");
     }
@@ -400,10 +410,6 @@ public abstract class Result<V, E> {
 
     private Error(E error) {
       this.error = error;
-    }
-
-    private E get() {
-      return error;
     }
 
     @Override
@@ -490,6 +496,11 @@ public abstract class Result<V, E> {
     @Override
     public V valueOrElseThrow(Supplier<? extends RuntimeException> supplier) {
       throw supplier.get();
+    }
+
+    @Override
+    public V valueOrElseThrow(Function<E, ? extends RuntimeException> exceptionMapper) {
+      throw exceptionMapper.apply(error);
     }
 
     @Override
