@@ -747,7 +747,8 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private boolean hasCellValidationChanged(Cell cell, ValidationResult validationResult) {
-    return !isCellValid(cell) || !validationResult.isValid();
+    return !(isCellValid(cell) && validationResult.isValid())
+        || !(isCellInvalid(cell) && validationResult.isInvalid());
   }
 
   private boolean isCellValid(Cell cell) {
