@@ -30,7 +30,6 @@ public class ProjectSupportComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -6996282848714468102L;
-  private final ProjectLinksComponent projectLinksComponent;
   private final ExperimentListComponent experimentListComponent;
   private static final Logger log = LoggerFactory.logger(ProjectSupportComponent.class);
 
@@ -40,14 +39,12 @@ public class ProjectSupportComponent extends Div {
     Objects.requireNonNull(projectLinksComponent);
     Objects.requireNonNull(experimentListComponent);
     this.experimentListComponent = experimentListComponent;
-    this.projectLinksComponent = projectLinksComponent;
     layoutComponent();
     addListeners();
   }
 
   private void layoutComponent() {
     this.add(experimentListComponent);
-    this.add(projectLinksComponent);
   }
 
   private void addListeners() {
@@ -61,7 +58,6 @@ public class ProjectSupportComponent extends Div {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    projectLinksComponent.setContext(context);
     experimentListComponent.setContext(context);
   }
 
