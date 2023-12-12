@@ -83,7 +83,7 @@ class ValueSpec extends Specification {
         when:
         var result = valueObject.map(function)
         then:
-        result.get() == function.apply(valueObject.get())
+        result.valueOrElseThrow(() -> new RuntimeException("Test")) == function.apply(valueObject.valueOrElseThrow(() -> new RuntimeException("Test")))
     }
 
     def "transform error returns an either with unchanged error"() {
@@ -92,7 +92,8 @@ class ValueSpec extends Specification {
         when:
         var result = valueObject.mapError(function)
         then:
-        result.get() == valueObject.get()
+        result.valueOrElseThrow(() -> new RuntimeException("Test")) == valueObject.valueOrElseThrow(() -> new RuntimeException("Test"))
+
     }
 
     def "either containing a value is equal to another either containing the value"() {
@@ -117,7 +118,7 @@ class ValueSpec extends Specification {
         when:
         var result = valueObject.flatMap(mapper)
         then:
-        result == mapper.apply(valueObject.get())
+        result == mapper.apply(valueObject.valueOrElseThrow(() -> new RuntimeException("Test")))
     }
 
     def "bind error returns an either with unchanged error"() {
@@ -127,7 +128,7 @@ class ValueSpec extends Specification {
         var result = valueObject.flatMapError(mapper)
 
         then:
-        result.get() == valueObject.get()
+        result.valueOrElseThrow(() -> new RuntimeException("Test")) == valueObject.valueOrElseThrow(() -> new RuntimeException("Test"))
     }
 
     def "fold returns the mapped value"() {
@@ -145,22 +146,17 @@ class ValueSpec extends Specification {
 
     def "getValue returns the value"() {
         expect:
-        valueObject.get() == valueObject.getValue()
+        valueObject.valueOrElseThrow(() -> new RuntimeException("Test")) == valueObject.getValue()
     }
 
     def "valueOrElse returns the value"() {
         expect:
-        valueObject.get() == valueObject.valueOrElse("my other Value")
+        valueObject.valueOrElseThrow(() -> new RuntimeException("Test")) == valueObject.valueOrElse("my other Value")
     }
 
     def "valueOrElseGet returns the value"() {
         expect:
-        valueObject.get() == valueObject.valueOrElseGet(() -> "my other value")
-    }
-
-    def "valueOrElseThrow returns the value"() {
-        expect:
-        valueObject.get() == valueObject.valueOrElseThrow(() -> new RuntimeException("Oha! No value!"))
+        valueObject.valueOrElseThrow(() -> new RuntimeException("Test")) == valueObject.valueOrElseGet(() -> "my other value")
     }
 
     def "getError throws an exception"() {
