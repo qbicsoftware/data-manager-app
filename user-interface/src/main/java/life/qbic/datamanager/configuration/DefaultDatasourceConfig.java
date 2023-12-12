@@ -50,7 +50,7 @@ public class DefaultDatasourceConfig {
 
   @Primary
   @Bean(name = "entityManagerFactory")
-  public LocalContainerEntityManagerFactoryBean jobRunrEntityManagerFactory(
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory(
       EntityManagerFactoryBuilder builder,
       @Qualifier("datasource") DataSource dataSource
   ) {
