@@ -54,7 +54,6 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
@@ -364,11 +363,9 @@ public class ExperimentDetailsComponent extends PageArea {
     list.add(listTitle);
     list.addClassName("taglist");
     for (OntologyClassDTO ontologyDto : ontologyClasses) {
-      Span termSpan = new Span(ontologyDto.getLabel());
-      String ontologyName = Ontology.findOntologyByAbbreviation(ontologyDto.getOntology())
-          .getName();
-      // creates a line with label and ontology name (id), e.g. "Homo sapiens (NCBITaxon_9606)"
-      termSpan.setTitle("%s (%s)".formatted(ontologyDto.getName(), ontologyName));
+      Span termSpan = new Span(ontologyDto.getLabel()); // for example "homo sapiens"
+      termSpan.setTitle(
+          ontologyDto.formatted()); // for example “NCBITaxon_9606 (NCBI organismal classification)”
       list.add(termSpan);
     }
     iconAndList.add(list);

@@ -22,7 +22,6 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -180,16 +179,17 @@ public class ProjectDetailsComponent extends PageArea {
    * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
    */
   private static List<Tag> createTagsFrom(Stream<OntologyClassDTO> entries) {
-    return entries.distinct().map(entry -> new Tag(entry.getLabel(),
-        entry.getName()+"("+ Ontology.findOntologyByAbbreviation(entry.getOntology()).getName()+")"))
+    return entries.distinct()
+        .map(entry -> new Tag(entry.getLabel(), entry.formatted()))
         .toList();
   }
 
   public void setContext(Context context) {
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
     this.context = context;
-    loadProjectData(context.projectId().get());
+    loadProjectData(context.projectId().orElseThrow());
   }
 
   private void layoutComponent() {
@@ -255,7 +255,8 @@ public class ProjectDetailsComponent extends PageArea {
   }
 
   private void onProjectUpdateEvent(ProjectUpdateEvent projectUpdateEvent) {
-    if (projectUpdateEvent.getOldValue().isEmpty() || !projectUpdateEvent.getOldValue().get()
+    if (projectUpdateEvent.getOldValue().isEmpty() || !projectUpdateEvent.getOldValue()
+        .orElseThrow()
         .equals(projectUpdateEvent.getValue())) {
       ProjectInformation projectInformation = projectUpdateEvent.getValue();
       updateProjectInformation(projectInformation);

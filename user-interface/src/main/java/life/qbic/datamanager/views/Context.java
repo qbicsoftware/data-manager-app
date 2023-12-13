@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -11,7 +13,10 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  *
  * @since 1.0.0
  */
-public final class Context {
+public final class Context implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 1139517888631879868L;
 
   private final ProjectId projectId;
   private final ExperimentId experimentId;

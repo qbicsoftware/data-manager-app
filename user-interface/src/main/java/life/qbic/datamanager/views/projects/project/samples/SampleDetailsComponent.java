@@ -37,11 +37,9 @@ import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,13 +187,17 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    context.experimentId()
-        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    if (context.experimentId().isEmpty()) {
+      throw new ApplicationException("no experiment id in context " + context);
+    }
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
+
     this.context = context;
-    setExperiment(
-        experimentInformationService.find(context.experimentId().orElseThrow()).orElseThrow());
+    ExperimentId experimentId = context.experimentId()
+        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
+    setExperiment(experimentInformationService.find(experimentId).orElseThrow());
   }
 
   /**
@@ -215,8 +217,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           context.projectId().orElseThrow().value(),
           experimentId);
       log.debug(String.format(
-          "Rerouting to experiment page for experiment %s of project %s: " + routeToExperimentPage,
-          experimentId, context.projectId().orElseThrow().value()));
+          "Rerouting to experiment page for experiment %s of project %s: %s",
+          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
     }
   }
@@ -292,11 +294,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
         .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
     sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species").setSortProperty("species")
-        .setTooltipGenerator(preview -> ontologyToolTipGenerator(preview.species()));
+        .setTooltipGenerator(preview -> preview.species().formatted());
     sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
-        .setSortProperty("specimen").setTooltipGenerator(preview -> ontologyToolTipGenerator(preview.specimen()));
+        .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
     sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte").setSortProperty("analyte")
-        .setTooltipGenerator(preview -> ontologyToolTipGenerator(preview.analyte()));
+        .setTooltipGenerator(preview -> preview.analyte().formatted());
     sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
     sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
@@ -304,16 +306,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.addClassName("sample-grid");
     sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     return sampleGrid;
-  }
-
-  private static String ontologyToolTipGenerator(OntologyClassDTO ontologyClass) {
-    StringBuilder builder = new StringBuilder();
-    builder.append(ontologyClass.getName());
-    if(Ontology.findOntologyByAbbreviation(ontologyClass.getOntology())!=null) {
-      builder.append(" (");
-      builder.append(Ontology.findOntologyByAbbreviation(ontologyClass.getOntology()).getName()+")");
-    }
-    return builder.toString();
   }
 
   public static class SampleExperimentTab extends Tab {
