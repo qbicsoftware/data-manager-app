@@ -1,13 +1,8 @@
 package life.qbic.identity.application.user.policy.directive;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import life.qbic.broadcasting.MessageBusSubmission;
-import life.qbic.broadcasting.MessageParameters;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.domain.concepts.DomainEventSerializer;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;
@@ -15,14 +10,12 @@ import life.qbic.identity.domain.event.UserRegistered;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * When a user registered, broadcast an integration event to message bus
  *
  * @since 1.0.0
  */
-@Component
 public class WhenUserRegisteredSubmitIntegrationEvent implements
     DomainEventSubscriber<UserRegistered> {
 
@@ -47,7 +40,7 @@ public class WhenUserRegisteredSubmitIntegrationEvent implements
     this.jobScheduler.enqueue(() -> dispatchEvent(event));
   }
 
-  @Job(name = "Broadcast event about user registration")
+  @Job(name = "Broadcast user registration")
   public void dispatchEvent(UserRegistered event) {
     Map<String, String> content = new HashMap<>();
     content.put("userId", event.userId());

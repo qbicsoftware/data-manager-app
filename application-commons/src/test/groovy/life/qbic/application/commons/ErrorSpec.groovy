@@ -80,7 +80,7 @@ class ErrorSpec extends Specification {
         when:
         var result = errorObject.map(function)
         then:
-        result.get() == errorObject.get()
+        result.value == errorObject.value
     }
 
     def "transform error returns an either with transformed error"() {
@@ -89,7 +89,7 @@ class ErrorSpec extends Specification {
         when:
         var result = errorObject.mapError(function)
         then:
-        result.get() == function.apply(errorObject.get())
+        result.getError() == function.apply(errorObject.getError())
     }
 
     def "either containing a value is equal to another either containing the value"() {
@@ -115,7 +115,7 @@ class ErrorSpec extends Specification {
         var result = errorObject.flatMap(mapper)
 
         then:
-        result.get() == errorObject.get()
+        result.getError() == errorObject.getError()
     }
 
     def "bind error returns an either with the mapped error"() {
@@ -124,7 +124,7 @@ class ErrorSpec extends Specification {
         when:
         var result = errorObject.flatMapError(mapper)
         then:
-        result == mapper.apply(errorObject.get())
+        result == mapper.apply(errorObject.getError())
     }
 
     def "fold returns the mapped error"() {
@@ -142,7 +142,7 @@ class ErrorSpec extends Specification {
         var result = errorObject.recover(function)
         then:
         result.isValue()
-        result.get() == function.apply(errorObject.get())
+        result.valueOrElseThrow(() -> new RuntimeException("Test")) == function.apply(errorObject.getError())
     }
 
     def "getValue throws an exception"() {
@@ -170,10 +170,5 @@ class ErrorSpec extends Specification {
         then:
         def e = thrown(RuntimeException)
         e == expectedException
-    }
-
-    def "getError returns the error"() {
-        expect:
-        errorObject.get() == errorObject.getError()
     }
 }

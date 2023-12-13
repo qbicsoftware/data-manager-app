@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model;
 
+import java.util.Arrays;
+
 /**
  * Describes an ontology with name, short name and description.
  */
@@ -27,12 +29,16 @@ public enum Ontology {
   public String getName() {
     return name;
   }
-
   public String getAbbreviation() {
     return abbreviation;
   }
 
   public String getDescription(){
     return description;
+  }
+
+  public static Ontology findOntologyByAbbreviation(String abbreviation) {
+    return Arrays.stream(Ontology.values()).filter(o ->
+        o.getAbbreviation().equals(abbreviation)).findFirst().orElse(null);
   }
 }

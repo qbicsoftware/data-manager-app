@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
@@ -126,7 +127,10 @@ public class SampleContentComponent extends Div {
               sampleDetailsComponent.setContext(context);
               displayComponentInContent(batchDetailsComponent);
               displayComponentInContent(sampleDetailsComponent);
-            }, this::displayProjectNotFound);
+            }, () -> {
+              throw new ApplicationException(ErrorCode.INVALID_PROJECT_CODE,
+                  ErrorParameters.of(projectId.value()));
+            });
   }
 
 
@@ -173,16 +177,20 @@ public class SampleContentComponent extends Div {
             batchLabel, false,
             context.projectId().orElseThrow())
         .map(batchId -> generateSampleRequestsFromSampleInfo(batchId, samples))
-        .onError(responseCode -> displayRegistrationFailure())
-        .valueOrElseThrow(() ->
-            new ApplicationException("Could not create sample registration requests"));
-    sampleRegistrationService.registerSamples(sampleRegistrationRequests,
+        .valueOrElseThrow(error -> new ApplicationException(
+            "Could not create sample registration requests. Response code: " + error));
+    sampleRegistrationService.registerSamples(
+            sampleRegistrationRequests,
             context.projectId().orElseThrow())
-        .onError(responseCode -> displayRegistrationFailure())
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
-        .onValue(ignored -> confirmEvent.getSource().close())
         .onValue(batchId -> displayRegistrationSuccess())
-        .onValue(ignored -> reload());
+        .onValue(ignored -> reload())
+        .onValue(ignored -> confirmEvent.getSource().close())
+        .onError(error -> {
+          confirmEvent.getSource().close();
+          throw new ApplicationException(
+              "Could not register samples. Response code: " + error);
+        });
   }
 
   private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
@@ -230,12 +238,6 @@ public class SampleContentComponent extends Div {
     notification.open();
   }
 
-  private void displayRegistrationFailure() {
-    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
-  }
-
   private void onViewBatchClicked(ViewBatchEvent viewBatchEvent) {
     ConfirmDialog confirmDialog = new ConfirmDialog();
     confirmDialog.setText(("This is where I'd show all of my Samples"));
@@ -250,7 +252,7 @@ public class SampleContentComponent extends Div {
     List<Sample> samples = sampleInformationService.retrieveSamplesForBatch(
         editBatchEvent.batchPreview().batchId()).stream().toList();
     var experimentalGroups = experimentInformationService.experimentalGroupsFor(
-        context.experimentId().get());
+        context.experimentId().orElseThrow());
     List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = samples.stream()
         .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList();
     EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
@@ -292,9 +294,13 @@ public class SampleContentComponent extends Div {
     var result = batchRegistrationService.editBatch(confirmEvent.getData().batchId(),
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
-    result.onValue(ignored -> confirmEvent.getSource().close());
-    result.onValue(batchId -> displayUpdateSuccess());
-    result.onValue(ignored -> reload());
+    result.onValue(ignored -> reload())
+        .onValue(ignored -> confirmEvent.getSource().close())
+        .onValue(batchId -> displayUpdateSuccess());
+    result.onError(error -> {
+      confirmEvent.getSource().close();
+      throw new ApplicationException("error code: " + error);
+    });
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
@@ -313,14 +319,6 @@ public class SampleContentComponent extends Div {
     });
     batchDeletionConfirmationNotification.addCancelListener(
         event -> batchDeletionConfirmationNotification.close());
-  }
-
-  private void displayProjectNotFound() {
-    this.removeAll();
-    ErrorMessage errorMessage = new ErrorMessage("Project not found",
-        "Please try to reload the page");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
   }
 
   public static class BatchRegisteredEvent extends ComponentEvent<SampleContentComponent> {

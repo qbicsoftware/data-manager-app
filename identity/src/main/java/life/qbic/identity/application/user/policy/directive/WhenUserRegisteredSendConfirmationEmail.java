@@ -1,7 +1,6 @@
 package life.qbic.identity.application.user.policy.directive;
 
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.application.communication.Content;
 import life.qbic.identity.application.communication.EmailService;
@@ -16,14 +15,12 @@ import life.qbic.identity.domain.repository.UserRepository;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * When a user registered, email the user a confirmation link to the provided email address.
  *
  * @since 1.0.0
  */
-@Component
 public class WhenUserRegisteredSendConfirmationEmail implements
     DomainEventSubscriber<UserRegistered> {
 

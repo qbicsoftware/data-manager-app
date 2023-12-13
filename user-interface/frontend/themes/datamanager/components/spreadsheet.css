@@ -1,22 +1,3 @@
-#spreadsheet-overlays .v-spreadsheet-comment-overlay {
-  /* we need the comment to show in front of vaadin dialogs
-  the html element itself has the style of z-index of 1.
-  We need to overwrite it (!important) as direct element styles have preference over css.*/
-  z-index: 201 !important;
-}
-
-#spreadsheet-overlays .v-spreadsheet-comment-overlay {
-  border-style: solid;
-  border-color: var(--lumo-warning-color);
-  border-width: 1px;
-}
-
-#spreadsheet-overlays .v-spreadsheet-comment-overlay .popupContent {
-  font-size: 0.9em;
-  background-color: white;
-  padding: 0.2em;
-}
-
 .spreadsheet,
 .spreadsheet-container {
   width: 100%;

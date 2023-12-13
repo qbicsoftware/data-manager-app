@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
@@ -17,9 +18,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 
 /**
@@ -42,12 +42,15 @@ public class Experiment {
   @Embedded
   private ExperimentalDesign experimentalDesign;
 
-  @ElementCollection(targetClass = Analyte.class)
-  private List<Analyte> analytes = new ArrayList<>();
-  @ElementCollection(targetClass = Species.class)
-  private List<Species> species = new ArrayList<>();
-  @ElementCollection(targetClass = Specimen.class)
-  private List<Specimen> specimens = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyClassDTO.class)
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private List<OntologyClassDTO> analytes = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyClassDTO.class)
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private List<OntologyClassDTO> species = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyClassDTO.class)
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private List<OntologyClassDTO> specimens = new ArrayList<>();
 
 
   /**
@@ -124,34 +127,34 @@ public class Experiment {
   /**
    * @return the collection of species in this experiment
    */
-  public Collection<Species> getSpecies() {
+  public Collection<OntologyClassDTO> getSpecies() {
     return species.stream().toList();
   }
 
   /**
    * @return the collection of specimens in this experiment
    */
-  public Collection<Specimen> getSpecimens() {
+  public Collection<OntologyClassDTO> getSpecimens() {
     return specimens.stream().toList();
   }
 
   /**
    * @return the collection of analytes in this experiment
    */
-  public Collection<Analyte> getAnalytes() {
+  public Collection<OntologyClassDTO> getAnalytes() {
     return analytes.stream().toList();
   }
 
   /**
-   * Adds {@link Specimen}s to the experiment.
+   * Adds specimens to the experiment.
    *
    * @param specimens The specimens to add to the experiment
    */
-  public void addSpecimens(Collection<Specimen> specimens) {
+  public void addSpecimens(Collection<OntologyClassDTO> specimens) {
     if (specimens.isEmpty()) {
       return;
     }
-    List<Specimen> missingSpecimens = specimens.stream()
+    List<OntologyClassDTO> missingSpecimens = specimens.stream()
         .filter(specimen -> !this.specimens.contains(specimen))
         .distinct()
         .toList();
@@ -180,17 +183,17 @@ public class Experiment {
   }
 
   /**
-   * Adds {@link Analyte}s to the experiment.
+   * Adds analytes to the experiment.
    *
    * @param analytes The analytes to add to the experiment
    */
-  public void addAnalytes(Collection<Analyte> analytes) {
+  public void addAnalytes(Collection<OntologyClassDTO> analytes) {
     if (analytes.isEmpty()) {
       return;
     }
 
     // only add analytes that are not present already
-    List<Analyte> missingAnalytes = analytes.stream()
+    List<OntologyClassDTO> missingAnalytes = analytes.stream()
         .filter(analyte -> !this.analytes.contains(analyte))
         .distinct()
         .toList();
@@ -198,16 +201,16 @@ public class Experiment {
   }
 
   /**
-   * Adds {@link Species}s to the experiment.
+   * Adds species to the experiment.
    *
    * @param species The species to add to the experiment
    */
-  public void addSpecies(Collection<Species> species) {
+  public void addSpecies(Collection<OntologyClassDTO> species) {
     if (species.isEmpty()) {
       return;
     }
-    // only add specimen that are not present already
-    List<Species> missingSpecies = species.stream()
+    // only add species that are not present already
+    List<OntologyClassDTO> missingSpecies = species.stream()
         .filter(speci -> !this.species.contains(speci))
         .distinct()
         .toList();
@@ -273,10 +276,10 @@ public class Experiment {
   }
 
   /**
-   * Sets the list of {@link Species}for an experiment.
+   * Sets the list of species for an experiment.
    */
   public void setSpecies(
-      List<Species> species) {
+      List<OntologyClassDTO> species) {
     if (species == null || species.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
@@ -285,10 +288,10 @@ public class Experiment {
   }
 
   /**
-   * Sets the list of {@link Species} for an experiment.
+   * Sets the list of specimen for an experiment.
    */
   public void setSpecimens(
-      List<Specimen> specimens) {
+      List<OntologyClassDTO> specimens) {
     if (specimens == null || specimens.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
           ErrorParameters.of(specimens));
@@ -297,10 +300,10 @@ public class Experiment {
   }
 
   /**
-   * Sets the list of {@link Analyte} for an experiment.
+   * Sets the list of analytes for an experiment.
    */
   public void setAnalytes(
-      List<Analyte> analytes) {
+      List<OntologyClassDTO> analytes) {
     if (analytes == null || analytes.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
           ErrorParameters.of(analytes));

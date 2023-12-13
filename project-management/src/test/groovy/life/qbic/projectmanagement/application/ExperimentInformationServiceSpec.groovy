@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
@@ -26,8 +27,9 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "specimens are added to an experiment"
-        Specimen specimen1 = Specimen.create("blood")
-        Specimen specimen2 = Specimen.create("plasma")
+        OntologyClassDTO specimen1 = new OntologyClassDTO();
+        OntologyClassDTO specimen2 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
+                 "label",  "name",  "description",  "classIri");
         experimentInformationService.addSpecimenToExperiment(experiment.experimentId(), specimen1, specimen2)
 
         then: "the experiment contains the added specimens"
@@ -43,8 +45,9 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "analytes are added to an experiment"
-        Analyte analyte1 = Analyte.create("blood")
-        Analyte analyte2 = Analyte.create("plasma")
+        OntologyClassDTO analyte2 = new OntologyClassDTO();
+        OntologyClassDTO analyte1 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
+                "label",  "name",  "description",  "classIri");
         experimentInformationService.addAnalyteToExperiment(experiment.experimentId(), analyte1, analyte2)
 
         then: "the experiment contains the added analytes"
@@ -60,12 +63,15 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "species are added to an experiment"
-        Species species1 = Species.create("blood")
-        Species species2 = Species.create("plasma")
-        experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), species1, species2)
+        OntologyClassDTO species1 = new OntologyClassDTO();
+        OntologyClassDTO species2 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
+                "label",  "name",  "description",  "classIri");
+        OntologyClassDTO species3 = new OntologyClassDTO();
+
+        experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), species1, species2, species3)
 
         then: "the experiment contains the added species"
-        experiment.getSpecies().containsAll(species1, species2)
+        experiment.getSpecies().containsAll(species1, species2, species3)
 
         and: "the experiment is updated"
         1 * experimentRepository.update(experiment)

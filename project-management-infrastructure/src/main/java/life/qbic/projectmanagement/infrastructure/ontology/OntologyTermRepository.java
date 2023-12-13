@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.infrastructure.ontology;
 
 import java.util.List;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
-import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

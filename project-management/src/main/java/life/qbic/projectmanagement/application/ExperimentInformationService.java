@@ -18,9 +18,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
@@ -135,7 +133,7 @@ public class ExperimentInformationService {
    * @param species      the species to add
    * @see Experiment#addSpecies(Collection)
    */
-  public void addSpeciesToExperiment(ExperimentId experimentId, Species... species) {
+  public void addSpeciesToExperiment(ExperimentId experimentId, OntologyClassDTO... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -152,7 +150,7 @@ public class ExperimentInformationService {
    * @param specimens    the specimens to add
    * @see Experiment#addSpecimens(Collection)
    */
-  public void addSpecimenToExperiment(ExperimentId experimentId, Specimen... specimens) {
+  public void addSpecimenToExperiment(ExperimentId experimentId, OntologyClassDTO... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -169,7 +167,7 @@ public class ExperimentInformationService {
    * @param analytes     the analytes to add
    * @see Experiment#addAnalytes(Collection)
    */
-  public void addAnalyteToExperiment(ExperimentId experimentId, Analyte... analytes) {
+  public void addAnalyteToExperiment(ExperimentId experimentId, OntologyClassDTO... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -214,7 +212,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the analytes should be retrieved
    * @return a collection of analytes in the active experiment.
    */
-  public Collection<Analyte> getAnalytesOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyClassDTO> getAnalytesOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getAnalytes();
   }
@@ -225,7 +223,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the species should be retrieved
    * @return a collection of species in the active experiment.
    */
-  public Collection<Species> getSpeciesOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyClassDTO> getSpeciesOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecies();
   }
@@ -236,7 +234,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the specimen should be retrieved
    * @return a collection of specimen in the active experiment.
    */
-  public Collection<Specimen> getSpecimensOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyClassDTO> getSpecimensOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecimens();
   }
@@ -295,7 +293,7 @@ public class ExperimentInformationService {
   }
 
   public void editExperimentInformation(ExperimentId experimentId, String experimentName,
-      List<Species> species, List<Specimen> specimens, List<Analyte> analytes) {
+      List<OntologyClassDTO> species, List<OntologyClassDTO> specimens, List<OntologyClassDTO> analytes) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);
     experiment.setSpecies(species);
