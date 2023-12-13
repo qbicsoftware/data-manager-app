@@ -45,9 +45,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentDraft;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.update.ExperimentUpdateDialog.ExperimentUpdateEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -193,7 +193,7 @@ public class ExperimentDetailsComponent extends PageArea {
           "Experiment information could not be retrieved from service");
     }
     optionalExperiment.ifPresent(experiment -> {
-      ExperimentUpdateDialog experimentUpdateDialog = new ExperimentUpdateDialog(
+      EditExperimentDialog editExperimentDialog = new EditExperimentDialog(
           ontologyTermInformationService);
 
       ExperimentDraft experimentDraft = new ExperimentDraft();
@@ -202,12 +202,12 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecimens(experiment.getSpecimens());
       experimentDraft.setAnalytes(experiment.getAnalytes());
 
-      experimentUpdateDialog.setExperiment(experimentDraft);
-      experimentUpdateDialog.setConfirmButtonLabel("Save");
+      editExperimentDialog.setExperiment(experimentDraft);
+      editExperimentDialog.setConfirmButtonLabel("Save");
 
-      experimentUpdateDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
-      experimentUpdateDialog.addCancelListener(event -> event.getSource().close());
-      experimentUpdateDialog.open();
+      editExperimentDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
+      editExperimentDialog.addCancelListener(event -> event.getSource().close());
+      editExperimentDialog.open();
     });
   }
 
@@ -431,9 +431,9 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentId);
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream()).toList();
-    var experimentalGroups = experimentInformationService.getExperimentalGroups(experimentId)
+    var groups = experimentInformationService.getExperimentalGroups(experimentId)
         .stream().map(this::toContent).toList();
-    var dialog = ExperimentalGroupsDialog.prefilled(levels, experimentalGroups);
+    var dialog = ExperimentalGroupsDialog.prefilled(levels, groups);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmEventListener(this::onExperimentalGroupEditConfirmed);
     dialog.open();
@@ -512,9 +512,9 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadExperimentalGroups() {
     // We load the experimental groups of the experiment and render them as cards
-    List<ExperimentalGroup> experimentalGroups = experimentInformationService.experimentalGroupsFor(
+    List<ExperimentalGroup> groups = experimentInformationService.experimentalGroupsFor(
         context.experimentId().orElseThrow());
-    List<ExperimentalGroupCard> experimentalGroupsCards = experimentalGroups.stream()
+    List<ExperimentalGroupCard> experimentalGroupsCards = groups.stream()
         .map(ExperimentalGroupCard::new).toList();
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
     this.experimentalGroupCount = experimentalGroupsCards.size();

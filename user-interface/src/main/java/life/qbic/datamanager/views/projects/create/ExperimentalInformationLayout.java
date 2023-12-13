@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.create;
 
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
@@ -9,14 +12,11 @@ import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
@@ -28,75 +28,63 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  */
 public class ExperimentalInformationLayout extends Div implements HasValidation {
 
-  private static final String TITLE = "Experimental Information";
-  private static final String CHIP_BADGE = "chip-badge";
-  private static final String WIDTH_INPUT = "full-width-input";
-  private final Binder<ExperimentalInformation> experimentalInformationBinder = new Binder<>(
-      ExperimentalInformation.class);
-  private final transient OntologyFilterConnector ontologyFilterConnector;
+  private final Binder<ExperimentalInformation> experimentalInformationBinder;
 
   public ExperimentalInformationLayout(
       OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyFilterConnector = new OntologyFilterConnector(ontologyTermInformationService);
-    initTitleAndDescription();
-    initNameField();
-    initOntologyComboboxes();
-    addClassName("experiment-information-layout");
-  }
+    requireNonNull(ontologyTermInformationService,
+        "ontologyTermInformationService must not be null");
+    OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
+        ontologyTermInformationService);
+    MultiSelectComboBox<OntologyClassDTO> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyClassDTO> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyClassDTO> analyteBox = ontologyComboboxFactory.analyteBox();
+    TextField nameField = nameField();
 
-  private void initTitleAndDescription() {
-    Span experimentInformationTitle = new Span(TITLE);
-    Span experimentInformationDescription = new Span(
-        "The experiment name and sample origin information of the samples");
-    experimentInformationTitle.addClassName("title");
-    add(experimentInformationTitle,
-        experimentInformationDescription);
-  }
-
-  private void initNameField() {
-    TextField experimentNameField = new TextField("Experiment Name");
-    experimentNameField.addClassName("experiment-name-field");
-    experimentNameField.setPlaceholder("Please enter a name for your experiment");
-    experimentNameField.setRequired(true);
-    experimentalInformationBinder.forField(experimentNameField)
-        .withValidator(it -> !it.isBlank(), "Please provide a name for the experiment")
-        .bind(ExperimentalInformation::getExperimentName,
-            ExperimentalInformation::setExperimentName);
-    add(experimentNameField);
-  }
-
-  private void initOntologyComboboxes() {
-    MultiSelectComboBox<OntologyClassDTO> speciesBox = new MultiSelectComboBox<>("Species");
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox,
-        List.of(Ontology.NCBI_TAXONOMY));
-    speciesBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
-    speciesBox.setPlaceholder("Please select one or more species for your samples");
+    experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
     experimentalInformationBinder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecies()),
             ExperimentalInformation::setSpecies);
-    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    MultiSelectComboBox<OntologyClassDTO> specimenBox = new MultiSelectComboBox<>("Specimen");
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox,
-        Arrays.asList(Ontology.PLANT_ONTOLOGY, Ontology.BRENDA_TISSUE_ONTOLOGY));
-    specimenBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
-    specimenBox.setPlaceholder("Please select one or more specimen for your samples");
     experimentalInformationBinder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getSpecimens()),
             ExperimentalInformation::setSpecimens);
-    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    MultiSelectComboBox<OntologyClassDTO> analyteBox = new MultiSelectComboBox<>("Analyte");
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox,
-        List.of(Ontology.BIOASSAY_ONTOLOGY));
-    analyteBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
-    analyteBox.setPlaceholder("Please select one or more analytes for your samples");
     experimentalInformationBinder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentalInformation -> new HashSet<>(experimentalInformation.getAnalytes()),
             ExperimentalInformation::setAnalytes);
-    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    add(speciesBox, specimenBox, analyteBox);
+    experimentalInformationBinder.forField(nameField)
+        .withValidator(it -> !it.isBlank(), "Please provide a name for the experiment")
+        .bind(ExperimentalInformation::getExperimentName,
+            ExperimentalInformation::setExperimentName);
+
+    add(title(),
+        description(),
+        nameField,
+        speciesBox,
+        specimenBox,
+        analyteBox);
+    addClassName("experiment-information-layout");
+  }
+
+  private static Component title() {
+    Span experimentInformationTitle = new Span("Experimental Information");
+    experimentInformationTitle.addClassName("title");
+    return experimentInformationTitle;
+  }
+
+  private static Component description() {
+    return new Span(
+        "The experiment name and sample origin information of the samples");
+  }
+
+  private static TextField nameField() {
+    TextField experimentNameField = new TextField("Experiment Name");
+    experimentNameField.addClassName("experiment-name-field");
+    experimentNameField.setPlaceholder("Please enter a name for your experiment");
+    experimentNameField.setRequired(true);
+    return experimentNameField;
   }
 
 
@@ -104,6 +92,8 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
     ExperimentalInformation experimentalInformation = new ExperimentalInformation();
     experimentalInformationBinder.writeBeanIfValid(experimentalInformation);
     return experimentalInformation;
+    //TODO I am unsure whether it is intended that on invalid input, empty output is
+    // provided instead of a failure.
   }
 
   /**

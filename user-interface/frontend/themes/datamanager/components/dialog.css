@@ -126,11 +126,11 @@ vaadin-dialog-overlay::part(title) {
 }
 
 .add-experiment-dialog::part(overlay),
-.update-experiment-dialog::part(overlay) {
+.edit-experiment-dialog::part(overlay) {
   width: 66vw;
 }
 
-.update-experiment-content,
+.edit-experiment-content,
 .add-experiment-content {
   padding-top: var(--lumo-space-m);
   display: flex;
@@ -141,12 +141,12 @@ vaadin-dialog-overlay::part(title) {
   box-sizing: border-box;
 }
 
-.update-experiment-content .header,
-.add-experiment-content . header {
+.edit-experiment-dialog .header,
+.add-experiment-dialog . header {
   font-weight: bold;
 }
 
-.update-experiment-content .full-width-input,
+.edit-experiment-content .full-width-input,
 .add-experiment-content .full-width-input {
   width: 100%;
 }
@@ -456,6 +456,8 @@ vaadin-upload-file::part(meta){
   border-bottom-style: solid;
   border-width: 1px;
   padding: 0.5rem 1rem 1rem 1rem;
+  font-size: smaller;
+
 }
 
 .uploaded-documents .purchase-item:last-child{
@@ -463,13 +465,8 @@ vaadin-upload-file::part(meta){
   border-style: none;
 }
 
-.uploaded-documents .purchase-item {
-  font-size: smaller;
-}
-
 .uploaded-documents .purchase-item vaadin-icon {
   font-size: smaller;
   margin-right: 0.3rem;
   color: var(--lumo-primary-color);
 }
-
