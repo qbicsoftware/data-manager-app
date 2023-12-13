@@ -14,8 +14,8 @@ import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.create.ProjectCreationDialog;
-import life.qbic.datamanager.views.projects.create.ProjectCreationDialog.ProjectCreationEvent;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectCreationEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
@@ -72,10 +72,10 @@ public class ProjectOverviewPage extends Div {
 
   private void configurePage() {
     projectCollectionComponent.addListener(projectCreationClickedEvent -> {
-      ProjectCreationDialog projectCreationDialog = new ProjectCreationDialog(financeService,
+      AddProjectDialog addProjectDialog = new AddProjectDialog(financeService,
           ontologyTermInformationService);
-      projectCreationDialog.addListener(this::createProject);
-      projectCreationDialog.open();
+      addProjectDialog.addListener(this::createProject);
+      addProjectDialog.open();
     });
   }
 

@@ -48,7 +48,8 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
   }
 
   @Override
-  public List<OntologyClassEntity> query(String searchString, List<String> ontologies, int offset,
+  public List<OntologyClassEntity> query(String searchString, List<String> ontologyAbbreviations,
+      int offset,
       int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
       Order order;
@@ -66,6 +67,7 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
     // otherwise create a more complex search term for fulltext search
     String searchTerm = buildSearchTerm(searchString);
     return ontologyTermRepository.findByLabelFulltextMatching(
-        searchTerm, ontologies, new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+            searchTerm, ontologyAbbreviations, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+        .getContent();
   }
 }

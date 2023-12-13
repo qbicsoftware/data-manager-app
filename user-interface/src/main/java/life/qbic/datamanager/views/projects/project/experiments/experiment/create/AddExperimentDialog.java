@@ -1,4 +1,6 @@
-package life.qbic.datamanager.views.projects.project.experiments.experiment.update;
+package life.qbic.datamanager.views.projects.project.experiments.experiment.create;
+
+import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -12,47 +14,44 @@ import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.OntologyFilterConnector;
+import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
- * <b>ExperimentUpdateDialog</b>
+ * <b>AddExperimentDialog</b>
  *
- * <p>Dialog to edit experiment information by providing the minimal required
+ * <p>Dialog to create an experiment information by providing the minimal required
  * information</p>
  *
  * @since 1.0.0
  */
 
-public class ExperimentUpdateDialog extends DialogWindow {
+public class AddExperimentDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
 
-  private static final String CHIP_BADGE = "chip-badge";
-  private static final String WIDTH_INPUT = "full-width-input";
-  private final OntologyFilterConnector ontologyFilterConnector;
-
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
-  public ExperimentUpdateDialog(OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyFilterConnector = new OntologyFilterConnector(ontologyTermInformationService);
+  public AddExperimentDialog(
+      OntologyTermInformationService ontologyTermInformationService) {
+    requireNonNull(ontologyTermInformationService,
+        "ontologyTermInformationService must not be null");
+    OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
+        ontologyTermInformationService);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
 
     TextField experimentNameField = new TextField("Experiment Name");
-    experimentNameField.addClassName(WIDTH_INPUT);
+    experimentNameField.addClassName("full-width-input");
     binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
@@ -60,58 +59,47 @@ public class ExperimentUpdateDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<OntologyClassDTO> speciesBox = new MultiSelectComboBox<>("Species");
-    speciesBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(speciesBox, List.of(Ontology.NCBI_TAXONOMY));
-    speciesBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
+    MultiSelectComboBox<OntologyClassDTO> speciesBox = ontologyComboboxFactory.speciesBox();
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    MultiSelectComboBox<OntologyClassDTO> specimenBox = new MultiSelectComboBox<>("Specimen");
-    specimenBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(specimenBox, Arrays.asList(Ontology.PLANT_ONTOLOGY,
-            Ontology.BRENDA_TISSUE_ONTOLOGY));
-    specimenBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
+    MultiSelectComboBox<OntologyClassDTO> specimenBox = ontologyComboboxFactory.specimenBox();
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    MultiSelectComboBox<OntologyClassDTO> analyteBox = new MultiSelectComboBox<>("Analyte");
-    analyteBox.addClassNames(CHIP_BADGE, WIDTH_INPUT);
-    ontologyFilterConnector.initComboBoxWithOntologyDatasource(analyteBox, List.of(Ontology.BIOASSAY_ONTOLOGY));
-    analyteBox.setItemLabelGenerator(OntologyClassDTO::getLabel);
+    MultiSelectComboBox<OntologyClassDTO> analyteBox = ontologyComboboxFactory.analyteBox();
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-    Div updateExperimentContent = new Div();
-    updateExperimentContent.addClassName("update-experiment-content");
-    updateExperimentContent.add(experimentHeader,
+
+    addClassName("add-experiment-dialog");
+    setHeaderTitle("Experimental Design");
+    setConfirmButtonLabel("Add");
+    setCancelButtonLabel("Cancel");
+
+    Div container = new Div(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
         speciesBox,
         specimenBox,
         analyteBox);
+    container.addClassName("add-experiment-content");
 
-    addClassName("update-experiment-dialog");
-    setHeaderTitle("Experimental Design");
-    setConfirmButtonLabel("Save");
-    setCancelButtonLabel("Cancel");
-    add(updateExperimentContent);
+    add(container);
   }
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
-    ExperimentDraft oldDraft = binder.getBean();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
     if (isValid) {
-      fireEvent(
-          new ExperimentUpdateEvent(this, clickEvent.isFromClient(), oldDraft, experimentDraft));
+      fireEvent(new ExperimentAddEvent(this, clickEvent.isFromClient(), experimentDraft));
     }
   }
 
@@ -134,25 +122,23 @@ public class ExperimentUpdateDialog extends DialogWindow {
     binder.setBean(new ExperimentDraft());
   }
 
-  public void addExperimentUpdateEventListener(
-      ComponentEventListener<ExperimentUpdateEvent> listener) {
-    addListener(ExperimentUpdateEvent.class, listener);
+  public void addExperimentAddEventListener(ComponentEventListener<ExperimentAddEvent> listener) {
+    addListener(ExperimentAddEvent.class, listener);
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
     addListener(CancelEvent.class, listener);
   }
 
-  public static class CancelEvent extends UserCancelEvent<ExperimentUpdateDialog> {
+  public static class CancelEvent extends UserCancelEvent<AddExperimentDialog> {
 
-    public CancelEvent(ExperimentUpdateDialog source, boolean fromClient) {
+    public CancelEvent(AddExperimentDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class ExperimentUpdateEvent extends ComponentEvent<ExperimentUpdateDialog> {
+  public static class ExperimentAddEvent extends ComponentEvent<AddExperimentDialog> {
 
-    private final ExperimentDraft oldDraft;
     private final ExperimentDraft experimentDraft;
 
     /**
@@ -162,29 +148,23 @@ public class ExperimentUpdateDialog extends DialogWindow {
      * @param source          the source component
      * @param fromClient      <code>true</code> if the event originated from the client
      *                        side, <code>false</code> otherwise
-     * @param oldDraft        the draft of the old experiment
-     * @param experimentDraft the draft for the changed experiment
+     * @param experimentDraft the draft for the experiment
      */
-    public ExperimentUpdateEvent(ExperimentUpdateDialog source, boolean fromClient,
-        ExperimentDraft oldDraft, ExperimentDraft experimentDraft) {
+    public ExperimentAddEvent(AddExperimentDialog source, boolean fromClient,
+        ExperimentDraft experimentDraft) {
       super(source, fromClient);
       this.experimentDraft = experimentDraft;
-      this.oldDraft = oldDraft;
     }
 
     public ExperimentDraft getExperimentDraft() {
       return experimentDraft;
-    }
-
-    public Optional<ExperimentDraft> getOldDraft() {
-      return Optional.ofNullable(oldDraft);
     }
   }
 
   public static class ExperimentDraft implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 5584396740927480418L;
+    private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
     private final List<OntologyClassDTO> species;
