@@ -363,11 +363,12 @@ public class ExperimentDetailsComponent extends PageArea {
     listTitle.addClassName("title");
     list.add(listTitle);
     list.addClassName("taglist");
-    for(OntologyClassDTO ontologyClass : ontologyClasses) {
-      Span termSpan = new Span(ontologyClass.getLabel());
-      String ontologyName = Ontology.findOntologyByAbbreviation(ontologyClass.getOntology()).getName();
+    for (OntologyClassDTO ontologyDto : ontologyClasses) {
+      Span termSpan = new Span(ontologyDto.getLabel());
+      String ontologyName = Ontology.findOntologyByAbbreviation(ontologyDto.getOntology())
+          .getName();
       // creates a line with label and ontology name (id), e.g. "Homo sapiens (NCBITaxon_9606)"
-      termSpan.setTitle(ontologyClass.getName()+ "("+ontologyName+")");
+      termSpan.setTitle("%s (%s)".formatted(ontologyDto.getName(), ontologyName));
       list.add(termSpan);
     }
     iconAndList.add(list);
