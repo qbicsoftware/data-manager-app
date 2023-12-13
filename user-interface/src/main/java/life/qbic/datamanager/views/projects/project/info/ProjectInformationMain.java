@@ -23,7 +23,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
@@ -76,7 +76,8 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
     this.userPermissions = userPermissions;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.ontologyTermInformationService = ontologyTermInformationService;
-    layoutComponent();
+
+    addClassName("project");
     addListeners();
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
@@ -85,10 +86,6 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
         System.identityHashCode(projectContentComponent),
         projectSupportComponent.getClass().getSimpleName(),
         System.identityHashCode(projectSupportComponent)));
-  }
-
-  private void layoutComponent() {
-    addClassName("project");
   }
 
   /**
@@ -115,6 +112,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void setContext(Context context) {
+    this.context = context;
     projectContentComponent.setContext(context);
     projectSupportComponent.setContext(context);
   }
@@ -126,7 +124,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
         event -> showAddExperimentDialog());
   }
 
-  private void onExperimentAddEvent(ExperimentAddDialog.ExperimentAddEvent event) {
+  private void onExperimentAddEvent(AddExperimentDialog.ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
@@ -144,7 +142,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new ExperimentAddDialog(ontologyTermInformationService);
+    var creationDialog = new AddExperimentDialog(ontologyTermInformationService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();
@@ -157,7 +155,7 @@ public class ProjectInformationMain extends MainComponent implements BeforeEnter
   }
 
   private ExperimentId createExperiment(ProjectId projectId,
-      ExperimentAddDialog.ExperimentDraft experimentDraft) {
+      AddExperimentDialog.ExperimentDraft experimentDraft) {
     Result<ExperimentId, RuntimeException> result = addExperimentToProjectService.addExperimentToProject(
         projectId,
         experimentDraft.getExperimentName(),

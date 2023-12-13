@@ -37,6 +37,15 @@
   align-items: baseline;
 }
 
+.ontology-component {
+  display: flex;
+}
+
+.ontology-component .subtitle {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
 .card-deck {
   display: flex;
   align-content: space-evenly;
@@ -114,6 +123,41 @@
 .project-collection .projects-grid-section {
   height: 100%;
   width: 100%;
+}
+
+.project-creation-stepper-arrow {
+  align-items: end;
+  color: var(--lumo-contrast-60pct);
+  display: flex;
+  margin-inline: var(--lumo-space-l);
+}
+
+.stepper {
+  /*Ensure that the stepper has enough space on smaller screens*/
+  min-height: 4rem;
+  margin-top: 0.5rem;
+  display: inline-flex;
+  margin-left: 4rem;
+  margin-right: 4rem;
+}
+
+
+.stepper .step {
+  gap: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: center;
+}
+
+.stepper .step[selected] > vaadin-avatar {
+  background-color: var(--lumo-primary-color-50pct);
+  color: white;
+}
+
+.stepper .step > vaadin-avatar {
+  background-color: var(--lumo-contrast-60pct);
+  color: white;
 }
 
 .tag-collection {

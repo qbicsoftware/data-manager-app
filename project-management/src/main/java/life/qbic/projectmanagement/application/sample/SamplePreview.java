@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.sample;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -10,14 +11,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
+import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -50,9 +51,12 @@ public class SamplePreview {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
-  private String species;
-  private String specimen;
-  private String analyte;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO species;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO specimen;
+  @Convert(converter = OntologyClassAttributeConverter.class)
+  private OntologyClassDTO analyte;
 
   protected SamplePreview() {
     //needed by JPA
@@ -60,8 +64,8 @@ public class SamplePreview {
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisMethod, String comment) {
+      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
+      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -101,12 +105,12 @@ public class SamplePreview {
    * @param sampleLabel       the label of the {@link Sample} associated with this preview
    * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                          this preview
-   * @param species           the {@link Species} for the {@link Sample} associated with this
-   *                          preview
-   * @param specimen          the {@link Specimen} for the {@link Sample} associated with this
-   *                          preview
-   * @param analyte           the {@link Analyte} for the {@link Sample} associated with this
-   *                          preview
+   * @param species           the {@link OntologyClassDTO} for the species of this {@link Sample}
+   *                          associated with this preview
+   * @param specimen          the {@link OntologyClassDTO} for the specimen of this {@link Sample}
+   *                          associated with this preview
+   * @param analyte           the {@link OntologyClassDTO} for the analyte of this {@link Sample}
+   *                          associated with this preview
    * @param analysisMethod    the analysis method to be performed for this {@link Sample}
    * @param comment           an optional comment pertaining to the associated {@link Sample}
    * @return the sample preview
@@ -114,8 +118,8 @@ public class SamplePreview {
   public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
       String sampleCode,
       String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, String species, String specimen,
-      String analyte, String analysisMethod, String comment) {
+      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
+      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
         sampleLabel, experimentalGroup, species, specimen, analyte, analysisMethod, comment);
   }
@@ -144,15 +148,15 @@ public class SamplePreview {
     return sampleLabel;
   }
 
-  public String species() {
+  public OntologyClassDTO species() {
     return species;
   }
 
-  public String specimen() {
+  public OntologyClassDTO specimen() {
     return specimen;
   }
 
-  public String analyte() {
+  public OntologyClassDTO analyte() {
     return analyte;
   }
 

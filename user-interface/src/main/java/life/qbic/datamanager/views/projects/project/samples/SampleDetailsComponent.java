@@ -30,7 +30,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.Tag;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -187,13 +187,17 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    context.experimentId()
-        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    if (context.experimentId().isEmpty()) {
+      throw new ApplicationException("no experiment id in context " + context);
+    }
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
+
     this.context = context;
-    setExperiment(
-        experimentInformationService.find(context.experimentId().orElseThrow()).orElseThrow());
+    ExperimentId experimentId = context.experimentId()
+        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
+    setExperiment(experimentInformationService.find(experimentId).orElseThrow());
   }
 
   /**
@@ -213,8 +217,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           context.projectId().orElseThrow().value(),
           experimentId);
       log.debug(String.format(
-          "Rerouting to experiment page for experiment %s of project %s: " + routeToExperimentPage,
-          experimentId, context.projectId().orElseThrow().value()));
+          "Rerouting to experiment page for experiment %s of project %s: %s",
+          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
     }
   }
@@ -289,12 +293,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
         .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
-    sampleGrid.addColumn(SamplePreview::species).setHeader("Species").setSortProperty("species")
-        .setTooltipGenerator(SamplePreview::species);
-    sampleGrid.addColumn(SamplePreview::specimen).setHeader("Specimen")
-        .setSortProperty("specimen").setTooltipGenerator(SamplePreview::specimen);
-    sampleGrid.addColumn(SamplePreview::analyte).setHeader("Analyte").setSortProperty("analyte")
-        .setTooltipGenerator(SamplePreview::analyte);
+    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species").setSortProperty("species")
+        .setTooltipGenerator(preview -> preview.species().formatted());
+    sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
+        .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
+    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte").setSortProperty("analyte")
+        .setTooltipGenerator(preview -> preview.analyte().formatted());
     sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
     sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")

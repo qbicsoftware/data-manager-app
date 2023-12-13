@@ -23,6 +23,7 @@ import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.project.access.QBiCSid;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -105,13 +106,15 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
   }
 
   private void addUsersToGrid() {
-    List<String> userSids = new ArrayList<>();
-    List<UserInfo> users = new ArrayList<>();
-    sidRepository.findAllByPrincipalIsTrue().forEach(qBiCSid -> userSids.add(qBiCSid.getSid()));
-    userSids.forEach(
-        sId -> users.add(userInformationService.findById(sId).get()));
+    List<String> userSids = sidRepository.findAllByPrincipalIsTrue().stream()
+        .map(QBiCSid::getSid)
+        .toList();
+    List<UserInfo> users = userSids.stream()
+        .map(userInformationService::findById)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .toList();
     userGrid.setItems(users);
-
   }
 
   private boolean matchesTerm(String value, String searchTerm) {

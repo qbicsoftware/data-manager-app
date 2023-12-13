@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -20,8 +19,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentalDesignSearchService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -36,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * examined {@link Project}.
  * <p>
  * Additionally, it provides the possibility to create new experiments with its
- * {@link life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog} and enables the user to select an experiment of interest via
+ * {@link AddExperimentDialog} and enables the user to select an experiment of interest via
  * clicking on the item within {@link ListBox} associated with the experiment.
  * <p>
  * Finally, it allows components to be informed about a new experiment creation or selection via the
@@ -56,10 +55,8 @@ public class ExperimentListComponent extends PageArea {
   private Context context;
 
   public ExperimentListComponent(
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ExperimentalDesignSearchService experimentalDesignSearchService) {
+      @Autowired ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(experimentalDesignSearchService);
     this.experimentInformationService = experimentInformationService;
     this.add(listBox);
     this.addClassName("experiment-list-component");
@@ -100,8 +97,7 @@ public class ExperimentListComponent extends PageArea {
     var dataView = listBox.setItems(experiments);
     dataView.setSortOrder(experiment -> experiment.getName().toLowerCase(),
         SortDirection.ASCENDING);
-    listBox.setRenderer(new ComponentRenderer<Component, Experiment>(
-        this::generateExperimentListItem));
+    listBox.setRenderer(new ComponentRenderer<>(this::generateExperimentListItem));
   }
 
   private void addExperimentSelectionListener() {

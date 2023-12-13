@@ -26,7 +26,6 @@ import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConf
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * The entry point of the Spring Boot application.
@@ -34,7 +33,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * <p>Use the @PWA annotation make the application installable on phones, tablets and some desktop
  * browsers.
  */
-@SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
+@SpringBootApplication(exclude = {ErrorMvcAutoConfiguration.class})
 @Theme(value = "datamanager")
 @PWA(
     name = "Data Manager",
@@ -42,17 +41,16 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 @ComponentScan({"life.qbic"})
-@EnableJpaRepositories(basePackages = "life.qbic")
 @EntityScan(basePackages = "life.qbic")
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
-  private static final Logger logger = LoggerFactory.logger(Application.class.getName());
+  private static final Logger log = LoggerFactory.logger(Application.class.getName());
 
   @Serial
   private static final long serialVersionUID = -8182104817961102407L;
 
   public static void main(String[] args) {
-    logger.info("Starting data manager app...");
+    log.info("Starting data manager app...");
     var appContext = SpringApplication.run(Application.class, args);
 
     // We need to set up the domain registry and register important services:
