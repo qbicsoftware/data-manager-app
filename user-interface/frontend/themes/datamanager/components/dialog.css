@@ -141,8 +141,8 @@ vaadin-dialog-overlay::part(title) {
   box-sizing: border-box;
 }
 
-.edit-experiment-dialog .header,
-.add-experiment-dialog . header {
+.edit-experiment-content .header,
+.add-experiment-content . header {
   font-weight: bold;
 }
 
