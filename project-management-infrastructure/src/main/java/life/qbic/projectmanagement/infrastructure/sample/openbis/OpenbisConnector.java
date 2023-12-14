@@ -47,10 +47,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentalDesignVocabularyRepository;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -67,8 +63,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
-    QbicProjectDataRepo, QbicSampleDataRepo {
+public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -156,27 +151,6 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     return searchResult.getObjects();
   }
 
-  @Override
-  public List<Species> retrieveSpecies() {
-    return getVocabularyTermsForCode(VocabularyCode.SPECIES).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Species::new).toList();
-  }
-
-  @Override
-  public List<Specimen> retrieveSpecimens() {
-    return getVocabularyTermsForCode(VocabularyCode.SPECIMEN).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Specimen::new).toList();
-  }
-
-  @Override
-  public List<Analyte> retrieveAnalytes() {
-    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .map(it -> it.label().isBlank() ? it.code() : it.label())
-        .map(Analyte::new).toList();
-  }
-
   /**
    * Creates a reference to one or more {@link Sample}s in the data repository to connect project
    * data. A project must be provided, a unique experiment is created with each batch.
@@ -205,7 +179,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
 
         props.put("Q_SECONDARY_NAME", sample.label());
         props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
-        String analyteValue = sample.sampleOrigin().getAnalyte().value();
+        String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
         String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
                 () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
         props.put("Q_SAMPLE_TYPE", openBisSampleType);
@@ -340,7 +314,7 @@ public class OpenbisConnector implements ExperimentalDesignVocabularyRepository,
     sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
     sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
 
-    String analyteValue = sample.sampleOrigin().getAnalyte().value();
+    String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
 
     String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
         () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);

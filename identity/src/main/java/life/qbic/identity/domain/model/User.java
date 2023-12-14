@@ -105,16 +105,6 @@ public class User implements Serializable {
     return this.encryptedPassword;
   }
 
-  /**
-   * Sets the mail address for the current user.
-   *
-   * @param emailAddress the mail address of the user
-   * @since 1.0.0
-   */
-  private void setEmail(EmailAddress emailAddress) {
-    this.emailAddress = emailAddress;
-  }
-
   public UserId id() {
     return this.id;
   }
@@ -163,9 +153,11 @@ public class User implements Serializable {
   }
 
   private void activate() {
+    if (this.active) {
+      return;
+    }
     this.active = true;
-    UserActivated event = UserActivated.create(id.get());
-    DomainEventDispatcher.instance().dispatch(event);
+    DomainEventDispatcher.instance().dispatch(UserActivated.create(id.get()));
   }
 
   @Override

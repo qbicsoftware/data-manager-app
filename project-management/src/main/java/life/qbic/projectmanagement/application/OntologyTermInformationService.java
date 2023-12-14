@@ -34,17 +34,17 @@ public class OntologyTermInformationService {
    * Queries {@link OntologyClassEntity}s with a provided offset and limit that supports pagination.
    *
    * @param termFilter the user's input will be applied to filter results
-   * @param ontologies a List of ontology names denoting the ontologies to search in
+   * @param ontologyAbbreviations a List of ontology abbreviations denoting the ontology to search in
    * @param offset     the offset for the search result to start
    * @param limit      the maximum number of results that should be returned
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<OntologyClassEntity> queryOntologyTerm(String termFilter, List<String> ontologies,
+  public List<OntologyClassEntity> queryOntologyTerm(String termFilter, List<String> ontologyAbbreviations,
       int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<OntologyClassEntity> termList = ontologyTermLookup.query(termFilter, ontologies, offset,
+    List<OntologyClassEntity> termList = ontologyTermLookup.query(termFilter, ontologyAbbreviations, offset,
         50, sortOrders);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);

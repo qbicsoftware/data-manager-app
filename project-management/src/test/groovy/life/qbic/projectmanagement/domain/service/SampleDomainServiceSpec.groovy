@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
+import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.model.project.*
@@ -27,11 +28,11 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), AnalysisMethod.WES, ""))
+        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyClassDTO(), new OntologyClassDTO(), new OntologyClassDTO()), AnalysisMethod.WES, ""))
         Contact who = new Contact()
         Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new Species("test"), new Specimen("test"), new Analyte("test")), AnalysisMethod.WES, "")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyClassDTO(), new OntologyClassDTO(), new OntologyClassDTO()), AnalysisMethod.WES, "")
         sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
 
         and:
