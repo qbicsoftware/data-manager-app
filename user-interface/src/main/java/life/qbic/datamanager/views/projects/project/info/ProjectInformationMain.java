@@ -24,7 +24,8 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.create.ExperimentAddDialog;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.AddExperimentClickEvent;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentSelectionEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -59,7 +60,7 @@ public class ProjectInformationMain extends Div implements BeforeEnterObserver,
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectDetailsComponent projectDetailsComponent;
   private final ExperimentListComponent experimentListComponent;
-  private final ProjectLinksComponent projectLinksComponent;
+  private final ProjectLinksComponent projectLinksComponent; //TODO replace with OfferLinks
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
@@ -68,22 +69,24 @@ public class ProjectInformationMain extends Div implements BeforeEnterObserver,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired OntologyTermInformationService ontologyTermInformationService) {
-    requireNonNull(userPermissions, "userPermissions must not be null");
-    requireNonNull(projectDetailsComponent);
-    requireNonNull(experimentListComponent);
-    requireNonNull(projectLinksComponent);
-    requireNonNull(addExperimentToProjectService);
-    requireNonNull(ontologyTermInformationService);
-    this.projectDetailsComponent = projectDetailsComponent;
-    this.experimentListComponent = experimentListComponent;
-    this.projectLinksComponent = projectLinksComponent;
-    this.userPermissions = userPermissions;
-    this.addExperimentToProjectService = addExperimentToProjectService;
-    this.ontologyTermInformationService = ontologyTermInformationService;
-    addListeners();
+    this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
+        "projectDetailsComponent must not be null");
+    this.experimentListComponent = requireNonNull(experimentListComponent,
+        "experimentListComponent must not be null");
+    this.projectLinksComponent = requireNonNull(projectLinksComponent,
+        "projectLinksComponent must not be null");
+    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
+    this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
+        "addExperimentToProjectService must not be null");
+    this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
+        "ontologyTermInformationService must not be null");
+
+    this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
+    this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
+
+    addClassNames("main", "project");
     add(projectDetailsComponent, projectLinksComponent, experimentListComponent);
-    addClassName("project");
-    addClassName("main");
+
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s), %s(#%s) and %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -93,6 +96,15 @@ public class ProjectInformationMain extends Div implements BeforeEnterObserver,
         System.identityHashCode(experimentListComponent),
         projectLinksComponent.getClass().getSimpleName(),
         System.identityHashCode(projectLinksComponent)));
+  }
+
+  private void onAddExperimentClicked(AddExperimentClickEvent event) {
+    log.debug("Add experiment clicked: " + event);
+    showAddExperimentDialog();
+  }
+
+  private void onExperimentSelectionEvent(ExperimentSelectionEvent event) {
+    routeToExperiment(event.getExperimentId());
   }
 
   /**
@@ -123,13 +135,6 @@ public class ProjectInformationMain extends Div implements BeforeEnterObserver,
     projectDetailsComponent.setContext(context);
     projectLinksComponent.setContext(context);
     experimentListComponent.setContext(context);
-  }
-
-  private void addListeners() {
-    experimentListComponent.addExperimentSelectionListener(
-        event -> routeToExperiment(event.getExperimentId()));
-    experimentListComponent.addAddButtonListener(
-        event -> showAddExperimentDialog());
   }
 
   private void onExperimentAddEvent(AddExperimentDialog.ExperimentAddEvent event) {
