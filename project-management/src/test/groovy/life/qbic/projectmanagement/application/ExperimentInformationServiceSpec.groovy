@@ -6,10 +6,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
 
@@ -29,7 +26,7 @@ class ExperimentInformationServiceSpec extends Specification {
         when: "specimens are added to an experiment"
         OntologyClassDTO specimen1 = new OntologyClassDTO();
         OntologyClassDTO specimen2 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
-                 "label",  "name",  "description",  "classIri");
+                "classLabel", "name", "description", "classIri");
         experimentInformationService.addSpecimenToExperiment(experiment.experimentId(), specimen1, specimen2)
 
         then: "the experiment contains the added specimens"
@@ -47,7 +44,7 @@ class ExperimentInformationServiceSpec extends Specification {
         when: "analytes are added to an experiment"
         OntologyClassDTO analyte2 = new OntologyClassDTO();
         OntologyClassDTO analyte1 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
-                "label",  "name",  "description",  "classIri");
+                "classLabel", "name", "description", "classIri");
         experimentInformationService.addAnalyteToExperiment(experiment.experimentId(), analyte1, analyte2)
 
         then: "the experiment contains the added analytes"
@@ -65,7 +62,7 @@ class ExperimentInformationServiceSpec extends Specification {
         when: "species are added to an experiment"
         OntologyClassDTO species1 = new OntologyClassDTO();
         OntologyClassDTO species2 = new OntologyClassDTO("ontology", "ontologyVersion",  "ontologyIri",
-                "label",  "name",  "description",  "classIri");
+                "classLabel", "name", "description", "classIri");
         OntologyClassDTO species3 = new OntologyClassDTO();
 
         experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), species1, species2, species3)

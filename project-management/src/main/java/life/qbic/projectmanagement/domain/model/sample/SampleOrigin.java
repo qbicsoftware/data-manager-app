@@ -1,9 +1,7 @@
 package life.qbic.projectmanagement.domain.model.sample;
 
-import jakarta.persistence.Convert;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 /**
@@ -18,11 +16,8 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  */
 public class SampleOrigin {
 
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO species;
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO specimen;
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO analyte;
 
   protected SampleOrigin() {

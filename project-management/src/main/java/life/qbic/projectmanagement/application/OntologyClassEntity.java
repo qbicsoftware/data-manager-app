@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -10,7 +11,7 @@ import java.util.Objects;
 @Table(name = "ontology_classes")
 public class OntologyClassEntity {
 
-  String ontology;
+  String ontologyAbbreviation;
 
   String ontologyVersion;
 
@@ -20,6 +21,7 @@ public class OntologyClassEntity {
 
   String name;
 
+  @Column(length = 2000)
   String description;
 
   String classIri;
@@ -31,9 +33,10 @@ public class OntologyClassEntity {
   public OntologyClassEntity() {
   }
 
-  public OntologyClassEntity(String ontology, String ontologyVersion, String ontologyIri,
+  public OntologyClassEntity(String ontologyAbbreviation, String ontologyVersion,
+      String ontologyIri,
       String label, String name, String description, String classIri) {
-    this.ontology = ontology;
+    this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
     this.label = label;
@@ -42,12 +45,12 @@ public class OntologyClassEntity {
     this.classIri = classIri;
   }
 
-  public String getOntology() {
-    return ontology;
+  public String getOntologyAbbreviation() {
+    return ontologyAbbreviation;
   }
 
-  public void setOntology(String ontology) {
-    this.ontology = ontology;
+  public void setOntologyAbbreviation(String ontology) {
+    this.ontologyAbbreviation = ontology;
   }
 
   public String getOntologyVersion() {
@@ -107,7 +110,7 @@ public class OntologyClassEntity {
       return false;
     }
     OntologyClassEntity that = (OntologyClassEntity) o;
-    return Objects.equals(ontology, that.ontology) && Objects.equals(
+    return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
         that.ontologyIri) && Objects.equals(label, that.label) && Objects.equals(
         name, that.name) && Objects.equals(description, that.description)
@@ -116,7 +119,8 @@ public class OntologyClassEntity {
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontology, ontologyVersion, ontologyIri, label, name, description, classIri);
+    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, label, name,
+        description, classIri);
   }
 
   public Long getId() {
