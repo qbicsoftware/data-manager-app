@@ -19,7 +19,7 @@ import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.projects.EditProjectInformationForm;
+import life.qbic.projectmanagement.application.ContactRepository;
 
 /**
  * <b>Project Information Dialog</b>
@@ -40,7 +40,7 @@ public class EditProjectInformationDialog extends DialogWindow {
 
   private ProjectInformation oldValue = new ProjectInformation();
 
-  public EditProjectInformationDialog() {
+  public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
     addClassName("edit-project-dialog");
@@ -49,6 +49,12 @@ public class EditProjectInformationDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
 
     formLayout = new EditProjectInformationForm();
+    formLayout.setPrincipalInvestigators(contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+    formLayout.setProjectManagers(contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+
+
     binder = formLayout.getBinder();
 
     // Calls the reset method for all possible closure methods of the dialogue window:
@@ -88,20 +94,6 @@ public class EditProjectInformationDialog extends DialogWindow {
     close();
   }
 
-  @Override
-  public void close() {
-    super.close();
-    reset();
-  }
-
-  /**
-   * Resets the values and validity of all components that implement value storing and validity
-   * interfaces
-   */
-  public void reset() {
-    formLayout.reset();
-    binder.setBean(new ProjectInformation());
-  }
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
     addListener(ProjectUpdateEvent.class, listener);

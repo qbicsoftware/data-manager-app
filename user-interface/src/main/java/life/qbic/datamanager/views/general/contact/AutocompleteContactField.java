@@ -12,7 +12,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * <b>A component for contact person input</b>
@@ -34,45 +34,34 @@ public class AutocompleteContactField extends CustomField<Contact> {
     setLabel(label);
     addClassName("contact-field");
     binder = new Binder<>();
+    binder.addStatusChangeListener(event -> updateValidationProperty());
 
     contactSelection = new ComboBox<>();
     contactSelection.addClassName("contact-selection");
-    contactSelection.setAllowCustomValue(true);
+    contactSelection.setAllowCustomValue(false);
     contactSelection.setClearButtonVisible(true);
-    contactSelection.setRenderer(new ComponentRenderer<>(contact -> {
-      var contactName = new Span(contact.getFullName());
-      contactName.addClassName("contact-name");
-      var contactEmail = new Span(contact.getEmail());
-      contactEmail.addClassName("contact-email");
-      var container = new Div();
-      container.addClassName("contact-item");
-      container.add(contactName, contactEmail);
-      return container;
-    }));
+    contactSelection.setRenderer(new ComponentRenderer<>(AutocompleteContactField::renderContact));
     contactSelection.setItemLabelGenerator(
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
 
     nameField = new ComboBox<>();
     nameField.setAllowCustomValue(true);
+//    nameField = new TextField();
     nameField.setRequired(false);
     nameField.addClassName("name-field");
     nameField.setPlaceholder("Please enter a name");
 
     emailField = new ComboBox<>();
     emailField.setAllowCustomValue(true);
+//    emailField = new TextField();
     emailField.setRequired(false);
     emailField.addClassName("email-field");
     emailField.setPlaceholder("Please enter an email address");
 
-    contactSelection.addValueChangeListener(valueChanged -> {
-      Contact selectedContact = valueChanged.getValue();
-      if (selectedContact != null) {
-        binder.setBean(selectedContact);
-      }
-      valueChanged.getSource().clear();
-    });
+    contactSelection.addValueChangeListener(this::onContactSelectionChanged); //write only
 
     binder.forField(nameField)
+//        .withNullRepresentation(null)
         .withValidator(it -> !isRequired()
             || !(isNull(it) || it.isBlank()), "Please provide a name")
         .withValidator(it -> isNull(it) || !it.isBlank() || emailField.isEmpty(),
@@ -81,6 +70,7 @@ public class AutocompleteContactField extends CustomField<Contact> {
             Contact::setFullName);
 
     binder.forField(emailField)
+//        .withNullRepresentation(null)
         .withValidator(it -> !isRequired() || !(isNull(it) || it.isBlank()),
             "Please provide an email address")
         .withValidator(new EmailValidator(
@@ -95,26 +85,61 @@ public class AutocompleteContactField extends CustomField<Contact> {
     layout.addClassName("input-fields");
     add(contactSelection, layout);
     setItems(new ArrayList<>());
+    clear();
+  }
+
+  private void updateValidationProperty() {
+    this.getElement().setProperty("invalid", !binder.isValid());
+  }
+
+  private static Div renderContact(Contact contact) {
+    var contactName = new Span(contact.getFullName());
+    contactName.addClassName("contact-name");
+    var contactEmail = new Span(contact.getEmail());
+    contactEmail.addClassName("contact-email");
+    var container = new Div();
+    container.addClassName("contact-item");
+    container.add(contactName, contactEmail);
+    return container;
+  }
+
+  private void onContactSelectionChanged(
+      ComponentValueChangeEvent<ComboBox<Contact>, Contact> valueChanged) {
+    //ignore clearing the combobox or empty selection
+    if (valueChanged.getValue() == null) {
+      return;
+    }
+    if (valueChanged.getValue().isEmpty()) {
+      return;
+    }
+    // update the contact to the selected value
+    setContact(valueChanged.getValue());
+    // clear selection box
+    valueChanged.getHasValue().clear();
   }
 
   public void setContact(Contact contact) {
     binder.setBean(contact);
+    updateValidationProperty();
   }
 
   public void setItems(List<Contact> contacts) {
-    contactSelection.setVisible(!contacts.isEmpty());
-    nameField.setAutoOpen(!contacts.isEmpty());
-    emailField.setAutoOpen(!contacts.isEmpty());
+    nameField.setAutoOpen(true);
+    emailField.setAutoOpen(true);
 
     contactSelection.setItems(contacts);
-    nameField.setItems(contacts.stream().map(Contact::getFullName).distinct().toList());
-    emailField.setItems(contacts.stream().map(Contact::getEmail).distinct().toList());
+    nameField.setItems(
+        Stream.concat(contacts.stream().map(Contact::getFullName).distinct(),
+                Stream.of(""))
+            .toList());
+    emailField.setItems(
+        Stream.concat(contacts.stream().map(Contact::getEmail).distinct(),
+            Stream.of("")).toList());
   }
 
   @Override
   protected Contact generateModelValue() {
-    return new Contact(Optional.ofNullable(nameField.getValue()).orElse(""),
-        Optional.ofNullable(emailField.getValue()).orElse(""));
+    return new Contact(nameField.getValue(), emailField.getValue());
   }
 
   @Override
@@ -122,6 +147,7 @@ public class AutocompleteContactField extends CustomField<Contact> {
     nameField.setValue(contact.getFullName());
     emailField.setValue(contact.getEmail());
   }
+
 
   /**
    * Sets the component to required
@@ -140,8 +166,7 @@ public class AutocompleteContactField extends CustomField<Contact> {
 
   @Override
   public Contact getEmptyValue() {
-    return new Contact(Optional.ofNullable(nameField.getEmptyValue()).orElse(""),
-        Optional.ofNullable(emailField.getEmptyValue()).orElse(""));
+    return new Contact(nameField.getEmptyValue(), emailField.getEmptyValue());
   }
 
   /**

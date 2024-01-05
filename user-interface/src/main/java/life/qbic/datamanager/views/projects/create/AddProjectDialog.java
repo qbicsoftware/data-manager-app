@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.create;
 
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -11,17 +14,21 @@ import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import life.qbic.datamanager.views.general.Stepper;
-import life.qbic.datamanager.views.general.Stepper.Step;
+import life.qbic.datamanager.views.general.Stepper.StepIndicator;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
+import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 
@@ -38,59 +45,136 @@ public class AddProjectDialog extends Dialog {
 
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
-  private final Div dialogContent = new Div();
-  private static final String TITLE = "Create Project";
-  private final Stepper stepper = new Stepper();
+  private final Div dialogContent;
+  private final Stepper stepper;
   private final ProjectDesignLayout projectDesignLayout;
   private final FundingInformationLayout fundingInformationLayout;
   private final CollaboratorsLayout collaboratorsLayout;
   private final ExperimentalInformationLayout experimentalInformationLayout;
-  private final Button confirmButton = new Button("Confirm");
-  private final Button cancelButton = new Button("Cancel");
-  private final Button backButton = new Button("Back");
-  private final Button nextButton = new Button("Next");
-  private Step projectDesignStep;
-  private Step fundingInformationStep;
-  private Step projectCollaboratorsStep;
-  private Step experimentalInformationStep;
+
+  private final Button confirmButton;
+  private final Button backButton;
+  private final Button nextButton;
+
+  private final Map<String, Component> stepContent;
+
+
+  private StepIndicator addStep(Stepper stepper, String label, Component layout) {
+    stepContent.put(label, layout);
+    return stepper.addStep(label);
+  }
 
   public AddProjectDialog(FinanceService financeService,
-      OntologyTermInformationService ontologyTermInformationService) {
+      OntologyTermInformationService ontologyTermInformationService,
+      ContactRepository contactRepository) {
     super();
-    Objects.requireNonNull(financeService,
-        financeService.getClass().getSimpleName() + " must not be null");
-    Objects.requireNonNull(ontologyTermInformationService,
-        ontologyTermInformationService.getClass().getSimpleName() + " must not be null");
+    addClassName("add-project-dialog");
+    requireNonNull(financeService, "financeService must not be null");
+    requireNonNull(ontologyTermInformationService,
+        "ontologyTermInformationService must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         ontologyTermInformationService);
-    initDialog();
-    initListeners();
-    addClassName("project-creation-dialog");
-  }
 
-  private void initDialog() {
-    setHeaderTitle(TITLE);
-    add(generateSectionDivider(), stepper, generateSectionDivider(), dialogContent,
-        generateSectionDivider());
-    initStepper();
+    collaboratorsLayout.setPrincipalInvestigators(contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+    collaboratorsLayout.setProjectManagers(contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+
+    stepContent = new HashMap<>();
+
+    setHeaderTitle("Create Project");
+    dialogContent = new Div();
     dialogContent.addClassName("layout-container");
-    nextButton.addClassName("primary");
-    confirmButton.addClassName("primary");
+
+    stepper = new Stepper(this::createArrowSpan);
+    add(generateSectionDivider(),
+        stepper,
+        generateSectionDivider(),
+        dialogContent,
+        generateSectionDivider());
+
+    addStep(stepper, "Project Design", projectDesignLayout);
+    addStep(stepper, "Funding Information", fundingInformationLayout);
+    addStep(stepper, "Project Collaborators", collaboratorsLayout);
+    addStep(stepper, "Experimental Information", experimentalInformationLayout);
+
+    nextButton = new Button("Next");
+    nextButton.addClassNames("primary", "next");
+    nextButton.addClickListener(this::onNextClicked);
+
+    confirmButton = new Button("Confirm");
+    confirmButton.addClassNames("primary", "confirm");
+    confirmButton.addClickListener(this::onConfirmClicked);
+
+
     setDialogContent(stepper.getFirstStep());
+
+    stepper.addStepSelectionListener(
+        stepSelectedEvent -> {
+          //We only want to update the view if the user triggered the step selection
+          //FIXME: why?
+          if (stepSelectedEvent.isFromClient()) {
+            setDialogContent(stepSelectedEvent.getSelectedStep());
+            adaptFooterButtons(stepSelectedEvent.getSelectedStep());
+          } else {
+            stepper.setSelectedStep(stepSelectedEvent.getPreviousStep(), false);
+            //FIXME what happens here?
+          }
+        });
+
+    Button cancelButton = new Button("Cancel");
+    cancelButton.addClassName("cancel");
+    cancelButton.addClickListener(this::onCancelClicked);
+    backButton = new Button("Back");
+    backButton.addClassName("back");
+    backButton.addClickListener(this::onBackClicked);
+
+    DialogFooter footer = getFooter();
+    Div rightButtons = new Div();
+    rightButtons.addClassName("footer-right-buttons-container");
+    rightButtons.add(cancelButton, nextButton, confirmButton);
+    footer.add(backButton, rightButtons);
     adaptFooterButtons(stepper.getFirstStep());
   }
 
-  private void initStepper() {
-    projectDesignStep = stepper.addStep("Project Design");
-    stepper.addComponent(createArrowSpan());
-    fundingInformationStep = stepper.addStep("Funding Information");
-    stepper.addComponent(createArrowSpan());
-    projectCollaboratorsStep = stepper.addStep("Project Collaborators");
-    stepper.addComponent(createArrowSpan());
-    experimentalInformationStep = stepper.addStep("Experimental Information");
+
+  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+  }
+
+  private void onConfirmClicked(ClickEvent<Button> event) {
+    if (projectDesignLayout.isInvalid()) {
+      return;
+    }
+    if (fundingInformationLayout.isInvalid()) {
+      return;
+    }
+    if (collaboratorsLayout.getBinder().validate().hasErrors()) {
+      return;
+    }
+    if (experimentalInformationLayout.isInvalid()) {
+      return;
+    }
+
+    if (isDialogContentValid()) {
+      fireEvent(new ConfirmEvent(this, projectDesignLayout.getProjectDesign(),
+          fundingInformationLayout.getFundingInformation(),
+          collaboratorsLayout.getBinder().getBean(), //FIXME
+          experimentalInformationLayout.getExperimentalInformation(), true));
+    }
+  }
+
+  private void onNextClicked(ClickEvent<Button> event) {
+    if (isDialogContentValid()) {
+      stepper.selectNextStep(event.isFromClient());
+    }
+  }
+
+  private void onBackClicked(ClickEvent<Button> event) {
+    stepper.selectPreviousStep(event.isFromClient());
   }
 
   private Span createArrowSpan() {
@@ -100,70 +184,45 @@ public class AddProjectDialog extends Dialog {
     return arrow;
   }
 
-  private void initListeners() {
-    stepper.addListener(
-        event -> {
-          //We only want to update the view if the user triggered the step selection
-          if (event.isFromClient()) {
-            setDialogContent(event.getSelectedStep());
-            adaptFooterButtons(event.getSelectedStep());
-          } else {
-            stepper.setSelectedStep(event.getPreviousStep(), false);
-          }
-        });
-    cancelButton.addClickListener(event -> close());
-    backButton.addClickListener(
-        event -> stepper.selectPreviousStep(event.isFromClient()));
-    nextButton.addClickListener(event -> {
-      if (isDialogContentValid()) {
-        stepper.selectNextStep(event.isFromClient());
-      }
-    });
-    confirmButton.addClickListener(event -> {
-      if (isDialogContentValid()) {
-        fireEvent(new ProjectCreationEvent(this, projectDesignLayout.getProjectDesign(),
-            fundingInformationLayout.getFundingInformation(),
-            collaboratorsLayout.getCollaboratorInformation(),
-            experimentalInformationLayout.getExperimentalInformation(), true));
-      }
-    });
-  }
-
   /**
-   * Add a listener that is called, when a new {@link ProjectCreationEvent event} is emitted.
+   * Add a listener that is called, when a new {@link ConfirmEvent event} is emitted.
    *
    * @param listener a listener that should be called
    * @since 1.0.0
    */
-  public void addListener(ComponentEventListener<ProjectCreationEvent> listener) {
-    Objects.requireNonNull(listener);
-    addListener(ProjectCreationEvent.class, listener);
+  public void addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
+    requireNonNull(listener);
+    addListener(ConfirmEvent.class, listener);
+  }
+
+  public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    requireNonNull(listener, "listener must not be null");
+    return addListener(CancelEvent.class, listener);
   }
 
   private boolean isDialogContentValid() {
     return dialogContent.getChildren()
         .filter(HasValidation.class::isInstance)
-        .map(component -> ((HasValidation) component).isInvalid())
-        .anyMatch(aBoolean -> !aBoolean);
+        .map(HasValidation.class::cast)
+        .noneMatch(HasValidation::isInvalid);
   }
 
-  private void adaptFooterButtons(Step step) {
-    DialogFooter footer = getFooter();
-    footer.removeAll();
-    Span rightButtonsContainer = new Span();
-    rightButtonsContainer.addClassNames("footer-right-buttons-container");
-    if (stepper.getFirstStep().equals(step)) {
-      //First Step --> no back button
-      rightButtonsContainer.add(cancelButton, nextButton);
-      footer.add(new Span(), rightButtonsContainer);
-    } else if (stepper.getLastStep().equals(step)) {
-      //Last Step --> Confirm Button instead of Next button
-      rightButtonsContainer.add(cancelButton, confirmButton);
-      footer.add(backButton, rightButtonsContainer);
-    } else {
-      rightButtonsContainer.add(cancelButton, nextButton);
-      footer.add(backButton, rightButtonsContainer);
+
+  private void adaptFooterButtons(StepIndicator step) {
+
+    backButton.setVisible(true);
+    nextButton.setVisible(true);
+    confirmButton.setVisible(false);
+
+    if (stepper.isFirstStep(step)) {
+      backButton.setVisible(false);
     }
+
+    if (stepper.isLastStep(step)) {
+      nextButton.setVisible(false);
+      confirmButton.setVisible(true);
+    }
+
   }
 
   private static Span generateSectionDivider() {
@@ -172,18 +231,9 @@ public class AddProjectDialog extends Dialog {
     return sectionDivider;
   }
 
-  private void setDialogContent(Step step) {
+  private void setDialogContent(StepIndicator step) {
     dialogContent.removeAll();
-    Component selectedComponent = null;
-    if (step.equals(projectDesignStep)) {
-      selectedComponent = projectDesignLayout;
-    } else if (step.equals(fundingInformationStep)) {
-      selectedComponent = fundingInformationLayout;
-    } else if (step.equals(projectCollaboratorsStep)) {
-      selectedComponent = collaboratorsLayout;
-    } else if (step.equals(experimentalInformationStep)) {
-      selectedComponent = experimentalInformationLayout;
-    }
+    var selectedComponent = stepContent.getOrDefault(step.getLabel(), new Div());
     dialogContent.add(selectedComponent);
   }
 
@@ -194,7 +244,7 @@ public class AddProjectDialog extends Dialog {
    *
    * @since 1.0.0
    */
-  public static class ProjectCreationEvent extends ComponentEvent<AddProjectDialog> {
+  public static class ConfirmEvent extends ComponentEvent<AddProjectDialog> {
 
     @Serial
     private static final long serialVersionUID = 3629446840913968906L;
@@ -202,17 +252,6 @@ public class AddProjectDialog extends Dialog {
     private final FundingEntry fundingEntry;
     private final ProjectCollaborators projectCollaborators;
     private final ExperimentalInformation experimentalInformation;
-
-    public ProjectCreationEvent(AddProjectDialog source,
-        ProjectDesign projectDesign, FundingEntry fundingEntry,
-        ProjectCollaborators projectCollaborators,
-        ExperimentalInformation experimentalInformation, boolean fromClient) {
-      super(source, fromClient);
-      this.projectDesign = projectDesign;
-      this.fundingEntry = fundingEntry;
-      this.projectCollaborators = projectCollaborators;
-      this.experimentalInformation = experimentalInformation;
-    }
 
     public ProjectDesign getProjectDesign() {
       return projectDesign;
@@ -230,5 +269,31 @@ public class AddProjectDialog extends Dialog {
       return experimentalInformation;
     }
 
+
+    public ConfirmEvent(AddProjectDialog source,
+        ProjectDesign projectDesign, FundingEntry fundingEntry,
+        ProjectCollaborators projectCollaborators,
+        ExperimentalInformation experimentalInformation, boolean fromClient) {
+      super(source, fromClient);
+      this.projectDesign = projectDesign;
+      this.fundingEntry = fundingEntry;
+      this.projectCollaborators = projectCollaborators;
+      this.experimentalInformation = experimentalInformation;
+    }
+  }
+
+  public static class CancelEvent extends ComponentEvent<AddProjectDialog> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public CancelEvent(AddProjectDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 }

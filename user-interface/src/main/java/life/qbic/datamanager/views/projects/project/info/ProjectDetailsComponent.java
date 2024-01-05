@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -8,7 +10,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
@@ -20,6 +21,7 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
+import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -60,21 +62,22 @@ public class ProjectDetailsComponent extends PageArea {
       "Project Collaborators", "Important contacts for this project");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+
+  private final transient ContactRepository contactRepository;
   private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired ContactRepository contactRepository) {
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(contactRepository, "contactRepository must not be null");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.contactRepository = contactRepository;
     layoutComponent();
     addListenerForNewEditEvent();
     addClassName("project-details-component");
-  }
-
-  private static Contact fromContact(life.qbic.datamanager.views.general.contact.Contact contact) {
-    return new Contact(contact.getFullName(), contact.getEmail());
   }
 
   private static List<Entry> extractProjectInfo(Project project, List<Experiment> experiments) {
@@ -229,7 +232,7 @@ public class ProjectDetailsComponent extends PageArea {
   }
 
   private EditProjectInformationDialog generateEditProjectInformationDialog(Project project) {
-    EditProjectInformationDialog dialog = new EditProjectInformationDialog();
+    EditProjectInformationDialog dialog = new EditProjectInformationDialog(contactRepository);
     ProjectInformation projectInformation = new ProjectInformation();
     projectInformation.setProjectTitle(project.getProjectIntent().projectTitle().title());
     projectInformation.setProjectObjective(project.getProjectIntent().objective().value());
@@ -272,16 +275,16 @@ public class ProjectDetailsComponent extends PageArea {
     projectInformationService.stateObjective(projectId,
         projectInformationContent.getProjectObjective());
     projectInformationService.investigateProject(projectId,
-        fromContact(projectInformationContent.getPrincipalInvestigator()));
+        projectInformationContent.getPrincipalInvestigator().toDomainContact());
     projectInformationService.manageProject(projectId,
-        fromContact(projectInformationContent.getProjectManager()));
+        projectInformationContent.getProjectManager().toDomainContact());
 
     projectInformationContent.getFundingEntry().ifPresentOrElse(
         funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
             funding.getReferenceId()), () -> projectInformationService.removeFunding(projectId));
 
     projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
-            projectInformationService.setResponsibility(projectId, fromContact(contact)),
+            projectInformationService.setResponsibility(projectId, contact.toDomainContact()),
         () -> projectInformationService.setResponsibility(projectId, null));
   }
 

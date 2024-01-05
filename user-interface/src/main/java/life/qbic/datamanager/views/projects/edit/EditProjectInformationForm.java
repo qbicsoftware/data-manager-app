@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects;
+package life.qbic.datamanager.views.projects.edit;
 
 import static java.util.Objects.isNull;
 
@@ -90,6 +90,7 @@ public class EditProjectInformationForm extends FormLayout {
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
+        .withValidator(it -> principalInvestigatorField.isValid(), "")
         .bind((ProjectInformation::getPrincipalInvestigator),
             ProjectInformation::setPrincipalInvestigator);
 
@@ -98,19 +99,17 @@ public class EditProjectInformationForm extends FormLayout {
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     binder.forField(responsiblePersonField)
+        .withNullRepresentation(responsiblePersonField.getEmptyValue())
+        .withValidator(it -> responsiblePersonField.isValid(), "")
         .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
-            (projectInformation, contact) -> {
-              if (contact.getFullName().isEmpty() || contact.getEmail().isEmpty()) {
-                projectInformation.setResponsiblePerson(null);
-              } else {
-                projectInformation.setResponsiblePerson(contact);
-              }
-            });
+            ProjectInformation::setResponsiblePerson);
 
     projectManagerField = new AutocompleteContactField("Project Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
+        .withNullRepresentation(projectManagerField.getEmptyValue())
+        .withValidator(it -> projectManagerField.isValid(), "")
         .bind((ProjectInformation::getProjectManager),
             ProjectInformation::setProjectManager);
 
@@ -129,21 +128,7 @@ public class EditProjectInformationForm extends FormLayout {
         responsiblePersonField,
         projectManagerField
     );
-    setProjectManagers(dummyContacts());
-    setPrincipalInvestigators(dummyContacts());
-  }
 
-  private static List<Contact> dummyContacts() {
-    return List.of(
-        new Contact("Max Mustermann", "max.mustermann@qbic.uni-tuebingen.de"),
-        new Contact("David Müller", "david.mueller@qbic.uni-tuebingen.de"),
-        new Contact("John Koch", "john.koch@qbic.uni-tuebingen.de"),
-        new Contact("Trevor Noah", "trevor.noah@qbic.uni-tuebingen.de"),
-        new Contact("Sarah Connor", "sarah.connor@qbic.uni-tuebingen.de"),
-        new Contact("Anna Bell", "anna.bell@qbic.uni-tuebingen.de"),
-        new Contact("Sophia Turner", "sophia.turner@qbic.uni-tuebingen.de"),
-        new Contact("Tylor Smith", "tylor.smith@qbic.uni-tuebingen.de")
-    );
   }
 
   public void setProjectManagers(List<Contact> projectManagers) {

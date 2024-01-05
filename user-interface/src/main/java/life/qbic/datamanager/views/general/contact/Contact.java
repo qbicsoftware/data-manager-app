@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.general.contact;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -22,8 +20,8 @@ public final class Contact implements Serializable {
   private String email;
 
   public Contact(String fullName, String email) {
-    requireNonNull(fullName, "fullName must not be null");
-    requireNonNull(email, "email must not be null");
+//    requireNonNull(fullName, "fullName must not be null");
+//    requireNonNull(email, "email must not be null");
     this.fullName = fullName;
     this.email = email;
   }
@@ -44,7 +42,18 @@ public final class Contact implements Serializable {
     return email;
   }
 
+  public boolean isEmpty() {
+    return (fullName == null || fullName.isBlank()) && (email == null || email.isBlank());
+  }
+
+  public boolean isComplete() {
+    return fullName != null && !fullName.isBlank() && email != null && !email.isBlank();
+  }
+
   public life.qbic.projectmanagement.domain.model.project.Contact toDomainContact() {
+    if (!isComplete()) {
+      throw new RuntimeException("Contact is not complete and cannot be converted: " + this);
+    }
     return new life.qbic.projectmanagement.domain.model.project.Contact(getFullName(), getEmail());
   }
   @Override
