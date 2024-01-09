@@ -26,7 +26,7 @@ public class CollaboratorsLayout extends Div implements HasValidation {
   private final ContactField principalInvestigatorField = new ContactField(
       "Principal Investigator");
   private final ContactField responsiblePersonField = new ContactField(
-      "Project Responsible/Core Investigator (optional)");
+      "Project Responsible/Co-Investigator (optional)");
   private final ContactField projectManagerField = new ContactField("Project Manager");
   private final Binder<ProjectCollaborators> collaboratorsBinder = new Binder<>(
       ProjectCollaborators.class);
