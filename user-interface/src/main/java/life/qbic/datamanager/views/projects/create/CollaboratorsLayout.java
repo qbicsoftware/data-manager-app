@@ -39,7 +39,8 @@ public class CollaboratorsLayout extends Div implements HasValidation {
   private void initLayout() {
     Span projectContactsTitle = new Span(TITLE);
     projectContactsTitle.addClassName("title");
-    Span projectContactsDescription = new Span("Important contact people of the project");
+    Span projectContactsDescription = new Span(
+        "Add the names and email address of the important contact people of the project.");
     add(projectContactsTitle);
     add(projectContactsDescription);
     add(principalInvestigatorField);
