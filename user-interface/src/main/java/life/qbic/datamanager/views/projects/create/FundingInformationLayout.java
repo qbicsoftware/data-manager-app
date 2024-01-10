@@ -35,7 +35,8 @@ public class FundingInformationLayout extends Div implements HasValidation {
   private void initLayout() {
     Span fundingInformationTitle = new Span(TITLE);
     fundingInformationTitle.addClassNames("title");
-    Span fundingInformationDescription = new Span("Description Text");
+    Span fundingInformationDescription = new Span(
+        "Specify the name and id of the research project grant, if present.");
     add(fundingInformationTitle, fundingInformationDescription, fundingField);
     addClassName("funding-information-layout");
   }

@@ -129,7 +129,6 @@ public class ExperimentListComponent extends PageArea {
     Div controls = new Div();
     controls.addClassName("controls");
     Button addButton = new Button("Add");
-    addButton.addClassName("primary");
     addButton.addClickListener(
         event -> fireEvent(new AddExperimentClickEvent(this, event.isFromClient())));
     controls.add(addButton);
