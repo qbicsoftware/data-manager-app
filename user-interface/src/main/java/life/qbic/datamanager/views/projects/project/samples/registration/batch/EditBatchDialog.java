@@ -10,11 +10,17 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.SortDirection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
@@ -44,7 +50,13 @@ public class EditBatchDialog extends DialogWindow {
     setConfirmButtonLabel("Update Samples");
 
     this.batchId = batchId;
-    this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
+
+    // sort by sample code
+    List<SampleInfo> mutableSampleList = new ArrayList<>(existingSamples.stream().toList());
+
+    Collections.sort(mutableSampleList, Comparator.comparing(o -> o.getSampleCode().code()));
+
+    this.existingSamples = mutableSampleList;
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, true);
@@ -111,7 +123,7 @@ public class EditBatchDialog extends DialogWindow {
         });
 
     spreadsheet.resetRows();
-    for (SampleInfo existingSample : existingSamples) {
+    for (SampleInfo existingSample : this.existingSamples) {
       spreadsheet.addRow(existingSample);
     }
   }
