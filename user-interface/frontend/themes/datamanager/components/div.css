@@ -133,21 +133,19 @@
 }
 
 .stepper {
-  /*Ensure that the stepper has enough space on smaller screens*/
-  min-height: 4rem;
   margin-top: 0.5rem;
   display: inline-flex;
-  margin-left: 4rem;
-  margin-right: 4rem;
+  /*Employ same padding as defined for dialog layout*/
+  padding-inline: 4rem;
 }
 
 
 .stepper .step {
-  gap: var(--lumo-space-s);
   display: flex;
   flex-direction: column;
-  justify-content: end;
   align-items: center;
+  white-space: nowrap;
+  gap: var(--lumo-space-s);
 }
 
 .stepper .step[selected] > vaadin-avatar {
