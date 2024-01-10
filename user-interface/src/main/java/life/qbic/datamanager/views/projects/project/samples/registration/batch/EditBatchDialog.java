@@ -41,7 +41,7 @@ public class EditBatchDialog extends DialogWindow {
       List<SampleInfo> existingSamples) {
 
     addClassName("batch-update-dialog");
-    setConfirmButtonLabel("Update Samples");
+    setConfirmButtonLabel("Save");
 
     this.batchId = batchId;
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
@@ -64,39 +64,43 @@ public class EditBatchDialog extends DialogWindow {
     removeLastRow.addClickListener(this::onRemoveLastRowClicked);
     removeLastRow.addClassName("remove-batch-row");
 
-    setHeaderTitle("Update Batch");
+    setHeaderTitle("Edit sample batch");
     setResizable(true);
 
     Div batchControls = new Div();
     batchControls.addClassName("batch-controls");
     batchControls.add(batchNameField);
 
-    Span userHelp1 = new Span("You are editing samples for batch");
+    Span userHelp1 = new Span("You are editing your samples for batch");
     Span experimentNameText = new Span(experimentName);
     experimentNameText.addClassName("experiment-name");
     Span userHelp2 = new Span("and experiment");
     batchNameText = new Span(batchName);
     batchNameText.addClassName("batch-name");
-    Div userHelpText = new Div(userHelp1, batchNameText, userHelp2, experimentNameText);
+    Span userHelpText = new Span(userHelp1, batchNameText, userHelp2, experimentNameText);
     userHelpText.addClassName("user-help-text");
 
-    Div spreadsheetControls = new Div();
-    spreadsheetControls.addClassName("spreadsheet-controls");
+    Div spreadsheetHeader = new Div();
+    spreadsheetHeader.addClassName("spreadsheet-header");
 
-    Span rowControls = new Span();
-    rowControls.addClassName("row-controls");
-    rowControls.add(addRow, removeLastRow);
+    Span spreadsheetControls = new Span();
+    spreadsheetControls.addClassName("spreadsheet-controls");
+    spreadsheetControls.add(addRow, removeLastRow);
+
+    spreadsheetHeader.add(userHelpText, spreadsheetControls);
+    spreadsheetHeader.addClassName("spreadsheet-header");
 
     Span errorText = new Span("Unspecific Error message");
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
-    spreadsheetControls.add(rowControls, errorText);
+    Div spreadsheetContainer = new Div();
+
+    spreadsheetContainer.addClassName("spreadsheet-container");
+    spreadsheetContainer.add(spreadsheetHeader, errorText, spreadsheet);
 
     add(batchControls,
-        userHelpText,
-        spreadsheetControls,
-        spreadsheet);
+        spreadsheetContainer);
 
     batchNameField.focus();
 

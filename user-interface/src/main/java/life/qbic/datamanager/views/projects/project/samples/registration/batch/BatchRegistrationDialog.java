@@ -101,14 +101,14 @@ public class BatchRegistrationDialog extends DialogWindow {
     spreadsheetControls.addClassName("spreadsheet-controls");
     spreadsheetControls.add(addRow, removeLastRow);
 
-    Span spreadSheetHeader = new Span(userHelpText, spreadsheetControls);
-    spreadSheetHeader.addClassName("spreadsheet-header");
+    Span spreadsheetHeader = new Span(userHelpText, spreadsheetControls);
+    spreadsheetHeader.addClassName("spreadsheet-header");
 
     Span errorText = new Span("Unspecific Error message");
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
-    spreadsheetContainer.add(spreadSheetHeader, errorText, spreadsheet);
+    spreadsheetContainer.add(spreadsheetHeader, errorText, spreadsheet);
     spreadsheetContainer.addClassName("spreadsheet-container");
 
     add(batchControls,
