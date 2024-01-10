@@ -87,6 +87,12 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
+.batch-registration-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
 .batch-update-dialog::part(overlay),
 .batch-registration-dialog::part(overlay) {
   min-width: 80vw;
@@ -100,12 +106,31 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bolder;
 }
 
+.batch-registration-dialog .prefill-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-registration-dialog .spreadsheet-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.batch-registration-dialog .spreadsheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .batch-update-dialog .spreadsheet-controls,
 .batch-registration-dialog .spreadsheet-controls {
   display: flex;
   justify-content: space-between;
   align-content: baseline;
   flex-direction: row-reverse;
+  gap: var(--lumo-space-s);
 }
 
 .batch-update-dialog .spreadsheet-controls .error-text,
