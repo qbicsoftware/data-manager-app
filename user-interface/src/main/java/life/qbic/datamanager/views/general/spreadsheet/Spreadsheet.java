@@ -220,8 +220,8 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   public T getLastRowData() {
     int lastRowIndex = rowCount() - 1;
     Row lastRow = getRow(lastRowIndex);
-    if(lastRow instanceof DataRow) {
-      return ((DataRow) lastRow).data;
+    if(lastRow instanceof DataRow dataRow) {
+      return dataRow.data;
     }
     return null;//other possibilities?
   }
