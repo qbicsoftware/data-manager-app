@@ -272,6 +272,23 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     sampleCodesToDelete.forEach(code -> deleteOpenbisSample(DEFAULT_SPACE_CODE, code));
   }
 
+  @Override
+  public boolean canDeleteSample(ProjectCode projectCode, SampleCode codeToDelete) {
+    ExperimentFetchOptions fetchOptions = new ExperimentFetchOptions();
+    fetchOptions.withSamplesUsing(fetchSamplesCompletely());
+    for (Experiment experiment : searchExperimentsByProjectCode(projectCode.value(), fetchOptions)) {
+      for (Sample sample : experiment.getSamples()) {
+        String sampleCode = sample.getCode();
+        if (codeToDelete.code().equals(sampleCode)) {
+          if (isSampleWithData(List.of(sample))) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
   /**
    * Recursive method checking child samples for datasets
    */

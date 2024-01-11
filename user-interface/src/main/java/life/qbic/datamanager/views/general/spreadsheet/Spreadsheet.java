@@ -16,6 +16,7 @@ import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.shared.Registration;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -210,6 +211,22 @@ public class Spreadsheet<T> extends Component implements HasComponents,
         .map(DataRow::data)
         .toList();
   }
+
+
+  /**
+   * Get the data in the last row of the spreadsheet
+   * @return the underlying data of the last row
+   */
+  public T getLastRowData() {
+    int lastRowIndex = rowCount() - 1;
+    Row lastRow = getRow(lastRowIndex);
+    if(lastRow instanceof DataRow) {
+      return ((DataRow) lastRow).data;
+    }
+    return null;//other possibilities?
+  }
+
+
 
   /**
    *
@@ -729,6 +746,13 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       return; // does not apply to column headers
     }
     cell.setCellStyle(invalidCellStyle);
+  }
+
+  public void markLastRowInvalid() {
+    int lastRowIndex = rowCount() - 1;
+    Cell sampleCodeCell = getCell(lastRowIndex, 1).get();
+    markCellAsInvalid(sampleCodeCell);
+    refreshCells(Arrays.asList(sampleCodeCell));
   }
 
   private void markCellAsValid(Cell cell) {

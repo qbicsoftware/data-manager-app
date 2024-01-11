@@ -144,7 +144,22 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
+    SampleInfo sampleInfo = spreadsheet.getLastRowData();
+    fireEvent(new RemoveRowEvent(this, clickEvent.isFromClient(),
+        sampleInfo));
+  }
+
+  /**
+   * Removes the last row. Any checks for validity of the operation should be performed before using
+   * the related event
+   */
+  public void removeRow() {
     spreadsheet.removeLastRow();
+  }
+
+  public void displayRemoveRowError() {
+    spreadsheet.setErrorMessage("Sample can not be removed because data is attached.");
+    spreadsheet.markLastRowInvalid();
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
@@ -215,6 +230,33 @@ public class EditBatchDialog extends DialogWindow {
    */
   public void addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     addListener(ConfirmEvent.class, listener);
+  }
+
+  public void addRemoveRowListener(ComponentEventListener<RemoveRowEvent> listener) {
+    addListener(RemoveRowEvent.class, listener);
+  }
+
+  public static class RemoveRowEvent extends ComponentEvent<EditBatchDialog> {
+
+    private final SampleInfo sampleInfo;
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side. Is used to remove the last sample row, but only if that
+     * is allowed (e.g. no datasets attached).
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     * @param sampleInfo SampleInfo corresponding to the row to be removed
+     */
+    public RemoveRowEvent(EditBatchDialog source, boolean fromClient, SampleInfo sampleInfo) {
+      super(source, fromClient);
+      this.sampleInfo = sampleInfo;
+    }
+
+    public SampleInfo getSampleInfo() {
+      return sampleInfo;
+    }
   }
 
   public static class CancelEvent extends ComponentEvent<EditBatchDialog> {

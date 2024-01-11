@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
@@ -110,6 +111,18 @@ public class DeletionService {
       throw new IllegalArgumentException("Could not find project " + projectId);
     }
     sampleDomainService.deleteSamples(project.get(), samplesCollection);
+  }
+
+  public boolean isSampleRemovable(SampleId sampleId, ProjectId projectId) {
+    // "sample" without Id only exists in table, not the database, it can be removed
+    if(sampleId==null) {
+      return true;
+    }
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      throw new IllegalArgumentException("Could not find project " + projectId);
+    }
+    return sampleDomainService.isSampleRemovable(project.get(), sampleId);
   }
 
 

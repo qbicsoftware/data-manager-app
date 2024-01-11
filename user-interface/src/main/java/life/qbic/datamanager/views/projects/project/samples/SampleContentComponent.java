@@ -25,6 +25,7 @@ import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponen
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.RemoveRowEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.application.DeletionService;
@@ -262,6 +263,7 @@ public class SampleContentComponent extends Div {
             .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos);
     editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     editBatchDialog.addConfirmListener(this::editBatch);
+    editBatchDialog.addRemoveRowListener(this::removeRowFromBatch);
     editBatchDialog.open();
   }
 
@@ -301,6 +303,16 @@ public class SampleContentComponent extends Div {
       confirmEvent.getSource().close();
       throw new ApplicationException("error code: " + error);
     });
+  }
+
+  private void removeRowFromBatch(EditBatchDialog.RemoveRowEvent removeRowEvent) {
+    EditBatchDialog dialog = removeRowEvent.getSource();
+    if(deletionService.isSampleRemovable(removeRowEvent.getSampleInfo().getSampleId(),
+        context.projectId().orElseThrow())) {
+      dialog.removeRow();
+    } else {
+      dialog.displayRemoveRowError();
+    }
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
