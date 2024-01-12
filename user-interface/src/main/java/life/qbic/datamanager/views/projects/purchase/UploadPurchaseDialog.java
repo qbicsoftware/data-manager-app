@@ -94,7 +94,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     add(uploadSection, uploadedItemsSection);
     addClassName("purchase-item-upload");
     confirmButton.setText("Save");
-
     // Init the visibility rendering once
     toggleFileSectionIfEmpty();
   }
