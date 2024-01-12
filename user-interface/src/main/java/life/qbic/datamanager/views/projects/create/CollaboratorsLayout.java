@@ -1,18 +1,20 @@
 package life.qbic.datamanager.views.projects.create;
 
-import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.datamanager.views.general.HasBinder;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,7 +24,7 @@ import org.springframework.stereotype.Component;
  * within a project during project creation and validates the provided information</p>
  */
 @Component
-public class CollaboratorsLayout extends Div implements HasValidation {
+public class CollaboratorsLayout extends Div implements HasBinder<ProjectCollaborators> {
 
   private final AutocompleteContactField principalInvestigatorField;
   private final ContactField responsiblePersonField;
@@ -32,22 +34,27 @@ public class CollaboratorsLayout extends Div implements HasValidation {
   public CollaboratorsLayout() {
 
     collaboratorsBinder = new Binder<>(ProjectCollaborators.class);
+    collaboratorsBinder.setValidatorsDisabled(true);
     collaboratorsBinder.setBean(new ProjectCollaborators());
+    collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);
+
+
 
     principalInvestigatorField = new AutocompleteContactField("Principal Investigator");
     principalInvestigatorField.setRequired(true);
     collaboratorsBinder.forField(principalInvestigatorField)
         .withNullRepresentation(principalInvestigatorField.getEmptyValue())
-        .withValidator(it -> principalInvestigatorField.isValid(), "")
+        .withValidator(it -> principalInvestigatorField.validate().isOk(), "")
         .bind(ProjectCollaborators::getPrincipalInvestigator,
             ProjectCollaborators::setPrincipalInvestigator);
+
 
     responsiblePersonField = new ContactField("Project Responsible/Core Investigator (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
         .withNullRepresentation(responsiblePersonField.getEmptyValue())
-        .withValidator(it -> responsiblePersonField.isValid(), "")
+        .withValidator(it -> responsiblePersonField.validate().isOk(), "")
         .bind(bean -> bean.getResponsiblePerson().orElse(null),
             ProjectCollaborators::setResponsiblePerson);
 
@@ -55,7 +62,7 @@ public class CollaboratorsLayout extends Div implements HasValidation {
     projectManagerField.setRequired(true);
     collaboratorsBinder.forField(projectManagerField)
         .withNullRepresentation(projectManagerField.getEmptyValue())
-        .withValidator(it -> projectManagerField.isValid(), "")
+        .withValidator(it -> projectManagerField.validate().isOk(), "")
         .bind(ProjectCollaborators::getProjectManager,
             ProjectCollaborators::setProjectManager);
 
@@ -68,6 +75,18 @@ public class CollaboratorsLayout extends Div implements HasValidation {
         principalInvestigatorField,
         responsiblePersonField,
         projectManagerField);
+    collaboratorsBinder.setValidatorsDisabled(false);
+  }
+
+  @Override
+  public String defaultErrorMessage() {
+    return "Please complete the mandatory information. Some input seems to be invalid.";
+  }
+
+  @Override
+  public boolean isInvalid() {
+    validate();
+    return HasBinder.super.isInvalid();
   }
 
   public void setProjectManagers(List<Contact> projectManagers) {
@@ -78,28 +97,27 @@ public class CollaboratorsLayout extends Div implements HasValidation {
     principalInvestigatorField.setItems(principalInvestigators);
   }
 
+  @Override
   public Binder<ProjectCollaborators> getBinder() {
     return collaboratorsBinder;
   }
 
-  @Override
-  public void setErrorMessage(String errorMessage) {
+  /**
+   * Provides set project collaborators. Calling this method will lead to an exception if the
+   * current value is not valid.
+   *
+   * @return a valid {@link ProjectCollaborators} object
+   */
+  public ProjectCollaborators getProjectCollaborators() {
+    ProjectCollaborators projectCollaborators = new ProjectCollaborators();
+    try {
+      collaboratorsBinder.writeBean(projectCollaborators);
+    } catch (ValidationException e) {
+      throw new RuntimeException("Tried to access invalid project collaborator information.", e);
+    }
+    return projectCollaborators;
   }
 
-  @Override
-  public String getErrorMessage() {
-    return null;
-  }
-
-  @Override
-  public void setInvalid(boolean invalid) {
-
-  }
-
-  @Override
-  public boolean isInvalid() {
-    return getBinder().validate().hasErrors();
-  }
 
   public static final class ProjectCollaborators implements Serializable {
 

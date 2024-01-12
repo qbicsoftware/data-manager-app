@@ -97,7 +97,6 @@ public class Stepper extends Div {
    * Specifies to which step the stepper should be set
    *
    * @param step       the step to which the stepper should be set
-   * @param fromClient indicates if the step was selected by the client
    */
   public void setSelectedStep(StepIndicator step) {
     if (step == null) {
@@ -109,15 +108,14 @@ public class Stepper extends Div {
     StepIndicator originalStep = getSelectedStep();
     setStepAsActive(step);
     selectedStep = step;
-    fireStepSelected(this, getSelectedStep(), originalStep, false);
+    fireStepSelected(this, getSelectedStep(), originalStep);
   }
 
   /**
    * Specifies that the stepper should be set to the next step if possible
    *
-   * @param fromClient indicates if the step was selected by the client
    */
-  public void selectNextStep(boolean fromClient) {
+  public void selectNextStep() {
     StepIndicator originalStep = getSelectedStep();
     int originalIndex = stepList.indexOf(originalStep);
     if (originalIndex < stepList.size() - 1) {
@@ -183,10 +181,10 @@ public class Stepper extends Div {
     return step;
   }
 
-  private void fireStepSelected(Div source, StepIndicator selectedStep, StepIndicator previousStep,
-      boolean fromClient) {
+  private void fireStepSelected(Div source, StepIndicator selectedStep,
+      StepIndicator previousStep) {
     var stepSelectedEvent = new StepSelectedEvent(source,
-        selectedStep, previousStep, fromClient);
+        selectedStep, previousStep, false);
     fireEvent(stepSelectedEvent);
   }
 

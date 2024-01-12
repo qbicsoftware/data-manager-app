@@ -25,7 +25,6 @@ import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project view page that shows project information and additional components to manage project
@@ -48,20 +47,27 @@ public class ProjectOverviewPage extends Div {
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final ContactRepository contactRepository;
 
-  public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
+  public ProjectOverviewPage(ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       OntologyTermInformationService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired ContactRepository contactRepository) {
+      ContactRepository contactRepository) {
     this.projectCollectionComponent = projectCollectionComponent;
     this.projectCreationService = projectCreationService;
     this.financeService = financeService;
     this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.contactRepository = contactRepository;
-    layoutPage();
-    configurePage();
-    stylePage();
+    add(this.projectCollectionComponent);
+    this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
+      AddProjectDialog addProjectDialog = new AddProjectDialog(this.financeService,
+          this.ontologyTermInformationService, this.contactRepository);
+      addProjectDialog.addConfirmListener(this::createProject);
+      addProjectDialog.addCancelListener(it -> it.getSource().close());
+      addProjectDialog.open();
+    });
+    this.setWidthFull();
+    this.setHeightFull();
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -69,25 +75,6 @@ public class ProjectOverviewPage extends Div {
         System.identityHashCode(projectCollectionComponent)));
   }
 
-
-  private void layoutPage() {
-    add(projectCollectionComponent);
-  }
-
-  private void configurePage() {
-    projectCollectionComponent.addListener(projectCreationClickedEvent -> {
-      AddProjectDialog addProjectDialog = new AddProjectDialog(financeService,
-          ontologyTermInformationService, contactRepository);
-      addProjectDialog.addConfirmListener(this::createProject);
-      addProjectDialog.addCancelListener(it -> it.getSource().close());
-      addProjectDialog.open();
-    });
-  }
-
-  private void stylePage() {
-    this.setWidthFull();
-    this.setHeightFull();
-  }
 
   private void createProject(ConfirmEvent confirmEvent) {
     Funding funding = null;

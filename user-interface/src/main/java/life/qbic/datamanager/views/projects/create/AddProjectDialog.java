@@ -20,6 +20,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
+import life.qbic.datamanager.views.general.HasBinder;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -96,10 +97,11 @@ public class AddProjectDialog extends Dialog {
         dialogContent,
         generateSectionDivider());
 
-    addStep(stepper, "Project Design", projectDesignLayout);
+    StepIndicator projectDesign = addStep(stepper, "Project Design", projectDesignLayout);
     addStep(stepper, "Funding Information", fundingInformationLayout);
     addStep(stepper, "Project Collaborators", collaboratorsLayout);
     addStep(stepper, "Experimental Information", experimentalInformationLayout);
+    stepper.setSelectedStep(projectDesign);
 
     nextButton = new Button("Next");
     nextButton.addClassNames("primary", "next");
@@ -114,15 +116,8 @@ public class AddProjectDialog extends Dialog {
 
     stepper.addStepSelectionListener(
         stepSelectedEvent -> {
-          //We only want to update the view if the user triggered the step selection
-          //FIXME: why?
-          if (stepSelectedEvent.isFromClient()) {
             setDialogContent(stepSelectedEvent.getSelectedStep());
             adaptFooterButtons(stepSelectedEvent.getSelectedStep());
-          } else {
-            stepper.setSelectedStep(stepSelectedEvent.getPreviousStep(), false);
-            //FIXME what happens here?
-          }
         });
 
     Button cancelButton = new Button("Cancel");
@@ -146,35 +141,33 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {
-    if (projectDesignLayout.isInvalid()) {
+    if (projectDesignLayout.validate().isInvalid()) {
       return;
     }
-    if (fundingInformationLayout.isInvalid()) {
+    if (fundingInformationLayout.validate().isInvalid()) {
       return;
     }
-    if (collaboratorsLayout.getBinder().validate().hasErrors()) {
+    if (collaboratorsLayout.validate().isInvalid()) {
       return;
     }
-    if (experimentalInformationLayout.isInvalid()) {
+    if (experimentalInformationLayout.validate().isInvalid()) {
       return;
     }
+    fireEvent(new ConfirmEvent(this, projectDesignLayout.getProjectDesign(),
+        fundingInformationLayout.getFundingInformation(),
+        collaboratorsLayout.getProjectCollaborators(),
+        experimentalInformationLayout.getExperimentalInformation(), true));
 
-    if (isDialogContentValid()) {
-      fireEvent(new ConfirmEvent(this, projectDesignLayout.getProjectDesign(),
-          fundingInformationLayout.getFundingInformation(),
-          collaboratorsLayout.getBinder().getBean(), //FIXME
-          experimentalInformationLayout.getExperimentalInformation(), true));
-    }
   }
 
   private void onNextClicked(ClickEvent<Button> event) {
     if (isDialogContentValid()) {
-      stepper.selectNextStep(event.isFromClient());
+      stepper.selectNextStep();
     }
   }
 
   private void onBackClicked(ClickEvent<Button> event) {
-    stepper.selectPreviousStep(event.isFromClient());
+    stepper.selectPreviousStep();
   }
 
   private Span createArrowSpan() {
@@ -201,10 +194,15 @@ public class AddProjectDialog extends Dialog {
   }
 
   private boolean isDialogContentValid() {
+    return !isDialogContentInvalid();
+  }
+
+  private boolean isDialogContentInvalid() {
     return dialogContent.getChildren()
-        .filter(HasValidation.class::isInstance)
-        .map(HasValidation.class::cast)
-        .noneMatch(HasValidation::isInvalid);
+        .filter(HasBinder.class::isInstance)
+        .map(HasBinder.class::cast)
+        .map(HasBinder::validate)
+        .anyMatch(HasValidation::isInvalid);
   }
 
 
