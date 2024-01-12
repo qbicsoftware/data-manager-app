@@ -22,6 +22,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import org.apache.poi.ss.usermodel.Cell;
 
 /**
  * A spreadsheet used for sample batch information
@@ -108,6 +109,14 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
       addEmptyRow();
+    }
+  }
+
+  public void markCellInColumnInvalid(String colName, int dataRowIndex) {
+    Optional<Cell> cell = super.getCellByColNameAndRowIndex(colName, dataRowIndex);
+    if(cell.isPresent()) {
+      super.markCellAsInvalid(cell.get());
+      super.refreshCells(Arrays.asList(cell.get()));
     }
   }
 

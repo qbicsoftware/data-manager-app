@@ -26,7 +26,7 @@ import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponen
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.RemoveRowEvent;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.RemoveLastRowClickedEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.application.DeletionService;
@@ -310,13 +310,17 @@ public class SampleContentComponent extends Div {
     });
   }
 
-  private void removeRowFromBatch(EditBatchDialog.RemoveRowEvent removeRowEvent) {
-    EditBatchDialog dialog = removeRowEvent.getSource();
-    if(deletionService.isSampleRemovable(removeRowEvent.getSampleInfo().getSampleId(),
-        context.projectId().orElseThrow())) {
-      dialog.removeRow();
+  private void removeRowFromBatch(RemoveLastRowClickedEvent removeRowClickedEvent) {
+    EditBatchDialog dialog = removeRowClickedEvent.getSource();
+    int dataRowIndex = removeRowClickedEvent.getDataRowIndex();
+
+    SampleId sampleId = removeRowClickedEvent.getSampleInfo().getSampleId();
+    ProjectId projectId = context.projectId().orElseThrow();
+
+    if(deletionService.isSampleRemovable(sampleId, projectId)) {
+      dialog.removeLastRow();
     } else {
-      dialog.displayRemoveRowError();
+      dialog.displayRemoveRowError(dataRowIndex);
     }
   }
 

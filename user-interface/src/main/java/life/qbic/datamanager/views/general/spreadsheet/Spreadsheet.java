@@ -16,7 +16,6 @@ import com.vaadin.flow.component.spreadsheet.SpreadsheetComponentFactory;
 import com.vaadin.flow.shared.Registration;
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +58,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
   private final List<Column<T, ?>> columns = new ArrayList<>();
   private final List<Row> rows = new ArrayList<>();
+  private List<Cell> currentInvalidCells = new ArrayList<>();
 
   // cell styles
   private final transient CellStyle defaultCellStyle;
@@ -212,22 +212,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
         .toList();
   }
 
-
-  /**
-   * Get the data in the last row of the spreadsheet
-   * @return the underlying data of the last row
-   */
-  public T getLastRowData() {
-    int lastRowIndex = rowCount() - 1;
-    Row lastRow = getRow(lastRowIndex);
-    if(lastRow instanceof DataRow dataRow) {
-      return dataRow.data;
-    }
-    return null;//other possibilities?
-  }
-
-
-
   /**
    *
    * @return true if the last validation passed; false otherwise
@@ -244,6 +228,41 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   public Registration addValidationChangeListener(
       ComponentEventListener<ValidationChangeEvent> listener) {
     return addListener(ValidationChangeEvent.class, listener);
+  }
+
+  /**
+   * Returns the Cell belonging to a column with specified name and specified row index or empty
+   * if that Cell is not found.
+   * @param colName      the name of the column (as seen in the header)
+   * @param dataRowIndex the index of the data row - as displayed in the left of the spreadsheet
+   * @return a Cell object, or Optional.empty()
+   */
+  protected Optional<Cell> getCellByColNameAndRowIndex(String colName, int dataRowIndex) {
+    String sampleRow = Integer.toString(dataRowIndex);
+    int rowIndexCol = 0;
+    for (Column<T, ?> col : columns) {
+      if(col.getName().equals("#")) {
+        break;
+      }
+      rowIndexCol++;
+    }
+
+    int colWithName = 0;
+    for (Column<T, ?> col : columns) {
+      if(col.getName().equals(colName)) {
+        break;
+      }
+      colWithName++;
+    }
+
+    for(int rowIndex = 0; rowIndex < dataRowCount()+1; rowIndex++) {
+      Optional<Cell> cell = getCell(rowIndex, rowIndexCol);
+      if(sampleRow.equals(getCellValue(cell.orElseThrow()))) {
+        return getCell(rowIndex, colWithName);
+      }
+    }
+
+    return Optional.empty();
   }
 
   public static class ValidationChangeEvent extends ComponentEvent<Spreadsheet<?>> {
@@ -270,10 +289,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       return oldValue;
     }
 
-    public boolean wasInvalid() {
-      return !wasValid();
-    }
-
     public boolean isValid() {
       return value;
     }
@@ -281,6 +296,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     public boolean isInvalid() {
       return !isValid();
     }
+
   }
 
   private CellStyle createColumnNameStyle(Workbook workbook) {
@@ -416,10 +432,17 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private void updateSpreadsheetValidity() {
-    boolean wasInvalid = isInvalid();
-    boolean willBeInvalid = cells().stream().anyMatch(this::isCellInvalid);
+    List<Cell> newInvalidCells = cells().stream().filter(this::isCellInvalid).toList();
+    boolean wasInvalid = !currentInvalidCells.isEmpty();
+    boolean willBeInvalid = !newInvalidCells.isEmpty();
+
+    // we compare if the list of invalid cells changes, as this might lead to change of error message
+    boolean invalidationReasonChanged = !currentInvalidCells.equals(newInvalidCells);
+
     setInvalid(willBeInvalid);
-    if (wasInvalid != willBeInvalid) {
+    currentInvalidCells = newInvalidCells;
+
+    if (wasInvalid != willBeInvalid || invalidationReasonChanged) {
       fireEvent(new ValidationChangeEvent(this, false, !wasInvalid, !willBeInvalid));
     }
   }
@@ -433,7 +456,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     refreshCells(cellsInRow);
   }
 
-  private void refreshCells(Collection<Cell> cells) {
+  protected void refreshCells(Collection<Cell> cells) {
     updateSpreadsheetValidity();
     delegateSpreadsheet.refreshCells(cells);
   }
@@ -738,7 +761,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
         .orElse(ValidationResult.valid());
   }
 
-  private void markCellAsInvalid(Cell cell) {
+  protected void markCellAsInvalid(Cell cell) {
     if (rowNumberStyle.equals(cell.getCellStyle())) {
       return; // does not apply to row numbers
     }
@@ -746,13 +769,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       return; // does not apply to column headers
     }
     cell.setCellStyle(invalidCellStyle);
-  }
-
-  public void markLastRowInvalid() {
-    int lastRowIndex = rowCount() - 1;
-    Cell sampleCodeCell = getCell(lastRowIndex, 1).get();
-    markCellAsInvalid(sampleCodeCell);
-    refreshCells(Arrays.asList(sampleCodeCell));
   }
 
   private void markCellAsValid(Cell cell) {

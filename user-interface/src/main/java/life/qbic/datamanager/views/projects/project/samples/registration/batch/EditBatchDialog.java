@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import static java.util.Objects.nonNull;
 
+import com.google.common.collect.Iterables;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -27,9 +28,10 @@ public class EditBatchDialog extends DialogWindow {
   private final SampleBatchInformationSpreadsheet spreadsheet;
   private final BatchId batchId;
   private final List<SampleInfo> existingSamples;
-
   private final TextField batchNameField;
   private final Span batchNameText;
+
+  private final Span errorText = new Span("Unspecific Error message");
 
   public EditBatchDialog(String experimentName,
       List<OntologyClassDTO> species,
@@ -88,7 +90,6 @@ public class EditBatchDialog extends DialogWindow {
     rowControls.addClassName("row-controls");
     rowControls.add(addRow, removeLastRow);
 
-    Span errorText = new Span("Unspecific Error message");
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
@@ -137,22 +138,24 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
-    SampleInfo sampleInfo = spreadsheet.getLastRowData();
-    fireEvent(new RemoveRowEvent(this, clickEvent.isFromClient(),
-        sampleInfo));
+    List<SampleInfo> tableData = spreadsheet.getData();
+    SampleInfo sampleInfo = Iterables.getLast(tableData);
+    fireEvent(new RemoveLastRowClickedEvent(this, clickEvent.isFromClient(),
+        tableData.size(), sampleInfo));
   }
 
   /**
    * Removes the last row. Any checks for validity of the operation should be performed before using
    * the related event
    */
-  public void removeRow() {
+  public void removeLastRow() {
     spreadsheet.removeLastRow();
   }
 
-  public void displayRemoveRowError() {
-    spreadsheet.setErrorMessage("Sample can not be removed because data is attached.");
-    spreadsheet.markLastRowInvalid();
+  public void displayRemoveRowError(int dataRowIndex) {
+    spreadsheet.markCellInColumnInvalid("Sample code", dataRowIndex);
+    errorText.setText("Sample #"+dataRowIndex+" can not be removed because data is attached.");
+    errorText.setVisible(true);
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
@@ -225,30 +228,38 @@ public class EditBatchDialog extends DialogWindow {
     addListener(ConfirmEvent.class, listener);
   }
 
-  public void addRemoveRowListener(ComponentEventListener<RemoveRowEvent> listener) {
-    addListener(RemoveRowEvent.class, listener);
+  public void addRemoveRowListener(ComponentEventListener<RemoveLastRowClickedEvent> listener) {
+    addListener(RemoveLastRowClickedEvent.class, listener);
   }
 
-  public static class RemoveRowEvent extends ComponentEvent<EditBatchDialog> {
+  public static class RemoveLastRowClickedEvent extends ComponentEvent<EditBatchDialog> {
 
     private final SampleInfo sampleInfo;
+    private final int dataRowIndex;
     /**
      * Creates a new event using the given source and indicator whether the event originated from
      * the client side or the server side. Is used to remove the last sample row, but only if that
      * is allowed (e.g. no datasets attached).
      *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     * @param sampleInfo SampleInfo corresponding to the row to be removed
+     * @param source       the source component
+     * @param fromClient   <code>true</code> if the event originated from the client
+     *                     side, <code>false</code> otherwise
+     * @param dataRowIndex the index of the data row to be removed, to give users feedback on error
+     * @param sampleInfo   SampleInfo corresponding to the row to be removed
      */
-    public RemoveRowEvent(EditBatchDialog source, boolean fromClient, SampleInfo sampleInfo) {
+    public RemoveLastRowClickedEvent(EditBatchDialog source, boolean fromClient, int dataRowIndex,
+        SampleInfo sampleInfo) {
       super(source, fromClient);
       this.sampleInfo = sampleInfo;
+      this.dataRowIndex = dataRowIndex;
     }
 
     public SampleInfo getSampleInfo() {
       return sampleInfo;
+    }
+
+    public int getDataRowIndex() {
+      return dataRowIndex;
     }
   }
 
