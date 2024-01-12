@@ -70,6 +70,7 @@ public class Stepper extends Div {
       separator.addClassName("separator-" + stepList.size());
       add(separator);
     }
+    stepList.add(newStep);
     add(newStep);
     return newStep;
   }
@@ -98,15 +99,17 @@ public class Stepper extends Div {
    * @param step       the step to which the stepper should be set
    * @param fromClient indicates if the step was selected by the client
    */
-  public void setSelectedStep(StepIndicator step, boolean fromClient) {
-    if (selectedStep != null && stepList.contains(step)) {
-      StepIndicator originalStep = getSelectedStep();
-      setStepAsActive(step);
-      selectedStep = step;
-      fireStepSelected(this, getSelectedStep(), originalStep, fromClient);
-    } else {
-      selectedStep = step;
+  public void setSelectedStep(StepIndicator step) {
+    if (step == null) {
+      return;
     }
+    if (!stepList.contains(step)) {
+      return;
+    }
+    StepIndicator originalStep = getSelectedStep();
+    setStepAsActive(step);
+    selectedStep = step;
+    fireStepSelected(this, getSelectedStep(), originalStep, false);
   }
 
   /**
@@ -118,20 +121,19 @@ public class Stepper extends Div {
     StepIndicator originalStep = getSelectedStep();
     int originalIndex = stepList.indexOf(originalStep);
     if (originalIndex < stepList.size() - 1) {
-      setSelectedStep(stepList.get(originalIndex + 1), fromClient);
+      setSelectedStep(stepList.get(originalIndex + 1));
     }
   }
 
   /**
    * Specifies that the stepper should be set to the previous step if possible
    *
-   * @param fromClient indicates if the step was selected by the client
    */
-  public void selectPreviousStep(boolean fromClient) {
+  public void selectPreviousStep() {
     StepIndicator originalStep = getSelectedStep();
     int currentIndex = stepList.indexOf(originalStep);
     if (currentIndex > 0) {
-      setSelectedStep(stepList.get(currentIndex - 1), fromClient);
+      setSelectedStep(stepList.get(currentIndex - 1));
     }
   }
 
@@ -164,7 +166,9 @@ public class Stepper extends Div {
   }
 
   private void setStepAsActive(StepIndicator activatableStep) {
-    selectedStep.getElement().setAttribute("selected", false);
+    if (selectedStep != null) {
+      selectedStep.getElement().setAttribute("selected", false);
+    }
     activatableStep.getElement().setAttribute("selected", true);
   }
 
@@ -176,8 +180,6 @@ public class Stepper extends Div {
     StepIndicator step = new StepIndicator(stepAvatar, label);
     step.addClassName("step");
     step.setEnabled(false);
-    stepList.add(step);
-    setSelectedStep(getFirstStep(), false);
     return step;
   }
 
