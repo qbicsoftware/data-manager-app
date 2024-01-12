@@ -98,6 +98,21 @@ public class BatchRegistrationService {
     }
   }
 
+  public Result<BatchId, ResponseCode> deleteSampleFromBatch(SampleId sampleId, BatchId batchId) {
+    var searchResult = batchRepository.find(batchId);
+    if (searchResult.isEmpty()) {
+      return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
+    } else {
+      Batch batch = searchResult.get();
+      batch.removeSample(sampleId);
+      var result = batchRepository.update(batch);
+      if (result.isError()) {
+        return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
+      }
+      return Result.fromValue(batch.batchId());
+    }
+  }
+
   /**
    * Edits the information contained within a {@link Batch} and its corresponding registered
    * {@link Sample}
@@ -150,7 +165,7 @@ public class BatchRegistrationService {
       sampleRegistrationService.updateSamples(projectId, editedSamples);
     }
     if (!deletedSamples.isEmpty()) {
-      deletionService.deleteSamples(projectId, deletedSamples);
+      deletionService.deleteSamples(projectId, batchId, deletedSamples);
     }
     return Result.fromValue(batch.batchId());
   }
