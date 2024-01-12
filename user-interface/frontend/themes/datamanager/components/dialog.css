@@ -413,6 +413,12 @@ vaadin-upload-file::part(meta){
   font-size: smaller;
 }
 
+.purchase-item-upload::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
 .purchase-item-upload .restrictions {
   font-size: smaller;
   display: flex;
@@ -420,54 +426,62 @@ vaadin-upload-file::part(meta){
   color: var(--lumo-contrast-60pct);
 }
 
-.purchase-item-upload .title-box {
-  margin-bottom: 1rem;
-}
-
-.purchase-item-upload .instructions {
-  display: block;
-  margin-top: 2rem;
-  font-size: smaller;
-}
-.purchase-item-upload .instructions span{
-  font-weight: bold;
-  color: var(--lumo-contrast-80pct);
-}
-
-.purchase-item-upload .instructions.hidden {
-  visibility: hidden;
+.purchase-item-upload .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
 }
 
 
-.uploaded-documents {
-  border: 1px dashed var(--lumo-contrast-20pct);
-  padding: 0.5rem 1rem 1rem 1rem;
+.purchase-item-upload .uploaded-items-description {
+  font-size: var(--lumo-font-size-s);
+}
+
+.uploaded-items {
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: column;
 }
 
-
-.uploaded-documents.hidden{
-  visibility: hidden;
-}
-
-
-
-.uploaded-documents .purchase-item{
+.uploaded-items .purchase-item {
   border-bottom-color: var(--lumo-contrast-20pct);
   border-bottom-style: solid;
   border-width: 1px;
-  padding: 0.5rem 1rem 1rem 1rem;
-  font-size: smaller;
-
+  font-size: var(--lumo-font-size-s);
+  display: flex;
+  padding-top: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  margin-inline: var(--lumo-space-m);
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
 }
 
-.uploaded-documents .purchase-item:last-child{
-  padding: 0.5rem 1rem 0 1rem;
+.uploaded-items .purchase-item .file-name {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-xs);
+}
+
+.uploaded-items .purchase-item:last-child {
   border-style: none;
 }
 
-.uploaded-documents .purchase-item vaadin-icon {
+.uploaded-items .purchase-item .file-icon {
   font-size: smaller;
-  margin-right: 0.3rem;
   color: var(--lumo-primary-color);
+}
+
+.uploaded-items .purchase-item .signature-box {
+  display: inline-flex;
+  column-gap: var(--lumo-space-xs);
+}
+
+.uploaded-items .purchase-item .offer-icon {
+  background-color: #4CADE8;
+  display: inline-flex;
+  font-size: var(--lumo-font-size-xs);
+  color: white;
+  padding-inline: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-s);
 }

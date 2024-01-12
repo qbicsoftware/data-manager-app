@@ -34,50 +34,52 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   private static final Logger log = logger(UploadPurchaseDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-
   private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 5; // 14 MiB
-
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
   private final Upload upload;
   private EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
-  private Div uploadedPurchaseItems;
-
-  private List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
-
-  private Div disclaimer;
-
-  private Div titleBox;
-
-
+  private final Div uploadedPurchaseItems;
+  private final List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
+  private final Div uploadedItemsSectionContent;
   public UploadPurchaseDialog() {
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
+
     upload = new Upload(multiFileMemoryBuffer);
     upload.setAcceptedFileTypes("application/pdf", ".pdf");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
+    setHeaderTitle("Upload an offer");
     // Title box configuration
-    titleBox = new Div();
-    var title = new Span("Upload your offer");
-    title.addClassName("title");
-    titleBox.add(title);
-    titleBox.addClassName("title-box");
+    Span uploadSectionTitle = new Span("Upload your offer");
+    uploadSectionTitle.addClassName("section-title");
 
     // Upload restriction display configuration
-    var restrictions = new Div();
+    Div restrictions = new Div();
     restrictions.addClassName("restrictions");
     restrictions.add(new Span("Accepted file formats: PDF (.pdf)"));
     restrictions.add(
         new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
 
+    Div uploadSection = new Div();
+    uploadSection.add(uploadSectionTitle, upload, restrictions);
+
+
     // Uploaded purchase items display configuration
     uploadedPurchaseItems = new Div();
-    uploadedPurchaseItems.addClassName("uploaded-documents");
-    disclaimer = new Div();
-    disclaimer.addClassName("instructions");
-    disclaimer.add(new Span("Set offer signed status"));
-    disclaimer.add(new Paragraph("Please tick the checkbox if the offer is signed."));
+    uploadedPurchaseItems.addClassName("uploaded-items");
+    uploadedItemsSectionContent = new Div();
+    Span uploadedItemsSectionTitle = new Span("Set offer signed status");
+    uploadedItemsSectionTitle.addClassName("section-title");
+    uploadedItemsSectionContent.add(uploadedItemsSectionTitle);
+    Paragraph uploadedItemsDescription = new Paragraph(
+        "Please tick the checkbox if the offer is signed.");
+    uploadedItemsDescription.addClassName("uploaded-items-description");
+    uploadedItemsSectionContent.add(uploadedItemsDescription);
+
+    Div uploadedItemsSection = new Div();
+    uploadedItemsSection.add(uploadedItemsSectionContent, uploadedPurchaseItems);
 
     // Add upload offers to the purchase item section, where users can set the signed flag
     upload.addSucceededListener(this::onUploadSucceeded);
@@ -89,7 +91,7 @@ public class UploadPurchaseDialog extends DialogWindow {
         .addEventData(VAADIN_FILENAME_EVENT);
 
     // Put the elements together
-    add(titleBox, upload, restrictions, disclaimer, uploadedPurchaseItems);
+    add(uploadSection, uploadedItemsSection);
     addClassName("purchase-item-upload");
     confirmButton.setText("Save");
 
@@ -129,7 +131,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   private void toggleFileSectionIfEmpty() {
     boolean filesUploaded = !uploadedPurchaseItems.getChildren().toList().isEmpty();
     uploadedPurchaseItems.setVisible(filesUploaded);
-    disclaimer.setVisible(filesUploaded);
+    uploadedItemsSectionContent.setVisible(filesUploaded);
   }
 
   private void removeFileFromBuffer(String fileName) {
