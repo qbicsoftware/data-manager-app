@@ -10,9 +10,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -48,12 +45,7 @@ public class EditBatchDialog extends DialogWindow {
 
     this.batchId = batchId;
 
-    // sort by sample code
-    List<SampleInfo> mutableSampleList = new ArrayList<>(existingSamples.stream().toList());
-
-    Collections.sort(mutableSampleList, Comparator.comparing(o -> o.getSampleCode().code()));
-
-    this.existingSamples = mutableSampleList;
+    this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, true);
@@ -120,7 +112,8 @@ public class EditBatchDialog extends DialogWindow {
         });
 
     spreadsheet.resetRows();
-    for (SampleInfo existingSample : this.existingSamples) {
+    // don't use field, but parameter in order to compare edits later
+    for (SampleInfo existingSample : existingSamples) {
       spreadsheet.addRow(existingSample);
     }
   }
