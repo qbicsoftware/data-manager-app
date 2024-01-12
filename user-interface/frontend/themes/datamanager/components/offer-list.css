@@ -1,23 +1,19 @@
 .offer-info {
-  border: 1px solid transparent;
-  padding: 0.5em;
-  background-color: inherit;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-
-  gap: 0.8em;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .offer-info .file-info {
-  display: flex;
-  justify-content: left;
-  gap: 0.5em;
-  justify-self: left;
+  display: inline-flex;
   flex-grow: 1;
+  gap: var(--lumo-space-s);
+  align-items: center;
 }
 
 .offer-info .signed-info {
-  justify-self: right;
+  font-size: var(--lumo-font-size-xs);
 }
 
 .offer-info .signed-info.signed {
@@ -27,4 +23,14 @@
 .offer-info .signed-info.unsigned {
   color: gray;
   justify-self: right;
+}
+
+/*Same icon as used in .uploaded-items .purchase-item .offer-icon in dialog.css*/
+.offer-info .offer-icon {
+  background-color: #4CADE8;
+  display: inline-flex;
+  font-size: var(--lumo-font-size-xs);
+  color: white;
+  padding-inline: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-s);
 }
