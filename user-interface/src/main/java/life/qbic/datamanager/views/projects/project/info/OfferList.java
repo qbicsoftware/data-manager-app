@@ -32,6 +32,7 @@ public class OfferList extends PageArea {
     delegateList.setRenderer(new ComponentRenderer<>(this::renderOffer));
     delegateList.setItems(offers);
     Button upload = new Button("Upload", this::onUploadOfferClicked);
+    upload.setAriaLabel("Upload");
     Span title = new Span("Offers");
     title.addClassName("title");
     Span header = new Span(title, upload);
@@ -70,21 +71,29 @@ public class OfferList extends PageArea {
     Icon signedInfo = VaadinIcon.CHECK_CIRCLE.create();
     signedInfo.addClassName("signed-info");
     signedInfo.addClassName(offer.signed() ? "signed" : "unsigned");
-
+    if (offer.signed()) {
+      signedInfo.setTooltipText("Signed");
+    } else {
+      signedInfo.setTooltipText("Unsigned");
+    }
     Button downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
         event -> onDownloadOfferClicked(
             new DownloadOfferClickEvent(offer.offerId(), this, event.isFromClient())));
     downloadButton.addThemeNames("tertiary-inline", "icon-only");
     downloadButton.setAriaLabel("Download");
-
+    downloadButton.setTooltipText("Download");
     Button deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteOfferClicked(
         new DeleteOfferClickEvent(offer.offerId(), this, event.isFromClient())));
     deleteButton.addThemeNames("tertiary-inline", "icon-only");
+    deleteButton.setTooltipText("Delete");
     deleteButton.setAriaLabel("Delete");
 
     Span offerActionControls = new Span(downloadButton, deleteButton);
     offerActionControls.addClassName("controls");
-    Span fileInfo = new Span(generateOfferIcon(), offerFileName, signedInfo);
+
+    Span offerIcon = generateOfferIcon();
+    offerIcon.setTitle("Offer");
+    Span fileInfo = new Span(offerIcon, offerFileName, signedInfo);
     fileInfo.addClassName("file-info");
 
     Span offerListItem = new Span();
