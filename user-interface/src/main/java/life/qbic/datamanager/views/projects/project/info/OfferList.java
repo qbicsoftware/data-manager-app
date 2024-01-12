@@ -64,6 +64,7 @@ public class OfferList extends PageArea {
   private Component renderOffer(OfferInfo offer) {
 
     Span offerFileName = new Span(offer.filename());
+    offerFileName.setTitle(offer.filename());
     offerFileName.addClassName("file-name");
 
     Icon signedInfo = VaadinIcon.CHECK_CIRCLE.create();
@@ -73,11 +74,13 @@ public class OfferList extends PageArea {
     Button downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
         event -> onDownloadOfferClicked(
             new DownloadOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    downloadButton.addThemeName("tertiary");
+    downloadButton.addThemeNames("tertiary-inline", "icon-only");
+    downloadButton.setAriaLabel("Download");
 
     Button deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteOfferClicked(
         new DeleteOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    deleteButton.addThemeName("tertiary");
+    deleteButton.addThemeNames("tertiary-inline", "icon-only");
+    deleteButton.setAriaLabel("Delete");
 
     Span offerActionControls = new Span(downloadButton, deleteButton);
     offerActionControls.addClassName("controls");

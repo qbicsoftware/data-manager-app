@@ -132,22 +132,6 @@
   gap: var(--lumo-space-m);
 }
 
-.page-area.offer-list .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--lumo-space-m);
-}
-
-.page-area.offer-list .controls {
-  display: flex;
-}
-
-.page-area.offer-list .offer-list-item {
-  display: flex;
-  justify-content: space-between;
-}
-
 .page-area.project-access-component {
   width: 100%;
   height: 100%;

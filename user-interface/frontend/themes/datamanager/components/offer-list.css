@@ -1,28 +1,47 @@
+.offer-list .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.offer-list .offer-list-item {
+  display: inline-flex;
+  justify-content: space-between;
+}
+
 .offer-info {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.offer-info .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.offer-info .controls vaadin-button > vaadin-icon {
+  color: gray;
+}
+
+.offer-info .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .offer-info .file-info {
   display: inline-flex;
-  flex-grow: 1;
   gap: var(--lumo-space-s);
   align-items: center;
-}
-
-.offer-info .signed-info {
-  font-size: var(--lumo-font-size-xs);
-}
-
-.offer-info .signed-info.signed {
-  color: var(--lumo-primary-color);
-}
-
-.offer-info .signed-info.unsigned {
-  color: gray;
-  justify-self: right;
+  overflow: hidden;
 }
 
 /*Same icon as used in .uploaded-items .purchase-item .offer-icon in dialog.css*/
@@ -33,4 +52,18 @@
   color: white;
   padding-inline: var(--lumo-space-xs);
   border-radius: var(--lumo-border-radius-s);
+}
+
+.offer-info .signed-info {
+  width: var(--lumo-icon-size-s);
+  flex-shrink: 0;
+}
+
+.offer-info .signed-info.signed {
+  color: var(--lumo-primary-color);
+}
+
+.offer-info .signed-info.unsigned {
+  color: gray;
+  justify-self: right;
 }
