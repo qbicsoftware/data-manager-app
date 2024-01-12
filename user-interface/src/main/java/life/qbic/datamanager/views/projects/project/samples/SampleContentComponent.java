@@ -10,6 +10,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -254,8 +255,12 @@ public class SampleContentComponent extends Div {
         editBatchEvent.batchPreview().batchId()).stream().toList();
     var experimentalGroups = experimentInformationService.experimentalGroupsFor(
         context.experimentId().orElseThrow());
-    List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = samples.stream()
-        .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList();
+
+    // need to create mutable list to order samples
+    List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = new ArrayList<>(samples.stream()
+        .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList());
+    sampleInfos.sort(Comparator.comparing(o -> o.getSampleCode().code()));
+
     EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
         experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
         experiment.getAnalytes().stream().toList(), experiment.getExperimentalGroups(),
