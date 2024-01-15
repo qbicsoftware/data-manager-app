@@ -44,7 +44,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     principalInvestigatorField.setRequired(true);
     collaboratorsBinder.forField(principalInvestigatorField)
         .withNullRepresentation(principalInvestigatorField.getEmptyValue())
-        .withValidator(it -> principalInvestigatorField.validate().isOk(), "")
+        .withValidator(it -> principalInvestigatorField.validate().isValid(), "")
         .bind(ProjectCollaborators::getPrincipalInvestigator,
             ProjectCollaborators::setPrincipalInvestigator);
 
@@ -62,7 +62,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     projectManagerField.setRequired(true);
     collaboratorsBinder.forField(projectManagerField)
         .withNullRepresentation(projectManagerField.getEmptyValue())
-        .withValidator(it -> projectManagerField.validate().isOk(), "")
+        .withValidator(it -> projectManagerField.validate().isValid(), "")
         .bind(ProjectCollaborators::getProjectManager,
             ProjectCollaborators::setProjectManager);
 

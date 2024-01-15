@@ -52,4 +52,15 @@ public interface HasBinderValidation<T> extends HasValidationProperties {
     return this;
   }
 
+  /**
+   * Missing method from HasValidationProperties. Indiates whether this is marked as invalid.
+   * <p>
+   * Does not perform validation.
+   *
+   * @return true if no invalidation marker exists, false otherwise
+   */
+  default boolean isValid() {
+    return !isInvalid();
+  }
+
 }
