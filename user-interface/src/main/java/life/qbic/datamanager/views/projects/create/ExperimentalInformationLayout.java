@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.HasBinder;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -28,7 +28,7 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  * during project creation and validates the provided information</p>
  */
 public class ExperimentalInformationLayout extends Div implements
-    HasBinder<ExperimentalInformation> {
+    HasBinderValidation<ExperimentalInformation> {
 
   private final Binder<ExperimentalInformation> experimentalInformationBinder;
 
@@ -105,7 +105,7 @@ public class ExperimentalInformationLayout extends Div implements
   }
 
   @Override
-  public String defaultErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Invalid input found in Experiment Information";
   }
 

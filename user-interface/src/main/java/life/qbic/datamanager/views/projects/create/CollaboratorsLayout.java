@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.HasBinder;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  * within a project during project creation and validates the provided information</p>
  */
 @Component
-public class CollaboratorsLayout extends Div implements HasBinder<ProjectCollaborators> {
+public class CollaboratorsLayout extends Div implements HasBinderValidation<ProjectCollaborators> {
 
   private final AutocompleteContactField principalInvestigatorField;
   private final ContactField responsiblePersonField;
@@ -79,14 +79,14 @@ public class CollaboratorsLayout extends Div implements HasBinder<ProjectCollabo
   }
 
   @Override
-  public String defaultErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Please complete the mandatory information. Some input seems to be invalid.";
   }
 
   @Override
   public boolean isInvalid() {
     validate();
-    return HasBinder.super.isInvalid();
+    return HasBinderValidation.super.isInvalid();
   }
 
   public void setProjectManagers(List<Contact> projectManagers) {

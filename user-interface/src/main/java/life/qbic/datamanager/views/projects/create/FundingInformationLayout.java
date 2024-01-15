@@ -5,7 +5,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
 import java.io.Serializable;
-import life.qbic.datamanager.views.general.HasBinder;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.create.FundingInformationLayout.FundingInformationContainer;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class FundingInformationLayout extends Div implements
-    HasBinder<FundingInformationContainer> {
+    HasBinderValidation<FundingInformationContainer> {
 
   private final FundingField fundingField = new FundingField("");
   private final Binder<FundingInformationContainer> fundingEntryBinder = new Binder<>(
@@ -77,7 +77,7 @@ public class FundingInformationLayout extends Div implements
    * @return current error message
    */
   @Override
-  public String defaultErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Invalid Input found in Funding Information";
   }
 

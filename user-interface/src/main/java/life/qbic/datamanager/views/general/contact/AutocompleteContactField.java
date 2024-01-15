@@ -8,9 +8,11 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -29,6 +31,7 @@ public class AutocompleteContactField extends CustomField<Contact> {
   private final ComboBox<String> nameField;
   private final ComboBox<String> emailField;
   private final Binder<Contact> binder;
+  private final static double AUTOCOMPLETE_MIN_LENGTH = 2;
 
   public AutocompleteContactField(String label) {
     setLabel(label);
@@ -46,13 +49,36 @@ public class AutocompleteContactField extends CustomField<Contact> {
 
     nameField = new ComboBox<>();
     nameField.setAllowCustomValue(true);
+    nameField.addCustomValueSetListener(customValueSet -> {
+      List<String> items = new ArrayList<String>(
+          ((ListDataProvider) customValueSet.getSource().getDataProvider()).getItems());
+      items.add(customValueSet.getDetail());
+      customValueSet.getSource().setItems(items);
+    });
+    nameField.addValueChangeListener(valueChangeEvent -> valueChangeEvent.getSource()
+        .setAutoOpen(valueChangeEvent.getValue() != null
+            && valueChangeEvent.getValue().length() > AUTOCOMPLETE_MIN_LENGTH));
+
 //    nameField = new TextField();
     nameField.setRequired(false);
     nameField.addClassName("name-field");
     nameField.setPlaceholder("Please enter a name");
 
+
     emailField = new ComboBox<>();
     emailField.setAllowCustomValue(true);
+    emailField.addCustomValueSetListener(customValueSet -> {
+      Collection<String> items = ((ListDataProvider) customValueSet.getSource()
+          .getDataProvider()).getItems();
+      String value = customValueSet.getDetail();
+      items.add(value);
+      customValueSet.getSource().setItems(items);
+      customValueSet.getSource().setValue(value);
+    });
+    emailField.addValueChangeListener(valueChangeEvent -> valueChangeEvent.getSource()
+        .setAutoOpen(valueChangeEvent.getValue() != null
+            && valueChangeEvent.getValue().length() > AUTOCOMPLETE_MIN_LENGTH));
+
 //    emailField = new TextField();
     emailField.setRequired(false);
     emailField.addClassName("email-field");
@@ -124,17 +150,17 @@ public class AutocompleteContactField extends CustomField<Contact> {
   }
 
   public void setItems(List<Contact> contacts) {
-    nameField.setAutoOpen(true);
-    emailField.setAutoOpen(true);
-
     contactSelection.setItems(contacts);
-    nameField.setItems(
-        Stream.concat(contacts.stream().map(Contact::getFullName).distinct(),
-                Stream.of(""))
-            .toList());
+    List<String> fullNames = Stream.concat(contacts.stream().map(Contact::getFullName).distinct(),
+            Stream.of(""))
+        .toList();
+    nameField.setItems(fullNames);
+
+
     emailField.setItems(
         Stream.concat(contacts.stream().map(Contact::getEmail).distinct(),
             Stream.of("")).toList());
+
   }
 
   @Override

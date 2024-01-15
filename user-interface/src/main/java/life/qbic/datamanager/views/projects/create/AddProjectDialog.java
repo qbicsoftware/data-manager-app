@@ -20,7 +20,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
-import life.qbic.datamanager.views.general.HasBinder;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -199,9 +199,9 @@ public class AddProjectDialog extends Dialog {
 
   private boolean isDialogContentInvalid() {
     return dialogContent.getChildren()
-        .filter(HasBinder.class::isInstance)
-        .map(HasBinder.class::cast)
-        .map(HasBinder::validate)
+        .filter(HasBinderValidation.class::isInstance)
+        .map(HasBinderValidation.class::cast)
+        .map(HasBinderValidation::validate)
         .anyMatch(HasValidation::isInvalid);
   }
 

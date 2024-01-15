@@ -21,7 +21,7 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.HasBinder;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
@@ -39,7 +39,7 @@ import org.springframework.stereotype.Component;
  * during project creation and validates the provided information</p>
  */
 @Component
-public class ProjectDesignLayout extends Div implements HasBinder<ProjectDesign> {
+public class ProjectDesignLayout extends Div implements HasBinderValidation<ProjectDesign> {
 
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
@@ -204,7 +204,7 @@ public class ProjectDesignLayout extends Div implements HasBinder<ProjectDesign>
    * @return current error message
    */
   @Override
-  public String defaultErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Invalid Input found in Project Design";
   }
 
