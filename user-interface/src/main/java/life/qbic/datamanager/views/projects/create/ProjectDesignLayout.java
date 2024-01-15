@@ -61,7 +61,8 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private void initLayout() {
     Span projectDesignTitle = new Span(TITLE);
     projectDesignTitle.addClassName("title");
-    Span projectDesignDescription = new Span("Description text");
+    Span projectDesignDescription = new Span(
+        "Specify the name and objective of the research project. You can either select a project from the offer list or create a new one.");
     offerSearchField.setClassName("search-field");
     offerSearchField.setPlaceholder("Search for offers");
     offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());

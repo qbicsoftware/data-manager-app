@@ -78,7 +78,7 @@ public class ExperimentalInformationLayout extends Div implements
 
   private static Component description() {
     return new Span(
-        "The experiment name and sample origin information of the samples");
+        "Specify the experiment name and sample origin information of the samples.");
   }
 
   private static TextField nameField() {

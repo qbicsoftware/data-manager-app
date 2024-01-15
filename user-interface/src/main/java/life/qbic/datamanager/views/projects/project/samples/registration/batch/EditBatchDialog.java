@@ -44,6 +44,7 @@ public class EditBatchDialog extends DialogWindow {
     setConfirmButtonLabel("Update Samples");
 
     this.batchId = batchId;
+
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
@@ -111,6 +112,7 @@ public class EditBatchDialog extends DialogWindow {
         });
 
     spreadsheet.resetRows();
+    // don't use field, but parameter in order to compare edits later
     for (SampleInfo existingSample : existingSamples) {
       spreadsheet.addRow(existingSample);
     }

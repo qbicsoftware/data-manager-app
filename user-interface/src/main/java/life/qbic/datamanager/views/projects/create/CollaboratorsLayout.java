@@ -49,7 +49,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
             ProjectCollaborators::setPrincipalInvestigator);
 
 
-    responsiblePersonField = new ContactField("Project Responsible/Core Investigator (optional)");
+    responsiblePersonField = new ContactField("Project Responsible/Co-Investigator (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
@@ -68,7 +68,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
 
     Span projectContactsTitle = new Span("Project Collaborators");
     projectContactsTitle.addClassName("title");
-    Span projectContactsDescription = new Span("Important contact people of the project");
+    Span projectContactsDescription = new Span("Add the names and email address of the important contact people of the project.");
     addClassName("collaborators-layout");
     add(projectContactsTitle,
         projectContactsDescription,
