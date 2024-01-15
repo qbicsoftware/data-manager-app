@@ -32,10 +32,13 @@ public interface HasBinderValidation<T> extends HasValidationProperties {
 
   /**
    * Validates based on the binder returned by {@link #getBinder()}. Updates the validation status
-   * and sets an appropriate error message. By default, the first failing validator's error message
-   * is set as the error message. If the error message is blank, the next non-blank error message is
-   * set. If all error messages are blank or null, {@link #getDefaultErrorMessage()} is used to set
-   * the error message.
+   * and sets an appropriate error message.
+   * <p>
+   * By default, the first failing validator's error message is set as the error message. If the
+   * error message is blank, the next non-blank error message is set.
+   * <p>
+   * If all error messages are blank or null, {@link #getDefaultErrorMessage()} is used to set the
+   * error message.
    *
    * @return this instance.
    */
