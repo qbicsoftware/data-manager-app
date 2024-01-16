@@ -58,7 +58,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   private final com.vaadin.flow.component.spreadsheet.Spreadsheet delegateSpreadsheet = new com.vaadin.flow.component.spreadsheet.Spreadsheet();
   private final List<Column<T, ?>> columns = new ArrayList<>();
   private final List<Row> rows = new ArrayList<>();
-  private List<Cell> currentInvalidCells = new ArrayList<>();
 
   // cell styles
   private final transient CellStyle defaultCellStyle;
@@ -230,40 +229,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     return addListener(ValidationChangeEvent.class, listener);
   }
 
-  /**
-   * Returns the Cell belonging to a column with specified name and specified row index or empty
-   * if that Cell is not found.
-   * @param colName      the name of the column (as seen in the header)
-   * @param dataRowIndex the index of the data row - as displayed in the left of the spreadsheet
-   * @return a Cell object, or Optional.empty()
-   */
-  protected Optional<Cell> getCellByColNameAndRowIndex(String colName, int dataRowIndex) {
-    String sampleRow = Integer.toString(dataRowIndex);
-    int rowIndexCol = 0;
-    for (Column<T, ?> col : columns) {
-      if(col.getName().equals("#")) {
-        break;
-      }
-      rowIndexCol++;
-    }
-
-    int colWithName = 0;
-    for (Column<T, ?> col : columns) {
-      if(col.getName().equals(colName)) {
-        break;
-      }
-      colWithName++;
-    }
-
-    for(int rowIndex = 0; rowIndex < dataRowCount()+1; rowIndex++) {
-      Optional<Cell> cell = getCell(rowIndex, rowIndexCol);
-      if(sampleRow.equals(getCellValue(cell.orElseThrow()))) {
-        return getCell(rowIndex, colWithName);
-      }
-    }
-
-    return Optional.empty();
-  }
 
   public static class ValidationChangeEvent extends ComponentEvent<Spreadsheet<?>> {
 
@@ -289,6 +254,9 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       return oldValue;
     }
 
+    public boolean wasInvalid() {
+      return !wasValid();
+    }
     public boolean isValid() {
       return value;
     }
@@ -296,6 +264,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
     public boolean isInvalid() {
       return !isValid();
     }
+
 
   }
 
@@ -432,17 +401,11 @@ public class Spreadsheet<T> extends Component implements HasComponents,
   }
 
   private void updateSpreadsheetValidity() {
-    List<Cell> newInvalidCells = cells().stream().filter(this::isCellInvalid).toList();
-    boolean wasInvalid = !currentInvalidCells.isEmpty();
-    boolean willBeInvalid = !newInvalidCells.isEmpty();
-
-    // we compare if the list of invalid cells changes, as this might lead to change of error message
-    boolean invalidationReasonChanged = !currentInvalidCells.equals(newInvalidCells);
+    boolean wasInvalid = isInvalid();
+    boolean willBeInvalid = cells().stream().anyMatch(this::isCellInvalid);
 
     setInvalid(willBeInvalid);
-    currentInvalidCells = newInvalidCells;
-
-    if (wasInvalid != willBeInvalid || invalidationReasonChanged) {
+    if (wasInvalid != willBeInvalid) {
       fireEvent(new ValidationChangeEvent(this, false, !wasInvalid, !willBeInvalid));
     }
   }
@@ -783,6 +746,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       markCellAsValid(cell);
     } else {
       markCellAsInvalid(cell);
+      setErrorMessage(validationResult.errorMessage());
     }
   }
 
