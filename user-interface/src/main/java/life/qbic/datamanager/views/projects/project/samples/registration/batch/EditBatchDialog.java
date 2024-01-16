@@ -1,8 +1,10 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -13,12 +15,14 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * A dialog used for editing sample and batch information within an experiment
@@ -32,6 +36,7 @@ public class EditBatchDialog extends DialogWindow {
   private final Span batchNameText;
 
   private final Span errorText = new Span("Unspecific Error message");
+  private final SampleDeletionChecker deletionChecker;
 
   public EditBatchDialog(String experimentName,
       List<OntologyClassDTO> species,
@@ -40,10 +45,13 @@ public class EditBatchDialog extends DialogWindow {
       List<ExperimentalGroup> experimentalGroups,
       BatchId batchId,
       String batchName,
-      List<SampleInfo> existingSamples) {
+      List<SampleInfo> existingSamples,
+      SampleDeletionChecker deletionCheck) {
 
     addClassName("batch-update-dialog");
     setConfirmButtonLabel("Update Samples");
+
+    deletionChecker = requireNonNull(deletionCheck, "deletionCheck must not be null");
 
     this.batchId = batchId;
 
@@ -120,16 +128,16 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   private TextField createBatchNameField() {
-    final TextField batchNameField;
-    batchNameField = new TextField();
-    batchNameField.setLabel("Batch Name");
-    batchNameField.setPlaceholder("Please enter a name for this batch");
-    batchNameField.setRequired(true);
+    final TextField textField;
+    textField = new TextField();
+    textField.setLabel("Batch Name");
+    textField.setPlaceholder("Please enter a name for this batch");
+    textField.setRequired(true);
     // must contain at least one non-whitespace character and no leading/tailing whitespace.
-    batchNameField.setPattern("^\\S+(.*\\S)*$");
-    batchNameField.setErrorMessage(
+    textField.setPattern("^\\S+(.*\\S)*$");
+    textField.setErrorMessage(
         "The batch name must not be empty. It must not start nor end with whitespace.");
-    return batchNameField;
+    return textField;
   }
 
   private void onBatchNameChanged(
@@ -139,22 +147,24 @@ public class EditBatchDialog extends DialogWindow {
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
     List<SampleInfo> tableData = spreadsheet.getData();
-    SampleInfo sampleInfo = Iterables.getLast(tableData);
-    fireEvent(new RemoveLastRowClickedEvent(this, clickEvent.isFromClient(),
-        tableData.size(), sampleInfo));
-  }
-
-  /**
-   * Removes the last row. Any checks for validity of the operation should be performed before using
-   * the related event
-   */
-  public void removeLastRow() {
-    spreadsheet.removeLastRow();
+    Optional<SampleInfo> optionalSampleInfo = Streams.findLast(tableData.stream());
+    optionalSampleInfo.ifPresent(sampleInfo -> {
+      if (isNull(sampleInfo.getSampleId())) {
+        spreadsheet.removeLastRow();
+        return;
+      }
+      int dataRowIndex = spreadsheet.getDataRowIndex(sampleInfo);
+      if (deletionChecker.canDeleteSample(sampleInfo.getSampleId())) {
+        spreadsheet.removeLastRow();
+      } else {
+        displayRemoveRowError(dataRowIndex);
+      }
+    });
   }
 
   public void displayRemoveRowError(int dataRowIndex) {
-    spreadsheet.markCellInColumnInvalid("Sample code", dataRowIndex);
-    errorText.setText("Sample #"+dataRowIndex+" can not be removed because data is attached.");
+    errorText.setText(
+        "Sample #" + (dataRowIndex + 1) + " can not be removed because " + "data is attached");
     errorText.setVisible(true);
   }
 
@@ -228,41 +238,6 @@ public class EditBatchDialog extends DialogWindow {
     addListener(ConfirmEvent.class, listener);
   }
 
-  public void addRemoveRowListener(ComponentEventListener<RemoveLastRowClickedEvent> listener) {
-    addListener(RemoveLastRowClickedEvent.class, listener);
-  }
-
-  public static class RemoveLastRowClickedEvent extends ComponentEvent<EditBatchDialog> {
-
-    private final SampleInfo sampleInfo;
-    private final int dataRowIndex;
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side. Is used to remove the last sample row, but only if that
-     * is allowed (e.g. no datasets attached).
-     *
-     * @param source       the source component
-     * @param fromClient   <code>true</code> if the event originated from the client
-     *                     side, <code>false</code> otherwise
-     * @param dataRowIndex the index of the data row to be removed, to give users feedback on error
-     * @param sampleInfo   SampleInfo corresponding to the row to be removed
-     */
-    public RemoveLastRowClickedEvent(EditBatchDialog source, boolean fromClient, int dataRowIndex,
-        SampleInfo sampleInfo) {
-      super(source, fromClient);
-      this.sampleInfo = sampleInfo;
-      this.dataRowIndex = dataRowIndex;
-    }
-
-    public SampleInfo getSampleInfo() {
-      return sampleInfo;
-    }
-
-    public int getDataRowIndex() {
-      return dataRowIndex;
-    }
-  }
-
   public static class CancelEvent extends ComponentEvent<EditBatchDialog> {
 
     /**
@@ -312,6 +287,14 @@ public class EditBatchDialog extends DialogWindow {
     public Data getData() {
       return data;
     }
+  }
+
+  @FunctionalInterface
+
+  public interface SampleDeletionChecker {
+
+    boolean canDeleteSample(SampleId sampleId);
+
   }
 
 }

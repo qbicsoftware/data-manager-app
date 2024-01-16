@@ -26,7 +26,6 @@ import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponen
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.RemoveLastRowClickedEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.application.DeletionService;
@@ -265,11 +264,17 @@ public class SampleContentComponent extends Div {
         experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
         experiment.getAnalytes().stream().toList(), experiment.getExperimentalGroups(),
         editBatchEvent.batchPreview()
-            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos);
+            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
+        this::isSampleRemovable
+    );
     editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     editBatchDialog.addConfirmListener(this::editBatch);
-    editBatchDialog.addRemoveRowListener(this::removeRowFromBatch);
     editBatchDialog.open();
+  }
+
+  private boolean isSampleRemovable(SampleId sampleId) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    return deletionService.isSampleRemovable(sampleId, projectId);
   }
 
   private SampleBatchInformationSpreadsheet.SampleInfo convertSampleToSampleInfo(Sample sample,
@@ -308,20 +313,6 @@ public class SampleContentComponent extends Div {
       confirmEvent.getSource().close();
       throw new ApplicationException("error code: " + error);
     });
-  }
-
-  private void removeRowFromBatch(RemoveLastRowClickedEvent removeRowClickedEvent) {
-    EditBatchDialog dialog = removeRowClickedEvent.getSource();
-    int dataRowIndex = removeRowClickedEvent.getDataRowIndex();
-
-    SampleId sampleId = removeRowClickedEvent.getSampleInfo().getSampleId();
-    ProjectId projectId = context.projectId().orElseThrow();
-
-    if(deletionService.isSampleRemovable(sampleId, projectId)) {
-      dialog.removeLastRow();
-    } else {
-      dialog.displayRemoveRowError(dataRowIndex);
-    }
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {

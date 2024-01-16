@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
@@ -205,10 +204,18 @@ public class Spreadsheet<T> extends Component implements HasComponents,
    */
   public List<T> getData() {
     return rows.stream()
-        .filter(row -> row instanceof DataRow)
-        .map(row -> (DataRow) row)
+        .filter(DataRow.class::isInstance)
+        .map(DataRow.class::cast)
         .map(DataRow::data)
         .toList();
+  }
+
+  /**
+   * @param data the data to search for
+   * @return the data row index of the given data; -1 if not found
+   */
+  public int getDataRowIndex(T data) {
+    return getData().indexOf(data);
   }
 
   /**
@@ -493,7 +500,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
    */
   private void deleteRow(int index) {
     int lastRowIndex = rowCount() - 1;
-    int nextRowIndex = index + 1;
     if (index > lastRowIndex) {
       throw new IllegalArgumentException(
           "There is no row at index " + index + ". There are only rows with index up to "
@@ -689,7 +695,7 @@ public class Spreadsheet<T> extends Component implements HasComponents,
         .mapToObj(rowIndex -> getCell(rowIndex, columnIndex))
         .filter(Optional::isPresent).map(Optional::get)
         .map(this::getCellValue)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private ValidationResult validateCell(Cell cell) {
@@ -746,7 +752,6 @@ public class Spreadsheet<T> extends Component implements HasComponents,
       markCellAsValid(cell);
     } else {
       markCellAsInvalid(cell);
-      setErrorMessage(validationResult.errorMessage());
     }
   }
 
