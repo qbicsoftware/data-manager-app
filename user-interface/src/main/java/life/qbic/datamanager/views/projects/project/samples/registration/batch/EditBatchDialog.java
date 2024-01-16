@@ -1,7 +1,10 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.Streams;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -12,12 +15,14 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * A dialog used for editing sample and batch information within an experiment
@@ -27,9 +32,11 @@ public class EditBatchDialog extends DialogWindow {
   private final SampleBatchInformationSpreadsheet spreadsheet;
   private final BatchId batchId;
   private final List<SampleInfo> existingSamples;
-
   private final TextField batchNameField;
   private final Span batchNameText;
+
+  private final Span errorText = new Span("Unspecific Error message");
+  private final SampleDeletionChecker deletionChecker;
 
   public EditBatchDialog(String experimentName,
       List<OntologyClassDTO> species,
@@ -38,12 +45,16 @@ public class EditBatchDialog extends DialogWindow {
       List<ExperimentalGroup> experimentalGroups,
       BatchId batchId,
       String batchName,
-      List<SampleInfo> existingSamples) {
+      List<SampleInfo> existingSamples,
+      SampleDeletionChecker deletionCheck) {
 
     addClassName("batch-update-dialog");
     setConfirmButtonLabel("Save");
 
+    deletionChecker = requireNonNull(deletionCheck, "deletionCheck must not be null");
+
     this.batchId = batchId;
+
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
@@ -90,7 +101,6 @@ public class EditBatchDialog extends DialogWindow {
     spreadsheetHeader.add(userHelpText, spreadsheetControls);
     spreadsheetHeader.addClassName("spreadsheet-header");
 
-    Span errorText = new Span("Unspecific Error message");
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
@@ -115,22 +125,23 @@ public class EditBatchDialog extends DialogWindow {
         });
 
     spreadsheet.resetRows();
+    // don't use field, but parameter in order to compare edits later
     for (SampleInfo existingSample : existingSamples) {
       spreadsheet.addRow(existingSample);
     }
   }
 
   private TextField createBatchNameField() {
-    final TextField batchNameField;
-    batchNameField = new TextField();
-    batchNameField.setLabel("Batch Name");
-    batchNameField.setPlaceholder("Please enter a name for this batch");
-    batchNameField.setRequired(true);
+    final TextField textField;
+    textField = new TextField();
+    textField.setLabel("Batch Name");
+    textField.setPlaceholder("Please enter a name for this batch");
+    textField.setRequired(true);
     // must contain at least one non-whitespace character and no leading/tailing whitespace.
-    batchNameField.setPattern("^\\S+(.*\\S)*$");
-    batchNameField.setErrorMessage(
+    textField.setPattern("^\\S+(.*\\S)*$");
+    textField.setErrorMessage(
         "The batch name must not be empty. It must not start nor end with whitespace.");
-    return batchNameField;
+    return textField;
   }
 
   private void onBatchNameChanged(
@@ -139,7 +150,26 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
-    spreadsheet.removeLastRow();
+    List<SampleInfo> tableData = spreadsheet.getData();
+    Optional<SampleInfo> optionalSampleInfo = Streams.findLast(tableData.stream());
+    optionalSampleInfo.ifPresent(sampleInfo -> {
+      if (isNull(sampleInfo.getSampleId())) {
+        spreadsheet.removeLastRow();
+        return;
+      }
+      int dataRowIndex = spreadsheet.getDataRowIndex(sampleInfo);
+      if (deletionChecker.canDeleteSample(sampleInfo.getSampleId())) {
+        spreadsheet.removeLastRow();
+      } else {
+        displayRemoveRowError(dataRowIndex);
+      }
+    });
+  }
+
+  public void displayRemoveRowError(int dataRowIndex) {
+    errorText.setText(
+        "Sample #" + (dataRowIndex + 1) + " can not be removed because " + "data is attached");
+    errorText.setVisible(true);
   }
 
   private void onAddRowClicked(ClickEvent<Button> clickEvent) {
@@ -261,6 +291,14 @@ public class EditBatchDialog extends DialogWindow {
     public Data getData() {
       return data;
     }
+  }
+
+  @FunctionalInterface
+
+  public interface SampleDeletionChecker {
+
+    boolean canDeleteSample(SampleId sampleId);
+
   }
 
 }

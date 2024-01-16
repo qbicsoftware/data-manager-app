@@ -98,6 +98,12 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
+  public boolean isSampleRemovable(Project project, SampleId sampleId) {
+    SampleCode sampleCode = qbicSampleRepository.findById(sampleId).get().sampleCode();
+    return sampleDataRepo.canDeleteSample(project.getProjectCode(), sampleCode);
+  }
+
+  @Override
   public Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
@@ -131,5 +137,6 @@ public class SampleRepositoryImpl implements SampleRepository {
   public List<Sample> findSamplesBySampleId(List<SampleId> sampleId) {
     return qbicSampleRepository.findAllById(sampleId);
   }
+
 
 }

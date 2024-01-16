@@ -88,6 +88,10 @@ public class SampleDomainService {
         DomainEventDispatcher.instance().dispatch(sampleRegistered);
     }
 
+    public boolean isSampleRemovable(Project project, SampleId sampleId) {
+        return sampleRepository.isSampleRemovable(project, sampleId);
+    }
+
     /**
      * Response error codes for the sample registration
      *
