@@ -111,6 +111,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     }
   }
 
+
   /**
    * adds an empty row to the spreadsheet
    */
