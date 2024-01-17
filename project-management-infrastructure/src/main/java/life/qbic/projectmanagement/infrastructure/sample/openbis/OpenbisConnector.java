@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -314,10 +315,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
       throws SampleNotUpdatedException {
     try {
-      /*FixMe Throws org.springframework.remoting.RemoteAccessException: Could not access HTTP invoker remote service
-          and invalid stream header: 3C68746D
-      */
-      // updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
+      updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
     } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
           "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
@@ -346,7 +344,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
-    return updatedSamples.stream().map(this::createSampleUpdate).toList();
+    return updatedSamples.stream().map(this::createSampleUpdate).collect(Collectors.toList());
   }
 
   record VocabularyTerm(String code, String label, String description) {
