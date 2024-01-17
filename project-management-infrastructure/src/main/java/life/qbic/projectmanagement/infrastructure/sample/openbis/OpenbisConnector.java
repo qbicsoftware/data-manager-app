@@ -437,7 +437,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   @Override
   public boolean projectExists(ProjectCode projectCode) {
-    return !searchProjectsByCode(projectCode.toString()).isEmpty();
+    return !searchProjectsByCode(projectCode.value()).isEmpty();
   }
 
   // Convenience RTE to describe connection issues
