@@ -344,6 +344,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
+    // do not replace the collect with "toList()" - this creates an immutable list, which crashes the transaction
     return updatedSamples.stream().map(this::createSampleUpdate).collect(Collectors.toList());
   }
 
