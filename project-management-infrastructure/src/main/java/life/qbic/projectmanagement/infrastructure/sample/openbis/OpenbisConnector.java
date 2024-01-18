@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -234,8 +233,14 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     handleOperations(operation);
   }
 
+  /**
+   * Performs a list of provided update operations. Creates a mutable list beforehand, as that is
+   * necessary
+   * @param samplesToUpdate List of SampleUpdate objects containing changes to one or more samples
+   */
   private void updateOpenbisSamples(List<SampleUpdate> samplesToUpdate) {
-    IOperation operation = new UpdateSamplesOperation(samplesToUpdate);
+    List<SampleUpdate> mutableUpdates = new ArrayList<>(samplesToUpdate);
+    IOperation operation = new UpdateSamplesOperation(mutableUpdates);
     handleOperations(operation);
   }
 
@@ -344,8 +349,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
-    // do not replace the collect with "toList()" - this creates an immutable list, which crashes the transaction
-    return updatedSamples.stream().map(this::createSampleUpdate).collect(Collectors.toList());
+    return updatedSamples.stream().map(this::createSampleUpdate).toList();
   }
 
   record VocabularyTerm(String code, String label, String description) {
