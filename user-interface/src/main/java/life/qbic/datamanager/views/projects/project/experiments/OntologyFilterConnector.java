@@ -36,7 +36,7 @@ public class OntologyFilterConnector {
             query.getOffset(),
             query.getLimit(),
             sortOrders);
-    return ontologyClassEntities.stream().map(OntologyClassDTO::from);
+    return ontologyClassEntities.stream().map(OntologyClassDTO::from).distinct();
   }
 
 }
