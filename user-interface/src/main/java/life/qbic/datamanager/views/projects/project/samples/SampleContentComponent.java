@@ -40,7 +40,6 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -74,7 +73,7 @@ public class SampleContentComponent extends Div {
   private final transient SampleInformationService sampleInformationService;
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
-  private final BatchDetailsComponent batchDetailsComponent;
+  private final transient BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
@@ -119,9 +118,7 @@ public class SampleContentComponent extends Div {
   public void setContext(Context context) {
     this.context = context;
     ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    batchDetailsComponent.setExperiment(
-        experimentInformationService.find(experimentId).orElseThrow());
+    batchDetailsComponent.setContext(context);
     projectInformationService.find(projectId)
         .ifPresentOrElse(
             project -> {
@@ -169,7 +166,6 @@ public class SampleContentComponent extends Div {
   private void reload() {
     setContext(context);
   }
-
 
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();

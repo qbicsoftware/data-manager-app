@@ -26,13 +26,17 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,19 +60,24 @@ public class BatchDetailsComponent extends Div implements Serializable {
   private final Div content = new Div();
   private final Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchInformationService batchInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
   private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
   private final ClientDetailsProvider clientDetailsProvider;
+  private Context context;
 
   public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService,
+      @Autowired ExperimentInformationService experimentInformationService,
       ClientDetailsProvider clientDetailsProvider) {
     Objects.requireNonNull(batchInformationService);
+    Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(clientDetailsProvider);
-    this.clientDetailsProvider = clientDetailsProvider;
     addClassName("batch-details-component");
     createTitleAndControls();
     createBatchGrid();
     add(content);
+    this.experimentInformationService = experimentInformationService;
     this.batchInformationService = batchInformationService;
+    this.clientDetailsProvider = clientDetailsProvider;
   }
 
   private void createTitleAndControls() {
@@ -111,8 +120,17 @@ public class BatchDetailsComponent extends Div implements Serializable {
     batchGrid.addClassName("batch-grid");
   }
 
-  public void setExperiment(Experiment experiment) {
+  public void setContext(Context context) {
     batchPreviews.clear();
+    if (context.experimentId().isEmpty()) {
+      throw new ApplicationException("no experiment id in context " + context);
+    }
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
+    this.context = context;
+    ExperimentId experimentId = context.experimentId().get();
+    Experiment experiment = experimentInformationService.find(experimentId).orElseThrow();
     loadBatchesForExperiment(experiment);
     batchGrid.setItems(batchPreviews)
         .setSortOrder(BatchPreview::lastModified, SortDirection.DESCENDING);
@@ -150,7 +168,6 @@ public class BatchDetailsComponent extends Div implements Serializable {
         .map(batchStream -> batchStream.map(this::generatePreviewFromBatch))
         .map(Stream::toList)
         .onValue(batchPreviews::addAll);
-
   }
 
   /**
