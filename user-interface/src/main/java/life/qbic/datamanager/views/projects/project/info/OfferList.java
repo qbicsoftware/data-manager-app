@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -64,36 +63,32 @@ public class OfferList extends PageArea {
 
   private Component renderOffer(OfferInfo offer) {
 
-    Span offerFileName = new Span(offer.filename());
+    var offerFileName = new Span(offer.filename());
     offerFileName.setTitle(offer.filename());
     offerFileName.addClassName("file-name");
 
-    Icon signedInfo = VaadinIcon.CHECK_CIRCLE.create();
+    var signedInfo = VaadinIcon.CHECK_CIRCLE.create();
     signedInfo.addClassName("signed-info");
     signedInfo.addClassName(offer.signed() ? "signed" : "unsigned");
-    if (offer.signed()) {
-      signedInfo.setTooltipText("Signed");
-    } else {
-      signedInfo.setTooltipText("Unsigned");
-    }
-    Button downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
+    signedInfo.setTooltipText(offer.signed() ? "signed" : "unsigned");
+    var downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
         event -> onDownloadOfferClicked(
             new DownloadOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    downloadButton.addThemeNames("tertiary-inline", "icon-only");
+    downloadButton.addThemeNames("tertiary-inline", "icon");
     downloadButton.setAriaLabel("Download");
     downloadButton.setTooltipText("Download");
-    Button deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteOfferClicked(
+    var deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteOfferClicked(
         new DeleteOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    deleteButton.addThemeNames("tertiary-inline", "icon-only");
+    deleteButton.addThemeNames("tertiary-inline", "icon");
     deleteButton.setTooltipText("Delete");
     deleteButton.setAriaLabel("Delete");
 
     Span offerActionControls = new Span(downloadButton, deleteButton);
     offerActionControls.addClassName("controls");
 
-    Span offerIcon = generateOfferIcon();
-    offerIcon.setTitle("Offer");
-    Span fileInfo = new Span(offerIcon, offerFileName, signedInfo);
+    var fileIcon = VaadinIcon.FILE.create();
+    fileIcon.addClassName("file-icon");
+    Span fileInfo = new Span(fileIcon, offerFileName, signedInfo);
     fileInfo.addClassName("file-info");
 
     Span offerListItem = new Span();
@@ -101,12 +96,6 @@ public class OfferList extends PageArea {
     offerListItem.add(fileInfo, offerActionControls);
 
     return offerListItem;
-  }
-
-  private Span generateOfferIcon() {
-    Span offerIcon = new Span("O");
-    offerIcon.addClassName("offer-icon");
-    return offerIcon;
   }
 
   public void setOffers(List<OfferInfo> offers) {

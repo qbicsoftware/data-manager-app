@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.purchase;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.Objects;
 
@@ -22,7 +23,9 @@ public class PurchaseItem extends Div {
   private final Checkbox signedCheckBox;
   public PurchaseItem(String fileName) {
     this.fileName = fileName;
-    fileNameLabel = new Span(generateOfferIcon(), new Span(fileName));
+    var fileIcon = VaadinIcon.FILE.create();
+    fileIcon.addClassName("file-icon");
+    fileNameLabel = new Span(fileIcon, new Span(fileName));
     fileNameLabel.addClassName("file-name");
     signedCheckBox = new Checkbox();
     addClassName("purchase-item");
@@ -37,12 +40,6 @@ public class PurchaseItem extends Div {
   }
   public boolean isSigned() {
     return signedCheckBox.getValue();
-  }
-
-  private Span generateOfferIcon() {
-    Span offerIcon = new Span("O");
-    offerIcon.addClassName("offer-icon");
-    return offerIcon;
   }
 
   @Override

@@ -463,13 +463,15 @@ vaadin-upload-file::part(meta){
   column-gap: var(--lumo-space-xs);
 }
 
-.uploaded-items .purchase-item:last-child {
-  border-style: none;
+.uploaded-items .purchase-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
 }
 
-.uploaded-items .purchase-item .file-icon {
-  font-size: smaller;
-  color: var(--lumo-primary-color);
+.uploaded-items .purchase-item:last-child {
+  border-style: none;
 }
 
 .uploaded-items .purchase-item .signature-box {
