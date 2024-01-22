@@ -112,6 +112,24 @@ public class DeletionService {
     sampleDomainService.deleteSamples(project.get(), batchId, samplesCollection);
   }
 
+  /**
+   * Confirms that a sample can be removed. Might indicate that sample removal is not possible due
+   * to the following reasons:
+   * <ul>
+   *   <li> data is connected to the sample
+   *
+   * @param sampleId
+   * @param projectId
+   * @return
+   */
+  public boolean isSampleRemovable(SampleId sampleId, ProjectId projectId) {
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      throw new IllegalArgumentException("Could not find project " + projectId);
+    }
+    return sampleDomainService.isSampleRemovable(project.get(), sampleId);
+  }
+
 
   public enum ResponseCode {
     SAMPLES_STILL_ATTACHED_TO_EXPERIMENT, QUERY_FAILED, BATCH_DELETION_FAILED,

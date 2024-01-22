@@ -260,10 +260,17 @@ public class SampleContentComponent extends Div {
         experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
         experiment.getAnalytes().stream().toList(), experiment.getExperimentalGroups(),
         editBatchEvent.batchPreview()
-            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos);
+            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
+        this::isSampleRemovable
+    );
     editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     editBatchDialog.addConfirmListener(this::editBatch);
     editBatchDialog.open();
+  }
+
+  private boolean isSampleRemovable(SampleId sampleId) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    return deletionService.isSampleRemovable(sampleId, projectId);
   }
 
   private SampleBatchInformationSpreadsheet.SampleInfo convertSampleToSampleInfo(Sample sample,
