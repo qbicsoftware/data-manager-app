@@ -60,7 +60,7 @@ public enum AnalysisMethod {
   Proteomics related analysis methods
    */
 
-  PROTEOMICS("PROTEOMIICS", "Proteomics", ""),
+  PROTEOMICS("PROTEOMICS", "Proteomics", ""),
 
   PHOSPHO_PROTEOMICS("PHOSPHO", "Phosphoproteomics", ""),
 
