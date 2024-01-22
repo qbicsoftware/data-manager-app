@@ -16,22 +16,18 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public class PurchaseItem extends Div {
-
   @Serial
   private static final long serialVersionUID = -1266444866470199274L;
-
   private final String fileName;
-
-  private final Div fileNameLabel;
-
+  private final Span fileNameLabel;
   private final Checkbox signedCheckBox;
-
   public PurchaseItem(String fileName) {
     this.fileName = fileName;
-    fileNameLabel = new Div();
-    fileNameLabel.add(VaadinIcon.FILE.create(), new Span(fileName));
+    var fileIcon = VaadinIcon.FILE.create();
+    fileIcon.addClassName("file-icon");
+    fileNameLabel = new Span(fileIcon, new Span(fileName));
+    fileNameLabel.addClassName("file-name");
     signedCheckBox = new Checkbox();
-
     addClassName("purchase-item");
     Div signatureBox = new Div();
     signatureBox.addClassName("signature-box");
@@ -39,11 +35,9 @@ public class PurchaseItem extends Div {
     signatureBox.add(signedCheckBox);
     add(fileNameLabel, signatureBox);
   }
-
   public String fileName() {
     return fileName;
   }
-
   public boolean isSigned() {
     return signedCheckBox.getValue();
   }
