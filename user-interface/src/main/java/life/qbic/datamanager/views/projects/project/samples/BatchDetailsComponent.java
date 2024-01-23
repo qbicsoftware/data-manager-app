@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -143,6 +144,9 @@ public class BatchDetailsComponent extends Div implements Serializable {
     Button viewButton = new Button(viewIcon);
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
+    viewButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
+    editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     viewButton.addClickListener(e -> fireEvent(new ViewBatchEvent(this, batchPreview,
         e.isFromClient())));
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
