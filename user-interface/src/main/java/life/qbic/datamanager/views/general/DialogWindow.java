@@ -50,6 +50,7 @@ public abstract class DialogWindow extends Dialog {
    */
   public void setConfirmButtonLabel(String confirmLabel){
     confirmButton.setText(confirmLabel);
+    confirmButton.setAriaLabel(confirmLabel);
   }
 
   /**
@@ -58,6 +59,7 @@ public abstract class DialogWindow extends Dialog {
    */
   public void setCancelButtonLabel(String cancelLabel){
     cancelButton.setText(cancelLabel);
+    cancelButton.setAriaLabel(cancelLabel);
   }
 
 }
