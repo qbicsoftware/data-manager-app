@@ -1,23 +1,56 @@
-.offer-info {
-  border: 1px solid transparent;
-  padding: 0.5em;
-  background-color: inherit;
+.offer-list .header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: var(--lumo-space-m);
+}
 
-  gap: 0.8em;
+.offer-list .offer-list-item {
+  display: inline-flex;
+  justify-content: space-between;
+}
+
+.offer-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.offer-info .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.offer-info .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .offer-info .file-info {
-  display: flex;
-  justify-content: left;
-  gap: 0.5em;
-  justify-self: left;
-  flex-grow: 1;
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
+  overflow: hidden;
 }
 
 .offer-info .signed-info {
+  width: var(--lumo-icon-size-s);
+  flex-shrink: 0;
   justify-self: right;
+}
+
+.offer-info .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
 }
 
 .offer-info .signed-info.signed {
@@ -25,6 +58,5 @@
 }
 
 .offer-info .signed-info.unsigned {
-  color: gray;
-  justify-self: right;
+  color: var(--lumo-tertiary-text-color)
 }
