@@ -277,6 +277,11 @@ public class SampleInformationMain extends Main {
     editBatchDialog.open();
   }
 
+  private boolean isSampleRemovable(SampleId sampleId) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    return deletionService.isSampleRemovable(sampleId, projectId);
+  }
+
   private SampleBatchInformationSpreadsheet.SampleInfo convertSampleToSampleInfo(Sample sample,
       Collection<ExperimentalGroup> experimentalGroups) {
     ExperimentalGroup experimentalGroup = experimentalGroups.stream()
