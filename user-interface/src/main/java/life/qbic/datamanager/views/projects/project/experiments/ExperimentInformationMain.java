@@ -3,17 +3,15 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -33,8 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
 @PermitAll
-public class ExperimentInformationMain extends Div implements BeforeEnterObserver,
-    RouterLayout {
+public class ExperimentInformationMain extends Main {
 
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
@@ -48,7 +45,6 @@ public class ExperimentInformationMain extends Div implements BeforeEnterObserve
       @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
     requireNonNull(experimentDetailsComponent);
     this.experimentDetailsComponent = experimentDetailsComponent;
-    addClassName("main");
     addClassName("experiment");
     add(experimentDetailsComponent);
     log.debug(String.format(

@@ -36,8 +36,19 @@
   grid-area: projectlinks;
 }
 
+.main.project-overview {
+  grid-template-columns: minmax(max-content, 100%);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "projectcollection";
+}
+
+.main .project-overview .project-collection-component {
+  grid-area: projectcollection;
+}
+
 .main.sample {
-  grid-template-columns: auto;
+  grid-template-columns: minmax(min-content, 60%) minmax(min-content, 50%);
   grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
   grid-template-areas:
     ". batchdetails"

@@ -18,7 +18,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import org.slf4j.Logger;
 
@@ -39,10 +39,10 @@ public class ExperimentNavigationComponent extends Div {
       ExperimentInformationMain.class);
   RoutingTab<SampleInformationMain> registerSampleBatch = new RoutingTab<>(VaadinIcon.USER.create(),
       new Span("Register Sample Batch"), SampleInformationMain.class);
-  RoutingTab<ProjectOverviewPage> viewMeasurements = new RoutingTab<>(VaadinIcon.USER.create(),
-      new Span("View Measurements"), ProjectOverviewPage.class);
-  RoutingTab<ProjectOverviewPage> downloadAnalysis = new RoutingTab<>(VaadinIcon.USER.create(),
-      new Span("Download Analysis"), ProjectOverviewPage.class);
+  RoutingTab<ProjectOverviewMain> viewMeasurements = new RoutingTab<>(VaadinIcon.USER.create(),
+      new Span("View Measurements"), ProjectOverviewMain.class);
+  RoutingTab<ProjectOverviewMain> downloadAnalysis = new RoutingTab<>(VaadinIcon.USER.create(),
+      new Span("Download Analysis"), ProjectOverviewMain.class);
 
   private final List<ComponentEventListener<ExperimentNavigationTriggeredEvent>> experimentNavigationTriggeredListeners = new ArrayList<>();
 

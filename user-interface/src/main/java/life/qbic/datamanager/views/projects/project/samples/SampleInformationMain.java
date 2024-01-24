@@ -3,11 +3,8 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -19,6 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -66,8 +64,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends Div implements BeforeEnterObserver,
-    RouterLayout {
+public class SampleInformationMain extends Main {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
@@ -108,7 +105,6 @@ public class SampleInformationMain extends Div implements BeforeEnterObserver,
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.batchDetailsComponent = batchDetailsComponent;
     addClassName("sample");
-    addClassName("main");
     reloadOnBatchRegistration();
     sampleDetailsComponent.addCreateBatchListener(event -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
@@ -274,7 +270,8 @@ public class SampleInformationMain extends Div implements BeforeEnterObserver,
         experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
         experiment.getAnalytes().stream().toList(), experiment.getExperimentalGroups(),
         editBatchEvent.batchPreview()
-            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos);
+            .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
+        this::isSampleRemovable);
     editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     editBatchDialog.addConfirmListener(this::editBatch);
     editBatchDialog.open();

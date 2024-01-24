@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.projects.overview;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -11,6 +11,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -27,7 +28,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Project view page that shows project information and additional components to manage project
+ * Project overview {@link Main} component that shows project information and additional components to manage project
  * data.
  *
  * @since 1.0.0
@@ -35,18 +36,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Project Overview")
 @Route(value = Projects.PROJECTS, layout = MainLayout.class)
 @PermitAll
-public class ProjectOverviewPage extends Div {
-
+public class ProjectOverviewMain extends Main {
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
-  private static final Logger log = logger(ProjectOverviewPage.class);
+  private static final Logger log = logger(ProjectOverviewMain.class);
   private final ProjectCollectionComponent projectCollectionComponent;
   private final ProjectCreationService projectCreationService;
   private final FinanceService financeService;
   private final OntologyTermInformationService ontologyTermInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
 
-  public ProjectOverviewPage(@Autowired ProjectCollectionComponent projectCollectionComponent,
+  public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       OntologyTermInformationService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService) {
@@ -57,7 +57,8 @@ public class ProjectOverviewPage extends Div {
     this.addExperimentToProjectService = addExperimentToProjectService;
     layoutPage();
     configurePage();
-    stylePage();
+    add(projectCollectionComponent);
+    addClassName("project-overview");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -65,9 +66,9 @@ public class ProjectOverviewPage extends Div {
         System.identityHashCode(projectCollectionComponent)));
   }
 
-
-  private void layoutPage() {
-    add(projectCollectionComponent);
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    //Todo Check user permissions to access page?
   }
 
   private void configurePage() {
@@ -77,11 +78,6 @@ public class ProjectOverviewPage extends Div {
       addProjectDialog.addListener(this::createProject);
       addProjectDialog.open();
     });
-  }
-
-  private void stylePage() {
-    this.setWidthFull();
-    this.setHeightFull();
   }
 
   private void createProject(ProjectCreationEvent projectCreationEvent) {

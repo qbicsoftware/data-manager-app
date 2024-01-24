@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Batch Details Component
  * <p>
- * Component embedded within the {@link SampleDetailsComponent} in the {@link SampleInformationMain}
+ * Component embedded within the {@link SampleInformationMain}
  * It allows the user to see the information associated for each {@link Batch} of each
  * {@link Experiment within a {@link Project} Additionally it enables the user to trigger the edit
  * and deletion of the {@link Batch}

@@ -3,14 +3,11 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -20,6 +17,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.OfferDownload;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -58,8 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectInformationMain extends Div implements BeforeEnterObserver,
-    RouterLayout {
+public class ProjectInformationMain extends Main {
 
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
@@ -101,8 +98,7 @@ public class ProjectInformationMain extends Div implements BeforeEnterObserver,
 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
-
-    addClassNames("main", "project");
+    addClassName("project");
     add(projectDetailsComponent, offerList, offerDownload, experimentListComponent);
   }
 
