@@ -195,7 +195,7 @@ public class SampleContentComponent extends Div {
     List<SampleRegistrationRequest> sampleRegistrationRequests;
     sampleRegistrationRequests = sampleInfos.stream()
         .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleLabel(),
+            sample.getSampleLabel(), sample.getOrganismId(),
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
@@ -210,10 +210,10 @@ public class SampleContentComponent extends Div {
   private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
       SampleInfo sampleInfo) {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleLabel(), sampleInfo.getAnalysisToBePerformed(),
-        sampleInfo.getBiologicalReplicate(), sampleInfo.getExperimentalGroup(),
-        sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
-        sampleInfo.getCustomerComment()));
+        sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
+        sampleInfo.getAnalysisToBePerformed(), sampleInfo.getBiologicalReplicate(),
+        sampleInfo.getExperimentalGroup(), sampleInfo.getSpecies(), sampleInfo.getSpecimen(),
+        sampleInfo.getAnalyte(), sampleInfo.getCustomerComment()));
   }
 
   private void displayUpdateSuccess() {
@@ -285,7 +285,7 @@ public class SampleContentComponent extends Div {
                 .equals(sample.biologicalReplicateId())).findFirst().orElseThrow();
     return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
         sample.sampleCode(), sample.analysisMethod(),
-        sample.label(),
+        sample.label(), sample.organismId(),
         biologicalReplicate, experimentalGroup, sample.sampleOrigin()
             .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
         sample.comment().orElse(""));
