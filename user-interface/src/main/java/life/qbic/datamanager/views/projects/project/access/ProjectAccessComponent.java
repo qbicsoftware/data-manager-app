@@ -7,23 +7,22 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.NotFoundException;
-import com.vaadin.flow.router.Route;
-import jakarta.annotation.security.PermitAll;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import life.qbic.datamanager.security.UserPermissions;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.AccessDomainService;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
@@ -32,43 +31,47 @@ import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
- * A component that allows to manage project access
+ * Project Access Component
+ * <p>
+ * The access component is a {@link PageArea} component,
+ * which shows the current permissions for all users and user groups within a {@link Project}.
+ * <p>
+ * Additionally, it provides the possibility to add or revoke project access for individual users
+ * and user groups for the selected {@link Project}.
+ * <p>
  */
+@SpringComponent
+@UIScope
+public class ProjectAccessComponent extends PageArea {
 
-@Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
-@PermitAll
-public class ProjectAccessComponent extends PageArea implements BeforeEnterObserver {
-
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  @Serial
+  private static final long serialVersionUID = 6832688939965353201L;
   private final ProjectAccessService projectAccessService;
   private final UserDetailsService userDetailsService;
   private final SidRepository sidRepository;
   private final UserInformationService userInformationService;
-
-  private final UserPermissions userPermissions;
-  private static final Logger log = logger(ProjectAccessComponent.class);
+  private static final Logger log = logger(ProjectAccessMain.class);
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span buttonBar = new Span();
   private final Span titleField = new Span();
-  private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
-  private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
-  private ProjectId projectId;
-
+  private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(
+      UserProjectAccess.class);
+  private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(
+      RoleProjectAccess.class);
   private final AccessDomainService accessDomainService;
+  private Context context;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserDetailsService userDetailsService,
       @Autowired UserInformationService userInformationService,
       @Autowired SidRepository sidRepository,
-      @Autowired UserPermissions userPermissions,
       @Autowired AccessDomainService accessDomainService) {
     this.projectAccessService = projectAccessService;
     this.userDetailsService = userDetailsService;
     this.userInformationService = userInformationService;
     this.sidRepository = sidRepository;
-    this.userPermissions = userPermissions;
     this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userDetailsService, "userDetailsService must not be null");
@@ -77,8 +80,15 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     layoutComponent();
     this.addClassName("project-access-component");
     log.debug(String.format(
-        "New instance for ProjectAccessComponent(#%s)",
+        "New instance for ProjectAccessMain(#%s)",
         System.identityHashCode(this)));
+  }
+
+  public void setContext(Context context) {
+    ProjectId projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    this.context = context;
+    loadInformationForProject(projectId);
   }
 
   private void layoutComponent() {
@@ -87,7 +97,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   }
 
   private void initHeader() {
-    header.addClassName("access-header");
+    header.addClassName("header");
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
     initButtonBar();
@@ -102,7 +112,7 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
   }
 
   private void initContent() {
-    content.addClassName("access-content");
+    content.addClassName("content");
     layoutUserProjectAccessGrid();
     layoutRoleProjectAccessGrid();
     add(content);
@@ -110,34 +120,20 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
 
   private void layoutUserProjectAccessGrid() {
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    content.add(userProjectAccessDescription);
     userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
     userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
     userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
-    content.add(userProjectAccessGrid);
+    Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
+    userProjectAccess.addClassName("user-access");
+    content.add(userProjectAccess);
   }
 
   private void layoutRoleProjectAccessGrid() {
     Span roleProjectAccessDescription = new Span("Roles with access to this project");
-    content.add(roleProjectAccessDescription);
     roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
-    content.add(roleProjectAccessGrid);
-  }
-
-  /**
-   * Callback executed before navigation to attaching Component chain is made.
-   *
-   * @param event before navigation event with event details
-   */
-  @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    projectId = event.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .map(ProjectId::parse).orElseThrow();
-    if (userPermissions.changeProjectAccess(projectId)) {
-      loadInformationForProject(projectId);
-    } else {
-      event.rerouteToError(NotFoundException.class);
-    }
+    Div roleProjectAccess = new Div(roleProjectAccessDescription, roleProjectAccessGrid);
+    roleProjectAccess.addClassName("role-access");
+    content.add(roleProjectAccess);
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
@@ -201,14 +197,15 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
     setRoleProjectAccessGridData(roleProjectAccesses);
   }
 
-  private void setRoleProjectAccessGridData(List<RoleProjectAccess> roleProjectAccesses) {
+  private void setRoleProjectAccessGridData(List<
+      RoleProjectAccess> roleProjectAccesses) {
     roleProjectAccessGrid.setItems(roleProjectAccesses);
   }
 
   private void openEditUserAccessToProjectDialog() {
     EditUserAccessToProjectDialog editUserAccessToProjectDialog = new EditUserAccessToProjectDialog(
         projectAccessService,
-        projectId,
+        context.projectId().orElseThrow(),
         sidRepository, userInformationService);
     addEditUserAccessToProjectDialogListeners(editUserAccessToProjectDialog);
     editUserAccessToProjectDialog.open();
@@ -231,21 +228,22 @@ public class ProjectAccessComponent extends PageArea implements BeforeEnterObser
       if (!removedUsers.isEmpty()) {
         removeUsersFromProject(removedUsers);
       }
-      loadInformationForProject(projectId);
+      loadInformationForProject(context.projectId().orElseThrow());
       editUserAccessToProjectDialog.close();
     });
   }
 
   private void addUsersToProject(List<UserInfo> users) {
     for (UserInfo user : users) {
-      projectAccessService.grant(user.id(), projectId, BasePermission.READ);
-      accessDomainService.grantProjectAccessFor(projectId.value(), user.id());
+      projectAccessService.grant(user.id(), context.projectId().orElseThrow(), BasePermission.READ);
+      accessDomainService.grantProjectAccessFor(context.projectId().orElseThrow().value(),
+          user.id());
     }
   }
 
   private void removeUsersFromProject(List<UserInfo> users) {
     for (UserInfo user : users) {
-      projectAccessService.denyAll(user.id(), projectId);
+      projectAccessService.denyAll(user.id(), context.projectId().orElseThrow());
     }
   }
 

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.stream.Stream;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -38,7 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class BatchDetailsComponent extends Div implements Serializable {
+public class BatchDetailsComponent extends PageArea implements Serializable {
 
   private final Span titleAndControls = new Span();
   private final Span title = new Span("Batches");
