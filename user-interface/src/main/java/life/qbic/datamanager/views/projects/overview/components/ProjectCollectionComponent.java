@@ -6,6 +6,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -45,24 +46,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 public class ProjectCollectionComponent extends PageArea {
 
-  private final Div controlSection = new Div();
-  private final Div gridSection = new Div();
+  private final Div header = new Div();
   private String projectPreviewFilter = "";
   private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
-  private final Div titleSection = new Div();
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final Button createProjectButton = new Button("Add");
-  private final String title;
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
 
   @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
       ProjectInformationService projectInformationService) {
-    this.title = "Projects";
     this.clientDetailsProvider = clientDetailsProvider;
     this.projectInformationService = projectInformationService;
     layoutComponent();
@@ -71,21 +68,26 @@ public class ProjectCollectionComponent extends PageArea {
     configureProjectCreationButton();
   }
 
-  private void layoutComponent() {
-    addClassNames("project-collection");
-    layoutSearchField();
-    layoutProjectCreationButton();
-    layoutGrid();
-    layoutTitleSection();
-    layoutControlSection();
-    layoutGridSection();
-    controlSection.add(projectSearchField);
-    controlSection.add(createProjectButton);
+  private void initHeader() {
+    header.addClassName("header");
+    Span titleField = new Span();
+    titleField.setText("Projects");
+    titleField.addClassName("title");
+    createProjectButton.addClassName("primary");
+    projectSearchField.setPlaceholder("Search");
+    projectSearchField.setClearButtonVisible(true);
+    projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
+    projectSearchField.addClassNames("search-field");
+    Span controls = new Span(projectSearchField, createProjectButton);
+    controls.addClassName("controls");
+    header.add(titleField, controls);
+    add(header);
+  }
 
-    gridSection.add(projectGrid);
-    add(titleSection);
-    add(controlSection);
-    add(gridSection);
+  private void layoutComponent() {
+    addClassNames("project-collection-component");
+    initHeader();
+    layoutGrid();
   }
 
   private void createLazyProjectView() {
@@ -112,17 +114,6 @@ public class ProjectCollectionComponent extends PageArea {
     createProjectButton.addClickListener(listener -> fireCreateClickedEvent());
   }
 
-  private void layoutSearchField() {
-    projectSearchField.setPlaceholder("Search");
-    projectSearchField.setClearButtonVisible(true);
-    projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    projectSearchField.addClassNames("search-field");
-  }
-
-  private void layoutProjectCreationButton() {
-    createProjectButton.addClassName("primary");
-  }
-
   private void layoutGrid() {
     projectGrid.addColumn(new ComponentRenderer<>(
             item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
@@ -139,19 +130,7 @@ public class ProjectCollectionComponent extends PageArea {
             "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("lastModified").setSortable(true)
         .setSortProperty("lastModified");
     projectGrid.addClassName("projects-grid");
-  }
-
-  private void layoutTitleSection() {
-    titleSection.addClassName("title");
-    titleSection.setText(title);
-  }
-
-  private void layoutControlSection() {
-    controlSection.addClassName("controls");
-  }
-
-  private void layoutGridSection() {
-    gridSection.addClassName("projects-grid-section");
+    add(projectGrid);
   }
 
   private void fireCreateClickedEvent() {
