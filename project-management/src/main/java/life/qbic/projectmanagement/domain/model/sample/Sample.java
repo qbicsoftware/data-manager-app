@@ -42,6 +42,8 @@ public class Sample {
   @AttributeOverride(name = "uuid", column = @Column(name = "sample_id"))
   private SampleId id;
   private String label;
+  @Column(name = "organism_id")
+  private String organismId;
   private String comment;
 
   @Column(name = "analysis_method")
@@ -54,13 +56,14 @@ public class Sample {
   @Embedded
   private SampleOrigin sampleOrigin;
 
-  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
-      ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
+  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label, String
+      organismId, ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
       BiologicalReplicateId replicateReference, AnalysisMethod analysisMethod, String comment
   ) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
+    this.organismId = organismId;
     this.experimentId = experimentId;
     this.experimentalGroupId = experimentalGroupId;
     this.sampleOrigin = sampleOrigin;
@@ -87,8 +90,8 @@ public class Sample {
     SampleId sampleId = SampleId.create();
     return new Sample(sampleId, sampleCode,
         sampleRegistrationRequest.assignedBatch(),
-        sampleRegistrationRequest.label(), sampleRegistrationRequest.experimentId(),
-        sampleRegistrationRequest.experimentalGroupId(),
+        sampleRegistrationRequest.label(), sampleRegistrationRequest.organismId(),
+        sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
         sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
   }
@@ -105,13 +108,10 @@ public class Sample {
     return this.sampleCode;
   }
 
-  public SampleOrigin sampleOrigin() {
-    return this.sampleOrigin;
-  }
+  public SampleOrigin sampleOrigin() { return this.sampleOrigin; }
 
-  public String label() {
-    return this.label;
-  }
+  public String label() { return this.label; }
+  public String organismId() { return this.organismId; }
 
   public Optional<String> comment() {
     return Optional.ofNullable(comment);
@@ -145,6 +145,8 @@ public class Sample {
   public void setLabel(String label) {
     this.label = label;
   }
+
+  public void setOrganismId(String organismId) { this.organismId = organismId; }
 
   public void setComment(String comment) {
     this.comment = comment;
