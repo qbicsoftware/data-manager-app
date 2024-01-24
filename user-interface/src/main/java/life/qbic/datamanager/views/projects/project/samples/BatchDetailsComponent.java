@@ -78,6 +78,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     batchGrid.addComponentColumn(this::generateEditorButtons).setAutoWidth(true);
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
+    batchGrid.setAllRowsVisible(true);
   }
 
   public void setExperiment(Experiment experiment) {
