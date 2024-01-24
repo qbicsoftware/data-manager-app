@@ -55,7 +55,6 @@ public class ProjectOverviewMain extends Main {
     this.financeService = financeService;
     this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
-    layoutPage();
     configurePage();
     add(projectCollectionComponent);
     addClassName("project-overview");
