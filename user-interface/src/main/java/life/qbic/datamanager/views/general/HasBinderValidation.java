@@ -14,7 +14,9 @@ import com.vaadin.flow.data.binder.ValidationResult;
 public interface HasBinderValidation<T> extends HasValidationProperties {
 
   /**
-   * Specifies the binder used for validation. Must not be null!
+   * Returns a binder used for validation. Must not be null!
+   * <p>
+   * This binder is used for validation.
    *
    * @return the binder used for validation
    */
