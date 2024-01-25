@@ -66,8 +66,6 @@ public class ProjectOverviewPage extends Div {
       addProjectDialog.addCancelListener(it -> it.getSource().close());
       addProjectDialog.open();
     });
-    this.setWidthFull();
-    this.setHeightFull();
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
