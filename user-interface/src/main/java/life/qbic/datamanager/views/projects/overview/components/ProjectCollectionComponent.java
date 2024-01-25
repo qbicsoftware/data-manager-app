@@ -58,7 +58,6 @@ public class ProjectCollectionComponent extends PageArea {
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
 
-  //  @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
       ProjectInformationService projectInformationService) {
     this.title = "Projects";
