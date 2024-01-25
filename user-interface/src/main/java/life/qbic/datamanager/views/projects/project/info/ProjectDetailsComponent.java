@@ -69,8 +69,8 @@ public class ProjectDetailsComponent extends PageArea {
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ContactRepository contactRepository) {
-    requireNonNull(projectInformationService);
-    requireNonNull(experimentInformationService);
+    requireNonNull(projectInformationService, "projectInformationService must not be null");
+    requireNonNull(experimentInformationService, "experimentInformationService must not be null");
     requireNonNull(contactRepository, "contactRepository must not be null");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
