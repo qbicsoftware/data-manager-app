@@ -20,8 +20,6 @@ public final class Contact implements Serializable {
   private String email;
 
   public Contact(String fullName, String email) {
-//    requireNonNull(fullName, "fullName must not be null");
-//    requireNonNull(email, "email must not be null");
     this.fullName = fullName;
     this.email = email;
   }
