@@ -19,6 +19,7 @@ public record SampleUpdateRequest(SampleId sampleId, SampleInformation sampleInf
    * Sample update request.
    * <p>
    * @param sampleLabel          a human-readable semantic descriptor of the sample
+   * @param organismId           optional identifier of the sample's source patient or organism
    * @param analysisMethod       analysis method to be performed
    * @param biologicalReplicate  the biological replicate the sample has been taken from
    * @param experimentalGroup    the experimental group the sample is part of
@@ -27,7 +28,8 @@ public record SampleUpdateRequest(SampleId sampleId, SampleInformation sampleInf
    * @param analyte              the analyte the sample belongs to
    * @param comment              comment relating to the sample
    */
-  public record SampleInformation(String sampleLabel, AnalysisMethod analysisMethod,
+  public record SampleInformation(String sampleLabel, String organismId,
+                                  AnalysisMethod analysisMethod,
                                   BiologicalReplicate biologicalReplicate,
                                   ExperimentalGroup experimentalGroup, OntologyClassDTO species,
                                   OntologyClassDTO specimen, OntologyClassDTO analyte,

@@ -42,6 +42,9 @@ public class SamplePreview {
   private String bioReplicateLabel;
   @Column(name = "label")
   private String sampleLabel;
+
+  @Column(name = "organism_id")
+  private String organismId;
   private String comment;
   @Column(name = "analysis_method")
   private String analysisMethod;
@@ -57,8 +60,8 @@ public class SamplePreview {
   }
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
-      String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
+      String batchLabel, String bioReplicateLabel, String sampleLabel, String organismId,
+      ExperimentalGroup experimentalGroup, OntologyClassDTO species,
       OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
@@ -84,6 +87,7 @@ public class SamplePreview {
     this.analysisMethod = analysisMethod;
     // optional columns
     this.comment = comment;
+    this.organismId = organismId;
   }
 
   /**
@@ -97,6 +101,7 @@ public class SamplePreview {
    * @param bioReplicateLabel the label of the {@link BiologicalReplicate} for the {@link Sample}
    *                          associated with this preview
    * @param sampleLabel       the label of the {@link Sample} associated with this preview
+   * @param organismId        optional identifier of the patient or organism a {@link Sample} was taken of
    * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                          this preview
    * @param species           the {@link OntologyClassDTO} for the species of this {@link Sample}
@@ -112,10 +117,12 @@ public class SamplePreview {
   public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
       String sampleCode,
       String batchLabel, String bioReplicateLabel,
-      String sampleLabel, ExperimentalGroup experimentalGroup, OntologyClassDTO species,
-      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
+      String sampleLabel, String organismId, ExperimentalGroup experimentalGroup,
+      OntologyClassDTO species, OntologyClassDTO specimen, OntologyClassDTO analyte,
+      String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
-        sampleLabel, experimentalGroup, species, specimen, analyte, analysisMethod, comment);
+        sampleLabel, organismId, experimentalGroup, species, specimen, analyte, analysisMethod,
+        comment);
   }
 
   public ExperimentId experimentId() {
@@ -162,6 +169,8 @@ public class SamplePreview {
     return comment;
   }
 
+  public String organismId() { return organismId; }
+
   public ExperimentalGroup experimentalGroup() {
     return experimentalGroup;
   }
@@ -179,7 +188,7 @@ public class SamplePreview {
         sampleCode, that.sampleCode) && Objects.equals(sampleId, that.sampleId)
         && Objects.equals(batchLabel, that.batchLabel) && Objects.equals(
         bioReplicateLabel, that.bioReplicateLabel) && Objects.equals(sampleLabel,
-        that.sampleLabel)
+        that.sampleLabel) && Objects.equals(organismId, that.organismId)
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
         experimentalGroup, that.experimentalGroup) && Objects.equals(analysisMethod,
@@ -189,7 +198,7 @@ public class SamplePreview {
   @Override
   public int hashCode() {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
-        sampleLabel,
+        sampleLabel, organismId,
         species, specimen, analyte, experimentalGroup, analysisMethod, comment);
   }
 
@@ -202,6 +211,7 @@ public class SamplePreview {
         ", batchLabel='" + batchLabel + '\'' +
         ", sampleSource='" + bioReplicateLabel + '\'' +
         ", sampleLabel='" + sampleLabel + '\'' +
+        ", organismId='" + organismId + '\'' +
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +
         ", analyte='" + analyte + '\'' +
