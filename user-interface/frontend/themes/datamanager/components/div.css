@@ -26,9 +26,9 @@
 }
 
 .batch-details-component .editor-buttons {
-  display: flex;
+  display: inline-flex;
   gap: var(--lumo-space-s);
-  justify-content: end;
+  justify-content: start;
 }
 
 .batch-details-component .title-and-controls {
