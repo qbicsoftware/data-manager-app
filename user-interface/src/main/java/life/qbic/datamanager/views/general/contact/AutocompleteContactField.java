@@ -39,6 +39,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
     contactSelection = new ComboBox<>();
     contactSelection.addClassName("contact-selection");
+    contactSelection.setPlaceholder("(Optional) select from existing contacts");
     contactSelection.setAllowCustomValue(false);
     contactSelection.setClearButtonVisible(true);
     contactSelection.setRenderer(new ComponentRenderer<>(AutocompleteContactField::renderContact));
