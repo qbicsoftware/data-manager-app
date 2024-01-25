@@ -52,6 +52,7 @@ public class ProjectOverviewPage extends Div {
       OntologyTermInformationService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       ContactRepository contactRepository) {
+    addClassName("page");
     this.projectCollectionComponent = projectCollectionComponent;
     this.projectCreationService = projectCreationService;
     this.financeService = financeService;
