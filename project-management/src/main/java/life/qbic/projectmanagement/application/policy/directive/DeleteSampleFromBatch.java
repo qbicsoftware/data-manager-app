@@ -14,7 +14,7 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>Directive: Delete Sample to Batch</b>
+ * <b>Directive: Delete Sample from Batch</b>
  * <p>
  * After a sample has been deleted, we need to update the batch and remove
  * the sample reference of the deleted sample.
