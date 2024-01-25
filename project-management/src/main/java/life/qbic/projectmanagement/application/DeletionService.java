@@ -97,19 +97,19 @@ public class DeletionService {
     deletedBatchId.onError(error -> {
       throw new ApplicationException("Could not delete batch " + batchId);
     });
-    deleteSamples(projectId, samples);
+    deleteSamples(projectId, batchId, samples);
     return deletedBatchId.getValue();
   }
 
 
   @Transactional
   public void deleteSamples(
-      ProjectId projectId, Collection<SampleId> samplesCollection) {
+      ProjectId projectId, BatchId batchId, Collection<SampleId> samplesCollection) {
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
       throw new IllegalArgumentException("Could not find project " + projectId);
     }
-    sampleDomainService.deleteSamples(project.get(), samplesCollection);
+    sampleDomainService.deleteSamples(project.get(), batchId, samplesCollection);
   }
 
   /**
