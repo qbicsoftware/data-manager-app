@@ -2,8 +2,8 @@
 
 # Data Manager
 
-Data Manager - A web-based multi-omics data management platform enabling sustainable long-term
-scientific FAIR-compliant data access.
+Data Manager - A web-based multi-omics data management platform for the biomedical life sciences
+that enables FAIR-compliant data access.
 
 **Disclaimer**: _this project is still under heavy development and not yet officially released._
 
@@ -14,6 +14,7 @@ scientific FAIR-compliant data access.
 
 [![license](https://img.shields.io/github/license/qbicsoftware/data-manager-app)](https://github.com/qbicsoftware/data-manager-app/blob/main/LICENSE)
 ![language](https://img.shields.io/badge/language-groovy,%20java-blue.svg)
+[![DOI](https://zenodo.org/badge/468238683.svg)](https://zenodo.org/doi/10.5281/zenodo.10371779)
 
 </div>
 
