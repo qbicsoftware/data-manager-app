@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -19,57 +20,59 @@ public class OntologyClassDTO implements Serializable {
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
 
-  String ontology;
-
-  String ontologyVersion;
-
-  String ontologyIri;
-
-  String label;
-
-  String name;
-
-  String description;
-
-  String classIri;
+  @JsonProperty("ontology") //FIXME should be ontologyAbbreviation in the database and here
+  private String ontologyAbbreviation;
+  @JsonProperty("ontologyVersion")
+  private String ontologyVersion;
+  @JsonProperty("ontologyIri")
+  private String ontologyIri;
+  @JsonProperty("label") //FIXME should be classLabel in the database and here
+  private String classLabel;
+  @JsonProperty("name") //FIXME should be className in the database and here
+  private String className;
+  @JsonProperty("description")
+  private String description;
+  @JsonProperty("classIri")
+  private String classIri;
 
   public OntologyClassDTO() {
   }
 
   /**
-   * @param ontology - the abbreviation of the ontology a class/term belongs
+   * @param ontologyAbbreviation - the abbreviation of the ontology a class/term belongs
    *                             to
    * @param ontologyVersion      - the version of the ontology
    * @param ontologyIri          - the iri of this ontology (e.g. link to the owl)
-   * @param label                - a humanly readable label for the term
-   * @param name                 - the identifier unique for this ontology and term
+   * @param classLabel                - a humanly readable classLabel for the term
+   * @param className                 - the identifier unique for this ontology and term
    *                             (e.g. NCBITaxon_9606)
    * @param description          - an optional description of the term
    * @param classIri             - the iri where this specific class is found/described
    */
-  public OntologyClassDTO(String ontology, String ontologyVersion, String ontologyIri,
-      String label, String name, String description, String classIri) {
-    this.ontology = ontology;
+  public OntologyClassDTO(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
+      String classLabel, String className, String description, String classIri) {
+    this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
-    this.label = label;
-    this.name = name;
+    this.classLabel = classLabel;
+    this.className = className;
     this.description = description;
     this.classIri = classIri;
   }
 
   public static OntologyClassDTO from(OntologyClassEntity lookupEntity) {
-    return new OntologyClassDTO(lookupEntity.getOntology(), lookupEntity.getOntologyVersion(),
-        lookupEntity.getOntologyIri(), lookupEntity.getLabel(), lookupEntity.getName(),
+    return new OntologyClassDTO(lookupEntity.getOntologyAbbreviation(),
+        lookupEntity.getOntologyVersion(),
+        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
   }
 
-  public String getOntology() {
-    return ontology;
+  public String getOntologyAbbreviation() {
+    return ontologyAbbreviation;
   }
 
-  public void setOntology(String ontology) {
-    this.ontology = ontology;
+  public void setOntologyAbbreviation(String ontologyAbbreviation) {
+    this.ontologyAbbreviation = ontologyAbbreviation;
   }
 
   public String getOntologyVersion() {
@@ -89,19 +92,19 @@ public class OntologyClassDTO implements Serializable {
   }
 
   public String getLabel() {
-    return label;
+    return classLabel;
   }
 
   public void setLabel(String termLabel) {
-    this.label = termLabel;
+    this.classLabel = termLabel;
   }
 
   public String getName() {
-    return name;
+    return className;
   }
 
   public void setName(String name) {
-    this.name = name;
+    this.className = name;
   }
 
   public String getDescription() {
@@ -130,30 +133,51 @@ public class OntologyClassDTO implements Serializable {
    * @return a formatted String representing the name and ontology
    */
   public String formatted() {
-    return "%s (%s)".formatted(name,
-        Ontology.findOntologyByAbbreviation(ontology).getName());
+    return "%s (%s)".formatted(className,
+        Ontology.findOntologyByAbbreviation(ontologyAbbreviation).getName());
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object object) {
+    if (this == object) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (object == null || getClass() != object.getClass()) {
       return false;
     }
-    OntologyClassDTO that = (OntologyClassDTO) o;
-    return Objects.equals(ontology, that.ontology) && Objects.equals(
-        ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
-        that.ontologyIri) && Objects.equals(label, that.label) && Objects.equals(
-        name, that.name) && Objects.equals(description, that.description)
-        && Objects.equals(classIri, that.classIri);
+
+    OntologyClassDTO that = (OntologyClassDTO) object;
+
+    if (!Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation)) {
+      return false;
+    }
+    if (!Objects.equals(ontologyVersion, that.ontologyVersion)) {
+      return false;
+    }
+    if (!Objects.equals(ontologyIri, that.ontologyIri)) {
+      return false;
+    }
+    if (!Objects.equals(classLabel, that.classLabel)) {
+      return false;
+    }
+    if (!Objects.equals(className, that.className)) {
+      return false;
+    }
+    if (!Objects.equals(description, that.description)) {
+      return false;
+    }
+    return Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontology, ontologyVersion, ontologyIri, label, name,
-        description, classIri);
+    int result = ontologyAbbreviation != null ? ontologyAbbreviation.hashCode() : 0;
+    result = 31 * result + (ontologyVersion != null ? ontologyVersion.hashCode() : 0);
+    result = 31 * result + (ontologyIri != null ? ontologyIri.hashCode() : 0);
+    result = 31 * result + (classLabel != null ? classLabel.hashCode() : 0);
+    result = 31 * result + (className != null ? className.hashCode() : 0);
+    result = 31 * result + (description != null ? description.hashCode() : 0);
+    result = 31 * result + (classIri != null ? classIri.hashCode() : 0);
+    return result;
   }
-
 }

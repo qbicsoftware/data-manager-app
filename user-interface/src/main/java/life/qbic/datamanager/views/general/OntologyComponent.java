@@ -11,7 +11,8 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
 @Tag(Tag.DIV)
 public class OntologyComponent extends Component implements HasComponents {
   public OntologyComponent(OntologyClassDTO contentDTO) {
-    String ontologyName = Ontology.findOntologyByAbbreviation(contentDTO.getOntology()).getName();
+    String ontologyName = Ontology.findOntologyByAbbreviation(contentDTO.getOntologyAbbreviation())
+        .getName();
 
     addClassName("ontology-component");
 
