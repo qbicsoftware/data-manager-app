@@ -146,7 +146,7 @@ public class ProjectDetailsComponent extends PageArea {
 
     var principalInvestigator = new Div();
     principalInvestigator.add(generateContactContainer(project.getPrincipalInvestigator()));
-    entries.add(new Entry("Project Investigator", "", principalInvestigator));
+    entries.add(new Entry("Principal Investigator", "", principalInvestigator));
 
     var projectResponsible = new Div();
     project.getResponsiblePerson()
