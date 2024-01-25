@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -23,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectAccessMain extends Main {
+public class ProjectAccessMain extends Main implements BeforeEnterObserver {
 
   @Serial
   private static final long serialVersionUID = 4979017702364519296L;

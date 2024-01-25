@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.overview;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -63,11 +62,6 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
-  }
-
-  @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    //Todo Check user permissions to access page?
   }
 
   private void configurePage() {

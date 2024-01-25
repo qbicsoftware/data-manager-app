@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -64,7 +65,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends Main {
+public class SampleInformationMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
