@@ -63,7 +63,7 @@ public class OntologyClassDTO implements Serializable {
   public static OntologyClassDTO from(OntologyClassEntity lookupEntity) {
     return new OntologyClassDTO(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
-        lookupEntity.getOntologyIri(), lookupEntity.getLabel(), lookupEntity.getName(),
+        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
   }
 
