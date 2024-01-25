@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -19,12 +20,19 @@ public class OntologyClassDTO implements Serializable {
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
 
+  @JsonProperty("ontology") //FIXME should be ontologyAbbreviation in the database and here
   private String ontologyAbbreviation;
+  @JsonProperty("ontologyVersion")
   private String ontologyVersion;
+  @JsonProperty("ontologyIri")
   private String ontologyIri;
+  @JsonProperty("label") //FIXME should be classLabel in the database and here
   private String classLabel;
+  @JsonProperty("name") //FIXME should be className in the database and here
   private String className;
+  @JsonProperty("description")
   private String description;
+  @JsonProperty("classIri")
   private String classIri;
 
   public OntologyClassDTO() {
