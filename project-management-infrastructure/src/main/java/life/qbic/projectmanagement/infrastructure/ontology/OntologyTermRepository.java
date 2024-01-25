@@ -20,10 +20,4 @@ public interface OntologyTermRepository extends
       nativeQuery = true)
   Page<OntologyClassEntity> findByLabelFulltextMatching(
       String termFilter, List<String> ontologyAbbreviations, Pageable pageable);
-
-  Page<OntologyClassEntity> findByLabelNotNullAndOntologyAbbreviationIn(List<String> ontologies,
-      Pageable pageable);
-
-  Page<OntologyClassEntity> findByLabelStartingWithIgnoreCaseAndOntologyAbbreviationIn(
-      String filter, List<String> ontology, Pageable pageable);
 }
