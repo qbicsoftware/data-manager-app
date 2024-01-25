@@ -287,6 +287,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::sampleCode);
     sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
         .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
+    sampleGrid.addColumn(SamplePreview::organismId).setHeader("Organism ID")
+        .setSortProperty("organismId").setTooltipGenerator(SamplePreview::organismId);
     sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
         .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
     sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
