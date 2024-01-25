@@ -233,8 +233,14 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     handleOperations(operation);
   }
 
+  /**
+   * Performs a list of provided update operations. Creates a mutable list beforehand, as that is
+   * necessary
+   * @param samplesToUpdate List of SampleUpdate objects containing changes to one or more samples
+   */
   private void updateOpenbisSamples(List<SampleUpdate> samplesToUpdate) {
-    IOperation operation = new UpdateSamplesOperation(samplesToUpdate);
+    List<SampleUpdate> mutableUpdates = new ArrayList<>(samplesToUpdate);
+    IOperation operation = new UpdateSamplesOperation(mutableUpdates);
     handleOperations(operation);
   }
 
@@ -272,6 +278,23 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     sampleCodesToDelete.forEach(code -> deleteOpenbisSample(DEFAULT_SPACE_CODE, code));
   }
 
+  @Override
+  public boolean canDeleteSample(ProjectCode projectCode, SampleCode codeToDelete) {
+    ExperimentFetchOptions fetchOptions = new ExperimentFetchOptions();
+    fetchOptions.withSamplesUsing(fetchSamplesCompletely());
+    for (Experiment experiment : searchExperimentsByProjectCode(projectCode.value(), fetchOptions)) {
+      for (Sample sample : experiment.getSamples()) {
+        String sampleCode = sample.getCode();
+        if (codeToDelete.code().equals(sampleCode)) {
+          if (isSampleWithData(List.of(sample))) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
   /**
    * Recursive method checking child samples for datasets
    */
@@ -297,10 +320,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> samples)
       throws SampleNotUpdatedException {
     try {
-      /*FixMe Throws org.springframework.remoting.RemoteAccessException: Could not access HTTP invoker remote service
-          and invalid stream header: 3C68746D
-      */
-      // updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
+      updateOpenbisSamples(convertSamplesToSampleUpdates(samples));
     } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
           "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
@@ -420,7 +440,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   @Override
   public boolean projectExists(ProjectCode projectCode) {
-    return !searchProjectsByCode(projectCode.toString()).isEmpty();
+    return !searchProjectsByCode(projectCode.value()).isEmpty();
   }
 
   // Convenience RTE to describe connection issues

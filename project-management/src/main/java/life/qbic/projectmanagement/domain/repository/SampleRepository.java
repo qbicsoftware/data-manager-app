@@ -39,4 +39,6 @@ public interface SampleRepository {
   void updateAll(Project project, Collection<Sample> updatedSamples);
 
   List<Sample> findSamplesBySampleId(List<SampleId> sampleId);
+
+  boolean isSampleRemovable(Project project, SampleId sampleId);
 }

@@ -6,13 +6,12 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +31,13 @@ public class OfferList extends PageArea {
     delegateList.setRenderer(new ComponentRenderer<>(this::renderOffer));
     delegateList.setItems(offers);
     Button upload = new Button("Upload", this::onUploadOfferClicked);
-    H2 title = new H2("Offers");
-    Div topBar = new Div(title, upload);
-    topBar.addClassName("top-bar");
-    add(topBar, delegateList);
+    upload.setAriaLabel("Upload");
+    Span title = new Span("Offers");
+    title.addClassName("title");
+    Span header = new Span(title, upload);
+    header.addClassName("header");
+    addClassName("offer-list");
+    add(header, delegateList);
   }
 
   private void onUploadOfferClicked(ClickEvent<Button> clickEvent) {
@@ -62,30 +64,36 @@ public class OfferList extends PageArea {
   private Component renderOffer(OfferInfo offer) {
 
     var offerFileName = new Span(offer.filename());
+    offerFileName.setTitle(offer.filename());
     offerFileName.addClassName("file-name");
 
     var signedInfo = VaadinIcon.CHECK_CIRCLE.create();
     signedInfo.addClassName("signed-info");
     signedInfo.addClassName(offer.signed() ? "signed" : "unsigned");
-
-    var downloadButton = new Button(VaadinIcon.DOWNLOAD_ALT.create(),
+    signedInfo.setTooltipText(offer.signed() ? "signed" : "unsigned");
+    var downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
         event -> onDownloadOfferClicked(
             new DownloadOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    downloadButton.addClassName("download");
-    downloadButton.setThemeName("tertiary");
-
-    var deleteButton = new Button(VaadinIcon.CLOSE.create(), event -> onDeleteOfferClicked(
+    downloadButton.addThemeNames("tertiary-inline", "icon");
+    downloadButton.setAriaLabel("Download");
+    downloadButton.setTooltipText("Download");
+    var deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteOfferClicked(
         new DeleteOfferClickEvent(offer.offerId(), this, event.isFromClient())));
-    deleteButton.addClassName("delete");
-    deleteButton.setThemeName("tertiary");
+    deleteButton.addThemeNames("tertiary-inline", "icon");
+    deleteButton.setTooltipText("Delete");
+    deleteButton.setAriaLabel("Delete");
 
-    var fileInfo = new Div();
+    Span offerActionControls = new Span(downloadButton, deleteButton);
+    offerActionControls.addClassName("controls");
+
+    var fileIcon = VaadinIcon.FILE.create();
+    fileIcon.addClassName("file-icon");
+    Span fileInfo = new Span(fileIcon, offerFileName, signedInfo);
     fileInfo.addClassName("file-info");
-    fileInfo.add(offerFileName, signedInfo);
 
-    Div offerListItem = new Div();
+    Span offerListItem = new Span();
     offerListItem.addClassName("offer-info");
-    offerListItem.add(fileInfo, downloadButton, deleteButton);
+    offerListItem.add(fileInfo, offerActionControls);
 
     return offerListItem;
   }
