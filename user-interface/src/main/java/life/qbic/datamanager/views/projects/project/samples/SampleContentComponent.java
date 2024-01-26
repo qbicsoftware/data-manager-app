@@ -40,7 +40,6 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -74,7 +73,7 @@ public class SampleContentComponent extends Div {
   private final transient SampleInformationService sampleInformationService;
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
-  private final BatchDetailsComponent batchDetailsComponent;
+  private final transient BatchDetailsComponent batchDetailsComponent;
 
   public SampleContentComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
@@ -119,9 +118,7 @@ public class SampleContentComponent extends Div {
   public void setContext(Context context) {
     this.context = context;
     ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    batchDetailsComponent.setExperiment(
-        experimentInformationService.find(experimentId).orElseThrow());
+    batchDetailsComponent.setContext(context);
     projectInformationService.find(projectId)
         .ifPresentOrElse(
             project -> {
@@ -170,7 +167,6 @@ public class SampleContentComponent extends Div {
     setContext(context);
   }
 
-
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();
     List<SampleInfo> samples = confirmEvent.getData().samples();
@@ -199,7 +195,7 @@ public class SampleContentComponent extends Div {
     List<SampleRegistrationRequest> sampleRegistrationRequests;
     sampleRegistrationRequests = sampleInfos.stream()
         .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleLabel(),
+            sample.getSampleLabel(), sample.getOrganismId(),
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
@@ -214,10 +210,10 @@ public class SampleContentComponent extends Div {
   private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
       SampleInfo sampleInfo) {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleLabel(), sampleInfo.getAnalysisToBePerformed(),
-        sampleInfo.getBiologicalReplicate(), sampleInfo.getExperimentalGroup(),
-        sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
-        sampleInfo.getCustomerComment()));
+        sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
+        sampleInfo.getAnalysisToBePerformed(), sampleInfo.getBiologicalReplicate(),
+        sampleInfo.getExperimentalGroup(), sampleInfo.getSpecies(), sampleInfo.getSpecimen(),
+        sampleInfo.getAnalyte(), sampleInfo.getCustomerComment()));
   }
 
   private void displayUpdateSuccess() {
@@ -289,7 +285,7 @@ public class SampleContentComponent extends Div {
                 .equals(sample.biologicalReplicateId())).findFirst().orElseThrow();
     return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
         sample.sampleCode(), sample.analysisMethod(),
-        sample.label(),
+        sample.label(), sample.organismId(),
         biologicalReplicate, experimentalGroup, sample.sampleOrigin()
             .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
         sample.comment().orElse(""));

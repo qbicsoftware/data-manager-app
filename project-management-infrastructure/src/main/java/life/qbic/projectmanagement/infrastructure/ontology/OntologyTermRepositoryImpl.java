@@ -38,7 +38,7 @@ public class OntologyTermRepositoryImpl implements OntologyTermRepository {
 
   @Override
   public List<OntologyClassEntity> find(String name) {
-    return ontologyTermRepo.findOntologyTermByName(name);
+    return ontologyTermRepo.findOntologyClassEntitiesByClassName(name);
   }
 
   @Override

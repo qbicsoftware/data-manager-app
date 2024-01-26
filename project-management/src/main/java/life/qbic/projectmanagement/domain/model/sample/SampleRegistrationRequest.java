@@ -10,6 +10,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  * Serves as a parameter object for sample creation.
  *
  * @param label               a human-readable semantic descriptor of the sample
+ * @param organismId          optional identifier of the patient or organism a sample was taken of
  * @param assignedBatch       the assigned batch
  * @param experimentId        the experiment reference
  * @param experimentalGroupId the experimental group id the sample is part of
@@ -17,19 +18,20 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  * @param sampleOrigin        information about the sample origin.
  * @param analysisMethod      analysis method to be performed
  * @param comment             comment relating to the sample
+ *
  * @since 1.0.0
  */
-public record SampleRegistrationRequest(String label, BatchId assignedBatch,
+public record SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
                                         ExperimentId experimentId, Long experimentalGroupId,
                                         BiologicalReplicateId replicateReference,
                                         SampleOrigin sampleOrigin, AnalysisMethod analysisMethod,
                                         String comment) {
 
-  public SampleRegistrationRequest(String label, BatchId assignedBatch, ExperimentId experimentId,
-      Long experimentalGroupId, BiologicalReplicateId replicateReference,
-      SampleOrigin sampleOrigin, AnalysisMethod analysisMethod,
-      String comment) {
+  public SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
+      ExperimentId experimentId, Long experimentalGroupId, BiologicalReplicateId replicateReference,
+      SampleOrigin sampleOrigin, AnalysisMethod analysisMethod, String comment) {
     this.label = Objects.requireNonNull(label);
+    this.organismId = organismId;
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.experimentId = Objects.requireNonNull(experimentId);
     this.experimentalGroupId = Objects.requireNonNull(experimentalGroupId);
@@ -39,6 +41,5 @@ public record SampleRegistrationRequest(String label, BatchId assignedBatch,
     this.comment = comment;
 
   }
-
 
 }

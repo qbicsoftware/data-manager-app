@@ -36,9 +36,11 @@ import life.qbic.projectmanagement.application.communication.broadcasting.Messag
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
+import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
@@ -195,6 +197,13 @@ public class AppConfig {
       BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
     var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
     return new SampleRegisteredPolicy(addSampleToBatch);
+  }
+
+  @Bean
+  public SampleDeletedPolicy sampleDeletedPolicy(BatchRegistrationService batchRegistrationService,
+      JobScheduler jobScheduler) {
+    var deleteSampleFromBatch = new DeleteSampleFromBatch(batchRegistrationService, jobScheduler);
+    return new SampleDeletedPolicy(deleteSampleFromBatch);
   }
 
   @Bean

@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.create;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -16,6 +15,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
@@ -26,7 +27,8 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  * <p>Layout which enables the user to input the information associated with an {@link Experiment}
  * during project creation and validates the provided information</p>
  */
-public class ExperimentalInformationLayout extends Div implements HasValidation {
+public class ExperimentalInformationLayout extends Div implements
+    HasBinderValidation<ExperimentalInformation> {
 
   private final Binder<ExperimentalInformation> experimentalInformationBinder;
 
@@ -96,54 +98,17 @@ public class ExperimentalInformationLayout extends Div implements HasValidation 
     // provided instead of a failure.
   }
 
-  /**
-   * Sets an error message to the component.
-   * <p>
-   * The Web Component is responsible for deciding when to show the error message to the user, and
-   * this is usually triggered by triggering the invalid state for the Web Component. Which means
-   * that there is no need to clean up the message when component becomes valid (otherwise it may
-   * lead to undesired visual effects).
-   *
-   * @param errorMessage a new error message
-   */
+
   @Override
-  public void setErrorMessage(String errorMessage) {
-    /* Unused since we are only interested in the final values stored in the component*/
+  public Binder<ExperimentalInformation> getBinder() {
+    return experimentalInformationBinder;
   }
 
-  /**
-   * Gets current error message from the component.
-   *
-   * @return current error message
-   */
   @Override
-  public String getErrorMessage() {
-    return "Invalid Input found in Experiment Information";
+  public String getDefaultErrorMessage() {
+    return "Invalid input found in Experiment Information";
   }
 
-  /**
-   * Sets the validity of the component input.
-   * <p>
-   * When component becomes valid it hides the error message by itself, so there is no need to clean
-   * up the error message via the {@link #setErrorMessage(String)} call.
-   *
-   * @param invalid new value for component input validity
-   */
-  @Override
-  public void setInvalid(boolean invalid) {
-    /* Unused since we are only interested in the final values stored in the component*/
-  }
-
-  /**
-   * Returns {@code true} if component input is invalid, {@code false} otherwise.
-   *
-   * @return whether the component input is valid
-   */
-  @Override
-  public boolean isInvalid() {
-    experimentalInformationBinder.validate();
-    return !experimentalInformationBinder.isValid();
-  }
 
   public static class ExperimentalInformation implements Serializable {
 

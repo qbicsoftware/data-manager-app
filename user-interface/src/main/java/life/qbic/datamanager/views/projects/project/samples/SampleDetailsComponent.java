@@ -66,8 +66,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final Grid<SamplePreview> sampleGrid;
-  private final ExperimentInformationService experimentInformationService;
-  private final SampleInformationService sampleInformationService;
+  private final transient ExperimentInformationService experimentInformationService;
+  private final transient SampleInformationService sampleInformationService;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -193,10 +193,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     if (context.projectId().isEmpty()) {
       throw new ApplicationException("no project id in context " + context);
     }
-
     this.context = context;
-    ExperimentId experimentId = context.experimentId()
-        .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
+    ExperimentId experimentId = context.experimentId().get();
     setExperiment(experimentInformationService.find(experimentId).orElseThrow());
   }
 
@@ -287,6 +285,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::sampleCode);
     sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
         .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
+    sampleGrid.addColumn(SamplePreview::organismId).setHeader("Organism ID")
+        .setSortProperty("organismId").setTooltipGenerator(SamplePreview::organismId);
     sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
         .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
     sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
