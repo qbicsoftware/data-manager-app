@@ -87,6 +87,13 @@ vaadin-dialog-overlay::part(title) {
   height: 100%
 }
 
+.batch-registration-dialog::part(content),
+.batch-update-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
 .batch-update-dialog::part(overlay),
 .batch-registration-dialog::part(overlay) {
   min-width: 80vw;
@@ -100,12 +107,32 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bolder;
 }
 
-.batch-update-dialog .spreadsheet-controls,
-.batch-registration-dialog .spreadsheet-controls {
+.batch-registration-dialog .prefill-section {
   display: flex;
   justify-content: space-between;
-  align-content: baseline;
-  flex-direction: row-reverse;
+  align-items: center;
+}
+
+.batch-registration-dialog .spreadsheet-container,
+.batch-update-dialog .spreadsheet-container {
+  display: flex;
+  flex-direction: column;
+  column-gap: var(--lumo-space-s);
+  margin-top: var(--lumo-space-m);
+}
+
+.batch-registration-dialog .spreadsheet-header,
+.batch-update-dialog .spreadsheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-update-dialog .spreadsheet-controls,
+.batch-registration-dialog .spreadsheet-controls {
+  display: inline-flex;
+  column-gap: 0.5em;
+  justify-content: end;
 }
 
 .batch-update-dialog .spreadsheet-controls .error-text,
@@ -116,13 +143,6 @@ vaadin-dialog-overlay::part(title) {
 .batch-update-dialog .batch-controls > .batch-name-field,
 .batch-registration-dialog .batch-controls > .batch-name-field {
   width: calc(100% / 3);
-}
-
-.batch-update-dialog .spreadsheet-controls .row-controls,
-.batch-registration-dialog .spreadsheet-controls .row-controls {
-  display: inline-flex;
-  column-gap: 0.5em;
-  justify-content: end;
 }
 
 .add-experiment-dialog::part(overlay),
