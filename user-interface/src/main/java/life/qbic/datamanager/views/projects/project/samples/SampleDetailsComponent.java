@@ -101,7 +101,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     experimentTabContent.addClassName("sample-tab-content");
     experimentTab = new SampleExperimentTab("", 0);
 
-    sampleGrid = createSampleGrid(); //TODO sampleGrid not usable, to little height left
+    sampleGrid = createSampleGrid();
 
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
