@@ -1,6 +1,5 @@
 .main {
   display: grid;
-  gap: 1rem 1px;
   height: 100%;
 }
 
@@ -21,7 +20,6 @@
   grid-template-areas:
     "projectdetails experimentlist"
     "projectdetails projectlinks";
-  gap: var(--lumo-space-s);
 }
 
 .main.project .project-details-component {
