@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.create;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -15,12 +14,15 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
+import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.finances.api.OfferSummary;
@@ -37,7 +39,7 @@ import org.springframework.stereotype.Component;
  * during project creation and validates the provided information</p>
  */
 @Component
-public class ProjectDesignLayout extends Div implements HasValidation {
+public class ProjectDesignLayout extends Div implements HasBinderValidation<ProjectDesign> {
 
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
@@ -176,25 +178,25 @@ public class ProjectDesignLayout extends Div implements HasValidation {
   }
 
 
+  /**
+   * Returns the project design. Fails for invalid designs with an exception.
+   *
+   * @return a valid project design
+   */
   public ProjectDesign getProjectDesign() {
     ProjectDesign projectDesign = new ProjectDesign();
-    projectDesignBinder.writeBeanIfValid(projectDesign);
+    try {
+      projectDesignBinder.writeBean(projectDesign);
+    } catch (ValidationException e) {
+      throw new RuntimeException("Tried to access invalid project design.", e);
+    }
     return projectDesign;
   }
 
-  /**
-   * Sets an error message to the component.
-   * <p>
-   * The Web Component is responsible for deciding when to show the error message to the user, and
-   * this is usually triggered by triggering the invalid state for the Web Component. Which means
-   * that there is no need to clean up the message when component becomes valid (otherwise it may
-   * lead to undesired visual effects).
-   *
-   * @param errorMessage a new error message
-   */
+
   @Override
-  public void setErrorMessage(String errorMessage) {
-    /* Unused since we are only interested in the final values stored in the component*/
+  public Binder<ProjectDesign> getBinder() {
+    return projectDesignBinder;
   }
 
   /**
@@ -203,33 +205,10 @@ public class ProjectDesignLayout extends Div implements HasValidation {
    * @return current error message
    */
   @Override
-  public String getErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Invalid Input found in Project Design";
   }
 
-  /**
-   * Sets the validity of the component input.
-   * <p>
-   * When component becomes valid it hides the error message by itself, so there is no need to clean
-   * up the error message via the {@link #setErrorMessage(String)} call.
-   *
-   * @param invalid new value for component input validity
-   */
-  @Override
-  public void setInvalid(boolean invalid) {
-    /* Unused since we are only interested in the final values stored in the component*/
-  }
-
-  /**
-   * Returns {@code true} if component input is invalid, {@code false} otherwise.
-   *
-   * @return whether the component input is valid
-   */
-  @Override
-  public boolean isInvalid() {
-    projectDesignBinder.validate();
-    return !projectDesignBinder.isValid();
-  }
 
   public static final class ProjectDesign implements Serializable {
 

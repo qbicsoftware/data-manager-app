@@ -41,14 +41,15 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
   private String buildSearchTerm(String searchString) {
     StringBuilder searchTermBuilder = new StringBuilder();
     for(String word : searchString.split(" ")) {
-      searchTermBuilder.append(" +" + word);
+      searchTermBuilder.append(" +").append(word);
     }
     searchTermBuilder.append("*");
     return searchTermBuilder.toString().trim();
   }
 
   @Override
-  public List<OntologyClassEntity> query(String searchString, List<String> ontologyAbbreviations,
+  public List<OntologyClassEntity> query(String searchString,
+      List<String> ontologyAbbreviations,
       int offset,
       int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {

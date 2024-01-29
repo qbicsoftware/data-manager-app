@@ -132,9 +132,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   public void setContext(Context context) {
     this.context = context;
     ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    batchDetailsComponent.setExperiment(
-        experimentInformationService.find(experimentId).orElseThrow());
+    batchDetailsComponent.setContext(context);
     projectInformationService.find(projectId)
         .ifPresentOrElse(
             project -> {
@@ -204,7 +202,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     List<SampleRegistrationRequest> sampleRegistrationRequests;
     sampleRegistrationRequests = sampleInfos.stream()
         .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleLabel(),
+            sample.getSampleLabel(), sample.getOrganismId(),
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
@@ -219,7 +217,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
       SampleInfo sampleInfo) {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleLabel(), sampleInfo.getAnalysisToBePerformed(),
+        sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
+        sampleInfo.getAnalysisToBePerformed(),
         sampleInfo.getBiologicalReplicate(), sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
         sampleInfo.getCustomerComment()));
@@ -295,7 +294,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
                 .equals(sample.biologicalReplicateId())).findFirst().orElseThrow();
     return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
         sample.sampleCode(), sample.analysisMethod(),
-        sample.label(),
+        sample.label(), sample.organismId(),
         biologicalReplicate, experimentalGroup, sample.sampleOrigin()
             .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
         sample.comment().orElse(""));

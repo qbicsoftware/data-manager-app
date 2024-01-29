@@ -8,12 +8,14 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +67,7 @@ public class SampleDomainService {
                     sampleUpdateRequest -> sampleUpdateRequest.sampleId().equals(sample.sampleId()))
                 .findFirst().orElseThrow();
             sample.setLabel(sampleInfo.sampleInformation().sampleLabel());
+          sample.setOrganismId(sampleInfo.sampleInformation().organismId());
             sample.setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
             sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
                 sampleInfo.sampleInformation().specimen(),
@@ -77,10 +80,16 @@ public class SampleDomainService {
         sampleRepository.updateAll(project, samplesToUpdate);
     }
 
-    public void deleteSamples(Project project,
+  public void deleteSamples(Project project, BatchId batchId,
         Collection<SampleId> samples) {
         Objects.requireNonNull(samples);
         sampleRepository.deleteAll(project, samples);
+    samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
+  }
+
+  private void dispatchSuccessfulSampleDeletion(SampleId sampleId, BatchId batchId) {
+    SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId);
+    DomainEventDispatcher.instance().dispatch(sampleDeleted);
     }
 
     private void dispatchSuccessfulSampleRegistration(Sample sample) {

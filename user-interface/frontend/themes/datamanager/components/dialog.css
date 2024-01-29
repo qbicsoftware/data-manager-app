@@ -167,6 +167,12 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+.contact-field .contact-selection,
+.contact-field .input-fields,
+.contact-field .input-fields > * {
+  width: 100%;
+}
+
 .edit-project-dialog .form-content .contact-field .name-field {
   flex-grow: 1;
 }
@@ -262,7 +268,7 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-l);
 }
 
-.project-creation-dialog::part(content) {
+.add-project-dialog::part(content) {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -271,25 +277,23 @@ vaadin-dialog-overlay::part(title) {
   padding: 0;
 }
 
-.project-creation-dialog::part(overlay) {
-  width: 100%;
+.add-project-dialog::part(overlay) {
+  width: 66%;
   height: 100%;
-  max-width: 66%;
-  max-height: 100%
 }
 
-.project-creation-dialog::part(footer) {
+.add-project-dialog::part(footer) {
   background-color: transparent;
   justify-content: space-between;
   padding-inline: 4rem;
 }
 
-.project-creation-dialog .footer-right-buttons-container {
+.add-project-dialog .footer-right-buttons-container {
   gap: var(--lumo-space-m);
   display: inline-flex;
 }
 
-.project-creation-dialog .collaborators-layout {
+.add-project-dialog .collaborators-layout {
   width: 100%;
   height: 100%;
   gap: 1em;
@@ -297,38 +301,27 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
-.project-creation-dialog .layout-container {
+.add-project-dialog .layout-container {
   /*dialog content paddings*/
   height: 100%;
   padding: 1rem 4rem 3rem 4rem
 }
 
-.project-creation-dialog .collaborators-layout {
-  gap: var(--lumo-space-m);
-  display: inline-flex;
-}
-
-.project-creation-dialog .collaborators-layout .contact-field .name-field {
-  width: 100%;
-}
-
-.project-creation-dialog .collaborators-layout .contact-field .email-field {
-  width: 100%;
-}
-
-.project-creation-dialog .experiment-information-layout{
+.add-project-dialog .experiment-information-layout {
   width: 100%;
   height: 100%;
   gap: 1em;
+  /*gap: var(--lumo-space-m)*/
   display: flex;
+  /*display: inline-flex:*/
   flex-direction: column;
 }
 
-.project-creation-dialog .experiment-information-layout .experiment-name-field {
+.add-project-dialog .experiment-information-layout .experiment-name-field {
   width: 50%
 }
 
-.project-creation-dialog .funding-information-layout {
+.add-project-dialog .funding-information-layout {
   width: 100%;
   height: 100%;
   gap: 1em;
@@ -336,17 +329,18 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
-.project-creation-dialog .funding-information-layout .funding-field .grant-label-field {
+.add-project-dialog
+.add-project-dialog .funding-information-layout .funding-field .grant-label-field {
   min-width: 15vw;
 }
 
-.project-creation-dialog .funding-information-layout .funding-field .input-fields {
+.add-project-dialog .funding-information-layout .funding-field .input-fields {
   width: 100%;
   gap: var(--lumo-space-xl);
   display: inline-flex;
 }
 
-.project-creation-dialog .project-design-layout {
+.add-project-dialog .project-design-layout {
   width: 100%;
   height: 100%;
   gap: 1em;
@@ -354,26 +348,26 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
-.project-creation-dialog .project-design-layout .description-field {
+.add-project-dialog .project-design-layout .description-field {
   height: 100%;
   width: 100%;
   min-height: 15vh;
 }
 
-.project-creation-dialog .project-design-layout .title-field {
+.add-project-dialog .project-design-layout .title-field {
   width: 100%;
   margin-left: var(--lumo-space-m);
 }
 
-.project-creation-dialog .project-design-layout .code-field {
+.add-project-dialog .project-design-layout .code-field {
   max-width: 20%;
 }
 
-.project-creation-dialog .project-design-layout .search-field {
+.add-project-dialog .project-design-layout .search-field {
   max-width: 30%;
 }
 
-.project-creation-dialog .project-design-layout .code-and-title {
+.add-project-dialog .project-design-layout .code-and-title {
   width: 100%;
   gap: var(--lumo-space-s);
   display: inline-flex;

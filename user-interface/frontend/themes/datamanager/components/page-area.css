@@ -1,4 +1,8 @@
 /* All custom css for components which extend the page-area component go in here! */
+.page {
+  height: 100%;
+  width: 100%;
+}
 
 .page-area {
   background-color: var(--lumo-base-color);

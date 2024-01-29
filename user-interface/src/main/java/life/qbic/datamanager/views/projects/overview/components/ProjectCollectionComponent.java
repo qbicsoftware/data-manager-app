@@ -13,8 +13,7 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -30,7 +29,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import life.qbic.projectmanagement.application.SortOrder;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * <b>Project Collection</b>
@@ -42,8 +41,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @since 1.0.0
  */
-@SpringComponent
-@UIScope
+@Component
+@RouteScope
 public class ProjectCollectionComponent extends PageArea {
 
   private final Div header = new Div();
@@ -57,7 +56,6 @@ public class ProjectCollectionComponent extends PageArea {
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
 
-  @Autowired
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
       ProjectInformationService projectInformationService) {
     this.clientDetailsProvider = clientDetailsProvider;
@@ -150,7 +148,8 @@ public class ProjectCollectionComponent extends PageArea {
    * @param listener a listener that should be called
    * @since 1.0.0
    */
-  public void addListener(ComponentEventListener<ProjectCreationSubmitEvent> listener) {
+  public void addCreateClickedListener(
+      ComponentEventListener<ProjectCreationSubmitEvent> listener) {
     Objects.requireNonNull(listener);
     addListener(ProjectCreationSubmitEvent.class, listener);
   }

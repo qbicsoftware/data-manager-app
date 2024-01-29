@@ -7,6 +7,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +35,12 @@ public class Batch {
   @Column(name = "isPilot")
   private boolean pilot;
 
+  @Column(name = "lastModified")
+  private Instant lastModified;
+
+  @Column(name = "createdOn")
+  private Instant createdOn;
+
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "sample_batches_sampleid", joinColumns = @JoinColumn(name = "batch_id"))
   private List<SampleId> sampleIds;
@@ -47,6 +54,8 @@ public class Batch {
     this.label = Objects.requireNonNull(label);
     this.sampleIds = Objects.requireNonNull(sampleIds.stream().toList());
     this.pilot = isPilot;
+    this.lastModified = Instant.now();
+    this.createdOn = Instant.now();
   }
 
   /**
@@ -78,17 +87,22 @@ public class Batch {
 
   public void addSample(SampleId sampleId) {
     this.sampleIds.add(sampleId);
+    this.lastModified = Instant.now();
   }
 
   public void removeSample(SampleId sampleToRemove) {
     this.sampleIds.remove(sampleToRemove);
+    this.lastModified = Instant.now();
   }
 
   public void setLabel(String label) {
     this.label = label;
+    this.lastModified = Instant.now();
   }
+
   public void setPilot(boolean pilot) {
     this.pilot = pilot;
+    this.lastModified = Instant.now();
   }
 
 
@@ -103,6 +117,19 @@ public class Batch {
   public boolean isPilot() {
     return pilot;
   }
+
+  public Instant lastModified() {
+    return lastModified;
+  }
+
+  public Instant createdOn() {
+    return createdOn;
+  }
+
+  public List<SampleId> samples() {
+    return sampleIds;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -119,5 +146,17 @@ public class Batch {
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  @Override
+  public String toString() {
+    return "Batch{" +
+        "id=" + id +
+        ", label='" + label + '\'' +
+        ", pilot=" + pilot +
+        ", lastModified=" + lastModified +
+        ", createdOn=" + createdOn +
+        ", sampleIds=" + sampleIds +
+        '}';
   }
 }

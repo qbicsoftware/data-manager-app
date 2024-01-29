@@ -19,9 +19,5 @@ public interface OntologyTermRepository extends
       countQuery = "SELECT count(*) FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2);",
       nativeQuery = true)
   Page<OntologyClassEntity> findByLabelFulltextMatching(
-      String termFilter, List<String> ontology, Pageable pageable);
-
-  Page<OntologyClassEntity> findByLabelNotNullAndOntologyIn(List<String> ontologies, Pageable pageable);
-
-  Page<OntologyClassEntity> findByLabelStartingWithIgnoreCaseAndOntologyIn(String filter, List<String> ontology, Pageable pageable);
+      String termFilter, List<String> ontologyAbbreviations, Pageable pageable);
 }
