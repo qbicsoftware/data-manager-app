@@ -24,10 +24,13 @@ public class SamplePropertyAttributeConverter implements AttributeConverter<Hash
   @Override
   public HashMap<String, String> convertToEntityAttribute(String dbData) {
     try {
-      return objectMapper.readValue(dbData, HashMap.class);
+      if (dbData == null) {
+        return new HashMap<>();
+      } else {
+        return objectMapper.readValue(dbData, HashMap.class);
+      }
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
   }
-
 }
