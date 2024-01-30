@@ -17,5 +17,5 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface QbicOntologyTermRepo extends CrudRepository<OntologyClassEntity, Long> {
 
-  List<OntologyClassEntity> findOntologyTermByName(String name);
+  List<OntologyClassEntity> findOntologyClassEntitiesByClassName(String name);
 }

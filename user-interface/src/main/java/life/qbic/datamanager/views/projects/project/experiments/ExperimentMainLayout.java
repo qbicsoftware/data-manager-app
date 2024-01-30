@@ -21,7 +21,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * a project. It provides an app drawer within which the {@link ProjectSideNavigationComponent}
  * allows the user to navigate within the selected project. </b> Additionally it provides a navbar
  * which provides buttons to toggle the app drawer, for logout purposes and for routing back to the
- * home {@link ProjectOverviewPage} view. Finally, it provides a dedicated navbar
+ * home {@link ProjectOverviewMain} view. Finally, it provides a dedicated navbar
  * {@link ExperimentNavigationComponent} which allows the user to navigate within the pages of an
  * experiment.
  */
@@ -176,7 +176,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void routeToProjectOverview() {
-    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewPage.class));
+    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewMain.class));
     log.debug("Routing to ProjectOverview page");
   }
 

@@ -7,10 +7,7 @@ import life.qbic.projectmanagement.application.sample.SampleRegistrationService
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.model.sample.*
 import life.qbic.projectmanagement.domain.service.SampleDomainService
@@ -64,7 +61,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "Valid SampleRegistrationRequests returns a Result with the list of registered Samples"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyClassDTO(), new OntologyClassDTO(), new OntologyClassDTO())
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label","my patient", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", "my patient", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
@@ -87,7 +84,7 @@ class SampleRegistrationServiceSpec extends Specification {
     def "If project cannot be found, valid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
         SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyClassDTO(), new OntologyClassDTO(), new OntologyClassDTO())
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label","my patient", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", "my patient", BatchId.create(), ExperimentId.create(), 4, BiologicalReplicateId.create(), sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)

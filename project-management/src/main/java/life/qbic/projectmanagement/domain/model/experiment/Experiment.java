@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
@@ -18,7 +17,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 
@@ -43,13 +41,15 @@ public class Experiment {
   private ExperimentalDesign experimentalDesign;
 
   @ElementCollection(targetClass = OntologyClassDTO.class)
-  @Convert(converter = OntologyClassAttributeConverter.class)
+  @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analyte`))")
+  //FIXME should be `analyte`in the database and here
   private List<OntologyClassDTO> analytes = new ArrayList<>();
   @ElementCollection(targetClass = OntologyClassDTO.class)
-  @Convert(converter = OntologyClassAttributeConverter.class)
+  @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
   private List<OntologyClassDTO> species = new ArrayList<>();
   @ElementCollection(targetClass = OntologyClassDTO.class)
-  @Convert(converter = OntologyClassAttributeConverter.class)
+  @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimen`))")
+  //FIXME should be `specimen`in the database and here
   private List<OntologyClassDTO> specimens = new ArrayList<>();
 
 

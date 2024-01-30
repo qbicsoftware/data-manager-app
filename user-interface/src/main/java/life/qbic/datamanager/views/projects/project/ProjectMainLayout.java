@@ -13,7 +13,7 @@ import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * project. It provides an app drawer within which the {@link ProjectSideNavigationComponent} allows
  * the user to navigate within the selected project. </b> Additionally it provides a navbar which
  * provides buttons to toggle the app drawer, for logout purposes and for routing back to the home
- * {@link ProjectOverviewPage} view
+ * {@link ProjectOverviewMain} view
  *
  */
 @PageTitle("Data Manager")

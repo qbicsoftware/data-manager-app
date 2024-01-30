@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.application.sample;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -56,11 +55,8 @@ public class SamplePreview {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO species;
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO specimen;
-  @Convert(converter = OntologyClassAttributeConverter.class)
   private OntologyClassDTO analyte;
   @Convert(converter = SamplePropertyAttributeConverter.class)
   private HashMap<String, String> properties;

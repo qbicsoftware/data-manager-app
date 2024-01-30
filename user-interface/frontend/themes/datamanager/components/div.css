@@ -1,42 +1,3 @@
-.batch-details-component {
-  background-color: var(--lumo-base-color);
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
-  margin: var(--lumo-space-s);
-  padding: var(--lumo-space-m);
-  flex-direction: column;
-  display: flex;
-  gap: var(--lumo-space-m);
-  min-width: 500px;
-  min-height: 250px;
-  margin-left: auto;
-  height: 25vh;
-  width: 40vw;
-}
-
-.batch-details-component .content {
-  width: 100%;
-  height: 100%
-}
-
-.batch-details-component .batch-grid {
-  width: 100%;
-  height: 100%;
-}
-
-.batch-details-component .editor-buttons {
-  display: inline-flex;
-  gap: var(--lumo-space-s);
-  justify-content: start;
-}
-
-.batch-details-component .title-and-controls {
-  display: inline-flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
 .ontology-component {
   display: flex;
 }
@@ -80,14 +41,6 @@
   margin-bottom: 0.5rem;
 }
 
-/* Support section formatting and components */
-
-.experiment-item-collection {
-  display: flex;
-  gap: var(--lumo-space-s);
-  flex-flow: column;
-}
-
 .experiment-navigation-component {
   width: 100%;
   margin: var(--lumo-space-s);
@@ -100,29 +53,6 @@
 .experiment-navigation-component .experiment-navigation-tabs .arrow-tab {
   align-items: end;
   color: var(--lumo-contrast-60pct);
-}
-
-.project-collection {
-  display: flex;
-  gap: 1rem;
-  height: 100%;
-  flex-flow: column;
-}
-
-.project-collection .controls {
-  display: flex;
-  align-content: space-between;
-  gap: 1rem;
-}
-
-.project-collection .projects-grid {
-  height: 100%;
-  width: 100%;
-}
-
-.project-collection .projects-grid-section {
-  height: 100%;
-  width: 100%;
 }
 
 .project-creation-stepper-arrow {
@@ -138,7 +68,6 @@
   /*Employ same padding as defined for dialog layout*/
   padding-inline: 4rem;
 }
-
 
 .stepper .step {
   display: flex;
