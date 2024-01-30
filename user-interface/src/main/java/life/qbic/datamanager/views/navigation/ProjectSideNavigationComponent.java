@@ -29,7 +29,7 @@ import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewPage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -241,7 +241,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private static void routeToProjectOverview() {
     //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
     Optional.ofNullable(UI.getCurrent())
-        .ifPresentOrElse(ui -> ui.navigate(ProjectOverviewPage.class),
+        .ifPresentOrElse(ui -> ui.navigate(ProjectOverviewMain.class),
             () -> {
               throw new ApplicationException("No UI present for project navigation");
             });

@@ -31,6 +31,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
@@ -45,7 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Batch Details Component
  * <p>
- * Component embedded within the {@link SampleDetailsComponent} in the {@link SampleInformationMain}
+ * Component embedded within the {@link SampleInformationMain}
  * It allows the user to see the information associated for each {@link Batch} of each
  * {@link Experiment within a {@link Project} Additionally it enables the user to trigger the edit
  * and deletion of the {@link Batch}
@@ -53,7 +54,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class BatchDetailsComponent extends Div implements Serializable {
+public class BatchDetailsComponent extends PageArea implements Serializable {
+
   private final Span titleAndControls = new Span();
   private final Span title = new Span("Batches");
   @Serial
@@ -119,6 +121,7 @@ public class BatchDetailsComponent extends Div implements Serializable {
         .setHeader("Action");
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
+    batchGrid.setAllRowsVisible(true);
   }
 
   public void setContext(Context context) {

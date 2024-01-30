@@ -7,10 +7,7 @@ import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.model.sample.*
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered

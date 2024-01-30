@@ -38,8 +38,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     collaboratorsBinder.setBean(new ProjectCollaborators());
     collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);
 
-
-
     principalInvestigatorField = new AutocompleteContactField("Principal Investigator");
     principalInvestigatorField.setRequired(true);
     collaboratorsBinder.forField(principalInvestigatorField)
@@ -47,7 +45,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
         .withValidator(it -> principalInvestigatorField.validate().isValid(), "")
         .bind(ProjectCollaborators::getPrincipalInvestigator,
             ProjectCollaborators::setPrincipalInvestigator);
-
 
     responsiblePersonField = new ContactField("Project Responsible/Co-Investigator (optional)");
     responsiblePersonField.setRequired(false);
@@ -68,7 +65,8 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
 
     Span projectContactsTitle = new Span("Project Collaborators");
     projectContactsTitle.addClassName("title");
-    Span projectContactsDescription = new Span("Add the names and email address of the important contact people of the project.");
+    Span projectContactsDescription = new Span(
+        "Add the names and email address of the important contact people of the project.");
     addClassName("collaborators-layout");
     add(projectContactsTitle,
         projectContactsDescription,
