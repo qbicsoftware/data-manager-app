@@ -169,7 +169,9 @@ public class SamplePreview {
     return comment;
   }
 
-  public String organismId() { return organismId; }
+  public String organismId() {
+    return organismId;
+  }
 
   public ExperimentalGroup experimentalGroup() {
     return experimentalGroup;

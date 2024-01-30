@@ -56,10 +56,10 @@ public class Sample {
   @Embedded
   private SampleOrigin sampleOrigin;
 
-  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label, String
-      organismId, ExperimentId experimentId, Long experimentalGroupId, SampleOrigin sampleOrigin,
-      BiologicalReplicateId replicateReference, AnalysisMethod analysisMethod, String comment
-  ) {
+  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
+      String organismId, ExperimentId experimentId, Long experimentalGroupId,
+      SampleOrigin sampleOrigin, BiologicalReplicateId replicateReference,
+      AnalysisMethod analysisMethod, String comment) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
@@ -83,13 +83,11 @@ public class Sample {
    * @param sampleRegistrationRequest@return the sample
    * @since 1.0.0
    */
-  public static Sample create(
-      SampleCode sampleCode,
+  public static Sample create(SampleCode sampleCode,
       SampleRegistrationRequest sampleRegistrationRequest) {
     Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
-    return new Sample(sampleId, sampleCode,
-        sampleRegistrationRequest.assignedBatch(),
+    return new Sample(sampleId, sampleCode, sampleRegistrationRequest.assignedBatch(),
         sampleRegistrationRequest.label(), sampleRegistrationRequest.organismId(),
         sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
@@ -108,10 +106,17 @@ public class Sample {
     return this.sampleCode;
   }
 
-  public SampleOrigin sampleOrigin() { return this.sampleOrigin; }
+  public SampleOrigin sampleOrigin() {
+    return this.sampleOrigin;
+  }
 
-  public String label() { return this.label; }
-  public String organismId() { return this.organismId; }
+  public String label() {
+    return this.label;
+  }
+
+  public String organismId() {
+    return this.organismId;
+  }
 
   public Optional<String> comment() {
     return Optional.ofNullable(comment);
@@ -133,8 +138,7 @@ public class Sample {
     this.assignedBatch = assignedBatch;
   }
 
-  public void setBiologicalReplicateId(
-      BiologicalReplicateId biologicalReplicateId) {
+  public void setBiologicalReplicateId(BiologicalReplicateId biologicalReplicateId) {
     this.biologicalReplicateId = biologicalReplicateId;
   }
 
@@ -146,14 +150,15 @@ public class Sample {
     this.label = label;
   }
 
-  public void setOrganismId(String organismId) { this.organismId = organismId; }
+  public void setOrganismId(String organismId) {
+    this.organismId = organismId;
+  }
 
   public void setComment(String comment) {
     this.comment = comment;
   }
 
-  public void setAnalysisMethod(
-      AnalysisMethod analysisMethod) {
+  public void setAnalysisMethod(AnalysisMethod analysisMethod) {
     this.analysisMethod = analysisMethod;
   }
 
@@ -162,7 +167,7 @@ public class Sample {
   }
 
   static class AnalysisMethodConverter implements AttributeConverter<AnalysisMethod, String> {
-    
+
     @Override
     public String convertToDatabaseColumn(AnalysisMethod analysisMethod) {
       return analysisMethod.name();

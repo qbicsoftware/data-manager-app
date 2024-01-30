@@ -35,79 +35,57 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       List<OntologyClassDTO> species, List<OntologyClassDTO> specimens,
       List<OntologyClassDTO> analytes, boolean showSampleCode) {
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
-        .sorted(Comparator.comparing(AnalysisMethod::label))
-        .toList();
+        .sorted(Comparator.comparing(AnalysisMethod::label)).toList();
 
     if (showSampleCode) {
       Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample code",
-          SampleInfo::getSampleCode,
-          SampleCode::code,
-          (sampleInfo, sampleCodeString) -> {
+          SampleInfo::getSampleCode, SampleCode::code, (sampleInfo, sampleCodeString) -> {
             var sampleCode =
                 sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
             sampleInfo.setSampleCode(sampleCode);
-          })
-          .requireDistinctValues();
+          }).requireDistinctValues();
       lockColumn(sampleCodeColumn);
     }
 
-    addColumn("Analysis to be performed",
-        SampleInfo::getAnalysisToBePerformed,
+    addColumn("Analysis to be performed", SampleInfo::getAnalysisToBePerformed,
         AnalysisMethod::label,
         (sampleInfo, analysisToBePerformed) -> sampleInfo.setAnalysisToBePerformed(
-            AnalysisMethod.forLabel(analysisToBePerformed)))
-        .selectFrom(sortedAnalysisMethods,
-            identity(),
-            getAnalysisMethodItemRenderer())
-        .setRequired();
+            AnalysisMethod.forLabel(analysisToBePerformed))).selectFrom(sortedAnalysisMethods,
+        identity(), getAnalysisMethodItemRenderer()).setRequired();
 
     addColumn("Sample label", SampleInfo::getSampleLabel,
-        SampleInfo::setSampleLabel)
-        .requireDistinctValues()
-        .setRequired();
+        SampleInfo::setSampleLabel).requireDistinctValues().setRequired();
 
-    addColumn("Organism ID", SampleInfo::getOrganismId,
-        SampleInfo::setOrganismId);
+    addColumn("Organism ID", SampleInfo::getOrganismId, SampleInfo::setOrganismId);
 
     addColumn("Condition", SampleInfo::getExperimentalGroup,
         experimentalGroup -> formatConditionString(experimentalGroup.condition()),
         (sampleInfo, conditionString) -> updateSampleInfoWithMatchingExperimentalGroup(
-            experimentalGroups, sampleInfo, conditionString))
-        .selectFrom(experimentalGroups, identity())
-        .setRequired();
+            experimentalGroups, sampleInfo, conditionString)).selectFrom(experimentalGroups,
+        identity()).setRequired();
 
-    addColumn("Biological replicate ID",
-        SampleInfo::getBiologicalReplicate,
+    addColumn("Biological replicate ID", SampleInfo::getBiologicalReplicate,
         BiologicalReplicate::label,
         (sampleInfo1, value) -> updateSampleInfoWithMatchingBiologicalReplicate(sampleInfo1, value,
-            experimentalGroups))
-        .selectFrom(sampleInfo -> Optional.ofNullable(sampleInfo.getExperimentalGroup())
-            .map(ExperimentalGroup::biologicalReplicates).orElse(List.of()), identity())
+            experimentalGroups)).selectFrom(
+            sampleInfo -> Optional.ofNullable(sampleInfo.getExperimentalGroup())
+                .map(ExperimentalGroup::biologicalReplicates).orElse(List.of()), identity())
         .setRequired();
 
-    addColumn("Species",
-        SampleInfo::getSpecies,
-        OntologyClassDTO::getLabel,
-        (sampleInfo, label) -> sampleInfo.setSpecies(findOntologyForLabel(species, label)))
-        .selectFrom(species, identity())
+    addColumn("Species", SampleInfo::getSpecies, OntologyClassDTO::getLabel,
+        (sampleInfo, label) -> sampleInfo.setSpecies(
+            findOntologyForLabel(species, label))).selectFrom(species, identity()).setRequired();
+
+    addColumn("Specimen", SampleInfo::getSpecimen, OntologyClassDTO::getLabel,
+        (sampleInfo, label) -> sampleInfo.setSpecimen(
+            findOntologyForLabel(specimens, label))).selectFrom(specimens, identity())
         .setRequired();
 
-    addColumn("Specimen",
-        SampleInfo::getSpecimen,
-        OntologyClassDTO::getLabel,
-        (sampleInfo, label) -> sampleInfo.setSpecimen(findOntologyForLabel(specimens, label)))
-        .selectFrom(specimens, identity())
-        .setRequired();
+    addColumn("Analyte", SampleInfo::getAnalyte, OntologyClassDTO::getLabel,
+        (sampleInfo, label) -> sampleInfo.setAnalyte(
+            findOntologyForLabel(analytes, label))).selectFrom(analytes, identity()).setRequired();
 
-    addColumn("Analyte",
-        SampleInfo::getAnalyte,
-        OntologyClassDTO::getLabel,
-        (sampleInfo, label) -> sampleInfo.setAnalyte(findOntologyForLabel(analytes, label)))
-        .selectFrom(analytes, identity())
-        .setRequired();
-
-    addColumn("Customer comment", SampleInfo::getCustomerComment,
-        SampleInfo::setCustomerComment);
+    addColumn("Customer comment", SampleInfo::getCustomerComment, SampleInfo::setCustomerComment);
 
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
       addEmptyRow();
@@ -140,31 +118,18 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private OntologyClassDTO analyte;
     private String customerComment;
 
-    public static SampleInfo create(
-        AnalysisMethod analysisMethod,
-        String sampleLabel,
-        String organismId,
-        BiologicalReplicate biologicalReplicate,
-        ExperimentalGroup experimentalGroup,
-        OntologyClassDTO species,
-        OntologyClassDTO specimen,
-        OntologyClassDTO analyte,
-        String customerComment) {
-      return create(null, null, analysisMethod, sampleLabel, organismId,
-          biologicalReplicate, experimentalGroup, species, specimen, analyte, customerComment);
+    public static SampleInfo create(AnalysisMethod analysisMethod, String sampleLabel,
+        String organismId, BiologicalReplicate biologicalReplicate,
+        ExperimentalGroup experimentalGroup, OntologyClassDTO species, OntologyClassDTO specimen,
+        OntologyClassDTO analyte, String customerComment) {
+      return create(null, null, analysisMethod, sampleLabel, organismId, biologicalReplicate,
+          experimentalGroup, species, specimen, analyte, customerComment);
     }
 
-    public static SampleInfo create(
-        SampleId sampleId,
-        SampleCode sampleCode,
-        AnalysisMethod analysisMethod,
-        String sampleLabel,
-        String organismId,
-        BiologicalReplicate biologicalReplicate,
-        ExperimentalGroup experimentalGroup,
-        OntologyClassDTO species,
-        OntologyClassDTO specimen,
-        OntologyClassDTO analyte,
+    public static SampleInfo create(SampleId sampleId, SampleCode sampleCode,
+        AnalysisMethod analysisMethod, String sampleLabel, String organismId,
+        BiologicalReplicate biologicalReplicate, ExperimentalGroup experimentalGroup,
+        OntologyClassDTO species, OntologyClassDTO specimen, OntologyClassDTO analyte,
         String customerComment) {
       SampleInfo sampleInfo = new SampleInfo();
       sampleInfo.setSampleId(sampleId);
@@ -212,7 +177,11 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     public void setSampleLabel(String sampleLabel) {
       this.sampleLabel = sampleLabel;
     }
-    public String getOrganismId() { return organismId; }
+
+    public String getOrganismId() {
+      return organismId;
+    }
+
     public void setOrganismId(String organismId) {
       this.organismId = organismId;
     }
@@ -233,8 +202,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.specimen = specimen;
     }
 
-    public void setBiologicalReplicate(
-        BiologicalReplicate biologicalReplicate) {
+    public void setBiologicalReplicate(BiologicalReplicate biologicalReplicate) {
       this.biologicalReplicate = biologicalReplicate;
     }
 
@@ -246,8 +214,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       return experimentalGroup;
     }
 
-    public void setExperimentalGroup(
-        ExperimentalGroup experimentalGroup) {
+    public void setExperimentalGroup(ExperimentalGroup experimentalGroup) {
       this.experimentalGroup = experimentalGroup;
     }
 
@@ -269,18 +236,12 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
     @Override
     public String toString() {
-      return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[",
-          "]")
-          .add("analysisToBePerformed=" + analysisToBePerformed)
-          .add("sampleLabel='" + sampleLabel + "'")
-          .add("organismId='" + organismId + "'")
-          .add("biologicalReplicate=" + biologicalReplicate)
-          .add("experimentalGroup=" + experimentalGroup)
-          .add("species=" + species)
-          .add("specimen=" + specimen)
-          .add("analyte=" + analyte)
-          .add("customerComment='" + customerComment + "'")
-          .toString();
+      return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]").add(
+              "analysisToBePerformed=" + analysisToBePerformed).add("sampleLabel='" + sampleLabel + "'")
+          .add("organismId='" + organismId + "'").add("biologicalReplicate=" + biologicalReplicate)
+          .add("experimentalGroup=" + experimentalGroup).add("species=" + species)
+          .add("specimen=" + specimen).add("analyte=" + analyte)
+          .add("customerComment='" + customerComment + "'").toString();
     }
 
     public static SampleInfo copy(SampleInfo original) {
@@ -361,61 +322,47 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
   }
 
 
-  private static void updateSampleInfoWithMatchingBiologicalReplicate(
-      SampleInfo sampleInfo,
+  private static void updateSampleInfoWithMatchingBiologicalReplicate(SampleInfo sampleInfo,
       String value, List<ExperimentalGroup> experimentalGroups) {
 
-    Optional.ofNullable(sampleInfo.getExperimentalGroup())
-        .ifPresentOrElse(
-            experimentalGroup -> {
-              BiologicalReplicate matchingBiologicalReplicate = sampleInfo.getExperimentalGroup()
-                  .biologicalReplicates().stream()
-                  .filter(biologicalReplicate -> biologicalReplicate.label().equals(value))
-                  .findAny().orElse(null);
-              sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
-            },
-            /* It was requested that biological replicates can be entered even if they are not from the condition? */
-            () -> {
-              BiologicalReplicate matchingBiologicalReplicate = experimentalGroups.stream()
-                  .flatMap(experimentalGroup -> experimentalGroup.biologicalReplicates().stream())
-                  .filter(biologicalReplicate -> biologicalReplicate.label().equals(value))
-                  .findAny().orElse(null);
-              sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
-            }
-        );
+    Optional.ofNullable(sampleInfo.getExperimentalGroup()).ifPresentOrElse(experimentalGroup -> {
+          BiologicalReplicate matchingBiologicalReplicate = sampleInfo.getExperimentalGroup()
+              .biologicalReplicates().stream()
+              .filter(biologicalReplicate -> biologicalReplicate.label().equals(value)).findAny()
+              .orElse(null);
+          sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
+        },
+        /* It was requested that biological replicates can be entered even if they are not from the condition? */
+        () -> {
+          BiologicalReplicate matchingBiologicalReplicate = experimentalGroups.stream()
+              .flatMap(experimentalGroup -> experimentalGroup.biologicalReplicates().stream())
+              .filter(biologicalReplicate -> biologicalReplicate.label().equals(value)).findAny()
+              .orElse(null);
+          sampleInfo.setBiologicalReplicate(matchingBiologicalReplicate);
+        });
   }
 
   private static String formatConditionString(Condition condition) {
-    return condition.getVariableLevels().parallelStream()
-        .map(variableLevel -> "%s:%s %s"
-            .formatted(variableLevel.variableName().value(),
+    return condition.getVariableLevels().parallelStream().map(
+            variableLevel -> "%s:%s %s".formatted(variableLevel.variableName().value(),
                 variableLevel.experimentalValue().value(),
-                variableLevel.experimentalValue().unit().orElse(""))
-            .trim())
-        .sorted()
+                variableLevel.experimentalValue().unit().orElse("")).trim()).sorted()
         .collect(Collectors.joining("; "));
   }
 
   private static OntologyClassDTO findOntologyForLabel(List<OntologyClassDTO> selection,
       String label) {
-    return selection.stream()
-        .filter(it -> it.getLabel().equals(label))
-        .findFirst()
-        .orElse(null);
+    return selection.stream().filter(it -> it.getLabel().equals(label)).findFirst().orElse(null);
   }
 
   private static void updateSampleInfoWithMatchingExperimentalGroup(
-      List<ExperimentalGroup> experimentalGroups, SampleInfo sampleInfo,
-      String conditionString) {
+      List<ExperimentalGroup> experimentalGroups, SampleInfo sampleInfo, String conditionString) {
     // find condition producing the same condition string
-    Condition matchingCondition = experimentalGroups.stream()
-        .map(ExperimentalGroup::condition)
-        .filter(it -> formatConditionString(it).equals(conditionString))
-        .findAny().orElse(null);
+    Condition matchingCondition = experimentalGroups.stream().map(ExperimentalGroup::condition)
+        .filter(it -> formatConditionString(it).equals(conditionString)).findAny().orElse(null);
     // find experimentalGroup with the condition
     Optional<ExperimentalGroup> matchingExperimentalGroup = experimentalGroups.stream()
-        .filter(
-            experimentalGroup -> experimentalGroup.condition().equals(matchingCondition))
+        .filter(experimentalGroup -> experimentalGroup.condition().equals(matchingCondition))
         .findAny();
     // set experimental group in sampleInfo
     matchingExperimentalGroup.ifPresent(sampleInfo::setExperimentalGroup);

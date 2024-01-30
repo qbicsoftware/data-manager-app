@@ -116,8 +116,8 @@ public class AddProjectDialog extends Dialog {
 
     stepper.addStepSelectionListener(
         stepSelectedEvent -> {
-            setDialogContent(stepSelectedEvent.getSelectedStep());
-            adaptFooterButtons(stepSelectedEvent.getSelectedStep());
+          setDialogContent(stepSelectedEvent.getSelectedStep());
+          adaptFooterButtons(stepSelectedEvent.getSelectedStep());
         });
 
     Button cancelButton = new Button("Cancel");
