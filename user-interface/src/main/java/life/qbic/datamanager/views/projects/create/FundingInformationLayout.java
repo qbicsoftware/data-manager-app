@@ -1,13 +1,14 @@
 package life.qbic.datamanager.views.projects.create;
 
-import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
 import java.io.Serial;
 import java.io.Serializable;
+import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.funding.FundingField;
+import life.qbic.datamanager.views.projects.create.FundingInformationLayout.FundingInformationContainer;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,7 +18,8 @@ import org.springframework.stereotype.Component;
  * during project creation and validates the provided information</p>
  */
 @Component
-public class FundingInformationLayout extends Div implements HasValidation {
+public class FundingInformationLayout extends Div implements
+    HasBinderValidation<FundingInformationContainer> {
 
   private final FundingField fundingField = new FundingField("");
   private final Binder<FundingInformationContainer> fundingEntryBinder = new Binder<>(
@@ -65,19 +67,9 @@ public class FundingInformationLayout extends Div implements HasValidation {
     return fundingInformationContainer.getFundingEntry();
   }
 
-  /**
-   * Sets an error message to the component.
-   * <p>
-   * The Web Component is responsible for deciding when to show the error message to the user, and
-   * this is usually triggered by triggering the invalid state for the Web Component. Which means
-   * that there is no need to clean up the message when component becomes valid (otherwise it may
-   * lead to undesired visual effects).
-   *
-   * @param errorMessage a new error message
-   */
   @Override
-  public void setErrorMessage(String errorMessage) {
-    /* Unused since we are only interested in the final values stored in the component*/
+  public Binder<FundingInformationContainer> getBinder() {
+    return fundingEntryBinder;
   }
 
   /**
@@ -86,32 +78,8 @@ public class FundingInformationLayout extends Div implements HasValidation {
    * @return current error message
    */
   @Override
-  public String getErrorMessage() {
+  public String getDefaultErrorMessage() {
     return "Invalid Input found in Funding Information";
-  }
-
-  /**
-   * Sets the validity of the component input.
-   * <p>
-   * When component becomes valid it hides the error message by itself, so there is no need to clean
-   * up the error message via the {@link #setErrorMessage(String)} call.
-   *
-   * @param invalid new value for component input validity
-   */
-  @Override
-  public void setInvalid(boolean invalid) {
-    /* Unused since we are only interested in the final values stored in the component*/
-  }
-
-  /**
-   * Returns {@code true} if component input is invalid, {@code false} otherwise.
-   *
-   * @return whether the component input is valid
-   */
-  @Override
-  public boolean isInvalid() {
-    fundingEntryBinder.validate();
-    return !fundingEntryBinder.isValid() && fundingField.isInvalid();
   }
 
 

@@ -1,16 +1,18 @@
 /* All custom css for components which extend the page-area component go in here! */
+.page {
+  height: 100%;
+  width: 100%;
+}
 
 .page-area {
   background-color: var(--lumo-base-color);
+  padding: var(--lumo-space-m);
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-s);
   border: 1px solid;
   border-color: var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-m);
-  box-sizing: border-box;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  margin: var(--lumo-space-s);
-  padding: var(--lumo-space-xl);
 }
 
 .page-area .title {
@@ -20,15 +22,7 @@
   margin-bottom: 0.5rem;
 }
 
-.page-area.attachments-area {
-  flex-direction: column;
-  display: flex;
-  gap: var(--lumo-space-m);
-  overflow: auto;
-  max-height: 50%;
-}
-
-.page-area.attachments-area .delete-button {
+.project-links-component .delete-button {
   color: var(--lumo-error-text-color);
   --lumo-button-size: var(--lumo-size-m);
   cursor: pointer;
@@ -43,184 +37,162 @@
   gap: var(--lumo-space-xs);
 }
 
-.page-area.experiment-details-component {
-  height: 100%;
+.batch-details-component .editor-buttons {
   display: flex;
-  flex-direction: column;
+  gap: var(--lumo-space-s);
+  justify-content: end;
 }
 
-.page-area.experiment-details-component .sample-source-display {
+.batch-details-component .title-and-controls {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.experiment-details-component .sample-source-display {
   flex-direction: row;
   display: flex;
 }
 
-.page-area.experiment-details-component .sample-source-display .icon-with-list {
+.experiment-details-component .sample-source-display .icon-with-list {
   flex-direction: row;
   flex-grow: 0.2;
   display: flex;
 }
 
-.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist {
+.experiment-details-component .sample-source-display .icon-with-list .taglist {
   flex-direction: column;
   display: flex;
   line-height: 1.3em;
 }
 
-.page-area.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
+.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
   font-size: small;
 }
 
-.page-area.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
+.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
   color: var(--lumo-primary-color);
   margin-right: 1em;
   margin-top: 0.5em;
 }
 
-.page-area.experiment-details-component .header {
+.experiment-details-component .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.page-area.experiment-details-component .details-content {
+.experiment-details-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
   flex-grow: 1;
   gap: var(--lumo-space-m);
   font-size: var(--lumo-font-size-s);
-  height: 100%;
 }
 
-.page-area.experiment-details-component vaadin-tabsheet {
-  height: 100%;
-  width: 100%;
-}
-
-.page-area.experiment-details-component .details-content .experimental-groups-container {
+.experiment-details-component vaadin-tabsheet {
   height: 100%;
   width: 100%;
 }
 
-.page-area.experiment-details-component .details-content .experimental-variables-container {
+/*Necessary so the disclaimers are aligned to the center of the tab*/
+.experiment-details-component .details-content .experimental-groups-container {
   height: 100%;
   width: 100%;
 }
 
-.page-area.experiment-details-component .sample-registration-possible {
+.experiment-details-component .details-content .experimental-variables-container {
+  height: 100%;
+  width: 100%;
+}
+
+.experiment-details-component .sample-registration-possible {
   margin-bottom: var(--lumo-space-m);
 }
 
-.page-area.experiment-list-component {
-  flex-direction: column;
-  display: flex;
-  gap: var(--lumo-space-m);
-  overflow: auto;
-  max-height: 50%;
-}
-
-.page-area.experiment-list-component .content {
+.experiment-list-component .content {
   display: grid;
   gap: var(--lumo-space-m);
   grid-auto-rows: max-content;
 }
 
-.page-area.experiment-list-component .header {
+.experiment-list-component .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--lumo-space-m);
 }
 
-.page-area.project-access-component {
-  width: 100%;
-  height: 100%;
-}
-
-.page-area.project-access-component .access-content {
-  padding: var(--lumo-space-m);
+.project-access-component .content {
   display: flex;
+  row-gap: var(--lumo-space-l);
   flex-direction: column;
-  gap: var(--lumo-space-s);
-  height: 90%;
-  width: 100%;
 }
 
-.page-area.project-access-component .access-content vaadin-grid {
-  height: 100%;
-  width: 100%;
+.project-access-component .user-access {
+  display: flex;
+  row-gap: var(--lumo-space-m);
+  flex-direction: column;
 }
 
-.page-area.project-access-component .access-header {
+.project-access-component .role-access {
+  display: flex;
+  row-gap: var(--lumo-space-m);
+  flex-direction: column;
+}
+
+.project-access-component .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.page-area.project-details-component .details-content {
-  padding: var(--lumo-space-m);
+.project-collection-component .header {
   display: flex;
+  column-gap: var(--lumo-space-xl);
   flex-direction: column;
-  gap: var(--lumo-space-s);
 }
 
-.page-area.project-details-component .header {
+.project-collection-component .controls {
+  display: flex;
+  align-content: space-between;
+  gap: 1rem;
+}
+
+.project-details-component .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.page-area.project-details-component .details-content .no-person-assigned {
-  color: var(--lumo-secondary-text-color);
-}
-
-.page-area.project-details-component .details-content .person-reference {
-  display: flex;
-  flex-flow: column;
-}
-
-.page-area.project-details-component .details-content .person-reference .email {
-  color: var(--lumo-secondary-text-color);
-}
-
-.page-area.sample-details-component {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-area.sample-details-component .sample-details-content {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: var(--lumo-space-m);
-  height: 100%;
-}
-
-.page-area.sample-details-component .button-and-search-bar {
+.sample-details-component .button-and-search-bar {
   display: flex;
   justify-content: space-between;
   gap: var(--lumo-space-s);
   margin-bottom: var(--lumo-space-m);
 }
 
-.page-area.sample-details-component .button-bar {
+.sample-details-component .button-bar {
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
 }
 
-.page-area.sample-details-component .search-bar {
+.sample-details-component .sample-details-content {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--lumo-space-m);
+  height: 100%;
+}
+
+.sample-details-component .sample-tab-content {
+  height: 100%;
+  width: 100%;
+}
+
+.sample-details-component .search-bar {
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
-}
-
-.page-area.sample-details-component .sample-grid {
-  height: 100%;
-  width: 100%;
-}
-
-.page-area.sample-details-component .sample-tab-content {
-  height: 100%;
-  width: 100%;
 }

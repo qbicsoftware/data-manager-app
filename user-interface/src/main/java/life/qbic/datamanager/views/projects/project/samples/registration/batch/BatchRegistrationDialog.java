@@ -52,7 +52,7 @@ public class BatchRegistrationDialog extends DialogWindow {
     batchNameField = new TextField();
     batchNameField.addClassName("batch-name-field");
     batchNameField.setLabel("Batch Name");
-    batchNameField.setPlaceholder("Please enter a name for this batch");
+    batchNameField.setPlaceholder("Please enter a name for your batch");
     batchNameField.setRequired(true);
     // must contain at least one non-whitespace character and no leading/tailing whitespace.
     batchNameField.setPattern("^\\S+(.*\\S)*$");
@@ -62,16 +62,15 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     Div prefillSection = new Div();
     Button prefillSpreadsheet = new Button();
-    prefillSpreadsheet.setText("Clear and Prefill");
-    prefillSpreadsheet.setAriaLabel("Clear and Prefill");
+    prefillSpreadsheet.setText("Prefill spreadsheet");
+    prefillSpreadsheet.setAriaLabel("Prefill spreadsheet");
     prefillSpreadsheet.addClickListener(this::onPrefillClicked);
     prefillSpreadsheet.addClassName("prefill-batch");
 
     Span prefillText = new Span(
-        "Do you want to register a batch containing all biological replicates? You can prefill information already know to the system."
-            + "Please note: this will erase all information entered into the spreadsheet"
-    );
+        "Do you want to register a complete batch (all possible permutations of conditions and replicates) with some prefilled information?");
     prefillSection.add(prefillText, prefillSpreadsheet);
+    prefillSection.addClassName("prefill-section");
 
     Button addRow = new Button();
     addRow.setText("Add Row");
@@ -83,37 +82,38 @@ public class BatchRegistrationDialog extends DialogWindow {
     removeLastRow.addClickListener(this::onRemoveLastRowClicked);
     removeLastRow.addClassName("remove-batch-row");
 
-    setHeaderTitle("Register Batch");
+    setHeaderTitle("Register sample batch");
     setResizable(true);
 
     Div batchControls = new Div();
     batchControls.addClassName("batch-controls");
     batchControls.add(batchNameField);
 
-    Span pleaseRegisterText = new Span("Please register your samples for experiment:");
+    Div spreadsheetContainer = new Div();
+
+    Span pleaseRegisterText = new Span("Please register your samples for experiment: ");
     Span experimentNameText = new Span(experimentName);
     experimentNameText.setClassName("experiment-name");
-    Div userHelpText = new Div(pleaseRegisterText, experimentNameText);
+    Span userHelpText = new Span(pleaseRegisterText, experimentNameText);
     userHelpText.addClassName("user-help-text");
 
-    Div spreadsheetControls = new Div();
+    Span spreadsheetControls = new Span();
     spreadsheetControls.addClassName("spreadsheet-controls");
+    spreadsheetControls.add(addRow, removeLastRow);
 
-    Span rowControls = new Span();
-    rowControls.addClassName("row-controls");
-    rowControls.add(addRow, removeLastRow);
+    Span spreadsheetHeader = new Span(userHelpText, spreadsheetControls);
+    spreadsheetHeader.addClassName("spreadsheet-header");
 
     Span errorText = new Span("Unspecific Error message");
     errorText.addClassName("error-text");
     errorText.setVisible(false);
 
-    spreadsheetControls.add(rowControls, errorText);
+    spreadsheetContainer.add(spreadsheetHeader, errorText, spreadsheet);
+    spreadsheetContainer.addClassName("spreadsheet-container");
 
     add(batchControls,
-        userHelpText,
         prefillSection,
-        spreadsheetControls,
-        spreadsheet);
+        spreadsheetContainer);
 
     batchNameField.focus();
 
