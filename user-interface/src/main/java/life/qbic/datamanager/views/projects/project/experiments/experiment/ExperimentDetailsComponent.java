@@ -85,7 +85,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div header = new Div();
   private final Span title = new Span();
   private final Span buttonBar = new Span();
-  private final Div tagCollection = new Div();
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroups = new Div();
@@ -167,8 +166,6 @@ public class ExperimentDetailsComponent extends PageArea {
     initButtonBar();
     header.add(title, buttonBar);
     title.addClassName("title");
-    addTagCollectionToContent();
-    addExperimentNotesComponent();
     addSampleSourceInformationComponent();
     layoutTabSheet();
   }
@@ -331,18 +328,6 @@ public class ExperimentDetailsComponent extends PageArea {
     existingGroupsPreventVariableEdit.addRejectListener(
         rejectEvent -> rejectEvent.getSource().close());
     existingGroupsPreventVariableEdit.open();
-  }
-
-  private void addTagCollectionToContent() {
-    tagCollection.addClassName("tag-collection");
-    content.add(tagCollection);
-  }
-
-  private void addExperimentNotesComponent() {
-    Span emptyNotes = new Span("Click to add Notes");
-    ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
-        Span::new, new TextField(), emptyNotes);
-    content.add(experimentNotes);
   }
 
   private void addSampleSourceInformationComponent() {
@@ -551,11 +536,6 @@ public class ExperimentDetailsComponent extends PageArea {
     } else {
       onGroupsDefined();
     }
-  }
-
-  private void loadTagInformation() {
-    tagCollection.removeAll();
-    tagCollection.add(new Tag("Space for tags"));
   }
 
   private void loadExperimentalVariables(Experiment experiment) {
