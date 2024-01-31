@@ -52,29 +52,38 @@
 .experiment-details-component .sample-source-display {
   flex-direction: row;
   display: flex;
+  justify-content: space-between;
 }
 
-.experiment-details-component .sample-source-display .icon-with-list {
-  flex-direction: row;
-  flex-grow: 0.2;
-  display: flex;
-}
-
-.experiment-details-component .sample-source-display .icon-with-list .taglist {
+.experiment-details-component .sample-source-display .sample-source {
   flex-direction: column;
   display: flex;
-  line-height: 1.3em;
+  row-gap: var(--lumo-space-m);
 }
 
-.experiment-details-component .sample-source-display .icon-with-list .taglist .title {
-  font-size: small;
+.experiment-details-component .sample-source-display .sample-source .header {
+  display: inline-flex;
+  justify-content: start;
+  align-items: start;
+  column-gap: var(--lumo-space-m);
+  font-size: var(--lumo-font-size-m);
 }
 
-.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
-  color: var(--lumo-primary-color);
-  margin-right: 1em;
-  margin-top: 0.5em;
+.experiment-details-component .sample-source-display .sample-source .ontologies {
+  display: flex;
+  row-gap: var(--lumo-space-s);
+  align-items: center;
+  width: 100%;
+  flex-direction: column;
 }
+
+.experiment-details-component .sample-source-display .sample-source .ontologies .ontology {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
+  width: 100%;
+}
+
 
 .experiment-details-component .header {
   display: flex;
