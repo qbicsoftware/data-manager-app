@@ -355,9 +355,12 @@ public class ExperimentDetailsComponent extends PageArea {
     return new ComponentRenderer<>(ontologyClassDTO -> {
       Span ontology = new Span();
       Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
-      Span ontologyName = new Span(ontologyClassDTO.getName());
-      ontologyName.addClassName("tag");
-      Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyName);
+      /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
+      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
+      Span ontologyLink = new Span(ontologyLinkName);
+      ontologyLink.addClassName("ontology-link");
+      Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
+      ontologyClassIri.setTarget("_blank");
       ontology.add(ontologyLabel, ontologyClassIri);
       ontology.addClassName("ontology");
       return ontology;
