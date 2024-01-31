@@ -6,6 +6,7 @@ import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -14,6 +15,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -23,6 +25,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -293,19 +297,62 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
     sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
         .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
-    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species").setSortProperty("species")
+    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species")
+        .setSortProperty("species")
         .setTooltipGenerator(preview -> preview.species().formatted());
     sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
         .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
-    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte").setSortProperty("analyte")
+    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte")
+        .setSortProperty("analyte")
         .setTooltipGenerator(preview -> preview.analyte().formatted());
     sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
     sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
         .setTooltipGenerator(SamplePreview::comment);
+    sampleGrid.addComponentColumn(samplePreview -> {
+      Button button = new Button("Toggle");
+      button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+      button.addClickListener(event -> sampleGrid.setDetailsVisible(samplePreview,
+          !sampleGrid.isDetailsVisible(samplePreview)));
+      if (samplePreview.sampleProperties().isEmpty()) {
+        return null;
+      }
+      return button;
+    }).setHeader("Additional Properties");
+    sampleGrid.setItemDetailsRenderer(createSampleDetailsRenderer());
+    sampleGrid.setDetailsVisibleOnClick(false);
     sampleGrid.addClassName("sample-grid");
     sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     return sampleGrid;
+  }
+
+  private static ComponentRenderer<SamplePropertyLayout, SamplePreview> createSampleDetailsRenderer() {
+    return new ComponentRenderer<>(SamplePropertyLayout::new,
+        SamplePropertyLayout::setProperties);
+  }
+
+  private static class SamplePropertyLayout extends Div {
+
+    public SamplePropertyLayout() {
+      addClassName("sample-property-layout");
+    }
+
+    private void setProperties(SamplePreview samplePreview) {
+      samplePreview.sampleProperties().entrySet().stream()
+          .sorted(Map.Entry.comparingByKey())
+          .forEach(entry -> add(generatePropertyTextField(entry)));
+    }
+
+    private TextField generatePropertyTextField(Entry<String, String> entry) {
+      TextField propertyField = new TextField();
+      propertyField.setLabel(entry.getKey() != null ? entry.getKey() : "Undefined");
+      propertyField.setValue(entry.getValue() != null ? entry.getValue() : "");
+      propertyField.setReadOnly(true);
+      propertyField.setTooltipText(entry.getValue());
+      propertyField.addClassName("sample-property");
+      propertyField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+      return propertyField;
+    }
   }
 
   public static class SampleExperimentTab extends Tab {
