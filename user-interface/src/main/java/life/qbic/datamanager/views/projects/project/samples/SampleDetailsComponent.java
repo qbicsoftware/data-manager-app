@@ -91,8 +91,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     buttonBar.addClassName("button-bar");
     Button metadataDownloadButton = new Button("Download Metadata");
     buttonBar.add(metadataDownloadButton);
-    Button addPropertiesButton = new Button("Add Sample Properties");
-    buttonBar.add(addPropertiesButton, metadataDownloadButton);
+    buttonBar.add(metadataDownloadButton);
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -316,8 +315,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
       button.addClickListener(event -> sampleGrid.setDetailsVisible(samplePreview,
           !sampleGrid.isDetailsVisible(samplePreview)));
+      if (samplePreview.sampleProperties().isEmpty()) {
+        return null;
+      }
       return button;
-    }).setHeader("properties");
+    }).setHeader("Additional Properties");
     sampleGrid.setItemDetailsRenderer(createSampleDetailsRenderer());
     sampleGrid.setDetailsVisibleOnClick(false);
     sampleGrid.addClassName("sample-grid");

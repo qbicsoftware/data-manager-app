@@ -192,3 +192,19 @@
   display: inline-flex;
   align-items: end;
 }
+
+.sample-details-component .sample-grid .sample-property-layout {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  row-gap: var(--lumo-space-s);
+  column-gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+}
+
+.sample-details-component .sample-grid .sample-property-layout .sample-property {
+  height: 100%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
