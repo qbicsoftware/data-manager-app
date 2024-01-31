@@ -9,6 +9,24 @@
   padding: var(--lumo-space-xs);
 }
 
+.error-text {
+  color: var(--lumo-error-text-color);
+}
+
+/* ontology-link styling */
+.ontology-link {
+  display: inline-flex;
+  box-sizing: border-box;
+  padding: 0.4em calc(0.5em + var(--lumo-border-radius-s) / 4);
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  font-family: var(--lumo-font-family);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1;
+  text-decoration-line: underline;
+}
+
 span.bold {
   font-weight: bold;
 }
@@ -20,8 +38,11 @@ span.title {
   margin-bottom: 0.5rem;
 }
 
-.error-text {
-  color: var(--lumo-error-text-color);
+.spreadsheet-list-item {
+  display: inline-flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* vaadin badge styling*/
@@ -53,11 +74,4 @@ span.title {
 .tag.contrast {
   color: var(--lumo-contrast-80pct);
   background-color: var(--lumo-contrast-5pct);
-}
-
-.spreadsheet-list-item {
-  display: inline-flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
 }
