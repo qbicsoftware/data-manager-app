@@ -11,6 +11,7 @@ public class OntologyComponent extends Component implements HasComponents {
   public OntologyComponent(OntologyClassDTO contentDTO) {
     Span ontologyLabel = new Span(contentDTO.getLabel());
     ontologyLabel.addClassName("bold");
+    /* Ontology terms are delimited by a column, the underscore is only used in the web environment*/
     String ontologyNameContent = contentDTO.getName().replace("_", ":");
     Span ontologyName = new Span(ontologyNameContent);
     /*Clicking the Link should open the origin page in a new tab*/
