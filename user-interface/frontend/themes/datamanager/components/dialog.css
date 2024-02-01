@@ -1,293 +1,3 @@
-.dialog-window .confirm-button:hover::before {
-  opacity: 0.05;
-}
-
-vaadin-dialog-overlay::part(content) {
-  padding: 1rem 4rem 3rem 4rem;
-}
-
-vaadin-dialog-overlay::part(footer) {
-  padding: 1rem 4rem 1rem 0;
-}
-
-vaadin-dialog-overlay::part(header) {
-  padding: 2rem 1rem 1rem 4rem;
-}
-
-vaadin-dialog-overlay::part(title) {
-  margin-inline-start: 0;
-}
-
-/* set the width of the notification */
-.notification-dialog::part(overlay) {
-  width: 36.75rem;
-}
-
-.notification-dialog .content {
-  width: 100%;
-}
-
-/* notification dialog header */
-.notification-dialog > [slot="header"] {
-  display: flex;
-  align-items: center;
-  justify-items: flex-start;
-  gap: var(--lumo-space-s);
-}
-
-.notification-dialog .title {
-  font-family: var(--lumo-font-family);
-  line-height: var(--lumo-line-height-m);
-  font-size: var(--lumo-font-size-xl);
-  margin: 0;
-}
-
-/* icon in header */
-.notification-dialog > [slot="header"] vaadin-icon {
-  width: 1.83rem;
-  height: 1.83rem;
-  margin: 0.46rem;
-  margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
-}
-
-.notification-dialog .error-icon {
-  fill: var(--lumo-error-color);
-}
-
-.notification-dialog .warning-icon {
-  fill: var(--lumo-warning-color);
-}
-
-.notification-dialog .info-icon {
-  fill: var(--lumo-primary-color);
-}
-
-/* experimental groups exist dialog on variable edit */
-.existing-groups-prevent-variable-edit .content .experimental-group-count {
-  font-weight: bold;
-}
-
-/* samples exist on variable edit */
-.existing-samples-prevent-variable-edit .content .sample-count {
-  font-weight: bold;
-}
-
-/* samples exist on group edit */
-.existing-samples-prevent-group-edit .content .sample-count {
-  font-weight: bold;
-}
-
-
-.add-user-to-project-dialog::part(overlay) {
-  height: 100%;
-  min-width: 66vw;
-}
-
-.add-user-to-project-dialog vaadin-grid {
-  height: 100%
-}
-
-.batch-registration-dialog::part(content),
-.batch-update-dialog::part(content) {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-}
-
-.batch-update-dialog::part(overlay),
-.batch-registration-dialog::part(overlay) {
-  min-width: 80vw;
-  height: 100%;
-}
-
-.batch-update-dialog .batch-name,
-.batch-update-dialog .experiment-name,
-.batch-registration-dialog .experiment-name {
-  margin: auto 0.3em;
-  font-weight: bolder;
-}
-
-.batch-registration-dialog .prefill-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.batch-registration-dialog .spreadsheet-container,
-.batch-update-dialog .spreadsheet-container {
-  display: flex;
-  flex-direction: column;
-  column-gap: var(--lumo-space-s);
-  margin-top: var(--lumo-space-m);
-}
-
-.batch-registration-dialog .spreadsheet-header,
-.batch-update-dialog .spreadsheet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.batch-update-dialog .spreadsheet-controls,
-.batch-registration-dialog .spreadsheet-controls {
-  display: inline-flex;
-  column-gap: 0.5em;
-  justify-content: end;
-}
-
-.batch-update-dialog .spreadsheet-controls .error-text,
-.batch-registration-dialog .spreadsheet-controls .error-text {
-  color: var(--lumo-error-text-color);
-}
-
-.batch-update-dialog .batch-controls > .batch-name-field,
-.batch-registration-dialog .batch-controls > .batch-name-field {
-  width: calc(100% / 3);
-}
-
-.add-experiment-dialog::part(overlay),
-.edit-experiment-dialog::part(overlay) {
-  width: 66vw;
-}
-
-.edit-experiment-content,
-.add-experiment-content {
-  padding-top: var(--lumo-space-m);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  gap: var(--lumo-space-m);
-  box-sizing: border-box;
-}
-
-.edit-experiment-content .header,
-.add-experiment-content . header {
-  font-weight: bold;
-}
-
-.edit-experiment-content .full-width-input,
-.add-experiment-content .full-width-input {
-  width: 100%;
-}
-
-.edit-project-dialog .content {
-  max-width: 60vw;
-  padding-bottom: 1em;
-}
-
-.edit-project-dialog::part(overlay) {
-  width: 66vw;
-}
-
-.edit-project-dialog .funding-field .input-fields,
-.contact-field .input-fields {
-  display: flex;
-  gap: 1em;
-  align-items: baseline;
-}
-
-.contact-field .contact-selection,
-.contact-field .input-fields,
-.contact-field .input-fields > * {
-  width: 100%;
-}
-
-.edit-project-dialog .form-content .contact-field .name-field {
-  flex-grow: 1;
-}
-
-.edit-project-dialog .form-content .contact-field .email-field {
-  flex-grow: 1;
-}
-
-.edit-project-dialog .project-contacts {
-  display: flex;
-  gap: 1em;
-  flex-direction: column;
-  flex-wrap: wrap;
-  margin: 0;
-  padding: var(--lumo-space-m) 0 0;
-}
-
-.experiment-group-dialog::part(overlay) {
-  width: 66%;
-}
-
-.experiment-group-dialog .number-field {
-  min-width: 175px;
-}
-
-.experiment-group-dialog .experimental-group-entry {
-  display: grid;
-  grid: auto auto auto / 1fr 175px auto;
-  column-gap: 1rem;
-  align-items: baseline;
-}
-
-.experiment-variable-dialog vaadin-icon {
-  cursor: pointer;
-  color: var(--lumo-primary-color);
-}
-
-.experiment-group-dialog vaadin-icon {
-  cursor: pointer;
-  color: var(--lumo-primary-color);
-}
-
-.experiment-group-dialog .header {
-  font-weight: bold;
-}
-
-.experiment-variable-dialog .add-new-group-action {
-  display: flex;
-  column-gap: 1rem;
-  color: var(--lumo-primary-color)
-}
-
-.experiment-variable-dialog .add-new-group-action span {
-  cursor: pointer;
-}
-
-.experiment-variable-dialog .content {
-  display: flex;
-  flex-direction: column;
-}
-
-.experiment-group-dialog .add-new-group-action {
-  display: flex;
-  column-gap: 1rem;
-  color: var(--lumo-primary-color)
-}
-.experiment-group-dialog .add-new-group-action span {
-  cursor: pointer;
-}
-
-.experiment-group-dialog .content {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.experiment-group-dialog .content .group-collection {
-  display: grid;
-  gap: 1rem;
-}
-
-.experiment-variable-dialog .content .variables {
-  display: flex;
-  flex-direction: column;
-}
-
-.experiment-variable-dialog .content .variables .header {
-  font-weight: bold;
-}
-
-.experiment-variable-dialog .content .row {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-l);
-}
-
 .add-project-dialog::part(content) {
   display: flex;
   flex-direction: column;
@@ -394,6 +104,279 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+
+.add-user-to-project-dialog::part(overlay) {
+  height: 100%;
+  min-width: 66vw;
+}
+
+.add-user-to-project-dialog vaadin-grid {
+  height: 100%
+}
+
+.batch-registration-dialog::part(content),
+.batch-update-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.batch-update-dialog::part(overlay),
+.batch-registration-dialog::part(overlay) {
+  min-width: 80vw;
+  height: 100%;
+}
+
+.batch-update-dialog .batch-name,
+.batch-update-dialog .experiment-name,
+.batch-registration-dialog .experiment-name {
+  margin: auto 0.3em;
+  font-weight: bolder;
+}
+
+.batch-registration-dialog .prefill-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-registration-dialog .spreadsheet-container,
+.batch-update-dialog .spreadsheet-container {
+  display: flex;
+  flex-direction: column;
+  column-gap: var(--lumo-space-s);
+  margin-top: var(--lumo-space-m);
+}
+
+.batch-registration-dialog .spreadsheet-header,
+.batch-update-dialog .spreadsheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-update-dialog .spreadsheet-controls,
+.batch-registration-dialog .spreadsheet-controls {
+  display: inline-flex;
+  column-gap: 0.5em;
+  justify-content: end;
+}
+
+.batch-update-dialog .spreadsheet-controls .error-text,
+.batch-registration-dialog .spreadsheet-controls .error-text {
+  color: var(--lumo-error-text-color);
+}
+
+.batch-update-dialog .batch-controls > .batch-name-field,
+.batch-registration-dialog .batch-controls > .batch-name-field {
+  width: calc(100% / 3);
+}
+
+.add-experiment-dialog::part(overlay),
+.edit-experiment-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.contact-field .contact-selection,
+.contact-field .input-fields,
+.contact-field .input-fields > * {
+  width: 100%;
+}
+
+.dialog-window .confirm-button:hover::before {
+  opacity: 0.05;
+}
+.edit-experiment-content,
+.add-experiment-content {
+  padding-top: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.edit-experiment-content .header,
+.add-experiment-content . header {
+  font-weight: bold;
+}
+
+.edit-experiment-content .full-width-input,
+.add-experiment-content .full-width-input {
+  width: 100%;
+}
+
+.edit-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.edit-project-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.edit-project-dialog .funding-field .input-fields,
+.contact-field .input-fields {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+.edit-project-dialog .form-content .contact-field .name-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .form-content .contact-field .email-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--lumo-space-m) 0 0;
+}
+
+/* experimental groups exist dialog on variable edit */
+.existing-groups-prevent-variable-edit .content .experimental-group-count {
+  font-weight: bold;
+}
+
+/* samples exist on variable edit */
+.existing-samples-prevent-variable-edit .content .sample-count {
+  font-weight: bold;
+}
+
+/* samples exist on group edit */
+.existing-samples-prevent-group-edit .content .sample-count {
+  font-weight: bold;
+}
+
+.experiment-group-dialog::part(overlay) {
+  width: 66%;
+}
+
+.experiment-group-dialog .number-field {
+  min-width: 175px;
+}
+
+.experiment-group-dialog .experimental-group-entry {
+  display: grid;
+  grid: auto auto auto / 1fr 175px auto;
+  column-gap: 1rem;
+  align-items: baseline;
+}
+
+.experiment-variable-dialog vaadin-icon {
+  cursor: pointer;
+  color: var(--lumo-primary-color);
+}
+
+.experiment-group-dialog vaadin-icon {
+  cursor: pointer;
+  color: var(--lumo-primary-color);
+}
+
+.experiment-group-dialog .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+
+.experiment-variable-dialog .add-new-group-action span {
+  cursor: pointer;
+}
+
+.experiment-variable-dialog .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-group-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+.experiment-group-dialog .add-new-group-action span {
+  cursor: pointer;
+}
+
+.experiment-group-dialog .content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.experiment-group-dialog .content .group-collection {
+  display: grid;
+  gap: 1rem;
+}
+
+.experiment-variable-dialog .content .variables {
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-variable-dialog .content .variables .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .content .row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+/* set the width of the notification */
+.notification-dialog::part(overlay) {
+  width: 36.75rem;
+}
+
+.notification-dialog .content {
+  width: 100%;
+}
+
+/* notification dialog header */
+.notification-dialog > [slot="header"] {
+  display: flex;
+  align-items: center;
+  justify-items: flex-start;
+  gap: var(--lumo-space-s);
+}
+
+.notification-dialog .title {
+  font-family: var(--lumo-font-family);
+  line-height: var(--lumo-line-height-m);
+  font-size: var(--lumo-font-size-xl);
+  margin: 0;
+}
+
+/* icon in header */
+.notification-dialog > [slot="header"] vaadin-icon {
+  width: 1.83rem;
+  height: 1.83rem;
+  margin: 0.46rem;
+  margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
+}
+
+.notification-dialog .error-icon {
+  fill: var(--lumo-error-color);
+}
+
+.notification-dialog .warning-icon {
+  fill: var(--lumo-warning-color);
+}
+
+.notification-dialog .info-icon {
+  fill: var(--lumo-primary-color);
+}
+
 .project-information-dialog::part(overlay) {
   width: 66vw;
 }
@@ -416,15 +399,9 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
-
 .purchase-item-upload::part(overlay) {
   width: 50%;
   min-width: 400px;
-}
-
-
-vaadin-upload-file::part(meta){
-  font-size: smaller;
 }
 
 .purchase-item-upload::part(content) {
@@ -445,7 +422,6 @@ vaadin-upload-file::part(meta){
   font-size: var(--lumo-font-size-s);
   font-weight: 500;
 }
-
 
 .purchase-item-upload .uploaded-items-description {
   font-size: var(--lumo-font-size-s);
