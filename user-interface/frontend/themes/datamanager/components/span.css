@@ -25,6 +25,7 @@
   font-size: var(--lumo-font-size-s);
   line-height: 1;
   text-decoration-line: underline;
+  width: min-content;
 }
 
 span.bold {

@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -360,7 +361,7 @@ public class ExperimentDetailsComponent extends PageArea {
       Span ontologyLink = new Span(ontologyLinkName);
       ontologyLink.addClassName("ontology-link");
       Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
-      ontologyClassIri.setTarget("_blank");
+      ontologyClassIri.setTarget(AnchorTarget.BLANK);
       ontology.add(ontologyLabel, ontologyClassIri);
       ontology.addClassName("ontology");
       return ontology;
