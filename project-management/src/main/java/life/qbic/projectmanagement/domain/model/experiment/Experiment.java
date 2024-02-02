@@ -41,14 +41,14 @@ public class Experiment {
   private ExperimentalDesign experimentalDesign;
 
   @ElementCollection(targetClass = OntologyClassDTO.class)
-  @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analyte`))")
+  @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   //FIXME should be `analyte`in the database and here
   private List<OntologyClassDTO> analytes = new ArrayList<>();
   @ElementCollection(targetClass = OntologyClassDTO.class)
   @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
   private List<OntologyClassDTO> species = new ArrayList<>();
   @ElementCollection(targetClass = OntologyClassDTO.class)
-  @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimen`))")
+  @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   //FIXME should be `specimen`in the database and here
   private List<OntologyClassDTO> specimens = new ArrayList<>();
 

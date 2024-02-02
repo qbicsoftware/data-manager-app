@@ -31,6 +31,11 @@ vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip {
   font-size: var(--lumo-font-size-s);
 }
 
+/* The checkmark has to be in the beginning line of an item if the item spans multiple lines */
+vaadin-multi-select-combo-box-item {
+  align-items: start;
+}
+
 /*Style overflow chip color within multi-select combobox as badges" */
 vaadin-multi-select-combo-box.chip-badge vaadin-multi-select-combo-box-chip[slot="overflow"]::before, vaadin-multi-select-combo-box-chip[slot="overflow"]::after {
   border-color: var(--lumo-primary-color-10pct);

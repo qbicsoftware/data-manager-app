@@ -3,28 +3,20 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 
 @Tag(Tag.DIV)
 public class OntologyComponent extends Component implements HasComponents {
   public OntologyComponent(OntologyClassDTO contentDTO) {
-    String ontologyName = Ontology.findOntologyByAbbreviation(contentDTO.getOntologyAbbreviation())
-        .getName();
-
+    Span ontologyLabel = new Span(contentDTO.getLabel());
+    ontologyLabel.addClassName("bold");
+    /* Ontology terms are delimited by a column, the underscore is only used in the web environment*/
+    String ontologyNameContent = contentDTO.getName().replace("_", ":");
+    Span ontologyName = new Span(ontologyNameContent);
+    /*Clicking the Link should open the origin page in a new tab*/
+    ontologyName.addClassName("ontology-name");
     addClassName("ontology-component");
-
-    var upperDiv = new Div();
-    // creates a line with label and ontology name (id), e.g. "Homo sapiens (NCBITaxon_9606)"
-    upperDiv.add(new Span(contentDTO.getLabel() + " (" + contentDTO.getName() + ")"));
-    var lowerDiv = new Div();
-    Span subtitle = new Span(ontologyName);
-    subtitle.addClassNames("subtitle");
-    lowerDiv.add(subtitle);
-    upperDiv.add(lowerDiv);
-
-    add(upperDiv);
+    add(ontologyLabel, ontologyName);
   }
 }
