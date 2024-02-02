@@ -170,7 +170,6 @@
   background-color: transparent;
   display: inline-flex;
   column-gap: var(--lumo-space-s);
-  padding-top: var(--lumo-space-l);
   /*Dialog footer should also adhere to the padding we decided on for the entire dialog*/
   padding-inline: 4rem;
   justify-content: end;
@@ -181,6 +180,7 @@
   display: flex;
   align-items: start;
   row-gap: var(--lumo-space-m);
+  /*Full dialog width border between header-content and title so the left-padding has to be determined in the content and title separately*/
   padding-left: 0;
 }
 
@@ -188,12 +188,14 @@
   width: 100%;
   border-top: thin solid var(--lumo-contrast-20pct);
   padding-top: var(--lumo-space-m);
+  /*Full dialog width border between header-content and title so the left-padding has to be determined in the content and title separately*/
   padding-left: 4rem;
 }
 
 /*Full dialog width border between header-content and title so the left-padding has to be determined in the content and title separately*/
 .dialog-window::part(title) {
   padding-left: 4rem;
+  padding-bottom: var(--lumo-space-s);
 }
 
 .edit-experiment-dialog::part(overlay),
