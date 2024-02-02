@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -44,13 +43,13 @@ final class ExperimentalVariableRowLayout extends Span {
   }
 
   private void init() {
-    addClassName("row");
-    FormLayout experimentalVariableFieldsLayout = new FormLayout();
-    experimentalVariableFieldsLayout.add(nameField, unitField, levelArea);
-    experimentalVariableFieldsLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 3));
+    addClassName("experiment-variable-row");
+    add(nameField, unitField, levelArea, deleteIcon);
     nameField.setRequired(true);
+    nameField.setClassName("variable-name");
     levelArea.setRequired(true);
-    add(experimentalVariableFieldsLayout, deleteIcon);
+    deleteIcon.addClassNames("primary", "clickable");
+    add(deleteIcon);
   }
 
   public String getVariableName() {

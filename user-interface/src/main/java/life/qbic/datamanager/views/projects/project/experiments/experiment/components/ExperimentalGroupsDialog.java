@@ -33,7 +33,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private static final long serialVersionUID = 1657697182040756406L;
   private final Collection<VariableLevel> experimentalVariableLevels;
   private final Div experimentalGroupsCollection = new Div();
-  private final Div content = new Div();
   private final Div addNewGroupContainer = new Div();
   private final boolean editMode;
 
@@ -113,16 +112,14 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private void layoutComponent() {
     layoutHeaderAndFooter();
 
-    content.addClassName("content");
-    content.add(experimentalGroupsCollection);
-    content.add(addNewGroupContainer);
-    add(content);
+    add(experimentalGroupsCollection);
+    add(addNewGroupContainer);
 
-    experimentalGroupsCollection.addClassName("group-collection");
     addNewGroupContainer.addClassName("add-new-group-action");
     addNewGroupEntry();
 
     var addNewGroupIcon = new Icon(VaadinIcon.PLUS);
+    addNewGroupIcon.addClassName("primary");
     addNewGroupIcon.addClickListener(listener -> addNewGroupEntry());
     Span addGroupHelperText = new Span("Add Experimental Group");
     addGroupHelperText.addClickListener(listener -> addNewGroupEntry());

@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -51,7 +50,6 @@ public class AddExperimentDialog extends DialogWindow {
     experimentHeader.addClassName("header");
 
     TextField experimentNameField = new TextField("Experiment Name");
-    experimentNameField.addClassName("full-width-input");
     binder.forField(experimentNameField).asRequired("Please provide a name for the experiment")
         .bind(ExperimentDraft::getExperimentName, ExperimentDraft::setExperimentName);
 
@@ -82,16 +80,13 @@ public class AddExperimentDialog extends DialogWindow {
     setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
 
-    Div container = new Div(experimentHeader,
+    add(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
         speciesBox,
         specimenBox,
         analyteBox);
-    container.addClassName("add-experiment-content");
-
-    add(container);
   }
 
   @Override

@@ -30,7 +30,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 5296014328282974007L;
   private final List<ExperimentalVariableRowLayout> experimentalVariablesLayoutRows = new ArrayList<>();
-  private final Div dialogueContentLayout = new Div();
   private final Div experimentalVariableRowsContainerLayout = new Div();
   private final Span addExperimentalVariableLayoutRow = new Span();
   private final Div addNewVariableContainer = new Div();
@@ -175,21 +174,14 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   private void initDialogueContent() {
     appendEmptyRowForAddMode();
     initDesignVariableTemplate();
-    this.dialogueContentLayout.addClassName("content");
-    this.experimentalVariableRowsContainerLayout.addClassName("variables");
-    this.dialogueContentLayout.add(this.experimentalVariableRowsContainerLayout);
-
-    this.dialogueContentLayout.add(addNewVariableContainer);
-
-    addNewVariableContainer.addClassName("add-new-group-action");
-
+    add(experimentalVariableRowsContainerLayout);
+    add(addNewVariableContainer);
+    addNewVariableContainer.addClassName("add-new-variable-action");
     var addNewVariableIcon = new Icon(VaadinIcon.PLUS);
     addNewVariableIcon.addClickListener(listener -> appendEmptyRow());
     Span addVariableHelperText = new Span("Add Experimental Variable");
     addVariableHelperText.addClickListener(listener -> appendEmptyRow());
     addNewVariableContainer.add(addNewVariableIcon, addVariableHelperText);
-
-    add(this.dialogueContentLayout);
   }
 
   private void initDesignVariableTemplate() {
@@ -204,7 +196,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     final FormLayout experimentalVariableFieldsLayout = new FormLayout();
     experimentalVariableFieldsLayout.add(experimentalVariableField, unitField, levelField);
     experimentalVariableFieldsLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 3));
-    this.addExperimentalVariableLayoutRow.addClassName("row");
     this.addExperimentalVariableLayoutRow.add(plusIcon, experimentalVariableFieldsLayout);
   }
 
