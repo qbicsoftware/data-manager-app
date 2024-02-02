@@ -63,10 +63,9 @@
 }
 
 .stepper {
-  margin-top: 0.5rem;
   display: inline-flex;
-  /*Employ same padding as defined for dialog layout*/
-  padding-inline: 4rem;
+  align-items: end;
+  margin-right: auto;
 }
 
 .stepper .step {

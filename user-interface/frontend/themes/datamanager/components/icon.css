@@ -1,3 +1,7 @@
 vaadin-icon.primary {
   color: var(--lumo-primary-color);
 }
+
+vaadin-icon.clickable {
+  cursor: pointer;
+}

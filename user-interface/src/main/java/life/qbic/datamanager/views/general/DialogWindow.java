@@ -21,7 +21,6 @@ public abstract class DialogWindow extends Dialog {
   protected DialogWindow() {
     this.addClassName("dialog-window");
     confirmButton.addClassName("primary");
-    cancelButton.setThemeName("tertiary");
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
     getFooter().add(cancelButton, confirmButton);

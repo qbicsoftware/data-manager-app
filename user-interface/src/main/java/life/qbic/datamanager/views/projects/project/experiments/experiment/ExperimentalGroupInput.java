@@ -67,6 +67,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     replicateCountField = generateBiologicalReplicateField();
 
     var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
+    deleteIcon.addClassNames("primary", "clickable");
     deleteIcon.addClickListener(
         event -> fireRemoveEvent(new RemoveEvent(this, event.isFromClient())));
     add(variableLevelSelect, replicateCountField, deleteIcon);
@@ -170,11 +171,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   private MultiSelectComboBox<VariableLevel> generateVariableLevelSelect() {
     MultiSelectComboBox<VariableLevel> selectComboBox = new MultiSelectComboBox<>();
     selectComboBox.setLabel("Condition");
-    selectComboBox.addClassName("combo-box");
+    selectComboBox.addClassName("variable-select");
     selectComboBox.addClassName("chip-badge");
     selectComboBox.setAllowCustomValue(false);
     selectComboBox.setItemLabelGenerator(VARIABLE_LEVEL_ITEM_LABEL_GENERATOR);
-    selectComboBox.setWidthFull();
     overwriteSelectionOfSameVariable(selectComboBox);
     return selectComboBox;
   }
