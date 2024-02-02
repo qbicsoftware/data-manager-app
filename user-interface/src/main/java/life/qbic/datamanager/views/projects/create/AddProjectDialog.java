@@ -8,9 +8,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -20,6 +18,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
+import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
@@ -42,21 +41,17 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 
 @SpringComponent
 @UIScope
-public class AddProjectDialog extends Dialog {
+public class AddProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
-  private final Div dialogContent;
   private final Stepper stepper;
   private final ProjectDesignLayout projectDesignLayout;
   private final FundingInformationLayout fundingInformationLayout;
   private final CollaboratorsLayout collaboratorsLayout;
   private final ExperimentalInformationLayout experimentalInformationLayout;
-
-  private final Button confirmButton;
   private final Button backButton;
   private final Button nextButton;
-
   private final Map<String, Component> stepContent;
 
 
@@ -87,15 +82,9 @@ public class AddProjectDialog extends Dialog {
     stepContent = new HashMap<>();
 
     setHeaderTitle("Create Project");
-    dialogContent = new Div();
-    dialogContent.addClassName("layout-container");
 
     stepper = new Stepper(this::createArrowSpan);
-    add(generateSectionDivider(),
-        stepper,
-        generateSectionDivider(),
-        dialogContent,
-        generateSectionDivider());
+    getHeader().add(stepper);
 
     StepIndicator projectDesign = addStep(stepper, "Project Design", projectDesignLayout);
     addStep(stepper, "Funding Information", fundingInformationLayout);
@@ -107,7 +96,6 @@ public class AddProjectDialog extends Dialog {
     nextButton.addClassNames("primary", "next");
     nextButton.addClickListener(this::onNextClicked);
 
-    confirmButton = new Button("Confirm");
     confirmButton.addClassNames("primary", "confirm");
     confirmButton.addClickListener(this::onConfirmClicked);
 
@@ -120,11 +108,8 @@ public class AddProjectDialog extends Dialog {
           adaptFooterButtons(stepSelectedEvent.getSelectedStep());
         });
 
-    Button cancelButton = new Button("Cancel");
-    cancelButton.addClassName("cancel");
     cancelButton.addClickListener(this::onCancelClicked);
     backButton = new Button("Back");
-    backButton.addClassName("back");
     backButton.addClickListener(this::onBackClicked);
 
     DialogFooter footer = getFooter();
@@ -135,12 +120,13 @@ public class AddProjectDialog extends Dialog {
     adaptFooterButtons(stepper.getFirstStep());
   }
 
-
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
-  private void onConfirmClicked(ClickEvent<Button> event) {
+  @Override
+  protected void onConfirmClicked(ClickEvent<Button> event) {
     if (projectDesignLayout.validate().isInvalid()) {
       return;
     }
@@ -198,7 +184,7 @@ public class AddProjectDialog extends Dialog {
   }
 
   private boolean isDialogContentInvalid() {
-    return dialogContent.getChildren()
+    return getChildren()
         .filter(HasBinderValidation.class::isInstance)
         .map(HasBinderValidation.class::cast)
         .map(HasBinderValidation::validate)
@@ -220,19 +206,12 @@ public class AddProjectDialog extends Dialog {
       nextButton.setVisible(false);
       confirmButton.setVisible(true);
     }
-
-  }
-
-  private static Span generateSectionDivider() {
-    Span sectionDivider = new Span(new Hr());
-    sectionDivider.addClassName("section-divider");
-    return sectionDivider;
   }
 
   private void setDialogContent(StepIndicator step) {
-    dialogContent.removeAll();
+    removeAll();
     var selectedComponent = stepContent.getOrDefault(step.getLabel(), new Div());
-    dialogContent.add(selectedComponent);
+    add(selectedComponent);
   }
 
   /**
