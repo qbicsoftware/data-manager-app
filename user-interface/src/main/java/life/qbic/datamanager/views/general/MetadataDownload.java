@@ -22,7 +22,7 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
  */
 public class MetadataDownload extends Anchor {
 
-  private final static String FILE_SUFFIX = "_samples.txt";
+  private static final String FILE_SUFFIX = "_samples.txt";
   public MetadataDownload() {
     super("_blank", "Download");
     /*
