@@ -14,7 +14,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 
 /**
@@ -23,7 +22,7 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
  */
 public class MetadataDownload extends Anchor {
 
-  private final String FILE_SUFFIX = "_samples.txt";
+  private final static String FILE_SUFFIX = "_samples.txt";
   public MetadataDownload() {
     super("_blank", "Download");
     /*
@@ -105,7 +104,7 @@ public class MetadataDownload extends Anchor {
   }
 
   private String fileNamePrefixFromExperimentName(String experimentName) {
-    String prefix = experimentName.replaceAll(" ","_");
+    String prefix = experimentName.replace(" ","_");
     if(prefix.length() > 15) {
       return prefix.substring(0,16);
     }

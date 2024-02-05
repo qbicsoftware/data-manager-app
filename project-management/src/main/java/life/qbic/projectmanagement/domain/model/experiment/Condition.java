@@ -53,7 +53,7 @@ public class Condition {
    * @since 1.0.0
    */
   public static Condition create(Collection<VariableLevel> definedVariables) {
-    return new Condition(definedVariables.stream().distinct().toList());
+    return new Condition(definedVariables);
   }
 
   public List<VariableLevel> getVariableLevels() {
@@ -76,7 +76,6 @@ public class Condition {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
-    // after performing checks on the list, we handle variable levels as a set, making comparisons cleaner and easier
     this.variableLevels = List.copyOf(variableLevels);
   }
 
