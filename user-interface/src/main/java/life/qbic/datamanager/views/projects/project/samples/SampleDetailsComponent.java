@@ -14,6 +14,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -29,8 +30,10 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
+import life.qbic.datamanager.views.general.MetadataDownload;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.projects.project.info.OfferList.DownloadOfferClickEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -65,6 +68,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final TextField searchField;
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
+  private final MetadataDownload metadataDownload;
   private final Grid<SamplePreview> sampleGrid;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
@@ -85,8 +89,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     Span buttonBar = new Span();
     buttonBar.addClassName("button-bar");
-    Button metadataDownloadButton = new Button("Download Metadata");
+    Button metadataDownloadButton = new Button("Download Metadata",
+        event -> onDownloadMetadataClicked());
     buttonBar.add(metadataDownloadButton);
+
+    metadataDownload = new MetadataDownload();
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -118,9 +125,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     Div content = new Div();
     content.addClassName("sample-details-content");
 
-    content.add(buttonAndFieldBar, sampleExperimentTabSheet);
+    content.add(buttonAndFieldBar, metadataDownload, sampleExperimentTabSheet);
     add(content);
 
+  }
+
+  private void onDownloadMetadataClicked() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(experimentId);
+    metadataDownload.trigger(experimentInformationService.find(experimentId), samples);
   }
 
   private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {

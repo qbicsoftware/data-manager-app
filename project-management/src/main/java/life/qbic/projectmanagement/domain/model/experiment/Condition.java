@@ -5,9 +5,9 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class Condition {
 
   @ElementCollection(targetClass = VariableLevel.class, fetch = FetchType.EAGER)
-  private Set<VariableLevel> variableLevels;
+  private List<VariableLevel> variableLevels;
 
   protected Condition() {
     //used by jpa
@@ -53,11 +53,11 @@ public class Condition {
    * @since 1.0.0
    */
   public static Condition create(Collection<VariableLevel> definedVariables) {
-    return new Condition(definedVariables);
+    return new Condition(definedVariables.stream().distinct().toList());
   }
 
-  public Set<VariableLevel> getVariableLevels() {
-    return Collections.unmodifiableSet(variableLevels);
+  public List<VariableLevel> getVariableLevels() {
+    return Collections.unmodifiableList(variableLevels);
   }
 
   private Condition(Collection<VariableLevel> variableLevels) {
@@ -77,7 +77,7 @@ public class Condition {
           "Variable levels are not from distinct experimental variables.");
     }
     // after performing checks on the list, we handle variable levels as a set, making comparisons cleaner and easier
-    this.variableLevels = Set.copyOf(variableLevels);
+    this.variableLevels = List.copyOf(variableLevels);
   }
 
   /**
