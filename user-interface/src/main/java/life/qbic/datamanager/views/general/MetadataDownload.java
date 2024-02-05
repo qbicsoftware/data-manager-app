@@ -88,13 +88,20 @@ public class MetadataDownload extends Anchor {
   }
 
   private List<String> createConditionHeader(Condition condition) {
-    return condition.getVariableLevels().stream().map(c -> c.variableName().value()).toList();
+    List<String> headerWithUnits = new ArrayList<>();
+    for(VariableLevel level : condition.getVariableLevels()) {
+      String label = level.variableName().value();
+      Optional<String> unit = level.experimentalValue().unit();
+      if(unit.isPresent()) {
+        label = String.format("%s [%s]", label, unit.get());
+      }
+      headerWithUnits.add(label);
+    }
+    return headerWithUnits;
   }
 
   private List<String> createConditionContent(Condition condition) {
-    return condition.getVariableLevels().stream().map(c ->
-        c.experimentalValue().value()+c.experimentalValue().unit().orElse(""))
-        .toList();
+    return condition.getVariableLevels().stream().map(c -> c.experimentalValue().value()).toList();
   }
 
   private String fileNamePrefixFromExperimentName(String experimentName) {
