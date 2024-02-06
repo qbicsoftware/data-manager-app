@@ -1,11 +1,10 @@
-package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
+package life.qbic.projectmanagement.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.OntologyClassEntity;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 
 /**
@@ -15,7 +14,7 @@ import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.Ontolo
  * with ontology versions are stored persistently with experiments and samples. Storage
  * is facilitated by {@link OntologyClassAttributeConverter}.
  */
-public class OntologyClassDTO implements Serializable {
+public class OntologyTerm implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
@@ -35,7 +34,7 @@ public class OntologyClassDTO implements Serializable {
   @JsonProperty("classIri")
   private String classIri;
 
-  public OntologyClassDTO() {
+  public OntologyTerm() {
   }
 
   /**
@@ -49,7 +48,7 @@ public class OntologyClassDTO implements Serializable {
    * @param description          - an optional description of the term
    * @param classIri             - the iri where this specific class is found/described
    */
-  public OntologyClassDTO(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
+  public OntologyTerm(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
       String classLabel, String className, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
@@ -60,8 +59,8 @@ public class OntologyClassDTO implements Serializable {
     this.classIri = classIri;
   }
 
-  public static OntologyClassDTO from(OntologyClassEntity lookupEntity) {
-    return new OntologyClassDTO(lookupEntity.getOntologyAbbreviation(),
+  public static OntologyTerm from(OntologyClassEntity lookupEntity) {
+    return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
         lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
@@ -146,7 +145,7 @@ public class OntologyClassDTO implements Serializable {
       return false;
     }
 
-    OntologyClassDTO that = (OntologyClassDTO) object;
+    OntologyTerm that = (OntologyTerm) object;
 
     if (!Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation)) {
       return false;

@@ -27,33 +27,31 @@ package life.qbic.projectmanagement.domain.model.measurement;
 public class MeasurementCode {
 
   private final MEASUREMENT_PREFIX prefix;
-  private final int counter;
   private final String sampleCode;
   private final String measurementCode;
 
-  private MeasurementCode(MEASUREMENT_PREFIX prefix, int measurementCounter, String sampleCode) {
+  private final Long nanoTimeStamp;
+
+  private MeasurementCode(MEASUREMENT_PREFIX prefix, String sampleCode, Long nanoTimeStamp) {
     this.prefix = prefix;
-    this.counter = measurementCounter;
     this.sampleCode = sampleCode;
-    this.measurementCode = String.valueOf(prefix) + measurementCounter
-        + sampleCode;
+    this.nanoTimeStamp = nanoTimeStamp;
+    this.measurementCode = "%s-%s".formatted((prefix + sampleCode), nanoTimeStamp);
   }
 
-  public static MeasurementCode create(MEASUREMENT_PREFIX prefix, int measurementCounter,
-      String sampleCode) {
-    if (measurementCounter <= 0) {
-      throw new IllegalArgumentException(
-          "Measurement counter must be greater zero. Provided value was " + measurementCounter);
-    }
+  private static MeasurementCode create(MEASUREMENT_PREFIX prefix, String sampleCode) {
     if (sampleCode.isBlank()) {
       throw new IllegalArgumentException("Sample code must not be blank or empty.");
     }
-    return new MeasurementCode(prefix, measurementCounter, sampleCode);
+    return new MeasurementCode(prefix, sampleCode, System.nanoTime());
   }
 
+  public static MeasurementCode createNGS(String sampleCode) {
+    return MeasurementCode.create(MEASUREMENT_PREFIX.NGS, sampleCode);
+  }
 
-  public String value() {
-    return this.measurementCode;
+  public static MeasurementCode createMS(String sampleCode) {
+    return MeasurementCode.create(MEASUREMENT_PREFIX.MS, sampleCode);
   }
 
   public static MeasurementCode parse(String value) {
@@ -61,14 +59,31 @@ public class MeasurementCode {
       if (value.startsWith(prefix.toString())) {
         try {
           return new MeasurementCode(prefix,
-              Integer.parseInt(value.substring(prefix.toString().length(), value.length() - 10)),
-              value.substring(value.length() - 10));
+              value.split("-")[0].substring(prefix.toString().length()),
+              Long.parseLong(value.split("-")[1]));
         } catch (Exception e) {
-          throw new IllegalArgumentException("Unknown value for a measurement code for: \"" + value + "\"");
+          throw new IllegalArgumentException(
+              "Unknown value for a measurement code for: \"" + value + "\"");
         }
       }
     }
     throw new IllegalArgumentException("Unknown measurement code prefix for: \"" + value + "\"");
+  }
+
+  public String value() {
+    return this.measurementCode;
+  }
+
+  public boolean isNGSDomain() {
+    return prefix == MEASUREMENT_PREFIX.NGS;
+  }
+
+  public boolean isMSDomain() {
+    return prefix == MEASUREMENT_PREFIX.MS;
+  }
+
+  public boolean isIMGDomain() {
+    return prefix == MEASUREMENT_PREFIX.IMG;
   }
 
   public enum MEASUREMENT_PREFIX {

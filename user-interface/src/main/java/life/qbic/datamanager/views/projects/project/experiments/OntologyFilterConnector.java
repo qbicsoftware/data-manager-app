@@ -8,7 +8,7 @@ import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
@@ -20,8 +20,8 @@ public class OntologyFilterConnector {
 
   }
 
-  public static Stream<OntologyClassDTO> loadOntologyTerms(List<Ontology> ontologies,
-      Query<OntologyClassDTO, String> query,
+  public static Stream<OntologyTerm> loadOntologyTerms(List<Ontology> ontologies,
+      Query<OntologyTerm, String> query,
       OntologyTermInformationService ontologyTermInformationService) {
     List<String> ontologyAbbreviations = ontologies.stream()
         .map(Ontology::getAbbreviation)
@@ -36,7 +36,7 @@ public class OntologyFilterConnector {
             query.getOffset(),
             query.getLimit(),
             sortOrders);
-    return ontologyClassEntities.stream().map(OntologyClassDTO::from).distinct();
+    return ontologyClassEntities.stream().map(OntologyTerm::from).distinct();
   }
 
 }

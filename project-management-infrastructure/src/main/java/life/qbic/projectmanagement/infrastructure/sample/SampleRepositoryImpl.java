@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -136,6 +137,11 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public List<Sample> findSamplesBySampleId(List<SampleId> sampleId) {
     return qbicSampleRepository.findAllById(sampleId);
+  }
+
+  @Override
+  public Optional<SampleId> findSampleId(SampleCode sampleCode) {
+    return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
   }
 
 

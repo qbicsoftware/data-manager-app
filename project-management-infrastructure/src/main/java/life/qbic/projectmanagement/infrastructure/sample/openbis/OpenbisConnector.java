@@ -47,13 +47,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
 import life.qbic.projectmanagement.infrastructure.sample.translation.VocabularyCode;
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -63,7 +66,8 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo {
+public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
+    MeasurementDataRepo {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -350,6 +354,18 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
     return updatedSamples.stream().map(this::createSampleUpdate).toList();
+  }
+
+  @Override
+  public void addNGSMeasurements(Collection<NGSMeasurement> ngsMeasurements) {
+    // TODO implement!
+    throw new NotImplementedException("Not yet implemented!");
+  }
+
+  @Override
+  public void addNGSMeasurement(NGSMeasurement ngsMeasurement) {
+    // TODO implement
+    throw new NotImplementedException("");
   }
 
   record VocabularyTerm(String code, String label, String description) {

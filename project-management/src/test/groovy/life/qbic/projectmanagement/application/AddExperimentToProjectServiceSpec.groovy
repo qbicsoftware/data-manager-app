@@ -1,10 +1,7 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Analyte
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Species
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.Specimen
+import life.qbic.projectmanagement.domain.model.OntologyTerm
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
@@ -26,9 +23,9 @@ class AddExperimentToProjectServiceSpec extends Specification {
         when: "an experiment is added to a project"
         def result = service.addExperimentToProject(project.id,
                 "Pilot",
-                [new OntologyClassDTO()],
-                [new OntologyClassDTO()],
-                [new OntologyClassDTO()])
+                [new OntologyTerm()],
+                [new OntologyTerm()],
+                [new OntologyTerm()])
         ExperimentId experimentId = result.getValue()
 
         then: "the project holds a reference to the created experiment"

@@ -18,7 +18,7 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.S
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -32,8 +32,8 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
 
 
   public SampleBatchInformationSpreadsheet(List<ExperimentalGroup> experimentalGroups,
-      List<OntologyClassDTO> species, List<OntologyClassDTO> specimens,
-      List<OntologyClassDTO> analytes, boolean showSampleCode) {
+      List<OntologyTerm> species, List<OntologyTerm> specimens,
+      List<OntologyTerm> analytes, boolean showSampleCode) {
     List<AnalysisMethod> sortedAnalysisMethods = Arrays.stream(AnalysisMethod.values())
         .sorted(Comparator.comparing(AnalysisMethod::label)).toList();
 
@@ -72,16 +72,16 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
                 .map(ExperimentalGroup::biologicalReplicates).orElse(List.of()), identity())
         .setRequired();
 
-    addColumn("Species", SampleInfo::getSpecies, OntologyClassDTO::getLabel,
+    addColumn("Species", SampleInfo::getSpecies, OntologyTerm::getLabel,
         (sampleInfo, label) -> sampleInfo.setSpecies(
             findOntologyForLabel(species, label))).selectFrom(species, identity()).setRequired();
 
-    addColumn("Specimen", SampleInfo::getSpecimen, OntologyClassDTO::getLabel,
+    addColumn("Specimen", SampleInfo::getSpecimen, OntologyTerm::getLabel,
         (sampleInfo, label) -> sampleInfo.setSpecimen(
             findOntologyForLabel(specimens, label))).selectFrom(specimens, identity())
         .setRequired();
 
-    addColumn("Analyte", SampleInfo::getAnalyte, OntologyClassDTO::getLabel,
+    addColumn("Analyte", SampleInfo::getAnalyte, OntologyTerm::getLabel,
         (sampleInfo, label) -> sampleInfo.setAnalyte(
             findOntologyForLabel(analytes, label))).selectFrom(analytes, identity()).setRequired();
 
@@ -113,15 +113,15 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private String organismId;
     private BiologicalReplicate biologicalReplicate;
     private ExperimentalGroup experimentalGroup;
-    private OntologyClassDTO species;
-    private OntologyClassDTO specimen;
-    private OntologyClassDTO analyte;
+    private OntologyTerm species;
+    private OntologyTerm specimen;
+    private OntologyTerm analyte;
     private String customerComment;
 
     public static SampleInfo create(AnalysisMethod analysisMethod, String sampleLabel,
         String organismId, BiologicalReplicate biologicalReplicate,
-        ExperimentalGroup experimentalGroup, OntologyClassDTO species, OntologyClassDTO specimen,
-        OntologyClassDTO analyte, String customerComment) {
+        ExperimentalGroup experimentalGroup, OntologyTerm species, OntologyTerm specimen,
+        OntologyTerm analyte, String customerComment) {
       return create(null, null, analysisMethod, sampleLabel, organismId, biologicalReplicate,
           experimentalGroup, species, specimen, analyte, customerComment);
     }
@@ -129,7 +129,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     public static SampleInfo create(SampleId sampleId, SampleCode sampleCode,
         AnalysisMethod analysisMethod, String sampleLabel, String organismId,
         BiologicalReplicate biologicalReplicate, ExperimentalGroup experimentalGroup,
-        OntologyClassDTO species, OntologyClassDTO specimen, OntologyClassDTO analyte,
+        OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
         String customerComment) {
       SampleInfo sampleInfo = new SampleInfo();
       sampleInfo.setSampleId(sampleId);
@@ -186,19 +186,19 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.organismId = organismId;
     }
 
-    public OntologyClassDTO getSpecies() {
+    public OntologyTerm getSpecies() {
       return species;
     }
 
-    public void setSpecies(OntologyClassDTO species) {
+    public void setSpecies(OntologyTerm species) {
       this.species = species;
     }
 
-    public OntologyClassDTO getSpecimen() {
+    public OntologyTerm getSpecimen() {
       return specimen;
     }
 
-    public void setSpecimen(OntologyClassDTO specimen) {
+    public void setSpecimen(OntologyTerm specimen) {
       this.specimen = specimen;
     }
 
@@ -218,11 +218,11 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.experimentalGroup = experimentalGroup;
     }
 
-    public OntologyClassDTO getAnalyte() {
+    public OntologyTerm getAnalyte() {
       return analyte;
     }
 
-    public void setAnalyte(OntologyClassDTO analyte) {
+    public void setAnalyte(OntologyTerm analyte) {
       this.analyte = analyte;
     }
 
@@ -350,7 +350,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .collect(Collectors.joining("; "));
   }
 
-  private static OntologyClassDTO findOntologyForLabel(List<OntologyClassDTO> selection,
+  private static OntologyTerm findOntologyForLabel(List<OntologyTerm> selection,
       String label) {
     return selection.stream().filter(it -> it.getLabel().equals(label)).findFirst().orElse(null);
   }

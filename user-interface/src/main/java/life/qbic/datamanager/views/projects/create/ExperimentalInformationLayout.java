@@ -19,7 +19,7 @@ import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * <b>Experimental Information Layout</b>
@@ -38,9 +38,9 @@ public class ExperimentalInformationLayout extends Div implements
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
-    MultiSelectComboBox<OntologyClassDTO> speciesBox = ontologyComboboxFactory.speciesBox();
-    MultiSelectComboBox<OntologyClassDTO> specimenBox = ontologyComboboxFactory.specimenBox();
-    MultiSelectComboBox<OntologyClassDTO> analyteBox = ontologyComboboxFactory.analyteBox();
+    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
     TextField nameField = nameField();
 
     experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
@@ -115,9 +115,9 @@ public class ExperimentalInformationLayout extends Div implements
     @Serial
     private static final long serialVersionUID = -2712521934990738542L;
     private String experimentName;
-    private final List<OntologyClassDTO> species;
-    private final List<OntologyClassDTO> specimen;
-    private final List<OntologyClassDTO> analytes;
+    private final List<OntologyTerm> species;
+    private final List<OntologyTerm> specimen;
+    private final List<OntologyTerm> analytes;
 
     public ExperimentalInformation() {
       species = new ArrayList<>();
@@ -133,29 +133,29 @@ public class ExperimentalInformationLayout extends Div implements
       this.experimentName = experimentName;
     }
 
-    public List<OntologyClassDTO> getSpecies() {
+    public List<OntologyTerm> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyClassDTO> species) {
+    public void setSpecies(Collection<OntologyTerm> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyClassDTO> getSpecimens() {
+    public List<OntologyTerm> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyClassDTO> specimen) {
+    public void setSpecimens(Collection<OntologyTerm> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyClassDTO> getAnalytes() {
+    public List<OntologyTerm> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyClassDTO> analytes) {
+    public void setAnalytes(Collection<OntologyTerm> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

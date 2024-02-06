@@ -31,7 +31,7 @@ class MeasurementCodeSpec extends Specification {
         parsedCode instanceof MeasurementCode
 
         where:
-        validCode << ["NGS1QTEST001AE"]
+        validCode << ["NGSQTEST001AE-" + System.nanoTime()]
     }
 
     def "Valid measurement counters must result in a successfully parsed measurement code object"() {
@@ -46,7 +46,7 @@ class MeasurementCodeSpec extends Specification {
         parsedCode.value().equals(validCode)
 
         where:
-        validCode << ["NGS1QTEST001AE", "MS1QTEST001AE", "IMG234QTEST001AE"]
+        validCode << ["NGS1QTEST001AE-"+System.nanoTime(), "MS1QTEST001AE-"+System.nanoTime(), "IMG234QTEST001AE-"+System.nanoTime()]
     }
 
     def "Valid measurement code string with valid sample code must result in a successfully parsed representation"() {
@@ -61,7 +61,7 @@ class MeasurementCodeSpec extends Specification {
         parsedCode.value().equals(validCode)
 
         where:
-        validCode << ["NGS1QTEST001AE", "MS1QTEST001AE", "IMG234QTEST001AE"]
+        validCode << ["NGS1QTEST001AE-"+System.nanoTime(), "MS1QTEST001AE-"+System.nanoTime(), "IMG234QTEST001AE-"+System.nanoTime()]
     }
 
     def "Valid measurement code string with invalid sample code must result in an IllegalArumentException"() {
