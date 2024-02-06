@@ -58,6 +58,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
+      groupEntry.setEnabled(editMode);
       groupEntry.addRemoveEventListener(
           listener -> experimentalGroupsCollection.remove(groupEntry));
       return groupEntry;
@@ -75,14 +76,29 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   /**
-   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided.
+   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided. These
+   * groups can be edited.
    * @param experimentalVariables the variable levels to choose from
    * @param experimentalGroupContents the experimental groups prefilled into the input fields
    * @return a prefilled ExperimentalGroupDialog
    */
-  public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
+  public static ExperimentalGroupsDialog editable(Collection<VariableLevel> experimentalVariables,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, true);
+  }
+
+  /**
+   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided. Existing
+   * groups can't be edited, but new groups added. Existing groups are therefore greyed out in the UI.
+   * @param experimentalVariables the variable levels to choose from
+   * @param experimentalGroupContents the experimental groups prefilled into the input fields
+   * @return a prefilled ExperimentalGroupDialog
+   */
+  public static ExperimentalGroupsDialog nonEditable(Collection<VariableLevel> experimentalVariables,
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    ExperimentalGroupsDialog dialog = new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, false);
+    dialog.addNewGroupEntry();
+    return dialog;
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupInput experimentalGroupInput) {
@@ -158,15 +174,16 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   /**
-   * Provides the current experimental groups defined by the user.
-   *
+   * Provides experimental groups defined by the user. Only group information in enabled components
+   * is returned, as the list of existing groups cannot be changed in "add group" mode.
    * @return a collection of {@link ExperimentalGroupContent}, describing the group size (biological
    * replicates) and the variable level combination.
    * @since 1.0.0
    */
   public Collection<ExperimentalGroupContent> experimentalGroups() {
     return this.experimentalGroupsCollection.getChildren()
-        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
+        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class)
+            && ((ExperimentalGroupInput) component).isEnabled())
         .map(experimentalGroupEntry -> convert((ExperimentalGroupInput) experimentalGroupEntry))
         .toList();
   }
