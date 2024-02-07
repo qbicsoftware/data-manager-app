@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -73,7 +74,7 @@ public class OntologyTermJpaRepository implements OntologyLookupInterface {
   }
 
   @Override
-  public List<OntologyClass> query(String ontologyCURI) {
+  public Collection<OntologyClass> query(String ontologyCURI) {
     // The CURI (aka "name" in the database) is currently formatted with an "_" (underscore) as delimiter
     var delimiterCorrectedCURI = ontologyCURI.trim().replace(":", "_");
     // And the prefix is in capitalised form
