@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.ontology;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +9,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "ontology_classes")
-public class OntologyClassEntity {
+public class OntologyClass {
 
   @Column(name = "ontology")
   String ontologyAbbreviation;
@@ -30,10 +30,10 @@ public class OntologyClassEntity {
   @GeneratedValue
   private Long id;
 
-  public OntologyClassEntity() {
+  public OntologyClass() {
   }
 
-  public OntologyClassEntity(String ontologyAbbreviation, String ontologyVersion,
+  public OntologyClass(String ontologyAbbreviation, String ontologyVersion,
       String ontologyIri,
       String classLabel, String className, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
@@ -109,7 +109,7 @@ public class OntologyClassEntity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    OntologyClassEntity that = (OntologyClassEntity) o;
+    OntologyClass that = (OntologyClass) o;
     return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
         that.ontologyIri) && Objects.equals(classLabel, that.classLabel) && Objects.equals(

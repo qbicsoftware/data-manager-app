@@ -21,8 +21,8 @@ import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ContactRepository;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,13 +43,13 @@ public class ProjectOverviewMain extends Main {
   private final ProjectCollectionComponent projectCollectionComponent;
   private final ProjectCreationService projectCreationService;
   private final FinanceService financeService;
-  private final OntologyTermInformationService ontologyTermInformationService;
+  private final OntologyLookupService ontologyTermInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final ContactRepository contactRepository;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
-      OntologyTermInformationService ontologyTermInformationService,
+      OntologyLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       ContactRepository contactRepository) {
     this.projectCollectionComponent = projectCollectionComponent;

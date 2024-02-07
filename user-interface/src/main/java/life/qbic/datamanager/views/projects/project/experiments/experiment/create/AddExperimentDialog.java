@@ -21,7 +21,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -41,7 +41,7 @@ public class AddExperimentDialog extends DialogWindow {
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public AddExperimentDialog(
-      OntologyTermInformationService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(

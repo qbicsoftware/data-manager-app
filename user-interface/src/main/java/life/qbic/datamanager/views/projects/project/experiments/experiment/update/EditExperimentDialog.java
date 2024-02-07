@@ -20,7 +20,7 @@ import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -38,7 +38,7 @@ public class EditExperimentDialog extends DialogWindow {
   private static final long serialVersionUID = 2142928219461555700L;
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
-  public EditExperimentDialog(OntologyTermInformationService ontologyTermInformationService) {
+  public EditExperimentDialog(OntologyLookupService ontologyTermInformationService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
 

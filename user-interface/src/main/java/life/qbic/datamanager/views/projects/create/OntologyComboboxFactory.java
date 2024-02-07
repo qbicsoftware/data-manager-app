@@ -8,7 +8,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.List;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -18,11 +18,11 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  */
 public class OntologyComboboxFactory {
 
-  private final OntologyTermInformationService ontologyTermInformationService;
+  private final OntologyLookupService ontologyLookupService;
   private static final String[] BOX_CLASSES = {"chip-badge", "full-width-input"};
 
-  public OntologyComboboxFactory(OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
+  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService) {
+    this.ontologyLookupService = requireNonNull(ontologyLookupService,
         "ontologyTermInformationService must not be null");
   }
 
@@ -40,7 +40,7 @@ public class OntologyComboboxFactory {
   private FetchCallback<OntologyTerm, String> ontologyFetchCallback(
       List<Ontology> ontologies) {
     return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
-        ontologyTermInformationService);
+        ontologyLookupService);
   }
 
   public MultiSelectComboBox<OntologyTerm> speciesBox() {

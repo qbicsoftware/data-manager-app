@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 
 /**
  * Describes Ontology Class objects and is used to store and display species, specimen, analyte etc.
- * when creating or editing experiments and samples. Other than {@link OntologyClassEntity}, which
+ * when creating or editing experiments and samples. Other than {@link OntologyClass}, which
  * is used for lookup in the non-persistent ontology table, OntologyClassDTO objects
  * with ontology versions are stored persistently with experiments and samples. Storage
  * is facilitated by {@link OntologyClassAttributeConverter}.
@@ -59,7 +59,7 @@ public class OntologyTerm implements Serializable {
     this.classIri = classIri;
   }
 
-  public static OntologyTerm from(OntologyClassEntity lookupEntity) {
+  public static OntologyTerm from(OntologyClass lookupEntity) {
     return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
         lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),

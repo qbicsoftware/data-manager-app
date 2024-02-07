@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
 /**
  * <b>Experimental Information Layout</b>
@@ -33,7 +33,7 @@ public class ExperimentalInformationLayout extends Div implements
   private final Binder<ExperimentalInformation> experimentalInformationBinder;
 
   public ExperimentalInformationLayout(
-      OntologyTermInformationService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(

@@ -3,9 +3,9 @@ package life.qbic.projectmanagement.infrastructure.ontology;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.api.OntologyTermLookup;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface;
 import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Scope("singleton")
-public class OntologyTermJpaRepository implements OntologyTermLookup {
+public class OntologyTermJpaRepository implements OntologyLookupInterface {
 
   private final OntologyTermRepository ontologyTermRepository;
 
@@ -29,7 +29,7 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
   }
 
   @Override
-  public List<OntologyClassEntity> query(int offset, int limit) {
+  public List<OntologyClass> query(int offset, int limit) {
     return ontologyTermRepository.findAll(new OffsetBasedRequest(offset, limit)).getContent();
   }
 
@@ -48,7 +48,7 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
   }
 
   @Override
-  public List<OntologyClassEntity> query(String searchString,
+  public List<OntologyClass> query(String searchString,
       List<String> ontologyAbbreviations,
       int offset,
       int limit, List<SortOrder> sortOrders) {
@@ -70,5 +70,15 @@ public class OntologyTermJpaRepository implements OntologyTermLookup {
     return ontologyTermRepository.findByLabelFulltextMatching(
             searchTerm, ontologyAbbreviations, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
         .getContent();
+  }
+
+  @Override
+  public List<OntologyClass> query(String ontologyCURI) {
+    // The CURI (aka "name" in the database) is currently formatted with an "_" (underscore) as delimiter
+    var delimiterCorrectedCURI = ontologyCURI.trim().replace(":", "_");
+    // And the prefix is in capitalised form
+    var capitalizedCURI = delimiterCorrectedCURI.toUpperCase();
+
+    return ontologyTermRepository.findByClassNameFulltextMatching(capitalizedCURI);
   }
 }

@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
 import java.util.List;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import org.springframework.data.repository.CrudRepository;
 
 /**
@@ -15,7 +15,7 @@ import org.springframework.data.repository.CrudRepository;
  *
  * @since 1.0.0
  */
-public interface QbicOntologyTermRepo extends CrudRepository<OntologyClassEntity, Long> {
+public interface QbicOntologyTermRepo extends CrudRepository<OntologyClass, Long> {
 
-  List<OntologyClassEntity> findOntologyClassEntitiesByClassName(String name);
+  List<OntologyClass> findOntologyClassEntitiesByClassName(String name);
 }

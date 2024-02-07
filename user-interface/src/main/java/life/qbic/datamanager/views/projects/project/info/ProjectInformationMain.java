@@ -37,7 +37,7 @@ import life.qbic.datamanager.views.projects.project.info.OfferList.UploadOfferCl
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -63,7 +63,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
-  private final transient OntologyTermInformationService ontologyTermInformationService;
+  private final transient OntologyLookupService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
@@ -78,7 +78,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ExperimentListComponent experimentListComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired OntologyTermInformationService ontologyTermInformationService,
+      @Autowired OntologyLookupService ontologyTermInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");

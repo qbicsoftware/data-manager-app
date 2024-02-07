@@ -51,8 +51,9 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
@@ -60,7 +61,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -79,7 +79,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
-  private final transient OntologyTermInformationService ontologyTermInformationService;
+  private final transient OntologyLookupService ontologyTermInformationService;
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span title = new Span();
@@ -104,7 +104,7 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
-      @Autowired OntologyTermInformationService ontologyTermInformationService) {
+      @Autowired OntologyLookupService ontologyTermInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
