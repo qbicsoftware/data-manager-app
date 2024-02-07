@@ -1,17 +1,16 @@
 /*Ensures consistent dialog size via dedicated variable breakpoints*/
-/*Todo Discuss current sizes with Shraddha especially on smaller screens*/
 :root {
-  --small-dialog-height: 60%;
-  --medium-dialog-height: 80%;
-  --full-dialog-height: 100%;
-  --small-dialog-width: 50%;
-  --medium-dialog-width: 75%;
-  --full-dialog-width: 100%;
+  --small-dialog-width: 50vw;
+  --medium-dialog-width: 75vw;
+  --full-dialog-width: 100vw;
+  --small-dialog-height: clamp(min-content, 50vh, 75vh);
+  --medium-dialog-height: clamp(min-content, 75vh, 100vh);
+  --full-dialog-height: 100vh;
 }
 
 .add-project-dialog::part(overlay) {
   height: var(--full-dialog-height);
-  width: var(--medium-dialog-width);
+  width: var(--medium -dialog-width);
 }
 
 .add-project-dialog .collaborators-layout {
@@ -153,11 +152,6 @@
   opacity: 0.05;
 }
 
-.dialog-window::part(overlay) {
-  min-width: var(--small-dialog-width);
-  min-height: var(--small-dialog-height);
-}
-
 .dialog-window::part(content) {
   display: flex;
   flex-direction: column;
@@ -200,8 +194,8 @@
 
 .edit-experiment-dialog::part(overlay),
 .add-experiment-dialog::part(overlay) {
-  height: var(--medium-dialog-width);
-  width: var(--small-dialog-height);
+  height: var(--medium-dialog-height);
+  width: var(--small-dialog-width);
 }
 
 .edit-experiment-dialog .header,
@@ -222,11 +216,12 @@
 }
 
 .edit-project-dialog .form-content .contact-field .name-field {
-  flex-grow: 1;
+
 }
 
 .edit-project-dialog .form-content .contact-field .email-field {
-  flex-grow: 1;
+
+
 }
 
 .edit-project-dialog .project-contacts {
@@ -344,7 +339,7 @@
 }
 
 .purchase-item-upload::part(overlay) {
-  height: var(--medium-dialog-height);
+  height: var(--small-dialog-height);
   width: var(--small-dialog-width);
 }
 
