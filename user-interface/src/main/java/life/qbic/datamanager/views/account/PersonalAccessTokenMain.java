@@ -9,7 +9,6 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.MainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
 import life.qbic.datamanager.views.general.Main;
@@ -39,7 +38,6 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   @Serial
   private static final long serialVersionUID = -7876265792987169498L;
   private static final Logger log = LoggerFactory.logger(PersonalAccessTokenMain.class);
-  private transient Context context;
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
 
