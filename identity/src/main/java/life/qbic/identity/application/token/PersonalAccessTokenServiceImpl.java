@@ -1,9 +1,7 @@
 package life.qbic.identity.application.token;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
@@ -33,6 +31,13 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
     this.tokenRepository = tokenRepository;
   }
 
+  private static PersonalAccessToken convert(
+      life.qbic.identity.domain.model.token.PersonalAccessToken token) {
+    return new PersonalAccessToken(token.tokenId(),
+        token.description(), token.expirationDate(),
+        token.hasExpired());
+  }
+
   @Override
   public RawToken create(String userId, String description, Duration duration)
       throws UnknownUserIdException {
@@ -52,15 +57,9 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
     return new RawToken(rawToken);
   }
 
-
   @Override
   public Collection<PersonalAccessToken> find(String userId) {
-    List<PersonalAccessToken> accessTokens = new ArrayList<>();
-    tokenRepository.findAllByUserId(userId).forEach(personalAccessToken -> accessTokens.add(
-        new PersonalAccessToken(personalAccessToken.tokenId(),
-            personalAccessToken.description(), personalAccessToken.creationDate().plus(
-            personalAccessToken.duration()),
-            personalAccessToken.hasExpired())));
-    return accessTokens;
+    return tokenRepository.findAllByUserId(userId).stream()
+        .map(PersonalAccessTokenServiceImpl::convert).toList();
   }
 }

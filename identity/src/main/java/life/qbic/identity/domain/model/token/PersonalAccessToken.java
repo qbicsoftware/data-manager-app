@@ -75,4 +75,8 @@ public class PersonalAccessToken {
     return !hasExpired();
   }
 
+  public Instant expirationDate() {
+    return creationDate.plus(duration);
+  }
+
 }
