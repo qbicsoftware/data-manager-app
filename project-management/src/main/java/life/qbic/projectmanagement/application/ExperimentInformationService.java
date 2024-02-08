@@ -308,7 +308,7 @@ public class ExperimentInformationService {
    * @param levels         the levels in the condition of the group
    * @param replicateCount the number of biological replicates
    */
-  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int replicateCount) {
+  public record ExperimentalGroupDTO(List<VariableLevel> levels, int replicateCount) {
 
   }
 }
