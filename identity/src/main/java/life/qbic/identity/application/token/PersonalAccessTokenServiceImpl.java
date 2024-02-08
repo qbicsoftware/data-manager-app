@@ -62,4 +62,9 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
     return tokenRepository.findAllByUserId(userId).stream()
         .map(PersonalAccessTokenServiceImpl::convert).toList();
   }
+
+  @Override
+  public void delete(String tokenId, String userId) {
+    // TODO
+  }
 }

@@ -32,6 +32,7 @@ public interface PersonalAccessTokenService {
    */
   Collection<PersonalAccessToken> find(String userId);
 
+
   void delete(String tokenId, String userId);
 
 }
