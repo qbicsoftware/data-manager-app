@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
@@ -17,8 +18,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Collection;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.logging.api.Logger;
 
 /**
@@ -56,10 +61,11 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       Div showEncryptedPersonalTokenDetails = new Div();
       Span personalAccessToken = new Span(personalAccessTokenDTO.tokenDescription());
       Span expirationDate = new Span(
-          "Your token expires on: " + personalAccessTokenDTO.expirationDate);
+          "Your token expires on: " + personalAccessTokenDTO.expirationDate().format(
+              DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)));
       expirationDate.setClassName("secondary");
       Icon deletionIcon = VaadinIcon.TRASH.create();
-      deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenClicked(this,
+      deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
           event.isFromClient())));
       deletionIcon.addClassNames("error", "clickable");
       showEncryptedPersonalTokenDetails.addClassName(
@@ -83,7 +89,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
           .executeJs("navigator.clipboard.writeText", personalAccessTokenDTO.tokenName()));
        */
       Icon deletionIcon = VaadinIcon.TRASH.create();
-      deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenClicked(this,
+      deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
           event.isFromClient())));
       deletionIcon.addClassName("error");
       Span copyNotification = new Span(
@@ -96,8 +102,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     });
   }
 
-  //ToDo move logic to create token
-
   private Span generateHeader() {
     Span title = new Span(TITLE);
     title.addClassName("title");
@@ -106,7 +110,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     Button generateTokenButton = new Button("Generate new token");
     buttonBar.add(generateTokenButton);
     generateTokenButton.addClickListener(
-        event -> fireEvent(new GenerateTokenClicked(this, event.isFromClient())));
+        event -> fireEvent(new addTokenEvent(this, event.isFromClient())));
     Span header = new Span(title, buttonBar);
     header.addClassName("header");
     return header;
@@ -133,8 +137,28 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     return new Div(upperDescription, lowerDescription);
   }
 
-  public void setTokens(List<PersonalAccessTokenDTO> personalAccessTokenDTOList) {
-    personalAccessTokenDTOVirtualList.setItems(personalAccessTokenDTOList);
+  public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokens) {
+    personalAccessTokenDTOVirtualList.setItems(personalAccessTokens);
+  }
+
+  /**
+   * Register an {@link ComponentEventListener} that will get informed with a {@link addTokenEvent},
+   * as soon as a user wants to edit batch Information.
+   *
+   * @param addTokenListener a listener on the batch edit trigger
+   */
+  public void addTokenListener(ComponentEventListener<addTokenEvent> addTokenListener) {
+    addListener(addTokenEvent.class, addTokenListener);
+  }
+
+  /**
+   * Register an {@link ComponentEventListener} that will get informed with a
+   * {@link DeleteTokenEvent}, as soon as a user wants to edit batch Information.
+   *
+   * @param deleteTokenListener a listener on the batch edit trigger
+   */
+  public void addDeleteTokenListener(ComponentEventListener<DeleteTokenEvent> deleteTokenListener) {
+    addListener(DeleteTokenEvent.class, deleteTokenListener);
   }
 
   /**
@@ -143,12 +167,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * <p>Indicates that a user wants to create a {@link PersonalAccessToken}
    * within the {@link PersonalAccessTokenComponent}</p>
    */
-  public static class GenerateTokenClicked extends ComponentEvent<PersonalAccessTokenComponent> {
+  public static class addTokenEvent extends ComponentEvent<PersonalAccessTokenComponent> {
 
     @Serial
     private static final long serialVersionUID = 2389754662171510873L;
 
-    public GenerateTokenClicked(PersonalAccessTokenComponent source, boolean fromClient) {
+    public addTokenEvent(PersonalAccessTokenComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }
@@ -159,24 +183,41 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * <p>Indicates that a user wants to delete a {@link PersonalAccessToken}
    * within the {@link PersonalAccessTokenComponent}</p>
    */
-  public static class DeleteTokenClicked extends ComponentEvent<PersonalAccessTokenComponent> {
+  public static class DeleteTokenEvent extends ComponentEvent<PersonalAccessTokenComponent> {
 
     @Serial
     private static final long serialVersionUID = 5303581981248150518L;
 
-    public DeleteTokenClicked(PersonalAccessTokenComponent source, boolean fromClient) {
+    public DeleteTokenEvent(PersonalAccessTokenComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  /*Todo replace with LocalDate and figure out how to generate and encrypt token*/
-  public record PersonalAccessTokenDTO(String tokenId, String tokenDescription,
-                                       String expirationDate) {
+  public static class PersonalAccessTokenDTO {
 
+    private String tokenDescription;
+    private LocalDate expirationDate;
+
+    public PersonalAccessTokenDTO(String tokenDescription, LocalDate expirationDate) {
+      this.tokenDescription = tokenDescription;
+      this.expirationDate = expirationDate;
+    }
+
+    public String tokenDescription() {
+      return tokenDescription;
+    }
+
+    public void setTokenDescription(String tokenDescription) {
+      this.tokenDescription = tokenDescription;
+    }
+
+    public LocalDate expirationDate() {
+      return expirationDate;
+    }
+
+    public void setExpirationDate(LocalDate expirationDate) {
+      this.expirationDate = expirationDate;
+    }
   }
 
-  //ToDo Define how this is best stored and accessed in database
-  public record PersonalAccessToken() {
-
-  }
 }

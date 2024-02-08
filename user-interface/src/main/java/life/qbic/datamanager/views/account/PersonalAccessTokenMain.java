@@ -7,26 +7,30 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.addTokenEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.identity.api.PersonalAccessToken;
+import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
- * Sample Information Main Component
+ * Personal Access Token Main
  * <p>
- * This component hosts the components necessary to show and update the information for all
- * {@link Sample} associated with all {@link Experiment} of a {@link Project} information via the
- * provided {@link ProjectId} in the URL
+ * This component hosts the components necessary to show the {@link PersonalAccessToken} for the
+ * current logged-in User via the {@link PersonalAccessTokenComponent}. Additionally, the user can
+ * create and delete {@link PersonalAccessToken} via the provided UI elements
  */
 
 @Route(value = "personal-access-token", layout = MainLayout.class)
@@ -41,7 +45,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
 
-  public PersonalAccessTokenMain(@Autowired PersonalAccessTokenService personalAccessTokenService,
+  public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
       @Autowired PersonalAccessTokenComponent personalAccessTokenComponent) {
     Objects.requireNonNull(personalAccessTokenService);
     Objects.requireNonNull(personalAccessTokenComponent);
@@ -49,12 +53,32 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     this.personalAccessTokenComponent = personalAccessTokenComponent;
     addClassName("personal-access-token");
     add(personalAccessTokenComponent);
+    personalAccessTokenComponent.addTokenListener(this::onAddTokenClicked);
+    personalAccessTokenComponent.addDeleteTokenListener(this::onDeleteTokenClicked);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
         personalAccessTokenComponent.getClass().getSimpleName(),
         System.identityHashCode(personalAccessTokenComponent)));
   }
+
+  private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
+    //Todo Delete Token Logic with Service
+  }
+
+  private void onAddTokenClicked(addTokenEvent addTokenEvent) {
+    AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();
+    addPersonalAccessTokenDialog.open();
+    addPersonalAccessTokenDialog.addCancelListener(event -> event.getSource().close());
+    addPersonalAccessTokenDialog.addConfirmListener(event -> {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+      //ToDo add expiration date and description?
+      personalAccessTokenService.create(details.getUserId());
+      event.getSource().close();
+    });
+  }
+
 
   /**
    * Callback executed before navigation to attaching Component chain is made.
@@ -67,23 +91,35 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void loadGeneratedPersonalAccessTokens() {
-    PersonalAccessTokenService personalAccessTokenService = new PersonalAccessTokenService();
-    personalAccessTokenComponent.setTokens(personalAccessTokenService.getTokensForUser());
+
+    //ToDo add this once backend is ready
+    /*
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    List<PersonalAccessTokenDTO> personalAccessTokenDTOs = new ArrayList<>;
+    List<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.find(details.getUserId()));
+    personalAccessTokens.forEach(token -> personalAccessTokenDTOs.add(new PersonalAccessTokenDTO(token.description(),
+            LocalDate.ofInstant(token.expiration(), ZoneId.systemDefault()))));
+    personalAccessTokenComponent.setTokens(personalAccessTokenDTOs);
+    */
+    personalAccessTokenComponent.setTokens(MockPersonalAccessTokenService.getTokensForUser());
   }
 
-  @Service
-  public static class PersonalAccessTokenService {
 
-    public PersonalAccessTokenService() {
+  //Todo Replace with real service
+  @Service
+  public static class MockPersonalAccessTokenService {
+
+    public MockPersonalAccessTokenService() {
     }
 
 
-    public List<PersonalAccessTokenDTO> getTokensForUser() {
-      return List.of(new PersonalAccessTokenDTO("PiD1", "ABC", "NEVER"),
-          new PersonalAccessTokenDTO("PiD2", "DEF", "GONNA"),
-          new PersonalAccessTokenDTO("PiD3", "GHIJ", "GIVE"),
-          new PersonalAccessTokenDTO("PiD4", "KLMN", "YOU"),
-          new PersonalAccessTokenDTO("PiD5", "OPQR", "UP"));
+    public static List<PersonalAccessTokenDTO> getTokensForUser() {
+      return List.of(new PersonalAccessTokenDTO("ABC", LocalDate.now().plusDays(1)),
+          new PersonalAccessTokenDTO("DEF", LocalDate.now().plusDays(2)),
+          new PersonalAccessTokenDTO("GHIJ", LocalDate.now().plusDays(3)),
+          new PersonalAccessTokenDTO("KLMN", LocalDate.now().plusDays(4)),
+          new PersonalAccessTokenDTO("OPQR", LocalDate.now().plusDays(5)));
     }
   }
 

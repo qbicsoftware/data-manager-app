@@ -6,6 +6,7 @@ import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.identity.api.UnknownUserIdException;
 import life.qbic.identity.api.UserInformationService;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Personal Access Token Service</b>
@@ -14,6 +15,7 @@ import life.qbic.identity.api.UserInformationService;
  *
  * @since 1.0.0
  */
+@Service
 public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenService {
 
   private final UserInformationService userInformationService;

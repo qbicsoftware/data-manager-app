@@ -77,6 +77,21 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bold;
 }
 
+/* ToDo adjust once dialog PR is approved */
+.add-personal-access-token-dialog::part(overlay) {
+  height: 50%;
+  min-width: 50vw;
+}
+
+.add-personal-access-token-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-personal-access-token-dialog .expiration-date {
+  width: 50%;
+}
+
 
 .add-user-to-project-dialog::part(overlay) {
   height: 100%;
