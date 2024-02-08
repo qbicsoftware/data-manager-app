@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.general;
+package life.qbic.datamanager.views.general.download;
 
 import static java.util.Objects.requireNonNull;
 

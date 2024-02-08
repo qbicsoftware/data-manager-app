@@ -29,7 +29,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
-import life.qbic.datamanager.views.general.MetadataDownload;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -66,7 +66,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final TextField searchField;
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
-  private final MetadataDownload metadataDownload;
+  private final DownloadProvider metadataDownload;
+  private final SampleMetadataContentProvider metadataDownloadFormatter;
   private final Grid<SamplePreview> sampleGrid;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
@@ -91,7 +92,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         event -> onDownloadMetadataClicked());
     buttonBar.add(metadataDownloadButton);
 
-    metadataDownload = new MetadataDownload();
+    metadataDownloadFormatter = new SampleMetadataContentProvider();
+    metadataDownload = new DownloadProvider(metadataDownloadFormatter);
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -129,9 +131,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void onDownloadMetadataClicked() {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(experimentId);
-    metadataDownload.trigger(experimentInformationService.find(experimentId), samples);
+    metadataDownload.trigger();
   }
 
   private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
@@ -207,6 +207,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     this.context = context;
     ExperimentId experimentId = context.experimentId().get();
     setExperiment(experimentInformationService.find(experimentId).orElseThrow());
+
+    System.err.println("updating context");
+    // we also update the data provider with any samples of this experiment
+    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(experimentId);
+    System.err.println(samples.size()+" samples");
+    metadataDownloadFormatter.updateContext(experimentInformationService.find(experimentId), samples);
   }
 
   /**
