@@ -22,7 +22,7 @@ public interface PersonalAccessTokenService {
   RawToken create(String userId) throws UnknownUserIdException;
 
   /**
-   * Lists all personal access token entries for user with a given id.
+   * Lists all personal access token entries for a user with a given id.
    *
    * @param userId the user's id the service shall search for existing tokens
    * @return a collection of personal access token entries associated with a user id
