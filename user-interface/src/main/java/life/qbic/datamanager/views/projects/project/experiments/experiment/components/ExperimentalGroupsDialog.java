@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
@@ -171,7 +172,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .toList();
   }
 
-  public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {}
+  public record ExperimentalGroupContent(int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends
       life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {
