@@ -18,8 +18,8 @@ public class TSVBuilder<T> {
   private List<T> contentObjects;
 
   public TSVBuilder(List<T> contentObjects) {
-    this.contentBuilder = new StringBuilder();
     this.contentObjects = contentObjects;
+    this.contentBuilder = new StringBuilder();
     this.header = new ArrayList<>();
     this.getters = new ArrayList<>();
   }
@@ -36,7 +36,7 @@ public class TSVBuilder<T> {
   }
 
   /**
-   * This method generates the final TSV as a string.
+   * This method generates the final TSV as a string, one input object per line.
    * @return String representation of the TSV.
    */
   public String getTSVString() {
