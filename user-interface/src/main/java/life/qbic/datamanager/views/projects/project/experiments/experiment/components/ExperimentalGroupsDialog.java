@@ -56,7 +56,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private void addEntries(Collection<VariableLevel> experimentalVariableLevels,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream().map(group -> {
-      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
       groupEntry.setEnabled(editMode);
@@ -155,7 +155,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void addNewGroupEntry() {
-    var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+    var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
     experimentalGroupsCollection.add(groupEntry);
     groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
   }
@@ -168,7 +168,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void refreshGroupEntries() {
     if (experimentalGroupsCollection.getChildren().toList().isEmpty()) {
-      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
       experimentalGroupsCollection.add(groupEntry);
       groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
     }
