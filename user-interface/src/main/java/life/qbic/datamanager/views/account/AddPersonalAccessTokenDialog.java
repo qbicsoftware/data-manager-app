@@ -130,9 +130,6 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       this.personalAccessTokenDTO = personalAccessTokenDTO;
     }
 
-    public PersonalAccessTokenDTO personalAccessTokenDTO() {
-      return personalAccessTokenDTO;
-    }
   }
 
   public static class CancelEvent extends ComponentEvent<AddPersonalAccessTokenDialog> {
