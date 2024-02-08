@@ -79,4 +79,7 @@ public class PersonalAccessToken {
     return creationDate.plus(duration);
   }
 
+  public String userId() {
+    return userId;
+  }
 }

@@ -15,4 +15,6 @@ public interface TokenJpaRepository extends CrudRepository<PersonalAccessToken, 
 
   Collection<PersonalAccessToken> findAllByUserId(String userId);
 
+  PersonalAccessToken findByTokenId(String tokenId);
+
 }

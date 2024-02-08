@@ -1,6 +1,7 @@
 package life.qbic.identity.domain.model.token;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * <b><interface short description - 1 Line!></b>
@@ -16,5 +17,7 @@ public interface TokenRepository {
   void save(PersonalAccessToken token);
 
   void delete(PersonalAccessToken token);
+
+  Optional<PersonalAccessToken> find(String accessTokenId);
 
 }

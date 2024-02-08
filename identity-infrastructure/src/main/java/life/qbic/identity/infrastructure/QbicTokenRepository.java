@@ -1,6 +1,7 @@
 package life.qbic.identity.infrastructure;
 
 import java.util.Collection;
+import java.util.Optional;
 import life.qbic.identity.domain.model.token.PersonalAccessToken;
 import life.qbic.identity.domain.model.token.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,5 +37,10 @@ public class QbicTokenRepository implements TokenRepository {
   @Override
   public void delete(PersonalAccessToken token) {
     tokenJpaRepository.delete(token);
+  }
+
+  @Override
+  public Optional<PersonalAccessToken> find(String accessTokenId) {
+    return Optional.ofNullable(tokenJpaRepository.findByTokenId(accessTokenId));
   }
 }
