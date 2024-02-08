@@ -208,10 +208,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     ExperimentId experimentId = context.experimentId().get();
     setExperiment(experimentInformationService.find(experimentId).orElseThrow());
 
-    System.err.println("updating context");
     // we also update the data provider with any samples of this experiment
     List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(experimentId);
-    System.err.println(samples.size()+" samples");
     metadataDownloadFormatter.updateContext(experimentInformationService.find(experimentId), samples);
   }
 
