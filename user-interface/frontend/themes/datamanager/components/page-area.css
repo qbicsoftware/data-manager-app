@@ -155,19 +155,58 @@
   row-gap: var(--lumo-space-m);
 }
 
-.personal-access-token-component .personal-access-token-list {
+.personal-access-token-component .personal-access-token-container {
   width: 60%;
   height: 60%;
+}
+
+.personal-access-token-component .personal-access-token-container .personal-access-token-list {
   border: 1px solid var(--lumo-contrast-20pct);
 }
 
-.personal-access-token-component .show-encrypted-personal-access-token-details {
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  width: 100%;
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .copy-disclaimer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .token-text {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
 }
 
-.personal-access-token-component .show-encrypted-personal-access-token-layout {
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details. .token-text {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details. .copy-disclaimer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-layout {
   display: flex;
   padding: var(--lumo-space-m);
   border-bottom: 1px solid var(--lumo-contrast-20pct);

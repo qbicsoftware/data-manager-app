@@ -20,6 +20,7 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.addToken
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
+import life.qbic.identity.api.RawToken;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -40,7 +41,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @UIScope
 @PermitAll
 public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver {
-
   @Serial
   private static final long serialVersionUID = -7876265792987169498L;
   private static final Logger log = LoggerFactory.logger(PersonalAccessTokenMain.class);
@@ -65,7 +65,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
-    //Todo Delete Token Logic with Service
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
+    loadGeneratedPersonalAccessTokens();
   }
 
   private void onAddTokenClicked(addTokenEvent addTokenEvent) {
@@ -75,10 +78,13 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     addPersonalAccessTokenDialog.addConfirmListener(event -> {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-      personalAccessTokenService.create(details.getUserId(), event.personalAccessTokenDTO()
+      RawToken createdToken = personalAccessTokenService.create(details.getUserId(),
+          event.personalAccessTokenDTO()
           .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
+      personalAccessTokenComponent.showCreatedToken(createdToken);
       event.getSource().close();
     });
+
   }
 
 

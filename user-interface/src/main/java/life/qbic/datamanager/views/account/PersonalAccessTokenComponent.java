@@ -25,6 +25,7 @@ import java.time.format.FormatStyle;
 import java.util.Collection;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.PersonalAccessToken;
+import life.qbic.identity.api.RawToken;
 import life.qbic.logging.api.Logger;
 
 /**
@@ -43,16 +44,22 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   private static final long serialVersionUID = -8972242722349756972L;
   private static final Logger log = logger(PersonalAccessTokenComponent.class);
   private final String TITLE = "Personal Access Token (PAT)";
+  private final Div createdTokenLayout = new Div();
   private final VirtualList<PersonalAccessTokenDTO> personalAccessTokenDTOVirtualList = new VirtualList<>();
+
 
   public PersonalAccessTokenComponent() {
     addClassName("personal-access-token-component");
     addComponentAsFirst(generateHeader());
     add(generateDescription());
-    //ToDo figure out how to best extract this list
+    Div personalAccessTokenContainer = new Div();
+    personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokenDTOVirtualList);
+    createdTokenLayout.setVisible(false);
+    add(personalAccessTokenContainer);
+    personalAccessTokenContainer.addClassName("personal-access-token-container");
     personalAccessTokenDTOVirtualList.setRenderer(showEncryptedPersonalAccessTokenRenderer());
-    add(personalAccessTokenDTOVirtualList);
     personalAccessTokenDTOVirtualList.addClassName("personal-access-token-list");
+    createdTokenLayout.addClassName("show-created-personal-access-token-layout");
   }
 
 
@@ -64,7 +71,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       Span expirationDate = new Span(
           "Your token expires on: " + LocalDate.now()
               .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
-              DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)));
+                  DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)));
       expirationDate.setClassName("secondary");
       Icon deletionIcon = VaadinIcon.TRASH.create();
       deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
@@ -80,28 +87,27 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     });
   }
 
-  private ComponentRenderer<Component, PersonalAccessToken> showCreatedPersonalAccessTokenRenderer() {
-    return new ComponentRenderer<>(personalAccessToken -> {
-      Div createPersonalAccessTokenDetails = new Div();
-      Icon copyIcon = VaadinIcon.COPY.create();
-      Span personalAccessTokenWithIcon = new Span(copyIcon);
-      //ToDo figure out how to copy text to clipboard in vaadin
-      /*
-      copyIcon.addClickListener(event -> UI.getCurrent().getPage()
-          .executeJs("navigator.clipboard.writeText", personalAccessTokenDTO.tokenName()));
-       */
-      Icon deletionIcon = VaadinIcon.TRASH.create();
-      deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
-          event.isFromClient(), personalAccessToken.tokenId())));
-      deletionIcon.addClassName("error");
-      Span copyNotification = new Span(
-          "Please copy your personal access token now. You won't be able to see it again");
-      copyNotification.addClassName("primary");
-      createPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyNotification);
-      Div createPersonalAccessTokenLayout = new Div(createPersonalAccessTokenDetails, deletionIcon);
-      createPersonalAccessTokenLayout.addClassName("create-personal-access-token-layout");
-      return createPersonalAccessTokenLayout;
-    });
+  public void showCreatedToken(RawToken rawToken) {
+    showCreatedPersonalAccessToken(rawToken.value());
+  }
+
+  private void showCreatedPersonalAccessToken(String rawTokenText) {
+    createdTokenLayout.removeAll();
+    Div createdPersonalAccessTokenDetails = new Div();
+    Icon copyIcon = VaadinIcon.COPY_O.create();
+    copyIcon.addClassName("clickable");
+    Span rawToken = new Span(rawTokenText);
+    Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
+    personalAccessTokenWithIcon.addClassName("token-text");
+    //ToDo Figure out how copying works in vaadin
+    Span copyDisclaimer = new Span(VaadinIcon.EXCLAMATION_CIRCLE_O.create(),
+        new Text("Please copy your personal access token now. You won't be able to see it again"));
+    copyDisclaimer.addClassName("copy-disclaimer");
+    copyDisclaimer.addClassName("primary");
+    createdPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyDisclaimer);
+    createdPersonalAccessTokenDetails.addClassName("show-created-personal-access-token-details");
+    createdTokenLayout.add(createdPersonalAccessTokenDetails);
+    createdTokenLayout.setVisible(true);
   }
 
   private Span generateHeader() {
@@ -195,6 +201,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
         String tokenId) {
       super(source, fromClient);
       this.tokenId = tokenId;
+    }
+
+    public String tokenId() {
+      return tokenId;
     }
   }
 
