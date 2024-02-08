@@ -7,7 +7,10 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.time.LocalDate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.MainLayout;
@@ -23,7 +26,6 @@ import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
 
 /**
  * Personal Access Token Main
@@ -73,8 +75,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     addPersonalAccessTokenDialog.addConfirmListener(event -> {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-      //ToDo add expiration date and description?
-      personalAccessTokenService.create(details.getUserId());
+      personalAccessTokenService.create(details.getUserId(), event.personalAccessTokenDTO()
+          .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       event.getSource().close();
     });
   }
@@ -92,35 +94,14 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
 
   private void loadGeneratedPersonalAccessTokens() {
 
-    //ToDo add this once backend is ready
-    /*
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    List<PersonalAccessTokenDTO> personalAccessTokenDTOs = new ArrayList<>;
-    List<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.find(details.getUserId()));
-    personalAccessTokens.forEach(token -> personalAccessTokenDTOs.add(new PersonalAccessTokenDTO(token.description(),
-            LocalDate.ofInstant(token.expiration(), ZoneId.systemDefault()))));
+    List<PersonalAccessTokenDTO> personalAccessTokenDTOs = new ArrayList<>();
+    Collection<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.find(
+        details.getUserId());
+    personalAccessTokens.forEach(token -> personalAccessTokenDTOs.add(
+        new PersonalAccessTokenDTO(token.tokenId(), token.description(), Duration.between(
+            Instant.now(), token.expiration()))));
     personalAccessTokenComponent.setTokens(personalAccessTokenDTOs);
-    */
-    personalAccessTokenComponent.setTokens(MockPersonalAccessTokenService.getTokensForUser());
   }
-
-
-  //Todo Replace with real service
-  @Service
-  public static class MockPersonalAccessTokenService {
-
-    public MockPersonalAccessTokenService() {
-    }
-
-
-    public static List<PersonalAccessTokenDTO> getTokensForUser() {
-      return List.of(new PersonalAccessTokenDTO("ABC", LocalDate.now().plusDays(1)),
-          new PersonalAccessTokenDTO("DEF", LocalDate.now().plusDays(2)),
-          new PersonalAccessTokenDTO("GHIJ", LocalDate.now().plusDays(3)),
-          new PersonalAccessTokenDTO("KLMN", LocalDate.now().plusDays(4)),
-          new PersonalAccessTokenDTO("OPQR", LocalDate.now().plusDays(5)));
-    }
-  }
-
 }

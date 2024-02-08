@@ -1,5 +1,6 @@
 package life.qbic.identity.infrastructure;
 
+import java.util.Collection;
 import life.qbic.identity.domain.model.token.PersonalAccessToken;
 import org.springframework.data.repository.CrudRepository;
 
@@ -11,5 +12,7 @@ import org.springframework.data.repository.CrudRepository;
  * @since <version tag>
  */
 public interface TokenJpaRepository extends CrudRepository<PersonalAccessToken, Integer> {
+
+  Collection<PersonalAccessToken> findAllByUserId(String userId);
 
 }

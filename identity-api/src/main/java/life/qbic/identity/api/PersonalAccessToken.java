@@ -10,6 +10,7 @@ import java.time.Instant;
  *
  * @since 1.0.0
  */
-public record PersonalAccessToken(String description, Instant expiration, boolean expired) {
+public record PersonalAccessToken(String tokenId, String description, Instant expiration,
+                                  boolean expired) {
 
 }

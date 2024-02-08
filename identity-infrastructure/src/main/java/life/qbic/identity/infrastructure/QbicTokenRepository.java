@@ -1,5 +1,6 @@
 package life.qbic.identity.infrastructure;
 
+import java.util.Collection;
 import life.qbic.identity.domain.model.token.PersonalAccessToken;
 import life.qbic.identity.domain.model.token.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +24,17 @@ public class QbicTokenRepository implements TokenRepository {
   }
 
   @Override
+  public Collection<PersonalAccessToken> findAllByUserId(String userId) {
+    return tokenJpaRepository.findAllByUserId(userId);
+  }
+
+  @Override
   public void save(PersonalAccessToken token) {
     this.tokenJpaRepository.save(token);
   }
 
   @Override
   public void delete(PersonalAccessToken token) {
-
+    tokenJpaRepository.delete(token);
   }
 }

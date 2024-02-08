@@ -18,6 +18,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -61,12 +62,13 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       Div showEncryptedPersonalTokenDetails = new Div();
       Span personalAccessToken = new Span(personalAccessTokenDTO.tokenDescription());
       Span expirationDate = new Span(
-          "Your token expires on: " + personalAccessTokenDTO.expirationDate().format(
+          "Your token expires on: " + LocalDate.now()
+              .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
               DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)));
       expirationDate.setClassName("secondary");
       Icon deletionIcon = VaadinIcon.TRASH.create();
       deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
-          event.isFromClient())));
+          event.isFromClient(), personalAccessTokenDTO.tokenId())));
       deletionIcon.addClassNames("error", "clickable");
       showEncryptedPersonalTokenDetails.addClassName(
           "show-encrypted-personal-access-token-details");
@@ -90,7 +92,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
        */
       Icon deletionIcon = VaadinIcon.TRASH.create();
       deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
-          event.isFromClient())));
+          event.isFromClient(), personalAccessToken.tokenId())));
       deletionIcon.addClassName("error");
       Span copyNotification = new Span(
           "Please copy your personal access token now. You won't be able to see it again");
@@ -187,20 +189,30 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
     @Serial
     private static final long serialVersionUID = 5303581981248150518L;
+    private final String tokenId;
 
-    public DeleteTokenEvent(PersonalAccessTokenComponent source, boolean fromClient) {
+    public DeleteTokenEvent(PersonalAccessTokenComponent source, boolean fromClient,
+        String tokenId) {
       super(source, fromClient);
+      this.tokenId = tokenId;
     }
   }
 
   public static class PersonalAccessTokenDTO {
 
+    private final String tokenId;
     private String tokenDescription;
-    private LocalDate expirationDate;
+    private Duration expirationDate;
 
-    public PersonalAccessTokenDTO(String tokenDescription, LocalDate expirationDate) {
+    public PersonalAccessTokenDTO(String tokenId, String tokenDescription,
+        Duration expirationDate) {
+      this.tokenId = tokenId;
       this.tokenDescription = tokenDescription;
       this.expirationDate = expirationDate;
+    }
+
+    public String tokenId() {
+      return tokenId;
     }
 
     public String tokenDescription() {
@@ -211,11 +223,11 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       this.tokenDescription = tokenDescription;
     }
 
-    public LocalDate expirationDate() {
+    public Duration expirationDate() {
       return expirationDate;
     }
 
-    public void setExpirationDate(LocalDate expirationDate) {
+    public void setExpirationDate(Duration expirationDate) {
       this.expirationDate = expirationDate;
     }
   }

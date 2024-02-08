@@ -1,15 +1,17 @@
 package life.qbic.identity.application.token;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.identity.api.UnknownUserIdException;
 import life.qbic.identity.api.UserInformationService;
-import org.springframework.stereotype.Service;
 import life.qbic.identity.domain.model.token.TokenGenerator;
 import life.qbic.identity.domain.model.token.TokenRepository;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Personal Access Token Service</b>
@@ -32,7 +34,8 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
   }
 
   @Override
-  public RawToken create(String userId, String description, Duration duration) throws UnknownUserIdException {
+  public RawToken create(String userId, String description, Duration duration)
+      throws UnknownUserIdException {
     var userInfo = userInformationService.findById(userId);
     if (userInfo.isEmpty()) {
       throw new UnknownUserIdException("No user found for id: \"%s\"".formatted(userId));
@@ -52,6 +55,12 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
 
   @Override
   public Collection<PersonalAccessToken> find(String userId) {
-    return null;
+    List<PersonalAccessToken> accessTokens = new ArrayList<>();
+    tokenRepository.findAllByUserId(userId).forEach(personalAccessToken -> accessTokens.add(
+        new PersonalAccessToken(personalAccessToken.tokenId(),
+            personalAccessToken.description(), personalAccessToken.creationDate().plus(
+            personalAccessToken.duration()),
+            personalAccessToken.hasExpired())));
+    return accessTokens;
   }
 }
