@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import life.qbic.identity.domain.model.PasswordEncryptionPolicy;
 
 /**
@@ -24,6 +25,8 @@ public class PersonalAccessToken {
   @Id
   private int id;
 
+  private String tokenId;
+
   private Instant creationDate;
 
   private Duration duration;
@@ -38,6 +41,7 @@ public class PersonalAccessToken {
     this.duration = duration;
     this.creationDate = Instant.now();
     this.tokenValueEncrypted = encryptedSecret;
+    this.tokenId = UUID.randomUUID().toString();
   }
 
 
