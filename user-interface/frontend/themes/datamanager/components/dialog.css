@@ -364,7 +364,6 @@ vaadin-dialog-overlay::part(title) {
   flex-direction: column;
 }
 
-.add-project-dialog
 .add-project-dialog .funding-information-layout .funding-field .grant-label-field {
   min-width: 15vw;
 }
