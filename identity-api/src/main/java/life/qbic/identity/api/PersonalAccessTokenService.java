@@ -1,5 +1,6 @@
 package life.qbic.identity.api;
 
+import java.time.Duration;
 import java.util.Collection;
 
 /**
@@ -16,10 +17,11 @@ public interface PersonalAccessTokenService {
    * Creates a personal access token for a user with the given id.
    *
    * @param userId the user id of the user the token shall be created for
+   * @param duration the duration until the token has expired
    * @return the raw token after successful creation
    * @since 1.0.0
    */
-  RawToken create(String userId) throws UnknownUserIdException;
+  RawToken create(String userId, String description, Duration duration) throws UnknownUserIdException;
 
   /**
    * Lists all personal access token entries for a user with a given id.

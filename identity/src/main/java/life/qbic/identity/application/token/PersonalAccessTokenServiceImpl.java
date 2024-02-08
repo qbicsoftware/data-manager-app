@@ -1,11 +1,14 @@
 package life.qbic.identity.application.token;
 
+import java.time.Duration;
 import java.util.Collection;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.identity.api.UnknownUserIdException;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.domain.model.token.TokenGenerator;
+import life.qbic.identity.domain.model.token.TokenRepository;
 
 /**
  * <b>Personal Access Token Service</b>
@@ -18,21 +21,30 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
 
   private final UserInformationService userInformationService;
 
-  public PersonalAccessTokenServiceImpl(UserInformationService basicUserInformationService) {
+  private final TokenRepository tokenRepository;
+
+  public PersonalAccessTokenServiceImpl(UserInformationService basicUserInformationService,
+      TokenRepository tokenRepository) {
     this.userInformationService = basicUserInformationService;
+    this.tokenRepository = tokenRepository;
   }
 
   @Override
-  public RawToken create(String userId) throws UnknownUserIdException {
+  public RawToken create(String userId, String description, Duration duration) throws UnknownUserIdException {
     var userInfo = userInformationService.findById(userId);
     if (userInfo.isEmpty()) {
       throw new UnknownUserIdException("No user found for id: \"%s\"".formatted(userId));
     }
-    return processTokenRequest(userId);
+    return processTokenRequest(userId, description, duration);
   }
 
-  private RawToken processTokenRequest(String userId) {
-    return null;
+  private RawToken processTokenRequest(String userId, String description, Duration duration) {
+    TokenGenerator tokenGenerator = new TokenGenerator();
+    String rawToken = tokenGenerator.token();
+    var token = life.qbic.identity.domain.model.token.PersonalAccessToken.create(userId,
+        description, duration, rawToken);
+    tokenRepository.save(token);
+    return new RawToken(rawToken);
   }
 
 
