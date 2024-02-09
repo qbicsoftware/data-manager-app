@@ -27,6 +27,7 @@ import java.time.format.FormatStyle;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.RawToken;
@@ -49,6 +50,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   private static final long serialVersionUID = -8972242722349756972L;
   private static final Logger log = logger(PersonalAccessTokenComponent.class);
   private final String TITLE = "Personal Access Token (PAT)";
+  private final Disclaimer noTokensRegisteredDisclaimer;
   private final Div createdTokenLayout = new Div();
   private final VirtualList<PersonalAccessTokenDTO> personalAccessTokens = new VirtualList<>();
 
@@ -58,8 +60,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     addComponentAsFirst(generateHeader());
     add(generateDescription());
     Div personalAccessTokenContainer = new Div();
+    noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
+    noTokensRegisteredDisclaimer.setVisible(false);
+    add(noTokensRegisteredDisclaimer);
     personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
     add(personalAccessTokenContainer);
+    createNoTokensRegisteredDisclaimer();
     personalAccessTokenContainer.addClassName("personal-access-token-container");
     personalAccessTokens.setRenderer(showEncryptedPersonalAccessTokenRenderer());
     personalAccessTokens.addClassName("personal-access-token-list");
@@ -98,6 +104,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * @param rawToken The {@link RawToken} to be displayed to the user
    */
   public void showCreatedToken(RawToken rawToken) {
+    noTokensRegisteredDisclaimer.setVisible(false);
     showCreatedPersonalAccessToken(rawToken.value());
   }
 
@@ -156,6 +163,15 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     return new Div(upperDescription, lowerDescription);
   }
 
+  private Disclaimer createNoTokensRegisteredDisclaimer() {
+    Disclaimer noTokensRegisteredCard = Disclaimer.createWithTitle(
+        "Manage your tokens in one place",
+        "Manage data access by registering the first personal access token", "Generate new token");
+    noTokensRegisteredCard.addDisclaimerConfirmedListener(
+        event -> fireEvent(new addTokenEvent(this, event.isFromClient())));
+    return noTokensRegisteredCard;
+  }
+
   /**
    * Sets the provided collection of {@link PersonalAccessTokenDTO} within the
    * {@link PersonalAccessTokenComponent}
@@ -164,14 +180,21 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    *                             to be displayed within {@link VirtualList} the component
    */
   public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokenDTOs) {
-    //Sort list so the tokens with the remaining duration of expiration date is on top
-    List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
-        .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
-            .reversed())
-        .toList();
-    personalAccessTokens.setItems(sortedTokenList);
     //Each time the component is updated the generated token should not be visible anymore(e.g. deletion, adding another token etc.)
     createdTokenLayout.setVisible(false);
+    if (personalAccessTokenDTOs.isEmpty()) {
+      personalAccessTokens.setVisible(false);
+      noTokensRegisteredDisclaimer.setVisible(true);
+    } else {
+      personalAccessTokens.setVisible(true);
+      noTokensRegisteredDisclaimer.setVisible(false);
+      //Sort list so the tokens with the remaining duration of expiration date is on top
+      List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
+          .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
+              .reversed())
+          .toList();
+      personalAccessTokens.setItems(sortedTokenList);
+    }
   }
 
   /**
