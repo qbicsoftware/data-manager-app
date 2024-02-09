@@ -90,7 +90,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   /**
-   * Callback executed before navigation to attaching Component chain is made.
+   * Upon initialization of the main Component, the {@link PersonalAccessTokenComponent} should be
+   * provided with the list of personal access tokens associated with the user
    *
    * @param event before navigation event with event details
    */

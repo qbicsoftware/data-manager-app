@@ -15,6 +15,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -34,11 +35,12 @@ import life.qbic.identity.api.RawToken;
 import life.qbic.logging.api.Logger;
 
 /**
- * <class short description - One Line!>
+ * Personal Access Token Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * This {@link PageArea} allows the user to manage his personal access tokens. The user is able to
+ * view a tokens expiration date and descripton. Additionally,he is able to delete and create
+ * personal access tokens. Only after a personal access token is created its raw text is shown to
+ * the user with the ability to copy it to the clipboard
  */
 
 @SpringComponent
@@ -61,7 +63,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     add(generateDescription());
     Div personalAccessTokenContainer = new Div();
     noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
-    noTokensRegisteredDisclaimer.setVisible(false);
     add(noTokensRegisteredDisclaimer);
     personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
     add(personalAccessTokenContainer);
@@ -70,6 +71,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     personalAccessTokens.setRenderer(showEncryptedPersonalAccessTokenRenderer());
     personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
+    updateUI();
   }
 
   private ComponentRenderer<Component, PersonalAccessTokenDTO> showEncryptedPersonalAccessTokenRenderer() {
@@ -95,19 +97,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     });
   }
 
-  /**
-   * Sets the provided {@link RawToken} within the {@link PersonalAccessTokenComponent}
-   * <p>
-   * This method is used to show a newly generated Token to the user on Top of the
-   * {@link VirtualList} within the component
-   *
-   * @param rawToken The {@link RawToken} to be displayed to the user
-   */
-  public void showCreatedToken(RawToken rawToken) {
-    noTokensRegisteredDisclaimer.setVisible(false);
-    showCreatedPersonalAccessToken(rawToken.value());
-  }
-
   private void showCreatedPersonalAccessToken(String rawTokenText) {
     createdTokenLayout.removeAll();
     Div createdPersonalAccessTokenDetails = new Div();
@@ -125,7 +114,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     createdPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyDisclaimer);
     createdPersonalAccessTokenDetails.addClassName("show-created-personal-access-token-details");
     createdTokenLayout.add(createdPersonalAccessTokenDetails);
-    createdTokenLayout.setVisible(true);
+    updateUI();
   }
 
   private Span generateHeader() {
@@ -177,25 +166,41 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * Sets the provided collection of {@link PersonalAccessTokenDTO} within the
    * {@link PersonalAccessTokenComponent}
    *
-   * @param personalAccessTokenDTOs Collection of {@link PersonalAccessTokenDTO} for the logged-in user
-   *                             to be displayed within {@link VirtualList} the component
+   * @param personalAccessTokenDTOs Collection of {@link PersonalAccessTokenDTO} for the logged-in
+   *                                user to be displayed within {@link VirtualList} the component
    */
   public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokenDTOs) {
     //Each time the component is updated the generated token should not be visible anymore(e.g. deletion, adding another token etc.)
-    createdTokenLayout.setVisible(false);
-    if (personalAccessTokenDTOs.isEmpty()) {
-      personalAccessTokens.setVisible(false);
-      noTokensRegisteredDisclaimer.setVisible(true);
-    } else {
-      personalAccessTokens.setVisible(true);
-      noTokensRegisteredDisclaimer.setVisible(false);
-      //Sort list so the tokens with the remaining duration of expiration date is on top
-      List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
-          .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
-              .reversed())
-          .toList();
-      personalAccessTokens.setItems(sortedTokenList);
-    }
+    createdTokenLayout.removeAll();
+    //Sort list so the tokens with the remaining duration of expiration date is on top
+    List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
+        .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
+            .reversed())
+        .toList();
+    personalAccessTokens.setItems(sortedTokenList);
+    updateUI();
+  }
+
+  private void updateUI() {
+    boolean userHasTokens = !personalAccessTokens.getDataProvider().fetch(new Query<>()).toList()
+        .isEmpty();
+    boolean userCreatedToken = createdTokenLayout.getChildren().findAny().isPresent();
+    personalAccessTokens.setVisible(userHasTokens);
+    createdTokenLayout.setVisible(userCreatedToken);
+    //Show Disclaimer only if no token was generated and user has no tokens currently
+    noTokensRegisteredDisclaimer.setVisible(!userHasTokens && !userCreatedToken);
+  }
+
+  /**
+   * Sets the provided {@link RawToken} within the {@link PersonalAccessTokenComponent}
+   * <p>
+   * This method is used to show a newly generated Token to the user on Top of the
+   * {@link VirtualList} within the component
+   *
+   * @param rawToken The {@link RawToken} to be displayed to the user
+   */
+  public void showCreatedToken(RawToken rawToken) {
+    showCreatedPersonalAccessToken(rawToken.value());
   }
 
   /**
