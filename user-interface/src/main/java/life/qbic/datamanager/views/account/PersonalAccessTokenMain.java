@@ -41,6 +41,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @UIScope
 @PermitAll
 public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver {
+
   @Serial
   private static final long serialVersionUID = -7876265792987169498L;
   private static final Logger log = LoggerFactory.logger(PersonalAccessTokenMain.class);
@@ -75,18 +76,18 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();
     addPersonalAccessTokenDialog.open();
     addPersonalAccessTokenDialog.addCancelListener(event -> event.getSource().close());
+    /*Reload the tokens to ensure that if multiple tokens are generated the previously generated tokens are shown within the list*/
+    addPersonalAccessTokenDialog.addConfirmListener(event -> loadGeneratedPersonalAccessTokens());
     addPersonalAccessTokenDialog.addConfirmListener(event -> {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
       RawToken createdToken = personalAccessTokenService.create(details.getUserId(),
           event.personalAccessTokenDTO()
-          .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
+              .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       personalAccessTokenComponent.showCreatedToken(createdToken);
       event.getSource().close();
     });
-
   }
-
 
   /**
    * Callback executed before navigation to attaching Component chain is made.
@@ -99,7 +100,6 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void loadGeneratedPersonalAccessTokens() {
-
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
     List<PersonalAccessTokenDTO> personalAccessTokenDTOs = new ArrayList<>();

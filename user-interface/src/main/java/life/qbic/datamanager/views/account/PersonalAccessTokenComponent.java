@@ -48,7 +48,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   private static final Logger log = logger(PersonalAccessTokenComponent.class);
   private final String TITLE = "Personal Access Token (PAT)";
   private final Div createdTokenLayout = new Div();
-  private final VirtualList<PersonalAccessTokenDTO> personalAccessTokenDTOVirtualList = new VirtualList<>();
+  private final VirtualList<PersonalAccessTokenDTO> personalAccessTokens = new VirtualList<>();
 
 
   public PersonalAccessTokenComponent() {
@@ -56,17 +56,14 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     addComponentAsFirst(generateHeader());
     add(generateDescription());
     Div personalAccessTokenContainer = new Div();
-    personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokenDTOVirtualList);
-    createdTokenLayout.setVisible(false);
+    personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
     add(personalAccessTokenContainer);
     personalAccessTokenContainer.addClassName("personal-access-token-container");
-    personalAccessTokenDTOVirtualList.setRenderer(showEncryptedPersonalAccessTokenRenderer());
-    personalAccessTokenDTOVirtualList.addClassName("personal-access-token-list");
+    personalAccessTokens.setRenderer(showEncryptedPersonalAccessTokenRenderer());
+    personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
   }
 
-
-  //Todo define custom component and add css
   private ComponentRenderer<Component, PersonalAccessTokenDTO> showEncryptedPersonalAccessTokenRenderer() {
     return new ComponentRenderer<>(personalAccessTokenDTO -> {
       Div showEncryptedPersonalTokenDetails = new Div();
@@ -90,6 +87,14 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     });
   }
 
+  /**
+   * Sets the provided {@link RawToken} within the {@link PersonalAccessTokenComponent}
+   * <p>
+   * This method is used to show a newly generated Token to the user on Top of the
+   * {@link VirtualList} within the component
+   *
+   * @param rawToken The {@link RawToken} to be displayed to the user
+   */
   public void showCreatedToken(RawToken rawToken) {
     showCreatedPersonalAccessToken(rawToken.value());
   }
@@ -149,8 +154,17 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     return new Div(upperDescription, lowerDescription);
   }
 
+  /**
+   * Sets the provided collection of {@link PersonalAccessTokenDTO} within the
+   * {@link PersonalAccessTokenComponent}
+   *
+   * @param personalAccessTokens Collection of {@link PersonalAccessTokenDTO} for the logged-in user
+   *                             to be displayed within {@link VirtualList} the component
+   */
   public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokens) {
-    personalAccessTokenDTOVirtualList.setItems(personalAccessTokens);
+    this.personalAccessTokens.setItems(personalAccessTokens);
+    //Each time the component is updated the generated token should not be visible anymore(e.g. deletion, adding another token etc.)
+    createdTokenLayout.setVisible(false);
   }
 
   /**
@@ -212,6 +226,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     }
   }
 
+  /**
+   * PersonalAccessTokenDTO
+   * <p>
+   * Class which is used to store and display the frontend relevant properties of the
+   * {@link PersonalAccessToken} in the {@link PersonalAccessTokenComponent}
+   */
   public static class PersonalAccessTokenDTO {
 
     private final String tokenId;
