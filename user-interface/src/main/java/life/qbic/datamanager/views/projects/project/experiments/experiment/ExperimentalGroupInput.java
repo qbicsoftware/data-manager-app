@@ -59,7 +59,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
    */
-  public ExperimentalGroupInput(Collection<VariableLevel> availableLevels) {
+  public ExperimentalGroupInput(Collection<VariableLevel> availableLevels, boolean allowDeletion) {
     addClassName("experimental-group-entry");
     removeEventListeners = new ArrayList<>();
 
@@ -69,7 +69,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
     deleteIcon.addClickListener(
         event -> fireRemoveEvent(new RemoveEvent(this, event.isFromClient())));
-    add(variableLevelSelect, replicateCountField, deleteIcon);
+    add(variableLevelSelect, replicateCountField);
+    if(allowDeletion) {
+      add(deleteIcon);
+    }
     setLevels(availableLevels);
     addValidationForVariableCount();
     variableLevelSelect.addValueChangeListener(

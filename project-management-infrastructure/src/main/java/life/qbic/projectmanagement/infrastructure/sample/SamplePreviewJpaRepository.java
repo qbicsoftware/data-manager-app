@@ -52,6 +52,11 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
   }
 
   @Override
+  public List<SamplePreview> queryByExperimentId(ExperimentId experimentId) {
+    return samplePreviewRepository.findAll(SamplePreviewSpecs.experimentIdEquals(experimentId));
+  }
+
+  @Override
   public int queryCountByExperimentId(ExperimentId experimentId, String filter) {
     Specification<SamplePreview> filterSpecification = generateExperimentIdandFilterSpecification(
         experimentId, filter);

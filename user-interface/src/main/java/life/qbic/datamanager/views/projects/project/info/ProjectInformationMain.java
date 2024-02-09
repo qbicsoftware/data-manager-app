@@ -19,7 +19,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.OfferDownload;
+import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
