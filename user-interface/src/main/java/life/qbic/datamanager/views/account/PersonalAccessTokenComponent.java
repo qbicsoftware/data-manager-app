@@ -132,6 +132,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   }
 
   private Div generateDescription() {
+    /*There is currently no download Guide, This should be adapted once it's present*/
     Anchor downloadGuideLink = new Anchor(
         "https://github.com/qbicsoftware/postman-cli/blob/main/README.md",
         "Download Guide");
