@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.RawToken;
@@ -158,11 +160,16 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * Sets the provided collection of {@link PersonalAccessTokenDTO} within the
    * {@link PersonalAccessTokenComponent}
    *
-   * @param personalAccessTokens Collection of {@link PersonalAccessTokenDTO} for the logged-in user
+   * @param personalAccessTokenDTOs Collection of {@link PersonalAccessTokenDTO} for the logged-in user
    *                             to be displayed within {@link VirtualList} the component
    */
-  public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokens) {
-    this.personalAccessTokens.setItems(personalAccessTokens);
+  public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokenDTOs) {
+    //Sort list so the tokens with the remaining duration of expiration date is on top
+    List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
+        .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
+            .reversed())
+        .toList();
+    personalAccessTokens.setItems(sortedTokenList);
     //Each time the component is updated the generated token should not be visible anymore(e.g. deletion, adding another token etc.)
     createdTokenLayout.setVisible(false);
   }
@@ -265,5 +272,4 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       this.expirationDate = expirationDate;
     }
   }
-
 }
