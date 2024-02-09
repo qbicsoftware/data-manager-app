@@ -143,7 +143,8 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   }
 
   private Div generateDescription() {
-    Anchor downloadGuideLink = new Anchor("https://letmegooglethat.com/?q=never+gonna+give+you+up",
+    Anchor downloadGuideLink = new Anchor(
+        "https://github.com/qbicsoftware/postman-cli/blob/main/README.md",
         "Download Guide");
     Text upperDescription = new Text("""
         Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).""");

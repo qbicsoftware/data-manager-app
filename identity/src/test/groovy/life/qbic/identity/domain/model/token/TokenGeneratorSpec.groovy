@@ -14,10 +14,7 @@ class TokenGeneratorSpec extends Specification {
         def secondToken = tokenGenerator.token()
 
         then:
-        firstToken.length() != secondToken.length()
-        firstToken == secondToken
-
-
+        firstToken != secondToken
     }
 
 }
