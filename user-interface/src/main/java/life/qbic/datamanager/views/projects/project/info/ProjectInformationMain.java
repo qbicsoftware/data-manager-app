@@ -20,6 +20,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.OfferDownload;
+import life.qbic.datamanager.views.general.download.QualityControlDownload;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -34,12 +35,18 @@ import life.qbic.datamanager.views.projects.project.info.OfferList.DeleteOfferCl
 import life.qbic.datamanager.views.projects.project.info.OfferList.DownloadOfferClickEvent;
 import life.qbic.datamanager.views.projects.project.info.OfferList.OfferInfo;
 import life.qbic.datamanager.views.projects.project.info.OfferList.UploadOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlList.DeleteQualityControlEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlList.DownloadQualityControlEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlList.UploadQualityControlEvent;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
+import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
+import life.qbic.projectmanagement.application.qualityControl.QualityControlDTO;
+import life.qbic.projectmanagement.application.qualityControl.QualityControlService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -58,20 +65,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
 public class ProjectInformationMain extends Main implements BeforeEnterObserver {
-
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient OntologyTermInformationService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
+  private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectDetailsComponent projectDetailsComponent;
   private final ExperimentListComponent experimentListComponent;
   private final OfferDownload offerDownload;
+  private final QualityControlDownload qualityControlDownload;
   private final OfferList offerList;
+  private final QualityControlList qualityControlList;
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
@@ -79,7 +88,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired OntologyTermInformationService ontologyTermInformationService,
-      @Autowired ProjectPurchaseService projectPurchaseService) {
+      @Autowired ProjectPurchaseService projectPurchaseService,
+      @Autowired QualityControlService qualityControlService) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
@@ -91,16 +101,25 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "ontologyTermInformationService must not be null");
     this.projectPurchaseService = requireNonNull(projectPurchaseService,
         "projectPurchaseService must not be null");
+    this.qualityControlService = requireNonNull(qualityControlService,
+        "qualityControlService must not be null");
 
     offerList = getConfiguredOfferList();
+    qualityControlList = getConfiguredQualityControlList();
     offerDownload = new OfferDownload(
         (projectId, offerId) -> projectPurchaseService.getOfferWithContent(projectId, offerId)
+            .orElseThrow());
+
+    qualityControlDownload = new QualityControlDownload(
+        (projectId, qualityControlId) -> qualityControlService.getQualityControlWithContent(
+                projectId, qualityControlId)
             .orElseThrow());
 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
-    add(projectDetailsComponent, offerList, offerDownload, experimentListComponent);
+    add(projectDetailsComponent, offerList, offerDownload, experimentListComponent,
+        qualityControlList, qualityControlDownload);
   }
 
 
@@ -174,6 +193,49 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     offerList.setOffers(offers);
   }
 
+  private QualityControlList getConfiguredQualityControlList() {
+    QualityControlList component = new QualityControlList();
+    component.addDeleteQualityControlListener(this::onDeleteQualityControlClicked);
+    component.addDownloadQualityControlListener(this::onDownloadQualityControlClicked);
+    component.addUploadQualityControlListener(
+        event -> onUploadQualityControlClicked(event, qualityControlService,
+            context.projectId().orElseThrow().value()));
+    return component;
+  }
+
+  private void onDownloadQualityControlClicked(
+      DownloadQualityControlEvent downloadQualityControlEvent) {
+    qualityControlDownload.trigger(context.projectId().orElseThrow().value(),
+        downloadQualityControlEvent.qualityControlId());
+  }
+
+  private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
+    qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
+        deleteQualityControlEvent.qualityControlId());
+    deleteQualityControlEvent.getSource().remove(deleteQualityControlEvent.qualityControlId());
+    offerDownload.removeHref();
+  }
+
+  private void onUploadQualityControlClicked(UploadQualityControlEvent uploadQualityControlEvent,
+      QualityControlService qualityControlService,
+      String projectId) {
+    UploadQualityControlDialog dialog = new UploadQualityControlDialog();
+    dialog.addConfirmListener(confirmEvent -> {
+      List<QualityControlDTO> qualityControlDTOS = confirmEvent.getSource().qualityControlItems()
+          .stream()
+          .map(it -> new QualityControlDTO(it.fileName(), it.experimentId(), it.content()))
+          .toList();
+      qualityControlService.addQualityControls(projectId, qualityControlDTOS);
+      refreshQualityControls(uploadQualityControlEvent);
+      confirmEvent.getSource().close();
+    });
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.open();
+  }
+
+  private static void refreshQualityControls(UploadQualityControlEvent uploadQualityControlEvent) {
+
+  }
 
   private void onAddExperimentClicked(AddExperimentClickEvent event) {
     log.debug("Add experiment clicked: " + event);

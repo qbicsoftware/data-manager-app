@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.purchase;
+package life.qbic.datamanager.views.projects.qualityControl;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -22,28 +22,29 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.purchase.OfferDTO;
+import life.qbic.projectmanagement.application.qualityControl.QualityControlDTO;
 
 /**
- * <b>Upload Purchase Dialog</b>
+ * <b>Upload Quality Control Dialog</b>
  * <p>
- * A dialog window that enables uploads of purchase items such as an offer.
+ * A dialog window that enables uploads of sample QC reports.
  *
  * @since 1.0.0
  */
-public class UploadPurchaseDialog extends DialogWindow {
+public class UploadQualityControlDialog extends DialogWindow {
 
-  private static final Logger log = logger(UploadPurchaseDialog.class);
+  private static final Logger log = logger(UploadQualityControlDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 5; // 14 MiB
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
   private final Upload upload;
   private EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
-  private final Div uploadedPurchaseItems;
-  private final List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
+  private final Div uploadedQualityControlItems;
+  private final List<QualityControlItem> qualityControlItemsCache = new ArrayList<>();
   private final Div uploadedItemsSectionContent;
-  public UploadPurchaseDialog() {
+
+  public UploadQualityControlDialog() {
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
 
@@ -51,38 +52,36 @@ public class UploadPurchaseDialog extends DialogWindow {
     upload.setAcceptedFileTypes("application/pdf", ".pdf");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
-    setHeaderTitle("Upload an offer");
+    setHeaderTitle("Upload a Sample QC Report");
     // Title box configuration
-    Span uploadSectionTitle = new Span("Upload your offer");
+    Span uploadSectionTitle = new Span("Upload the report");
     uploadSectionTitle.addClassName("section-title");
 
     // Upload restriction display configuration
     Div restrictions = new Div();
     restrictions.addClassName("restrictions");
-    restrictions.add(new Span("Accepted file formats: PDF (.pdf)"));
+    restrictions.add(new Span("Supported file formats: PDF, docx, xlsx"));
     restrictions.add(
         new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
-
     Div uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, upload, restrictions);
 
-
-    // Uploaded purchase items display configuration
-    uploadedPurchaseItems = new Div();
-    uploadedPurchaseItems.addClassName("uploaded-purchase-items");
+    // Uploaded qualityControl items display configuration
+    uploadedQualityControlItems = new Div();
+    uploadedQualityControlItems.addClassName("uploaded-quality-control-items");
     uploadedItemsSectionContent = new Div();
-    Span uploadedItemsSectionTitle = new Span("Set offer signed status");
+    Span uploadedItemsSectionTitle = new Span("Link to an experiment (optional)");
     uploadedItemsSectionTitle.addClassName("section-title");
     uploadedItemsSectionContent.add(uploadedItemsSectionTitle);
     Paragraph uploadedItemsDescription = new Paragraph(
-        "Please tick the checkbox if the offer is signed.");
+        "Please select the experiment for which the report was generated.");
     uploadedItemsDescription.addClassName("uploaded-items-description");
     uploadedItemsSectionContent.add(uploadedItemsDescription);
 
     Div uploadedItemsSection = new Div();
-    uploadedItemsSection.add(uploadedItemsSectionContent, uploadedPurchaseItems);
+    uploadedItemsSection.add(uploadedItemsSectionContent, uploadedQualityControlItems);
 
-    // Add upload offers to the purchase item section, where users can set the signed flag
+    // Add upload QualityControls to the link experiment item section, where users can decide on the linked experiment
     upload.addSucceededListener(this::onUploadSucceeded);
 
     // Synchronise the Vaadin upload component with the purchase list display
@@ -93,16 +92,16 @@ public class UploadPurchaseDialog extends DialogWindow {
 
     // Put the elements together
     add(uploadSection, uploadedItemsSection);
-    addClassName("purchase-item-upload");
+    addClassName("quality-control-upload");
     confirmButton.setText("Save");
     // Init the visibility rendering once
     toggleFileSectionIfEmpty();
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    var purchase = new PurchaseItem(succeededEvent.getFileName());
-    uploadedPurchaseItems.add(purchase);
-    purchaseItemsCache.add(purchase);
+    var qualityControl = new QualityControlItem(succeededEvent.getFileName());
+    uploadedQualityControlItems.add(qualityControl);
+    qualityControlItemsCache.add(qualityControl);
     toggleFileSectionIfEmpty();
   }
 
@@ -113,7 +112,7 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new UploadPurchaseDialog.CancelEvent(this, clickEvent.isFromClient()));
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   private void processClientFileRemoveEvent(DomEvent event) {
@@ -129,8 +128,8 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void toggleFileSectionIfEmpty() {
-    boolean filesUploaded = !uploadedPurchaseItems.getChildren().toList().isEmpty();
-    uploadedPurchaseItems.setVisible(filesUploaded);
+    boolean filesUploaded = !uploadedQualityControlItems.getChildren().toList().isEmpty();
+    uploadedQualityControlItems.setVisible(filesUploaded);
     uploadedItemsSectionContent.setVisible(filesUploaded);
   }
 
@@ -139,25 +138,27 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void removeFileFromDisplay(String fileName) {
-    purchaseItemsCache.stream().filter(purchaseItem -> purchaseItem.fileName().equals(
-        fileName)).findAny().ifPresent(purchaseItem -> {
-      purchaseItemsCache.remove(purchaseItem);
-      uploadedPurchaseItems.remove(purchaseItem);
-    });
+    qualityControlItemsCache.stream()
+        .filter(qualityControlItem -> qualityControlItem.fileName().equals(
+            fileName)).findAny().ifPresent(qualityControlItem -> {
+          qualityControlItemsCache.remove(qualityControlItem);
+          uploadedQualityControlItems.remove(qualityControlItem);
+        });
   }
 
-  public List<OfferDTO> purchaseItems() {
-    return purchaseItemsCache.stream().map(this::convertToOffer).toList();
+  public List<QualityControlDTO> qualityControlItems() {
+    return qualityControlItemsCache.stream().map(this::convertToQualityControl).toList();
   }
 
-  private OfferDTO convertToOffer(PurchaseItem purchaseItem) {
+  private QualityControlDTO convertToQualityControl(QualityControlItem qualityControlItem) {
     try {
-      var fileName = purchaseItem.fileName();
+      var fileName = qualityControlItem.fileName();
+      var experimentId = qualityControlItem.experimentId();
       var content = multiFileMemoryBuffer.inputStream(fileName)
           .orElse(new ByteArrayInputStream(new byte[]{})).readAllBytes();
-      return new OfferDTO(purchaseItem.isSigned(), fileName, content);
+      return new QualityControlDTO(fileName, experimentId, content);
     } catch (IOException e) {
-      throw new ApplicationException("Failed to read offer content", e);
+      throw new ApplicationException("Failed to read quality control content", e);
     }
   }
 
@@ -179,16 +180,16 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   private void removeContent() {
-    this.purchaseItemsCache.clear();
-    this.uploadedPurchaseItems.removeAll();
-    this.upload.clearFileList();
+    qualityControlItemsCache.clear();
+    uploadedQualityControlItems.removeAll();
+    upload.clearFileList();
   }
 
   private void emptyCachedBuffer() {
     this.multiFileMemoryBuffer.clear();
   }
 
-  public static class ConfirmEvent extends ComponentEvent<UploadPurchaseDialog> {
+  public static class ConfirmEvent extends ComponentEvent<UploadQualityControlDialog> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -198,12 +199,12 @@ public class UploadPurchaseDialog extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ConfirmEvent(UploadPurchaseDialog source, boolean fromClient) {
+    public ConfirmEvent(UploadQualityControlDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class CancelEvent extends ComponentEvent<UploadPurchaseDialog> {
+  public static class CancelEvent extends ComponentEvent<UploadQualityControlDialog> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -213,7 +214,7 @@ public class UploadPurchaseDialog extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public CancelEvent(UploadPurchaseDialog source, boolean fromClient) {
+    public CancelEvent(UploadQualityControlDialog source, boolean fromClient) {
       super(source, fromClient);
     }
   }

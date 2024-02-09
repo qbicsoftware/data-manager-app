@@ -36,7 +36,7 @@ public class OfferList extends PageArea {
     title.addClassName("title");
     Span header = new Span(title, upload);
     header.addClassName("header");
-    addClassName("offer-list");
+    addClassName("offer-list-component");
     add(header, delegateList);
   }
 
