@@ -6,7 +6,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -38,6 +40,7 @@ import life.qbic.logging.api.Logger;
 
 @SpringComponent
 @UIScope
+@JsModule("./javascript/copytoclipboard.js")
 public class PersonalAccessTokenComponent extends PageArea implements Serializable {
 
   @Serial
@@ -96,10 +99,11 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     Div createdPersonalAccessTokenDetails = new Div();
     Icon copyIcon = VaadinIcon.COPY_O.create();
     copyIcon.addClassName("clickable");
+    copyIcon.addClickListener(
+        event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText));
     Span rawToken = new Span(rawTokenText);
     Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
     personalAccessTokenWithIcon.addClassName("token-text");
-    //ToDo Figure out how copying works in vaadin
     Span copyDisclaimer = new Span(VaadinIcon.EXCLAMATION_CIRCLE_O.create(),
         new Text("Please copy your personal access token now. You won't be able to see it again"));
     copyDisclaimer.addClassName("copy-disclaimer");
