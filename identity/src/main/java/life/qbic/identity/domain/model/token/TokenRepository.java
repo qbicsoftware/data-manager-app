@@ -4,11 +4,12 @@ import java.util.Collection;
 import java.util.Optional;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * Token repository interface
+ * <p>
+ * Provides access to the persistence layer that handles the {@link PersonalAccessToken} storage,
+ * access and deletion.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface TokenRepository {
 
