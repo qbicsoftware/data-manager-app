@@ -1,3 +1,11 @@
 vaadin-icon.primary {
   color: var(--lumo-primary-color);
 }
+
+vaadin-icon.error {
+  color: var(--lumo-error-color);
+}
+
+vaadin-icon.clickable {
+  cursor: pointer;
+}

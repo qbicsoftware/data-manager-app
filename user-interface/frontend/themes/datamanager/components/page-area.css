@@ -134,6 +134,99 @@
   gap: var(--lumo-space-m);
 }
 
+.personal-access-token-component {
+  row-gap: var(--lumo-space-l);
+  display: flex;
+}
+
+.personal-access-token-component .header {
+  justify-content: space-between;
+  display: inline-flex;
+}
+
+.personal-access-token-component .header .buttons {
+  column-gap: var(--lumo-space-s);
+  display: inline-flex;
+}
+
+.personal-access-token-component .description {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.personal-access-token-component .personal-access-token-container {
+  width: 60%;
+  height: 60%;
+}
+
+.personal-access-token-component .personal-access-token-container .personal-access-token-list {
+  border: 1px solid var(--lumo-contrast-20pct);
+}
+
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  width: 100%;
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .copy-disclaimer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .token-text {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .copy-disclaimer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .expiration-date {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .token-text {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-layout {
+  display: flex;
+  padding: var(--lumo-space-m);
+  border-bottom: 1px solid var(--lumo-contrast-20pct);
+  justify-content: space-between;
+  align-items: center;
+}
+
 .project-access-component .content {
   display: flex;
   row-gap: var(--lumo-space-l);
