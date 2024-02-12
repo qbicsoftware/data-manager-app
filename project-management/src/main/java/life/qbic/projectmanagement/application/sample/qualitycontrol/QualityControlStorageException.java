@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.application.sample.qualitycontrol;
 
 import java.io.Serial;
-import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 
 /**
  * <b>QualityControlStorageException</b>
  * <p>
- * Exception that shall be thrown if a {@link QualityControl} item cannot be stored in the
+ * Exception that shall be thrown if a {@link QualityControlUpload} item cannot be stored in the
  * persistence storage implementation.
  *
  * @since 1.0.0

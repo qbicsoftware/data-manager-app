@@ -1,64 +1,69 @@
 package life.qbic.projectmanagement.domain.model.sample.qualitycontrol;
 
-import static jakarta.persistence.FetchType.LAZY;
-
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import java.util.Arrays;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
- * <b>Quality Control</b>
- * <p>
- * A quality control associated with an experiment in the context of project management
+ * <b>Quality Control Association</b>
+ *
+ * <p>Entity which contains context-related information around the provided {@link QualityControlUpload}
+ * file such as the associated {@link Project} via its {@link ProjectId} and the file upload timestamp
+ * </p>
+ *
+ * @since 1.0.0
  */
-
+@Entity
+@Table(name = "quality_control")
 public class QualityControl {
+
+  private ProjectId projectId;
+
+  private Instant providedOn;
+
+  @OneToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "qualityControlReference", referencedColumnName = "id")
+  private QualityControlUpload qualityControlUpload;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  private ExperimentId experimentId;
-  private String fileName;
-  @Lob
-  @Column(name = "file_content", columnDefinition = "BLOB")
-  @Basic(fetch = LAZY)
-  private byte[] fileContent;
 
-  public QualityControl() {
+  protected QualityControl() {
 
   }
 
-  public static QualityControl create(String fileName, ExperimentId experimentId,
-      byte[] fileContent) {
-    return new QualityControl(fileName, experimentId, fileContent);
+  protected QualityControl(ProjectId projectId, Instant providedOn,
+      QualityControlUpload qualityControlUpload) {
+    this.projectId = projectId;
+    this.providedOn = providedOn;
+    this.qualityControlUpload = qualityControlUpload;
   }
 
-  protected QualityControl(String fileName, ExperimentId experimentId, byte[] fileContent) {
-    this.fileName = fileName;
-    this.experimentId = experimentId;
-    this.fileContent = fileContent;
+  public static QualityControl create(ProjectId projectId, Instant providedOn,
+      QualityControlUpload qualityControlUpload) {
+    return new QualityControl(projectId, providedOn, qualityControlUpload);
   }
 
-  public String getFileName() {
-    return fileName;
+  public ProjectId project() {
+    return this.projectId;
   }
 
-  public ExperimentId experimentId() {
-    return experimentId;
+  public QualityControlUpload qualityControlUpload() {
+    return qualityControlUpload;
   }
 
-  public byte[] fileContent() {
-    return Arrays.copyOf(fileContent, fileContent.length);
-  }
-
-  public Long id() {
-    return id;
+  public Instant providedOn() {
+    return providedOn;
   }
 
   @Override
@@ -69,17 +74,15 @@ public class QualityControl {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    QualityControl qualityControl = (QualityControl) o;
-    return Objects.equals(id, qualityControl.id)
-        && Objects.equals(fileName, qualityControl.fileName) && Objects.equals(experimentId,
-        qualityControl.experimentId) && Arrays.equals(fileContent,
-        qualityControl.fileContent);
+    QualityControl that = (QualityControl) o;
+    return Objects.equals(projectId, that.projectId) && Objects.equals(
+        providedOn, that.providedOn) && Objects.equals(
+        qualityControlUpload, that.qualityControlUpload)
+        && Objects.equals(id, that.id);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(id, experimentId, fileName);
-    result = 31 * result + Arrays.hashCode(fileContent);
-    return result;
+    return Objects.hash(projectId, providedOn, qualityControlUpload, id);
   }
 }

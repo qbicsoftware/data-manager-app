@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 
 /**
- * <b>QualityControl Storage</b>
+ * <b>QualityControlUpload Storage</b>
  * <p>
- * Quality Control storage interface, that enables storing of {@link QualityControl} items.
+ * Quality Control storage interface, that enables storing of {@link QualityControl}
+ * items.
  * <p>
  */
 public interface QualityControlStorage {
@@ -18,17 +20,46 @@ public interface QualityControlStorage {
    *
    * @param qualityControl the QualityControl item to store
    * @throws QualityControlStorageException is thrown if the storage fails
-   * @since 1.0.0
    */
-  void storeQualityControl(QualityControl qualityControl) throws QualityControlStorageException;
+  void storeQualityControl(QualityControl qualityControl)
+      throws QualityControlStorageException;
 
+  /**
+   * Stores a list of {@link QualityControl} item persistently.
+   *
+   * @param qualityControls the QualityControl item list to store
+   * @throws QualityControlStorageException is thrown if the storage fails
+   */
   void storeQualityControls(List<QualityControl> qualityControls)
       throws QualityControlStorageException;
 
-  List<QualityControl> findQualityControlsForProject(ProjectId projectId);
+  /**
+   * Returns a list of {@link QualityControlUpload} items associated with the provided
+   * {@link ProjectId} from the database.
+   *
+   * @param projectId the projectId for which the {@link QualityControl} should be returned
+   */
+  List<QualityControlUpload> findQualityControlsForProject(ProjectId projectId);
 
+  /**
+   * Deletes {@link QualityControl} item persistently.
+   *
+   * @param projectId        the projectId for which the {@link QualityControl} should be
+   *                         deleted
+   * @param qualityControlId the id of the quality control to be deleted
+   */
   void deleteQualityControlsForProject(String projectId, long qualityControlId);
 
-  Optional<QualityControl> findQualityControlForProject(String projectId, Long qualityControlId);
+
+  /**
+   * Returns a {@link QualityControlUpload} item with the provided qualityControlId which is
+   * associated with the provided {@link ProjectId} from the database.
+   *
+   * @param projectId        the projectId for which the {@link QualityControl} should be
+   *                         returned
+   * @param qualityControlId the id of the quality control to be returned
+   */
+  Optional<QualityControlUpload> findQualityControlForProject(String projectId,
+      Long qualityControlId);
 
 }
