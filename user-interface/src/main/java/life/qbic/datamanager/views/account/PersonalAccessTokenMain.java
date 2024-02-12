@@ -108,7 +108,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
         details.getUserId());
     personalAccessTokens.forEach(token -> personalAccessTokenDTOs.add(
         new PersonalAccessTokenDTO(token.tokenId(), token.description(), Duration.between(
-            Instant.now(), token.expiration()))));
+            Instant.now(), token.expiration()), token.expired())));
     personalAccessTokenComponent.setTokens(personalAccessTokenDTOs);
   }
 }

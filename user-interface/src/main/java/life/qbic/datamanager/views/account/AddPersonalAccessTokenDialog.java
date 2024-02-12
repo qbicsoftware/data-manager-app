@@ -86,7 +86,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       return;
     }
     PersonalAccessTokenDTO personalAccessTokenDTO = new PersonalAccessTokenDTO(
-        "My new Id", tokenDescription.getValue(), expirationDate.getValue());
+        "My new Id", tokenDescription.getValue(), expirationDate.getValue(), false);
     fireEvent(new ConfirmEvent(this, true, personalAccessTokenDTO));
   }
 

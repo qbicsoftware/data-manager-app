@@ -78,11 +78,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     return new ComponentRenderer<>(personalAccessTokenDTO -> {
       Div showEncryptedPersonalTokenDetails = new Div();
       Span personalAccessToken = new Span(personalAccessTokenDTO.tokenDescription());
-      Span expirationDate = new Span(
-          "Your token expires on: " + LocalDate.now()
-              .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
-                  DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)));
-      expirationDate.setClassName("secondary");
+      Span expirationDate = createExpirationDate(personalAccessTokenDTO);
       Icon deletionIcon = VaadinIcon.TRASH.create();
       deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
           event.isFromClient(), personalAccessTokenDTO.tokenId())));
@@ -95,6 +91,22 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
       showEncryptedPersonalTokenLayout.addClassName("show-encrypted-personal-access-token-layout");
       return showEncryptedPersonalTokenLayout;
     });
+  }
+
+  private Span createExpirationDate(PersonalAccessTokenDTO personalAccessTokenDTO) {
+    Span expirationDate = new Span();
+    String expirationDateText = LocalDate.now()
+        .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG));
+    if (personalAccessTokenDTO.expired()) {
+      expirationDate.setText("Your token has expired on: " + expirationDateText);
+      expirationDate.setClassName("warning");
+    } else {
+      expirationDate.setText(
+          "Your token expires on: " + expirationDateText);
+      expirationDate.setClassName("secondary");
+    }
+    return expirationDate;
   }
 
   private void showCreatedPersonalAccessToken(String rawTokenText) {
@@ -274,12 +286,14 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     private final String tokenId;
     private String tokenDescription;
     private Duration expirationDate;
+    private final boolean hasExpired;
 
     public PersonalAccessTokenDTO(String tokenId, String tokenDescription,
-        Duration expirationDate) {
+        Duration expirationDate, boolean hasExpired) {
       this.tokenId = tokenId;
       this.tokenDescription = tokenDescription;
       this.expirationDate = expirationDate;
+      this.hasExpired = hasExpired;
     }
 
     public String tokenId() {
@@ -300,6 +314,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
     public void setExpirationDate(Duration expirationDate) {
       this.expirationDate = expirationDate;
+    }
+
+    public boolean expired() {
+      return hasExpired;
     }
   }
 }
