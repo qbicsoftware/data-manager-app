@@ -157,7 +157,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   private Div generateDescriptionText(Anchor downloadGuideLink, Text upperDescription) {
     Text lowerDescriptionText1 = new Text(
-        "Tokens that you have generated can be used to access your data via qPostman. You can learn more about how you can use your personal access tokens through this");
+        "Tokens that you have generated can be used to access your data via qPostman. You can learn more about how you can use your personal access tokens through this ");
     Text lowerDescriptionText2 = new Text(
         ". Please do not share your personal access tokens with anyone you don't want to access your files.");
     Span lowerDescription = new Span(lowerDescriptionText1, downloadGuideLink,
