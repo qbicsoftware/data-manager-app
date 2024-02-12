@@ -11,8 +11,7 @@ import java.util.stream.Stream;
  * <b>Token Generator</b>
  *
  * <p>Creates random token strings width a default length of 32 characters, using a combination
- * Java's {@link SecureRandom}
- * class and the {@link Collections#shuffle(List)} method.</p>
+ * Java's {@link SecureRandom} class and the {@link Collections#shuffle(List)} method.</p>
  * <p>
  * The token character pool are small and capital letters from the ASCII table ans well as numeric
  * values from 0-9.
@@ -24,7 +23,8 @@ public class TokenGenerator {
   private static final int TOKEN_LENGTH = 32;
 
   public TokenGenerator() {
-    // Tokens can be generated via the token() method;
+    /* Tokens can and should be generated via the token() method within the generator;
+     */
   }
 
   private static Stream<Character> getRandomAlphabet() {

@@ -51,7 +51,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   @Serial
   private static final long serialVersionUID = -8972242722349756972L;
   private static final Logger log = logger(PersonalAccessTokenComponent.class);
-  private final static String TITLE = "Personal Access Token (PAT)";
+  private static final String TITLE = "Personal Access Token (PAT)";
   private final Disclaimer noTokensRegisteredDisclaimer;
   private final Div createdTokenLayout = new Div();
   private final VirtualList<PersonalAccessTokenDTO> personalAccessTokens = new VirtualList<>();
@@ -148,8 +148,8 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     Anchor downloadGuideLink = new Anchor(
         "https://github.com/qbicsoftware/postman-cli/blob/main/README.md",
         "Download Guide");
-    Text upperDescription = new Text("""
-        Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).""");
+    Text upperDescription = new Text(
+        "Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).");
     Div description = generateDescriptionText(downloadGuideLink, upperDescription);
     description.addClassName("description");
     return description;
