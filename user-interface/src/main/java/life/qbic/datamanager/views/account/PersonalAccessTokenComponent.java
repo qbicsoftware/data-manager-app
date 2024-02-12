@@ -51,7 +51,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   @Serial
   private static final long serialVersionUID = -8972242722349756972L;
   private static final Logger log = logger(PersonalAccessTokenComponent.class);
-  private final String TITLE = "Personal Access Token (PAT)";
+  private final static String TITLE = "Personal Access Token (PAT)";
   private final Disclaimer noTokensRegisteredDisclaimer;
   private final Div createdTokenLayout = new Div();
   private final VirtualList<PersonalAccessTokenDTO> personalAccessTokens = new VirtualList<>();
@@ -137,7 +137,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     Button generateTokenButton = new Button("Generate new token");
     buttonBar.add(generateTokenButton);
     generateTokenButton.addClickListener(
-        event -> fireEvent(new addTokenEvent(this, event.isFromClient())));
+        event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
     Span header = new Span(title, buttonBar);
     header.addClassName("header");
     return header;
@@ -156,11 +156,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   }
 
   private Div generateDescriptionText(Anchor downloadGuideLink, Text upperDescription) {
-    Text lowerDescriptionText1 = new Text("""
-        Tokens that you have generated can be used to access your data via qPostman. You can learn more about how you can use your personal access tokens through this \s""");
-    Text lowerDescriptionText2 = new Text(""" 
-        . Please do not share your personal access tokens with anyone you don't want to access your files.
-        """);
+    Text lowerDescriptionText1 = new Text(
+        "Tokens that you have generated can be used to access your data via qPostman. You can learn more about how you can use your personal access tokens through this \s");
+    Text lowerDescriptionText2 = new Text(
+        ". Please do not share your personal access tokens with anyone you don't want to access your files.");
     Span lowerDescription = new Span(lowerDescriptionText1, downloadGuideLink,
         lowerDescriptionText2);
     return new Div(upperDescription, lowerDescription);
@@ -171,7 +170,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
         "Manage your tokens in one place",
         "Manage data access by registering the first personal access token", "Generate new token");
     noTokensRegisteredCard.addDisclaimerConfirmedListener(
-        event -> fireEvent(new addTokenEvent(this, event.isFromClient())));
+        event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
     return noTokensRegisteredCard;
   }
 
@@ -217,13 +216,13 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   }
 
   /**
-   * Register an {@link ComponentEventListener} that will get informed with a {@link addTokenEvent},
+   * Register an {@link ComponentEventListener} that will get informed with a {@link AddTokenEvent},
    * as soon as a user wants to edit batch Information.
    *
    * @param addTokenListener a listener on the batch edit trigger
    */
-  public void addTokenListener(ComponentEventListener<addTokenEvent> addTokenListener) {
-    addListener(addTokenEvent.class, addTokenListener);
+  public void addTokenListener(ComponentEventListener<AddTokenEvent> addTokenListener) {
+    addListener(AddTokenEvent.class, addTokenListener);
   }
 
   /**
@@ -242,12 +241,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * <p>Indicates that a user wants to create a {@link PersonalAccessToken}
    * within the {@link PersonalAccessTokenComponent}</p>
    */
-  public static class addTokenEvent extends ComponentEvent<PersonalAccessTokenComponent> {
+  public static class AddTokenEvent extends ComponentEvent<PersonalAccessTokenComponent> {
 
     @Serial
     private static final long serialVersionUID = 2389754662171510873L;
 
-    public addTokenEvent(PersonalAccessTokenComponent source, boolean fromClient) {
+    public AddTokenEvent(PersonalAccessTokenComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }

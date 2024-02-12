@@ -14,9 +14,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
-import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.addTokenEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
@@ -72,7 +72,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     loadGeneratedPersonalAccessTokens();
   }
 
-  private void onAddTokenClicked(addTokenEvent addTokenEvent) {
+  private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
     AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();
     addPersonalAccessTokenDialog.open();
     addPersonalAccessTokenDialog.addCancelListener(event -> event.getSource().close());

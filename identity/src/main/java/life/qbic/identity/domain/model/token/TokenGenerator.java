@@ -24,6 +24,7 @@ public class TokenGenerator {
   private static final int TOKEN_LENGTH = 32;
 
   public TokenGenerator() {
+    // Tokens can be generated via the token() method;
   }
 
   private static Stream<Character> getRandomAlphabet() {
