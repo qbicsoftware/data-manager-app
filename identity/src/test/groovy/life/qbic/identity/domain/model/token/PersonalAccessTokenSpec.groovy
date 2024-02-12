@@ -28,4 +28,19 @@ class PersonalAccessTokenSpec extends Specification {
         !token.hasExpired()
     }
 
+    def "Comparing tokens with the same raw token must be equal"() {
+        given:
+        TokenGenerator generator = new TokenGenerator()
+        def token = generator.token()
+
+        and:
+        PersonalAccessToken tokenOne = PersonalAccessToken.create("a-user-id", "a description", Duration.ofDays(20), token)
+
+        when:
+        def doMatch = tokenOne.matches(token)
+
+        then:
+        doMatch
+    }
+
 }

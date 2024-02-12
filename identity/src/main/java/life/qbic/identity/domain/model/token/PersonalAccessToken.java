@@ -7,13 +7,20 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import life.qbic.identity.domain.model.PasswordEncryptionPolicy;
 
 /**
  * <b>Personal Access Token</b>
  *
- * <p></p>
+ * <p>A user's personal access token to interact with QBiC's data API.</p>
+ * <p>
+ * The personal access token contains a small description for the user being able to describe the
+ * purpose of the token.
+ * <p>
+ * Every token has a creation date, which is set automatically at token creation. The duration of a
+ * token can be set by the client, policies are not enforced on object level.
  *
  * @since 1.0.0
  */
@@ -67,6 +74,7 @@ public class PersonalAccessToken {
   public String tokenId() {
     return tokenId;
   }
+
   public boolean hasExpired() {
     return Instant.now().minus(duration).isAfter(creationDate);
   }
@@ -82,4 +90,26 @@ public class PersonalAccessToken {
   public String userId() {
     return userId;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    PersonalAccessToken that = (PersonalAccessToken) o;
+    return Objects.equals(tokenId, that.tokenId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(tokenId);
+  }
+
+  public boolean matches(String rawToken) {
+    return PasswordEncryptionPolicy.instance().doPasswordsMatch(rawToken.toCharArray(), this.tokenValueEncrypted);
+  }
+
 }
