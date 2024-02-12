@@ -8,11 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Qbic Token Repository</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link TokenRepository} interface. </p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Repository
 public class QbicTokenRepository implements TokenRepository {

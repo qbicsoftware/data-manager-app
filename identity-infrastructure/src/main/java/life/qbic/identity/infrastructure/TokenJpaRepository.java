@@ -5,11 +5,11 @@ import life.qbic.identity.domain.model.token.PersonalAccessToken;
 import org.springframework.data.repository.CrudRepository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Token Jpa Repository/b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Token repository extending Springs {@link CrudRepository} to enable specific queries.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface TokenJpaRepository extends CrudRepository<PersonalAccessToken, Integer> {
 
