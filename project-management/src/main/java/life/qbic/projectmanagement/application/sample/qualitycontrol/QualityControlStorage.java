@@ -1,9 +1,9 @@
-package life.qbic.projectmanagement.application.api;
+package life.qbic.projectmanagement.application.sample.qualitycontrol;
 
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.qualityControl.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 
 /**
  * <b>QualityControl Storage</b>

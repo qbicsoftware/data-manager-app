@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.model.project.qualityControl;
+package life.qbic.projectmanagement.domain.model.sample.qualitycontrol;
 
 import static jakarta.persistence.FetchType.LAZY;
 

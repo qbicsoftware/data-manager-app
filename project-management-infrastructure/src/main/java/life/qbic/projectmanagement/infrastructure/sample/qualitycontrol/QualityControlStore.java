@@ -1,13 +1,13 @@
-package life.qbic.projectmanagement.infrastructure.project.qualityControl;
+package life.qbic.projectmanagement.infrastructure.sample.qualitycontrol;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.application.api.QualityControlStorage;
-import life.qbic.projectmanagement.application.api.QualityControlStorageException;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorage;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorageException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.qualityControl.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 

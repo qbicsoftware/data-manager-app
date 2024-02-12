@@ -22,7 +22,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.qualityControl.QualityControlDTO;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
 
 /**
  * <b>Upload Quality Control Dialog</b>
@@ -146,17 +146,17 @@ public class UploadQualityControlDialog extends DialogWindow {
         });
   }
 
-  public List<QualityControlDTO> qualityControlItems() {
+  public List<QualityControlReport> qualityControlItems() {
     return qualityControlItemsCache.stream().map(this::convertToQualityControl).toList();
   }
 
-  private QualityControlDTO convertToQualityControl(QualityControlItem qualityControlItem) {
+  private QualityControlReport convertToQualityControl(QualityControlItem qualityControlItem) {
     try {
       var fileName = qualityControlItem.fileName();
       var experimentId = qualityControlItem.experimentId();
       var content = multiFileMemoryBuffer.inputStream(fileName)
           .orElse(new ByteArrayInputStream(new byte[]{})).readAllBytes();
-      return new QualityControlDTO(fileName, experimentId, content);
+      return new QualityControlReport(fileName, experimentId, content);
     } catch (IOException e) {
       throw new ApplicationException("Failed to read quality control content", e);
     }

@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.qualityControl;
+package life.qbic.projectmanagement.application.sample.qualitycontrol;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -8,7 +8,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 /**
  * <b>Simple quality control information exchange object</b>
  */
-public record QualityControlDTO(String fileName, ExperimentId experimentId, byte[] content) {
+public record QualityControlReport(String fileName, ExperimentId experimentId, byte[] content) {
 
   @Override
   public boolean equals(Object o) {
@@ -18,10 +18,10 @@ public record QualityControlDTO(String fileName, ExperimentId experimentId, byte
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    QualityControlDTO qualityControlDTO = (QualityControlDTO) o;
-    return Objects.equals(fileName, qualityControlDTO.fileName) && Objects.equals(experimentId,
-        qualityControlDTO.experimentId)
-        && Arrays.equals(content, qualityControlDTO.content);
+    QualityControlReport qualityControlReport = (QualityControlReport) o;
+    return Objects.equals(fileName, qualityControlReport.fileName) && Objects.equals(experimentId,
+        qualityControlReport.experimentId)
+        && Arrays.equals(content, qualityControlReport.content);
   }
 
   @Override
@@ -33,7 +33,7 @@ public record QualityControlDTO(String fileName, ExperimentId experimentId, byte
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", QualityControlDTO.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", QualityControlReport.class.getSimpleName() + "[", "]")
         .add("fileName='" + fileName + "'")
         .add("experimentId='" + experimentId + "'")
         .add("content=" + Arrays.toString(content))

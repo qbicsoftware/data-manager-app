@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.qualityControl;
+package life.qbic.projectmanagement.application.sample.qualitycontrol;
 
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -6,9 +6,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.api.QualityControlStorage;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.qualityControl.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import org.springframework.stereotype.Service;
 
 ;
@@ -37,11 +36,11 @@ public class QualityControlService {
    * @param qualityControl the qualityControl content
    * @since 1.0.0
    */
-  public void addQualityControl(String projectId, QualityControlDTO qualityControl) {
+  public void addQualityControl(String projectId, QualityControlReport qualityControl) {
     addQualityControls(projectId, List.of(qualityControl));
   }
 
-  public void addQualityControls(String projectId, List<QualityControlDTO> qualityControlsList) {
+  public void addQualityControls(String projectId, List<QualityControlReport> qualityControlsList) {
     /*
     var projectReference = ProjectId.parse(projectId);
     var qualityControlUploadDate = Instant.now();

@@ -8,7 +8,7 @@ import com.vaadin.flow.server.StreamResource;
 import java.io.ByteArrayInputStream;
 import java.util.function.BiFunction;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.projectmanagement.domain.model.project.qualityControl.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 
 /**
  * The QualityControlDownload class extends the Anchor class and provides functionality for
@@ -39,7 +39,7 @@ public class QualityControlDownload extends Anchor {
   public void trigger(String projectId, long qualityControlId) {
     UI ui = getUI().orElseThrow(() -> new ApplicationException(
         "QualityControl Download component triggered but not attached to any UI."));
-    life.qbic.projectmanagement.domain.model.project.qualityControl.QualityControl qualityControl = qualityControlDataProvider.apply(
+    QualityControl qualityControl = qualityControlDataProvider.apply(
         projectId, qualityControlId);
     StreamResource resource = new StreamResource(qualityControl.getFileName(),
         () -> new ByteArrayInputStream(qualityControl.fileContent()));

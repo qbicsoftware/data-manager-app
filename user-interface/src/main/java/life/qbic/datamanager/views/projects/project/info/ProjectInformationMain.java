@@ -45,8 +45,8 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
-import life.qbic.projectmanagement.application.qualityControl.QualityControlDTO;
-import life.qbic.projectmanagement.application.qualityControl.QualityControlService;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -221,11 +221,11 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       String projectId) {
     UploadQualityControlDialog dialog = new UploadQualityControlDialog();
     dialog.addConfirmListener(confirmEvent -> {
-      List<QualityControlDTO> qualityControlDTOS = confirmEvent.getSource().qualityControlItems()
+      List<QualityControlReport> qualityControlReports = confirmEvent.getSource().qualityControlItems()
           .stream()
-          .map(it -> new QualityControlDTO(it.fileName(), it.experimentId(), it.content()))
+          .map(it -> new QualityControlReport(it.fileName(), it.experimentId(), it.content()))
           .toList();
-      qualityControlService.addQualityControls(projectId, qualityControlDTOS);
+      qualityControlService.addQualityControls(projectId, qualityControlReports);
       refreshQualityControls(uploadQualityControlEvent);
       confirmEvent.getSource().close();
     });
