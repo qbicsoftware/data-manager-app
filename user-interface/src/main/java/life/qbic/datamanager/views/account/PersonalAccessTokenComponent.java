@@ -19,6 +19,7 @@ import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
@@ -95,16 +96,20 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   private Span createExpirationDate(PersonalAccessTokenDTO personalAccessTokenDTO) {
     Span expirationDate = new Span();
+    expirationDate.addClassName("expiration-date");
     String expirationDateText = LocalDate.now()
         .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
             DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG));
     if (personalAccessTokenDTO.expired()) {
-      expirationDate.setText("Your token has expired on: " + expirationDateText);
-      expirationDate.setClassName("warning");
+      Icon warningIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+      warningIcon.addClassName(IconSize.SMALL);
+      expirationDate.add(warningIcon);
+      expirationDate.add("Your token has expired on: " + expirationDateText);
+      expirationDate.addClassName("warning");
     } else {
       expirationDate.setText(
           "Your token expires on: " + expirationDateText);
-      expirationDate.setClassName("secondary");
+      expirationDate.addClassName("secondary");
     }
     return expirationDate;
   }
@@ -113,13 +118,16 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     createdTokenLayout.removeAll();
     Div createdPersonalAccessTokenDetails = new Div();
     Icon copyIcon = VaadinIcon.COPY_O.create();
+    copyIcon.addClassName(IconSize.SMALL);
     copyIcon.addClassName("clickable");
     copyIcon.addClickListener(
         event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText));
     Span rawToken = new Span(rawTokenText);
     Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
     personalAccessTokenWithIcon.addClassName("token-text");
-    Span copyDisclaimer = new Span(VaadinIcon.EXCLAMATION_CIRCLE_O.create(),
+    Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+    disclaimerIcon.addClassName(IconSize.SMALL);
+    Span copyDisclaimer = new Span(disclaimerIcon,
         new Text("Please copy your personal access token now. You won't be able to see it again"));
     copyDisclaimer.addClassName("copy-disclaimer");
     copyDisclaimer.addClassName("primary");
