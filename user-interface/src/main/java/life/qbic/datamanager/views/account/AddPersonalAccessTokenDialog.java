@@ -18,14 +18,16 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.identity.domain.model.token.PersonalAccessToken;
 import life.qbic.logging.api.Logger;
 
+
 /**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * AddPersonalAccessTokenDialog
  *
- * @since <version tag>
+ * <p>Vaadin dialog component which enables the user to trigger the
+ * {@link PersonalAccessToken} generation process with a selectable expiration date
+ * </p>
  */
 public class AddPersonalAccessTokenDialog extends DialogWindow {
 
