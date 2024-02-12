@@ -32,8 +32,18 @@ span.bold {
   font-weight: bold;
 }
 
+span.primary {
+  color: var(--lumo-primary-text-color);
+}
+
 span.secondary {
   color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+span.warning {
+  color: var(--lumo-warning-text-color);
+  font-size: var(--lumo-font-size-s);
 }
 
 span.title {
