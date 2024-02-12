@@ -18,18 +18,21 @@ import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
+import life.qbic.datamanager.views.projects.qualityControl.QualityControlItem.ExperimentItem;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * <b>Upload Quality Control Dialog</b>
  * <p>
- * A dialog window that enables uploads of sample QC reports.
+ * A dialog window that enables uploads of sample quality control reports.
  *
- * @since 1.0.0
  */
 public class UploadQualityControlDialog extends DialogWindow {
 
@@ -39,17 +42,30 @@ public class UploadQualityControlDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
   private final Upload upload;
-  private EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
+  private final EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
   private final Div uploadedQualityControlItems;
   private final List<QualityControlItem> qualityControlItemsCache = new ArrayList<>();
   private final Div uploadedItemsSectionContent;
+  private final List<ExperimentItem> selectableExperimentsForProject;
 
-  public UploadQualityControlDialog() {
+  public UploadQualityControlDialog(ProjectId projectId,
+      ExperimentInformationService experimentInformationService) {
+    Objects.requireNonNull(experimentInformationService,
+        "experiment information service must not be null");
+    //Load selectable Experiments for Sample quality control items;
+    selectableExperimentsForProject = experimentInformationService.findAllForProject(projectId)
+        .stream()
+        .map(experiment -> new ExperimentItem(experiment.experimentId(), experiment.getName()))
+        .toList();
+
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
 
     upload = new Upload(multiFileMemoryBuffer);
-    upload.setAcceptedFileTypes("application/pdf", ".pdf");
+    upload.setAcceptedFileTypes(AllowedFileExtension.PDF.extension(),
+        AllowedFileExtension.PDF.mimetype(),
+        AllowedFileExtension.EXCEL.extension(), AllowedFileExtension.EXCEL.mimetype(),
+        AllowedFileExtension.WORD.extension(), AllowedFileExtension.WORD.mimetype());
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
     setHeaderTitle("Upload a Sample QC Report");
@@ -62,7 +78,7 @@ public class UploadQualityControlDialog extends DialogWindow {
     restrictions.addClassName("restrictions");
     restrictions.add(new Span("Supported file formats: PDF, docx, xlsx"));
     restrictions.add(
-        new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
+        new Span("Maximum file size: %s MB" .formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
     Div uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, upload, restrictions);
 
@@ -99,7 +115,8 @@ public class UploadQualityControlDialog extends DialogWindow {
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    var qualityControl = new QualityControlItem(succeededEvent.getFileName());
+    var qualityControl = new QualityControlItem(succeededEvent.getFileName(),
+        selectableExperimentsForProject);
     uploadedQualityControlItems.add(qualityControl);
     qualityControlItemsCache.add(qualityControl);
     toggleFileSectionIfEmpty();
@@ -216,6 +233,49 @@ public class UploadQualityControlDialog extends DialogWindow {
      */
     public CancelEvent(UploadQualityControlDialog source, boolean fromClient) {
       super(source, fromClient);
+    }
+  }
+
+
+  /**
+   * <b>Allowed File Extension</b>
+   *
+   * <p>Enumeration of all allowed File extensions in the context of the Quality Control upload.
+   * Additionally provides the MIME_type and a short description as outlined by the mozilla docs <a
+   * href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types">...</a>
+   * </p>
+   */
+  private enum AllowedFileExtension {
+
+    EXCEL(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Microsoft Excel (OpenXML)"),
+    PDF(".pdf", "application/pdf",
+        "Adobe Portable Document Format (PDF)"),
+    WORD(
+        ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Microsoft Word (OpenXML)");
+
+    private final String extension;
+    private final String mimeType;
+    private final String description;
+
+
+    AllowedFileExtension(String extension, String mimeType, String description) {
+      this.extension = extension;
+      this.mimeType = mimeType;
+      this.description = description;
+    }
+
+    public String extension() {
+      return extension;
+    }
+
+    public String mimetype() {
+      return mimeType;
+    }
+
+    public String description() {
+      return description;
     }
   }
 }

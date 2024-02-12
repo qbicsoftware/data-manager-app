@@ -509,7 +509,7 @@ vaadin-upload-file::part(meta){
   color: var(--lumo-tertiary-text-color);
 }
 
-.uploaded-quality-control-items .quality-control-item .purchase-item:last-child {
+.uploaded-quality-control-items .quality-control-item:last-child {
   border-style: none;
 }
 

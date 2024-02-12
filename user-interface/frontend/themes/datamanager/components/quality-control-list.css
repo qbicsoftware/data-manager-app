@@ -1,0 +1,50 @@
+.quality-control-list-component .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.quality-control-list-component .quality-control-item {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.quality-control-list-component .quality-control-item .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.quality-control-list-component .quality-control-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quality-control-list-component .quality-control-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.quality-control-list-component .quality-control-item .file-info {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+}
+
+
+.quality-control-list-component .quality-control-item .file-info-with-icon {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+}

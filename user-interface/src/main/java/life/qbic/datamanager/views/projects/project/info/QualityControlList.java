@@ -2,10 +2,10 @@ package life.qbic.datamanager.views.projects.project.info;
 
 
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
@@ -25,7 +25,7 @@ public class QualityControlList extends PageArea {
 
   public QualityControlList() {
     qualityControls = new VirtualList<>();
-    qualityControls.setRenderer(new ComponentRenderer<>(this::renderQualityControl));
+    qualityControls.setRenderer(qualityControlItemRenderer());
     Button upload = new Button("Upload", this::onUploadQualityControlClicked);
     upload.setAriaLabel("Upload");
     Span title = new Span("Sample QC");
@@ -36,58 +36,24 @@ public class QualityControlList extends PageArea {
     add(header, qualityControls);
   }
 
-  public void setItems() {
-
+  private ComponentRenderer<QualityControlItem, QualityControl> qualityControlItemRenderer() {
+    return new ComponentRenderer<>(qualityControl -> {
+      QualityControlItem qualityControlItem = new QualityControlItem(qualityControl);
+      qualityControlItem.onDownloadButtonClicked(event -> fireEvent(
+          new DownloadQualityControlEvent(qualityControl.qualityControlId(), this,
+              event.isFromClient())));
+      qualityControlItem.onDeleteButtonClicked(event -> fireEvent(new DeleteQualityControlEvent(
+          qualityControl.qualityControlId(), this, event.isFromClient())));
+      return qualityControlItem;
+    });
   }
 
   private void onUploadQualityControlClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new UploadQualityControlEvent(this, clickEvent.isFromClient()));
   }
 
-  private Component renderQualityControl(QualityControl qualityControl) {
-
-    var offerFileName = new Span(qualityControl.filename());
-    offerFileName.setTitle(qualityControl.filename());
-    offerFileName.addClassName("file-name");
-
-    var downloadButton = new Button(LumoIcon.DOWNLOAD.create(),
-        event -> onDownloadQualityControlClicked(
-            new DownloadQualityControlEvent(qualityControl.qualityControlId(), this,
-                event.isFromClient())));
-    downloadButton.addThemeNames("tertiary-inline", "icon");
-    downloadButton.setAriaLabel("Download");
-    downloadButton.setTooltipText("Download");
-    var deleteButton = new Button(LumoIcon.CROSS.create(), event -> onDeleteQualityControlClicked(
-        new DeleteQualityControlEvent(qualityControl.qualityControlId(), this,
-            event.isFromClient())));
-    deleteButton.addThemeNames("tertiary-inline", "icon");
-    deleteButton.setTooltipText("Delete");
-    deleteButton.setAriaLabel("Delete");
-
-    Span qualityControlActionControls = new Span(downloadButton, deleteButton);
-    qualityControlActionControls.addClassName("controls");
-
-    var fileIcon = VaadinIcon.FILE.create();
-    fileIcon.addClassName("file-icon");
-    Span fileInfo = new Span(fileIcon, offerFileName);
-
-    Span qualityControlListItem = new Span();
-    qualityControlListItem.addClassName("quality-control");
-    qualityControlListItem.add(fileInfo, qualityControlActionControls);
-
-    return qualityControlListItem;
-  }
-
   public void setQualityControls(List<QualityControl> qualityControlList) {
     qualityControls.setItems(qualityControlList);
-  }
-
-  private void onDeleteQualityControlClicked(DeleteQualityControlEvent event) {
-    fireEvent(event);
-  }
-
-  private void onDownloadQualityControlClicked(DownloadQualityControlEvent event) {
-    fireEvent(event);
   }
 
   public Registration addDeleteQualityControlListener(
@@ -171,5 +137,59 @@ public class QualityControlList extends PageArea {
 
   public record QualityControl(Long qualityControlId, String filename, String experimentName) {
 
+  }
+
+  private static class QualityControlItem extends Span {
+
+    private final QualityControl qualityControl;
+    private final Span controls = new Span();
+    private final Button downloadButton = new Button(LumoIcon.DOWNLOAD.create());
+    private final Button deleteButton = new Button(LumoIcon.CROSS.create());
+
+    public QualityControlItem(QualityControl qualityControl) {
+      this.qualityControl = qualityControl;
+      createFileInformationSection();
+      createControls();
+      addClassName("quality-control-item");
+    }
+
+    public QualityControl qualityControl() {
+      return qualityControl;
+    }
+
+    private void createFileInformationSection() {
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span experimentName = new Span(qualityControl.experimentName());
+      experimentName.addClassName("secondary");
+      var qualityControlFileName = new Span(qualityControl.filename());
+      qualityControlFileName.setTitle(qualityControl.filename());
+      qualityControlFileName.addClassName("file-name");
+      Div fileInfo = new Div(qualityControlFileName, experimentName);
+      fileInfo.addClassName("file-info");
+      Span iconWithFileInfo = new Span(fileIcon, fileInfo);
+      iconWithFileInfo.addClassName("file-info-with-icon");
+      add(iconWithFileInfo);
+    }
+
+    private void createControls() {
+      downloadButton.addThemeNames("tertiary-inline", "icon");
+      downloadButton.setAriaLabel("Download");
+      downloadButton.setTooltipText("Download");
+      deleteButton.addThemeNames("tertiary-inline", "icon");
+      deleteButton.setTooltipText("Delete");
+      deleteButton.setAriaLabel("Delete");
+      controls.add(downloadButton, deleteButton);
+      controls.addClassName("controls");
+      add(controls);
+    }
+
+    private void onDownloadButtonClicked(ComponentEventListener<ClickEvent<Button>> listener) {
+      downloadButton.addClickListener(listener);
+    }
+
+    private void onDeleteButtonClicked(ComponentEventListener<ClickEvent<Button>> listener) {
+      deleteButton.addClickListener(listener);
+    }
   }
 }

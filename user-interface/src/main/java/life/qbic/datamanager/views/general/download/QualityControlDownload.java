@@ -8,18 +8,18 @@ import com.vaadin.flow.server.StreamResource;
 import java.io.ByteArrayInputStream;
 import java.util.function.BiFunction;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 
 /**
  * The QualityControlDownload class extends the Anchor class and provides functionality for
- * triggering the download of a QualityControl file.
+ * triggering the download of a QualityControlUpload file.
  */
 public class QualityControlDownload extends Anchor {
 
-  private final transient BiFunction<String, Long, QualityControl> qualityControlDataProvider;
+  private final transient BiFunction<String, Long, QualityControlUpload> qualityControlDataProvider;
 
   public QualityControlDownload(
-      BiFunction<String, Long, QualityControl> qualityControlDataProvider) {
+      BiFunction<String, Long, QualityControlUpload> qualityControlDataProvider) {
     super("_blank", "Download");
     /*
      * Using setVisible(false), vaadin prevents any client side actions.
@@ -38,11 +38,11 @@ public class QualityControlDownload extends Anchor {
 
   public void trigger(String projectId, long qualityControlId) {
     UI ui = getUI().orElseThrow(() -> new ApplicationException(
-        "QualityControl Download component triggered but not attached to any UI."));
-    QualityControl qualityControl = qualityControlDataProvider.apply(
+        "QualityControlUpload Download component triggered but not attached to any UI."));
+    QualityControlUpload qualityControlUpload = qualityControlDataProvider.apply(
         projectId, qualityControlId);
-    StreamResource resource = new StreamResource(qualityControl.getFileName(),
-        () -> new ByteArrayInputStream(qualityControl.fileContent()));
+    StreamResource resource = new StreamResource(qualityControlUpload.getFileName(),
+        () -> new ByteArrayInputStream(qualityControlUpload.fileContent()));
     this.setHref(resource);
     ui.getPage().executeJs("$0.click()", this.getElement());
   }
