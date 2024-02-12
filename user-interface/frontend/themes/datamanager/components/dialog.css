@@ -460,9 +460,10 @@ vaadin-upload-file::part(meta){
 
 .quality-control-upload .restrictions {
   font-size: smaller;
-  display: flex;
+  display: inline-flex;
   justify-content: space-between;
   color: var(--lumo-contrast-60pct);
+  column-gap: var(--lumo-space-s);
 }
 
 .quality-control-upload.section-title {
