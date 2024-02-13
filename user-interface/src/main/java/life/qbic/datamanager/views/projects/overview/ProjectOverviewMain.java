@@ -9,7 +9,7 @@ import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -34,7 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Project Overview")
-@Route(value = Projects.PROJECTS, layout = MainLayout.class)
+@Route(value = Projects.PROJECTS, layout = UserMainLayout.class)
 @PermitAll
 public class ProjectOverviewMain extends Main {
   @Serial

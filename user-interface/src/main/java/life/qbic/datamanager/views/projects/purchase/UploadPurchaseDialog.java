@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 
@@ -68,7 +69,7 @@ public class UploadPurchaseDialog extends DialogWindow {
 
     // Uploaded purchase items display configuration
     uploadedPurchaseItems = new Div();
-    uploadedPurchaseItems.addClassName("uploaded-items");
+    uploadedPurchaseItems.addClassName("uploaded-purchase-items");
     uploadedItemsSectionContent = new Div();
     Span uploadedItemsSectionTitle = new Span("Set offer signed status");
     uploadedItemsSectionTitle.addClassName("section-title");
