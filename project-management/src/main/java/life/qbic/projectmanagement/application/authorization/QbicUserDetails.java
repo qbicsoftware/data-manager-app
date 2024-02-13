@@ -57,7 +57,7 @@ public class QbicUserDetails implements UserDetails {
     return user.id();
   }
 
-  public String getFullName() {
+  public String fullName() {
     return user.fullName();
   }
 
