@@ -1,3 +1,18 @@
+.data-manager-layout::part(navbar) {
+  display: inline-flex;
+  justify-content: space-between;
+}
+
+.data-manager-layout .data-manager-title {
+  font-size: var(--lumo-font-size-l);
+  margin: var(--lumo-space-m);
+  color: var(--lumo-header-text-color);
+  font-weight: 600;
+  line-height: var(--lumo-line-height-xs);
+  margin-block: 0;
+  padding-inline: var(--lumo-space-m);
+}
+
 .data-manager-menu {
   display: inline-flex;
   justify-content: space-between;
@@ -27,11 +42,6 @@
   display: inline-flex;
   justify-content: space-between;
   width: 100%;
-}
-
-.main-layout::part(navbar) {
-  display: inline-flex;
-  justify-content: space-between;
 }
 
 .project-main-layout::part(navbar) {
