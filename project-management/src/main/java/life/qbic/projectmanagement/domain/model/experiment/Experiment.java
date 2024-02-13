@@ -247,14 +247,15 @@ public class Experiment {
    *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
+   * @param groupName      the name of this experimental group, which can be empty
    * @param variableLevels at least one value for a variable defined in this experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    * @return
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
+    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize);
   }
 
   public List<ExperimentalGroup> getExperimentalGroups() {

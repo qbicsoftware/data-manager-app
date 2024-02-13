@@ -137,9 +137,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   @Override
   protected ExperimentalGroupBean generateModelValue() {
+    var name = getName();
     var levels = getCondition();
     var sampleSize = getReplicateCount();
-    return new ExperimentalGroupBean(sampleSize, levels);
+    return new ExperimentalGroupBean(name, sampleSize, levels);
+  }
+
+  public String getName() {
+    return nameField.getValue();
   }
 
   public int getReplicateCount() {
@@ -201,6 +206,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     return numberField;
   }
 
+  private TextField generateGroupNameField() {
+    TextField textField = new TextField();
+    textField.addClassName("text-field");
+    textField.setLabel("Group Name");
+    textField.setPlaceholder("optional");
+    return textField;
+  }
+
   private void filterShownLevels() {
     ComboBoxListDataView<VariableLevel> listDataView = variableLevelSelect.getListDataView();
     listDataView.setFilter(
@@ -222,10 +235,13 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   public static class ExperimentalGroupBean {
 
     private final List<VariableLevel> levels = new ArrayList<>();
+
+    private final String name;
     @Min(1)
     private final int replicateCount;
 
-    public ExperimentalGroupBean(int replicateCount, List<VariableLevel> levels) {
+    public ExperimentalGroupBean(String name, int replicateCount, List<VariableLevel> levels) {
+      this.name = name;
       this.replicateCount = replicateCount;
       this.levels.addAll(levels);
     }

@@ -479,12 +479,12 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(
       ExperimentalGroupContent experimentalGroupContent) {
-    return new ExperimentalGroupDTO(experimentalGroupContent.variableLevels(),
-        experimentalGroupContent.size());
+    return new ExperimentalGroupDTO(experimentalGroupContent.name(),
+        experimentalGroupContent.variableLevels(), experimentalGroupContent.size());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.replicateCount(),
+    return new ExperimentalGroupContent(experimentalGroupDTO.name(), experimentalGroupDTO.replicateCount(),
         experimentalGroupDTO.levels());
   }
 

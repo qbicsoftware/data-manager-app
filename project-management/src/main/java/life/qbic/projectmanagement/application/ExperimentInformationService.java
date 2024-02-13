@@ -71,7 +71,7 @@ public class ExperimentInformationService {
 
     Experiment experiment = loadExperimentById(experimentId);
     Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-        experimentalGroup.levels(), experimentalGroup.replicateCount());
+        experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
       experimentRepository.update(experiment);
     }
@@ -88,7 +88,7 @@ public class ExperimentInformationService {
   public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
-        .map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize()))
+        .map(it -> new ExperimentalGroupDTO(it.name(), it.condition().getVariableLevels(), it.sampleSize()))
         .toList();
   }
 
@@ -280,7 +280,7 @@ public class ExperimentInformationService {
     List<ExperimentalGroup> addedGroups = new ArrayList<>();
     for (ExperimentalGroupDTO experimentalGroupDTO : experimentalGroupDTOS) {
       Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-          experimentalGroupDTO.levels(),
+          experimentalGroupDTO.name(), experimentalGroupDTO.levels(),
           experimentalGroupDTO.replicateCount());
       if (result.isError()) {
         return Result.fromError(result.getError());
@@ -305,10 +305,11 @@ public class ExperimentInformationService {
   /**
    * Information about an experimental group
    *
+   * @param name           the name of the group - can be empty
    * @param levels         the levels in the condition of the group
    * @param replicateCount the number of biological replicates
    */
-  public record ExperimentalGroupDTO(List<VariableLevel> levels, int replicateCount) {
+  public record ExperimentalGroupDTO(String name, List<VariableLevel> levels, int replicateCount) {
 
   }
 }

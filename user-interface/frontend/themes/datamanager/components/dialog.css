@@ -218,9 +218,13 @@ vaadin-dialog-overlay::part(title) {
   min-width: 175px;
 }
 
+.experiment-group-dialog .text-field {
+  min-width: 100px;
+}
+
 .experiment-group-dialog .experimental-group-entry {
   display: grid;
-  grid: auto auto auto / 1fr 175px auto;
+  grid: auto auto auto auto / auto 1fr 175px auto;
   column-gap: 1rem;
   align-items: baseline;
 }

@@ -87,7 +87,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupInput experimentalGroupInput) {
-    return new ExperimentalGroupContent(experimentalGroupInput.getReplicateCount(),
+    return new ExperimentalGroupContent(experimentalGroupInput.getName(), experimentalGroupInput.getReplicateCount(),
         experimentalGroupInput.getCondition());
   }
 
@@ -172,7 +172,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .toList();
   }
 
-  public record ExperimentalGroupContent(int size, List<VariableLevel> variableLevels) {}
+  public record ExperimentalGroupContent(String name, int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends
       life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {
