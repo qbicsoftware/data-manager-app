@@ -65,7 +65,8 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
 
   @Override
   public void delete(String tokenId, String userId) {
-    tokenRepository.findAllByUserId(userId).stream().filter(token -> token.userId().equals(userId))
+    tokenRepository.findAllByUserId(userId).stream()
+        .filter(token -> token.tokenId().equals(tokenId))
         .findAny().ifPresent(tokenRepository::delete);
   }
 }
