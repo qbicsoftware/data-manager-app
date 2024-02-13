@@ -57,6 +57,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream().map(group -> {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
+      groupEntry.setGroupName(group.name());
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
       groupEntry.setEnabled(editMode);
@@ -183,8 +184,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
    */
   public Collection<ExperimentalGroupContent> experimentalGroups() {
     return this.experimentalGroupsCollection.getChildren()
-        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class)
-            && ((ExperimentalGroupInput) component).isEnabled())
+        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
         .map(experimentalGroupEntry -> convert((ExperimentalGroupInput) experimentalGroupEntry))
         .toList();
   }
