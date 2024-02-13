@@ -10,6 +10,7 @@ import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.NumberField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.Min;
 import java.io.Serial;
@@ -47,6 +48,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       VariableValueFormatter.format(it.experimentalValue()));
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
+  private final TextField nameField;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
   int variableCount = 0;
@@ -54,8 +56,9 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   /**
    * ExperimentalGroupInput is a {@link CustomField} which contains a {@link MultiSelectComboBox}
-   * allowing the user to define the {@link Condition} and a {@link NumberField} enabling the user
-   * to define the number of {@link BiologicalReplicate} within an {@link ExperimentalGroup}
+   * allowing the user to define the {@link Condition}, a {@link NumberField} enabling the user
+   * to define the number of {@link BiologicalReplicate} within an {@link ExperimentalGroup}, and
+   * a {@link TextField} to optionally name the group.
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
    */
@@ -63,23 +66,30 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     addClassName("experimental-group-entry");
     removeEventListeners = new ArrayList<>();
 
+    nameField = generateGroupNameField();
     variableLevelSelect = generateVariableLevelSelect();
     replicateCountField = generateBiologicalReplicateField();
 
     var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
     deleteIcon.addClickListener(
         event -> fireRemoveEvent(new RemoveEvent(this, event.isFromClient())));
-    add(variableLevelSelect, replicateCountField, deleteIcon);
+    add(nameField, variableLevelSelect, replicateCountField, deleteIcon);
     setLevels(availableLevels);
     addValidationForVariableCount();
     variableLevelSelect.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
     replicateCountField.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
+    nameField.addValueChangeListener(
+        event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
   }
 
   public void setCondition(Collection<VariableLevel> levels) {
     this.variableLevelSelect.setValue(levels);
+  }
+
+  public void setGroupName(String groupName) {
+    this.nameField.setValue(groupName);
   }
 
   public void setReplicateCount(int numberOfReplicates) {
