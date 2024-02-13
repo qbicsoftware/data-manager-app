@@ -13,7 +13,7 @@ import com.vaadin.flow.router.PageTitle;
 @PageTitle("Data Manager")
 public abstract class DataManagerLayout extends AppLayout {
 
-  public DataManagerLayout() {
+  protected DataManagerLayout() {
     addClassName("data-manager-layout");
     Span drawerTitle = new Span("Data Manager");
     drawerTitle.addClassName("data-manager-title");
