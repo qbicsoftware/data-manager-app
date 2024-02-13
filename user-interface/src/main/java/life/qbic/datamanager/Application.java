@@ -5,8 +5,6 @@ import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import java.io.Serial;
-import life.qbic.datamanager.templates.TemplateDownloadFactory;
-import life.qbic.datamanager.templates.TemplateDownloadFactory.Template;
 import life.qbic.datamanager.views.login.LoginHandler;
 import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
 import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
@@ -55,8 +53,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
     log.info("Starting data manager app...");
     var appContext = SpringApplication.run(Application.class, args);
 
-    var content = TemplateDownloadFactory.provider(Template.MS_MEASUREMENT).getContent();
-    content.hashCode();
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
