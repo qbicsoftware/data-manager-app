@@ -20,12 +20,12 @@ import life.qbic.datamanager.views.general.PageArea;
 /**
  * Lists all uploaded offers. Allows users to upload and delete uploads.
  */
-public class OfferList extends PageArea {
+public class OfferListComponent extends PageArea {
 
   private final VirtualList<OfferInfo> delegateList;
   private final List<OfferInfo> offers;
 
-  public OfferList() {
+  public OfferListComponent() {
     offers = new ArrayList<>();
     delegateList = new VirtualList<>();
     delegateList.setRenderer(new ComponentRenderer<>(this::renderOffer));
@@ -36,7 +36,8 @@ public class OfferList extends PageArea {
     title.addClassName("title");
     Span header = new Span(title, upload);
     header.addClassName("header");
-    addClassName("offer-list");
+    addClassName("offer-list-component");
+    delegateList.addClassName("offer-list");
     add(header, delegateList);
   }
 
@@ -131,7 +132,7 @@ public class OfferList extends PageArea {
     return addListener(UploadOfferClickEvent.class, listener);
   }
 
-  public static class DeleteOfferClickEvent extends ComponentEvent<OfferList> {
+  public static class DeleteOfferClickEvent extends ComponentEvent<OfferListComponent> {
 
     private final long offerId;
 
@@ -143,7 +144,7 @@ public class OfferList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DeleteOfferClickEvent(long offerId, OfferList source, boolean fromClient) {
+    public DeleteOfferClickEvent(long offerId, OfferListComponent source, boolean fromClient) {
       super(source, fromClient);
       this.offerId = offerId;
     }
@@ -153,7 +154,7 @@ public class OfferList extends PageArea {
     }
   }
 
-  public static class DownloadOfferClickEvent extends ComponentEvent<OfferList> {
+  public static class DownloadOfferClickEvent extends ComponentEvent<OfferListComponent> {
 
     private final long offerId;
 
@@ -165,7 +166,7 @@ public class OfferList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DownloadOfferClickEvent(long offerId, OfferList source, boolean fromClient) {
+    public DownloadOfferClickEvent(long offerId, OfferListComponent source, boolean fromClient) {
       super(source, fromClient);
       this.offerId = offerId;
     }
@@ -175,7 +176,7 @@ public class OfferList extends PageArea {
     }
   }
 
-  public static class UploadOfferClickEvent extends ComponentEvent<OfferList> {
+  public static class UploadOfferClickEvent extends ComponentEvent<OfferListComponent> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -185,7 +186,7 @@ public class OfferList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public UploadOfferClickEvent(OfferList source, boolean fromClient) {
+    public UploadOfferClickEvent(OfferListComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }
