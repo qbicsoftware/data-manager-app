@@ -22,13 +22,6 @@
   margin-bottom: 0.5rem;
 }
 
-.project-links-component .delete-button {
-  color: var(--lumo-error-text-color);
-  --lumo-button-size: var(--lumo-size-m);
-  cursor: pointer;
-  background-color: inherit;
-}
-
 .page-area.navbar {
   justify-content: space-evenly;
   display: flex;
@@ -133,6 +126,7 @@
   align-items: center;
   gap: var(--lumo-space-m);
 }
+
 
 .personal-access-token-component {
   row-gap: var(--lumo-space-l);
@@ -265,6 +259,12 @@
 
 .project-details-component .header {
   display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.quality-control-list-component .header {
+  display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
 }
