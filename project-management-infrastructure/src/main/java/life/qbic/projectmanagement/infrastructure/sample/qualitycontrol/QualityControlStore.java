@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorage;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorageException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -46,8 +45,8 @@ public class QualityControlStore implements QualityControlStorage {
     try {
       persistenceStore.save(qualityControl);
     } catch (RuntimeException e) {
-      throw new PurchaseStoreException(
-          "Storing the quality control for project %s failed" .formatted(qualityControl.project()),
+      throw new QualityControlStorageException(
+          "Storing the quality control for project %s failed".formatted(qualityControl.project()),
           e);
     }
   }
@@ -58,7 +57,10 @@ public class QualityControlStore implements QualityControlStorage {
     try {
       persistenceStore.saveAll(qualityControls);
     } catch (RuntimeException e) {
-      throw new PurchaseStoreException("Storing quality controls failed.");
+      throw new QualityControlStorageException((
+          "Storing the quality control for project %s failed".formatted(
+              qualityControls.stream().findFirst().orElseThrow().project())),
+          e);
     }
   }
 
@@ -70,12 +72,12 @@ public class QualityControlStore implements QualityControlStorage {
           .map(QualityControl::qualityControlUpload).toList();
     } catch (RuntimeException e) {
       throw new ApplicationException(
-          "Retrieving quality controls for project %s failed." .formatted(projectId), e);
+          "Retrieving quality controls for project %s failed.".formatted(projectId), e);
     }
   }
 
   @Override
-  public void deleteQualityControlsForProject(String projectId, long qualityControlId) {
+  public void deleteQualityControlForProject(String projectId, long qualityControlId) {
     List<QualityControl> associations = persistenceStore.findQualityControlAssociationByProjectIdEquals(
         ProjectId.parse(projectId));
     List<QualityControl> associationsWithQualityControl = associations.stream()
@@ -98,7 +100,7 @@ public class QualityControlStore implements QualityControlStorage {
       return foundQualityControl;
     } catch (RuntimeException e) {
       throw new ApplicationException(
-          "Retrieving quality control %d for project %s failed." .formatted(qualityControlId,
+          "Retrieving quality control %d for project %s failed.".formatted(qualityControlId,
               projectId), e);
     }
   }

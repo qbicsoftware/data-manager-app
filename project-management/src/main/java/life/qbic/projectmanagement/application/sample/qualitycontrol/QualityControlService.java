@@ -80,7 +80,7 @@ public class QualityControlService {
    * @param qualityControlId the id of the quality control to be deleted
    */
   public void deleteQualityControl(String projectId, long qualityControlId) {
-    storage.deleteQualityControlsForProject(projectId, qualityControlId);
+    storage.deleteQualityControlForProject(projectId, qualityControlId);
   }
 
   /**

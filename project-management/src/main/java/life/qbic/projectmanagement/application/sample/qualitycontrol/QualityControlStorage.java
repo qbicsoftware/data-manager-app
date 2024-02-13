@@ -48,7 +48,7 @@ public interface QualityControlStorage {
    *                         deleted
    * @param qualityControlId the id of the quality control to be deleted
    */
-  void deleteQualityControlsForProject(String projectId, long qualityControlId);
+  void deleteQualityControlForProject(String projectId, long qualityControlId);
 
 
   /**

@@ -11,9 +11,9 @@ import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 
 /**
- * <b>QualityControlUpload Item</b>
+ * <b>QualityControl Item</b>
  *
- * <p>Describes an uploaded QualityControlUpload Item) and a combobox which allows the user to
+ * <p>Describes an uploaded QualityControl Item and a combobox which allows the user to
  * associate the quality control with an experiment within the project.</p>
  */
 public class QualityControlItem extends Div {

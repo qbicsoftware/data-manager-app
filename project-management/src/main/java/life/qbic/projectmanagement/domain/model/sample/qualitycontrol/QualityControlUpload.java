@@ -19,8 +19,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 /**
  * <b>Quality Control Upload</b>
  * <p>
- * A quality control to which an experiment was associated during the provision step by the user in
- * the context of project management
+ * The quality control upload entity handles a {@link QualityControl}, with which an experiment was
+ * associated during the provision step by the user in the context of project management
  */
 
 @Entity(name = "quality_control_upload")

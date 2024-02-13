@@ -19,11 +19,11 @@ import life.qbic.datamanager.views.general.PageArea;
  * Lists all uploaded {@link QualityControl}. Allows users to upload new {@link QualityControl} and
  * delete existing {@link QualityControl}.
  */
-public class QualityControlList extends PageArea {
+public class QualityControlListComponent extends PageArea {
 
   private final VirtualList<QualityControl> qualityControls;
 
-  public QualityControlList() {
+  public QualityControlListComponent() {
     qualityControls = new VirtualList<>();
     qualityControls.setRenderer(qualityControlItemRenderer());
     Button upload = new Button("Upload", this::onUploadQualityControlClicked);
@@ -75,7 +75,8 @@ public class QualityControlList extends PageArea {
   public void remove(long qualityControlId) {
   }
 
-  public static class DeleteQualityControlEvent extends ComponentEvent<QualityControlList> {
+  public static class DeleteQualityControlEvent extends
+      ComponentEvent<QualityControlListComponent> {
 
     private final long qualityControlId;
 
@@ -87,7 +88,7 @@ public class QualityControlList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DeleteQualityControlEvent(long qualityControlId, QualityControlList source,
+    public DeleteQualityControlEvent(long qualityControlId, QualityControlListComponent source,
         boolean fromClient) {
       super(source, fromClient);
       this.qualityControlId = qualityControlId;
@@ -98,7 +99,8 @@ public class QualityControlList extends PageArea {
     }
   }
 
-  public static class DownloadQualityControlEvent extends ComponentEvent<QualityControlList> {
+  public static class DownloadQualityControlEvent extends
+      ComponentEvent<QualityControlListComponent> {
 
     private final long qualityControlId;
 
@@ -110,7 +112,7 @@ public class QualityControlList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DownloadQualityControlEvent(long qualityControlId, QualityControlList source,
+    public DownloadQualityControlEvent(long qualityControlId, QualityControlListComponent source,
         boolean fromClient) {
       super(source, fromClient);
       this.qualityControlId = qualityControlId;
@@ -121,7 +123,8 @@ public class QualityControlList extends PageArea {
     }
   }
 
-  public static class UploadQualityControlEvent extends ComponentEvent<QualityControlList> {
+  public static class UploadQualityControlEvent extends
+      ComponentEvent<QualityControlListComponent> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -131,7 +134,7 @@ public class QualityControlList extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public UploadQualityControlEvent(QualityControlList source, boolean fromClient) {
+    public UploadQualityControlEvent(QualityControlListComponent source, boolean fromClient) {
       super(source, fromClient);
     }
   }
