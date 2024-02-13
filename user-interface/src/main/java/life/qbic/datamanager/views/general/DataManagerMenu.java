@@ -55,7 +55,7 @@ public class DataManagerMenu extends Div {
   private void initializeAvatar() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    userAvatar.setName(details.getFullName());
+    userAvatar.setName(details.fullName());
     userAvatar.addClassName("user-avatar");
 
   }
