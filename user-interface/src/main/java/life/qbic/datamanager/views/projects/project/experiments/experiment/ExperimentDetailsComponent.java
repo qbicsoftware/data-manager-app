@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -13,7 +14,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
@@ -35,8 +36,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.ToggleDisplayEditComponent;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
@@ -69,8 +68,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <b>Experimental Details Component</b>
  *
  * <p>A PageComponent based Composite showing the information stored in the
- * {@link ExperimentalDesign} associated with
- * a {@link Project} within the {@link ExperimentInformationMain}
+ * {@link ExperimentalDesign} associated with a {@link Project} within the
+ * {@link ExperimentInformationMain}
  */
 @UIScope
 @SpringComponent
@@ -85,7 +84,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div header = new Div();
   private final Span title = new Span();
   private final Span buttonBar = new Span();
-  private final Div tagCollection = new Div();
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroups = new Div();
@@ -167,8 +165,6 @@ public class ExperimentDetailsComponent extends PageArea {
     initButtonBar();
     header.add(title, buttonBar);
     title.addClassName("title");
-    addTagCollectionToContent();
-    addExperimentNotesComponent();
     addSampleSourceInformationComponent();
     layoutTabSheet();
   }
@@ -226,7 +222,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void listenForExperimentalVariablesComponentEvents() {
     experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
-    experimentalVariableCollection.addEditListener(editEvent -> openExperimentalVariablesEditDialog());
+    experimentalVariableCollection.addEditListener(
+        editEvent -> openExperimentalVariablesEditDialog());
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -333,44 +330,44 @@ public class ExperimentDetailsComponent extends PageArea {
     existingGroupsPreventVariableEdit.open();
   }
 
-  private void addTagCollectionToContent() {
-    tagCollection.addClassName("tag-collection");
-    content.add(tagCollection);
-  }
-
-  private void addExperimentNotesComponent() {
-    Span emptyNotes = new Span("Click to add Notes");
-    ToggleDisplayEditComponent<Span, TextField, String> experimentNotes = new ToggleDisplayEditComponent<>(
-        Span::new, new TextField(), emptyNotes);
-    content.add(experimentNotes);
-  }
-
   private void addSampleSourceInformationComponent() {
     sampleSourceComponent.addClassName("sample-source-display");
-
     content.add(sampleSourceComponent);
   }
 
-  private Span createSampleSourceList(String title, Icon icon, List<OntologyClassDTO> ontologyClasses) {
-    Span iconAndList = new Span();
-    iconAndList.addClassName("icon-with-list");
-    iconAndList.add(icon);
-
-    Div list = new Div();
-    Span listTitle = new Span();
-    listTitle.setText(title);
-    listTitle.addClassName("title");
-    list.add(listTitle);
-    list.addClassName("taglist");
-    for (OntologyClassDTO ontologyDto : ontologyClasses) {
-      Span termSpan = new Span(ontologyDto.getLabel()); // for example "homo sapiens"
-      termSpan.setTitle(
-          ontologyDto.formatted()); // for example “NCBITaxon_9606 (NCBI organismal classification)”
-      list.add(termSpan);
-    }
-    iconAndList.add(list);
-    return iconAndList;
+  private Div createSampleSourceList(String titleText, Icon icon,
+      List<OntologyClassDTO> ontologyClasses) {
+    icon.addClassName("primary");
+    Div sampleSource = new Div();
+    sampleSource.addClassName("sample-source");
+    Span title = new Span(titleText);
+    Span header = new Span(icon, title);
+    header.addClassName("header");
+    Div ontologies = new Div();
+    ontologies.addClassName("ontologies");
+    ontologyClasses.forEach(ontologyClassDTO -> ontologies.add(
+        createOntologyRenderer().createComponent(ontologyClassDTO)));
+    sampleSource.add(header, ontologies);
+    return sampleSource;
   }
+
+
+  private static ComponentRenderer<Span, OntologyClassDTO> createOntologyRenderer() {
+    return new ComponentRenderer<>(ontologyClassDTO -> {
+      Span ontology = new Span();
+      Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
+      /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
+      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
+      Span ontologyLink = new Span(ontologyLinkName);
+      ontologyLink.addClassName("ontology-link");
+      Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
+      ontologyClassIri.setTarget(AnchorTarget.BLANK);
+      ontology.add(ontologyLabel, ontologyClassIri);
+      ontology.addClassName("ontology");
+      return ontology;
+    });
+  }
+
 
   private void loadSampleSources(Experiment experiment) {
     sampleSourceComponent.removeAll();
@@ -406,7 +403,14 @@ public class ExperimentDetailsComponent extends PageArea {
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream())
         .toList();
-    var dialog = ExperimentalGroupsDialog.empty(levels);
+    var groups = experimentInformationService.getExperimentalGroups(experimentId)
+        .stream().map(this::toContent).toList();
+    ExperimentalGroupsDialog dialog;
+    if(groups.isEmpty()) {
+      dialog = ExperimentalGroupsDialog.empty(levels);
+    } else {
+      dialog = ExperimentalGroupsDialog.nonEditable(levels, groups);
+    }
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmEventListener(this::onExperimentalGroupAddConfirmed);
     dialog.open();
@@ -431,7 +435,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .flatMap(variable -> variable.levels().stream()).toList();
     var groups = experimentInformationService.getExperimentalGroups(experimentId)
         .stream().map(this::toContent).toList();
-    var dialog = ExperimentalGroupsDialog.prefilled(levels, groups);
+    var dialog = ExperimentalGroupsDialog.editable(levels, groups);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmEventListener(this::onExperimentalGroupEditConfirmed);
     dialog.open();
@@ -461,13 +465,15 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     Result<Collection<ExperimentalGroup>, ResponseCode> result = experimentInformationService.addExperimentalGroupsToExperiment(
         experimentId, experimentalGroupDTOS);
-    if(result.isError()) {
+    if (result.isError()) {
       if (result.getError().equals(ResponseCode.CONDITION_EXISTS)) {
-        throw new ApplicationException("Duplicate experimental group was selected", ErrorCode.DUPLICATE_GROUP_SELECTED,
+        throw new ApplicationException("Duplicate experimental group was selected",
+            ErrorCode.DUPLICATE_GROUP_SELECTED,
             ErrorParameters.empty());
       }
       if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
-        throw new ApplicationException("No experimental variable was selected", ErrorCode.NO_CONDITION_SELECTED,
+        throw new ApplicationException("No experimental variable was selected",
+            ErrorCode.NO_CONDITION_SELECTED,
             ErrorParameters.empty());
       } else {
         throw new ApplicationException(
@@ -538,7 +544,6 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadExperimentInformation(Experiment experiment) {
     title.setText(experiment.getName());
-    loadTagInformation();
     loadSampleSources(experiment);
     loadExperimentalVariables(experiment);
     loadExperimentalGroups();
@@ -551,11 +556,6 @@ public class ExperimentDetailsComponent extends PageArea {
     } else {
       onGroupsDefined();
     }
-  }
-
-  private void loadTagInformation() {
-    tagCollection.removeAll();
-    tagCollection.add(new Tag("Space for tags"));
   }
 
   private void loadExperimentalVariables(Experiment experiment) {

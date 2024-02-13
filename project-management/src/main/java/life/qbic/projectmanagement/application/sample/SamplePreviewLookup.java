@@ -20,6 +20,8 @@ public interface SamplePreviewLookup {
   List<SamplePreview> queryByExperimentId(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders, String filter);
 
+  List<SamplePreview> queryByExperimentId(ExperimentId experimentId);
+
   /**
    * Queries the count of previews associated with a provided {@link ExperimentId}
    *
