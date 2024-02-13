@@ -127,11 +127,6 @@
   gap: var(--lumo-space-m);
 }
 
-.offer-list-component .header {
-  display: inline-flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
 
 .personal-access-token-component {
   row-gap: var(--lumo-space-l);

@@ -33,6 +33,7 @@ public class QualityControlList extends PageArea {
     Span header = new Span(title, upload);
     header.addClassName("header");
     addClassName("quality-control-list-component");
+    qualityControls.addClassName("quality-control-list");
     add(header, qualityControls);
   }
 

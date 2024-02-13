@@ -11,9 +11,8 @@
 @import "main.css";
 @import "navbar.css";
 @import "navigation-drawer.css";
-@import "offer-list.css";
 @import "page-area.css";
-@import "quality-control-list.css";
 @import "span.css";
 @import "spreadsheet.css";
 @import "vaadin-custom.css";
+@import "virtuallist.css";
