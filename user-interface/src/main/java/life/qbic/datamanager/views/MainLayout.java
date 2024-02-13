@@ -1,11 +1,9 @@
 package life.qbic.datamanager.views;
 
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.datamanager.security.LogoutService;
+import life.qbic.datamanager.views.general.DataManagerMenu;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -16,38 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Data Manager")
 public class MainLayout extends DataManagerLayout {
 
-  private Button homeButton;
-  private Button logout;
+  private final DataManagerMenu dataManagerMenu;
 
-  public MainLayout(@Autowired MainHandlerInterface startHandlerInterface,
-      ProjectInformationService projectInformationService,
-      ExperimentInformationService experimentInformationService) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    createNavBarContent();
-    registerToHandler(startHandlerInterface);
-  }
-
-  private void registerToHandler(MainHandlerInterface startHandler) {
-    startHandler.handle(this);
-  }
-
-  private void createNavBarContent() {
-    addToNavbar(createHeaderButtonLayout());
-  }
-
-  private HorizontalLayout createHeaderButtonLayout() {
-    homeButton = new Button("Home");
-    logout = new Button("Log out");
-
-    return new HorizontalLayout(homeButton, logout);
-  }
-
-  public Button logout() {
-    return logout;
-  }
-
-  public Button homeButton() {
-    return homeButton;
+  public MainLayout(@Autowired LogoutService logoutService) {
+    Objects.requireNonNull(logoutService);
+    dataManagerMenu = new DataManagerMenu(logoutService);
+    addToNavbar(dataManagerMenu);
+    addClassName("main-layout");
   }
 }
