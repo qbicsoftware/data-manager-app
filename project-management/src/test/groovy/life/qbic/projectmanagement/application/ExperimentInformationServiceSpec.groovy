@@ -111,14 +111,14 @@ class ExperimentInformationServiceSpec extends Specification {
         experiment.addVariableToDesign(experimentalVariable.name().value(), experimentalVariable.levels().collect { it.experimentalValue() })
 
         when: "experimental groups are added to an experiment"
-        def group1 = new ExperimentalGroupDTO(List.of(experimentalVariable.levels().get(0)), 5)
-        def group2 = new ExperimentalGroupDTO(List.of(experimentalVariable.levels().get(1)), 6)
+        def group1 = new ExperimentalGroupDTO("label1", List.of(experimentalVariable.levels().get(0)), 5)
+        def group2 = new ExperimentalGroupDTO("label2", List.of(experimentalVariable.levels().get(1)), 6)
 
         experimentInformationService.addExperimentalGroupToExperiment(experiment.experimentId(), group1)
 
 
         then: "the experiment contains the added experimental groups"
-        def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList()
+        def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.name(), it.condition().getVariableLevels(), it.sampleSize())).toList()
         dtoGroups.contains(group1)
 
         and: "the experiment is updated once for adding the variable and once for adding the experimental groups"
