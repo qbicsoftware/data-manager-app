@@ -419,7 +419,12 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalGroupAddConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
-    addExperimentalGroups(dialog.experimentalGroups());
+    var groupContents = dialog.experimentalGroups();
+    var result = addExperimentalGroups(groupContents);
+    if(result.isError()) {
+      handleGroupModificationError(groupContents, result.getError());
+    }
+
     reloadExperimentalGroups();
     dialog.close();
   }
@@ -451,36 +456,48 @@ public class ExperimentDetailsComponent extends PageArea {
   private void editExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     ExperimentId experimentId = context.experimentId().orElseThrow();
+    // store groups in order to reroll deletion if the update fails later
+    List<ExperimentalGroupDTO> originalGroups = experimentInformationService.getExperimentalGroups(
+        experimentId);
     deletionService.deleteAllExperimentalGroups(experimentId).onError(error -> {
       throw new ApplicationException(
           "Could not edit experiments because samples are already registered.");
     });
-    addExperimentalGroups(experimentalGroupContents);
+    var result = addExperimentalGroups(experimentalGroupContents);
+    if(result.isError()) {
+      // reroll by re-adding the original groups
+      experimentInformationService.addExperimentalGroupsToExperiment(
+          experimentId, originalGroups);
+      handleGroupModificationError(experimentalGroupContents, result.getError());
+    }
   }
 
-  private void addExperimentalGroups(
+  private Result<Collection<ExperimentalGroup>, ResponseCode> addExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     List<ExperimentalGroupDTO> experimentalGroupDTOS = experimentalGroupContents.stream()
         .map(this::toExperimentalGroupDTO).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     Result<Collection<ExperimentalGroup>, ResponseCode> result = experimentInformationService.addExperimentalGroupsToExperiment(
         experimentId, experimentalGroupDTOS);
-    if (result.isError()) {
-      if (result.getError().equals(ResponseCode.CONDITION_EXISTS)) {
-        throw new ApplicationException("Duplicate experimental group was selected",
-            ErrorCode.DUPLICATE_GROUP_SELECTED,
-            ErrorParameters.empty());
-      }
-      if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
-        throw new ApplicationException("No experimental variable was selected",
-            ErrorCode.NO_CONDITION_SELECTED,
-            ErrorParameters.empty());
-      } else {
-        throw new ApplicationException(
-            "Could not save one or more experimental groups %s %nReason: %s".formatted(
-                Arrays.toString(
-                    experimentalGroupContents.toArray()), result.getError()));
-      }
+    return result;
+  }
+
+  private void handleGroupModificationError(Collection<ExperimentalGroupContent> experimentalGroupContents,
+      ResponseCode responseCode) {
+    if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
+      throw new ApplicationException("Duplicate experimental group was selected",
+          ErrorCode.DUPLICATE_GROUP_SELECTED,
+          ErrorParameters.empty());
+    }
+    if (responseCode.equals(ResponseCode.EMPTY_VARIABLE)) {
+      throw new ApplicationException("No experimental variable was selected",
+          ErrorCode.NO_CONDITION_SELECTED,
+          ErrorParameters.empty());
+    } else {
+      throw new ApplicationException(
+          "Could not save one or more experimental groups %s %nReason: %s".formatted(
+              Arrays.toString(
+                  experimentalGroupContents.toArray()), responseCode));
     }
   }
 
