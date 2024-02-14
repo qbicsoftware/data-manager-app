@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.general.contact;
 
 import static java.util.Objects.isNull;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
@@ -26,10 +28,11 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
 
   private final ComboBox<Contact> contactSelection;
-
+  private final Button selfSelect;
   private final ComboBox<String> nameField;
   private final ComboBox<String> emailField;
   private final Binder<Contact> binder;
+  private Contact userAsContact;
 
   public AutocompleteContactField(String label) {
     setLabel(label);
@@ -45,6 +48,10 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     contactSelection.setRenderer(new ComponentRenderer<>(AutocompleteContactField::renderContact));
     contactSelection.setItemLabelGenerator(
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
+
+    selfSelect = new Button("Select myself");
+    selfSelect.addClassName("contact-self-select");
+    selfSelect.addClickListener(this::onSelfSelected);
 
     nameField = new ComboBox<>();
     nameField.setAllowCustomValue(true);
@@ -83,11 +90,19 @@ public class AutocompleteContactField extends CustomField<Contact> implements
         .bind(Contact::getEmail,
             Contact::setEmail);
 
+    Div preselectLayout = new Div(contactSelection, selfSelect);
+    preselectLayout.addClassName("prefill-input-fields");
+
     Div layout = new Div(nameField, emailField);
     layout.addClassName("input-fields");
-    add(contactSelection, layout);
+
+    add(preselectLayout, layout);
     setItems(new ArrayList<>());
     clear();
+  }
+
+  private void onSelfSelected(ClickEvent<Button> buttonClickEvent) {
+    setContact(userAsContact);
   }
 
   private void updateValidationProperty() {
@@ -118,6 +133,10 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     setContact(valueChanged.getValue());
     // clear selection box
     valueChanged.getHasValue().clear();
+  }
+  
+  public void setLoggedInUser(Contact contact) {
+    userAsContact = contact;
   }
 
   public void setContact(Contact contact) {

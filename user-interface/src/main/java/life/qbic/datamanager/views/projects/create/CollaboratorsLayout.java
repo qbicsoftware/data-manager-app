@@ -116,6 +116,11 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     return projectCollaborators;
   }
 
+  public void setLoggedInUser(Contact contact) {
+    projectManagerField.setLoggedInUser(contact);
+    principalInvestigatorField.setLoggedInUser(contact);
+  }
+
 
   public static final class ProjectCollaborators implements Serializable {
 
