@@ -55,10 +55,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   private final List<Binder<?>> binders = new ArrayList<>();
 
   /**
-   * ExperimentalGroupInput is a {@link CustomField} which contains a {@link MultiSelectComboBox}
-   * allowing the user to define the {@link Condition}, a {@link NumberField} enabling the user
-   * to define the number of {@link BiologicalReplicate} within an {@link ExperimentalGroup}, and
-   * a {@link TextField} to optionally name the group.
+   * ExperimentalGroupInput is a {@link CustomField} which contains a {@link TextField} to name the
+   * group, a {@link MultiSelectComboBox} allowing the user to define the {@link Condition}, and a
+   * {@link NumberField} enabling the user to define the number of {@link BiologicalReplicate}
+   * within an {@link ExperimentalGroup}
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
    */
@@ -82,8 +82,6 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     variableLevelSelect.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
     replicateCountField.addValueChangeListener(
-        event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
-    nameField.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
   }
 

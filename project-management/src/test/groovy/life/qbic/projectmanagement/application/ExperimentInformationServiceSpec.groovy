@@ -111,8 +111,8 @@ class ExperimentInformationServiceSpec extends Specification {
         experiment.addVariableToDesign(experimentalVariable.name().value(), experimentalVariable.levels().collect { it.experimentalValue() })
 
         when: "experimental groups are added to an experiment"
-        def group1 = new ExperimentalGroupDTO("label1", List.of(experimentalVariable.levels().get(0)), 5)
-        def group2 = new ExperimentalGroupDTO("label2", List.of(experimentalVariable.levels().get(1)), 6)
+        def group1 = new ExperimentalGroupDTO("name1", List.of(experimentalVariable.levels().get(0)), 5)
+        def group2 = new ExperimentalGroupDTO("name2", List.of(experimentalVariable.levels().get(1)), 6)
 
         experimentInformationService.addExperimentalGroupToExperiment(experiment.experimentId(), group1)
 
