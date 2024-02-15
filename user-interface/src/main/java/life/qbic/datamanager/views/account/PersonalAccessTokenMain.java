@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.MainLayout;
+import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
@@ -36,7 +36,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * create and delete {@link PersonalAccessToken} via the provided UI elements
  */
 
-@Route(value = "personal-access-token", layout = MainLayout.class)
+@Route(value = "personal-access-token", layout = UserMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll

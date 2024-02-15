@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.purchase;
+package life.qbic.datamanager.views.projects;
 
 import com.vaadin.flow.component.upload.MultiFileReceiver;
 import com.vaadin.flow.component.upload.receivers.FileData;
