@@ -17,8 +17,6 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemp
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -45,22 +43,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final transient ProjectInformationService projectInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementTemplateService measurementTemplateService;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private transient Context context;
 
-  public MeasurementMain(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired MeasurementTemplateService measurementTemplateService,
+  public MeasurementMain(@Autowired MeasurementTemplateService measurementTemplateService,
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(measurementTemplateService);
     Objects.requireNonNull(measurementTemplateListComponent);
-    this.projectInformationService = projectInformationService;
-    this.experimentInformationService = experimentInformationService;
     this.measurementTemplateService = measurementTemplateService;
     this.measurementTemplateListComponent = measurementTemplateListComponent;
     addClassName("measurement");
