@@ -116,7 +116,9 @@ public class MeasurementTemplateListComponent extends PageArea {
       var qualityControlFileName = new Span(measurementTemplate.getFileName());
       qualityControlFileName.setTitle(measurementTemplate.getFileName());
       qualityControlFileName.addClassName("file-name");
-      add(qualityControlFileName);
+      var fileNameWithIcon = new Span(fileIcon, qualityControlFileName);
+      fileNameWithIcon.addClassName("file-info-with-icon");
+      add(fileNameWithIcon);
     }
 
     private void createControls() {

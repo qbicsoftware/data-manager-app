@@ -46,6 +46,13 @@
   overflow: hidden;
 }
 
+.measurement-template-list-component .measurement-template-list-item .file-info-with-icon {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+  align-items: center;
+}
+
 .offer-list-component .header {
   display: inline-flex;
   justify-content: space-between;
