@@ -7,13 +7,13 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.MeasurementTemplate;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -22,7 +22,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * Measurement Main Component
@@ -43,18 +42,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final transient MeasurementTemplateService measurementTemplateService;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
+  private final MeasurementTemplateDownload measurementTemplateDownload;
   private transient Context context;
 
-  public MeasurementMain(@Autowired MeasurementTemplateService measurementTemplateService,
+  public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent) {
-    Objects.requireNonNull(measurementTemplateService);
     Objects.requireNonNull(measurementTemplateListComponent);
-    this.measurementTemplateService = measurementTemplateService;
     this.measurementTemplateListComponent = measurementTemplateListComponent;
-    addClassName("measurement");
+    measurementTemplateDownload = new MeasurementTemplateDownload();
+    measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
+        this::onDownloadMeasurementTemplateClicked);
     add(measurementTemplateListComponent);
+    add(measurementTemplateDownload);
+    addClassName("measurement");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         getClass().getSimpleName(), System.identityHashCode(this),
@@ -83,26 +84,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    setContext(context);
   }
 
-  public void setContext(Context context) {
-    this.context = context;
-    List<MeasurementTemplate> templates = measurementTemplateService.getMeasurementTemplates();
-    measurementTemplateListComponent.setMeasurementTemplates(templates);
-  }
-
-  @Service
-  public static final class MeasurementTemplateService {
-
-    public MeasurementTemplateService() {
-
-    }
-
-    public List<MeasurementTemplate> getMeasurementTemplates() {
-      return List.of(new MeasurementTemplate(1, "Genomics.xlsx"),
-          new MeasurementTemplate(2, "Imaging.xlsx"), new MeasurementTemplate(3, "Proteomics.xlsx"),
-          new MeasurementTemplate(4, "Immunopeptidomics.xlsx"));
-    }
+  private void onDownloadMeasurementTemplateClicked(
+      DownloadMeasurementTemplateEvent downloadMeasurementTemplateEvent) {
+    measurementTemplateDownload.trigger(downloadMeasurementTemplateEvent.measurementTemplate());
   }
 }
