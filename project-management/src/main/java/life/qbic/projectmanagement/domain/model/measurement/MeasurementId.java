@@ -13,7 +13,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
 
 /**
- * <b>Measurement Identifier</b>
+ * <b>NGSMeasurementMetadata Identifier</b>
  *
  * <p>Unique identifier for measurements within QBiC's data management platform.</p>
  *

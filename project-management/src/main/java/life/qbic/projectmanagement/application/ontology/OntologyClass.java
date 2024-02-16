@@ -19,8 +19,8 @@ public class OntologyClass {
   String ontologyIri;
   @Column(name = "label")
   String classLabel;
-  @Column(name = "name")
-  String className;
+  @Column(name = "curi")
+  String curi;
   @Column(name = "description", length = 2000)
   String description;
   @Column(name = "classIri")
@@ -35,12 +35,12 @@ public class OntologyClass {
 
   public OntologyClass(String ontologyAbbreviation, String ontologyVersion,
       String ontologyIri,
-      String classLabel, String className, String description, String classIri) {
+      String classLabel, String curi, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
     this.classLabel = classLabel;
-    this.className = className;
+    this.curi = curi;
     this.description = description;
     this.classIri = classIri;
   }
@@ -77,12 +77,12 @@ public class OntologyClass {
     this.classLabel = label;
   }
 
-  public String getClassName() {
-    return className;
+  public String getCuri() {
+    return curi;
   }
 
-  public void setClassName(String name) {
-    this.className = name;
+  public void setCuri(String name) {
+    this.curi = name;
   }
 
   public String getDescription() {
@@ -113,13 +113,13 @@ public class OntologyClass {
     return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
         that.ontologyIri) && Objects.equals(classLabel, that.classLabel) && Objects.equals(
-        className, that.className) && Objects.equals(description, that.description)
+        curi, that.curi) && Objects.equals(description, that.description)
         && Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, className,
+    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, curi,
         description, classIri);
   }
 

@@ -46,5 +46,10 @@ public class OntologyTermRepositoryImpl implements OntologyRepository {
     return ontologyTermRepo.findById(id);
   }
 
+  @Override
+  public Optional<OntologyClass> findByCuri(String curi) {
+    return ontologyTermRepo.findOntologyClassEntitiesByClassName(curi).stream().findAny();
+  }
+
 
 }

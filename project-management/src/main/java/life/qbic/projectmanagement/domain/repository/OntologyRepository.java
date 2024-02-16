@@ -25,6 +25,8 @@ public interface OntologyRepository {
 
   Optional<OntologyClass> find(Long ontologyClassId);
 
+  Optional<OntologyClass> findByCuri(String curi);
+
   /**
    * Thrown when a term is expected to exist but cannot be found.
    */

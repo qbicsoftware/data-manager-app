@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
 /**
- * <b>Measurement Code</b>
+ * <b>NGSMeasurementMetadata Code</b>
  *
  * <p>A measurement code is s short label for measurement entities to help the user associate it
  * with a sample</p>

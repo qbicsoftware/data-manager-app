@@ -62,7 +62,7 @@ public class OntologyTerm implements Serializable {
   public static OntologyTerm from(OntologyClass lookupEntity) {
     return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
-        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),
+        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getCuri(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
   }
 

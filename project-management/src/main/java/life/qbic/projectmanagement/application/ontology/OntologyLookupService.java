@@ -55,6 +55,10 @@ public class OntologyLookupService {
     return ontologyTermRepository.find(id);
   }
 
+  public Optional<OntologyClass> findByCURI(String curi) {
+    return ontologyTermRepository.findByCuri(curi);
+  }
+
   public Optional<OntologyClass> find(String id) throws IllegalArgumentException{
     return find(Long.parseLong(id));
   }

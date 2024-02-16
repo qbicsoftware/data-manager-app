@@ -12,10 +12,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
- * <b>NGS Measurement Metadata Object</b>
+ * <b>NGS NGSMeasurementMetadata Metadata Object</b>
  *
  * <p>Captures an measurement metadata object entity with information
  * about the origin of measurement, the instrumentation and much more domain-specific
@@ -28,7 +30,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  * @since 1.0.0
  */
 @Entity(name = "ngs_measurements")
-public class NGSMeasurement {
+public class NGSMeasurement implements MeasurementMetadata {
 
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
@@ -43,13 +45,13 @@ public class NGSMeasurement {
   @ElementCollection
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   @Column(name = "measured_sample")
-  private Collection<String> measuredSamples;
+  private Collection<SampleId> measuredSamples;
 
   protected NGSMeasurement() {
     // Needed for JPA
   }
 
-  private NGSMeasurement(Collection<String> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  private NGSMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
     this.instrument = instrument;
@@ -68,7 +70,7 @@ public class NGSMeasurement {
    * @return
    * @since 1.0.0
    */
-  public static NGSMeasurement create(Collection<String> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  public static NGSMeasurement create(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
@@ -76,7 +78,7 @@ public class NGSMeasurement {
     Objects.requireNonNull(instrument);
     Objects.requireNonNull(measurementCode);
     if (!measurementCode.isNGSDomain()) {
-      throw new IllegalArgumentException("Measurement code is not from the NGS domain for: \"" + measurementCode + "\"");
+      throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
     }
     return new NGSMeasurement(sampleIds, measurementCode, instrument);
   }
@@ -95,8 +97,8 @@ public class NGSMeasurement {
     return this.measurementCode;
   }
 
-  public Optional<MeasurementId> measurementId() {
-    return Optional.ofNullable(id);
+  public MeasurementId measurementId() {
+    return id;
   }
 
 }
