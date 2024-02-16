@@ -21,8 +21,8 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 
 /**
- * Lists all the stored measurment templates {@link DownloadContentProvider}. Allows users to
- * download {@link DownloadContentProvider} to facilitate measurement registrations dependent on the
+ * Lists all the stored measurement templates via the default {@link DownloadContentProvider}. Allows users to
+ * download their template of interest {@link DownloadContentProvider} to facilitate measurement registrations dependent on the
  * lab facility (Proteomics, Genomics, Imaging...)
  */
 @SpringComponent
