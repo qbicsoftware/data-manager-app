@@ -15,22 +15,22 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.PermitAll;
 import java.util.Arrays;
 import java.util.List;
+import life.qbic.datamanager.templates.Template;
 import life.qbic.datamanager.templates.TemplateDownloadFactory;
-import life.qbic.datamanager.templates.TemplateDownloadFactory.Template;
+import life.qbic.datamanager.templates.TemplateDownloadFactory.TemplateType;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 
 /**
- * Lists all the stored measurement templates via the default {@link DownloadContentProvider}. Allows users to
- * download their template of interest {@link DownloadContentProvider} to facilitate measurement registrations dependent on the
- * lab facility (Proteomics, Genomics, Imaging...)
+ * Lists all the stored measurement templates via a default {@link Template}. Allows users to
+ * download their template of interest to facilitate measurement registrations dependent on the lab
+ * facility (Proteomics, Genomics, Imaging...)
  */
 @SpringComponent
 @UIScope
 @PermitAll
 public class MeasurementTemplateListComponent extends PageArea {
 
-  private final VirtualList<DownloadContentProvider> measurementTemplateList;
+  private final VirtualList<Template> measurementTemplateList;
 
   public MeasurementTemplateListComponent() {
     measurementTemplateList = new VirtualList<>();
@@ -46,12 +46,12 @@ public class MeasurementTemplateListComponent extends PageArea {
   }
 
   private void loadMeasurementTemplates() {
-    List<DownloadContentProvider> templates = Arrays.stream(Template.values()).map(
+    List<Template> templates = Arrays.stream(TemplateType.values()).map(
         TemplateDownloadFactory::provider).toList();
     measurementTemplateList.setItems(templates);
   }
 
-  private ComponentRenderer<MeasurementTemplateItem, DownloadContentProvider> measurementTemplateItemRenderer() {
+  private ComponentRenderer<MeasurementTemplateItem, Template> measurementTemplateItemRenderer() {
     return new ComponentRenderer<>(measurementTemplate -> {
       MeasurementTemplateItem measurementTemplateItem = new MeasurementTemplateItem(
           measurementTemplate);
@@ -70,7 +70,7 @@ public class MeasurementTemplateListComponent extends PageArea {
   public static class DownloadMeasurementTemplateEvent extends
       ComponentEvent<MeasurementTemplateListComponent> {
 
-    private final DownloadContentProvider measurementTemplate;
+    private final Template measurementTemplate;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -80,14 +80,14 @@ public class MeasurementTemplateListComponent extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DownloadMeasurementTemplateEvent(DownloadContentProvider measurementTemplate,
+    public DownloadMeasurementTemplateEvent(Template measurementTemplate,
         MeasurementTemplateListComponent source,
         boolean fromClient) {
       super(source, fromClient);
       this.measurementTemplate = measurementTemplate;
     }
 
-    public DownloadContentProvider measurementTemplate() {
+    public Template measurementTemplate() {
       return measurementTemplate;
     }
   }
@@ -95,26 +95,26 @@ public class MeasurementTemplateListComponent extends PageArea {
 
   private static class MeasurementTemplateItem extends Span {
 
-    private final DownloadContentProvider measurementTemplate;
+    private final Template measurementTemplate;
     private final Span controls = new Span();
     private final Button downloadButton = new Button(LumoIcon.DOWNLOAD.create());
 
-    public MeasurementTemplateItem(DownloadContentProvider measurementTemplate) {
+    public MeasurementTemplateItem(Template measurementTemplate) {
       this.measurementTemplate = measurementTemplate;
       createFileInformationSection();
       createControls();
       addClassName("measurement-template-list-item");
     }
 
-    public DownloadContentProvider measurementTemplate() {
+    public Template measurementTemplate() {
       return measurementTemplate;
     }
 
     private void createFileInformationSection() {
       var fileIcon = VaadinIcon.FILE.create();
       fileIcon.addClassName("file-icon");
-      var qualityControlFileName = new Span(measurementTemplate.getFileName());
-      qualityControlFileName.setTitle(measurementTemplate.getFileName());
+      var qualityControlFileName = new Span(measurementTemplate.getDomainName());
+      qualityControlFileName.setTitle(measurementTemplate.getDomainName());
       qualityControlFileName.addClassName("file-name");
       var fileNameWithIcon = new Span(fileIcon, qualityControlFileName);
       fileNameWithIcon.addClassName("file-info-with-icon");

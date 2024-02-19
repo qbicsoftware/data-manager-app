@@ -2,7 +2,6 @@ package life.qbic.datamanager.templates;
 
 import java.io.IOException;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 
 /**
  * <b>MS measurement template</b>
@@ -12,11 +11,13 @@ import life.qbic.datamanager.views.general.download.DownloadContentProvider;
  *
  * @since 1.0.0
  */
-public class MSMeasurementTemplate implements DownloadContentProvider {
+public class MSMeasurementTemplate extends Template {
 
   private static final String MS_MEASUREMENT_TEMPLATE_PATH = "templates/ms_measurement_registration_sheet.xlsx";
 
   private static final String MS_MEASUREMENT_TEMPLATE_FILENAME = "ms_measurement_registration_sheet.xlsx";
+
+  private static final String MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Proteomics Template";
 
   public MSMeasurementTemplate() {
   }
@@ -36,5 +37,10 @@ public class MSMeasurementTemplate implements DownloadContentProvider {
   @Override
   public String getFileName() {
     return MS_MEASUREMENT_TEMPLATE_FILENAME;
+  }
+
+  @Override
+  public String getDomainName() {
+    return MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME;
   }
 }

@@ -12,15 +12,15 @@ import life.qbic.datamanager.views.general.download.DownloadContentProvider;
  */
 public class TemplateDownloadFactory {
 
-  public static DownloadContentProvider provider(Template template) {
+  public static Template provider(TemplateType templateType) {
     return
-        switch (template) {
+        switch (templateType) {
           case MS_MEASUREMENT -> new MSMeasurementTemplate();
           case NGS_MEASUREMENT -> new NGSMeasurementTemplate();
         };
   }
 
-  public enum Template {
+  public enum TemplateType {
     NGS_MEASUREMENT, MS_MEASUREMENT
   }
 

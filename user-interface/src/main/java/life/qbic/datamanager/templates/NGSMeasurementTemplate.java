@@ -2,7 +2,6 @@ package life.qbic.datamanager.templates;
 
 import java.io.IOException;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 
 /**
  * <b>NGS measurement template</b>
@@ -11,11 +10,13 @@ import life.qbic.datamanager.views.general.download.DownloadContentProvider;
  *
  * @since 1.0.0
  */
-public class NGSMeasurementTemplate implements DownloadContentProvider {
+public class NGSMeasurementTemplate extends Template {
 
   private static final String NGS_MEASUREMENT_TEMPLATE_PATH = "templates/ngs_measurement_registration_sheet.xlsx";
 
   private static final String NGS_MEASUREMENT_TEMPLATE_FILENAME = "ngs_measurement_registration_sheet.xlsx";
+
+  private static final String NGS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Genomics Template";
 
   @Override
   public byte[] getContent() {
@@ -33,5 +34,10 @@ public class NGSMeasurementTemplate implements DownloadContentProvider {
   @Override
   public String getFileName() {
     return NGS_MEASUREMENT_TEMPLATE_FILENAME;
+  }
+
+  @Override
+  public String getDomainName() {
+    return NGS_MEASUREMENT_TEMPLATE_DOMAIN_NAME;
   }
 }

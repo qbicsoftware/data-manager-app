@@ -5,6 +5,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.server.StreamResource;
 import java.io.ByteArrayInputStream;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.templates.Template;
 
 /**
  * The MeasurementTemplate download class extends the Anchor class and provides functionality for
@@ -26,11 +27,11 @@ public class MeasurementTemplateDownload extends Anchor {
     getElement().setAttribute("download", true);
   }
 
-  public void trigger(DownloadContentProvider downloadContentProvider) {
+  public void trigger(Template template) {
     UI ui = getUI().orElseThrow(() -> new ApplicationException(
         this.getClass().getSimpleName() + "component triggered but not attached to any UI."));
-    StreamResource resource = new StreamResource(downloadContentProvider.getFileName(),
-        () -> new ByteArrayInputStream(downloadContentProvider.getContent()));
+    StreamResource resource = new StreamResource(template.getFileName(),
+        () -> new ByteArrayInputStream(template.getContent()));
     this.setHref(resource);
     ui.getPage().executeJs("$0.click()", this.getElement());
   }
