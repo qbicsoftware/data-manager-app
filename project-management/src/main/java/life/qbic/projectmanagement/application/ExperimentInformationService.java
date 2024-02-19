@@ -325,7 +325,10 @@ public class ExperimentInformationService {
     }
 
     List<ExperimentalGroup> existingGroups = experimentalGroupsFor(experimentId);
-    deleteExperimentalGroupsWithIds(experimentId, getGroupIdsToDelete(existingGroups, experimentalGroupDTOS));
+    List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
+    if(!idsToDelete.isEmpty()) {
+      deleteExperimentalGroupsWithIds(experimentId, idsToDelete);
+    }
 
     for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
       if(group.id() == -1) {
