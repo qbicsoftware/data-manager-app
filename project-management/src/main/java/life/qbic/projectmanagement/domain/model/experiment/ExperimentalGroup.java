@@ -92,6 +92,17 @@ public class ExperimentalGroup {
     return name;
   }
 
+  public void setCondition(Condition condition) {
+    this.condition = condition;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setSampleSize(int sampleSize) {
+    this.sampleSize = sampleSize;
+  }
   public long id() {
     return this.experimentalGroupId;
   }

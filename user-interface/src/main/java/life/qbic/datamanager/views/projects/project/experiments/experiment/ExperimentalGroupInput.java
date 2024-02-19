@@ -49,6 +49,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
   private final TextField nameField;
+  private final long id = -1;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
   int variableCount = 0;
@@ -58,7 +59,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    * ExperimentalGroupInput is a {@link CustomField} which contains a {@link TextField} to name the
    * group, a {@link MultiSelectComboBox} allowing the user to define the {@link Condition}, and a
    * {@link NumberField} enabling the user to define the number of {@link BiologicalReplicate}
-   * within an {@link ExperimentalGroup}
+   * within an {@link ExperimentalGroup}. Stores the id of existing groups in order to allow editing.
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
    */
@@ -141,11 +142,15 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     var name = getName();
     var levels = getCondition();
     var sampleSize = getReplicateCount();
-    return new ExperimentalGroupBean(name, sampleSize, levels);
+    return new ExperimentalGroupBean(id, name, sampleSize, levels);
   }
 
   public String getName() {
     return nameField.getValue();
+  }
+
+  public long getGroupId() {
+    return id;
   }
 
   public int getReplicateCount() {
@@ -237,11 +242,13 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
     private final List<VariableLevel> levels = new ArrayList<>();
 
+    private final long id;
     private final String name;
     @Min(1)
     private final int replicateCount;
 
-    public ExperimentalGroupBean(String name, int replicateCount, List<VariableLevel> levels) {
+    public ExperimentalGroupBean(long id, String name, int replicateCount, List<VariableLevel> levels) {
+      this.id = id;
       this.name = name;
       this.replicateCount = replicateCount;
       this.levels.addAll(levels);
