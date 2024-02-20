@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -78,28 +79,30 @@ public class ExperimentInformationService {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
-    Experiment experiment = loadExperimentById(experimentId);
-    Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-        experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
-    if (result.isValue()) {
-      experimentRepository.update(experiment);
-    } else {
-      ResponseCode responseCode = result.getError();
-      if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
-        throw new ApplicationException("Duplicate experimental group was selected",
-            ErrorCode.DUPLICATE_GROUP_SELECTED,
-            ErrorParameters.empty());
-      }
-      if (responseCode.equals(ResponseCode.EMPTY_VARIABLE)) {
-        throw new ApplicationException("No experimental variable was selected",
-            ErrorCode.NO_CONDITION_SELECTED,
-            ErrorParameters.empty());
-      } else {
-        throw new ApplicationException(
-            "Could not save one or more experimental groups %s %nReason: %s".formatted(
-                    experimentalGroup.toString(), responseCode));
-      }
+    List<VariableLevel> varLevels = experimentalGroup.levels;
+    if (varLevels.isEmpty()) {
+      throw new ApplicationException("No experimental variable was selected",
+          ErrorCode.NO_CONDITION_SELECTED,
+          ErrorParameters.empty());
     }
+
+      Experiment experiment = loadExperimentById(experimentId);
+      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+          experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
+      if (result.isValue()) {
+        experimentRepository.update(experiment);
+      } else {
+        ResponseCode responseCode = result.getError();
+        if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
+          throw new ApplicationException("A group with the variable levels %s already exists.".formatted(varLevels.toString()),
+              ErrorCode.DUPLICATE_GROUP_SELECTED,
+              ErrorParameters.empty());
+        } else {
+          throw new ApplicationException(
+              "Could not save one or more experimental groups %s %nReason: %s".formatted(
+                  experimentalGroup.toString(), responseCode));
+        }
+      }
   }
 
   /**
@@ -286,9 +289,8 @@ public class ExperimentInformationService {
   public void deleteExperimentalGroupsWithIds(ExperimentId id, List<Long> groupIds) {
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
-      log.debug("experiment (%s) converting %s to %s".formatted(id, queryResult.getError(),
-          DeletionService.ResponseCode.QUERY_FAILED));
-      throw new ApplicationException("Query failed",
+      throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
+          queryResult.getError(), DeletionService.ResponseCode.QUERY_FAILED),
           ErrorCode.GENERAL,
           ErrorParameters.empty());
     }
@@ -318,7 +320,9 @@ public class ExperimentInformationService {
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
     // check for duplicates
-    if (experimentalGroupDTOS.stream().map(ExperimentalGroupDTO::levels).distinct().toList().size() < experimentalGroupDTOS.size()) {
+    List<List<VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
+        .map(ExperimentalGroupDTO::levels).distinct().toList();
+    if (distinctLevels.size() < experimentalGroupDTOS.size()) {
       throw new ApplicationException("Duplicate experimental group was selected",
           ErrorCode.DUPLICATE_GROUP_SELECTED,
           ErrorParameters.empty());
@@ -347,8 +351,10 @@ public class ExperimentInformationService {
   private List<Long> getGroupIdsToDelete(List<ExperimentalGroup> existingGroups,
       List<ExperimentalGroupDTO> newGroups) {
     Set<Long> newIds = newGroups.stream().map(ExperimentalGroupDTO::id).collect(Collectors.toSet());
-    List<ExperimentalGroup> groupsToDelete = existingGroups.stream().filter(group -> !newIds.contains(group.id())).toList();
-    return groupsToDelete.stream().map(ExperimentalGroup::id).toList();
+    return existingGroups.stream()
+        .map(ExperimentalGroup::id)
+        .filter(Predicate.not(newIds::contains))
+        .toList();
   }
 
   public void editExperimentInformation(ExperimentId experimentId, String experimentName,

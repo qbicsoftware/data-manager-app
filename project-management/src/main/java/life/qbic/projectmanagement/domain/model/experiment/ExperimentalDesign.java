@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
@@ -282,7 +283,10 @@ public class ExperimentalDesign {
 
     Condition condition = Condition.create(variableLevels);
 
-    ExperimentalGroup groupToUpdate = experimentalGroups.stream().filter(group -> id==group.id()).findFirst().get();
+    ExperimentalGroup groupToUpdate = experimentalGroups.stream()
+        .filter(group -> id == group.id())
+        .findFirst()
+        .orElseThrow(() -> new ApplicationException("No group with id %s exists in experimental design.".formatted(id)));
     groupToUpdate.setCondition(condition);
     groupToUpdate.setName(name);
     groupToUpdate.setSampleSize(sampleSize);

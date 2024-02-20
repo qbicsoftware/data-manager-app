@@ -177,7 +177,7 @@ public class Experiment {
    * @since 1.0.0
    */
   public void removeExperimentalGroups(List<Long> ids) {
-    ids.forEach( (id) -> experimentalDesign.removeExperimentalGroup(id) );
+    ids.forEach(experimentalDesign::removeExperimentalGroup);
   }
 
   /**
