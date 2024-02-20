@@ -8,6 +8,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.EmailValidator;
@@ -29,8 +30,8 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
   private final ComboBox<Contact> contactSelection;
   private final Button selfSelect;
-  private final ComboBox<String> nameField;
-  private final ComboBox<String> emailField;
+  private final TextField nameField;
+  private final TextField emailField;
   private final Binder<Contact> binder;
   private Contact userAsContact;
 
@@ -49,22 +50,17 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     contactSelection.setItemLabelGenerator(
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
 
-    selfSelect = new Button("Select myself");
+    selfSelect = new Button("Myself");
+    selfSelect.setVisible(userAsContact!=null);
     selfSelect.addClassName("contact-self-select");
     selfSelect.addClickListener(this::onSelfSelected);
 
-    nameField = new ComboBox<>();
-    nameField.setAllowCustomValue(true);
-    nameField.addCustomValueSetListener(
-        customValueSet -> customValueSet.getSource().setValue(customValueSet.getDetail()));
+    nameField = new TextField();
     nameField.setRequired(false);
     nameField.addClassName("name-field");
     nameField.setPlaceholder("Please enter a name");
 
-    emailField = new ComboBox<>();
-    emailField.setAllowCustomValue(true);
-    emailField.addCustomValueSetListener(
-        customValueSet -> customValueSet.getSource().setValue(customValueSet.getDetail()));
+    emailField = new TextField();
     emailField.setRequired(false);
     emailField.addClassName("email-field");
     emailField.setPlaceholder("Please enter an email address");
@@ -137,26 +133,17 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   
   public void setLoggedInUser(Contact contact) {
     userAsContact = contact;
+    selfSelect.setVisible(userAsContact!=null);
   }
 
   public void setContact(Contact contact) {
     binder.setBean(contact);
     updateValidationProperty();
+    setValue(contact);
   }
 
   public void setItems(List<Contact> contacts) {
-    List<String> fullNames = contacts.stream()
-        .map(Contact::getFullName)
-        .distinct()
-        .toList();
-    List<String> emails = contacts.stream()
-        .map(Contact::getEmail)
-        .distinct()
-        .toList();
-
     contactSelection.setItems(contacts);
-    nameField.setItems(fullNames);
-    emailField.setItems(emails);
   }
 
   @Override
@@ -194,5 +181,17 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   @Override
   public Binder<Contact> getBinder() {
     return binder;
+  }
+
+  /**
+   * Runs all configured field level validators and returns whether any of the validators failed.
+   * <p>
+   * <b>Note:</b> Calling this method will not trigger status change events, unlike
+   * {@link #validate()} and will not modify the UI. Also updates error indicators on fields.
+   *
+   * @return true if the field is valid; false otherwise
+   */
+  public boolean isOk() {
+    return binder.validate().isOk();
   }
 }
