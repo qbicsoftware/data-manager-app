@@ -42,14 +42,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent) {
     Objects.requireNonNull(measurementTemplateListComponent);
-    this.measurementTemplateListComponent = measurementTemplateListComponent;
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
