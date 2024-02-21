@@ -50,7 +50,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
         .withNullRepresentation(responsiblePersonField.getEmptyValue())
-        .withValidator(it -> responsiblePersonField.isOk(), "")
+        .withValidator(it -> responsiblePersonField.validate().isValid(), "")
         .bind(bean -> bean.getResponsiblePerson().orElse(null),
             ProjectCollaborators::setResponsiblePerson);
 

@@ -182,15 +182,4 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     return binder;
   }
 
-  /**
-   * Runs all configured field level validators and returns whether any of the validators failed.
-   * <p>
-   * <b>Note:</b> Calling this method will not trigger status change events, unlike
-   * {@link #validate()} and will not modify the UI. Also updates error indicators on fields.
-   *
-   * @return true if the field is valid; false otherwise
-   */
-  public boolean isOk() {
-    return binder.validate().isOk();
-  }
 }
