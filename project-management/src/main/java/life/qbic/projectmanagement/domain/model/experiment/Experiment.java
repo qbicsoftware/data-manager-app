@@ -172,6 +172,15 @@ public class Experiment {
   }
 
   /**
+   * Removes experimental groups with the provided ids from the experiment .
+   *
+   * @since 1.0.0
+   */
+  public void removeExperimentalGroups(List<Long> ids) {
+    ids.forEach(experimentalDesign::removeExperimentalGroup);
+  }
+
+  /**
    * Removes all experimental groups in an experiment.
    *
    * @since 1.0.0
@@ -247,14 +256,36 @@ public class Experiment {
    *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
+   * @param groupName      the name of this experimental group, which can be empty
    * @param variableLevels at least one value for a variable defined in this experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    * @return
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.addExperimentalGroup(variableLevels, sampleSize);
+    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize);
+  }
+
+  /**
+   * Updates an experimental group of to the experimental design.
+   * <p>
+   * <ul>
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
+   * </ul>
+   *
+   * @param id             the unique identifier of the experimental group to update
+   * @param groupName      the name of this experimental group, which can be empty
+   * @param variableLevels at least one value for a variable defined in this experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   * @return
+   */
+  public Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String groupName,
+      Collection<VariableLevel> variableLevels,
+      int sampleSize) {
+    return experimentalDesign.updateExperimentalGroup(id, groupName, variableLevels, sampleSize);
   }
 
   public List<ExperimentalGroup> getExperimentalGroups() {

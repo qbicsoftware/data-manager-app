@@ -18,7 +18,7 @@ class ExperimentalGroupSpec extends Specification {
 
     def "Experimental groups with the same id are equal"() {
         given:
-        def experimentalGroup = ExperimentalGroup.create(condition, 1)
+        def experimentalGroup = ExperimentalGroup.create("name", condition, 1)
         experimentalGroup.experimentalGroupId = 201
         expect:
         experimentalGroup.equals(experimentalGroup)
@@ -26,8 +26,8 @@ class ExperimentalGroupSpec extends Specification {
 
     def "Experimental groups with the different ids are not equal"() {
         given:
-        def experimentalGroup = ExperimentalGroup.create(condition, 1)
-        def experimentalGroup2 = ExperimentalGroup.create(condition, 1)
+        def experimentalGroup = ExperimentalGroup.create("name", condition, 1)
+        def experimentalGroup2 = ExperimentalGroup.create("name", condition, 1)
         experimentalGroup.experimentalGroupId = 201
         experimentalGroup2.experimentalGroupId = 202
         expect:
@@ -36,7 +36,7 @@ class ExperimentalGroupSpec extends Specification {
 
     def "Experimental groups with the same id have the same hashcode"() {
         given:
-        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
+        def experimentalGroup = ExperimentalGroup.create("name", conditionWithUnit, 1)
         experimentalGroup.experimentalGroupId = 201
         expect:
         experimentalGroup.hashCode() == experimentalGroup.hashCode()
@@ -44,8 +44,8 @@ class ExperimentalGroupSpec extends Specification {
 
     def "Experimental groups with the different ids have a different hashcode"() {
         given:
-        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
-        def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
+        def experimentalGroup = ExperimentalGroup.create("name", conditionWithUnit, 1)
+        def experimentalGroup2 = ExperimentalGroup.create("name", conditionWithUnit, 1)
         experimentalGroup.experimentalGroupId = 201
         experimentalGroup2.experimentalGroupId = 202
         expect:
@@ -64,8 +64,8 @@ class ExperimentalGroupSpec extends Specification {
 
     def "If an experimental group has no id it will never equal another experimental group with an id"() {
         given:
-        def experimentalGroup = ExperimentalGroup.create(conditionWithUnit, 1)
-        def experimentalGroup2 = ExperimentalGroup.create(conditionWithUnit, 1)
+        def experimentalGroup = ExperimentalGroup.create("name", conditionWithUnit, 1)
+        def experimentalGroup2 = ExperimentalGroup.create("name", conditionWithUnit, 1)
         experimentalGroup2.experimentalGroupId = 202
         expect:
         !experimentalGroup.hashCode().equals(experimentalGroup2.hashCode())

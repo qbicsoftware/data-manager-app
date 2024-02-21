@@ -75,20 +75,6 @@ public class DeletionService {
     return Result.fromValue(id);
   }
 
-  public Result<ExperimentId, ResponseCode> deleteAllExperimentalGroups(ExperimentId id) {
-    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
-    if (queryResult.isError()) {
-      log.debug("experiment (%s) converting %s to %s".formatted(id, queryResult.getError(),
-          ResponseCode.QUERY_FAILED));
-      return Result.fromError(ResponseCode.QUERY_FAILED);
-    }
-    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
-      return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
-    }
-    experimentInformationService.deleteAllExperimentalGroups(id);
-    return Result.fromValue(id);
-  }
-
   @Transactional
   public BatchId deleteBatch(ProjectId projectId, BatchId batchId) {
     var samples = sampleInformationService.retrieveSamplesForBatch(batchId).stream()

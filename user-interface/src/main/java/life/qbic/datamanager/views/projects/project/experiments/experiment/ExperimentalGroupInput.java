@@ -10,6 +10,7 @@ import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.NumberField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import jakarta.validation.constraints.Min;
 import java.io.Serial;
@@ -47,15 +48,18 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       VariableValueFormatter.format(it.experimentalValue()));
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
+  private final TextField nameField;
+  private final long id = -1;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
   int variableCount = 0;
   private final List<Binder<?>> binders = new ArrayList<>();
 
   /**
-   * ExperimentalGroupInput is a {@link CustomField} which contains a {@link MultiSelectComboBox}
-   * allowing the user to define the {@link Condition} and a {@link NumberField} enabling the user
-   * to define the number of {@link BiologicalReplicate} within an {@link ExperimentalGroup}
+   * ExperimentalGroupInput is a {@link CustomField} which contains a {@link TextField} to name the
+   * group, a {@link MultiSelectComboBox} allowing the user to define the {@link Condition}, and a
+   * {@link NumberField} enabling the user to define the number of {@link BiologicalReplicate}
+   * within an {@link ExperimentalGroup}. Stores the id of existing groups in order to allow editing.
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
    */
@@ -63,13 +67,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     addClassName("experimental-group-entry");
     removeEventListeners = new ArrayList<>();
 
+    nameField = generateGroupNameField();
     variableLevelSelect = generateVariableLevelSelect();
     replicateCountField = generateBiologicalReplicateField();
 
     var deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
     deleteIcon.addClickListener(
         event -> fireRemoveEvent(new RemoveEvent(this, event.isFromClient())));
-    add(variableLevelSelect, replicateCountField);
+    add(nameField, variableLevelSelect, replicateCountField);
     if(allowDeletion) {
       add(deleteIcon);
     }
@@ -83,6 +88,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   public void setCondition(Collection<VariableLevel> levels) {
     this.variableLevelSelect.setValue(levels);
+  }
+
+  public void setGroupName(String groupName) {
+    this.nameField.setValue(groupName);
   }
 
   public void setReplicateCount(int numberOfReplicates) {
@@ -130,9 +139,18 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   @Override
   protected ExperimentalGroupBean generateModelValue() {
+    var name = getName();
     var levels = getCondition();
     var sampleSize = getReplicateCount();
-    return new ExperimentalGroupBean(sampleSize, levels);
+    return new ExperimentalGroupBean(id, name, sampleSize, levels);
+  }
+
+  public String getName() {
+    return nameField.getValue();
+  }
+
+  public long getGroupId() {
+    return id;
   }
 
   public int getReplicateCount() {
@@ -194,6 +212,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     return numberField;
   }
 
+  private TextField generateGroupNameField() {
+    TextField textField = new TextField();
+    textField.addClassName("text-field");
+    textField.setLabel("Group Name");
+    textField.setPlaceholder("optional");
+    return textField;
+  }
+
   private void filterShownLevels() {
     ComboBoxListDataView<VariableLevel> listDataView = variableLevelSelect.getListDataView();
     listDataView.setFilter(
@@ -215,10 +241,15 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   public static class ExperimentalGroupBean {
 
     private final List<VariableLevel> levels = new ArrayList<>();
+
+    private final long id;
+    private final String name;
     @Min(1)
     private final int replicateCount;
 
-    public ExperimentalGroupBean(int replicateCount, List<VariableLevel> levels) {
+    public ExperimentalGroupBean(long id, String name, int replicateCount, List<VariableLevel> levels) {
+      this.id = id;
+      this.name = name;
       this.replicateCount = replicateCount;
       this.levels.addAll(levels);
     }
