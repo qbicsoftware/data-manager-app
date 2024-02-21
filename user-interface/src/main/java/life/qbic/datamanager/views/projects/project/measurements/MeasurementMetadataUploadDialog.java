@@ -26,7 +26,7 @@ import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
  */
 public class MeasurementMetadataUploadDialog extends DialogWindow {
 
-  private static enum AcceptedFormats {
+  private enum AcceptedFormats {
     TSV("text/tab-separated-values", List.of(".tsv", ".TSV"), "TSV");
     private final String mimeType;
     private final List<String> extension;
