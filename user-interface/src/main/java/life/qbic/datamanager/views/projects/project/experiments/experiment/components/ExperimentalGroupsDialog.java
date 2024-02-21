@@ -57,6 +57,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream().map(group -> {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
+      groupEntry.setGroupName(group.name());
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
       groupEntry.setEnabled(editMode);
@@ -103,7 +104,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupInput experimentalGroupInput) {
-    return new ExperimentalGroupContent(experimentalGroupInput.getReplicateCount(),
+    return new ExperimentalGroupContent(experimentalGroupInput.getGroupId(), experimentalGroupInput.getName(), experimentalGroupInput.getReplicateCount(),
         experimentalGroupInput.getCondition());
   }
 
@@ -183,13 +184,12 @@ public class ExperimentalGroupsDialog extends DialogWindow {
    */
   public Collection<ExperimentalGroupContent> experimentalGroups() {
     return this.experimentalGroupsCollection.getChildren()
-        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class)
-            && ((ExperimentalGroupInput) component).isEnabled())
+        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
         .map(experimentalGroupEntry -> convert((ExperimentalGroupInput) experimentalGroupEntry))
         .toList();
   }
 
-  public record ExperimentalGroupContent(int size, List<VariableLevel> variableLevels) {}
+  public record ExperimentalGroupContent(long id, String name, int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends
       life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {
