@@ -66,7 +66,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     uploadSectionTitle.addClassName("section-title");
 
     var restrictions = new Div();
-    restrictions.addClassName("restrictions");
+    restrictions.addClassName("restrictions"); //TODO CSS
     restrictions.add(new Span(
         "Accepted file formats: %s (%s)".formatted(AcceptedFormats.TSV.commonlyKnownAs(),
             AcceptedFormats.TSV.extensions())));
@@ -76,7 +76,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     uploadSection.add(uploadSectionTitle, upload, restrictions);
 
     var uploadedFilesSection = new Div();
-    uploadedFilesSection.addClassName("uploaded-items");
+    uploadedFilesSection.addClassName("uploaded-items"); //TODO CSS
 
     var uploadedFilesSectionTitle = new Span("Uploaded files");
     uploadedFilesSectionTitle.addClassName("section-title");
