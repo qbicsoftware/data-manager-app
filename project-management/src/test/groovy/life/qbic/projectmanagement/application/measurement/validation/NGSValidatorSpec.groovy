@@ -6,11 +6,10 @@ class NGSValidatorSpec extends Specification {
 
     def "Given a valid NGS measurement metadata property collection, pass the validation"() {
         given:
-        def validNGSproperties = ["qbic sample id", "organism id", "facility", "instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
+        def validNGSproperties = ["qbic sample id", "organisation id", "facility", "instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
 
         when:
-        def ngsValidator = new NGSValidator();
-        def isNGSMetadata = ngsValidator.isNGS(validNGSproperties)
+        def isNGSMetadata = NGSValidator.isNGS(validNGSproperties)
 
         then:
         isNGSMetadata
@@ -22,8 +21,7 @@ class NGSValidatorSpec extends Specification {
         def missingProperties= ["organism id", "facility", "instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
 
         when:
-        def ngsValidator = new NGSValidator();
-        def isNGSMetadata = ngsValidator.isNGS(missingProperties)
+        def isNGSMetadata = NGSValidator.isNGS(missingProperties)
 
         then:
         !isNGSMetadata
@@ -34,8 +32,7 @@ class NGSValidatorSpec extends Specification {
         def missingProperties= []
 
         when:
-        def ngsValidator = new NGSValidator();
-        def isNGSMetadata = ngsValidator.isNGS(missingProperties)
+        def isNGSMetadata = NGSValidator.isNGS(missingProperties)
 
         then:
         !isNGSMetadata
@@ -43,11 +40,10 @@ class NGSValidatorSpec extends Specification {
 
     def "A complete property set must be valid no matter the letter casing style"() {
         given:
-        def chaosCasing= ["QbiC SaMpLe ID", "Organism ID", "FACiLity", "Instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
+        def chaosCasing= ["QbiC SaMpLe ID", "organisation ID", "FACiLity", "Instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
 
         when:
-        def ngsValidator = new NGSValidator();
-        def isNGSMetadata = ngsValidator.isNGS(chaosCasing)
+        def isNGSMetadata = NGSValidator.isNGS(chaosCasing)
 
         then:
         isNGSMetadata

@@ -3,9 +3,11 @@ package life.qbic.projectmanagement.application.measurement.validation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -14,23 +16,33 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
  *
  * @since <version tag>
  */
-public class NGSValidator implements Validator<NGSMeasurement> {
+public class NGSValidator implements Validator<NGSMeasurementMetadata> {
 
   private static final Set<String> NGS_PROPERTIES = new HashSet<>();
 
+  private final SampleInformationService sampleInformationService;
+
   static {
-    NGS_PROPERTIES.addAll(Arrays.asList("qbic sample id", "organism id", "facility", "instrument",
-        "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7",
-        "note"));
+    NGS_PROPERTIES.addAll(
+        Arrays.asList("qbic sample id", "organisation id", "facility", "instrument",
+            "sequencing read type", "library kit", "flow cell", "run protocol", "index i5",
+            "index i7",
+            "note"));
   }
 
-  @Override
-  public ValidationResult validate(NGSMeasurement measurementMetadata) {
-    // TODO implement property validation
-    return new ValidationResult();
+  public NGSValidator(SampleInformationService sampleInformationService) {
+    this.sampleInformationService = sampleInformationService;
   }
 
-  public boolean isNGS(Collection<String> properties) {
+  /**
+   * Given a collection of properties, the validator determines if they mach the expected properties
+   * for a QBiC-defined NGS measurement metadata object.
+   *
+   * @param properties
+   * @return
+   * @since 1.0.0
+   */
+  public static boolean isNGS(Collection<String> properties) {
     if (properties.isEmpty()) {
       return false;
     }
@@ -38,11 +50,22 @@ public class NGSValidator implements Validator<NGSMeasurement> {
       return false;
     }
     for (String ngsProperty : NGS_PROPERTIES) {
-      var propertyFound = properties.stream().filter(property -> Objects.equals(property, ngsProperty)).findAny();
+      var propertyFound = properties.stream()
+          .filter(property -> Objects.equals(property.toLowerCase(), ngsProperty)).findAny();
       if (propertyFound.isEmpty()) {
         return false;
       }
     }
     return true;
+  }
+
+  public static Collection<String> properties() {
+    return NGS_PROPERTIES.stream().toList();
+  }
+
+  @Override
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata) {
+    // TODO implement property validation
+    return ValidationResult.withFailures(1, List.of("This went wrong"));
   }
 }

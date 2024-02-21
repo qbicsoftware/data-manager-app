@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.application.measurement;
 
+import java.util.Collection;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+
 /**
  * <b>Proteomics Measurement Metadata</b>
  * <p>
@@ -7,6 +10,8 @@ package life.qbic.projectmanagement.application.measurement;
  *
  * @since 1.0.0
  */
-public class ProteomicsMeasurementMetadata implements MeasurementMetadata {
+public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes) implements MeasurementMetadata {
+
+
 
 }
