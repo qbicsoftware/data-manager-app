@@ -25,7 +25,6 @@ public class ValidationResult {
     this.validatedEntries = 0;
     this.warnings = Collections.emptyList();
     this.failures = Collections.emptyList();
-    ;
   }
 
   private ValidationResult(int validatedEntries) {
@@ -67,7 +66,7 @@ public class ValidationResult {
    */
   public boolean allPassed() {
     // We consider warnings as not part of a reason to fail validation
-    return failures().isEmpty();
+    return this.failures.isEmpty();
   }
 
   public boolean containsFailures() {
@@ -75,7 +74,7 @@ public class ValidationResult {
   }
 
   public Collection<String> failures() {
-    return Collections.emptyList();
+    return failures.stream().toList();
   }
 
   public int failedEntries() {
@@ -95,9 +94,4 @@ public class ValidationResult {
         Stream.concat(this.warnings.stream(), otherResult.warnings.stream()).toList(),
         Stream.concat(this.failures.stream(), otherResult.failures.stream()).toList());
   }
-
-  enum Status {
-    PASSED, WARNING, FAILED
-  }
-
 }

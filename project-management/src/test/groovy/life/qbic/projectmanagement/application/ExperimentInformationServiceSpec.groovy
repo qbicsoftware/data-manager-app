@@ -9,6 +9,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository
 import life.qbic.projectmanagement.domain.model.OntologyTerm
+import life.qbic.projectmanagement.domain.model.sample.Sample
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
 

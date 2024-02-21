@@ -24,7 +24,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   static {
     PROTEOMICS_PROPERTIES.addAll(
         Arrays.asList("qbic sample id", "organisation id", "facility", "instrument",
-            "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method",
+            "pooled sample label", "cycle/fraction name", "digestion method",
             "enrichment method", "injection volume (ul)", "lc column",
             "lcms method", "sample preparation", "sample cleanup (protein)",
             "sample cleanup (peptide)", "note"));
@@ -74,12 +74,15 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   private class ValidationPolicy {
 
-    private String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
+    private final String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
 
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
+      if (sampleCodes.isEmpty()) {
+        return ValidationResult.withFailures(1, List.of("A measurement must contain at least one sample reference. Provided: none"));
+      }
       ValidationResult validationResult = ValidationResult.successful(0);
       for (SampleCode sample : sampleCodes) {
-        validationResult.combine(validateSampleId(sample));
+        validationResult = validationResult.combine(validateSampleId(sample));
       }
       return validationResult;
     }
