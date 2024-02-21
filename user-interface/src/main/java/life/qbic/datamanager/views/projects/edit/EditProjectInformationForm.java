@@ -13,7 +13,6 @@ import java.io.Serial;
 import java.util.List;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
@@ -177,9 +176,4 @@ public class EditProjectInformationForm extends FormLayout {
     return binder;
   }
 
-  public void setLoggedInUser(Contact loggedInUser) {
-    principalInvestigatorField.setLoggedInUser(loggedInUser);
-    responsiblePersonField.setLoggedInUser(loggedInUser);
-    projectManagerField.setLoggedInUser(loggedInUser);
-  }
 }

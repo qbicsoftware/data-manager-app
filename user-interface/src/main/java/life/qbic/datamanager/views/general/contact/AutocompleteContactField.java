@@ -15,6 +15,9 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>A component for contact person input</b>
@@ -33,7 +36,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   private final TextField nameField;
   private final TextField emailField;
   private final Binder<Contact> binder;
-  private Contact userAsContact;
 
   public AutocompleteContactField(String label) {
     setLabel(label);
@@ -51,7 +53,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
 
     selfSelect = new Button("Myself");
-    selfSelect.setVisible(userAsContact!=null);
     selfSelect.addClassName("contact-self-select");
     selfSelect.addClickListener(this::onSelfSelected);
 
@@ -98,6 +99,9 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   }
 
   private void onSelfSelected(ClickEvent<Button> buttonClickEvent) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());
     setContact(userAsContact);
   }
 
@@ -129,11 +133,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     setContact(valueChanged.getValue());
     // clear selection box
     valueChanged.getHasValue().clear();
-  }
-  
-  public void setLoggedInUser(Contact contact) {
-    userAsContact = contact;
-    selfSelect.setVisible(userAsContact!=null);
   }
 
   public void setContact(Contact contact) {

@@ -13,7 +13,6 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import org.springframework.stereotype.Component;
 
@@ -118,13 +117,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     }
     return projectCollaborators;
   }
-
-  public void setLoggedInUser(Contact contact) {
-    projectManagerField.setLoggedInUser(contact);
-    responsiblePersonField.setLoggedInUser(contact);
-    principalInvestigatorField.setLoggedInUser(contact);
-  }
-
 
   public static final class ProjectCollaborators implements Serializable {
 

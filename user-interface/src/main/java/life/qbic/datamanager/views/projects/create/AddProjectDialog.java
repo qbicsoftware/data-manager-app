@@ -32,10 +32,7 @@ import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDe
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Project Creation Dialog
@@ -83,10 +80,6 @@ public class AddProjectDialog extends Dialog {
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         ontologyTermInformationService);
 
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-
-    collaboratorsLayout.setLoggedInUser(new Contact(details.fullName(), details.getEmailAddress()));
     List<Contact> knownContacts = contactRepository.findAll().stream()
         .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
     collaboratorsLayout.setPrincipalInvestigators(knownContacts);
