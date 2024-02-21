@@ -13,7 +13,6 @@ import java.io.Serial;
 import java.util.List;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
@@ -25,7 +24,7 @@ public class EditProjectInformationForm extends FormLayout {
   private static final long serialVersionUID = 972380320581239752L;
   private final Binder<ProjectInformation> binder;
   private final AutocompleteContactField principalInvestigatorField;
-  private final ContactField responsiblePersonField;
+  private final AutocompleteContactField responsiblePersonField;
   private final AutocompleteContactField projectManagerField;
 
   private final FundingField fundingField;
@@ -94,7 +93,7 @@ public class EditProjectInformationForm extends FormLayout {
         .bind((ProjectInformation::getPrincipalInvestigator),
             ProjectInformation::setPrincipalInvestigator);
 
-    responsiblePersonField = new ContactField("Project Responsible (optional)");
+    responsiblePersonField = new AutocompleteContactField("Project Responsible (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
@@ -133,6 +132,10 @@ public class EditProjectInformationForm extends FormLayout {
 
   public void setProjectManagers(List<Contact> projectManagers) {
     projectManagerField.setItems(projectManagers);
+  }
+
+  public void setResponsiblePersons(List<Contact> responsiblePersons) {
+    responsiblePersonField.setItems(responsiblePersons);
   }
 
   public void setPrincipalInvestigators(List<Contact> principalInvestigators) {

@@ -2,16 +2,22 @@ package life.qbic.datamanager.views.general.contact;
 
 import static java.util.Objects.isNull;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>A component for contact person input</b>
@@ -26,9 +32,9 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
 
   private final ComboBox<Contact> contactSelection;
-
-  private final ComboBox<String> nameField;
-  private final ComboBox<String> emailField;
+  private final Button selfSelect;
+  private final TextField nameField;
+  private final TextField emailField;
   private final Binder<Contact> binder;
 
   public AutocompleteContactField(String label) {
@@ -46,18 +52,16 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     contactSelection.setItemLabelGenerator(
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
 
-    nameField = new ComboBox<>();
-    nameField.setAllowCustomValue(true);
-    nameField.addCustomValueSetListener(
-        customValueSet -> customValueSet.getSource().setValue(customValueSet.getDetail()));
+    selfSelect = new Button("Myself");
+    selfSelect.addClassName("contact-self-select");
+    selfSelect.addClickListener(this::onSelfSelected);
+
+    nameField = new TextField();
     nameField.setRequired(false);
     nameField.addClassName("name-field");
     nameField.setPlaceholder("Please enter a name");
 
-    emailField = new ComboBox<>();
-    emailField.setAllowCustomValue(true);
-    emailField.addCustomValueSetListener(
-        customValueSet -> customValueSet.getSource().setValue(customValueSet.getDetail()));
+    emailField = new TextField();
     emailField.setRequired(false);
     emailField.addClassName("email-field");
     emailField.setPlaceholder("Please enter an email address");
@@ -83,11 +87,22 @@ public class AutocompleteContactField extends CustomField<Contact> implements
         .bind(Contact::getEmail,
             Contact::setEmail);
 
+    Div preselectLayout = new Div(contactSelection, selfSelect);
+    preselectLayout.addClassName("prefill-input-fields");
+
     Div layout = new Div(nameField, emailField);
     layout.addClassName("input-fields");
-    add(contactSelection, layout);
+
+    add(preselectLayout, layout);
     setItems(new ArrayList<>());
     clear();
+  }
+
+  private void onSelfSelected(ClickEvent<Button> buttonClickEvent) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());
+    setContact(userAsContact);
   }
 
   private void updateValidationProperty() {
@@ -123,21 +138,11 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   public void setContact(Contact contact) {
     binder.setBean(contact);
     updateValidationProperty();
+    setValue(contact);
   }
 
   public void setItems(List<Contact> contacts) {
-    List<String> fullNames = contacts.stream()
-        .map(Contact::getFullName)
-        .distinct()
-        .toList();
-    List<String> emails = contacts.stream()
-        .map(Contact::getEmail)
-        .distinct()
-        .toList();
-
     contactSelection.setItems(contacts);
-    nameField.setItems(fullNames);
-    emailField.setItems(emails);
   }
 
   @Override
@@ -176,4 +181,5 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   public Binder<Contact> getBinder() {
     return binder;
   }
+
 }
