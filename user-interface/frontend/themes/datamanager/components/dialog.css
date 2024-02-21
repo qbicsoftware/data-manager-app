@@ -202,13 +202,6 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
-.edit-project-dialog .contact-field .prefill-input-fields {
-  line-height: 0;
-  display: flex;
-  gap: 1em;
-  align-items: baseline;
-}
-
 .contact-field .contact-selection,
 .contact-field .input-fields,
 .contact-field .input-fields > * {
@@ -223,7 +216,7 @@ vaadin-dialog-overlay::part(title) {
 }
 
 .contact-field .prefill-input-fields .contact-self-select {
-  width: 130px;
+  width: 5em;
 }
 
 .edit-project-dialog .form-content .contact-field .name-field {
