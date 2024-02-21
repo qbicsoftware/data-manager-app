@@ -19,6 +19,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.Stepper;
@@ -79,10 +80,11 @@ public class AddProjectDialog extends Dialog {
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         ontologyLookupService);
 
-    collaboratorsLayout.setPrincipalInvestigators(contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
-    collaboratorsLayout.setProjectManagers(contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+    List<Contact> knownContacts = contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
+    collaboratorsLayout.setPrincipalInvestigators(knownContacts);
+    collaboratorsLayout.setResponsiblePersons(knownContacts);
+    collaboratorsLayout.setProjectManagers(knownContacts);
 
     stepContent = new HashMap<>();
 

@@ -29,14 +29,16 @@ public class ExperimentalGroup {
   @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private List<BiologicalReplicate> biologicalReplicates;
+  private String name;
   private Condition condition;
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long experimentalGroupId;
   private int sampleSize;
 
-  private ExperimentalGroup(Condition condition, int sampleSize,
+  private ExperimentalGroup(String name, Condition condition, int sampleSize,
       Collection<BiologicalReplicate> biologicalReplicates) {
+    this.name = name;
     this.condition = condition;
     this.sampleSize = sampleSize;
     this.biologicalReplicates = biologicalReplicates.stream().toList();
@@ -54,12 +56,13 @@ public class ExperimentalGroup {
   /**
    * Creates a new instance of an experimental group object.
    *
+   * @param name       an optional name of the experimental group
    * @param condition  the condition the experimental group represents
    * @param sampleSize the number of samples in this experimental group
    * @return the experimental group
    * @since 1.0.0
    */
-  public static ExperimentalGroup create(Condition condition, int sampleSize) {
+  public static ExperimentalGroup create(String name, Condition condition, int sampleSize) {
     Objects.requireNonNull(condition);
     if (sampleSize < 1) {
       // Admitting not very meaningful to allow for sample size of 1 and 2
@@ -67,7 +70,7 @@ public class ExperimentalGroup {
       throw new IllegalArgumentException(
           "The number of biological replicates must be at least one");
     }
-    return new ExperimentalGroup(condition, sampleSize, createBiologicalReplicates(sampleSize));
+    return new ExperimentalGroup(name, condition, sampleSize, createBiologicalReplicates(sampleSize));
   }
 
   private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
@@ -85,7 +88,21 @@ public class ExperimentalGroup {
   public int sampleSize() {
     return this.sampleSize;
   }
+  public String name() {
+    return name;
+  }
 
+  public void setCondition(Condition condition) {
+    this.condition = condition;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setSampleSize(int sampleSize) {
+    this.sampleSize = sampleSize;
+  }
   public long id() {
     return this.experimentalGroupId;
   }
@@ -119,6 +136,7 @@ public class ExperimentalGroup {
   @Override
   public String toString() {
     return new StringJoiner(", ", ExperimentalGroup.class.getSimpleName() + "[", "]")
+        .add("name=" + name)
         .add("biologicalReplicates=" + biologicalReplicates)
         .add("condition=" + condition)
         .add("experimentalGroupId=" + experimentalGroupId)

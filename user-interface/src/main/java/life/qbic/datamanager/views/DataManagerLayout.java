@@ -1,47 +1,22 @@
 package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.applayout.AppLayout;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.PageTitle;
 
 /**
- * <b>Main layout of the app</b>
+ * <b>Data Manager Layout</b>
  *
- * <p>Defines the look of the header and the project title
+ * <p>Defines the basic look of the application before a user has logged in
  *
- * @since 1.0.0
  */
+@PageTitle("Data Manager")
 public abstract class DataManagerLayout extends AppLayout {
 
-  private HorizontalLayout headerLayout;
-
   protected DataManagerLayout() {
-    createHeaderContent();
-  }
-
-  private void createHeaderContent() {
-    createHeaderLayout();
-
-    addToNavbar(headerLayout);
-  }
-
-  private void createHeaderLayout() {
-    H1 appName = styleHeaderTitle();
-    headerLayout = new HorizontalLayout(appName);
-
-    styleHeaderLayout();
-  }
-
-  private void styleHeaderLayout() {
-    headerLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    headerLayout.setWidth("100%");
-    headerLayout.addClassNames("py-0", "px-m");
-  }
-
-  private H1 styleHeaderTitle() {
-    H1 appName = new H1("Data Manager");
-    appName.addClassNames("text-l", "m-m");
-    return appName;
+    addClassName("data-manager-layout");
+    Span drawerTitle = new Span("Data Manager");
+    drawerTitle.addClassName("data-manager-title");
+    addToNavbar(drawerTitle);
   }
 }

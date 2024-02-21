@@ -1,17 +1,55 @@
-.project-navbar {
-  width: 100%;
+.data-manager-layout::part(navbar) {
   display: inline-flex;
-  align-items: start;
   justify-content: space-between;
 }
 
-.project-navbar-buttonbar {
-  display: inline-flex;
-  gap: var(--lumo-space-m);
-  align-items: center;
+.data-manager-layout .data-manager-title {
+  font-size: var(--lumo-font-size-l);
+  margin: var(--lumo-space-m);
+  color: var(--lumo-header-text-color);
+  font-weight: 600;
+  line-height: var(--lumo-line-height-xs);
+  margin-block: 0;
+  padding-inline: var(--lumo-space-m);
 }
 
-.project-navbar-drawer-bar {
+.data-manager-menu {
+  display: inline-flex;
+  justify-content: space-between;
+  column-gap: var(--lumo-space-s);
+}
+
+/*Increase gap between menu items*/
+.data-manager-menu .menubar::part(container) {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.data-manager-menu .user-avatar {
+  cursor: pointer;
+}
+
+/*Increase gap between menu items*/
+.experiment-main-layout::part(navbar) {
+  display: flex;
+  flex-direction: column;
+  /*Ensure proper padding even if secondary experiment tab based navigation is present*/
+  padding-top: var(--lumo-space-s);
+}
+
+/*Increase gap between menu items*/
+.experiment-main-layout .experiment-app-navbar {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.project-main-layout::part(navbar) {
+  display: inline-flex;
+  justify-content: space-between;
+}
+
+.drawer-title-bar {
   display: inline-flex;
   align-items: center;
 }
@@ -21,28 +59,10 @@
   font-size: var(--lumo-font-size-l);
 }
 
-.experiment-app-navbar {
-  width: 100%;
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  background-image: linear-gradient(var(--lumo-shade-5pct), var(--lumo-shade-5pct));
-  padding: var(--lumo-space-s);
-}
-
-.experiment-navbar {
-  width: 100%;
-}
-
-.experiment-navbar-buttonbar {
-  display: inline-flex;
-  gap: var(--lumo-space-m);
-  align-items: center;
-}
-
 .experiment-navbar-drawer-bar {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .experiment-navbar-title {

@@ -6,10 +6,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
@@ -24,6 +30,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service that provides an API to query basic experiment information
@@ -36,11 +43,14 @@ public class ExperimentInformationService {
   private static final Logger log = LoggerFactory.logger(ExperimentInformationService.class);
   private final ExperimentRepository experimentRepository;
   private final ProjectRepository projectRepository;
+  private final SampleInformationService sampleInformationService;
 
   public ExperimentInformationService(@Autowired ExperimentRepository experimentRepository,
-      @Autowired ProjectRepository projectRepository) {
+      @Autowired ProjectRepository projectRepository,
+      @Autowired SampleInformationService sampleInformationService) {
     this.experimentRepository = experimentRepository;
     this.projectRepository = projectRepository;
+    this.sampleInformationService = sampleInformationService;
   }
 
   public Optional<Experiment> find(ExperimentId experimentId) {
@@ -64,18 +74,35 @@ public class ExperimentInformationService {
    * @param experimentId      the Id of the experiment for which to add the species
    * @param experimentalGroup the experimental groups to add
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroupToExperiment(
+  private void addExperimentalGroupToExperiment(
       ExperimentId experimentId, ExperimentalGroupDTO experimentalGroup) {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
-    Experiment experiment = loadExperimentById(experimentId);
-    Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-        experimentalGroup.levels(), experimentalGroup.replicateCount());
-    if (result.isValue()) {
-      experimentRepository.update(experiment);
+    List<VariableLevel> varLevels = experimentalGroup.levels;
+    if (varLevels.isEmpty()) {
+      throw new ApplicationException("No experimental variable was selected",
+          ErrorCode.NO_CONDITION_SELECTED,
+          ErrorParameters.empty());
     }
-    return result;
+
+      Experiment experiment = loadExperimentById(experimentId);
+      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+          experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
+      if (result.isValue()) {
+        experimentRepository.update(experiment);
+      } else {
+        ResponseCode responseCode = result.getError();
+        if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
+          throw new ApplicationException("A group with the variable levels %s already exists.".formatted(varLevels.toString()),
+              ErrorCode.DUPLICATE_GROUP_SELECTED,
+              ErrorParameters.empty());
+        } else {
+          throw new ApplicationException(
+              "Could not save one or more experimental groups %s %nReason: %s".formatted(
+                  experimentalGroup.toString(), responseCode));
+        }
+      }
   }
 
   /**
@@ -88,7 +115,7 @@ public class ExperimentInformationService {
   public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
-        .map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize()))
+        .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(), it.sampleSize()))
         .toList();
   }
 
@@ -254,42 +281,80 @@ public class ExperimentInformationService {
 
   /**
    * Deletes all experimental groups in a given experiment.
-   * <p>
-   * This method does not check if samples are already.
    *
    * @param id the experiment identifier of the experiment the experimental groups are going to be
    *           deleted.
    * @since 1.0.0
    */
-  public void deleteAllExperimentalGroups(ExperimentId id) {
+  public void deleteExperimentalGroupsWithIds(ExperimentId id, List<Long> groupIds) {
+    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
+    if (queryResult.isError()) {
+      throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
+          queryResult.getError(), DeletionService.ResponseCode.QUERY_FAILED),
+          ErrorCode.GENERAL,
+          ErrorParameters.empty());
+    }
+    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
+      throw new ApplicationException("Could not edit experimental groups because samples are already registered.",
+          ErrorCode.SAMPLES_ATTACHED_TO_EXPERIMENT,
+          ErrorParameters.empty());
+    }
     Experiment experiment = loadExperimentById(id);
-    experiment.removeAllExperimentalGroups();
+    experiment.removeExperimentalGroups(groupIds);
     experimentRepository.update(experiment);
   }
 
+  @Transactional
   /**
-   * Adds experimental groups to an experiment
+   * Updates experimental groups in a given experiment.
    *
-   * @param experimentId          the experiment to add the groups to
-   * @param experimentalGroupDTOS the group information
-   * @return either the collection of added groups or an appropriate response code
+   * Compares the provided list of experimental groups of an experiment with the persistent state.
+   * Removes groups from the experiment that are not in the new list, adds groups that are not in
+   * the experiment yet and updates the other groups of the experiment.
+   *
+   * @param id                     the experiment identifier of the experiment whose groups should be updated
+   * @param experimentalGroupDTOS  the new list of experimental groups including all updates
+   * @since 1.0.0
    */
-  public Result<Collection<ExperimentalGroup>, ResponseCode> addExperimentalGroupsToExperiment(
-      ExperimentId experimentId, List<ExperimentalGroupDTO> experimentalGroupDTOS) {
-    Experiment experiment = loadExperimentById(experimentId);
-    List<ExperimentalGroup> addedGroups = new ArrayList<>();
-    for (ExperimentalGroupDTO experimentalGroupDTO : experimentalGroupDTOS) {
-      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-          experimentalGroupDTO.levels(),
-          experimentalGroupDTO.replicateCount());
-      if (result.isError()) {
-        return Result.fromError(result.getError());
+  public void updateExperimentalGroupsOfExperiment(ExperimentId experimentId,
+      List<ExperimentalGroupDTO> experimentalGroupDTOS) {
+
+    // check for duplicates
+    List<List<VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
+        .map(ExperimentalGroupDTO::levels).distinct().toList();
+    if (distinctLevels.size() < experimentalGroupDTOS.size()) {
+      throw new ApplicationException("Duplicate experimental group was selected",
+          ErrorCode.DUPLICATE_GROUP_SELECTED,
+          ErrorParameters.empty());
+    }
+
+    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(experimentId);
+    List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
+    if(!idsToDelete.isEmpty()) {
+      deleteExperimentalGroupsWithIds(experimentId, idsToDelete);
+    }
+
+    for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
+      if(group.id() == -1) {
+        addExperimentalGroupToExperiment(experimentId, group);
       } else {
-        addedGroups.add(result.getValue());
+        updateExperimentalGroupOfExperiment(experimentId, group);
       }
     }
-    experimentRepository.update(experiment);
-    return Result.fromValue(addedGroups);
+  }
+
+  private void updateExperimentalGroupOfExperiment(ExperimentId experimentId, ExperimentalGroupDTO group) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.updateExperimentalGroup(group.id(), group.name(), group.levels(), group.replicateCount());
+  }
+
+  private List<Long> getGroupIdsToDelete(List<ExperimentalGroup> existingGroups,
+      List<ExperimentalGroupDTO> newGroups) {
+    Set<Long> newIds = newGroups.stream().map(ExperimentalGroupDTO::id).collect(Collectors.toSet());
+    return existingGroups.stream()
+        .map(ExperimentalGroup::id)
+        .filter(Predicate.not(newIds::contains))
+        .toList();
   }
 
   public void editExperimentInformation(ExperimentId experimentId, String experimentName,
@@ -305,10 +370,12 @@ public class ExperimentInformationService {
   /**
    * Information about an experimental group
    *
+   * @param id             id, -1 for new groups
+   * @param name           the name of the group - can be empty
    * @param levels         the levels in the condition of the group
    * @param replicateCount the number of biological replicates
    */
-  public record ExperimentalGroupDTO(Collection<VariableLevel> levels, int replicateCount) {
+  public record ExperimentalGroupDTO(long id, String name, List<VariableLevel> levels, int replicateCount) {
 
   }
 }

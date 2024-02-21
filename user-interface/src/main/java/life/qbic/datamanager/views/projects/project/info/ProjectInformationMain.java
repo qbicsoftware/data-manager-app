@@ -19,7 +19,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.OfferDownload;
+import life.qbic.datamanager.views.general.download.OfferDownload;
+import life.qbic.datamanager.views.general.download.QualityControlDownload;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -30,19 +31,28 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentListCo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
-import life.qbic.datamanager.views.projects.project.info.OfferList.DeleteOfferClickEvent;
-import life.qbic.datamanager.views.projects.project.info.OfferList.DownloadOfferClickEvent;
-import life.qbic.datamanager.views.projects.project.info.OfferList.OfferInfo;
-import life.qbic.datamanager.views.projects.project.info.OfferList.UploadOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.OfferListComponent.DeleteOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.OfferListComponent.DownloadOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.OfferListComponent.OfferInfo;
+import life.qbic.datamanager.views.projects.project.info.OfferListComponent.UploadOfferClickEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DeleteQualityControlEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
+import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
+import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -63,15 +73,19 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
+  private final transient ExperimentInformationService experimentInformationService;
   private final transient OntologyLookupService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
+  private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectDetailsComponent projectDetailsComponent;
   private final ExperimentListComponent experimentListComponent;
   private final OfferDownload offerDownload;
-  private final OfferList offerList;
+  private final QualityControlDownload qualityControlDownload;
+  private final OfferListComponent offerListComponent;
+  private final QualityControlListComponent qualityControlListComponent;
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
@@ -79,7 +93,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired OntologyLookupService ontologyTermInformationService,
-      @Autowired ProjectPurchaseService projectPurchaseService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired ProjectPurchaseService projectPurchaseService,
+      @Autowired QualityControlService qualityControlService) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
@@ -89,25 +105,36 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "addExperimentToProjectService must not be null");
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
+    this.experimentInformationService = requireNonNull(experimentInformationService,
+        "experimentInformationService must not be null");
     this.projectPurchaseService = requireNonNull(projectPurchaseService,
         "projectPurchaseService must not be null");
+    this.qualityControlService = requireNonNull(qualityControlService,
+        "qualityControlService must not be null");
 
-    offerList = getConfiguredOfferList();
+    offerListComponent = getConfiguredOfferList();
+    qualityControlListComponent = getConfiguredQualityControlList();
     offerDownload = new OfferDownload(
         (projectId, offerId) -> projectPurchaseService.getOfferWithContent(projectId, offerId)
+            .orElseThrow());
+
+    qualityControlDownload = new QualityControlDownload(
+        (projectId, qualityControlId) -> qualityControlService.getQualityControlWithContent(
+                projectId, qualityControlId)
             .orElseThrow());
 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
-    add(projectDetailsComponent, offerList, offerDownload, experimentListComponent);
+    add(projectDetailsComponent, offerListComponent, offerDownload, experimentListComponent,
+        qualityControlListComponent, qualityControlDownload);
   }
 
 
   /**
-   * Extracts {@link ExperimentId} from the provided URL before the user accesses the page
+   * Extracts {@link ProjectId} from the provided URL before the user accesses the page
    * <p>
-   * This method is responsible for checking if the provided {@link ExperimentId} is valid and
+   * This method is responsible for checking if the provided {@link ProjectId} is valid and
    * triggering its propagation to the components within the {@link ProjectInformationMain}
    */
 
@@ -127,8 +154,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     }
   }
 
-  private OfferList getConfiguredOfferList() {
-    OfferList component = new OfferList();
+  private OfferListComponent getConfiguredOfferList() {
+    OfferListComponent component = new OfferListComponent();
     component.addDeleteOfferClickListener(this::onDeleteOfferClicked);
     component.addDownloadOfferClickListener(this::onDownloadOfferClicked);
     component.addUploadOfferClickListener(
@@ -166,14 +193,72 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
-      OfferList offerList) {
+      OfferListComponent offerListComponent) {
     List<OfferInfo> offers = projectPurchaseService.linkedOffers(projectId)
         .stream()
         .map(offer -> new OfferInfo(offer.id(), offer.getFileName(), offer.isSigned()))
         .toList();
-    offerList.setOffers(offers);
+    offerListComponent.setOffers(offers);
   }
 
+  private QualityControlListComponent getConfiguredQualityControlList() {
+    QualityControlListComponent component = new QualityControlListComponent();
+    component.addDeleteQualityControlListener(this::onDeleteQualityControlClicked);
+    component.addDownloadQualityControlListener(this::onDownloadQualityControlClicked);
+    component.addUploadQualityControlListener(
+        event -> onUploadQualityControlClicked());
+    return component;
+  }
+
+  private void onDownloadQualityControlClicked(
+      DownloadQualityControlEvent downloadQualityControlEvent) {
+    qualityControlDownload.trigger(context.projectId().orElseThrow().value(),
+        downloadQualityControlEvent.qualityControlId());
+  }
+
+  private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
+    qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
+        deleteQualityControlEvent.qualityControlId());
+    qualityControlDownload.removeHref();
+    refreshQualityControls();
+  }
+
+  private void onUploadQualityControlClicked() {
+    UploadQualityControlDialog dialog = new UploadQualityControlDialog(
+        context.projectId().orElseThrow(), experimentInformationService);
+    dialog.addConfirmListener(confirmEvent -> {
+      List<QualityControlReport> qualityControlReports = confirmEvent.getSource()
+          .qualityControlItems()
+          .stream()
+          .map(it -> new QualityControlReport(it.fileName(), it.experimentId(), it.content()))
+          .toList();
+      qualityControlService.addQualityControls(context.projectId().orElseThrow().toString(),
+          qualityControlReports);
+      refreshQualityControls();
+      confirmEvent.getSource().close();
+    });
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.open();
+  }
+
+  private void refreshQualityControls() {
+    List<QualityControl> qualityControls = qualityControlService.linkedQualityControls(
+            context.projectId().orElseThrow().value())
+        .stream()
+        .map(qualityControl -> {
+          String experimentName = getExperimentNameFromQualityControl(qualityControl);
+          return new QualityControl(qualityControl.id(), qualityControl.getFileName(),
+              experimentName);
+        })
+        .toList();
+    qualityControlListComponent.setQualityControls(qualityControls);
+  }
+
+  private String getExperimentNameFromQualityControl(QualityControlUpload qualityControl) {
+    return qualityControl.experimentId().map(
+        experimentId -> experimentInformationService.find(experimentId).map(Experiment::getName)
+            .orElse("")).orElse("");
+  }
 
   private void onAddExperimentClicked(AddExperimentClickEvent event) {
     log.debug("Add experiment clicked: " + event);
@@ -188,7 +273,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     this.context = context;
     projectDetailsComponent.setContext(context);
     experimentListComponent.setContext(context);
-    refreshOffers(projectPurchaseService, context.projectId().orElseThrow().value(), offerList);
+    refreshOffers(projectPurchaseService, context.projectId().orElseThrow().value(),
+        offerListComponent);
+    refreshQualityControls();
   }
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {

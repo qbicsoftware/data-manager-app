@@ -1,0 +1,181 @@
+.measurement-template-list-component .measurement-template-list {
+  height: fit-content;
+}
+
+.measurement-template-list-component .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.measurement-template-list-component .measurement-template-list-item {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.measurement-template-list-component .measurement-template-list-item .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.measurement-template-list-component .measurement-template-list-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.measurement-template-list-component .measurement-template-list-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.measurement-template-list-component .measurement-template-list-item .file-info {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+}
+
+.measurement-template-list-component .measurement-template-list-item .file-info-with-icon {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+  align-items: center;
+}
+
+.offer-list-component .header {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.offer-list-component .offer-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.offer-list-component .offer-info .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.offer-list-component .offer-info .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.offer-list-component .offer-info .file-info {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
+  overflow: hidden;
+}
+
+.offer-list-component .offer-info .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.offer-list-component .offer-list {
+  height: fit-content;
+}
+
+.offer-list-component .offer-list .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.offer-list-component .offer-list .offer-list-item {
+  display: inline-flex;
+  justify-content: space-between;
+}
+
+.offer-list-component .offer-info .signed-info {
+  width: var(--lumo-icon-size-s);
+  flex-shrink: 0;
+  justify-self: right;
+}
+
+.offer-list-component .offer-info .signed-info.signed {
+  color: var(--lumo-primary-color);
+}
+
+.offer-list-component .offer-info .signed-info.unsigned {
+  color: var(--lumo-tertiary-text-color)
+}
+
+.quality-control-list-component .quality-control-list {
+  height: fit-content;
+}
+
+.quality-control-list-component .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.quality-control-list-component .quality-control-item {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  column-gap: var(--lumo-space-l);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.quality-control-list-component .quality-control-item .controls {
+  display: inline-flex;
+  align-items: end;
+  justify-items: center;
+  column-gap: var(--lumo-space-s);
+  padding-inline: var(--lumo-space-m);
+}
+
+.quality-control-list-component .quality-control-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quality-control-list-component .quality-control-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.quality-control-list-component .quality-control-item .file-info {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+}
+
+.quality-control-list-component .quality-control-item .file-info-with-icon {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  overflow: hidden;
+}

@@ -43,6 +43,10 @@ public class SampleInformationService {
     return sampleRepository.findSamplesByExperimentId(experimentId);
   }
 
+  public List<SamplePreview> retrieveSamplePreviewsForExperiment(ExperimentId experimentId) {
+    return samplePreviewLookup.queryByExperimentId(experimentId);
+  }
+
   public List<Sample> retrieveSamplesForBatch(BatchId batchId) {
     Objects.requireNonNull(batchId, "batch id must not be null");
     return sampleRepository.findSamplesByBatchId(batchId);

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
@@ -55,9 +56,11 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private void addEntries(Collection<VariableLevel> experimentalVariableLevels,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     experimentalGroupContents.stream().map(group -> {
-      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
+      groupEntry.setGroupName(group.name());
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
+      groupEntry.setEnabled(editMode);
       groupEntry.addRemoveEventListener(
           listener -> experimentalGroupsCollection.remove(groupEntry));
       return groupEntry;
@@ -75,18 +78,33 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   /**
-   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided.
+   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided. These
+   * groups can be edited.
    * @param experimentalVariables the variable levels to choose from
    * @param experimentalGroupContents the experimental groups prefilled into the input fields
    * @return a prefilled ExperimentalGroupDialog
    */
-  public static ExperimentalGroupsDialog prefilled(Collection<VariableLevel> experimentalVariables,
+  public static ExperimentalGroupsDialog editable(Collection<VariableLevel> experimentalVariables,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     return new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, true);
   }
 
+  /**
+   * Creates an ExperimentalGroupsDialog prefilled with the experimental groups provided. Existing
+   * groups can't be edited, but new groups added. Existing groups are therefore greyed out in the UI.
+   * @param experimentalVariables the variable levels to choose from
+   * @param experimentalGroupContents the experimental groups prefilled into the input fields
+   * @return a prefilled ExperimentalGroupDialog
+   */
+  public static ExperimentalGroupsDialog nonEditable(Collection<VariableLevel> experimentalVariables,
+      Collection<ExperimentalGroupContent> experimentalGroupContents) {
+    ExperimentalGroupsDialog dialog = new ExperimentalGroupsDialog(experimentalVariables, experimentalGroupContents, false);
+    dialog.addNewGroupEntry();
+    return dialog;
+  }
+
   private static ExperimentalGroupContent convert(ExperimentalGroupInput experimentalGroupInput) {
-    return new ExperimentalGroupContent(experimentalGroupInput.getReplicateCount(),
+    return new ExperimentalGroupContent(experimentalGroupInput.getGroupId(), experimentalGroupInput.getName(), experimentalGroupInput.getReplicateCount(),
         experimentalGroupInput.getCondition());
   }
 
@@ -138,7 +156,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void addNewGroupEntry() {
-    var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+    var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
     experimentalGroupsCollection.add(groupEntry);
     groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
   }
@@ -151,15 +169,15 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void refreshGroupEntries() {
     if (experimentalGroupsCollection.getChildren().toList().isEmpty()) {
-      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels);
+      var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
       experimentalGroupsCollection.add(groupEntry);
       groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
     }
   }
 
   /**
-   * Provides the current experimental groups defined by the user.
-   *
+   * Provides experimental groups defined by the user. Only group information in enabled components
+   * is returned, as the list of existing groups cannot be changed in "add group" mode.
    * @return a collection of {@link ExperimentalGroupContent}, describing the group size (biological
    * replicates) and the variable level combination.
    * @since 1.0.0
@@ -171,7 +189,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .toList();
   }
 
-  public record ExperimentalGroupContent(int size, Collection<VariableLevel> variableLevels) {}
+  public record ExperimentalGroupContent(long id, String name, int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends
       life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {

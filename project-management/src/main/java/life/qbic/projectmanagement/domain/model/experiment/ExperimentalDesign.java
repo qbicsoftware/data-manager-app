@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
@@ -222,11 +223,12 @@ public class ExperimentalDesign {
    *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
    * </ul>
    *
+   * @param name           the name of this experimental group, which can be empty
    * @param variableLevels a list containing at least one value for a variable defined in this
    *                       experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(Collection<VariableLevel> variableLevels,
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String name, Collection<VariableLevel> variableLevels,
       int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
@@ -244,9 +246,52 @@ public class ExperimentalDesign {
     if (isConditionDefined(condition)) {
       return Result.fromError(ResponseCode.CONDITION_EXISTS);
     }
-    var newExperimentalGroup = ExperimentalGroup.create(condition, sampleSize);
+    var newExperimentalGroup = ExperimentalGroup.create(name, condition, sampleSize);
     experimentalGroups.add(newExperimentalGroup);
     return Result.fromValue(newExperimentalGroup);
+  }
+
+  /**
+   * Updates an experimental group consisting of one or more levels of distinct variables and the
+   * sample size and replaces it in the experimental design.
+   * <p>
+   * <ul>
+   *   <li>If an experimental group with the same variable levels already exists, the creation will fail with an {@link ConditionExistsException} and no condition is added to the design.
+   *   <li>If the {@link VariableLevel}s belong to variables not specified in this experiment, the creation will fail with an {@link IllegalArgumentException}
+   *   <li>If the sample size is not at least 1, the creation will fail with an {@link IllegalArgumentException}
+   * </ul>
+   *
+   * @param id             the unique identifier of the experimental group to update
+   * @param name           the name of this experimental group, which can be empty
+   * @param variableLevels a list containing at least one value for a variable defined in this
+   *                       experiment
+   * @param sampleSize     the number of samples that are expected for this experimental group
+   */
+  public Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String name,
+      Collection<VariableLevel> variableLevels, int sampleSize) {
+    variableLevels.forEach(Objects::requireNonNull);
+    if (variableLevels.isEmpty()) {
+      return Result.fromError(ResponseCode.EMPTY_VARIABLE);
+    }
+
+    for (VariableLevel level : variableLevels) {
+      if (!isVariableDefined(level.variableName().value())) {
+        throw new IllegalArgumentException(
+            "There is no variable " + level.variableName().value() + " in this experiment.");
+      }
+    }
+
+    Condition condition = Condition.create(variableLevels);
+
+    ExperimentalGroup groupToUpdate = experimentalGroups.stream()
+        .filter(group -> id == group.id())
+        .findFirst()
+        .orElseThrow(() -> new ApplicationException("No group with id %s exists in experimental design.".formatted(id)));
+    groupToUpdate.setCondition(condition);
+    groupToUpdate.setName(name);
+    groupToUpdate.setSampleSize(sampleSize);
+
+    return Result.fromValue(groupToUpdate);
   }
 
   public List<ExperimentalGroup> getExperimentalGroups() {

@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.application
 
+import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO
+import life.qbic.projectmanagement.application.sample.SampleInformationService
 import life.qbic.projectmanagement.domain.model.experiment.Experiment
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
@@ -14,7 +16,8 @@ class ExperimentInformationServiceSpec extends Specification {
 
     ExperimentRepository experimentRepository = Mock()
     ProjectRepository projectRepository = Mock()
-    ExperimentInformationService experimentInformationService = new ExperimentInformationService(experimentRepository, projectRepository)
+    SampleInformationService sampleInformationService = Mock()
+    ExperimentInformationService experimentInformationService = new ExperimentInformationService(experimentRepository, projectRepository, sampleInformationService)
 
     def experiment = setupExperiment()
 
@@ -100,6 +103,7 @@ class ExperimentInformationServiceSpec extends Specification {
         given:
         experimentRepository.find(experiment.experimentId()) >> Optional.of(experiment)
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
+        sampleInformationService.retrieveSamplesForExperiment((ExperimentId) _) >> Result.fromValue(new ArrayList<Sample>())
 
         and: "an experiment with a variable"
 
@@ -111,17 +115,17 @@ class ExperimentInformationServiceSpec extends Specification {
         experiment.addVariableToDesign(experimentalVariable.name().value(), experimentalVariable.levels().collect { it.experimentalValue() })
 
         when: "experimental groups are added to an experiment"
-        def group1 = new ExperimentalGroupDTO(Set.of(experimentalVariable.levels().get(0)), 5)
-        def group2 = new ExperimentalGroupDTO(Set.of(experimentalVariable.levels().get(1)), 6)
+        def group1 = new ExperimentalGroupDTO(-1, "name1", List.of(experimentalVariable.levels().get(0)), 5)
+        def group2 = new ExperimentalGroupDTO(-1, "name2", List.of(experimentalVariable.levels().get(1)), 6)
 
-        experimentInformationService.addExperimentalGroupToExperiment(experiment.experimentId(), group1)
+        experimentInformationService.updateExperimentalGroupsOfExperiment(experiment.experimentId(), Arrays.asList(group1))
 
 
         then: "the experiment contains the added experimental groups"
-        def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(it.condition().getVariableLevels(), it.sampleSize())).toList()
+        def dtoGroups = experiment.getExperimentalGroups().stream().map(it -> new ExperimentalGroupDTO(-1, it.name(), it.condition().getVariableLevels(), it.sampleSize())).toList()
         dtoGroups.contains(group1)
 
-        and: "the experiment is updated once for adding the variable and once for adding the experimental groups"
+        and: "the experiment is updated once for adding the experimental group"
         1 * experimentRepository.update(experiment)
     }
 

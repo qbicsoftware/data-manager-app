@@ -4,22 +4,20 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
-import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
@@ -47,11 +45,10 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final ExperimentNavigationComponent experimentNavigationComponent = new ExperimentNavigationComponent();
-  private final Div navBarContent = new Div();
-  private final transient LogoutService logoutService;
+  private final DataManagerMenu dataManagerMenu;
   private final transient ExperimentInformationService experimentInformationService;
   private Context context = new Context();
-  private final Span navBarTitle = new Span("Test");
+  private final Span navBarTitle = new Span();
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired ProjectInformationService projectInformationService,
@@ -59,15 +56,13 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.logoutService = logoutService;
+    this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService);
-    initializeAppDrawer();
-    addToNavbar(navBarContent);
     initializeNavbar();
-    addListener(LogoutTriggeredEvent.class, this::logoutTriggeredListener);
+    initializeAppDrawer();
     addClassName("experiment-main-layout");
   }
 
@@ -98,10 +93,8 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void initializeNavbar() {
-    navBarContent.addClassName("experiment-navbar");
-    navBarContent.addComponentAsFirst(createAppNavigationBar());
-    navBarContent.add(createExperimentNavigationBar());
-    addToNavbar(navBarContent);
+    addToNavbar(createAppNavigationBar());
+    addToNavbar(createExperimentNavigationBar());
     navBarTitle.setClassName("experiment-navbar-title");
   }
 
@@ -112,29 +105,18 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     setPrimarySection(Section.DRAWER);
   }
 
-  private Span createButtonBar() {
-    Span buttonBar = new Span();
-    buttonBar.addClassName("experiment-navbar-buttonbar");
-    Button homeButton = new Button("Home");
-    Button logout = new Button("Log out");
-    buttonBar.add(homeButton, logout);
-    homeButton.addClickListener(event -> routeToProjectOverview());
-    logout.addClickListener(
-        event -> fireEvent(new LogoutTriggeredEvent(logout, event.isFromClient())));
-    return buttonBar;
-  }
-
   private Span createDrawerToggleAndTitleBar() {
     Span drawerToggleAndTitleBar = new Span();
     DrawerToggle drawerToggle = new DrawerToggle();
     drawerToggleAndTitleBar.add(drawerToggle, navBarTitle);
+    drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     return drawerToggleAndTitleBar;
   }
 
   private Span createAppNavigationBar() {
     Span appNavigationBar = new Span();
     appNavigationBar.addClassNames("experiment-app-navbar");
-    appNavigationBar.add(createDrawerToggleAndTitleBar(), createButtonBar());
+    appNavigationBar.add(createDrawerToggleAndTitleBar(), dataManagerMenu);
     return appNavigationBar;
   }
 
@@ -169,33 +151,5 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
         context.experimentId().orElseThrow().value());
     getUI().ifPresent(ui -> ui.navigate(navigationTarget, projectRouteParam, experimentRouteParam));
-  }
-
-  private void logoutTriggeredListener(LogoutTriggeredEvent logoutTriggeredEvent) {
-    logoutService.logout();
-  }
-
-  private void routeToProjectOverview() {
-    getUI().ifPresent(ui -> ui.navigate(ProjectOverviewMain.class));
-    log.debug("Routing to ProjectOverview page");
-  }
-
-  private static class LogoutTriggeredEvent extends ComponentEvent<Component> {
-
-    @Serial
-    private static final long serialVersionUID = 5541927397309901474L;
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public LogoutTriggeredEvent(Component source,
-        boolean fromClient) {
-      super(source, fromClient);
-    }
   }
 }
