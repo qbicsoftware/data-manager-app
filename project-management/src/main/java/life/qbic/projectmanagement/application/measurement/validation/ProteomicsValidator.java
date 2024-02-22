@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -68,7 +69,9 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   @Override
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
     // TODO implement property validation
-    return new ValidationPolicy().validateSampleIds(measurementMetadata.sampleCodes());
+    var validationPolicy = new ValidationPolicy();
+    return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
+        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId()));
   }
 
 
@@ -76,9 +79,16 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
     private final String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
 
+    private final String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
+
+    // The unique ROR id part of the URL is described in the official documentation:
+    // https://ror.readme.io/docs/ror-identifier-pattern
+    private final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
+
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {
-        return ValidationResult.withFailures(1, List.of("A measurement must contain at least one sample reference. Provided: none"));
+        return ValidationResult.withFailures(1,
+            List.of("A measurement must contain at least one sample reference. Provided: none"));
       }
       ValidationResult validationResult = ValidationResult.successful(0);
       for (SampleCode sample : sampleCodes) {
@@ -94,6 +104,14 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       }
       return ValidationResult.withFailures(1,
           List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCodes.code())));
+    }
+
+    ValidationResult validateOrganisation(String organisationId) {
+      if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
+        return ValidationResult.successful(1);
+      }
+      return ValidationResult.withFailures(1,
+          List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
   }
