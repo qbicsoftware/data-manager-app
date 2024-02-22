@@ -29,8 +29,10 @@ public class UserPermissionsImpl implements UserPermissions {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     boolean hasReadPermission = aclPermissionEvaluator.hasPermission(authentication, projectId,
         "life.qbic.projectmanagement.domain.model.project.Project", "READ");
+    boolean hasCreatedProject = aclPermissionEvaluator.hasPermission(authentication, projectId,
+        "life.qbic.projectmanagement.domain.model.project.Project", "ADMINISTRATION");
     boolean canChangeAclAccess = authentication.getAuthorities().stream()
         .anyMatch(it -> it.getAuthority().equals("acl:change-access"));
-    return (hasReadPermission && canChangeAclAccess);
+    return (hasReadPermission && (canChangeAclAccess || hasCreatedProject));
   }
 }
