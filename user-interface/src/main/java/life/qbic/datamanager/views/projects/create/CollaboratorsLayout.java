@@ -13,7 +13,6 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +26,7 @@ import org.springframework.stereotype.Component;
 public class CollaboratorsLayout extends Div implements HasBinderValidation<ProjectCollaborators> {
 
   private final AutocompleteContactField principalInvestigatorField;
-  private final ContactField responsiblePersonField;
+  private final AutocompleteContactField responsiblePersonField;
   private final AutocompleteContactField projectManagerField;
   private final Binder<ProjectCollaborators> collaboratorsBinder;
 
@@ -46,12 +45,12 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
         .bind(ProjectCollaborators::getPrincipalInvestigator,
             ProjectCollaborators::setPrincipalInvestigator);
 
-    responsiblePersonField = new ContactField("Project Responsible/Co-Investigator (optional)");
+    responsiblePersonField = new AutocompleteContactField("Project Responsible/Co-Investigator (optional)");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
         .withNullRepresentation(responsiblePersonField.getEmptyValue())
-        .withValidator(it -> responsiblePersonField.validate().isOk(), "")
+        .withValidator(it -> responsiblePersonField.validate().isValid(), "")
         .bind(bean -> bean.getResponsiblePerson().orElse(null),
             ProjectCollaborators::setResponsiblePerson);
 
@@ -91,6 +90,9 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     projectManagerField.setItems(projectManagers);
   }
 
+  public void setResponsiblePersons(List<Contact> contactPersons) {
+    responsiblePersonField.setItems(contactPersons);
+  }
   public void setPrincipalInvestigators(List<Contact> principalInvestigators) {
     principalInvestigatorField.setItems(principalInvestigators);
   }
@@ -115,7 +117,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     }
     return projectCollaborators;
   }
-
 
   public static final class ProjectCollaborators implements Serializable {
 
@@ -163,13 +164,13 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
 
       ProjectCollaborators that = (ProjectCollaborators) o;
 
-      if (!principalInvestigator.equals(that.principalInvestigator)) {
+      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
         return false;
       }
       if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
         return false;
       }
-      return projectManager.equals(that.projectManager);
+      return (!Objects.equals(projectManager, that.projectManager));
     }
 
     @Override

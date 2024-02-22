@@ -419,7 +419,9 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalGroupAddConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
-    addExperimentalGroups(dialog.experimentalGroups());
+    var groupContents = dialog.experimentalGroups();
+    addExperimentalGroups(groupContents);
+
     reloadExperimentalGroups();
     dialog.close();
   }
@@ -443,19 +445,12 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onExperimentalGroupEditConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
-    editExperimentalGroups(confirmEvent.getSource().experimentalGroups());
+    var groupDTOs = confirmEvent.getSource().experimentalGroups().stream()
+        .map(this::toExperimentalGroupDTO).toList();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, groupDTOs);
     reloadExperimentalGroups();
     confirmEvent.getSource().close();
-  }
-
-  private void editExperimentalGroups(
-      Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    deletionService.deleteAllExperimentalGroups(experimentId).onError(error -> {
-      throw new ApplicationException(
-          "Could not edit experiments because samples are already registered.");
-    });
-    addExperimentalGroups(experimentalGroupContents);
   }
 
   private void addExperimentalGroups(
@@ -463,36 +458,19 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalGroupDTO> experimentalGroupDTOS = experimentalGroupContents.stream()
         .map(this::toExperimentalGroupDTO).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    Result<Collection<ExperimentalGroup>, ResponseCode> result = experimentInformationService.addExperimentalGroupsToExperiment(
+    experimentInformationService.updateExperimentalGroupsOfExperiment(
         experimentId, experimentalGroupDTOS);
-    if (result.isError()) {
-      if (result.getError().equals(ResponseCode.CONDITION_EXISTS)) {
-        throw new ApplicationException("Duplicate experimental group was selected",
-            ErrorCode.DUPLICATE_GROUP_SELECTED,
-            ErrorParameters.empty());
-      }
-      if (result.getError().equals(ResponseCode.EMPTY_VARIABLE)) {
-        throw new ApplicationException("No experimental variable was selected",
-            ErrorCode.NO_CONDITION_SELECTED,
-            ErrorParameters.empty());
-      } else {
-        throw new ApplicationException(
-            "Could not save one or more experimental groups %s %nReason: %s".formatted(
-                Arrays.toString(
-                    experimentalGroupContents.toArray()), result.getError()));
-      }
-    }
   }
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(
       ExperimentalGroupContent experimentalGroupContent) {
-    return new ExperimentalGroupDTO(experimentalGroupContent.variableLevels(),
-        experimentalGroupContent.size());
+    return new ExperimentalGroupDTO(experimentalGroupContent.id(), experimentalGroupContent.name(),
+        experimentalGroupContent.variableLevels(), experimentalGroupContent.size());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.replicateCount(),
-        experimentalGroupDTO.levels());
+    return new ExperimentalGroupContent(experimentalGroupDTO.id(), experimentalGroupDTO.name(),
+        experimentalGroupDTO.replicateCount(), experimentalGroupDTO.levels());
   }
 
   private void showSampleRegistrationPossibleNotification() {

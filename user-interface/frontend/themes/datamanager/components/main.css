@@ -14,6 +14,18 @@
   grid-area: experimentdetails;
 }
 
+.main.measurement {
+  grid-template-columns: minmax(min-content, 70%) minmax(min-content, 30%);
+  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  grid-template-areas:
+    ". measurementtemplatelist"
+    "measurementdetails measurementdetails";
+}
+
+.main.measurement .measurement-template-list-component {
+  grid-area: measurementtemplatelist;
+}
+
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
   grid-template-rows: auto;
