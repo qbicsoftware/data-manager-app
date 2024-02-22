@@ -18,6 +18,8 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddToken
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.projects.project.samples.BatchDeletionConfirmationNotification;
+import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
@@ -66,11 +68,18 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
-    loadGeneratedPersonalAccessTokens();
-  }
+    AccessTokenDeletionConfirmationNotification tokenDeletionConfirmationNotification = new AccessTokenDeletionConfirmationNotification();
+    tokenDeletionConfirmationNotification.open();
+    tokenDeletionConfirmationNotification.addConfirmListener(event -> {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+      personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
+      loadGeneratedPersonalAccessTokens();
+      tokenDeletionConfirmationNotification.close();
+      });
+    tokenDeletionConfirmationNotification.addCancelListener(
+        event -> tokenDeletionConfirmationNotification.close());
+    }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
     AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();
