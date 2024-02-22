@@ -53,12 +53,13 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     if (properties.isEmpty()) {
       return false;
     }
-    if (properties.size() != PROTEOMICS_PROPERTIES.size()) {
+    if (properties.size() != PROTEOMICS_PROPERTY.values().length) {
       return false;
     }
-    for (String pxpProperty : PROTEOMICS_PROPERTIES) {
+    for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
       var propertyFound = properties.stream()
-          .filter(property -> Objects.equals(property.toLowerCase(), pxpProperty)).findAny();
+          .filter(property -> Objects.equals(property.toLowerCase(), pxpProperty.label()))
+          .findAny();
       if (propertyFound.isEmpty()) {
         return false;
       }
@@ -67,7 +68,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   }
 
   public static Collection<String> properties() {
-    return PROTEOMICS_PROPERTIES.stream().toList();
+    return Arrays.stream(PROTEOMICS_PROPERTY.values()).map(PROTEOMICS_PROPERTY::label).toList();
   }
 
   @Override
@@ -78,6 +79,37 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId()));
   }
 
+  public enum PROTEOMICS_PROPERTY {
+    QBIC_SAMPLE_ID("qbic sample ids"),
+    ORGANISATION_ID("organisation id"),
+    FACILITY("facility"),
+    INSTRUMENT("instrument"),
+    POOLED_SAMPLE_LABEL("pooled sample label"),
+    CYCLE_FRACTION_NAME("cycle/fraction name"),
+    FRACTIONATION_TYPE("fractionation type"),
+    DIGESTION_METHOD("digestion method"),
+    DIGESTION_ENZYME("digestion enzyme"),
+    ENRICHMENT_METHOD("enrichment method"),
+    INJECTION_VOLUME("injection volume (ul)"),
+    LC_COLUMN("lc column"),
+    LCMS_METHOD("lcms method"),
+    SAMPLE_PREPARATION("sample preparation"),
+    SAMPLE_CLEANUP_PROTEIN("sample cleanup (protein)"),
+    SAMPLE_CLEANUP_PEPTIDE("sample cleanup (peptide)"),
+    NOTE("note");
+
+
+    private final String label;
+
+    PROTEOMICS_PROPERTY(String propertyLabel) {
+      this.label = propertyLabel;
+    }
+
+    public String label() {
+      return this.label;
+    }
+
+  }
 
   private class ValidationPolicy {
 

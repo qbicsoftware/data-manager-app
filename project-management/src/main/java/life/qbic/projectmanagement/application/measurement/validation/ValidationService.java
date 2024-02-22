@@ -35,7 +35,7 @@ public class ValidationService {
     return ngsValidator.validate(ngsMeasurementMetadata);
   }
 
-  public ValidationResult validateNGS(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
     return pxValidator.validate(pxMeasurementMetadata);
   }
 

@@ -15,12 +15,20 @@ import com.vaadin.flow.shared.Registration;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
  * TODO!
@@ -44,6 +52,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.measurementService = measurementService;
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     var upload = new Upload(uploadBuffer);
+    upload.setMaxFiles(1);
     upload.setAcceptedFileTypes(AcceptedFormats.TSV.mimeType(), AcceptedFormats.TXT.mimeType());
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
@@ -78,42 +87,78 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     add(uploadSection, uploadedFilesSection);
   }
 
+  private static List<String> parseHeaderContent(String header) {
+    return Arrays.stream(header.strip().split("\t")).map(String::strip).toList();
+  }
+
+  private static Map<String, Integer> propertyColumnMap(List<String> properties) {
+    var propertyIterator = properties.listIterator();
+    Map<String, Integer> map = new HashMap<>();
+    int index;
+    while ((index = propertyIterator.nextIndex()) < properties.size()) {
+      map.put(propertyIterator.next().toLowerCase(), index);
+    }
+    return map;
+  }
+
+  private static MetadataContent read(InputStream inputStream) {
+    var content = new BufferedReader(new InputStreamReader(inputStream)).lines().toList();
+
+    return new MetadataContent(content.isEmpty() ? null : content.get(0),
+        content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
+  }
+
   private void onUploadFailed(FailedEvent failedEvent) {
     //TODO what happens if the upload failed
   }
 
   private void onUploadFinished(FinishedEvent finishedEvent) {
-    var header = uploadBuffer.inputStream(finishedEvent.getFileName()).map(this::extractHeaderRow)
-        .map(str -> Arrays.stream(str.split("/t")).toList());
-    if (header.isEmpty()) {
+    MetadataContent content = read(
+        uploadBuffer.inputStream(finishedEvent.getFileName()).orElseThrow());
+    if (content.theHeader().isEmpty()) {
       throw new RuntimeException("No header row found");
     }
-    var domainQuery = validationService.inferDomainByPropertyTypes(header.get());
-    //TODO the upload finished and either succeeded or failed. Can be replaced by onFailed and onSucceeded
-    domainQuery.orElseThrow(() -> new RuntimeException("Cannot determine measurement domain"));
-    domainQuery.ifPresent(domain -> {
-      switch (domain) {
-        case PROTEOMICS -> validatePxP();
-        case NGS -> validateNGS();
-      }
-    });
+    var domain = validationService.inferDomainByPropertyTypes(
+            parseHeaderContent(content.theHeader().get()))
+        .orElseThrow();
+
+    switch (domain) {
+      case PROTEOMICS -> validatePxP(content);
+      case NGS -> validateNGS();
+    }
+
+  }
+
+  private Optional<String> extractHeaderRow(List<String> content) {
+    return content.isEmpty() ? Optional.empty() : Optional.ofNullable(content.get(0));
   }
 
   private void validateNGS() {
 
   }
 
-  private void validatePxP() {
-
-
-  }
-
-  private String extractHeaderRow(InputStream inputStream) {
-    var content = new BufferedReader(new InputStreamReader(inputStream)).lines().toList();
-    if (!content.isEmpty()) {
-      return content.get(0);
+  private ValidationResult validatePxP(MetadataContent content) {
+    var validationResult = ValidationResult.successful(0);
+    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
+    if (content.rows().isEmpty()) {
+      validationResult = validationResult.combine(
+          ValidationResult.withFailures(1, List.of("The metadata sheet seems to be empty")));
     }
-    return null;
+    for (String row : content.rows()) {
+      var metaDataValues = row.split("/t");
+      ProteomicsMeasurementMetadata metadata = null;
+      try {
+        metadata = new ProteomicsMeasurementMetadata(
+            List.of(SampleCode.create(metaDataValues[propertyColumnMap.get(
+                PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
+            metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())]);
+        validationResult = validationResult.combine(validationService.validateProteomics(metadata));
+      } catch (IndexOutOfBoundsException e) {
+        validationResult = validationResult.combine(ValidationResult.withFailures(1,
+            List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
+      }
+    }
+    return validationResult;
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
@@ -165,6 +210,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     public String commonlyKnownAs() {
       return commonlyKnownAs;
+    }
+  }
+
+  private record MetadataContent(String header, List<String> rows) {
+
+    Optional<String> theHeader() {
+      return Optional.ofNullable(header);
     }
   }
 
