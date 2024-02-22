@@ -20,6 +20,7 @@ import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
@@ -97,6 +98,7 @@ public class ProjectSideNavigationComponent extends Div implements
     List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
     content.add(generateNavigationSections(project, lastModifiedProjects, experiments).toArray(
         Component[]::new));
+    content.add(createOntologyLookupSideNavItem(projectId));
   }
 
   private Project loadProject(ProjectId id) {
@@ -231,6 +233,16 @@ public class ProjectSideNavigationComponent extends Div implements
     sideNavItem.addClassName("hoverable");
     return sideNavItem;
   }
+
+  private static SideNavItem createOntologyLookupSideNavItem(String projectId) {
+    String projectOntologyPath = String.format(Projects.ONTOLOGY, projectId);
+    SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
+        LumoIcon.SEARCH.create());
+    ontologySearch.addClassName("hoverable");
+    ontologySearch.addClassName("primary");
+    return ontologySearch;
+  }
+
 
   private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
     projectNavigationEvent.projectId().ifPresentOrElse(
