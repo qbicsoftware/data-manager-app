@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -42,19 +43,24 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent) {
     Objects.requireNonNull(measurementTemplateListComponent);
-    this.measurementTemplateListComponent = measurementTemplateListComponent;
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
+    add(new Button("Upload Measurement TSV", it -> {
+      var dialog = new MeasurementMetadataUploadDialog();
+      dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+      dialog.addConfirmListener(confirmEvent -> confirmEvent.getSource().close());
+      dialog.open();
+
+    }));
     addClassName("measurement");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",

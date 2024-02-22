@@ -1,10 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import java.util.List;
 import java.util.Optional;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.domain.repository.OntologyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,17 +24,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class OntologyTermRepositoryImpl implements OntologyRepository {
 
-  private static final Logger log = logger(OntologyTermRepositoryImpl.class);
   private final QbicOntologyTermRepo ontologyTermRepo;
 
   @Autowired
   public OntologyTermRepositoryImpl(QbicOntologyTermRepo ontologyTermRepo) {
     this.ontologyTermRepo = ontologyTermRepo;
-  }
-
-  @Override
-  public List<OntologyClass> find(String name) {
-    return ontologyTermRepo.findOntologyClassEntitiesByClassName(name);
   }
 
   @Override
@@ -48,7 +38,7 @@ public class OntologyTermRepositoryImpl implements OntologyRepository {
 
   @Override
   public Optional<OntologyClass> findByCuri(String curi) {
-    return ontologyTermRepo.findOntologyClassEntitiesByClassName(curi).stream().findAny();
+    return ontologyTermRepo.findOntologyClassEntitiesByCuri(curi).stream().findAny();
   }
 
 

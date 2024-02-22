@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface;
 import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.context.annotation.Scope;
@@ -80,6 +80,6 @@ public class OntologyTermJpaRepository implements OntologyLookupInterface {
     // And the prefix is in capitalised form
     var capitalizedCURI = delimiterCorrectedCURI.toUpperCase();
 
-    return ontologyTermRepository.findByClassNameFulltextMatching(capitalizedCURI);
+    return ontologyTermRepository.findByCuriFulltextMatching(capitalizedCURI);
   }
 }

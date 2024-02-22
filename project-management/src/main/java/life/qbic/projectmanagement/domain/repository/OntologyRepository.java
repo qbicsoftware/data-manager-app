@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.repository;
 
-import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 
@@ -13,15 +12,6 @@ import life.qbic.projectmanagement.application.ontology.OntologyClass;
  * @since 1.0.0
  */
 public interface OntologyRepository {
-
-  /**
-   * Searches for ontology terms that contain the provided name
-   *
-   * @param name the name to search for
-   * @return entities that contain the name
-   * @since 1.0.0
-   */
-  List<OntologyClass> find(String name);
 
   Optional<OntologyClass> find(Long ontologyClassId);
 

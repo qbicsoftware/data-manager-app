@@ -23,6 +23,6 @@ public interface OntologyTermRepository extends
 
   @Query(value = "SELECT * FROM ontology_classes WHERE MATCH(name) AGAINST(?1 IN BOOLEAN MODE);",
       nativeQuery = true)
-  List<OntologyClass> findByClassNameFulltextMatching(String ontologyCURI);
+  List<OntologyClass> findByCuriFulltextMatching(String ontologyCURI);
 
 }
