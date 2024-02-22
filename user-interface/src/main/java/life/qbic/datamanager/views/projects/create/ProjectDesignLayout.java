@@ -43,7 +43,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
 
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
-  private final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");;
+  private final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");
   private final TextField codeField = new TextField("Code");
   private final TextField titleField = new TextField("Title");
   private final TextArea projectDescription = new TextArea("Description");
