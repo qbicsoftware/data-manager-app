@@ -9,6 +9,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.upload.FailedEvent;
+import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.DomEvent;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.projects.qualityControl.QualityControlItem.ExperimentItem;
 import life.qbic.logging.api.Logger;
@@ -32,7 +36,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * <b>Upload Quality Control Dialog</b>
  * <p>
  * A dialog window that enables uploads of sample quality control reports.
- *
  */
 public class UploadQualityControlDialog extends DialogWindow {
 
@@ -60,7 +63,6 @@ public class UploadQualityControlDialog extends DialogWindow {
 
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
-
     upload = new Upload(multiFileMemoryBuffer);
     upload.setAcceptedFileTypes(AllowedFileExtension.PDF.extension(),
         AllowedFileExtension.PDF.mimetype(),
@@ -78,7 +80,7 @@ public class UploadQualityControlDialog extends DialogWindow {
     restrictions.addClassName("restrictions");
     restrictions.add(new Span("Supported file formats: PDF, docx, xlsx"));
     restrictions.add(
-        new Span("Maximum file size: %s MB" .formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
+        new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
     Div uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, upload, restrictions);
 
@@ -100,6 +102,10 @@ public class UploadQualityControlDialog extends DialogWindow {
     // Add upload QualityControls to the link experiment item section, where users can decide on the linked experiment
     upload.addSucceededListener(this::onUploadSucceeded);
 
+    // Show notification if user provides invalid file
+    upload.addFailedListener(this::onUploadFailure);
+    upload.addFileRejectedListener(this::onUploadFailure);
+
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed  from the upload component, we also want to remove it properly from memory
     // and from any additional display
@@ -120,6 +126,21 @@ public class UploadQualityControlDialog extends DialogWindow {
     uploadedQualityControlItems.add(qualityControl);
     qualityControlItemsCache.add(qualityControl);
     toggleFileSectionIfEmpty();
+  }
+
+  private void onUploadFailure(ComponentEvent<Upload> event) {
+    ErrorMessage errorMessage = new ErrorMessage("Quality Control upload failed",
+        "An unknown exception has occurred");
+    if (event instanceof FileRejectedEvent) {
+      errorMessage.descriptionTextSpan.setText(
+          "Please provide a file within the file limit of %s MB".formatted(
+              MAX_FILE_SIZE_BYTES / (1024 * 1024)));
+    } else if (event instanceof FailedEvent) {
+      errorMessage.descriptionTextSpan.setText(
+          "Quality control upload was interrupted, please try again");
+    }
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   @Override
