@@ -7,6 +7,7 @@ import life.qbic.finance.domain.model.Offer;
 import life.qbic.finance.domain.model.OfferId;
 import life.qbic.finance.domain.model.OfferPreview;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -23,13 +24,16 @@ public class SimpleOfferSearchService implements OfferSearchService {
 
   private final OfferRepository offerRepository;
 
+
   @Override
+  @PreAuthorize("hasAnyAuthority('ROLE_PROJECT_MANAGER', 'ROLE_ADMIN')")
   public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId) {
     return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
         projectTitle, offerId);
   }
 
   @Override
+  @PreAuthorize("hasAnyAuthority('ROLE_PROJECT_MANAGER', 'ROLE_ADMIN')")
   public List<OfferPreview> findByProjectTitleOrOfferId(String projectTitle, String offerId,
       int offset, int limit) {
     return offerPreviewRepository.findByProjectTitleContainingIgnoreCaseOrOfferIdContainingIgnoreCase(
@@ -37,6 +41,7 @@ public class SimpleOfferSearchService implements OfferSearchService {
   }
 
   @Override
+  @PreAuthorize("hasAnyAuthority('ROLE_PROJECT_MANAGER', 'ROLE_ADMIN')")
   public Optional<Offer> findByOfferId(String offerId) {
     return Optional.ofNullable(offerRepository.findByOfferId(OfferId.from(offerId)));
   }

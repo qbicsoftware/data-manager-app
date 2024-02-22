@@ -43,13 +43,15 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
 
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
-  final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");
+  private final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");;
   private final TextField codeField = new TextField("Code");
   private final TextField titleField = new TextField("Title");
   private final TextArea projectDescription = new TextArea("Description");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
   private final Binder<ProjectDesign> projectDesignBinder = new Binder<>(ProjectDesign.class);
   private final FinanceService financeService;
+  private final Span projectDesignDescription = new Span(
+      "Specify the name and objective of the research project.");
 
   public ProjectDesignLayout(FinanceService financeService) {
     this.financeService = financeService;
@@ -61,11 +63,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private void initLayout() {
     Span projectDesignTitle = new Span(TITLE);
     projectDesignTitle.addClassName("title");
-    Span projectDesignDescription = new Span(
-        "Specify the name and objective of the research project. You can either select a project from the offer list or create a new one.");
-    offerSearchField.setClassName("search-field");
-    offerSearchField.setPlaceholder("Search for offers");
-    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
+
     codeField.setHelperText("Q and 4 letters/numbers");
     codeField.setValue(ProjectCode.random().value());
     codeField.addClassName("code-field");
@@ -76,9 +74,22 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     codeTitleAndButtonSpan.addClassNames("code-and-title");
     projectDescription.setPlaceholder("Please enter a description for your project");
     projectDescription.addClassName("description-field");
+
+    // disable offer access until user authority is known
+    offerSearchField.setEnabled(false);
+    offerSearchField.setVisible(false);
+    offerSearchField.setClassName("search-field");
+    offerSearchField.setPlaceholder("Search for offers");
+    offerSearchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     add(projectDesignTitle, projectDesignDescription, offerSearchField, codeTitleAndButtonSpan,
         projectDescription);
     addClassName("project-design-layout");
+  }
+
+  public void enableOfferSearch() {
+    offerSearchField.setEnabled(true);
+    offerSearchField.setVisible(true);
+    projectDesignDescription.add(" You can either select a project from the offer list or create a new one.");
   }
 
   private void initCodeGenerationButton() {
@@ -208,7 +219,6 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   public String getDefaultErrorMessage() {
     return "Invalid Input found in Project Design";
   }
-
 
   public static final class ProjectDesign implements Serializable {
 

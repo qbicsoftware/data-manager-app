@@ -52,7 +52,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   private static final Logger log = logger(ProjectRepositoryImpl.class);
   private final QbicProjectRepo projectRepo;
   private final QbicProjectDataRepo projectDataRepo;
-
   private final ProjectAccessService projectAccessService;
 
   @Autowired
