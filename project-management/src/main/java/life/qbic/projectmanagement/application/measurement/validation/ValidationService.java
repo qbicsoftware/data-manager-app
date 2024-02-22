@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Validation Service</b>
@@ -16,12 +18,14 @@ import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurement
  *
  * @since 1.0.0
  */
+@Service
 public class ValidationService {
 
   private final NGSValidator ngsValidator;
 
   private final ProteomicsValidator pxValidator;
 
+  @Autowired
   public ValidationService(NGSValidator ngsValidator, ProteomicsValidator pxValidator) {
     this.ngsValidator = ngsValidator;
     this.pxValidator = pxValidator;

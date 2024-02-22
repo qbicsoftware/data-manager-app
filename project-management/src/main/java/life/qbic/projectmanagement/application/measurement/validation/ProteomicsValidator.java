@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -18,21 +20,23 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since <version tag>
  */
+@Component
 public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetadata> {
 
   private static final Set<String> PROTEOMICS_PROPERTIES = new HashSet<>();
 
   static {
     PROTEOMICS_PROPERTIES.addAll(
-        Arrays.asList("qbic sample id", "organisation id", "facility", "instrument",
-            "pooled sample label", "cycle/fraction name", "digestion method",
-            "enrichment method", "injection volume (ul)", "lc column",
+        Arrays.asList("qbic sample ids", "organisation id", "facility", "instrument",
+            "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method",
+            "digestion enzyme", "enrichment method", "injection volume (ul)", "lc column",
             "lcms method", "sample preparation", "sample cleanup (protein)",
             "sample cleanup (peptide)", "note"));
   }
 
   protected final SampleInformationService sampleInformationService;
 
+  @Autowired
   public ProteomicsValidator(SampleInformationService sampleInformationService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
   }

@@ -12,9 +12,15 @@ import com.vaadin.flow.component.upload.FinishedEvent;
 import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.shared.Registration;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
 
 /**
  * TODO!
@@ -26,37 +32,19 @@ import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
  */
 public class MeasurementMetadataUploadDialog extends DialogWindow {
 
-  private enum AcceptedFormats {
-    TSV("text/tab-separated-values", List.of(".tsv", ".TSV"), "TSV");
-    private final String mimeType;
-    private final List<String> extension;
-    private final String commonlyKnownAs;
-
-    AcceptedFormats(String mimeType, List<String> extensions, String commonlyKnownAs) {
-      this.mimeType = mimeType;
-      this.extension = extensions;
-      this.commonlyKnownAs = commonlyKnownAs;
-    }
-
-    public String mimeType() {
-      return mimeType;
-    }
-
-    public String extensions() {
-      return String.join(",", extension);
-    }
-
-    public String commonlyKnownAs() {
-      return commonlyKnownAs;
-    }
-  }
-
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 5);
+  private final MeasurementService measurementService;
+  private final ValidationService validationService;
 
-  public MeasurementMetadataUploadDialog() {
-    EditableMultiFileMemoryBuffer editableMultiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
-    var upload = new Upload(editableMultiFileMemoryBuffer);
-    upload.setAcceptedFileTypes(AcceptedFormats.TSV.mimeType());
+  private final EditableMultiFileMemoryBuffer uploadBuffer;
+
+  public MeasurementMetadataUploadDialog(MeasurementService measurementService,
+      ValidationService validationService) {
+    this.validationService = validationService;
+    this.measurementService = measurementService;
+    this.uploadBuffer = new EditableMultiFileMemoryBuffer();
+    var upload = new Upload(uploadBuffer);
+    upload.setAcceptedFileTypes(AcceptedFormats.TSV.mimeType(), AcceptedFormats.TXT.mimeType());
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
     setHeaderTitle("Register Measurements");
@@ -95,7 +83,37 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private void onUploadFinished(FinishedEvent finishedEvent) {
+    var header = uploadBuffer.inputStream(finishedEvent.getFileName()).map(this::extractHeaderRow)
+        .map(str -> Arrays.stream(str.split("/t")).toList());
+    if (header.isEmpty()) {
+      throw new RuntimeException("No header row found");
+    }
+    var domainQuery = validationService.inferDomainByPropertyTypes(header.get());
     //TODO the upload finished and either succeeded or failed. Can be replaced by onFailed and onSucceeded
+    domainQuery.orElseThrow(() -> new RuntimeException("Cannot determine measurement domain"));
+    domainQuery.ifPresent(domain -> {
+      switch (domain) {
+        case PROTEOMICS -> validatePxP();
+        case NGS -> validateNGS();
+      }
+    });
+  }
+
+  private void validateNGS() {
+
+  }
+
+  private void validatePxP() {
+
+
+  }
+
+  private String extractHeaderRow(InputStream inputStream) {
+    var content = new BufferedReader(new InputStreamReader(inputStream)).lines().toList();
+    if (!content.isEmpty()) {
+      return content.get(0);
+    }
+    return null;
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
@@ -122,6 +140,32 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+  }
+
+  private enum AcceptedFormats {
+    TSV("text/tab-separated-values", List.of(".tsv", ".TSV"), "TSV"),
+    TXT("text/plain", List.of(".txt", ".TXT"), "TXT");
+    private final String mimeType;
+    private final List<String> extension;
+    private final String commonlyKnownAs;
+
+    AcceptedFormats(String mimeType, List<String> extensions, String commonlyKnownAs) {
+      this.mimeType = mimeType;
+      this.extension = extensions;
+      this.commonlyKnownAs = commonlyKnownAs;
+    }
+
+    public String mimeType() {
+      return mimeType;
+    }
+
+    public String extensions() {
+      return String.join(",", extension);
+    }
+
+    public String commonlyKnownAs() {
+      return commonlyKnownAs;
+    }
   }
 
   public static class ConfirmEvent extends ComponentEvent<MeasurementMetadataUploadDialog> {

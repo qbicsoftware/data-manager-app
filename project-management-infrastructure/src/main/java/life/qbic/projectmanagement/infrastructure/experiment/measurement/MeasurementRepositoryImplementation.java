@@ -8,6 +8,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
+import org.springframework.stereotype.Repository;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -16,6 +17,7 @@ import life.qbic.projectmanagement.domain.service.MeasurementDomainService.Respo
  *
  * @since <version tag>
  */
+@Repository
 public class MeasurementRepositoryImplementation implements MeasurementRepository {
 
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);

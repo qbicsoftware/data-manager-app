@@ -242,7 +242,6 @@ class ProteomicsValidatorSpec extends Specification {
         validRorId << [
                 "https://ror.org/03a1kwz48", // University of Tübingen
                 "https://ror.org/00v34f693" // QBiC
-
         ]
     }
 }

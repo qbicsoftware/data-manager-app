@@ -16,6 +16,8 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -24,6 +26,7 @@ import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
  *
  * @since <version tag>
  */
+@Service
 public class MeasurementService {
 
   private static final Logger log = logger(MeasurementService.class);
@@ -31,6 +34,7 @@ public class MeasurementService {
   private final SampleInformationService sampleInformationService;
   private final OntologyLookupService ontologyLookupService;
 
+  @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService) {

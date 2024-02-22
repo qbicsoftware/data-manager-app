@@ -18,6 +18,8 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemp
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -38,16 +40,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
 
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private transient Context context;
 
   public MeasurementMain(
-      @Autowired MeasurementTemplateListComponent measurementTemplateListComponent) {
+      @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
+      @Autowired MeasurementService measurementService,
+      @Autowired ValidationService validationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
@@ -55,7 +59,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(new Button("Upload Measurement TSV", it -> {
-      var dialog = new MeasurementMetadataUploadDialog();
+      var dialog = new MeasurementMetadataUploadDialog(measurementService, validationService);
       dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
       dialog.addConfirmListener(confirmEvent -> confirmEvent.getSource().close());
       dialog.open();

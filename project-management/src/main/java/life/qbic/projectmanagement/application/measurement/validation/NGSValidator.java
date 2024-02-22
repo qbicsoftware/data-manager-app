@@ -8,6 +8,8 @@ import java.util.Objects;
 import java.util.Set;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -16,6 +18,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
  *
  * @since <version tag>
  */
+@Component
 public class NGSValidator implements Validator<NGSMeasurementMetadata> {
 
   private static final Set<String> NGS_PROPERTIES = new HashSet<>();
@@ -29,7 +32,7 @@ public class NGSValidator implements Validator<NGSMeasurementMetadata> {
             "index i7",
             "note"));
   }
-
+  @Autowired
   public NGSValidator(SampleInformationService sampleInformationService) {
     this.sampleInformationService = sampleInformationService;
   }
