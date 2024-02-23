@@ -74,7 +74,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
     projectAccessService.grant(details.getUserId(), project.getId(),
-        List.of(READ, WRITE));
+        List.of(READ, WRITE, ADMINISTRATION));//administration of this project, only
     projectAccessService.grantToAuthority(ADMIN.auth(), project.getId(), ADMIN.permissions());
     projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
         PROJECT_MANAGER.permissions());

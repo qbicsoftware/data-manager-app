@@ -8,6 +8,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
@@ -34,19 +35,21 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final DataManagerMenu dataManagerMenu;
   private final transient ProjectInformationService projectInformationService;
+
   private Context context = new Context();
   private final Span projectTitle = new Span();
 
   public ProjectMainLayout(@Autowired LogoutService logoutService,
       ProjectInformationService projectInformationService,
-      ExperimentInformationService experimentInformationService) {
+      ExperimentInformationService experimentInformationService,
+      @Autowired UserPermissions userPermissions) {
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
-        experimentInformationService);
+        experimentInformationService, userPermissions);
     dataManagerMenu = new DataManagerMenu(logoutService);
     addToNavbar(createDrawerToggleAndTitleBar(), dataManagerMenu);
     addClassName("project-main-layout");
