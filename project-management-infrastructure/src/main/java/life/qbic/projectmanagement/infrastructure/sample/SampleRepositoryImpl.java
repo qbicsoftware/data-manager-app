@@ -140,7 +140,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
-  public Optional<SampleId> findSampleId(SampleCode sampleCode) {
+  public Optional<Sample> findSample(SampleCode sampleCode) {
     return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
   }
 

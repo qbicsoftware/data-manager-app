@@ -73,8 +73,8 @@ public class SampleInformationService {
   }
 
   public Optional<SampleIdCodeEntry> findSampleId(SampleCode sampleCode) {
-    return sampleRepository.findSampleId(sampleCode)
-        .map(sampleId -> new SampleIdCodeEntry(sampleId, sampleCode));
+    return sampleRepository.findSample(sampleCode)
+        .map(sample -> new SampleIdCodeEntry(sample.sampleId(), sampleCode));
   }
 
   public int countPreviews(ExperimentId experimentId, String filter) {

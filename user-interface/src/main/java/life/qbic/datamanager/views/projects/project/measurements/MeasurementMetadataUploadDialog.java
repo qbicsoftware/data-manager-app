@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -46,11 +47,15 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private final EditableMultiFileMemoryBuffer uploadBuffer;
 
+  private final Div validationDisplayBox;
+
   public MeasurementMetadataUploadDialog(MeasurementService measurementService,
       ValidationService validationService) {
     this.validationService = validationService;
     this.measurementService = measurementService;
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
+    this.validationDisplayBox = new Div();
+    validationDisplayBox.addClassName("validation-display-box");
     var upload = new Upload(uploadBuffer);
     upload.setMaxFiles(1);
     upload.setAcceptedFileTypes(AcceptedFormats.TSV.mimeType(), AcceptedFormats.TXT.mimeType());
@@ -84,7 +89,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     upload.addFailedListener(this::onUploadFailed);
     upload.addFinishedListener(this::onUploadFinished);
 
-    add(uploadSection, uploadedFilesSection);
+    add(uploadSection, uploadedFilesSection, validationDisplayBox);
   }
 
   private static List<String> parseHeaderContent(String header) {
@@ -123,9 +128,27 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .orElseThrow();
 
     switch (domain) {
-      case PROTEOMICS -> validatePxP(content);
+      case PROTEOMICS -> validatePxP(content, this::display);
       case NGS -> validateNGS();
     }
+
+  }
+
+  /**
+   * Generic consumer to display validation results. Independent of the measurement metadata
+   * template and thus domain.
+   *
+   * @param report the validation report containing detailed validation information and the number
+   *               of rows that have been evaluated
+   * @since 1.0.0
+   */
+  private void display(ValidationReport report) {
+    // TODO display the validation result to the user
+    validationDisplayBox.removeAll();
+    validationDisplayBox.add(new Span("Evaluated rows: %s".formatted(report.validatedRows)));
+    validationDisplayBox.add(
+        new Span("Validated %s entries.".formatted(report.validationResult.validatedEntries())));
+    report.validationResult.failures().stream().map(Span::new).forEach(validationDisplayBox::add);
 
   }
 
@@ -137,15 +160,22 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   }
 
-  private ValidationResult validatePxP(MetadataContent content) {
+  private void validatePxP(MetadataContent content, Consumer<ValidationReport> consumer) {
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    if (content.rows().isEmpty()) {
+    var evaluatedRows = 0;
+    if (content.rows().isEmpty() || content.rows().stream()
+        .noneMatch(row -> row.split("\t").length > 0)) {
       validationResult = validationResult.combine(
           ValidationResult.withFailures(1, List.of("The metadata sheet seems to be empty")));
     }
     for (String row : content.rows()) {
-      var metaDataValues = row.split("/t");
+      var metaDataValues = row.split("\t");
+      if (metaDataValues.length == 0) {
+        validationResult.combine(ValidationResult.successful(1, List.of("Empty row provided.")));
+        evaluatedRows++;
+        continue;
+      }
       ProteomicsMeasurementMetadata metadata = null;
       try {
         metadata = new ProteomicsMeasurementMetadata(
@@ -153,12 +183,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
                 PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
             metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())]);
         validationResult = validationResult.combine(validationService.validateProteomics(metadata));
+        evaluatedRows++;
       } catch (IndexOutOfBoundsException e) {
         validationResult = validationResult.combine(ValidationResult.withFailures(1,
             List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
       }
     }
-    return validationResult;
+    consumer.accept(new ValidationReport(evaluatedRows, validationResult));
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
@@ -211,6 +242,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     public String commonlyKnownAs() {
       return commonlyKnownAs;
     }
+  }
+
+  record ValidationReport(int validatedRows, ValidationResult validationResult) {
+
   }
 
   private record MetadataContent(String header, List<String> rows) {

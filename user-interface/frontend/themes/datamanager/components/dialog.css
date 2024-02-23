@@ -601,3 +601,8 @@ vaadin-upload-file::part(meta){
   padding-inline: var(--lumo-space-xs);
   border-radius: var(--lumo-border-radius-s);
 }
+
+
+.validation-display-box {
+  display: grid;
+}

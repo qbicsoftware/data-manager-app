@@ -42,7 +42,7 @@ public interface SampleRepository {
 
   List<Sample> findSamplesBySampleId(List<SampleId> sampleId);
 
-  Optional<SampleId> findSampleId(SampleCode sampleCode);
+  Optional<Sample> findSample(SampleCode sampleCode);
 
   boolean isSampleRemovable(Project project, SampleId sampleId);
 }
