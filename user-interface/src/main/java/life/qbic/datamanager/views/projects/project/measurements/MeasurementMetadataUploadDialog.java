@@ -73,7 +73,11 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     setHeaderTitle("Register Measurements");
     confirmButton.setText("Save");
-    addConfirmListener(listener -> registerMeasurements());
+    addConfirmListener(listener -> {
+
+      var result = registerMeasurements();
+      result.size();
+    });
 
     var uploadSectionTitle = new Span("Upload the measurement data");
     uploadSectionTitle.addClassName("section-title");
@@ -214,6 +218,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
               PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
           metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())], "");
       validationResult = validationResult.combine(validationService.validateProteomics(metadata));
+      cachedPxPMetada.add(metadata);
     } catch (IndexOutOfBoundsException e) {
       validationResult = validationResult.combine(ValidationResult.withFailures(1,
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
