@@ -12,7 +12,7 @@ public class UserPermissionsImpl implements UserPermissions {
 
   final AclPermissionEvaluator aclPermissionEvaluator;
 
-  final private String projectTargetType = "life.qbic.projectmanagement.domain.model.project.Project";
+  private static final String projectTargetType = "life.qbic.projectmanagement.domain.model.project.Project";
 
   public UserPermissionsImpl(@Autowired
   AclPermissionEvaluator aclPermissionEvaluator) {
