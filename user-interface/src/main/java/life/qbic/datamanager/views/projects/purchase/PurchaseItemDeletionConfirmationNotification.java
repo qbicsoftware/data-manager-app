@@ -25,7 +25,7 @@ public class PurchaseItemDeletionConfirmationNotification extends NotificationDi
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Do you wish to delete this file?");
+    setTitle("Do you wish to delete this offer");
     setHeaderIcon(errorIcon);
   }
 }
