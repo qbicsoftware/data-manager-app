@@ -6,6 +6,7 @@ import java.util.Collection;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.stereotype.Repository;
@@ -23,11 +24,15 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);
   private final NGSMeasurementJpaRepo measurementJpaRepo;
 
+  private final ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo;
+
   private final MeasurementDataRepo measurementDataRepo;
 
   public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo measurementJpaRepo,
+      ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo,
       MeasurementDataRepo measurementDataRepo) {
     this.measurementJpaRepo = measurementJpaRepo;
+    this.pxpMeasurenemtJpaRepo = pxpMeasurenemtJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
   }
 
@@ -46,6 +51,27 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       measurementJpaRepo.delete(measurement); // Rollback JPA save
+      return Result.fromError(ResponseCode.FAILED);
+    }
+
+    return Result.fromValue(measurement);
+  }
+
+  @Override
+  public Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement) {
+    try {
+      pxpMeasurenemtJpaRepo.save(measurement);
+    } catch (Exception e) {
+      log.error("Saving ngs measurement failed", e);
+      return Result.fromError(ResponseCode.FAILED);
+    }
+
+    try {
+      measurementDataRepo.addProtemicsMeasurement(measurement);
+    } catch (Exception e) {
+      log.error("Saving ngs measurement in data repo failed for measurement "
+          + measurement.measurementCode().value(), e);
+      pxpMeasurenemtJpaRepo.delete(measurement); // Rollback JPA save
       return Result.fromError(ResponseCode.FAILED);
     }
 

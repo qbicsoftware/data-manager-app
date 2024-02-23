@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -364,6 +365,12 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   @Override
   public void addNGSMeasurement(NGSMeasurement ngsMeasurement) {
+    // TODO implement
+    throw new NotImplementedException("");
+  }
+
+  @Override
+  public void addProtemicsMeasurement(ProteomicsMeasurement proteomicsMeasurement) {
     // TODO implement
     throw new NotImplementedException("");
   }

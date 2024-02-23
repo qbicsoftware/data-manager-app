@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,7 @@ public class MeasurementService {
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
   }
 
-  public Result<MeasurementId, ResponseCode> createNGSMeasurementEntry(
+  public Result<MeasurementId, ResponseCode> registerNGS(
       MeasurementRegistrationRequest<NGSMeasurementMetadata> registrationRequest) {
 
     var associatedSampleCodes = registrationRequest.associatedSamples();
@@ -67,6 +68,37 @@ public class MeasurementService {
         instrumentQuery.get());
 
     var result = measurementDomainService.addNGS(measurement);
+
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.FAILED);
+    } else {
+      return Result.fromValue(result.getValue().measurementId());
+    }
+  }
+
+  public Result<MeasurementId, ResponseCode> registerPxP(
+      MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest) {
+    var associatedSampleCodes = registrationRequest.associatedSamples();
+    var selectedSampleCode = MeasurementCode.createNGS(
+        String.valueOf(registrationRequest.associatedSamples().get(0)));
+    var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
+
+    if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
+      log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
+      return Result.fromError(ResponseCode.FAILED);
+    }
+
+    var instrumentQuery = resolveOntologyCURI(registrationRequest.metadata().instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var measurement = ProteomicsMeasurement.create(
+        sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
+        selectedSampleCode,
+        instrumentQuery.get());
+
+    var result = measurementDomainService.addProteomics(measurement);
 
     if (result.isError()) {
       return Result.fromError(ResponseCode.FAILED);

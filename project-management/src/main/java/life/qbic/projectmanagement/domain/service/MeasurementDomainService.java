@@ -6,6 +6,7 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import org.hibernate.annotations.Comment;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,17 @@ public class MeasurementDomainService {
           "Saving the NGS measurement failed for id: " + ngsMeasurement.measurementCode().value());
     }
     return Result.fromValue(ngsMeasurement);
+  }
+
+  public Result<ProteomicsMeasurement, ResponseCode> addProteomics(ProteomicsMeasurement pxpMeasurement) {
+    try {
+      measurementRepository.save(pxpMeasurement);
+      return Result.fromValue(pxpMeasurement);
+    } catch (Exception e) {
+      log.error(
+          "Saving the NGS measurement failed for id: " + pxpMeasurement.measurementCode().value());
+    }
+    return Result.fromValue(pxpMeasurement);
   }
 
   public enum ResponseCode {

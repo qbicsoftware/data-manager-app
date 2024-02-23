@@ -17,18 +17,26 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
+import life.qbic.projectmanagement.application.measurement.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.ResponseCode;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -47,6 +55,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private final EditableMultiFileMemoryBuffer uploadBuffer;
 
+  private final Collection<ProteomicsMeasurementMetadata> cachedPxPMetada;
   private final Div validationDisplayBox;
 
   public MeasurementMetadataUploadDialog(MeasurementService measurementService,
@@ -54,6 +63,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.validationService = validationService;
     this.measurementService = measurementService;
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
+    this.cachedPxPMetada = new LinkedList<>();
     this.validationDisplayBox = new Div();
     validationDisplayBox.addClassName("validation-display-box");
     var upload = new Upload(uploadBuffer);
@@ -63,6 +73,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     setHeaderTitle("Register Measurements");
     confirmButton.setText("Save");
+    addConfirmListener(listener -> registerMeasurements());
 
     var uploadSectionTitle = new Span("Upload the measurement data");
     uploadSectionTitle.addClassName("section-title");
@@ -111,6 +122,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     return new MetadataContent(content.isEmpty() ? null : content.get(0),
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
+  }
+
+  public Collection<Result<MeasurementId, ResponseCode>> registerMeasurements() throws ApplicationException {
+    // TODO no need to do validation again, the registration service will do this again during a
+    // a registration. We just create the
+    return cachedPxPMetada.stream().map(measurement -> new MeasurementRegistrationRequest<>(
+        (List<SampleCode>) measurement.sampleCodes(), measurement)).map(measurementService::registerPxP).toList();
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
@@ -194,7 +212,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       metadata = new ProteomicsMeasurementMetadata(
           List.of(SampleCode.create(metaDataValues[propertyColumnMap.get(
               PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
-          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())]);
+          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())], "");
       validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     } catch (IndexOutOfBoundsException e) {
       validationResult = validationResult.combine(ValidationResult.withFailures(1,

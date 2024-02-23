@@ -61,7 +61,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(new Button("Upload Measurement TSV", it -> {
       var dialog = new MeasurementMetadataUploadDialog(measurementService, validationService);
       dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-      dialog.addConfirmListener(confirmEvent -> confirmEvent.getSource().close());
+      dialog.addConfirmListener(confirmEvent -> {
+        confirmEvent.getSource().close();
+      });
       dialog.open();
 
     }));
