@@ -22,6 +22,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
+import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.OntologyTermInformationService;
@@ -36,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * The ontology lookup component is a {@link PageArea} component, which enables a user to look up
  * the ontologies supported within the data manager. It allows the user to provide a string based
- * search term and get results with the correct CURIE for the ontology terms.
+ * search term and get results with the correct IRI for the ontology terms.
  */
 @SpringComponent
 @UIScope
@@ -80,7 +81,6 @@ public class OntologyLookupComponent extends PageArea {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
-      // if no order is provided by the grid order sort by className
       return ontologyTermInformationService.queryOntologyTerm(searchTerm, ontologyAbbreviations,
           query.getOffset(), query.getLimit(),
           List.copyOf(sortOrders)).stream().map(OntologyClassDTO::from);
@@ -98,6 +98,10 @@ public class OntologyLookupComponent extends PageArea {
     add(ontologyGrid);
   }
 
+  /**
+   * Resets the value within the searchfield, which in turn resets the grid via the fired
+   * {@link OntologySearchEvent}
+   */
   public void resetSearch() {
     searchField.setValue("");
   }
@@ -124,7 +128,14 @@ public class OntologyLookupComponent extends PageArea {
     add(searchField);
   }
 
-  public static class OntologyItem extends Div {
+
+  /**
+   * Ontology Item
+   * <p>
+   * The ontology Item is a Div container styled similiar to the {@link Card} component, hosting the
+   * ontology information of interest provided by a {@link OntologyClassDTO}
+   */
+  private static class OntologyItem extends Div {
 
     public OntologyItem(String label, String name, String classIri, String description,
         String ontologyAbbreviation) {

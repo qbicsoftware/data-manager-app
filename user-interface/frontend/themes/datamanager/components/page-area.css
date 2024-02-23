@@ -132,7 +132,6 @@
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
-  width: 100%
 }
 
 .ontology-lookup-component .search-field {
