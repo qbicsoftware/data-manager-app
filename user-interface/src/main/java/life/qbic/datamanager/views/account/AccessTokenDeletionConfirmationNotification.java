@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.account;
 
-import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -14,10 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class AccessTokenDeletionConfirmationNotification extends NotificationDialog {
 
   public AccessTokenDeletionConfirmationNotification() {
-    addClassName("batch-deletion-confirmation");
     customizeHeader();
-    content.add(new Div(new Text(
-        "Deleting this Personal Access Token will make it unusable by you or others. Proceed?")));
+    content.add(new Span(
+        "Deleting this Personal Access Token will make it unusable. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");
   }

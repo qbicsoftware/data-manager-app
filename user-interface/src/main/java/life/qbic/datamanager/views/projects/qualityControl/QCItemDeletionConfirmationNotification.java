@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.qualityControl;
 
-import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -14,10 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class QCItemDeletionConfirmationNotification extends NotificationDialog {
 
   public QCItemDeletionConfirmationNotification() {
-    addClassName("batch-deletion-confirmation");
     customizeHeader();
-    content.add(new Div(new Text(
-        "Are you sure you want to delete this file?")));
+    content.add(new Span(
+        "Are you sure you want to delete this file?"));
     setCancelable(true);
     setConfirmText("Confirm");
   }
@@ -25,7 +23,7 @@ public class QCItemDeletionConfirmationNotification extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Do you wish to delete this quality control?");
+    setTitle("Quality control will be deleted");
     setHeaderIcon(errorIcon);
   }
 }
