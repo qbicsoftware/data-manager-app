@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -15,10 +14,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
   public BatchDeletionConfirmationNotification() {
-    addClassName("batch-deletion-confirmation");
     customizeHeader();
-    content.add(new Div(new Text(
-        "Deleting this Batch will also delete the samples contained within. Proceed?")));
+    content.add(new Span(
+        "Deleting this Batch will also delete the samples contained within. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");
   }
