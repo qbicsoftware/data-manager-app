@@ -164,32 +164,43 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
     var evaluatedRows = 0;
+    // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(row -> row.split("\t").length > 0)) {
       validationResult = validationResult.combine(
           ValidationResult.withFailures(1, List.of("The metadata sheet seems to be empty")));
+      consumer.accept(new ValidationReport(0, validationResult));
+      // no need to continue
+      return;
     }
     for (String row : content.rows()) {
-      var metaDataValues = row.split("\t");
-      if (metaDataValues.length == 0) {
-        validationResult.combine(ValidationResult.successful(1, List.of("Empty row provided.")));
-        evaluatedRows++;
-        continue;
-      }
-      ProteomicsMeasurementMetadata metadata = null;
-      try {
-        metadata = new ProteomicsMeasurementMetadata(
-            List.of(SampleCode.create(metaDataValues[propertyColumnMap.get(
-                PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
-            metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())]);
-        validationResult = validationResult.combine(validationService.validateProteomics(metadata));
-        evaluatedRows++;
-      } catch (IndexOutOfBoundsException e) {
-        validationResult = validationResult.combine(ValidationResult.withFailures(1,
-            List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
-      }
+      ValidationResult result = validateRow(propertyColumnMap, row);
+      validationResult = validationResult.combine(result);
+      evaluatedRows++;
     }
     consumer.accept(new ValidationReport(evaluatedRows, validationResult));
+  }
+
+  private ValidationResult validateRow(Map<String, Integer> propertyColumnMap, String row) {
+    var validationResult = ValidationResult.successful(0);
+    var metaDataValues = row.split("\t");
+    // we consider an empty row as a reason to warn, not to fail
+    if (metaDataValues.length == 0) {
+      validationResult.combine(ValidationResult.successful(1, List.of("Empty row provided.")));
+      return validationResult;
+    }
+    ProteomicsMeasurementMetadata metadata;
+    try {
+      metadata = new ProteomicsMeasurementMetadata(
+          List.of(SampleCode.create(metaDataValues[propertyColumnMap.get(
+              PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
+          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())]);
+      validationResult = validationResult.combine(validationService.validateProteomics(metadata));
+    } catch (IndexOutOfBoundsException e) {
+      validationResult = validationResult.combine(ValidationResult.withFailures(1,
+          List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
+    }
+    return validationResult;
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
