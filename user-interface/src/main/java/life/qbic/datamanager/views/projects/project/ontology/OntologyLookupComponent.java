@@ -51,8 +51,8 @@ public class OntologyLookupComponent extends PageArea {
   private GridLazyDataView<OntologyClassDTO> ontologyGridLazyDataView;
   private String searchTerm = "";
   private final Span foundResults = new Span();
-  private final OntologyTermInformationService ontologyTermInformationService;
-  private final int ontologySearchLowerLimit = 2;
+  private final transient OntologyTermInformationService ontologyTermInformationService;
+  private static final int ontologySearchLowerLimit = 2;
 
   public OntologyLookupComponent(
       @Autowired OntologyTermInformationService ontologyTermInformationService) {
