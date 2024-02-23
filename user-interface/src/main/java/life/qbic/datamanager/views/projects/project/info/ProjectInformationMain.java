@@ -38,8 +38,6 @@ import life.qbic.datamanager.views.projects.project.info.OfferListComponent.Uplo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DeleteQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
-import life.qbic.datamanager.views.projects.project.samples.BatchDeletionConfirmationNotification;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.purchase.PurchaseItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
 import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirmationNotification;

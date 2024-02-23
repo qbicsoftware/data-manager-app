@@ -18,8 +18,6 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddToken
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.projects.project.samples.BatchDeletionConfirmationNotification;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
