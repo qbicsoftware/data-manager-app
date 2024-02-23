@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
