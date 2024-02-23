@@ -17,7 +17,7 @@ public class PurchaseItemDeletionConfirmationNotification extends NotificationDi
     addClassName("batch-deletion-confirmation");
     customizeHeader();
     content.add(new Div(new Text(
-        "Are you sure you want to delete this file?")));
+        "Are you sure you want to delete this offer?")));
     setCancelable(true);
     setConfirmText("Confirm");
   }
