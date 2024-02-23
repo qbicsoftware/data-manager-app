@@ -137,6 +137,12 @@ public class AddProjectDialog extends Dialog {
     adaptFooterButtons(stepper.getFirstStep());
   }
 
+  /**
+   * Allows user to search the offer database to prefill some project information
+   */
+  public void enableOfferSearch() {
+    projectDesignLayout.enableOfferSearch();
+  }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
