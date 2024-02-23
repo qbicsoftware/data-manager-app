@@ -128,7 +128,6 @@
 }
 
 .ontology-lookup-component {
-  height: 100%;
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
@@ -138,9 +137,19 @@
   max-width: 33%;
 }
 
-.ontology-lookup-component .ontology-grid {
+.ontology-lookup-component .ontology-grid-section {
   border-top: 1px solid var(--lumo-contrast-10pct);
   margin-right: var(--lumo-space-xl);
+  row-gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-m);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ontology-lookup-component .ontology-grid-section .ontology-grid {
+  height: 100%;
+  margin-top: var(--lumo-space-s);
 }
 
 .ontology-lookup-component .ontology-grid vaadin-grid-cell-content {

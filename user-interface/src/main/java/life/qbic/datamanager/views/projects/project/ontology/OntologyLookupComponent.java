@@ -47,10 +47,12 @@ public class OntologyLookupComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = -1777819501917841723L;
   private final TextField searchField = new TextField();
-  private final Grid<OntologyClassDTO> ontologyGrid = new Grid<>();
+  private final Div ontologyGridSection = new Div();
   private GridLazyDataView<OntologyClassDTO> ontologyGridLazyDataView;
   private String searchTerm = "";
+  private final Span foundResults = new Span();
   private final OntologyTermInformationService ontologyTermInformationService;
+  private final int ontologySearchLowerLimit = 2;
 
   public OntologyLookupComponent(
       @Autowired OntologyTermInformationService ontologyTermInformationService) {
@@ -62,17 +64,13 @@ public class OntologyLookupComponent extends PageArea {
     Span description = new Span(
         "You can search here for ontology terms from over 20 different ontologies.");
     add(description);
-    addSearchEventListener(event -> {
-      searchTerm = event.searchValue();
-      ontologyGridLazyDataView.refreshAll();
-    });
+    addSearchEventListener(this::updateShownResults);
     initSearchField();
-    layoutGrid();
-    setLazyDataProviderForOntologyGrid();
+    layoutGridSection();
     addClassName("ontology-lookup-component");
   }
 
-  private void setLazyDataProviderForOntologyGrid() {
+  private void setLazyDataProviderForOntologyGrid(Grid<OntologyClassDTO> ontologyGrid) {
     List<Ontology> ontologies = Arrays.stream(Ontology.values()).toList();
     List<String> ontologyAbbreviations = ontologies.stream()
         .map(Ontology::getAbbreviation)
@@ -87,7 +85,8 @@ public class OntologyLookupComponent extends PageArea {
     });
   }
 
-  private void layoutGrid() {
+  private void layoutGridSection() {
+    Grid<OntologyClassDTO> ontologyGrid = new Grid<>();
     ontologyGrid.addComponentColumn(
         ontologyClassDTO -> new OntologyItem(ontologyClassDTO.getLabel(),
             ontologyClassDTO.getName(),
@@ -95,15 +94,30 @@ public class OntologyLookupComponent extends PageArea {
             ontologyClassDTO.getOntologyAbbreviation()));
     ontologyGrid.addClassName("ontology-grid");
     ontologyGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-    add(ontologyGrid);
+    setLazyDataProviderForOntologyGrid(ontologyGrid);
+    ontologyGridSection.add(foundResults, ontologyGrid);
+    foundResults.addClassName("secondary");
+    ontologyGridSection.addClassName("ontology-grid-section");
+    add(ontologyGridSection);
+  }
+
+  private void updateShownResults(OntologySearchEvent event) {
+    searchTerm = event.searchValue();
+    ontologyGridLazyDataView.refreshAll();
+    foundResults.setText("%s results found".formatted(ontologyGridLazyDataView.getItems().count()));
+    if (!ontologyGridSection.isVisible()) {
+      ontologyGridSection.setVisible(true);
+    }
   }
 
   /**
    * Resets the value within the searchfield, which in turn resets the grid via the fired
-   * {@link OntologySearchEvent}
+   * {@link OntologySearchEvent}. Additionally, hides the entire section so the result span is only
+   * shown when the user is actively searching for an ontology
    */
   public void resetSearch() {
     searchField.setValue("");
+    ontologyGridSection.setVisible(false);
   }
 
   /**
@@ -120,11 +134,16 @@ public class OntologyLookupComponent extends PageArea {
   private void initSearchField() {
     searchField.setClassName("search-field");
     searchField.setPlaceholder("Search for ontology term e.g. Whole blood");
-    searchField.setPlaceholder("Search");
+    searchField.setHelperText("Please provide at least %s letters to search for entries".formatted(
+        ontologySearchLowerLimit));
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addValueChangeListener(
-        event -> fireEvent(new OntologySearchEvent(this, event.isFromClient(), event.getValue())));
+        event -> {
+          if (event.getValue().length() >= ontologySearchLowerLimit) {
+            fireEvent(new OntologySearchEvent(this, event.isFromClient(), event.getValue()));
+          }
+        });
     add(searchField);
   }
 
