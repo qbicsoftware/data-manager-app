@@ -52,7 +52,7 @@ public class OntologyLookupComponent extends PageArea {
   private String searchTerm = "";
   private final Span foundResults = new Span();
   private final transient OntologyTermInformationService ontologyTermInformationService;
-  private static final int ontologySearchLowerLimit = 2;
+  private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
 
   public OntologyLookupComponent(
       @Autowired OntologyTermInformationService ontologyTermInformationService) {
@@ -135,12 +135,12 @@ public class OntologyLookupComponent extends PageArea {
     searchField.setClassName("search-field");
     searchField.setPlaceholder("Search for ontology term e.g. Whole blood");
     searchField.setHelperText("Please provide at least %s letters to search for entries".formatted(
-        ontologySearchLowerLimit));
+        ONTOLOGY_SEARCH_LOWER_LIMIT));
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addValueChangeListener(
         event -> {
-          if (event.getValue().length() >= ontologySearchLowerLimit) {
+          if (event.getValue().length() >= ONTOLOGY_SEARCH_LOWER_LIMIT) {
             fireEvent(new OntologySearchEvent(this, event.isFromClient(), event.getValue()));
           }
         });
